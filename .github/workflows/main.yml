@@ -7,8 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-20.04 # or ubuntu-22.04, depending on your preference
-
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -23,8 +22,8 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }} # Your FTP username (e.g., asipiya@finance.asipiya.lk)
           password: ${{ secrets.FTP_PASSWORD }} # Your FTP password (e.g., Asipiya@#$12345)
           remote_folder: ${{ secrets.FTP_REMOTE_FOLDER }} # Path to remote directory where files will be deployed
-          local_folder: dist # Local folder to deploy, default is 'dist' but you can change it as per your folder structure
+          local_folder: dist # Local folder to deploy, change this if your Laravel build is stored elsewhere
           cleanup: false # Set to 'false' if you don't want to remove files in the remote folder
-          include: "['*', '**/*']" # Specify all files and folders in the local_folder to upload
-          exclude: "['node_modules/**', '.git/**', '*.env']" # Optional: exclude unnecessary files
+          include: "[\"*\", \"**/*\"]" # Correct JSON array for all files and directories
+          exclude: "[\"node_modules/**\", \".git/**\", \"*.env\", \"storage/*.key\"]" # Exclude unnecessary files
           passive: true # Use passive mode for FTP (recommended for most firewalls)
