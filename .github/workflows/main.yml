@@ -31,11 +31,13 @@ jobs:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./ # Deploy everything from the root of the repository
-          server-dir: / # Target root directory on the remote server
+          local-dir: ./ # Deploy everything from the repository root
+          server-dir: /public_html/ # Adjust this path based on your server
           exclude: |
-            node_modules/*
+            .DS_Store
             .git/*
+            node_modules/*
             *.env
             storage/*
+            .github/*
           dry-run: false # Set to true for testing without deployment
