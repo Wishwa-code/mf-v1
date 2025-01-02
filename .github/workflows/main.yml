@@ -25,6 +25,9 @@ jobs:
           npm run prod
           php artisan storage:link
 
+      - name: Debug local folder
+        run: ls -lR public
+
       - name: FTP Deployer
         uses: sand4rt/ftp-deployer@v1.8
         with:
