@@ -1,0 +1,29 @@
+name: FTP Deployer
+
+on:
+  push:
+    branches:
+      - main  # Trigger the workflow on push to the 'main' branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: FTP Deployer
+        uses: sand4rt/ftp-deployer@v1.8
+        with:
+          sftp: false # Set to 'false' since it's FTP, not SFTP
+          host: ${{ secrets.FTP_HOST }} # Set the FTP host (e.g., finance.asipiya.lk)
+          port: 21 # Default FTP port
+          username: ${{ secrets.FTP_USERNAME }} # Your FTP username (e.g., asipiya@finance.asipiya.lk)
+          password: ${{ secrets.FTP_PASSWORD }} # Your FTP password (e.g., Asipiya@#$12345)
+          remote_folder: ${{ secrets.FTP_REMOTE_FOLDER }} # Path to remote directory where files will be deployed
+          local_folder: dist # Local folder to deploy, default is 'dist' but you can change it as per your folder structure
+          cleanup: false # Set to 'false' if you don't want to remove files in the remote folder
+          include: '[]' # Optional: list files/folders to include (default includes everything)
+          exclude: '[]' # Optional: list files/folders to exclude, e.g., ['node_modules/**', '.git/**', '*.env']
+          passive: true # Use passive mode for FTP (recommended for most firewalls)
