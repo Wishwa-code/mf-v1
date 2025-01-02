@@ -32,7 +32,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: public/ # Ensure the folder path ends with /
-          server-dir: /path/to/remote/directory/ # Use 'server-dir' for the remote directory
+          server-dir: / # Use 'server-dir' for the remote directory
           exclude: |
             node_modules/*
             .git/*
