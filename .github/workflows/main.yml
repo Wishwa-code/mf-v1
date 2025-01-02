@@ -31,8 +31,8 @@ jobs:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: public/ # Ensure the folder path ends with /
-          server-dir: / # Use 'server-dir' for the remote directory
+          local-dir: ./ # Deploy everything from the root of the repository
+          server-dir: / # Target root directory on the remote server
           exclude: |
             node_modules/*
             .git/*
