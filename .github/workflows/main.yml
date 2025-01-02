@@ -26,18 +26,18 @@ jobs:
           php artisan storage:link
 
       - name: Deploy to FTP
-        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+        uses: microsoft/ftp-action@v1
         with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./ # Deploy everything from the repository root
-          server-dir: /public_html/ # Adjust this path based on your server
-          exclude: |
-            .DS_Store
-            .git/*
-            node_modules/*
-            *.env
-            storage/*
-            .github/*
-          dry-run: false # Set to true for testing without deployment
+            host: ${{ secrets.FTP_HOST }}
+            username: ${{ secrets.FTP_USERNAME }}
+            password: ${{ secrets.FTP_PASSWORD }}
+            local-dir: ./ # Deploy everything from the repository root
+            server-dir: /public_html/ # Adjust this path based on your server
+            exclude: |
+              .git/*
+              .github/*
+              .DS_Store
+              node_modules/*
+              storage/logs/*
+              *.env  
+            dry-run: false # Set to true for testing without deployment
