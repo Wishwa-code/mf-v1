@@ -31,11 +31,11 @@ jobs:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: public
-          remote-dir: /path/to/remote/directory
+          local-dir: public/ # Ensure the folder path ends with /
+          server-dir: /path/to/remote/directory/ # Use 'server-dir' for the remote directory
           exclude: |
             node_modules/*
             .git/*
             *.env
             storage/*
-          dry-run: false # Set to true if you want to test without making changes
+          dry-run: false # Set to true for testing without deployment
