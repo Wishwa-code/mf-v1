@@ -1,0 +1,127 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\BankLog;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class BankLogController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index($bank_id,$type,$description,$note,$system,$amount, $payment_id = 0)
+    {
+        $user_id = (int)session('userid');
+// Create a new BankLog entry
+        $BankLog = new BankLog();
+        $BankLog->Bank_Account_Id = $bank_id;
+        $BankLog->Date_Time = now(); // Use Laravel's now() helper
+        $BankLog->Type = $type;
+        $BankLog->Description = $description;
+        $BankLog->Note = $note;
+
+        $currentBalance = tableWithBranch('company_bank_accounts')->where('Idbank', '=', $bank_id)->value('Account_Balance');
+
+        if (!$currentBalance) {
+            $currentBalance = 0.00; // Default balance if no records exist
+        }
+
+        if ($type == "Account Creation") {
+            $BankLog->Credit = $amount;
+            $BankLog->Debit = '0.00';
+            $BankLog->Balance = $amount;
+        } else {
+            if ($system == "credit") {
+                $BankLog->Credit = $amount;
+                $BankLog->Debit = '0.00';
+                $BankLog->Balance = $currentBalance + $amount;
+
+                // Update the account balance
+                updateWithBranch('company_bank_accounts', 'Idbank', $bank_id, [
+                    'Account_Balance' => $currentBalance + $amount
+                ]);
+            } else {
+                $BankLog->Credit = '0.00';
+                $BankLog->Debit = $amount;
+                $BankLog->Balance = $currentBalance - $amount;
+
+                // Update the account balance
+                updateWithBranch('company_bank_accounts', 'Idbank', $bank_id, [
+                    'Account_Balance' => $currentBalance - $amount
+                ]);
+            }
+        }
+
+        $BankLog->User = $user_id;
+
+// Convert the BankLog object to an array for insertion
+        $bankLogData = [
+            'Bank_Account_Id' => $BankLog->Bank_Account_Id,
+            'Date_Time' => $BankLog->Date_Time,
+            'Type' => $BankLog->Type,
+            'Description' => $BankLog->Description,
+            'Note' => $BankLog->Note,
+            'Credit' => $BankLog->Credit,
+            'Debit' => $BankLog->Debit,
+            'Balance' => $BankLog->Balance,
+            'User' => $BankLog->User,
+            'payment_id' => $payment_id,
+        ];
+
+// Insert the BankLog entry using the helper function
+        insertWithBranch('company_bank_has_log', $bankLogData);
+
+
+
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        //
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(string $id)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        //
+    }
+}

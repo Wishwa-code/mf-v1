@@ -1,0 +1,1005 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Bank;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+class BankController extends Controller
+{
+
+    protected $bankLogController;
+    protected $customerLogController;
+
+    public function __construct(CustomerLogController $customerLogController,BankLogController $bankLogController)
+    {
+        $this->bankLogController = $bankLogController;
+        $this->customerLogController = $customerLogController;
+    }
+
+
+
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $banks = tableWithBranch('company_bank_accounts','company_bank_accounts')
+            ->join('user', 'company_bank_accounts.User', '=', 'user.id')
+            ->where('company_bank_accounts.Bank_Name','!=','Collector')
+            ->get();
+        $company_banks = tableWithBranch('company_bank_accounts')
+            ->where('company_bank_accounts.Bank_Name','=','Collector')
+            ->get();
+
+        return view('pages.BankAccount',compact('banks','company_banks'));
+    }
+
+    public function collector_index()
+    {
+        $banks = tableWithBranch('company_bank_accounts','company_bank_accounts')
+            ->join('user', 'company_bank_accounts.User', '=', 'user.id')
+            ->where('company_bank_accounts.Bank_Name','=','Collector')
+            ->get();
+
+        $company_banks = tableWithBranch('company_bank_accounts')
+            ->where('company_bank_accounts.Bank_Name','!=','Collector')
+            ->get();
+
+        return view('pages.CollectorAccount',compact('banks','company_banks'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create(string $id)
+    {
+        $bank_log = tableWithBranch('company_bank_has_log','company_bank_has_log')
+            ->join('user', 'company_bank_has_log.User', '=', 'user.id')
+            ->where('Bank_Account_Id', $id)
+            ->get();
+
+        return response()->json(["item" => $bank_log], 200);
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        $user_id = (int)session('userid');
+        $Bank = [
+            'Bank_Name' => $request->bank_name,
+            'Account_Name' => $request->account_name,
+            'Account_No' => $request->account_number,
+            'Bank_Branch' => $request->branch,
+            'Account_Balance' => $request->opening_balance,
+            'User' => $user_id,
+        ];
+
+        if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $request->account_number)->exists()) {
+            return response()->json(["id" => "0"], 200);
+        } else {
+            $insertedId = insertWithBranch('company_bank_accounts', $Bank);
+            $this->bankLogController->index($insertedId,"Account Creation","-","-","credit",$request->opening_balance);
+            return response()->json(["id" => "1"], 200);
+        }
+
+
+
+
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show()
+    {
+        // Fetch banks associated with the current branch
+        $banks = tableWithBranch('company_bank_accounts')->get();
+
+        // Fetch bank logs with a join to company_bank_accounts, scoped by branch
+        $banklog = tableWithBranch('company_bank_has_log','company_bank_has_log')
+            ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.Bank_Account_Id')
+            ->where('company_bank_has_log.Type', '=', 'InterBank Transfer')
+            ->get();
+
+        return view('pages.Accounting.InnerBankTransfers',compact('banks','banklog'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Request $request)
+    {
+        $fromBank=$request->fromBank;
+
+        $fromBankDetails = tableWithBranch('company_bank_accounts')->where('Idbank', $fromBank)->first();
+
+
+        $fromAmount=$request->fromAmount;
+        $reason=$request->reason;
+        $toBank=$request->toBank;
+        $toBankDetails = tableWithBranch('company_bank_accounts')->where('Idbank', $toBank)->first();
+        $this->bankLogController->index($fromBank,"InterBank Transfer",'To ('.$toBankDetails->Account_No.')',$reason,"debit",$fromAmount);
+        $this->bankLogController->index($toBank,"InterBank Transfer",'From'.' ('.$fromBankDetails->Account_No.')',$reason,"credit",$fromAmount);
+        return response()->json(["id" => "1"], 200);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        // Retrieve the current status of the customer
+        $bank = tableWithBranch('company_bank_accounts')->where('Id', $id)->first();
+
+
+        // Check if the customer exists
+        if ($bank) {
+            // Toggle the status
+            $newStatus = ($bank->status == 1) ? 0 : 1;
+
+            // Update the status in the database
+            updateWithBranch('company_bank_accounts', 'Id', $id, ['status' => $newStatus]);
+
+
+            // Optionally, return a response
+            return response()->json(['id' => '1'], 200);
+        } else {
+            // Return an error response if the customer is not found
+            return response()->json(['message' => 'Customer not found'], 404);
+        }
+    }
+
+
+
+    public function chq(){
+        $chq = tableWithBranch('Cheque_payment','Cheque_payment')
+            ->join('company_bank_accounts', 'Cheque_payment.bank_account_company', '=', 'company_bank_accounts.Idbank')
+            ->join('customer_loan', 'Cheque_payment.loan_id', '=', 'customer_loan.idCustomer_Loan')
+            ->get();
+
+        return view('pages.ChqDetails',compact('chq'));
+    }
+
+    public function chq_process(string $id){
+
+        $chq = tableWithBranch('cheque_details')
+            ->where('Id', '=', $id)
+            ->first();
+
+        if ($chq) {
+            updateWithBranch('cheque_details', 'Id', $id, ['Status' => '1']);
+            $this->bankLogController->index($chq->Company_Account, "Cheque Deposit", "-", "-", "credit", $chq->Amount);
+            return response()->json(['id' => '1'], 200);
+        }
+
+    }
+
+
+    public function return_chq(string $id){
+
+        $chq = tableWithBranch('Cheque_payment')
+            ->where('idChq', '=', $id)
+            ->first();
+        $user_id = (int)session('userid');
+        if ($chq) {
+            updateWithBranch('Cheque_payment', 'idChq', $id, ['chq_status' => '-1']);
+            $chq_comment='Cheque Returned ! Cheque No : '.$chq->chq_number.' Cheque Date : '.$chq->chq_date.' Cheque Type : '.$chq->chq_type.' Amount : '.$chq->payment_amount;
+            $comment_id=insertWithBranch('loan_comment',[
+                'comment' => $chq_comment,
+                'loan_id' => $chq->loan_id,
+                'user_id' => $user_id,
+                'date' => now()->toDateString(),
+                'time' => now()->toTimeString(),
+            ]);
+            $loan = tableWithBranch('customer_loan')
+                ->where('idCustomer_Loan', '=', $chq->loan_id)
+                ->first();
+            $customer = tableWithBranch('customer')
+                ->where('idCustomer', '=', $loan->Customer_idCustomer)
+                ->first();
+
+            $request = new Request([
+                'customer_id' => $loan->Customer_idCustomer,
+                'description' => 'Payment Rejected ('.$customer->First_Name.' '.$customer->Last_Name.')',
+                'description_id' => $comment_id,
+                'comment' =>$chq_comment,
+                'type' => 'Loan Comment',
+            ]);
+            $this->customerLogController->store($request);
+            return response()->json(['id' => '1'], 200);
+        }
+
+    }
+
+    public function profitView(){
+        $date_from = Carbon::now()->format('Y-m-d'); // Current date
+        $date_to = Carbon::now()->format('Y-m-d'); // Current date
+        $interest=0.00;
+        $panelty=0.00;
+        $other_chargers=0.00;
+        $loan_expenses=0.00;
+        $total_income=0.00;
+        $total_expenses=0.00;
+        return view('pages.Accounting.ProfitLoss',compact('date_from','date_to','interest','panelty','other_chargers','loan_expenses','total_income','total_expenses'));
+    }
+
+
+    public function profit(Request $request){
+        $date_from=$request->date_from;
+        $date_to=$request->date_to;
+        $interest=0.00;
+        $panelty=0.00;
+        $other_chargers=0.00;
+        $loan_expenses=0.00;
+        $total_income=0.00;
+        $total_expenses=0.00;
+
+        $date_to = Carbon::parse($date_to)->endOfDay();
+        $date_from = Carbon::parse($date_from)->startOfDay(); // To ensure you're starting from the beginning of the day
+
+
+
+        $interest = tableWithBranch('Loan_Log')
+            ->whereBetween('Date_Time', [$date_from, $date_to])
+            ->sum('Interest_Payment');
+
+        $panelty = tableWithBranch('Loan_Log')
+            ->whereBetween('Date_Time', [$date_from, $date_to])
+            ->sum('Panelty_Payment');
+
+        $other_chargers = tableWithBranch('expences')
+            ->whereBetween('date', [$date_from, $date_to])
+            ->where('reason', 'like', '%Other loan charges for loan number:%')
+            ->where('type', '=', 'Income')
+            ->sum('amount');
+
+        $total_income = tableWithBranch('expences')
+            ->whereBetween('date', [$date_from, $date_to])
+            ->where('reason', 'not like', '%Other loan charges for loan number:%')
+            ->where('type', '=', 'Income')
+            ->sum('amount');
+
+        $total_expenses = tableWithBranch('expences')
+            ->whereBetween('date', [$date_from, $date_to])
+            ->where('type', '=', 'Expense')
+            ->sum('amount');
+
+
+
+
+
+        return view('pages.Accounting.ProfitLoss',compact('date_from','date_to','interest','panelty','other_chargers','loan_expenses','total_income','total_expenses'));
+    }
+
+
+    public function BankReconciliationView(){
+        $date_from = Carbon::now()->format('Y-m-d'); // Current date
+        $date_to = Carbon::now()->format('Y-m-d'); // Current date
+        $bank_details="all";
+        $bank = tableWithBranch('company_bank_accounts')->get();
+
+        $bank_log = tableWithBranch('company_bank_has_log')
+            ->whereBetween('Date_Time', [$date_from, $date_to])
+            ->get();
+
+// Get the opening balance (the last balance before the date_from)
+        $opening_balance_record = tableWithBranch('company_bank_has_log')
+            ->where('Date_Time', '<', $date_from)
+            ->orderBy('Date_Time', 'desc')
+            ->first(); // Get the last record before the date_from
+
+        $opening_balance = $opening_balance_record ? $opening_balance_record->Balance : 0; // Use 0 if no record exists
+
+// Get the closing balance (the balance of the last transaction on or before date_to)
+        $closing_balance_record = tableWithBranch('company_bank_has_log')
+            ->where('Date_Time', '<=', $date_to)
+            ->orderBy('Date_Time', 'desc')
+            ->first(); // Get the last record on or before the date_to
+
+
+        $closing_balance = $closing_balance_record ? $closing_balance_record->Balance : 0; // Use 0 if no record exists
+
+        return view('pages.Accounting.BankReconsilation', compact('bank_details','date_from', 'date_to', 'bank', 'bank_log', 'opening_balance', 'closing_balance'));
+    }
+
+    public function BankReconciliation(Request $request){
+        $date_from = $request->date_from;
+        $date_to = $request->date_to;
+        $bank_details=$request->bank;
+        $bank=tableWithBranch('company_bank_accounts')->get();
+
+        if ($bank_details=="all"){
+            $bank_log = tableWithBranch('company_bank_has_log')
+                ->whereBetween('Date_Time', [$date_from, $date_to])
+                ->get();
+
+// Get the opening balance (the last balance before the date_from)
+            $opening_balance_record = tableWithBranch('company_bank_has_log')
+                ->where('Date_Time', '<', $date_from)
+                ->orderBy('Date_Time', 'desc')
+                ->first(); // Get the last record before the date_from
+
+            $opening_balance = $opening_balance_record ? $opening_balance_record->Balance : 0; // Use 0 if no record exists
+
+// Get the closing balance (the balance of the last transaction on or before date_to)
+            $closing_balance_record = tableWithBranch('company_bank_has_log')
+                ->where('Date_Time', '<=', $date_to)
+                ->orderBy('Date_Time', 'desc')
+                ->first(); // Get the last record on or before the date_to
+
+
+            $closing_balance = $closing_balance_record ? $closing_balance_record->Balance : 0; // Use 0 if no record exists
+        }else{
+
+            $bank_log = tableWithBranch('company_bank_has_log')
+                ->whereBetween('Date_Time', [$date_from, $date_to])
+                ->where('Bank_Account_Id', '=', $bank_details)
+                ->get();
+
+// Get the opening balance (the last balance before the date_from)
+            $opening_balance_record = tableWithBranch('company_bank_has_log')
+                ->where('Date_Time', '<', $date_from)
+                ->where('Bank_Account_Id', '=', $bank_details)
+                ->orderBy('Date_Time', 'desc')
+                ->first(); // Get the last record before the date_from
+
+            $opening_balance = $opening_balance_record ? $opening_balance_record->Balance : 0; // Use 0 if no record exists
+
+// Get the closing balance (the balance of the last transaction on or before date_to)
+            $closing_balance_record = tableWithBranch('company_bank_has_log')
+                ->where('Date_Time', '<=', $date_to)
+                ->where('Bank_Account_Id', '=', $bank_details)
+                ->orderBy('Date_Time', 'desc')
+                ->first(); // Get the last record on or before the date_to
+
+
+            $closing_balance = $closing_balance_record ? $closing_balance_record->Balance : 0; // Use 0 if no record exists
+        }
+
+
+        return view('pages.Accounting.BankReconsilation', compact('bank_details','date_from', 'date_to', 'bank', 'bank_log', 'opening_balance', 'closing_balance'));
+    }
+
+    public function loanStatusView() {
+
+        $customer = tableWithBranch('customer')
+            ->get();
+        $lending_officer = tableWithBranch('user')->where('lending_officer','=','1')->get();
+        $recovery_officer = tableWithBranch('user')->where('collector','=','1')->get();
+
+        // Fetch active loans
+        $loans = tableWithBranch('customer_loan')
+            ->where('Status', '=', '0')
+            ->get();
+        $route = tableWithBranch('route','route')
+            ->join('user', 'route.id_officer', '=', 'user.id')
+            ->get();
+        $center = tableWithBranch('center')->get();
+        $group = tableWithBranch('customer_group')->get();
+
+        // Initialize variables
+        $current_loan_capital_amount = 0.00;
+        $current_loan_interest_amount = 0.00;
+        $current_loan_panelty_amount = 0.00;
+        $Capital_Payment = 0.00;
+        $Interest_Payment = 0.00;
+        $Panelty_Payment = 0.00;
+
+        // Initialize variables
+        $past_capital_amount = 0.00;
+        $past_loan_interest_amount = 0.00;
+        $past_panelty_amount = 0.00;
+        $past_Capital_Payment = 0.00;
+        $past_Interest_Payment = 0.00;
+        $past_Panelty_Payment = 0.00;
+
+        foreach ($loans as $loan) {
+            // Fetch the most recent installment
+            $installment = tableWithBranch('installments')
+                ->where('Customer_Loan_idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                ->orderBy('idInstallments', 'desc')
+                ->first();
+
+
+            // Check if the maturity date is greater than the current date
+            $Maturity_Date = $installment->Installment_Date ?? null;
+            if ($Maturity_Date && $Maturity_Date > date('Y-m-d')) {
+                // Calculate capital amount
+                $current_loan_capital_amount += tableWithBranch('customer_loan')
+                    ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                    ->sum('Amount');
+
+// Calculate interest amount
+                $current_loan_interest_amount += tableWithBranch('customer_loan')
+                    ->where('Status', '=', '0')
+                    ->sum('Interest_Amount');
+
+// Calculate penalty amount
+                $current_loan_panelty_amount += tableWithBranch('installments','installments')
+                    ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+                    ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                    ->sum('installments.Panalty_Amount');
+
+// Calculate payments
+                $loan_payments = tableWithBranch('Loan_Log','Loan_Log')
+                    ->join('customer_loan', 'Loan_Log.Loan_ID', '=', 'customer_loan.idCustomer_Loan')
+                    ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                    ->selectRaw('SUM(Loan_Log.Capital_Payment) as Capital_Payment')
+                    ->selectRaw('SUM(Loan_Log.Interest_Payment) as Interest_Payment')
+                    ->selectRaw('SUM(Loan_Log.Panelty_Payment) as Panelty_Payment')
+                    ->first();
+
+
+                $Capital_Payment += $loan_payments->Capital_Payment ?? 0;
+                $Interest_Payment += $loan_payments->Interest_Payment ?? 0;
+                $Panelty_Payment += $loan_payments->Panelty_Payment ?? 0;
+            }else{
+                // Calculate capital amount
+                $past_capital_amount += tableWithBranch('customer_loan')
+                    ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                    ->sum('Amount');
+
+// Calculate interest amount
+                $past_loan_interest_amount += tableWithBranch('customer_loan')
+                    ->where('Status', '=', '0')
+                    ->sum('Interest_Amount');
+
+// Calculate penalty amount
+                $past_panelty_amount += tableWithBranch('installments','installments')
+                    ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+                    ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                    ->sum('installments.Panalty_Amount');
+
+// Calculate payments
+                $past_loan_payments = tableWithBranch('Loan_Log','Loan_Log')
+                    ->join('customer_loan', 'Loan_Log.Loan_ID', '=', 'customer_loan.idCustomer_Loan')
+                    ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                    ->selectRaw('SUM(Loan_Log.Capital_Payment) as Capital_Payment')
+                    ->selectRaw('SUM(Loan_Log.Interest_Payment) as Interest_Payment')
+                    ->selectRaw('SUM(Loan_Log.Panelty_Payment) as Panelty_Payment')
+                    ->first();
+
+
+                $past_Capital_Payment += $past_loan_payments->Capital_Payment ?? 0;
+                $past_Interest_Payment += $past_loan_payments->Interest_Payment ?? 0;
+                $past_Panelty_Payment += $past_loan_payments->Panelty_Payment ?? 0;
+            }
+        }
+
+        // Calculate total amounts
+        $current_loan_total = $current_loan_capital_amount + $current_loan_interest_amount + $current_loan_panelty_amount;
+        $current_loan_total_payment = $Capital_Payment + $Interest_Payment + $Panelty_Payment;
+
+        // Calculate total amounts
+        $past_total = $past_capital_amount + $past_loan_interest_amount + $past_panelty_amount;
+        $past_total_payment = $past_Capital_Payment + $past_Interest_Payment + $past_Panelty_Payment;
+
+
+
+
+
+
+
+
+
+
+
+
+        // Fetch active loans
+        $loans = tableWithBranch('customer_loan')
+            ->where('Status', '=', '1')
+            ->get();
+
+
+        // Initialize variables
+        $fully_paid_capital_amount = 0.00;
+        $fully_paid_interest_amount = 0.00;
+        $fully_paid_panelty_amount = 0.00;
+        $fully_paid_Capital_Payment = 0.00;
+        $fully_paid_Interest_Payment = 0.00;
+        $fully_paid_Panelty_Payment = 0.00;
+
+        foreach ($loans as $loan) {
+            // Fetch the most recent installment
+            $installment = tableWithBranch('installments')
+                ->where('Customer_Loan_idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                ->orderBy('idInstallments', 'desc')
+                ->first();
+
+
+            // Check if the maturity date is greater than the current date
+            $Maturity_Date = $installment->Installment_Date ?? null;
+            if ($Maturity_Date && $Maturity_Date > date('Y-m-d')) {
+                // Calculate capital amount
+                // Calculate fully paid capital amount
+                $fully_paid_capital_amount += tableWithBranch('customer_loan')
+                    ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                    ->sum('Amount');
+
+// Calculate interest amount for fully paid loans
+                $fully_paid_interest_amount += tableWithBranch('customer_loan')
+                    ->where('Status', '=', '0') // Assuming '0' is the status for fully paid loans
+                    ->sum('Interest_Amount');
+
+// Calculate penalty amount
+                $fully_paid_panelty_amount += tableWithBranch('installments','installments')
+                    ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+                    ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                    ->sum('installments.Panalty_Amount');
+
+// Calculate payments
+                $loan_payments = tableWithBranch('Loan_Log','Loan_Log')
+                    ->join('customer_loan', 'Loan_Log.Loan_ID', '=', 'customer_loan.idCustomer_Loan')
+                    ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                    ->selectRaw('SUM(Loan_Log.Capital_Payment) as Capital_Payment')
+                    ->selectRaw('SUM(Loan_Log.Interest_Payment) as Interest_Payment')
+                    ->selectRaw('SUM(Loan_Log.Panelty_Payment) as Panelty_Payment')
+                    ->first();
+
+
+                $fully_paid_Capital_Payment += $loan_payments->Capital_Payment ?? 0;
+                $fully_paid_Interest_Payment += $loan_payments->Interest_Payment ?? 0;
+                $fully_paid_Panelty_Payment += $loan_payments->Panelty_Payment ?? 0;
+            }
+        }
+
+        // Calculate total amounts
+        $fully_paid_total = $fully_paid_capital_amount + $fully_paid_interest_amount + $fully_paid_panelty_amount;
+        $fully_paid_total_payment = $fully_paid_Capital_Payment + $fully_paid_Interest_Payment + $fully_paid_Panelty_Payment;
+
+        $selectedCustomer=0;
+        $selectedLendingOfficer=0;
+        $selectedRecoveryOfficer=0;
+
+        $selectedRoute = 0;
+        $selectedCenter = 0;
+        $selectedGroup = 0;
+
+
+        // Return data to view
+        return view('pages.Accounting.loanStatus', compact(
+            'route','center','group','selectedRoute','selectedCenter','selectedGroup',
+
+            'selectedCustomer',
+            'selectedLendingOfficer',
+            'selectedRecoveryOfficer',
+            'customer',
+            'lending_officer',
+            'recovery_officer',
+
+            'current_loan_capital_amount',
+            'current_loan_interest_amount',
+            'current_loan_panelty_amount',
+            'current_loan_total',
+            'Capital_Payment',
+            'Interest_Payment',
+            'Panelty_Payment',
+            'current_loan_total_payment',
+
+
+            'past_capital_amount',
+            'past_loan_interest_amount',
+            'past_panelty_amount',
+            'past_total',
+            'past_Capital_Payment',
+            'past_Interest_Payment',
+            'past_Panelty_Payment',
+            'past_total_payment',
+
+
+            'fully_paid_capital_amount',
+            'fully_paid_interest_amount',
+            'fully_paid_panelty_amount',
+            'fully_paid_total',
+            'fully_paid_Capital_Payment',
+            'fully_paid_Interest_Payment',
+            'fully_paid_Panelty_Payment',
+            'fully_paid_total_payment'
+        ));
+    }
+
+
+
+
+
+
+
+    public function loanStatusView_2(Request $request) {
+
+        $customer = tableWithBranch('customer')
+            ->get();
+        $lending_officer = tableWithBranch('user')->where('lending_officer','=','1')->get();
+        $recovery_officer = tableWithBranch('user')->where('collector','=','1')->get();
+        $route = tableWithBranch('route','route')
+            ->join('user', 'route.id_officer', '=', 'user.id')
+            ->get();
+        $center = tableWithBranch('center')->get();
+        $group = tableWithBranch('customer_group')->get();
+        // Fetch active loans
+        $loanQuery = tableWithBranch('customer_loan','customer_loan')
+            ->where('customer_loan.Status', '=', '0')
+            ->leftJoin('group_has_customer', 'customer_loan.Customer_idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->leftJoin('route', 'center.route_id', '=', 'route.id_route');
+
+// Add conditions for filtering
+        if ($request->customer != '0') {
+            $loanQuery->where('customer_loan.Customer_idCustomer', '=', $request->customer);
+        }
+
+        if ($request->lending != '0') {
+            $loanQuery->where('customer_loan.lending_officer_id', '=', $request->lending);
+        }
+
+        if ($request->recovery != '0') {
+            $loanQuery->where('customer_loan.collector_id', '=', $request->recovery);
+        }
+
+        if ($request->route != '0') {
+            $loanQuery->where('route.id_route', '=', $request->route);
+        }
+
+        if ($request->center_details != '0') {
+            $loanQuery->where('center.idCenter', '=', $request->center_details);
+        }
+
+        if ($request->group != '0') {
+            $loanQuery->where('customer_group.idCustomer_Group', '=', $request->group);
+        }
+
+        $loans = $loanQuery->get();
+
+        // Initialize variables
+        $current_loan_capital_amount = 0.00;
+        $current_loan_interest_amount = 0.00;
+        $current_loan_panelty_amount = 0.00;
+        $Capital_Payment = 0.00;
+        $Interest_Payment = 0.00;
+        $Panelty_Payment = 0.00;
+
+        // Initialize variables
+        $past_capital_amount = 0.00;
+        $past_loan_interest_amount = 0.00;
+        $past_panelty_amount = 0.00;
+        $past_Capital_Payment = 0.00;
+        $past_Interest_Payment = 0.00;
+        $past_Panelty_Payment = 0.00;
+
+        foreach ($loans as $loan) {
+            // Fetch the most recent installment
+            $installment = tableWithBranch('installments')
+                ->where('Customer_Loan_idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                ->orderBy('idInstallments', 'desc')
+                ->first();
+
+
+            // Check if the maturity date is greater than the current date
+            $Maturity_Date = $installment->Installment_Date ?? null;
+            if ($Maturity_Date && $Maturity_Date > date('Y-m-d')) {
+                // Calculate capital amount
+                $current_loan_capital_amount += tableWithBranch('customer_loan')
+                    ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                    ->sum('Amount');
+
+// Calculate interest amount
+                $current_loan_interest_amount += tableWithBranch('customer_loan')
+                    ->where('Status', '=', '0')
+                    ->sum('Interest_Amount');
+
+// Calculate penalty amount
+                $current_loan_panelty_amount += tableWithBranch('installments','installments')
+                    ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+                    ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                    ->sum('installments.Panalty_Amount');
+
+// Calculate payments
+                $loan_payments = tableWithBranch('Loan_Log','Loan_Log')
+                    ->join('customer_loan', 'Loan_Log.Loan_ID', '=', 'customer_loan.idCustomer_Loan')
+                    ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                    ->selectRaw('SUM(Loan_Log.Capital_Payment) as Capital_Payment')
+                    ->selectRaw('SUM(Loan_Log.Interest_Payment) as Interest_Payment')
+                    ->selectRaw('SUM(Loan_Log.Panelty_Payment) as Panelty_Payment')
+                    ->first();
+
+
+                $Capital_Payment += $loan_payments->Capital_Payment ?? 0;
+                $Interest_Payment += $loan_payments->Interest_Payment ?? 0;
+                $Panelty_Payment += $loan_payments->Panelty_Payment ?? 0;
+            }else{
+                // Calculate capital amount
+                $past_capital_amount += tableWithBranch('customer_loan')
+                    ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                    ->sum('Amount');
+
+// Calculate interest amount
+                $past_loan_interest_amount += tableWithBranch('customer_loan')
+                    ->where('Status', '=', '0')
+                    ->sum('Interest_Amount');
+
+// Calculate penalty amount
+                $past_panelty_amount += tableWithBranch('installments','installments')
+                    ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+                    ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                    ->sum('installments.Panalty_Amount');
+
+// Calculate payments
+                $past_loan_payments = tableWithBranch('Loan_Log','Loan_Log')
+                    ->join('customer_loan', 'Loan_Log.Loan_ID', '=', 'customer_loan.idCustomer_Loan')
+                    ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                    ->selectRaw('SUM(Loan_Log.Capital_Payment) as Capital_Payment')
+                    ->selectRaw('SUM(Loan_Log.Interest_Payment) as Interest_Payment')
+                    ->selectRaw('SUM(Loan_Log.Panelty_Payment) as Panelty_Payment')
+                    ->first();
+
+
+                $past_Capital_Payment += $past_loan_payments->Capital_Payment ?? 0;
+                $past_Interest_Payment += $past_loan_payments->Interest_Payment ?? 0;
+                $past_Panelty_Payment += $past_loan_payments->Panelty_Payment ?? 0;
+            }
+        }
+
+        // Calculate total amounts
+        $current_loan_total = $current_loan_capital_amount + $current_loan_interest_amount + $current_loan_panelty_amount;
+        $current_loan_total_payment = $Capital_Payment + $Interest_Payment + $Panelty_Payment;
+
+        // Calculate total amounts
+        $past_total = $past_capital_amount + $past_loan_interest_amount + $past_panelty_amount;
+        $past_total_payment = $past_Capital_Payment + $past_Interest_Payment + $past_Panelty_Payment;
+
+
+
+
+
+
+
+
+
+
+
+
+        // Fetch active loans
+        $loanQuery = tableWithBranch('customer_loan','customer_loan')
+            ->where('Status', '=', '1')
+            ->leftJoin('group_has_customer', 'customer_loan.Customer_idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->leftJoin('route', 'center.route_id', '=', 'route.id_route');
+
+
+
+// Add conditions for filtering
+        if ($request->customer != '0') {
+            $loanQuery->where('customer_loan.Customer_idCustomer', '=', $request->customer);
+        }
+
+        if ($request->lending != '0') {
+            $loanQuery->where('customer_loan.lending_officer_id', '=', $request->lending);
+        }
+
+        if ($request->recovery != '0') {
+            $loanQuery->where('customer_loan.collector_id', '=', $request->recovery);
+        }
+
+        if ($request->route != '0') {
+            $loanQuery->where('route.id_route', '=', $request->route);
+        }
+
+        if ($request->center_details != '0') {
+            $loanQuery->where('center.idCenter', '=', $request->center_details);
+        }
+
+        if ($request->group != '0') {
+            $loanQuery->where('customer_group.idCustomer_Group', '=', $request->group);
+        }
+
+        $loans = $loanQuery->get();
+
+
+        // Initialize variables
+        $fully_paid_capital_amount = 0.00;
+        $fully_paid_interest_amount = 0.00;
+        $fully_paid_panelty_amount = 0.00;
+        $fully_paid_Capital_Payment = 0.00;
+        $fully_paid_Interest_Payment = 0.00;
+        $fully_paid_Panelty_Payment = 0.00;
+
+        foreach ($loans as $loan) {
+            // Fetch the most recent installment
+            $installment = tableWithBranch('installments')
+                ->where('Customer_Loan_idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                ->orderBy('idInstallments', 'desc')
+                ->first();
+
+
+            // Check if the maturity date is greater than the current date
+            $Maturity_Date = $installment->Installment_Date ?? null;
+            if ($Maturity_Date && $Maturity_Date > date('Y-m-d')) {
+                // Calculate capital amount
+                // Calculate fully paid capital amount
+                $fully_paid_capital_amount += tableWithBranch('customer_loan')
+                    ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                    ->sum('Amount');
+
+// Calculate interest amount for fully paid loans
+                $fully_paid_interest_amount += tableWithBranch('customer_loan')
+                    ->where('Status', '=', '0') // Assuming '0' is the status for fully paid loans
+                    ->sum('Interest_Amount');
+
+// Calculate penalty amount
+                $fully_paid_panelty_amount += tableWithBranch('installments','installments')
+                    ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+                    ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                    ->sum('installments.Panalty_Amount');
+
+// Calculate payments
+                $loan_payments = tableWithBranch('Loan_Log','Loan_Log')
+                    ->join('customer_loan', 'Loan_Log.Loan_ID', '=', 'customer_loan.idCustomer_Loan')
+                    ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                    ->selectRaw('SUM(Loan_Log.Capital_Payment) as Capital_Payment')
+                    ->selectRaw('SUM(Loan_Log.Interest_Payment) as Interest_Payment')
+                    ->selectRaw('SUM(Loan_Log.Panelty_Payment) as Panelty_Payment')
+                    ->first();
+
+
+                $fully_paid_Capital_Payment += $loan_payments->Capital_Payment ?? 0;
+                $fully_paid_Interest_Payment += $loan_payments->Interest_Payment ?? 0;
+                $fully_paid_Panelty_Payment += $loan_payments->Panelty_Payment ?? 0;
+            }
+        }
+
+        // Calculate total amounts
+        $fully_paid_total = $fully_paid_capital_amount + $fully_paid_interest_amount + $fully_paid_panelty_amount;
+        $fully_paid_total_payment = $fully_paid_Capital_Payment + $fully_paid_Interest_Payment + $fully_paid_Panelty_Payment;
+
+
+
+        $selectedRoute = $request->route;
+        $selectedCenter = $request->center_details;
+        $selectedGroup = $request->group;
+        $selectedCustomer = $request->customer;
+        $selectedLendingOfficer = $request->lending;
+        $selectedRecoveryOfficer = $request->recovery;
+
+        // Return data to view
+        return view('pages.Accounting.loanStatus', compact(
+
+            'route','center','group','selectedRoute','selectedCenter','selectedGroup',
+            'selectedCustomer',
+    'selectedLendingOfficer',
+    'selectedRecoveryOfficer',
+
+            'customer',
+            'lending_officer',
+            'recovery_officer',
+
+            'current_loan_capital_amount',
+            'current_loan_interest_amount',
+            'current_loan_panelty_amount',
+            'current_loan_total',
+            'Capital_Payment',
+            'Interest_Payment',
+            'Panelty_Payment',
+            'current_loan_total_payment',
+
+
+            'past_capital_amount',
+            'past_loan_interest_amount',
+            'past_panelty_amount',
+            'past_total',
+            'past_Capital_Payment',
+            'past_Interest_Payment',
+            'past_Panelty_Payment',
+            'past_total_payment',
+
+
+            'fully_paid_capital_amount',
+            'fully_paid_interest_amount',
+            'fully_paid_panelty_amount',
+            'fully_paid_total',
+            'fully_paid_Capital_Payment',
+            'fully_paid_Interest_Payment',
+            'fully_paid_Panelty_Payment',
+            'fully_paid_total_payment'
+        ));
+    }
+
+    public function updateStatus(Request $request)
+    {
+        $user_id=(int) session('userid');
+        // Validate the incoming request data
+        $validatedData = $request->validate([
+            'log_id' => 'required|integer',
+            'status' => 'required|string',
+            'note' => 'nullable|string',
+        ]);
+
+        $logId = $validatedData['log_id'];
+        $status = $validatedData['status'];
+        $note = $validatedData['note'] ?? null;
+
+        // Update the log status in the database
+        updateWithBranch('company_bank_has_log', 'id', $logId, [
+            'updated_status' => $status,
+            'updated_note' => $note,
+            'updated_date_time' => now(),
+            'updated_user' => $user_id,
+        ]);
+
+
+        return response()->json(['success' => true, 'message' => 'Status updated successfully']);
+    }
+
+    public function transfer(Request $request)
+    {
+
+
+        $bankId = $request->bankId;
+        $selectedBankId = $request->selectedBankId;
+        $amount = $request->amount;
+
+        $bank=tableWithBranch('company_bank_accounts')->where('Idbank','=',$selectedBankId)->first();
+        $description="Bank Name :".$bank->Bank_Name."- Account Name :".$bank->Account_Name."- Account Num :".$bank->Account_No;
+
+        $this->bankLogController->index($bankId, "Return To Company", $description, "-", "debit", $amount);
+
+
+        $bank_2=tableWithBranch('company_bank_accounts')->where('Idbank','=',$bankId)->first();
+        $description_2="Account Name :".$bank_2->Account_Name."- Account Num :".$bank_2->Account_No;
+
+        $this->bankLogController->index($selectedBankId, "Return From Collector", $description_2, "-", "credit", $amount);
+        return response()->json(['success' => true, 'message' => 'Status updated successfully']);
+    }
+
+
+    public function transfer_to_collector(Request $request)
+    {
+        $bankId = $request->bankId;
+        $selectedBankId = $request->selectedBankId;
+        $amount = $request->amount;
+
+        $bank=tableWithBranch('company_bank_accounts')->where('Idbank','=',$selectedBankId)->first();
+        $description="Bank Name :".$bank->Bank_Name."- Account Name :".$bank->Account_Name."- Account Num :".$bank->Account_No;
+
+        $this->bankLogController->index($bankId, "Return To Collector", $description, "-", "debit", $amount);
+
+
+        $bank_2=tableWithBranch('company_bank_accounts')->where('Idbank','=',$bankId)->first();
+        $description_2="Account Name :".$bank_2->Account_Name."- Account Num :".$bank_2->Account_No;
+
+        $this->bankLogController->index($selectedBankId, "Return From Company", $description_2, "-", "credit", $amount);
+        return response()->json(['success' => true, 'message' => 'Status updated successfully']);
+    }
+
+    public function topup(Request $request)
+    {
+        $bankId = $request->bankId;
+        $amount = $request->amount;
+        $note = $request->note??'-';
+
+        $this->bankLogController->index($bankId, "Cash Top up", "-", "-", "credit", $amount);
+
+        $bank=tableWithBranch('company_bank_accounts')->where('Account_No','=',"Cash")->first();
+        $bank_2=tableWithBranch('company_bank_accounts')->where('Idbank','=',$bankId)->first();
+        $description_2="Account Name :".$bank_2->Account_Name."- Account Num :".$bank_2->Account_No;
+        $this->bankLogController->index($bank->Idbank, "Cash Deposit", $description_2, $note, "debit", $amount);
+
+        return response()->json(['success' => true, 'message' => 'Status updated successfully']);
+    }
+
+
+}

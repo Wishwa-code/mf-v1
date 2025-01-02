@@ -1,0 +1,474 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Expenses;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+class PendingLoanController extends Controller
+{
+    protected $customerLogController;
+    protected $smsLogController;
+    protected $bankLogController;
+    protected $LoanLogController;
+
+    // Single constructor to inject both controllers
+    public function __construct(CustomerLogController $customerLogController, SmsController $smsLogController,BankLogController $bankLogController,LoanLogController $LoanLogController)
+    {
+        $this->customerLogController = $customerLogController;
+        $this->smsLogController = $smsLogController;
+        $this->bankLogController = $bankLogController;
+        $this->LoanLogController = $LoanLogController;
+    }
+
+
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $user_id = (int)session('userid');
+        $collector_val = DB::table('user')->where('branch_id', session('branch_id'))->where('id', '=', $user_id)->first();
+        $collector = $collector_val->collector;
+
+        $group = tableWithBranch('customer_group')->get();
+        $loan_category = tableWithBranch('loan_category')->get();
+        $customers = tableWithBranch('customer')->get();
+        $bank = tableWithBranch('company_bank_accounts')->where('Bank_Name','!=','Collector')->where('status','=','1')->get();
+        if ($collector == 1) {
+            $bank = DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $user_id)->where('status', '=', '1')->get();
+        }
+        $documents = tableWithBranch('documents')->get();
+        $route = tableWithBranch('route','route')
+            ->join('user', 'route.id_officer', '=', 'user.id')
+            ->get();
+        $center = tableWithBranch('center')->get();
+        return view('pages.PendingLoan', compact('route','center','group', 'loan_category', 'customers','bank','documents'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create(Request $request)
+    {
+        $group = $request->group;
+        $category = $request->category;
+        $status = $request->status;
+        $customer = $request->customer;
+        $center_details = $request->center_details;
+        $route = $request->route;
+
+        // Check if no filters are applied
+        if ($center_details == '0' && $route == '0' && $group == '0' && $category == '0' && $customer == '0') {
+            $loan = tableWithBranch('customer_loan', 'customer_loan')
+                ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+                ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id
+             FROM group_has_customer
+             LEFT JOIN customer_group
+             ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
+                    'customer.idCustomer', '=', 'subquery.cus_id')
+                ->join('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category')
+                ->join('user as u1', 'customer_loan.User_idUser', '=', 'u1.id') // Join for User_idUser
+                ->join('user as u2', 'customer_loan.lending_officer_id', '=', 'u2.id') // Join for lending_officer_id
+                ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter') // Use the center_id from subquery
+                ->leftJoin('route', 'customer.route_id', '=', 'route.id_route') // Left join for route
+                ->leftJoin(DB::raw('(SELECT loan_id, COUNT(*) as approval_count FROM loan_has_approval GROUP BY loan_id) as approval_subquery'),
+                    'customer_loan.idCustomer_Loan', '=', 'approval_subquery.loan_id') // Subquery to get approval count
+                ->leftJoin(DB::raw('(SELECT loan_id, COUNT(*) as approved_count FROM loan_has_approval WHERE user_id != 0 GROUP BY loan_id) as approved_subquery'),
+                    'customer_loan.idCustomer_Loan', '=', 'approved_subquery.loan_id') // Subquery to get approved count
+                ->where('customer_loan.Status', '=', $status)
+                ->select(
+                    'customer_loan.*',
+                    'loan_category.Name as loan_name',
+                    'customer.*',
+                    DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
+                    DB::raw('IFNULL(center.No, "-") as center_no'), // Handle center
+                    DB::raw('IFNULL(route.name, "-") as route_name'), // Handle route
+                    'u1.Full_Name as user_name',
+                    'u2.Full_Name as lending_officer',
+                    DB::raw('IFNULL(approval_subquery.approval_count, 0) as approval_count'), // Approval count
+                    DB::raw('IFNULL(approved_subquery.approved_count, 0) as approved_count') // Approved count
+                )
+                ->get();
+
+            return response()->json(['item' => $loan, 'message' => 'all'], 200);
+        } else {
+            $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
+                ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+                ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id
+             FROM group_has_customer
+             LEFT JOIN customer_group
+             ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
+                    'customer.idCustomer', '=', 'subquery.cus_id')
+                ->join('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category')
+                ->join('user as u1', 'customer_loan.User_idUser', '=', 'u1.id') // Join for User_idUser
+                ->join('user as u2', 'customer_loan.lending_officer_id', '=', 'u2.id') // Join for lending_officer_id
+                ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter') // Use the center_id from subquery
+                ->leftJoin('route', 'customer.route_id', '=', 'route.id_route') // Left join for route
+                ->leftJoin(DB::raw('(SELECT loan_id, COUNT(*) as approval_count FROM loan_has_approval GROUP BY loan_id) as approval_subquery'),
+                    'customer_loan.idCustomer_Loan', '=', 'approval_subquery.loan_id') // Subquery to get approval count
+                ->leftJoin(DB::raw('(SELECT loan_id, COUNT(*) as approved_count FROM loan_has_approval WHERE user_id != 0 GROUP BY loan_id) as approved_subquery'),
+                    'customer_loan.idCustomer_Loan', '=', 'approved_subquery.loan_id') // Subquery to get approved count
+                ->where('customer_loan.Status', '=', $status)
+                ->select(
+                    'customer_loan.*',
+                    'loan_category.Name as loan_name',
+                    'customer.*',
+                    DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
+                    DB::raw('IFNULL(center.No, "-") as center_no'), // Handle center
+                    DB::raw('IFNULL(route.name, "-") as route_name'), // Handle route
+                    'u1.Full_Name as user_name',
+                    'u2.Full_Name as lending_officer',
+                    DB::raw('IFNULL(approval_subquery.approval_count, 0) as approval_count'), // Approval count
+                    DB::raw('IFNULL(approved_subquery.approved_count, 0) as approved_count') // Approved count
+                );
+
+            // Apply filters based on input values
+            if ($group != '0') {
+                $loanQuery->where('subquery.group_id', '=', $group);
+            }
+
+            if ($category != '0') {
+                $loanQuery->where('loan_category.idLoan_Category', '=', $category);
+            }
+
+            if ($customer != '0') {
+                $loanQuery->where('customer.idCustomer', '=', $customer);
+            }
+
+            if ($center_details != '0') {
+                $loanQuery->where('center.idCenter', '=', $center_details);
+            }
+
+            if ($route != '0') {
+                $loanQuery->where('customer.route_id', '=', $route);
+            }
+
+            $loan = $loanQuery->get();
+
+            return response()->json(['item' => $loan, 'message' => 'notall'], 200);
+        }
+    }
+
+
+
+
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        //
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Request $request)
+    {
+        $id=$request->loan_id;
+        $id_show=$request->loan_id;
+        $company_bank=$request->company_bank;
+        $document_details=$request->document_details;
+
+        $customer_loan=tableWithBranch('customer_loan')
+            ->where('idCustomer_Loan','=',$id)
+            ->first();
+
+        $bank = tableWithBranch('company_bank_accounts')->where('Idbank','=',$company_bank)->first();
+        if ($bank->Account_Balance<$customer_loan->Amount){
+            return response()->json(['error' => 'Bank Balance is not enough','id' => 0], 200);
+        }else{
+            $affected = DB::table('customer_loan')
+                ->where('idCustomer_Loan', $id)
+                ->where('branch_id', session('branch_id'))
+                ->update(
+                    [
+                        'Status' => '0',
+                        'cus_bank_account' => $request->bank_acc,
+                        'company_bank_account' => $company_bank
+                    ]);
+
+
+            $bank_log_comment="Loan Number : {$customer_loan->Loan_No}\nLoan Amount : {$customer_loan->Amount}\n";
+
+            $this->bankLogController->index($company_bank,"Issue Loan",$bank_log_comment,"-","debit",$customer_loan->Amount);
+
+
+
+
+
+            $customer=tableWithBranch('customer')
+                ->where('idCustomer','=',$customer_loan->Customer_idCustomer)
+                ->first();
+            $sumAmount = DB::table('loan_other_charges')
+                ->where('Customer_Loan_idCustomer_Loan', '=', $id)
+                ->where('branch_id', session('branch_id'))
+                ->sum('Amount');
+
+
+
+            // Check if the sumAmount is greater than zero
+            if ($sumAmount > 0) {
+                $bank_log_doc_comment="Loan Number : {$customer_loan->Loan_No}\nLoan Amount : {$customer_loan->Amount}\n";
+                $this->bankLogController->index($company_bank,"Loan Document Chargers",$bank_log_doc_comment,"-","credit",$sumAmount);
+
+                $cate=tableWithBranch('income_category')
+                    ->where('description','=','Other')
+                    ->first();
+
+                if ($cate){
+
+                    // Create a new Expenses instance
+                    $expenses = new Expenses();
+
+                    // Set the values for the Expenses instance
+                    $expenses->type = "Income";
+                    $expenses->reason = "Other loan charges for loan number: ({$customer_loan->Loan_No}), Customer name: ({$customer->First_Name} {$customer->Last_Name})";
+                    $expenses->date = date('Y-m-d');
+                    $expenses->amount = $sumAmount;
+                    $expenses->category_id = $cate->id;
+                    $expenses->bank_id = 1;
+                    $expenses->branch_id = session('branch_id');
+
+                    $expenses->save();
+                }else{
+                    $cate_id=DB::table('income_category')->insertGetId([
+                        'description'=>"Other",
+                        'branch_id'=>session('branch_id')
+                    ]);
+
+                    // Create a new Expenses instance
+                    $expenses = new Expenses();
+
+                    // Set the values for the Expenses instance
+                    $expenses->type = "Income";
+                    $expenses->reason = "Other loan charges for loan number: ({$customer_loan->Loan_No}), Customer name: ({$customer->First_Name} {$customer->Last_Name})";
+                    $expenses->date = date('Y-m-d');
+                    $expenses->amount = $sumAmount;
+                    $expenses->category_id = $cate_id;
+                    $expenses->bank_id = 1;
+                    $expenses->branch_id = session('branch_id');
+
+                    $expenses->save();
+                }
+
+
+
+
+            }
+
+
+            $request = new Request([
+                'customer_id' => $customer_loan->Customer_idCustomer,
+                'description' => "Approve Loan ({$customer_loan->Loan_No})\nLoan Amount : ({$customer_loan->Amount})",
+                'description_id' => $id,
+                'comment' => ' ',
+                'type' => 'Approve Loan',
+            ]);
+
+            // Call the store method of CustomerLogController
+            $this->customerLogController->store($request);
+
+
+            // Instantiate UserController
+            $userController = new UserController();
+
+            // Call the create_panelty function
+            $userController->create_panelty();
+
+
+            if (!empty($document_details)) {
+                // Process the tableData as needed
+                foreach ($document_details as $row) {
+                    $id = $row['id'];
+                    $checked = $row['checked'];
+
+                    // Convert checked value to 1 or 0
+                    $isChecked = $checked ? 1 : 0;
+
+                    // Update database based on idDocuments
+                    DB::table('documents')
+                        ->where('idDocuments', $id)
+                        ->where('branch_id', session('branch_id'))
+                        ->update(['issue_loan_check' => $isChecked]);
+                }
+            }
+
+            $panelty_balance=tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan','=',$id)->sum('Panalty_Balance');
+
+            // Call the store method of LoanLogController
+            $this->LoanLogController->index(
+                $id_show,
+                'Issue Loan',
+                $id_show,
+                'Loan Issue',
+                $customer_loan->Amount,
+                '0',
+                '0',
+                '0',
+                '0',
+                $panelty_balance,
+                $customer_loan->Interest_Amount,
+                $customer_loan->capital_balance,
+                $customer_loan->Balance_Amount+$panelty_balance,
+                '0');
+
+
+            // Check if any rows were affected
+            if ($affected) {
+
+                $sms_template = tableWithBranch('sms_template')->where('type', '=', 'loan_issue')->where('status', '=', '1')->first();
+                if ($sms_template) {
+                    $customer = tableWithBranch('customer')->where('idCustomer', '=', $customer_loan->Customer_idCustomer)->first();
+                    $product = tableWithBranch('loan_category')->where('idLoan_Category', '=', $customer_loan->Loan_Category_idLoan_Category)->first();
+
+                    // Step 2: Define the mapping
+                    $placeholders = [
+                        '@Member_No@' => $customer->cus_number,
+                        '@Member_Name@' => $customer->First_Name . ' ' . $customer->Last_Name,
+                        '@Loan_No@' => $customer_loan->Loan_No,
+                        '@Loan_Amount@' => $customer_loan->Amount,
+                        '@Interest_Amount@' => $customer_loan->Interest_Amount,
+                        '@Repayment_Type@' => $product->Repayment_type,
+                        '@Installment_Amount@' => $customer_loan->Installment_Amount,
+                        '@Issue_Date@' => $customer_loan->Date_Time,
+                    ];
+
+                    // Step 3: Replace placeholders in the loan_format
+                    $loan_number_txt = $sms_template->template;
+                    foreach ($placeholders as $placeholder => $value) {
+                        $loan_number_txt = str_replace($placeholder, $value, $loan_number_txt);
+                    }
+
+                    // Log the SMS message
+                    $this->smsLogController->index($customer_loan->Customer_idCustomer, $loan_number_txt, "Issue Loan");
+                }
+
+                return response()->json(['message' => 'User updated successfully','id'=>1,$document_details], 200);
+
+
+            } else {
+                return response()->json(['error' => 'User not found'], 404);
+            }
+        }
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id,string $loan)
+    {
+        $customers = tableWithBranch('customer')
+            ->where('idCustomer', '=', $id)->first();
+
+        $getloan=tableWithBranch('customer_loan')->where('idCustomer_Loan', '=', $loan)->first();
+
+        $category=tableWithBranch('loan_category')->where('idLoan_Category', '=', $getloan->Loan_Category_idLoan_Category)->get();
+        $installments=tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', '=', $loan)->get();
+        $witnesses=tableWithBranch('witness')->where('Customer_Loan_idCustomer_Loan', '=', $loan)->get();
+        return view('pages.Show_Loan', compact('category','customers','id','getloan','installments','witnesses'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id,Request $request)
+    {
+        $affected = DB::table('customer_loan')
+            ->where('idCustomer_Loan', $id)
+            ->where('branch_id', session('branch_id'))
+            ->update(['Status' => '-2','reason' => $request->reason_for_dlt]);
+
+
+
+        $customer_loan=tableWithBranch('customer_loan')
+            ->where('idCustomer_Loan','=',$id)
+            ->first();
+
+
+        $request = new Request([
+            'customer_id' => $customer_loan->Customer_idCustomer,
+            'description' => "Delete Loan ({$id})\nReason : {$request->reason_for_dlt}",
+            'description_id' => $id,
+            'comment' => ' ',
+            'type' => 'Delete Loan',
+        ]);
+
+        // Call the store method of CustomerLogController
+        $this->customerLogController->store($request);
+
+        // Check if any rows were affected
+        if ($affected) {
+            return response()->json(['message' => 'User updated successfully'],200);
+        } else {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+    }
+
+
+    public function check_the_document(string $id){
+
+        $customer_loan_doc=tableWithBranch('documents')
+            ->where('Customer_Loan_idCustomer_Loan', '=', $id)
+            ->get();
+        return response()->json(['item' => $customer_loan_doc],200);
+    }
+
+    public function check_the_approval(string $id){
+
+        $customer_loan_doc = tableWithBranch('loan_has_approval','loan_has_approval')
+            ->leftJoin('user', 'loan_has_approval.user_id', '=', 'user.id')
+            ->where('loan_id', '=', $id)
+            ->select(
+                'loan_has_approval.*',
+                DB::raw('IF(user.id IS NULL, 0, user.id) as user_id'),
+                DB::raw('IF(user.id IS NULL, "-", user.Full_Name) as Full_Name')
+            )
+            ->get();
+
+        $login_designation=session('designation');;
+
+        $customer_loan=DB::table('customer_loan')
+            ->where('idCustomer_Loan', '=', $id)
+            ->where('branch_id', session('branch_id'))
+            ->first();
+
+        $level=tableWithBranch('level','level')
+            ->join('level_has_designation', 'level.id', '=', 'level_has_designation.level_id')
+            ->where('product_id', '=', $customer_loan->Loan_Category_idLoan_Category)
+            ->select('designation_id as designation')
+            ->get();
+
+
+
+        return response()->json(['item' => $customer_loan_doc,'designation' => $level,'login_designation' => $login_designation],200);
+    }
+
+
+    public function approve_loan(Request $request){
+        $user_id = (int)session('userid');
+        $affected = DB::table('loan_has_approval')
+            ->where('id', $request->id)
+            ->where('branch_id', session('branch_id'))
+            ->update(
+                [
+                    'comment' => $request->comment,
+                    'user_id' => $user_id,
+                    'date' => date('Y-m-d H:i:s'),
+                ]);
+        return response()->json(['item' => $affected],200);
+    }
+
+}
