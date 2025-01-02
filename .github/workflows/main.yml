@@ -1,0 +1,41 @@
+name: FTP Deployer
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          composer install --no-dev --optimize-autoloader
+          npm install
+          npm run prod
+          php artisan storage:link
+
+      - name: FTP Deployer
+        uses: sand4rt/ftp-deployer@v1.8
+        with:
+          sftp: false
+          host: ${{ secrets.FTP_HOST }}
+          port: 21
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          remote_folder: ${{ secrets.FTP_REMOTE_FOLDER }}
+          local_folder: public
+          cleanup: false
+          include: "[\"*\", \"**/*\"]"
+          exclude: "[\"node_modules/**\", \".git/**\", \"*.env\", \"public/storage\"]"
+          passive: true
