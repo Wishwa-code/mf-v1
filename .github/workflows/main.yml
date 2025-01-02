@@ -24,6 +24,6 @@ jobs:
           remote_folder: ${{ secrets.FTP_REMOTE_FOLDER }} # Path to remote directory where files will be deployed
           local_folder: dist # Local folder to deploy, default is 'dist' but you can change it as per your folder structure
           cleanup: false # Set to 'false' if you don't want to remove files in the remote folder
-          include: '[]' # Optional: list files/folders to include (default includes everything)
-          exclude: '[]' # Optional: list files/folders to exclude, e.g., ['node_modules/**', '.git/**', '*.env']
+          include: "['*', '**/*']" # Specify all files and folders in the local_folder to upload
+          exclude: "['node_modules/**', '.git/**', '*.env']" # Optional: exclude unnecessary files
           passive: true # Use passive mode for FTP (recommended for most firewalls)
