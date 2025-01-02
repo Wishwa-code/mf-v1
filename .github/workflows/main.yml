@@ -13,6 +13,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Install dependencies
+        run: |
+          composer install --no-dev --optimize-autoloader
+          npm install
+          npm run prod # Ensure assets are built for production
+
       - name: FTP Deployer
         uses: sand4rt/ftp-deployer@v1.8
         with:
@@ -22,7 +28,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }} # Your FTP username (e.g., asipiya@finance.asipiya.lk)
           password: ${{ secrets.FTP_PASSWORD }} # Your FTP password (e.g., Asipiya@#$12345)
           remote_folder: ${{ secrets.FTP_REMOTE_FOLDER }} # Path to remote directory where files will be deployed
-          local_folder: dist # Local folder to deploy, change this if your Laravel build is stored elsewhere
+          local_folder: public # Use 'public' as the folder to deploy
           cleanup: false # Set to 'false' if you don't want to remove files in the remote folder
           include: "[\"*\", \"**/*\"]" # Correct JSON array for all files and directories
           exclude: "[\"node_modules/**\", \".git/**\", \"*.env\", \"storage/*.key\"]" # Exclude unnecessary files
