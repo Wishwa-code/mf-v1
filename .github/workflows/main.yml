@@ -27,14 +27,15 @@ jobs:
       - name: FTP Deployer
         uses: sand4rt/ftp-deployer@v1.8
         with:
-          sftp: false # Set to 'false' since it's FTP, not SFTP
-          host: ${{ secrets.FTP_HOST }} # Set the FTP host (e.g., finance.asipiya.lk)
-          port: 21 # Default FTP port
-          username: ${{ secrets.FTP_USERNAME }} # Your FTP username (e.g., asipiya@finance.asipiya.lk)
-          password: ${{ secrets.FTP_PASSWORD }} # Your FTP password (e.g., Asipiya@#$12345)
-          remote_folder: ${{ secrets.FTP_REMOTE_FOLDER }} # Path to remote directory where files will be deployed
-          local_folder: public # Use 'public' as the folder to deploy
-          cleanup: false # Set to 'false' if you don't want to remove files in the remote folder
-          include: "[\"*\", \"**/*\"]" # Correct JSON array for all files and directories
-          exclude: "[\"node_modules/**\", \".git/**\", \"*.env\", \"storage/*.key\"]" # Exclude unnecessary files
-          passive: true # Use passive mode for FTP (recommended for most firewalls)
+          sftp: false
+          host: ${{ secrets.FTP_HOST }}
+          port: 21
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          remote_folder: ${{ secrets.FTP_REMOTE_FOLDER }}
+          local_folder: public
+          cleanup: false
+          include: "[\"*\", \"**/*\"]"
+          exclude: "[\"node_modules/**\", \".git/**\", \"*.env\"]"
+          passive: true
+
