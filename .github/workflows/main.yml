@@ -7,7 +7,8 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04 # or ubuntu-22.04, depending on your preference
+
 
     steps:
       - name: Checkout repository
