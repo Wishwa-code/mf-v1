@@ -10,6 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Set up PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+
       - name: Checkout repository
         uses: actions/checkout@v2
 
@@ -17,7 +22,7 @@ jobs:
         run: |
           composer install --no-dev --optimize-autoloader
           npm install
-          npm run prod # Ensure assets are built for production
+          npm run prod
 
       - name: FTP Deployer
         uses: sand4rt/ftp-deployer@v1.8
