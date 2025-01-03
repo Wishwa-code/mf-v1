@@ -1,4 +1,4 @@
-name: FTP Deployer
+name: FTP Deployment
 
 on:
   push:
@@ -25,17 +25,25 @@ jobs:
           npm run prod
           php artisan storage:link
 
-      - name: FTP Deployer
-        uses: sand4rt/ftp-deployer@v1.8
+      - name: Debug local files
+        run: ls -lR
+
+      - name: Deploy to FTP
+        uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
-          sftp: false
-          host: ${{ secrets.FTP_HOST }}
-          port: 21
+          server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          remote_folder: ${{ secrets.FTP_REMOTE_FOLDER }}
-          local_folder: public
-          cleanup: false
-          include: "[\"*\", \"**/*\"]"
-          exclude: "[\"node_modules/**\", \".git/**\", \"*.env\", \"public/storage\"]"
-          passive: true
+          local-dir: ./ # Deploy everything from the repository root
+          server-dir: / # Adjust this path based on your server
+          exclude: |
+            .DS_Store
+            .git/** # Ensure all Git files are excluded
+            node_modules/**
+            storage/**
+            .github/**
+            *.env
+            .htaccess
+            *.log
+            vendor/bin/*
+          dry-run: false # Set to true for testing without deployment
