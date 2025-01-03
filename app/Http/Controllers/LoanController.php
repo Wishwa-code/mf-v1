@@ -30,7 +30,7 @@ class LoanController extends Controller
         $customers = tableWithBranch('customer')->get();
         $center = tableWithBranch('center')->get();
         $product = tableWithBranch('loan_category')->get();
-        $company = tableWithBranch('company')->first();
+        $company = DB::table('company')->first();
         $lending_officer = tableWithBranch('user')->where('lending_officer', '=', '1')->get();
         $collector = tableWithBranch('user')
             ->where('collector','=','1')

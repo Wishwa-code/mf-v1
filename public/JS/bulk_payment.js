@@ -3,6 +3,8 @@ $(function () {
     load_payment_table();
 });
 
+let inputDataStore = {}; // Object to store input data
+
 function load_payment_table(page = 1) {
     let center_details = $("#center_details").val();
     let group = $("#group").val();
@@ -10,8 +12,6 @@ function load_payment_table(page = 1) {
     let status = $("#status").val();
     let route = $("#route").val();
     let loan_number_search = $("#loan_number_search").val();
-
-
 
     $.ajax({
         type: "POST",
@@ -23,9 +23,9 @@ function load_payment_table(page = 1) {
             center_details: center_details,
             group: group,
             customer: customer,
-            route:route,
+            route: route,
             loan_number_search: loan_number_search,
-            status: status
+            status: status,
         },
         success: function (response, textStatus, xhr) {
             if (xhr.status === 200) {
@@ -37,28 +37,28 @@ function load_payment_table(page = 1) {
 
                 let tot = 0.0;
 
-// Clear existing table rows
+                // Clear existing table rows
                 $("#loan_table tbody").empty();
 
                 // Loop through each item in the response data
                 data.forEach(function (item) {
-
-
-                    if (item.type==="Flat Rate"){
-
-                        // Determine which modal button to use based on item type
-
-
+                    if (item.type === "Flat Rate") {
                         let name = item.customer_name + " " + item.customer_lastname;
+
+                        // Use stored values if available
+                        let storedInputData = inputDataStore[item.idCustomer_Loan] || {};
+                        let inputDate = storedInputData.date || "";
+                        let inputAmount = storedInputData.amount || "";
+
                         // Construct row HTML
                         var row = `<tr>
                         <td>${item.Loan_No}</td>
                         <td>${name}</td>
                         <td>${parseFloat(item.Loan_Amount).toFixed(2)}</td>
                         <td>${parseFloat(item.Today_installment).toFixed(2)}</td>
-                        <td><input type="date" name="date_bulk" id="date_bulk"  class="form-control"></td>
+                        <td><input type="date" name="date_bulk" class="form-control" value="${inputDate || new Date().toISOString().split('T')[0]}" data-loan-id="${item.idCustomer_Loan}" /></td>
                         <td>
-                            <input type="text" class="form-control numeric-input" placeholder="Enter amount" data-id="${item.idCustomer_Loan}" />
+                            <input type="text" class="form-control numeric-input" placeholder="Enter amount" value="${inputAmount}" data-loan-id="${item.idCustomer_Loan}" />
                             <input type="hidden" name="loan_id" value="${item.idCustomer_Loan}" />
                             <input type="hidden" name="cus_id" value="${item.idCustomer}" />
                         </td>
@@ -75,12 +75,11 @@ function load_payment_table(page = 1) {
                     tot += parseFloat(item.Today_installment);
                 });
 
-
                 // Update total amount
                 $("#tot_amount").text(tot.toFixed(2));
 
                 // Add pagination controls
-                let paginationControls = '';
+                let paginationControls = "";
 
                 if (currentPage > 1) {
                     paginationControls += `
@@ -96,14 +95,31 @@ function load_payment_table(page = 1) {
                         </button>`;
                 }
 
-                $('#pagination').html(paginationControls);
+                $("#pagination").html(paginationControls);
+
+                // Add event listeners to save input data
+                $("#loan_table input").on("input change", function () {
+                    let loanId = $(this).data("loan-id");
+                    let inputType = $(this).attr("type");
+
+                    if (!inputDataStore[loanId]) {
+                        inputDataStore[loanId] = {};
+                    }
+
+                    if (inputType === "date") {
+                        inputDataStore[loanId].date = $(this).val();
+                    } else {
+                        inputDataStore[loanId].amount = $(this).val();
+                    }
+                });
             }
         },
         error: function (xhr, textStatus, errorThrown) {
             console.log("Error:", errorThrown);
-        }
+        },
     });
 }
+
 
 // Allow only numeric input
 $(document).on('input', '.numeric-input', function () {
@@ -114,111 +130,108 @@ $(document).on('input', '.numeric-input', function () {
 
 function automatePayments() {
     Swal.fire({
-        title: "Are you sure?",
-        text: "Do you want to pay these installments?",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, Pay it!",
-    }).then((result) => {
-        if (result.isConfirmed) {
-            let errorOccurred = false;  // Flag to track error
-            let successCount = 0; // Counter to track successful payments
+        title: "Processing Payments",
+        html: `
+            <div style="margin-top: 20px;">
+                <div id="progress-container" style="width: 100%; background: #f3f3f3; border-radius: 8px; overflow: hidden; height: 25px;">
+                    <div id="progress-bar" style="height: 100%; width: 0%; background: #4caf50; transition: width 0.3s;"></div>
+                </div>
+                <p style="margin-top: 10px;" id="progress-text">Initializing...</p>
+            </div>
+        `,
+        showConfirmButton: false,
+        allowOutsideClick: false,
+        willOpen: async () => {
+            const rows = $('#loan_table tbody tr');
+            let successCount = 0;
 
-            // Loop through each table row
-            $('#loan_table tbody tr').each(function (index, row) {
-                // Extract data from current row
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+
                 let loan_number = $(row).find('td:eq(0)').text();
                 let payment_amount = $(row).find('input.numeric-input').val();
                 let reduce_balance_loan_id = $(row).find('input[name="loan_id"]').val();
                 let cus_id = $(row).find('input[name="cus_id"]').val();
                 let payment_date = $(row).find('input[name="date_bulk"]').val();
 
-                // Check if both payment_amount and payment_date are empty
-                if (!payment_amount && !payment_date) {
-                    return true; // Skip this row (continue with the next row)
-                }
+                if (!payment_amount && !payment_date) continue;
 
-                // If only payment_amount is empty, show alert
                 if (!payment_amount) {
-                    Swal.fire("Error!", 'Payment amount is empty in loan number ' + loan_number, "error");
-                    errorOccurred = true;
-                    return true; // Skip this row (continue with the next row)
+                    Swal.fire("Error!", `Payment amount is empty in loan number ${loan_number}`, "error");
+                    return;
                 }
 
-                // If only payment_date is empty, show alert
                 if (!payment_date) {
-                    Swal.fire("Error!", 'Payment date is empty in loan number ' + loan_number, "error");
-                    errorOccurred = true;
-                    return true; // Skip this row (continue with the next row)
+                    Swal.fire("Error!", `Payment date is empty in loan number ${loan_number}`, "error");
+                    return;
                 }
 
-                // Perform payment if both payment amount and payment date are valid
-                performPayment(cus_id, payment_amount, reduce_balance_loan_id, payment_date);
-                successCount++; // Increment the successful payment counter
-            });
+                // Update progress text
+                document.getElementById("progress-text").innerText = `Processing payment ${i + 1} of ${rows.length}...`;
 
-            // Check if any successful payment was made
+                // Update progress bar
+                const progress = ((i + 1) / rows.length) * 100;
+                document.getElementById("progress-bar").style.width = `${progress}%`;
+
+                // Perform payment
+                const success = await performPayment(cus_id, payment_amount, reduce_balance_loan_id, payment_date);
+                if (success) {
+                    successCount++;
+                }
+            }
+
             if (successCount > 0) {
                 Swal.fire({
-                    position: "center",
                     icon: "success",
-                    title: "Successfully saved!",
-                }).then(function () {
+                    title: "Payments Complete",
+                    text: `${successCount} payments were successfully processed.`,
+                }).then(() => {
                     window.location.reload();
                 });
             } else {
                 Swal.fire({
-                    position: "center",
                     icon: "error",
-                    title: "No valid payments found.",
-                    text: "Please check the payment amounts and dates."
+                    title: "No Payments Processed",
+                    text: "No valid payments were made. Please check your data.",
                 });
             }
-        }
+        },
     });
 }
 
-
-
-
-function performPayment(cus_id, payment_amount, reduce_balance_loan_id, payment_date,type) {
-
-
-    let file = $('#file')[0].files[0];
-    // Prepare FormData
+async function performPayment(cus_id, payment_amount, reduce_balance_loan_id, payment_date) {
+    let file = $('#file')[0]?.files[0];
     let formData = new FormData();
     formData.append('cus_id', cus_id);
     formData.append('payment_amount', payment_amount);
-    formData.append('file', file);
+    formData.append('file', file || "");
     formData.append('loan_id', reduce_balance_loan_id);
     formData.append('payment_date', payment_date);
     formData.append('payment_type', 'Cash');
     formData.append('bank_account_company', '1');
 
-    // Perform AJAX request to save payment
-    $.ajax({
-        type: "POST",
-        url: "/payment_save_today",
-        headers: {
-            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-        },
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function (data, textStatus, xhr) {
-            if (xhr.status === 200) {
-                return true;
-            } else {
-                return false;
+    return new Promise((resolve) => {
+        $.ajax({
+            type: "POST",
+            url: "/payment_save_today",
+            headers: {
+                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+            },
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (data, textStatus, xhr) {
+                resolve(xhr.status === 200);
+            },
+            error: function (xhr, textStatus, errorThrown) {
+                Swal.fire("Error!", `Failed to save data: ${errorThrown}`, "error");
+                resolve(false);
             }
-        },
-        error: function (xhr, textStatus, errorThrown) {
-            Swal.fire("Error!", "Failed to save data: " + errorThrown, "error");
-        }
+        });
     });
 }
+
+
 
 
 // function payment() {
