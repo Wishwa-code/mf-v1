@@ -72,13 +72,14 @@ class TodayPaymentController extends Controller
 
     public function bulk_repayment()
     {
-        $company = tableWithBranch('company')->first();
+        $company = DB::table('company')->first();
         $group = tableWithBranch('customer_group')->get();
         $customers = tableWithBranch('customer')->get();
         $center = tableWithBranch('center')->get();
         $route = tableWithBranch('route', 'route')
             ->join('user', 'route.id_officer', '=', 'user.id')
             ->get();
+
         $user_id = (int)session('userid');
 
         $collector_val = DB::table('user')->where('branch_id','=',session('branch_id'))->where('id', '=', $user_id)->first();
