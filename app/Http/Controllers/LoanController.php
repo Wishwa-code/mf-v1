@@ -46,7 +46,7 @@ class LoanController extends Controller
         $customers = tableWithBranch('customer')->get();
         $center = tableWithBranch('center')->get();
         $product = tableWithBranch('loan_category')->get();
-        $company = tableWithBranch('company')->first();
+        $company = DB::table('company')->first();
         $lending_officer = tableWithBranch('user')->where('lending_officer', '=', '1')->get();
         $collector = tableWithBranch('user')
             ->where('collector','=','1')
@@ -955,7 +955,7 @@ class LoanController extends Controller
         $center = tableWithBranch('center')->get();
         $product = tableWithBranch('loan_category')->get();
         $loan = tableWithBranch('customer_loan')->where('idCustomer_Loan', $id)->first();
-        $company= tableWithBranch('company')->first();
+        $company= DB::table('company')->first();
 
         if (!$loan) {
             return redirect()->back()->with('error', 'Loan not found.');
@@ -1014,7 +1014,7 @@ class LoanController extends Controller
 
     public function invoice($id)
     {
-        $company = tableWithBranch('company')->first();
+        $company = DB::table('company')->first();
         $loan = tableWithBranch('customer_loan')->where('idCustomer_Loan', $id)->first();
         $customers = tableWithBranch('customer')->where('idCustomer', $loan->Customer_idCustomer)->first();
 
