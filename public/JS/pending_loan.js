@@ -734,7 +734,6 @@ function load_document_check(id) {
 }
 
 
-
 function load_approval_check(id) {
     $.ajax({
         type: "GET",
@@ -744,8 +743,7 @@ function load_approval_check(id) {
         },
         success: function (data, textStatus, xhr) {
             if (xhr.status === 200) {
-
-                let login_designation=data.login_designation;
+                let login_designation = data.login_designation;
 
                 // Clear the existing rows
                 $('#approval_table tbody').empty();
@@ -753,77 +751,275 @@ function load_approval_check(id) {
                 let designationNames = "";
                 let uniqueDesignations = new Set();
 
-// Iterate over the data and concatenate the designations with commas
-                data.designation.forEach(function(document, index) {
+                // Process designations
+                data.designation.forEach(function (document) {
                     if (!uniqueDesignations.has(document.designation)) {
                         uniqueDesignations.add(document.designation);
-                        if (designationNames !== "") {
-                            designationNames += ", ";
-                        }
-                        designationNames += document.designation;
+                        designationNames += (designationNames ? ", " : "") + document.designation;
                     }
                 });
 
-                let designation_user = $("#designation_user").val();
+                let allUsersHaveIds = true; // Flag for "Issue Loan" button
 
-                // Assuming 'data' is available from the server response
-                let allUsersHaveIds = true; // Flag to check if all user_ids are non-zero
+                // Iterate over approval items
+                data.item.forEach(function (document, index) {
+                    if (document.user_id === 0) allUsersHaveIds = false;
 
-// Iterate over the data and create new rows
-                data.item.forEach(function(document, index) {
+                    let newRow = `<tr>
+                        <td hidden>${document.id}</td>
+                        <td>${document.level}</td>
+                        <td>${designationNames}</td>
+                        <td>${document.description}</td>
+                        <td><input type="text" class="form-control" value="${document.comment}" id="des_${index}"></td>
+                        <td>
+                            <input type="button" class="btn btn-primary" value="Approve" id="approve_btn_${document.level_id}" disabled>
+                        </td>
+                        <td>${document.user_id === 0 ? '-' : document.Full_Name}</td>
+                        <td>${document.date}</td>
+                        <td>
+                            <button class="btn btn-info btn-sm" onclick="toggleChecklist(${document.level_id})">
+                                View Checklist (<span id="checklist_progress_${document.level_id}">0%</span>)
+                            </button>
+                        </td>
+                    </tr>
+                    <tr id="checklist_row_${document.level_id}" style="display: none;">
+                        <td colspan="9">
+                            <div id="checklist_container_${document.level_id}" class="p-3 bg-light"></div>
+                        </td>
+                    </tr>`;
 
-                    // Check if the user_id is 0
-                    if (document.user_id === 0) {
-                        allUsersHaveIds = false; // Set flag to false if any user_id is 0
-                    }
-
-                    var approveButton;
-                    if (login_designation==="Admin"){
-                        if (document.user_id === 0) {
-                            approveButton = `<input type="button" class="btn btn-primary" value="Approve" onclick="approve(${document.id}, '${index}')">`;
-                        } else {
-                            approveButton = `<input type="button" class="btn btn-primary" value="Approve" disabled>`;
-                        }
-                    }else{
-                        if (designationNames.includes(designation_user) && document.user_id === 0) {
-                            approveButton = `<input type="button" class="btn btn-primary" value="Approve" onclick="approve(${document.id}, '${index}')">`;
-                        } else {
-                            approveButton = `<input type="button" class="btn btn-primary" value="Approve" disabled>`;
-                        }
-                    }
-
-
-
-
-
-
-                    var newRow = `<tr>
-        <td hidden>${document.id}</td>
-        <td>${document.level}</td>
-        <td>${designationNames}</td>
-        <td>${document.description}</td>
-        <td><input type="text" class="form-control" value="${document.comment}" id="des_${index}"></td>
-        <td>${approveButton}</td>
-        <td>${document.user_id === 0 ? '-' : document.Full_Name}</td>
-        <td>${document.date}</td>
-    </tr>`;
                     $('#approval_table tbody').append(newRow);
+
+                    // Load checklist progress
+                    loadChecklistProgress(document.level_id);
                 });
-                // Enable the "Issue Loan" button if all user_ids are non-zero
-                if (allUsersHaveIds) {
-                    $('#issue_loan_btn').prop('disabled', false);
-                } else {
-                    $('#issue_loan_btn').prop('disabled', true);
-                }
+
+                // Enable or disable "Issue Loan" button
+                $('#issue_loan_btn').prop('disabled', !allUsersHaveIds);
             } else {
                 Swal.fire("Error!", "Failed to load data!", "error");
             }
         },
-        error: function(xhr, textStatus, errorThrown) {
-            console.log("Error:", errorThrown);
+        error: function (xhr) {
+            console.log("Error:", xhr.responseText);
+        },
+    });
+}function load_approval_check(id) {
+    $.ajax({
+        type: "GET",
+        url: "/load_loan_approval/" + id,
+        headers: {
+            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+        },
+        success: function (data, textStatus, xhr) {
+            if (xhr.status === 200) {
+                let login_designation = data.login_designation;
+
+                // Clear the existing rows
+                $('#approval_table tbody').empty();
+
+                let designationNames = "";
+                let uniqueDesignations = new Set();
+
+                // Process designations
+                data.designation.forEach(function (document) {
+                    if (!uniqueDesignations.has(document.designation)) {
+                        uniqueDesignations.add(document.designation);
+                        designationNames += (designationNames ? ", " : "") + document.designation;
+                    }
+                });
+
+                let allUsersHaveIds = true; // Flag for "Issue Loan" button
+
+                // Iterate over approval items
+                data.item.forEach(function (document, index) {
+                    if (document.user_id === 0) allUsersHaveIds = false;
+
+
+                    var approveButton;
+                    if (login_designation==="Admin"){
+                        if (document.user_id === 0) {
+                            approveButton = `<input type="button" class="btn btn-primary" id="approve_btn_${document.level_id}" value="Approve" onclick="approve(${document.id}, '${index}')">`;
+                        } else {
+                            approveButton = `<input type="button" class="btn btn-primary"  value="Approve" disabled>`;
+                        }
+                    }else{
+                        if (designationNames.includes(designation_user) && document.user_id === 0) {
+                            approveButton = `<input type="button" class="btn btn-primary" id="approve_btn_${document.level_id}" value="Approve" onclick="approve(${document.id}, '${index}')">`;
+                        } else {
+                            approveButton = `<input type="button" class="btn btn-primary" value="Approve" disabled>`;
+                        }
+                    }
+
+
+                    let newRow = `<tr>
+                        <td hidden>${document.id}</td>
+                        <td>${document.level}</td>
+                        <td>${designationNames}</td>
+                        <td>${document.description}</td>
+                        <td><input type="text" class="form-control" value="${document.comment}" id="des_${index}"></td>
+                        <td>${approveButton}</td>
+                        <td>${document.user_id === 0 ? '-' : document.Full_Name}</td>
+                        <td>${document.date}</td>
+                        <td>
+    <button class="btn btn-info btn-sm" onclick="toggleChecklist(${document.level_id})">
+        View Checklist (<span id="checklist_progress_${document.level_id}">0/0</span>)
+    </button>
+</td>
+
+                    </tr>
+                    <tr id="checklist_row_${document.level_id}" style="display: none;">
+                        <td colspan="9">
+                            <div id="checklist_container_${document.level_id}" class="p-3 bg-light"></div>
+                        </td>
+                    </tr>`;
+
+                    $('#approval_table tbody').append(newRow);
+
+                    // Load checklist progress
+                    loadChecklistProgress(document.level_id);
+                });
+
+                // Enable or disable "Issue Loan" button
+                $('#issue_loan_btn').prop('disabled', !allUsersHaveIds);
+            } else {
+                Swal.fire("Error!", "Failed to load data!", "error");
+            }
+        },
+        error: function (xhr) {
+            console.log("Error:", xhr.responseText);
+        },
+    });
+}
+
+function loadChecklistProgress(levelId) {
+    $.ajax({
+        type: "GET",
+        url: `/load_checklist/${levelId}`,
+        headers: {
+            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+        },
+        success: function (data) {
+            console.log(data); // Debugging to ensure correct data is received
+            if (data.success) {
+                const total = data.checklist.length;
+                const completed = data.checklist.filter(item => parseInt(item.status) === 1).length;
+
+                // Handle cases with no checklist items
+                const progressText = total > 0 ? `${completed}/${total}` : `0/0`;
+
+                // Update progress as a fraction (e.g., 1/3)
+                $(`#checklist_progress_${levelId}`).text(progressText);
+
+                // Enable "Approve" button only if all items are completed
+                $(`#approve_btn_${levelId}`).prop('disabled', completed !== total || total === 0);
+            } else {
+                Swal.fire("Error!", "Failed to load checklist progress!", "error");
+            }
+        },
+        error: function (xhr) {
+            console.log("Error:", xhr.responseText);
+        },
+    });
+}
+
+
+
+function toggleChecklist(levelId) {
+    const row = $(`#checklist_row_${levelId}`);
+    if (row.is(':visible')) {
+        row.hide();
+    } else {
+        loadChecklist(levelId);
+        row.show();
+    }
+}
+
+function loadChecklist(levelId) {
+    $.ajax({
+        type: "GET",
+        url: `/load_checklist/${levelId}`,
+        headers: {
+            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+        },
+        success: function (data) {
+            if (data.success) {
+                let checklistHtml = `<ul class="list-group">`;
+                data.checklist.forEach(item => {
+                    const isMarked = parseInt(item.status) === 1;
+                    const buttonLabel = isMarked ? "Remove Mark" : "Mark";
+                    const buttonClass = isMarked ? "btn-success" : "btn-primary";
+
+                    checklistHtml += `
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            ${item.description}
+                            <button class="btn ${buttonClass} btn-sm" onclick="markChecklistItem(${item.id}, ${levelId}, ${item.status})">
+                                ${buttonLabel}
+                            </button>
+                        </li>`;
+                });
+                checklistHtml += `</ul>`;
+                $(`#checklist_container_${levelId}`).html(checklistHtml);
+            } else {
+                Swal.fire("Error!", "Failed to load checklist!", "error");
+            }
+        },
+        error: function (xhr) {
+            console.log("Error:", xhr.responseText);
+        },
+    });
+}
+
+function markChecklistItem(itemId, levelId, currentStatus) {
+    const newStatus = currentStatus === 1 ? 0 : 1; // Toggle status (1 -> 0, 0 -> 1)
+    const action = newStatus === 1 ? "mark this item as completed" : "remove the mark";
+
+    Swal.fire({
+        title: "Are you sure?",
+        text: `Do you want to ${action}?`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, proceed!",
+        cancelButtonText: "Cancel",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Proceed to toggle the checklist item status
+            $.ajax({
+                type: "POST",
+                url: `/update_checklist/${itemId}`,
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                },
+                data: { status: newStatus },
+                success: function (data) {
+                    if (data.success) {
+                        // Reload the checklist to reflect changes
+                        loadChecklist(levelId);
+                        // Refresh checklist progress after updating the database
+                        loadChecklistProgress(levelId);
+
+                        // Show success notification
+                        Swal.fire(
+                            newStatus === 1 ? "Marked!" : "Unmarked!",
+                            `The checklist item has been ${newStatus === 1 ? "marked as completed" : "unmarked"}.`,
+                            "success"
+                        );
+                    } else {
+                        Swal.fire("Error!", "Failed to update checklist item!", "error");
+                    }
+                },
+                error: function (xhr) {
+                    console.log("Error:", xhr.responseText);
+                    Swal.fire("Error!", "An unexpected error occurred!", "error");
+                },
+            });
         }
     });
 }
+
+
 
 function approve(id,index){
     let comment = $("#des_" + index).val();

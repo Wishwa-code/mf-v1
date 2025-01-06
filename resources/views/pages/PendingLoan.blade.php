@@ -196,94 +196,6 @@
 
     </div>
 
-    <div class="modal fade" id="standard-modal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <!-- <h4 class="modal-title" >gwegerg</h4> -->
-                    <h4>View Loan</h4>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-
-
-                        <div class="col-lg-6 mb-3">
-                            <label for="simpleinput" class="form-label">Group</label>
-                            <select class="form-control select2" data-toggle="select2">
-                                <option>Select</option>
-                                <optgroup>
-                                    <option value="AK">Customer 01</option>
-                                    <option value="AK">Customer 02</option>
-                                    <option value="AK">Customer 03</option>
-                                    <option value="AK">Customer 04</option>
-                                    <option value="AK">Customer 05</option>
-                                    <option value="AK">Customer 06</option>
-                                    <option value="AK">Customer 07</option>
-                                </optgroup>
-                            </select>
-                        </div>
-
-                        <div class="col-lg-6 mb-3">
-                            <label for="simpleinput" class="form-label">Category</label>
-                            <select class="form-control select2" data-toggle="select2">
-                                <option>Select</option>
-                                <optgroup>
-                                    <option value="AK">Customer 01</option>
-                                    <option value="AK">Customer 02</option>
-                                    <option value="AK">Customer 03</option>
-                                    <option value="AK">Customer 04</option>
-                                    <option value="AK">Customer 05</option>
-                                    <option value="AK">Customer 06</option>
-                                    <option value="AK">Customer 07</option>
-                                </optgroup>
-                            </select>
-                        </div>
-
-                        <div class="col-lg-6 mb-3">
-                            <label for="simpleinput" class="form-label">Customer</label>
-                            <select class="form-control select2" data-toggle="select2">
-                                <option>Select</option>
-                                <optgroup>
-                                    <option value="AK">Customer 01</option>
-                                    <option value="AK">Customer 02</option>
-                                    <option value="AK">Customer 03</option>
-                                    <option value="AK">Customer 04</option>
-                                    <option value="AK">Customer 05</option>
-                                    <option value="AK">Customer 06</option>
-                                    <option value="AK">Customer 07</option>
-                                </optgroup>
-                            </select>
-                        </div>
-
-                        <div class="col-lg-6 mb-3">
-                            <label for="simpleinput" class="form-label">Total Amount</label>
-                            <input type="text" id="simpleinput" class="form-control">
-                        </div>
-                        <div class="col-lg-6 mb-3">
-                            <label for="simpleinput" class="form-label">Status</label>
-                            <select class="form-control select2" data-toggle="select2">
-                                <option>Select</option>
-                                <optgroup>
-                                    <option value="AK">Pending</option>
-                                    <option value="AK">Completed</option>
-                                </optgroup>
-                            </select>
-                        </div>
-
-
-                    </div>
-
-                </div>
-
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-success">Save changes</button>
-                </div>
-            </div><!-- /.modal-content -->
-        </div><!-- /.modal-dialog -->
-    </div><!-- /.modal -->
 
 
     <div class="modal fade" id="issue-loan-modal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
@@ -313,6 +225,7 @@
                                         <th scope="col">Approve</th>
                                         <th scope="col">Approved User</th>
                                         <th scope="col">Date Time</th>
+                                        <th scope="col">Check List</th>
                                     </tr>
                                     </thead>
                                     <tbody class="custom-scrollbar" style="max-height: 400px;">
@@ -371,6 +284,25 @@
             </div>
         </div>
     </div>
+
+
+    <div class="modal fade" id="checklist-modal" tabindex="-1" aria-labelledby="checklistModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="checklistModalLabel">Checklist</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="checklist-container"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
 
 
@@ -682,61 +614,61 @@
             }
         }
     </script>
-    <script>
-        const exampleModal = document.getElementById('standard-modal')
-        exampleModal.addEventListener('show.bs.modal', event => {
-            // Button that triggered the modal
-            const button = event.relatedTarget
-            // Extract info from data-bs-* attributes
-            const recipient = button.getAttribute('data-bs-whatever')
-            // If necessary, you could initiate an AJAX request here
-            // and then do the updating in a callback.
-            //
-            // Update the modal's content.
-            const modalTitle = exampleModal.querySelector('.modal-title')
-            const modalBodyInput = exampleModal.querySelector('.modal-body input')
+{{--    <script>--}}
+{{--        const exampleModal = document.getElementById('standard-modal')--}}
+{{--        exampleModal.addEventListener('show.bs.modal', event => {--}}
+{{--            // Button that triggered the modal--}}
+{{--            const button = event.relatedTarget--}}
+{{--            // Extract info from data-bs-* attributes--}}
+{{--            const recipient = button.getAttribute('data-bs-whatever')--}}
+{{--            // If necessary, you could initiate an AJAX request here--}}
+{{--            // and then do the updating in a callback.--}}
+{{--            //--}}
+{{--            // Update the modal's content.--}}
+{{--            const modalTitle = exampleModal.querySelector('.modal-title')--}}
+{{--            const modalBodyInput = exampleModal.querySelector('.modal-body input')--}}
 
-            modalTitle.textContent = `New message to ${recipient}`
-            modalBodyInput.value = recipient
-        })
-    </script>
-    <script>
-        const issueLoanModal = document.getElementById('issue-loan-modal')
-        issueLoanModal.addEventListener('show.bs.modal', event => {
-            // Button that triggered the modal
-            const button = event.relatedTarget
-            // Extract info from data-bs-* attributes
-            const recipient = button.getAttribute('data-bs-whatever')
-            // If necessary, you could initiate an AJAX request here
-            // and then do the updating in a callback.
-            //
-            // Update the modal's content.
-            const modalTitle = issueLoanModal.querySelector('.modal-title')
-            const modalBodyInput = issueLoanModal.querySelector('.modal-body input')
+{{--            modalTitle.textContent = `New message to ${recipient}`--}}
+{{--            modalBodyInput.value = recipient--}}
+{{--        })--}}
+{{--    </script>--}}
+{{--    <script>--}}
+{{--        const issueLoanModal = document.getElementById('issue-loan-modal')--}}
+{{--        issueLoanModal.addEventListener('show.bs.modal', event => {--}}
+{{--            // Button that triggered the modal--}}
+{{--            const button = event.relatedTarget--}}
+{{--            // Extract info from data-bs-* attributes--}}
+{{--            const recipient = button.getAttribute('data-bs-whatever')--}}
+{{--            // If necessary, you could initiate an AJAX request here--}}
+{{--            // and then do the updating in a callback.--}}
+{{--            //--}}
+{{--            // Update the modal's content.--}}
+{{--            const modalTitle = issueLoanModal.querySelector('.modal-title')--}}
+{{--            const modalBodyInput = issueLoanModal.querySelector('.modal-body input')--}}
 
-            modalTitle.textContent = `New message to ${recipient}`
-            modalBodyInput.value = recipient
-        })
-    </script>
+{{--            modalTitle.textContent = `New message to ${recipient}`--}}
+{{--            modalBodyInput.value = recipient--}}
+{{--        })--}}
+{{--    </script>--}}
 
-    <script>
-        const viewModal = document.getElementById('view-modal')
-        exampleModal.addEventListener('show.bs.modal', event => {
-            // Button that triggered the modal
-            const button = event.relatedTarget
-            // Extract info from data-bs-* attributes
-            const recipient = button.getAttribute('data-bs-whatever')
-            // If necessary, you could initiate an AJAX request here
-            // and then do the updating in a callback.
-            //
-            // Update the modal's content.
-            const modalTitle = viewModal.querySelector('.modal-title')
-            const modalBodyInput = viewModal.querySelector('.modal-body input')
+{{--    <script>--}}
+{{--        const viewModal = document.getElementById('view-modal')--}}
+{{--        exampleModal.addEventListener('show.bs.modal', event => {--}}
+{{--            // Button that triggered the modal--}}
+{{--            const button = event.relatedTarget--}}
+{{--            // Extract info from data-bs-* attributes--}}
+{{--            const recipient = button.getAttribute('data-bs-whatever')--}}
+{{--            // If necessary, you could initiate an AJAX request here--}}
+{{--            // and then do the updating in a callback.--}}
+{{--            //--}}
+{{--            // Update the modal's content.--}}
+{{--            const modalTitle = viewModal.querySelector('.modal-title')--}}
+{{--            const modalBodyInput = viewModal.querySelector('.modal-body input')--}}
 
-            modalTitle.textContent = `New message to ${recipient}`
-            modalBodyInput.value = recipient
-        })
-    </script>
+{{--            modalTitle.textContent = `New message to ${recipient}`--}}
+{{--            modalBodyInput.value = recipient--}}
+{{--        })--}}
+{{--    </script>--}}
 
 @endsection
 
