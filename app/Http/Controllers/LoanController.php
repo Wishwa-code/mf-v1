@@ -422,6 +422,7 @@ class LoanController extends Controller
             $loanApprovalData = [
                 'loan_id' => $id,
                 'level' => $item->type,
+                'level_id' => $item->id,
                 'description' => '',
                 'comment' => '',
                 'user_id' => 0,
@@ -431,6 +432,16 @@ class LoanController extends Controller
 // Insert the loan approval data with branch scoping
             insertWithBranch('loan_has_approval', $loanApprovalData);
 
+            $checklist=tableWithBranch('approval_checklist')->where('level_id','=',$item->id)->get();
+            foreach ($checklist as $check_item){
+                $loanChecklistData = [
+                    'loan_id' => $id,
+                    'level' => $item->id,
+                    'description' => $check_item->description,
+                    'status' => '0',
+                ];
+                insertWithBranch('loan_has_approval_checklist', $loanChecklistData);
+            }
         }
 
 

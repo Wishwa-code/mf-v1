@@ -181,7 +181,7 @@
                                                 <option value="Weekly">Per Week</option>
                                                 <option value="Per Month">Per Month</option>
                                                 <option value="Per Year">Per Year</option>
-                                                {{--                                                    <option value="Per Loan">Per Loan</option>--}}
+                                                <option value="Per Loan">Per Loan</option>
                                             </select>
                                         </div>
                                     </div>
@@ -552,48 +552,101 @@
             $('#addLevelBtn1').click(function() {
                 levelCount++;
 
-                // Create a new level card
+                // Create a new level card with a checklist table on the right
                 let newLevel = `
-        <div class="col-lg-6 mb-4 level-card" data-level="${levelCount}" >
-            <div class="card shadow">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"  style="width: 20%"> Level ${levelCount < 10 ? '0' + levelCount : levelCount}</h5>
-                    <div class="col-md-6"  style="width: 80%">
-                        <input type="text" class="form-control" id="description_${levelCount}" placeholder="Enter Level Description">
-                    </div>
+    <div class="col-lg-12 mb-4 level-card" data-level="${levelCount}">
+        <div class="card shadow">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0" style="width: 20%;"> Level ${levelCount < 10 ? '0' + levelCount : levelCount}</h5>
+                <div class="col-md-6" style="width: 80%;">
+                    <input type="text" class="form-control" id="description_${levelCount}" placeholder="Enter Level Description">
                 </div>
-                <div class="card-body" style="background-color: #f6ffee;">
-                    <div class="table-responsive custom-scrollbar">
-                        <div class="row mb-3">
-                            <div class="col-md-12 d-flex align-items-center">
-                                <label for="desi_${levelCount}" class="form-label me-2">Designation</label>
-                                <select class="form-control" id="desi_${levelCount}" name="desi" >
-                                    @foreach($designation as $item)
+            </div>
+            <div class="card-body" style="background-color: #f6ffee;">
+                <div class="row">
+                    <!-- Left: Designation Table -->
+                    <div class="col-lg-6">
+                        <div class="table-responsive custom-scrollbar">
+                            <div class="row mb-3">
+                                <div class="col-md-12 d-flex align-items-center">
+                                    <label for="desi_${levelCount}" class="form-label me-2">Designation</label>
+                                    <select class="form-control" id="desi_${levelCount}" name="desi">
+                                        @foreach($designation as $item)
                 <option value="{{$item->idDesignation}}">{{$item->name}}</option>
-                                    @endforeach
+                                        @endforeach
                 </select>
-                  <button type="button" class="btn btn-primary ms-2 add-to-table">Add</button>
-            </div>
+                <button type="button" class="btn btn-primary ms-2 add-to-table" data-table="table_${levelCount}">Add</button>
+                                </div>
+                            </div>
+                            <table class="table table-bordered table-sm designation-table" id="table_${levelCount}" style="table-layout: fixed; width: 100%;">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th style="width: 70%;">Designation</th>
+                                        <th style="width: 30%;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamic rows will be added here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
 
-        </div>
-        <table class="table table-bordered table-sm" id="table_${levelCount}" style="table-layout: fixed; width: 100%;">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th style="width: 70%;">Designation</th>
-                                    <th style="width: 30%;">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Dynamic rows will be added here -->
-                            </tbody>
-                        </table>
+                    <!-- Right: Checklist Table -->
+                    <div class="col-lg-6">
+                        <div class="table-responsive custom-scrollbar">
+                            <div class="row mb-3">
+                                <div class="col-md-12 d-flex align-items-center">
+                                    <label for="checklist_${levelCount}" class="form-label me-2">Checklist Item</label>
+                                    <input type="text" class="form-control" id="checklist_input_${levelCount}" placeholder="Enter Checklist Item">
+                                    <button type="button" class="btn btn-primary ms-2 add-to-checklist" data-table="checklist_table_${levelCount}">Add</button>
+                                </div>
+                            </div>
+                            <table class="table table-bordered table-sm checklist-table" id="checklist_table_${levelCount}" style="table-layout: fixed; width: 100%;">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th style="width: 70%;">Checklist Item</th>
+                                        <th style="width: 30%;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamic rows will be added here -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>`;
+        </div>
+    </div>`;
 
                 // Append the new level card to the container
                 $('#levels-container').append(newLevel);
+            });
+
+// Event handler for adding rows to the checklist table
+            $(document).on('click', '.add-to-checklist', function() {
+                let tableId = $(this).data('table');
+                let levelId = tableId.split('_')[2]; // Extract level ID from table ID
+                let inputId = `#checklist_input_${levelId}`;
+                let value = $(inputId).val();
+
+                if (value.trim() !== '') {
+                    let newRow = `
+        <tr>
+            <td>${value}</td>
+            <td>
+                <button type="button" class="btn btn-danger btn-sm remove-row">Remove</button>
+            </td>
+        </tr>`;
+                    $(`#${tableId} tbody`).append(newRow);
+                    $(inputId).val(''); // Clear input field
+                }
+            });
+
+            // Event handler for removing rows from tables
+            $(document).on('click', '.remove-row', function() {
+                $(this).closest('tr').remove();
             });
 
             $('#removeLevelBtn1').click(function() {
@@ -609,7 +662,7 @@
                 let select = cardBody.find('select');
                 let selectedText = select.find('option:selected').text();
                 let selectedValue = select.find('option:selected').val();
-                let tableBody = cardBody.find('table tbody');
+                let tableBody = cardBody.find('.designation-table tbody');
 
                 // Check for duplicate entry
                 let isDuplicate = false;
@@ -651,24 +704,35 @@
                 let levelHeaderText = $(this).find('.card-header h5').text().trim();
                 let level = levelHeaderText.replace('Level ', '').trim();
 
-                let description = $(this).find(`input[id^="description_"]`).val(); // Using starts with selector for robustness
+                let description = $(this).find(`input[id^="description_"]`).val(); // Using starts-with selector for robustness
                 let designations = [];
+                let checklist = [];
 
-                $(this).find('table tbody tr').each(function() {
+                // Gather designations
+                $(this).find('.designation-table tbody tr').each(function() {
                     let designationId = $(this).find('td:first').data('value');
                     let designationName = $(this).find('td:first').text();
                     designations.push({ id: designationId, name: designationName });
                 });
 
+                // Gather checklist items
+                $(this).find('.checklist-table tbody tr').each(function() {
+                    let checklistItem = $(this).find('td:first').text().trim();
+                    checklist.push(checklistItem);
+                });
+
+                // Add level data to the array
                 levelsData.push({
                     level: level,
                     description: description,
-                    designations: designations
+                    designations: designations,
+                    checklist: checklist
                 });
             });
 
             return levelsData;
         }
+
 
 
     </script>

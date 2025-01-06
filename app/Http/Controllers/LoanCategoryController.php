@@ -101,18 +101,17 @@ class LoanCategoryController extends Controller
 
         $level_data = $request->input('level_data');
 
-
-        // Validate the structure of levelsData array
+// Validate the structure of levelsData array
         if (!is_array($level_data) || count($level_data) === 0) {
 
-        }else{
-            // Example: Loop through each level data
+        } else {
+            // Loop through each level data
             foreach ($level_data as $levelData) {
                 $level = $levelData['level'];
                 $description = $levelData['description'];
 
-                if ($description==""){
-                    $description="-";
+                if ($description == "") {
+                    $description = "-";
                 }
 
                 $data = [
@@ -121,22 +120,34 @@ class LoanCategoryController extends Controller
                     'description' => $description,
                 ];
 
-// Insert the data with branch-specific logic and get the inserted ID
+                // Insert the data with branch-specific logic and get the inserted ID
                 $levelId = insertWithBranch('level', $data);
 
-
-                // Example: Loop through designations for each level
+                // Loop through designations for each level
                 foreach ($levelData['designations'] as $designation) {
                     $designationId = $designation['id'];
                     $designationName = $designation['name'];
+
                     $data = [
                         'level_id' => $levelId,
                         'designation_id' => $designationName,
                     ];
 
-// Insert the data with branch-specific logic
+                    // Insert the data with branch-specific logic
                     insertWithBranch('level_has_designation', $data);
+                }
 
+                // Loop through checklist items for each level
+                if (isset($levelData['checklist']) && is_array($levelData['checklist'])) {
+                    foreach ($levelData['checklist'] as $checklistItem) {
+                        $checklistData = [
+                            'level_id' => $levelId,
+                            'description' => $checklistItem,
+                        ];
+
+                        // Insert the checklist item into the approval_checklist table
+                        insertWithBranch('approval_checklist', $checklistData);
+                    }
                 }
             }
         }
@@ -332,6 +343,24 @@ class LoanCategoryController extends Controller
 
 
         return response()->json(['message' => 'Data updated successfully'], 200);
+    }
+
+
+    public function loadChecklist($levelId) {
+        $checklist = DB::table('loan_has_approval_checklist')
+            ->where('level', $levelId)
+            ->get();
+
+        return response()->json(['success' => true, 'checklist' => $checklist]);
+    }
+
+    public function updateChecklist(Request $request, $itemId) {
+        $user_id = (int)session('userid');
+        DB::table('loan_has_approval_checklist')
+            ->where('id', $itemId)
+            ->update(['status' => 1,'user_id'=>$user_id]);
+
+        return response()->json(['success' => true]);
     }
 
 

@@ -127,16 +127,17 @@ class TodayPaymentController extends Controller
         $subquery = DB::table('installments')
             ->select(
                 'Customer_Loan_idCustomer_Loan',
-//                DB::raw('COUNT(idInstallments) as Calculated_Installment_Count'),
-//                DB::raw('SUM(Total_Balance) as Total_Balance'),
-//                DB::raw('SUM(Paid_Amount) as Total_Paid_Amount'),
-//                DB::raw('SUM(CASE WHEN Installment_Date <= CURDATE() THEN Total_Balance ELSE 0 END) as Total_Balance_until'),
+                DB::raw('COUNT(idInstallments) as Calculated_Installment_Count'),
+                DB::raw('SUM(Total_Balance) as Total_Balance'),
+                DB::raw('SUM(Paid_Amount) as Total_Paid_Amount'),
+                DB::raw('SUM(CASE WHEN Installment_Date <= CURDATE() THEN Total_Balance ELSE 0 END) as Total_Balance_until'),
                 DB::raw('SUM(CASE WHEN Installment_Date = CURDATE() THEN Total_Balance ELSE 0 END) as Today_installment'),
                 DB::raw('SUM(CASE WHEN Installment_Date < CURDATE() THEN Total_Balance ELSE 0 END) as arrease')
             )
-            ->where('installments.branch_id','=',session('branch_id'))
+            ->where('installments.branch_id', '=', session('branch_id'))
             ->whereNotIn('Panelty_date', $poyaDates) // Exclude dates in $poya
             ->groupBy('Customer_Loan_idCustomer_Loan');
+
 
         // Main query with joins, using the subquery as 'installment_summary'
         $loanQuery = DB::table('customer_loan')
@@ -161,10 +162,10 @@ class TodayPaymentController extends Controller
                 'customer_loan.capital_balance as capital_balance',
                 'customer_loan.Installment_Amount as Installment_Amount',
                 'customer_loan.Vehicle_No as Vehicle_No',
-//                'installment_summary.Calculated_Installment_Count',
-//                'installment_summary.Total_Balance',
-//                'installment_summary.Total_Paid_Amount',
-//                'installment_summary.Total_Balance_until',
+                'installment_summary.Calculated_Installment_Count',
+                'installment_summary.Total_Balance',
+                'installment_summary.Total_Paid_Amount',
+                'installment_summary.Total_Balance_until',
                 'installment_summary.Today_installment',
                 'installment_summary.arrease'
             )
@@ -197,12 +198,13 @@ class TodayPaymentController extends Controller
 
         // Apply status-specific filters
         if ($status == '0') {
-            $loanQuery->havingRaw('Total_Balance_until > 0');
+            $loanQuery->having('installment_summary.Total_Balance_until', '>', 0); // Reference the alias from the subquery
         } elseif ($status == '2') {
-            $loanQuery->havingRaw('arrease > 0');
+            $loanQuery->having('installment_summary.arrease', '>', 0); // Correctly reference alias
         } elseif ($status == '1') {
-            $loanQuery->havingRaw('Today_installment > 0');
+            $loanQuery->having('installment_summary.Today_installment', '>', 0);
         }
+
 
 
         if ($loan_number != '0') {

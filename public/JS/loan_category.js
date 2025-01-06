@@ -182,6 +182,7 @@ const saveLoanCategory = (e) => {
         document.push(rowData);
     });
 
+    console.log(level_data);
 
     if (level_data.length === 0) {
         Swal.fire("Error!", "Please add atleast one level !", "error");

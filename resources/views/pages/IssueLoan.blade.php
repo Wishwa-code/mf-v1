@@ -232,6 +232,7 @@
                                                                     <option value="Weekly">Per Week</option>
                                                                     <option value="Per Month">Per Month</option>
                                                                     <option value="Per Year">Per Year</option>
+                                                                    <option value="Per Loan">Per Loan</option>
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -3564,41 +3565,7 @@
                 $("#total_capital_amount").text(capital_amount_2);
                 $("#total_interest_amount").text(interest_amount);
                 saving_cal();
-                // if (type==="Weekly"){
-                //     let loan_amount = parseFloat($("#loan_amount").val());
-                //     let interest = parseFloat($("#loan_interest").val());
-                //     let installment_count = parseFloat($("#loan_period").val());
-                //     if (isNaN(loan_amount) || isNaN(interest) || isNaN(installment_count)) {
-                //         return;
-                //     }
-                //     let new_installment_count=0.0;
-                //     let interest_amount = ((loan_amount * interest) / 100);
-                //     $("#interest_amount").val(interest_amount.toFixed(2));
-                //     let total = loan_amount + interest_amount;
-                //     $("#total_loan_amount").text(total.toFixed(2));
-                //     new_installment_count=total/installment_count;
-                //     $("#new_interest_amount").text(new_installment_count.toFixed(2));
-                //
-                // }else{
-                //     let loan_amount = parseFloat($("#loan_amount").val());
-                //     let interest = parseFloat($("#loan_interest").val());
-                //     let total_loan_charge = parseFloat($("#total_loan_charge").text());
-                //     let installment_count = parseFloat($("#ins_count").val());
-                //
-                //     if (isNaN(total_loan_charge)) {
-                //         total_loan_charge=0.00;
-                //     }
-                //     let new_installment_count=0.0;
-                //     if (!isNaN(loan_amount) && !isNaN(interest) && !isNaN(installment_count)) {
-                //         let interest_amount = ((loan_amount * interest) / 100)*installment_count;
-                //         $("#interest_amount").val(interest_amount.toFixed(2));
-                //
-                //         let total = loan_amount + interest_amount + total_loan_charge;
-                //         $("#total_loan_amount").text(total.toFixed(2));
-                //         new_installment_count=total/installment_count;
-                //         $("#new_interest_amount").text(new_installment_count.toFixed(2));
-                //     }
-                // }
+
                 checkAnotherCheckbox('separateCharges');
             }
         @else
