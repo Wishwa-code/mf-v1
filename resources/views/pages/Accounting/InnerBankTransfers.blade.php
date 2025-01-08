@@ -49,7 +49,7 @@
 
     <div class="card">
         <div class="card-header">
-            <h4 class="card-title">Inter Bank Transfers</h4>
+            <h4 class="card-title">Internal Account Transfer</h4>
         </div>
         <div class="card-body">
             <form class="row g-3 mb-4">
@@ -99,7 +99,7 @@
 
         <div class="card mt-4">
             <div class="card-body">
-                <h4>Inter Bank Transfers</h4>
+                <h4>Internal Account Transfers</h4>
                 <table id="transfersTable" class="table table-bordered table-hover">
                     <thead class="table-light">
                     <tr>

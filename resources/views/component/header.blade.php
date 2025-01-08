@@ -607,6 +607,9 @@
                                             <li>
                                                 <a href="/bank_account">Bank Account</a>
                                             </li>
+                                            <li>
+                                                <a href="/InnerBankTransfer">Internal Account Transfer</a>
+                                            </li>
                                         @else
                                         @endif
                                         @if($item->chq_details == 1)
@@ -646,9 +649,7 @@
                                         <li>
                                             <a href="/AssetManagement">Asset Management</a>
                                         </li>
-                                        <li>
-                                            <a href="/InnerBankTransfer">Inner Bank Transfer</a>
-                                        </li>
+
 {{--                                        <li>--}}
 {{--                                            <a href="/AddManualJournal">Asset Manual Journal</a>--}}
 {{--                                        </li>--}}
