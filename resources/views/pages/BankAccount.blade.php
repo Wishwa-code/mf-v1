@@ -30,6 +30,12 @@
             border-radius: 50%;
             border: 5px solid white;
         }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+        }
 
     </style>
 @endsection
@@ -51,26 +57,45 @@
                                     <div class="card-body">
                                         <div class="mb-3">
                                             <div class="row mb-3">
+                                                <!-- Account Code -->
                                                 <div class="col-md-6">
-                                                    <label for="bank_name" class="form-label">Bank Name</label>
-                                                    <input type="text" id="bank_name" class="form-control">
+                                                    <div class="form-group">
+                                                        <label for="bank_code" class="form-label">
+                                                            Account Code
+                                                            <span style="color: red; font-weight: bold; font-size: 0.9rem; display: block; margin-top: 5px; background-color: #ffe6e6; padding: 5px; border-radius: 5px;">
+                    This code will be used as Chart Of Account code. It cannot be duplicate.
+                </span>
+                                                        </label>
+                                                        <input type="text" id="bank_code" class="form-control">
+                                                    </div>
                                                 </div>
+
+                                                <!-- Bank Name -->
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label for="bank_name" class="form-label">Bank Name</label>
+                                                        <input type="text" id="bank_name" class="form-control">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="row mb-3">
+
                                                 <div class="col-md-6">
                                                     <label for="account_name" class="form-label">Account Name</label>
                                                     <input type="text" id="account_name" class="form-control">
                                                 </div>
-                                            </div>
-                                            <div class="row mb-3">
                                                 <div class="col-md-6">
                                                     <label for="account_number" class="form-label">Account Number</label>
                                                     <input type="text" id="account_number" class="form-control">
                                                 </div>
+                                            </div>
+                                            <div class="row mb-3">
+
                                                 <div class="col-md-6">
                                                     <label for="branch" class="form-label">Branch</label>
                                                     <input type="text" id="branch" class="form-control">
                                                 </div>
-                                            </div>
-                                            <div class="row mb-3">
                                                 <div class="col-md-6">
                                                     <label for="account_number" class="form-label">Opening Balance</label>
                                                     <input type="text" id="opening_balance" class="form-control">
@@ -82,6 +107,7 @@
                                             <table class="table table-centered mb-0" id="bank_table">
                                                 <thead>
                                                 <tr>
+                                                    <th>Account Code</th>
                                                     <th>Bank Name</th>
                                                     <th>Account Name</th>
                                                     <th>Account Number</th>
@@ -95,6 +121,7 @@
                                                 <tbody>
                                                     @foreach($banks as $item)
                                                         <tr>
+                                                            <td>{{$item->code}}</td>
                                                             <td>{{$item->Bank_Name}}</td>
                                                             <td>{{$item->Account_Name}}</td>
                                                             <td>{{$item->Account_No}}</td>

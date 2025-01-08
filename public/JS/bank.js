@@ -37,7 +37,7 @@ const validateSubmitBank = (event) => {
 
     let err = 0;
 
-    let arr = ["bank_name", "account_name","account_number","branch","opening_balance"];
+    let arr = ["bank_code","bank_name", "account_name","account_number","branch","opening_balance"];
     err = check_validate(arr, err);
 
     if (err == 0) {
@@ -54,6 +54,7 @@ const validateSubmitBank = (event) => {
 const savebank = (e) => {
   e.preventDefault();
 
+  const bank_code = $("#bank_code").val();
   const bank_name = $("#bank_name").val();
   const account_name = $("#account_name").val();
   const account_number = $("#account_number").val();
@@ -77,6 +78,7 @@ const savebank = (e) => {
           "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
         data: {
+            bank_code: bank_code,
             bank_name: bank_name,
             account_name: account_name,
             account_number: account_number,
@@ -97,7 +99,7 @@ const savebank = (e) => {
                           window.location.reload();
                       });
                   }else{
-                      Swal.fire("Error!", "This Account Number Is Already Exist !", "error");
+                      Swal.fire("Error!", "This Account Number or Account Code Already Exist !", "error");
                   }
 
               } else {

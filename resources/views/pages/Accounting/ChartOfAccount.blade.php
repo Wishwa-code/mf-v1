@@ -675,7 +675,7 @@
                                         Swal.fire({
                                             icon: 'error',
                                             title: 'Error',
-                                            text: 'Failed to save the chart of account.'
+                                            text: 'This code is already exist.',
                                         });
                                     }
                                 },
