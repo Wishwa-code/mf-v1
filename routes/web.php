@@ -566,5 +566,5 @@ Route::post('/activate-branch/{id}','\App\Http\Controllers\BranchController@acti
 
 
 
-Route::get('/load_checklist/{levelId}','\App\Http\Controllers\LoanCategoryController@loadChecklist')->name('loadChecklist');
+Route::get('/load_checklist/{levelId}/{loan_id}','\App\Http\Controllers\LoanCategoryController@loadChecklist')->name('loadChecklist');
 Route::post('/update_checklist/{itemId}','\App\Http\Controllers\LoanCategoryController@updateChecklist')->name('updateChecklist');

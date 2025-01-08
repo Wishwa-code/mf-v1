@@ -247,7 +247,7 @@
                                         <th hidden>#</th>
                                         <th scope="col">Description</th>
                                         <th scope="col">File</th>
-                                        <th scope="col">Check</th>
+                                        <th scope="col" hidden>Check</th>
                                     </tr>
                                     </thead>
                                     <tbody class="custom-scrollbar" style="max-height: 400px;">

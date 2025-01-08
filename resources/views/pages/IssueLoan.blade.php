@@ -3620,13 +3620,6 @@
                 }else if(interest_period==="Per Loan"){
                     interest_amount=(loan_amount*interest/100);
                 }
-
-
-
-
-
-
-
                 $("#interest_amount").val(interest_amount.toFixed(2));
                 $("#total_loan_amount").text((parseFloat(loan_amount)+parseFloat(interest_amount)).toFixed(2));
                 let total_loan_amount=(parseFloat(loan_amount)+parseFloat(interest_amount)).toFixed(2);
