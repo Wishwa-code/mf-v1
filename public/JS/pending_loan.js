@@ -719,7 +719,7 @@ function load_document_check(id) {
                         <td hidden>${document.idDocuments}</td>
                         <td>${document.Name}</td>
                         <td>${fileButton}</td>
-                        <td><input type="checkbox" class="form-check-input" id="${checkboxId}"></td>
+                        <td hidden><input type="checkbox" class="form-check-input" id="${checkboxId}"></td>
                     </tr>`;
                     $('#file_table tbody').append(newRow);
                 });
@@ -862,7 +862,7 @@ function load_approval_check(id) {
                         <td>${document.user_id === 0 ? '-' : document.Full_Name}</td>
                         <td>${document.date}</td>
                         <td>
-    <button class="btn btn-info btn-sm" onclick="toggleChecklist(${document.level_id})">
+    <button class="btn btn-info btn-sm" onclick="toggleChecklist(${document.level_id},${id})">
         View Checklist (<span id="checklist_progress_${document.level_id}">0/0</span>)
     </button>
 </td>
@@ -877,7 +877,7 @@ function load_approval_check(id) {
                     $('#approval_table tbody').append(newRow);
 
                     // Load checklist progress
-                    loadChecklistProgress(document.level_id);
+                    loadChecklistProgress(document.level_id,id);
                 });
 
                 // Enable or disable "Issue Loan" button
@@ -893,10 +893,10 @@ function load_approval_check(id) {
 }
 
 
-function loadChecklistProgress(levelId) {
+function loadChecklistProgress(levelId,loan_id) {
     $.ajax({
         type: "GET",
-        url: `/load_checklist/${levelId}`,
+        url: `/load_checklist/${levelId}/${loan_id}`,
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
@@ -912,8 +912,6 @@ function loadChecklistProgress(levelId) {
                 // Update progress as a fraction (e.g., 1/3)
                 $(`#checklist_progress_${levelId}`).text(progressText);
 
-                // Enable "Approve" button if all items are completed or if there are no items
-                $(`#approve_btn_${levelId}`).prop('disabled', !(completed === total || total === 0));
             } else {
                 Swal.fire("Error!", "Failed to load checklist progress!", "error");
             }
@@ -927,20 +925,20 @@ function loadChecklistProgress(levelId) {
 
 
 
-function toggleChecklist(levelId) {
+function toggleChecklist(levelId,loan_id) {
     const row = $(`#checklist_row_${levelId}`);
     if (row.is(':visible')) {
         row.hide();
     } else {
-        loadChecklist(levelId);
+        loadChecklist(levelId,loan_id);
         row.show();
     }
 }
 
-function loadChecklist(levelId) {
+function loadChecklist(levelId, loan_id) {
     $.ajax({
         type: "GET",
-        url: `/load_checklist/${levelId}`,
+        url: `/load_checklist/${levelId}/${loan_id}`,
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
@@ -949,13 +947,18 @@ function loadChecklist(levelId) {
                 let checklistHtml = `<ul class="list-group">`;
                 data.checklist.forEach(item => {
                     const isMarked = parseInt(item.status) === 1;
-                    const buttonLabel = isMarked ? "Remove Mark" : "Mark";
-                    const buttonClass = isMarked ? "btn-success" : "btn-primary";
+                    const rowStyle = isMarked
+                        ? "background-color:#b3e5af; color: Green; height: 40px;" // Green background, white text, reduced height
+                        : "background-color:white; color: Gray; height: 40px;"; // Red background, white text, reduced height
+                    const buttonLabel = isMarked ? "Remove Checked" : "Checked";
+                    const buttonStyle = isMarked
+                        ? "background-color: #f8f9fa; color:red;" // Light background with green text
+                        : "background-color: #f8f9fa; color: green;"; // Light background with red text
 
                     checklistHtml += `
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <li class="list-group-item d-flex justify-content-between align-items-center" style="${rowStyle}">
                             ${item.description}
-                            <button class="btn ${buttonClass} btn-sm" onclick="markChecklistItem(${item.id}, ${levelId}, ${item.status})">
+                            <button class="btn btn-sm" style="${buttonStyle}" onclick="markChecklistItem(${item.id}, ${levelId}, ${item.status}, ${loan_id})">
                                 ${buttonLabel}
                             </button>
                         </li>`;
@@ -972,7 +975,10 @@ function loadChecklist(levelId) {
     });
 }
 
-function markChecklistItem(itemId, levelId, currentStatus) {
+
+
+
+function markChecklistItem(itemId, levelId, currentStatus,loan_id) {
     const newStatus = currentStatus === 1 ? 0 : 1; // Toggle status (1 -> 0, 0 -> 1)
     const action = newStatus === 1 ? "mark this item as completed" : "remove the mark";
 
@@ -998,9 +1004,9 @@ function markChecklistItem(itemId, levelId, currentStatus) {
                 success: function (data) {
                     if (data.success) {
                         // Reload the checklist to reflect changes
-                        loadChecklist(levelId);
+                        loadChecklist(levelId,loan_id);
                         // Refresh checklist progress after updating the database
-                        loadChecklistProgress(levelId);
+                        loadChecklistProgress(levelId,loan_id);
 
                         // Show success notification
                         Swal.fire(

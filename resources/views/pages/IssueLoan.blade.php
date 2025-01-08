@@ -3531,6 +3531,9 @@
                 let interest = parseFloat($("#loan_interest").val());
 
                 let interest_amount=(loan_amount*interest/100)*interest_period_count;
+                if(interest_period=="Per Loan"){
+                     interest_amount=(loan_amount*interest/100);
+                }
 
                 $("#interest_amount").val(interest_amount.toFixed(2));
                 $("#total_loan_amount").text((parseFloat(loan_amount)+parseFloat(interest_amount)).toFixed(2));
@@ -3614,14 +3617,9 @@
                     }else if(duration_period==="Months"){
                         interest_amount=(loan_amount*interest/100)*(interest_period_count/12);
                     }
+                }else if(interest_period==="Per Loan"){
+                    interest_amount=(loan_amount*interest/100);
                 }
-
-
-
-
-
-
-
                 $("#interest_amount").val(interest_amount.toFixed(2));
                 $("#total_loan_amount").text((parseFloat(loan_amount)+parseFloat(interest_amount)).toFixed(2));
                 let total_loan_amount=(parseFloat(loan_amount)+parseFloat(interest_amount)).toFixed(2);

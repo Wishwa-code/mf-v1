@@ -29,10 +29,10 @@ class BankController extends Controller
     {
         $banks = tableWithBranch('company_bank_accounts','company_bank_accounts')
             ->join('user', 'company_bank_accounts.User', '=', 'user.id')
-            ->where('company_bank_accounts.Bank_Name','!=','Collector')
+            ->where('company_bank_accounts.Bank_Type','=','Bank')
             ->get();
         $company_banks = tableWithBranch('company_bank_accounts')
-            ->where('company_bank_accounts.Bank_Name','=','Collector')
+            ->where('company_bank_accounts.Bank_Type','=','Collector')
             ->get();
 
         return view('pages.BankAccount',compact('banks','company_banks'));
@@ -42,11 +42,11 @@ class BankController extends Controller
     {
         $banks = tableWithBranch('company_bank_accounts','company_bank_accounts')
             ->join('user', 'company_bank_accounts.User', '=', 'user.id')
-            ->where('company_bank_accounts.Bank_Name','=','Collector')
+            ->where('company_bank_accounts.Bank_Type','=','Collector')
             ->get();
 
         $company_banks = tableWithBranch('company_bank_accounts')
-            ->where('company_bank_accounts.Bank_Name','!=','Collector')
+            ->where('company_bank_accounts.Bank_Type','=','Bank')
             ->get();
 
         return view('pages.CollectorAccount',compact('banks','company_banks'));
@@ -72,15 +72,21 @@ class BankController extends Controller
     {
         $user_id = (int)session('userid');
         $Bank = [
+            'Bank_Type' => "Bank",
+            'code' => $request->bank_code,
             'Bank_Name' => $request->bank_name,
             'Account_Name' => $request->account_name,
             'Account_No' => $request->account_number,
             'Bank_Branch' => $request->branch,
             'Account_Balance' => $request->opening_balance,
+            'type' => "Cash and Bank",
+            'cashflow' => "Non Applicable",
             'User' => $user_id,
         ];
 
         if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $request->account_number)->exists()) {
+            return response()->json(["id" => "0"], 200);
+        }else if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('code', '=', $request->bank_code)->exists()) {
             return response()->json(["id" => "0"], 200);
         } else {
             $insertedId = insertWithBranch('company_bank_accounts', $Bank);

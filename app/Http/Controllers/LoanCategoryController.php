@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\LoanCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class LoanCategoryController extends Controller
 {
@@ -113,7 +114,6 @@ class LoanCategoryController extends Controller
                 if ($description == "") {
                     $description = "-";
                 }
-
                 $data = [
                     'product_id' => $categoryId,
                     'type' => $level,
@@ -346,9 +346,10 @@ class LoanCategoryController extends Controller
     }
 
 
-    public function loadChecklist($levelId) {
+    public function loadChecklist($levelId,$loan_id) {
         $checklist = DB::table('loan_has_approval_checklist')
             ->where('level', $levelId)
+            ->where('loan_id', $loan_id)
             ->get();
 
         return response()->json(['success' => true, 'checklist' => $checklist]);
@@ -358,7 +359,7 @@ class LoanCategoryController extends Controller
         $user_id = (int)session('userid');
         DB::table('loan_has_approval_checklist')
             ->where('id', $itemId)
-            ->update(['status' => 1,'user_id'=>$user_id]);
+            ->update(['status' => $request->status,'user_id'=>$user_id]);
 
         return response()->json(['success' => true]);
     }

@@ -19,17 +19,17 @@
                         </ol>
                     </div>
                     <h4 class="page-title">Welcome!</h4>
-                    <form action="{{route('loan_settlement.capitalbalance')}}" method="post">
-                        @csrf
-                        <input type="submit" value="test capital">
-                    </form>
+{{--                    <form action="{{route('loan_settlement.capitalbalance')}}" method="post">--}}
+{{--                        @csrf--}}
+{{--                        <input type="submit" value="test capital">--}}
+{{--                    </form>--}}
                     <br>
                 </div>
             </div>
         </div>
         <!-- end page title -->
 
-        @if($dashboard==1)
+{{--        @if($dashboard==1)--}}
             <div class="row">
                 <div class="col-xxl-3 col-sm-6">
                     <a href="/pendingloan">
@@ -284,7 +284,7 @@
 
 {{--                </div> <!-- end card-->--}}
 {{--            </div> <!-- end col-->--}}
-        @endif
+{{--        @endif--}}
     </div>
 
     </div>

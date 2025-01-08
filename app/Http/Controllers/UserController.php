@@ -80,17 +80,21 @@ class UserController extends Controller
 
             if ($collector==1){
                 $Bank = [
+                    'Bank_Type' => "Collector",
+                    'code' => $user->id.'/Collector',
                     'Bank_Name' => "Collector",
                     'Account_Name' => $request->full_name,
                     'Account_No' => $user->id,
                     'Bank_Branch' => '-',
                     'Account_Balance' => "0.00",
+                    'type' => "Cash and Bank",
+                    'cashflow' => "Non Applicable",
                     'User' => $user->id,
                 ];
 
                 if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $request->account_number)->exists()) {
 
-                } else {
+                }else {
                     $insertedId = insertWithBranch('company_bank_accounts', $Bank);
 // Convert the BankLog object to an array for insertion
                     $bankLogData = [

@@ -605,13 +605,13 @@
                                     <ul class="side-nav-second-level">
                                         @if($item->bank_details == 1)
                                             <li>
-                                                <a href="/bank_account">Bank Account</a>
+                                                <a href="/bank_account">Bank/Cash Account</a>
                                             </li>
-                                        @else
-                                        @endif
-                                        @if($item->chq_details == 1)
                                             <li>
-                                                <a href="/chq">Cheque Details</a>
+                                                <a href="/ChartOfAccount">Chart Of Account</a>
+                                            </li>
+                                            <li>
+                                                <a href="/InnerBankTransfer">Internal Account Transfer</a>
                                             </li>
                                         @else
                                         @endif
@@ -621,6 +621,13 @@
                                                 </li>
                                             @else
                                             @endif
+                                        @if($item->chq_details == 1)
+                                            <li>
+                                                <a href="/chq">Cheque Details</a>
+                                            </li>
+                                        @else
+                                        @endif
+
                                     </ul>
                                 </div>
                             </li>
@@ -646,9 +653,7 @@
                                         <li>
                                             <a href="/AssetManagement">Asset Management</a>
                                         </li>
-                                        <li>
-                                            <a href="/InnerBankTransfer">Inner Bank Transfer</a>
-                                        </li>
+
 {{--                                        <li>--}}
 {{--                                            <a href="/AddManualJournal">Asset Manual Journal</a>--}}
 {{--                                        </li>--}}
@@ -675,9 +680,7 @@
                                             <a href="/trialBalanceAccounting">Trial Balance</a>
                                         </li>
 
-                                        <li>
-                                            <a href="/ChartOfAccount">Chart Of Account</a>
-                                        </li>
+
                                         <li>
                                             <a href="/ManualJournal">Manual Journal</a>
                                         </li>

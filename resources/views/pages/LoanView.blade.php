@@ -664,6 +664,9 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
+                                <div class="d-flex justify-content-end mb-2">
+                                    <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
+                                </div>
                                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                                     <table class="table table-striped" id="loanLogTable">
                                         <thead>
@@ -689,6 +692,7 @@
                         </div>
                     </div>
                 </div>
+
 
 
                 <div class="modal fade" id="loanCommentModal" tabindex="-1" aria-labelledby="loanLogModalLabel" aria-hidden="true">
@@ -898,6 +902,8 @@
                     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
                     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
                     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
                     <script>
 
                         $(document).ready(function() {
@@ -1092,6 +1098,22 @@
                                 }
                             });
                         }
+
+                        function downloadExcel() {
+                            // Get the table element
+                            const table = document.getElementById("loanLogTable");
+
+                            // Convert the table to a SheetJS worksheet
+                            const worksheet = XLSX.utils.table_to_sheet(table);
+
+                            // Create a new workbook and append the worksheet
+                            const workbook = XLSX.utils.book_new();
+                            XLSX.utils.book_append_sheet(workbook, worksheet, "Loan Log");
+
+                            // Export the workbook as an Excel file
+                            XLSX.writeFile(workbook, "LoanLog.xlsx");
+                        }
+
                     </script>
 
 @endsection

@@ -423,7 +423,7 @@ class LoanController extends Controller
                 'loan_id' => $id,
                 'level' => $item->type,
                 'level_id' => $item->id,
-                'description' => '',
+                'description' => $item->description,
                 'comment' => '',
                 'user_id' => 0,
                 'date' => '-',

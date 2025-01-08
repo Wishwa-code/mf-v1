@@ -9,6 +9,13 @@ use Illuminate\Support\Facades\Log;
 
 class ChartOfAccountController extends Controller
 {
+
+    protected $bankLogController;
+
+    public function __construct(BankLogController $bankLogController)
+    {
+        $this->bankLogController = $bankLogController;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -66,23 +73,38 @@ class ChartOfAccountController extends Controller
         ]);
 
         // Insert data into DB
-        $inserted = insertWithBranch('chart_of_account',[
-            'code' => $request->input('code'),
-            'acc_name' => $request->input('acc_name'),
-            'acc_type_group' => $request->input('acc_type_group'),
-            'acc_type' => $request->input('acc_type'),
-            'cash_flow_type' => $request->input('cash_flow_type'),
-            'description' => $request->input('description'),
-            'opening_balance' => 0, // set default if needed
-            'current_balance' => 0, // set default if needed
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now()
-        ]);
 
-        if($inserted) {
-            return response()->json(['status' => 'success']);
+        $user_id = (int)session('userid');
+        $Bank = [
+            'Bank_Type' => "ChartOfAccount",
+            'code' => $request->input('code'),
+            'Bank_Name' => $request->input('acc_name'),
+            'Account_Name' => $request->input('acc_name'),
+            'Account_No' => $request->input('code'),
+            'Bank_Branch' => '-',
+            'Account_Balance' => '0.00',
+            'type' => $request->input('acc_type'),
+            'cashflow' => $request->input('cash_flow_type'),
+            'User' => $user_id,
+        ];
+        if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('code', '=', $request->input('code'))->exists()) {
+            return response()->json(["id" => "0"], 200);
         } else {
-            return response()->json(['status' => 'error'], 500);
+            insertWithBranch('chart_of_account',[
+                'code' => $request->input('code'),
+                'acc_name' => $request->input('acc_name'),
+                'acc_type_group' => $request->input('acc_type_group'),
+                'acc_type' => $request->input('acc_type'),
+                'cash_flow_type' => $request->input('cash_flow_type'),
+                'description' => $request->input('description'),
+                'opening_balance' => 0, // set default if needed
+                'current_balance' => 0, // set default if needed
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ]);
+            $insertedId = insertWithBranch('company_bank_accounts', $Bank);
+            $this->bankLogController->index($insertedId,"Account Creation","-","-","credit","0.00");
+            return response()->json(['status' => 'success']);
         }
     }
 
