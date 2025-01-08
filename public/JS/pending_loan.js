@@ -892,6 +892,7 @@ function load_approval_check(id) {
     });
 }
 
+
 function loadChecklistProgress(levelId) {
     $.ajax({
         type: "GET",
@@ -911,8 +912,8 @@ function loadChecklistProgress(levelId) {
                 // Update progress as a fraction (e.g., 1/3)
                 $(`#checklist_progress_${levelId}`).text(progressText);
 
-                // Enable "Approve" button only if all items are completed
-                $(`#approve_btn_${levelId}`).prop('disabled', completed !== total || total === 0);
+                // Enable "Approve" button if all items are completed or if there are no items
+                $(`#approve_btn_${levelId}`).prop('disabled', !(completed === total || total === 0));
             } else {
                 Swal.fire("Error!", "Failed to load checklist progress!", "error");
             }
@@ -922,6 +923,7 @@ function loadChecklistProgress(levelId) {
         },
     });
 }
+
 
 
 
