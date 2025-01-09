@@ -130,74 +130,94 @@ $(document).on('input', '.numeric-input', function () {
 
 function automatePayments() {
     Swal.fire({
-        title: "Processing Payments",
-        html: `
-            <div style="margin-top: 20px;">
-                <div id="progress-container" style="width: 100%; background: #f3f3f3; border-radius: 8px; overflow: hidden; height: 25px;">
-                    <div id="progress-bar" style="height: 100%; width: 0%; background: #4caf50; transition: width 0.3s;"></div>
-                </div>
-                <p style="margin-top: 10px;" id="progress-text">Initializing...</p>
-            </div>
-        `,
-        showConfirmButton: false,
-        allowOutsideClick: false,
-        willOpen: async () => {
-            const rows = $('#loan_table tbody tr');
-            let successCount = 0;
+        title: "Are you sure?",
+        text: "Do you want to process all payments?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, proceed!",
+        cancelButtonText: "Cancel",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Proceed with the payment processing
+            Swal.fire({
+                title: "Processing Payments",
+                html: `
+                    <div style="margin-top: 20px;">
+                        <div id="progress-container" style="width: 100%; background: #f3f3f3; border-radius: 8px; overflow: hidden; height: 25px;">
+                            <div id="progress-bar" style="height: 100%; width: 0%; background: #4caf50; transition: width 0.3s;"></div>
+                        </div>
+                        <p style="margin-top: 10px;" id="progress-text">Initializing...</p>
+                    </div>
+                `,
+                showConfirmButton: false,
+                allowOutsideClick: false,
+                willOpen: async () => {
+                    const rows = $('#loan_table tbody tr');
+                    let successCount = 0;
 
-            for (let i = 0; i < rows.length; i++) {
-                const row = rows[i];
+                    for (let i = 0; i < rows.length; i++) {
+                        const row = rows[i];
 
-                let loan_number = $(row).find('td:eq(0)').text();
-                let payment_amount = $(row).find('input.numeric-input').val();
-                let reduce_balance_loan_id = $(row).find('input[name="loan_id"]').val();
-                let cus_id = $(row).find('input[name="cus_id"]').val();
-                let payment_date = $(row).find('input[name="date_bulk"]').val();
+                        let loan_number = $(row).find('td:eq(0)').text();
+                        let payment_amount = $(row).find('input.numeric-input').val();
+                        let reduce_balance_loan_id = $(row).find('input[name="loan_id"]').val();
+                        let cus_id = $(row).find('input[name="cus_id"]').val();
+                        let payment_date = $(row).find('input[name="date_bulk"]').val();
 
-                if (!payment_amount && !payment_date) continue;
+                        if (!payment_amount && !payment_date) continue;
 
-                if (!payment_amount) {
-                    Swal.fire("Error!", `Payment amount is empty in loan number ${loan_number}`, "error");
-                    return;
-                }
+                        if (!payment_amount) {
+                            Swal.fire("Error!", `Payment amount is empty in loan number ${loan_number}`, "error");
+                            return;
+                        }
 
-                if (!payment_date) {
-                    Swal.fire("Error!", `Payment date is empty in loan number ${loan_number}`, "error");
-                    return;
-                }
+                        if (!payment_date) {
+                            Swal.fire("Error!", `Payment date is empty in loan number ${loan_number}`, "error");
+                            return;
+                        }
 
-                // Update progress text
-                document.getElementById("progress-text").innerText = `Processing payment ${i + 1} of ${rows.length}...`;
+                        // Update progress text
+                        document.getElementById("progress-text").innerText = `Processing payment ${i + 1} of ${rows.length}...`;
 
-                // Update progress bar
-                const progress = ((i + 1) / rows.length) * 100;
-                document.getElementById("progress-bar").style.width = `${progress}%`;
+                        // Update progress bar
+                        const progress = ((i + 1) / rows.length) * 100;
+                        document.getElementById("progress-bar").style.width = `${progress}%`;
 
-                // Perform payment
-                const success = await performPayment(cus_id, payment_amount, reduce_balance_loan_id, payment_date);
-                if (success) {
-                    successCount++;
-                }
-            }
+                        // Perform payment
+                        const success = await performPayment(cus_id, payment_amount, reduce_balance_loan_id, payment_date);
+                        if (success) {
+                            successCount++;
+                        }
+                    }
 
-            if (successCount > 0) {
-                Swal.fire({
-                    icon: "success",
-                    title: "Payments Complete",
-                    text: `${successCount} payments were successfully processed.`,
-                }).then(() => {
-                    window.location.reload();
-                });
-            } else {
-                Swal.fire({
-                    icon: "error",
-                    title: "No Payments Processed",
-                    text: "No valid payments were made. Please check your data.",
-                });
-            }
-        },
+                    if (successCount > 0) {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Payments Complete",
+                            text: `${successCount} payments were successfully processed.`,
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: "error",
+                            title: "No Payments Processed",
+                            text: "No valid payments were made. Please check your data.",
+                        });
+                    }
+                },
+            });
+        } else {
+            // User canceled the action
+            Swal.fire({
+                icon: "info",
+                title: "Action Cancelled",
+                text: "Payment processing was not started.",
+            });
+        }
     });
 }
+
 
 async function performPayment(cus_id, payment_amount, reduce_balance_loan_id, payment_date) {
     let file = $('#file')[0]?.files[0];
