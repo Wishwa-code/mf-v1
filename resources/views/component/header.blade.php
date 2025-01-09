@@ -71,6 +71,27 @@
     .logo-sm {
         font-size: 15px;
     }
+    .enhanced-select {
+        appearance: none; /* Remove default browser styles */
+        background-color: #f3f3f3;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 10px 15px;
+        font-size: 16px;
+        color: #333;
+        cursor: pointer;
+        width: 100%; /* Adjust width as per your requirement */
+    }
+
+    .enhanced-select:focus {
+        border-color: #4caf50; /* Highlight border color */
+        outline: none;
+        box-shadow: 0px 0px 5px rgba(76, 175, 80, 0.5);
+    }
+
+    .enhanced-select option {
+        padding: 10px; /* Add spacing for options */
+    }
 
 </style>
 
@@ -129,13 +150,14 @@
         ?>
         <div class="date-time">
             @if(session('branch_access')===1)
-                <select class="form-control branch-select">
+                <select class="form-control branch-select enhanced-select">
                     @foreach($branch as $item)
                         <option value="{{$item->branch_id}}" {{ session('branch_id') == $item->branch_id ? 'selected' : '' }}>
                             {{$item->Name}} Branch
                         </option>
                     @endforeach
                 </select>
+
             @else
                 <h2 id="date">{{ session('branch_name').' Branch' }}</h2>
             @endif
