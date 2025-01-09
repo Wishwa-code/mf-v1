@@ -115,7 +115,7 @@
                                 </td>
                                 <td>{{ $smsCount }} ( {{ $smsLength }} Characters )</td>
                                 <td>
-                                    <a href="/loanview/{{ $sms->idCustomer_Loan }}" data-toggle="modal" data-target="#messageModal" class="btn btn-warning" data-message="{{ $sms->type === 'OTP' ? preg_replace('/\d{6}/', '#########', $sms->message) : $sms->message }}">
+                                    <a href="#" data-toggle="modal" data-target="#messageModal" class="btn btn-warning" data-message="{{ $sms->type === 'OTP' ? preg_replace('/\d{6}/', '#########', $sms->message) : $sms->message }}">
                                         <i class="bi bi-eye"></i>
                                     </a>
                                 </td>
