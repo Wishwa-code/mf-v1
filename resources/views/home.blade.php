@@ -198,93 +198,20 @@
             </div>
 
 
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="header-title mb-4">Monthly Revenue</h4>
+                        <div id="monthly-revenue-chart"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
 
-{{--            <div class="row">--}}
-{{--                <div class="col-lg-8">--}}
-{{--                    <div class="card">--}}
-{{--                        <div class="card-body">--}}
-{{--                            <div class="card-widgets">--}}
-{{--                                <a href="javascript:;" data-bs-toggle="reload"><i class="ri-refresh-line"></i></a>--}}
-{{--                                <a data-bs-toggle="collapse" href="#weeklysales-collapse" role="button" aria-expanded="false" aria-controls="weeklysales-collapse"><i class="ri-subtract-line"></i></a>--}}
-{{--                                <a href="#" data-bs-toggle="remove"><i class="ri-close-line"></i></a>--}}
-{{--                            </div>--}}
-{{--                            <h5 class="header-title mb-0">Weekly Sales Report</h5>--}}
-
-{{--                            <div id="weeklysales-collapse" class="collapse pt-3 show">--}}
-{{--                                <div dir="ltr">--}}
-{{--                                    <div id="revenue-charts" class="apex-charts" data-colors="#3bc0c3,#1a2942,#d1d7d973"></div>--}}
-{{--                                </div>--}}
-
-{{--                                <div class="row text-center">--}}
-{{--                                    <div class="col">--}}
-{{--                                        <p class="text-muted mt-3">Current Week</p>--}}
-{{--                                        <h3 class=" mb-0">--}}
-{{--                                            <span>LKR 506k</span>--}}
-{{--                                        </h3>--}}
-{{--                                    </div>--}}
-{{--                                    <div class="col">--}}
-{{--                                        <p class="text-muted mt-3">Previous Week</p>--}}
-{{--                                        <h3 class=" mb-0">--}}
-{{--                                            <span>LKR 305k </span>--}}
-{{--                                        </h3>--}}
-{{--                                    </div>--}}
-{{--                                    <div class="col">--}}
-{{--                                        <p class="text-muted mt-3">Conversation</p>--}}
-{{--                                        <h3 class=" mb-0">--}}
-{{--                                            <span>3.27%</span>--}}
-{{--                                        </h3>--}}
-{{--                                    </div>--}}
-{{--                                    <div class="col">--}}
-{{--                                        <p class="text-muted mt-3">Customers</p>--}}
-{{--                                        <h3 class=" mb-0">--}}
-{{--                                            <span>3k</span>--}}
-{{--                                        </h3>--}}
-{{--                                    </div>--}}
-{{--                                </div>--}}
-{{--                            </div>--}}
-
-{{--                        </div> <!-- end card-body-->--}}
-{{--                    </div> <!-- end card-->--}}
-{{--                </div>--}}
-{{--                <!-- end col-->--}}
-{{--                <div class="col-lg-4">--}}
-{{--                    <div class="card">--}}
-{{--                        <div class="card-body">--}}
-{{--                            <div class="card-widgets">--}}
-{{--                                <a href="javascript:;" data-bs-toggle="reload"><i class="ri-refresh-line"></i></a>--}}
-{{--                                <a data-bs-toggle="collapse" href="#yearly-sales-collapse" role="button" aria-expanded="false" aria-controls="yearly-sales-collapse"><i class="ri-subtract-line"></i></a>--}}
-{{--                                <a href="#" data-bs-toggle="remove"><i class="ri-close-line"></i></a>--}}
-{{--                            </div>--}}
-{{--                            <h5 class="header-title mb-0">Yearly Sales Report</h5>--}}
-
-{{--                            <div id="yearly-sales-collapse" class="collapse pt-3 show">--}}
-{{--                                <div dir="ltr">--}}
-{{--                                    <div id="yearly-sales-charts" class="apex-charts" data-colors="#3bc0c3,#1a2942,#d1d7d973"></div>--}}
-{{--                                </div>--}}
-{{--                                <div class="row text-center">--}}
-{{--                                    <div class="col">--}}
-{{--                                        <p class="text-muted mt-3 mb-2">Quarter 1</p>--}}
-{{--                                        <h4 class="mb-0">LKR56.2k</h4>--}}
-{{--                                    </div>--}}
-{{--                                    <div class="col">--}}
-{{--                                        <p class="text-muted mt-3 mb-2">Quarter 2</p>--}}
-{{--                                        <h4 class="mb-0">LKR42.5k</h4>--}}
-{{--                                    </div>--}}
-{{--                                    <div class="col">--}}
-{{--                                        <p class="text-muted mt-3 mb-2">All Time</p>--}}
-{{--                                        <h4 class="mb-0">LKR 102.03k</h4>--}}
-{{--                                    </div>--}}
-{{--                                </div>--}}
-{{--                            </div>--}}
-
-{{--                        </div> <!-- end card-body-->--}}
-{{--                    </div> <!-- end card-->--}}
 
 
-{{--                </div> <!-- end card-->--}}
-{{--            </div> <!-- end col-->--}}
-{{--        @endif--}}
     </div>
 
     </div>
@@ -306,56 +233,101 @@
     <script src="assets/js/pages/dashboard.js"></script>
 
 
-    <script>
-        $(document).ready(function() {
+{{--    <script>--}}
+{{--        $(document).ready(function() {--}}
 
-            var options = {
+{{--            var options = {--}}
+{{--                chart: {--}}
+{{--                    type: 'bar',--}}
+{{--                    height: 350,--}}
+{{--                    width: '100%',--}}
+{{--                },--}}
+{{--                series: [{--}}
+{{--                    name: 'Current Week',--}}
+{{--                    data: [30, 40, 35, 50, 49, 60, 70, 91, 125]--}}
+{{--                }, {--}}
+{{--                    name: 'Previous Week',--}}
+{{--                    data: [10, 20, 15, 30, 25, 35, 40, 50, 65]--}}
+{{--                }],--}}
+{{--                xaxis: {--}}
+{{--                    categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']--}}
+{{--                },--}}
+{{--                colors: ['#3bc0c3', '#1a2942']--}}
+{{--            };--}}
+
+{{--            var chart = new ApexCharts(document.querySelector("#revenue-charts"), options);--}}
+{{--            chart.render();--}}
+{{--        });--}}
+
+{{--        var options = {--}}
+{{--            chart: {--}}
+{{--                type: 'area',--}}
+{{--                height: 350,--}}
+{{--                width: '100%',--}}
+{{--            },--}}
+{{--            series: [{--}}
+{{--                name: 'Quarter 1',--}}
+{{--                data: [56200, 42500] // Replace with your actual sales data for Quarter 1 and Quarter 2--}}
+{{--            }, {--}}
+{{--                name: 'Quarter 2',--}}
+{{--                data: [42500, 65000] // Replace with your actual sales data for Quarter 2 and Quarter 3--}}
+{{--            }],--}}
+{{--            xaxis: {--}}
+{{--                categories: ['Quarter 1', 'Quarter 2'] // Replace with your quarter labels--}}
+{{--            },--}}
+{{--            colors: ['#3bc0c3', '#1a2942']--}}
+{{--        };--}}
+
+{{--        var chart = new ApexCharts(document.querySelector("#yearly-sales-charts"), options);--}}
+{{--        chart.render();--}}
+
+
+{{--    </script>--}}
+
+    <script>
+        $(document).ready(function () {
+            // Options for Monthly Revenue Chart
+            var monthlyRevenueOptions = {
                 chart: {
-                    type: 'bar',
+                    type: 'line',
                     height: 350,
                     width: '100%',
                 },
-                series: [{
-                    name: 'Current Week',
-                    data: [30, 40, 35, 50, 49, 60, 70, 91, 125]
-                }, {
-                    name: 'Previous Week',
-                    data: [10, 20, 15, 30, 25, 35, 40, 50, 65]
-                }],
+                series: [
+                    {
+                        name: 'Revenue',
+                        data: [30000, 40000, 35000, 50000, 60000, 75000, 85000, 90000, 100000, 95000, 110000, 120000], // Example data
+                    },
+                ],
                 xaxis: {
-                    categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                    categories: [
+                        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+                    ], // Months of the year
                 },
-                colors: ['#3bc0c3', '#1a2942']
+                colors: ['#3bc0c3'],
+                stroke: {
+                    curve: 'smooth',
+                },
+                title: {
+                    text: 'Monthly Revenue',
+                    align: 'center',
+                    style: {
+                        fontSize: '16px',
+                        fontWeight: 'bold',
+                    },
+                },
             };
 
-            var chart = new ApexCharts(document.querySelector("#revenue-charts"), options);
-            chart.render();
+            // Render the Monthly Revenue Chart
+            var monthlyRevenueChart = new ApexCharts(
+                document.querySelector('#monthly-revenue-chart'),
+                monthlyRevenueOptions
+            );
+            monthlyRevenueChart.render();
         });
-
-        var options = {
-            chart: {
-                type: 'area',
-                height: 350,
-                width: '100%',
-            },
-            series: [{
-                name: 'Quarter 1',
-                data: [56200, 42500] // Replace with your actual sales data for Quarter 1 and Quarter 2
-            }, {
-                name: 'Quarter 2',
-                data: [42500, 65000] // Replace with your actual sales data for Quarter 2 and Quarter 3
-            }],
-            xaxis: {
-                categories: ['Quarter 1', 'Quarter 2'] // Replace with your quarter labels
-            },
-            colors: ['#3bc0c3', '#1a2942']
-        };
-
-        var chart = new ApexCharts(document.querySelector("#yearly-sales-charts"), options);
-        chart.render();
-
-
     </script>
+
 
 
 
