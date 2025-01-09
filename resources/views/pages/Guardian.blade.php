@@ -67,10 +67,10 @@
                                         <label for="simpleinput" class="form-label">Date Of Birth</label>
                                         <input type="text" id="dob" name="dob" class="form-control">
                                     </div>
-{{--                                    <div class="mb-3">--}}
-{{--                                        <label for="simpleinput" class="form-label">Address</label>--}}
-{{--                                        <input type="text" id="address" name="address" class="form-control">--}}
-{{--                                    </div>--}}
+                                    {{--                                    <div class="mb-3">--}}
+                                    {{--                                        <label for="simpleinput" class="form-label">Address</label>--}}
+                                    {{--                                        <input type="text" id="address" name="address" class="form-control">--}}
+                                    {{--                                    </div>--}}
                                     <div class="row mb-3">
                                         <label for="occu_address_01" class="form-label">Address</label>
                                         <div class="col-md-4">
@@ -101,7 +101,8 @@
                                         <label for="simpleinput" class="form-label">City</label>
                                         <select  id="city" name="city" class="form-control">
                                             <?php
-                                            $cities = "SELECT * FROM cities";
+                                            $query = "SELECT * FROM cities";
+                                            $cities = DB::select($query);
                                             ?>
                                             @foreach($cities as $item)
                                                 <option value="{{$item->name_en}}">{{$item->name_en}}</option>
@@ -182,7 +183,7 @@
                             </div>
 
                             <button type="button" class="btn btn-success" style="float: right" onclick="validateSubmitGuardian(event)"><i
-                                    class="bi bi-save"></i>&nbsp;&nbsp;Save Guarantee</button>
+                                        class="bi bi-save"></i>&nbsp;&nbsp;Save Guarantee</button>
                         </div>
 
 

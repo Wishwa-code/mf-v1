@@ -986,6 +986,18 @@
                             <b><span class="amount"  id="capital_balance">9,000.00</span></b>
                         </div>
                     </div>
+                    <div class="payment-info balance">
+                        <div class="item">
+                            <span class="description">Penalty Balance</span>
+                            <b><span class="amount"  id="panelty_balance">9,000.00</span></b>
+                        </div>
+                    </div>
+                    <div class="payment-info balance">
+                        <div class="item">
+                            <span class="description">Total Balance</span>
+                            <b><span class="amount"  id="tot_balance">9,000.00</span></b>
+                        </div>
+                    </div>
                     <div class="payment-info">
                         <div class="item">
                             <span class="description">Payment Type</span>
@@ -1212,6 +1224,17 @@
                         $("#loyalty_points").text(parseFloat(data.points_to_add).toFixed(2));
                         $("#loan_number").text(loan.Loan_No);
                         $("#payment_date_view").text(payment.Date);
+                        if (parseFloat(data.panelty_balance) > 0) {
+                            $("#panelty_balance").text(data.panelty_balance);
+                            $("#tot_balance").text(data.tot_balance);
+
+                            // Show the relevant sections if they are hidden
+                            $(".payment-info.balance").show();
+                        } else {
+                            // Optionally hide the sections if no penalty balance exists
+                            $(".payment-info.balance").hide();
+                        }
+
 
                         if (payment.Payment_type === "Cheque") {
 

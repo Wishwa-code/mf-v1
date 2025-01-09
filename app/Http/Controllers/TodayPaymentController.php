@@ -2137,8 +2137,11 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
 
         }
 
+        $panelty_balance = DB::table('installments')->where('Customer_Loan_idCustomer_Loan', '=', $customer_payment->Customer_Loan_idCustomer_Loan)->sum('Panalty_Balance');
+        $tot_balance = DB::table('installments')->where('Customer_Loan_idCustomer_Loan', '=', $customer_payment->Customer_Loan_idCustomer_Loan)->sum('Total_Balance');
 
-        return response()->json(['payment' => $customer_payment, 'cheque_details' => $cheque_details, 'loan' => $loan, 'customer' => $customer, 'user' => $user, 'points_to_add' => $points_to_add, 'point_check' => $company->points], 200);
+
+        return response()->json(['tot_balance'=>$tot_balance,'panelty_balance'=>$panelty_balance,'payment' => $customer_payment, 'cheque_details' => $cheque_details, 'loan' => $loan, 'customer' => $customer, 'user' => $user, 'points_to_add' => $points_to_add, 'point_check' => $company->points], 200);
     }
 
 
