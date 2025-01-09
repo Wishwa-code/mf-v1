@@ -81,7 +81,7 @@
                                 <th>Points</th>
                                 <th>Location</th>
                                 <th>Status</th>
-                                <th>Change</th>
+                                <th>Blacklist</th>
                                 <th>Action</th>
                             </tr>
                             </thead>
@@ -104,13 +104,13 @@
                                     @if($customer->Status == "1")
                                         <td class="text-center"><span class="badge bg-primary">Active</span></td>
                                     @else
-                                        <td class="text-center"><span class="badge bg-danger">Inactive</span></td>
+                                        <td class="text-center"><span class="badge bg-danger">Blacklisted</span></td>
                                     @endif
-                                    <td><button class="btn btn-success" onclick="change_status({{$customer->idCustomer}})">Change Status</button></td>
+                                    <td><button class="btn btn-warning" onclick="change_status({{$customer->idCustomer}})">Move To Blacklist</button></td>
                                     <td>
                                         <div class="d-flex justify-content-center">
                                             <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#view-modal" onclick="load_document({{$customer->idCustomer}});">
-                                                <i class="bi bi-eye fs-4"></i>
+                                                <i class="bi bi-envelope-check fs-4"></i>
                                             </button>
                                             <button type="button" class="btn btn-light edit-btn" data-bs-toggle="modal" data-bs-target="#standard-modal"
                                                     data-first-name="{{$customer->First_Name}}" data-last-name="{{$customer->Last_Name}}" data-title="{{$customer->Title}}" data-civil="{{$customer->civil_status}}"
@@ -126,18 +126,25 @@
                                             >
                                                 <i class="bi bi-pencil fs-4"></i></button>
                                             <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#standard-modal_2" onclick="set_cus({{$customer->idCustomer}})">
-                                                <i class="bi bi-camera fs-4"></i>
+                                                <i class="bi bi-envelope-paper fs-4"></i>
                                             </button>
                                             <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#bank-modal" onclick="setbankid({{$customer->idCustomer}})">
-                                                <i class="bi bi-bank fs-4"></i>
+                                                <i class="bi bi-bank2 fs-4"></i>
                                             </button>
                                             <button type="button" class="btn btn-danger" onclick="deleteCustomer({{$customer->idCustomer}})">
                                                 <i class="bi bi-trash fs-4"></i>
                                             </button>
-                                            <a href="{{ Storage::url($customer->Cus_phto) }}" target="_blank" class="btn btn-warning">
-                                                <i class="bi bi-camera fs-4"></i>
-                                            </a>
-                                            <a href="/customer_road_map/{{$customer->idCustomer}}" target="_blank" class="btn btn-warning"><i class="bi bi-file-earmark-pdf fs-4"></i></a>
+                                            @if (!empty($customer->Cus_phto) && Storage::exists($customer->Cus_phto))
+                                                <a href="{{ Storage::url($customer->Cus_phto) }}" target="_blank" class="btn btn-dark">
+                                                    <i class="bi bi-people fs-4"></i>
+                                                </a>
+                                            @else
+                                                <button class="btn btn-dark" disabled>
+                                                    <i class="bi bi-people fs-4"></i>
+                                                </button>
+                                            @endif
+
+                                            <a href="/customer_road_map/{{$customer->idCustomer}}" target="_blank" class="btn btn-primary"><i class="bi bi-bar-chart-steps fs-4"></i></a>
                                         </div>
                                     </td>
                                 </tr>
