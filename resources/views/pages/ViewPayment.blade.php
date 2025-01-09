@@ -480,7 +480,19 @@
                     <div class="payment-info">
                         <div class="item">
                             <span class="description">Balance Amount</span>
-                            <b><span class="amount"  id="capital_balance">9,000.00</span></b>
+                            <b><span class="amount"  id="capital_balance">0.00</span></b>
+                        </div>
+                    </div>
+                    <div class="payment-info balance">
+                        <div class="item">
+                            <span class="description">Penalty Balance</span>
+                            <b><span class="amount"  id="panelty_balance">0.00</span></b>
+                        </div>
+                    </div>
+                    <div class="payment-info balance">
+                        <div class="item">
+                            <span class="description">Total Balance</span>
+                            <b><span class="amount"  id="tot_balance">9,000.00</span></b>
                         </div>
                     </div>
                     <div class="payment-info">

@@ -36,7 +36,7 @@ class PendingLoanController extends Controller
         $group = tableWithBranch('customer_group')->get();
         $loan_category = tableWithBranch('loan_category')->get();
         $customers = tableWithBranch('customer')->get();
-        $bank = tableWithBranch('company_bank_accounts')->where('Bank_Name','!=','Collector')->where('status','=','1')->get();
+        $bank = tableWithBranch('company_bank_accounts')->where('Bank_Type','=','Bank')->where('status','=','1')->get();
         if ($collector == 1) {
             $bank = DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $user_id)->where('status', '=', '1')->get();
         }

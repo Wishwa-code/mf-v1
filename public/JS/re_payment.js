@@ -199,7 +199,16 @@ function load_payment_reciept(id) {
                 $("#payment_time").text(payment.time);
                 $("#payment_type_view").text(payment.Payment_type);
 
+                if (parseFloat(data.panelty_balance) > 0) {
+                    $("#panelty_balance").text(parseFloat(data.panelty_balance).toFixed(2));
+                    $("#tot_balance").text(parseFloat(data.tot_balance).toFixed(2));
 
+                    // Show the relevant sections if they are hidden
+                    $(".payment-info.balance").show();
+                } else {
+                    // Optionally hide the sections if no penalty balance exists
+                    $(".payment-info.balance").hide();
+                }
                 if (payment.Payment_type === "Cheque") {
                     console.log(chequeDetails.Cheque_No
                     );

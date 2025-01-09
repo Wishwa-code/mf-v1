@@ -63,7 +63,7 @@
                                                         <label for="bank_code" class="form-label">
                                                             Account Code
                                                             <span style="color: red; font-weight: bold; font-size: 0.9rem; display: block; margin-top: 5px; background-color: #ffe6e6; padding: 5px; border-radius: 5px;">
-                    This code will be used as Chart Of Account code. It cannot be duplicate.
+                    This code will be used as a Chart of Accounts code. It cannot be duplicated.
                 </span>
                                                         </label>
                                                         <input type="text" id="bank_code" class="form-control">
@@ -97,7 +97,7 @@
                                                     <input type="text" id="branch" class="form-control">
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <label for="account_number" class="form-label">Opening Balance</label>
+                                                    <label for="account_number" class="form-label">Account Balance</label>
                                                     <input type="text" id="opening_balance" class="form-control">
                                                 </div>
                                             </div>
@@ -112,7 +112,7 @@
                                                     <th>Account Name</th>
                                                     <th>Account Number</th>
                                                     <th>Branch</th>
-                                                    <th>Opening Balance</th>
+                                                    <th>Account Balance</th>
                                                     <th>User</th>
                                                     <th>Status</th>
                                                     <th style="text-align: center">Action</th>
@@ -126,7 +126,7 @@
                                                             <td>{{$item->Account_Name}}</td>
                                                             <td>{{$item->Account_No}}</td>
                                                             <td>{{$item->Bank_Branch}}</td>
-                                                            <td>{{$item->Account_Balance}}</td>
+                                                            <td>{{number_format($item->Account_Balance,2,'.',',')}}</td>
                                                             <td>{{$item->Full_Name}}</td>
                                                             @if($item->status==="1")
                                                                 <td><span style="color: green">Active</span></td>
