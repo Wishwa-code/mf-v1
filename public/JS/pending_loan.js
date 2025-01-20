@@ -733,78 +733,80 @@ function load_document_check(id) {
     });
 }
 
+//
+// function load_approval_check(id) {
+//     $.ajax({
+//         type: "GET",
+//         url: "/load_loan_approval/" + id,
+//         headers: {
+//             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+//         },
+//         success: function (data, textStatus, xhr) {
+//             if (xhr.status === 200) {
+//                 let login_designation = data.login_designation;
+//
+//                 // Clear the existing rows
+//                 $('#approval_table tbody').empty();
+//
+//                 let designationNames = "";
+//                 let uniqueDesignations = new Set();
+//
+//                 // Process designations
+//                 data.designation.forEach(function (document) {
+//                     if (!uniqueDesignations.has(document.designation)) {
+//                         uniqueDesignations.add(document.designation);
+//                         designationNames += (designationNames ? ", " : "") + document.designation;
+//                     }
+//                 });
+//
+//                 let allUsersHaveIds = true; // Flag for "Issue Loan" button
+//
+//                 // Iterate over approval items
+//                 data.item.forEach(function (document, index) {
+//                     if (document.user_id === 0) allUsersHaveIds = false;
+//
+//                     let newRow = `<tr>
+//                         <td hidden>${document.id}</td>
+//                         <td>${document.level}</td>
+//                         <td>${designationNames}</td>
+//                         <td>${document.description}</td>
+//                         <td><input type="text" class="form-control" value="${document.comment}" id="des_${index}"></td>
+//                         <td>
+//                             <input type="button" class="btn btn-primary" value="Approve" id="approve_btn_${document.level_id}" disabled>
+//                         </td>
+//                         <td>${document.user_id === 0 ? '-' : document.Full_Name}</td>
+//                         <td>${document.date}</td>
+//                         <td>
+//                             <button class="btn btn-info btn-sm" onclick="toggleChecklist(${document.level_id})">
+//                                 View Checklist (<span id="checklist_progress_${document.level_id}">0%</span>)
+//                             </button>
+//                         </td>
+//                     </tr>
+//                     <tr id="checklist_row_${document.level_id}" style="display: none;">
+//                         <td colspan="9">
+//                             <div id="checklist_container_${document.level_id}" class="p-3 bg-light"></div>
+//                         </td>
+//                     </tr>`;
+//
+//                     $('#approval_table tbody').append(newRow);
+//
+//                     // Load checklist progress
+//                     loadChecklistProgress(document.level_id);
+//                 });
+//
+//                 // Enable or disable "Issue Loan" button
+//                 $('#issue_loan_btn').prop('disabled', !allUsersHaveIds);
+//             } else {
+//                 Swal.fire("Error!", "Failed to load data!", "error");
+//             }
+//         },
+//         error: function (xhr) {
+//             console.log("Error:", xhr.responseText);
+//         },
+//     });
+// }
 
 function load_approval_check(id) {
-    $.ajax({
-        type: "GET",
-        url: "/load_loan_approval/" + id,
-        headers: {
-            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-        },
-        success: function (data, textStatus, xhr) {
-            if (xhr.status === 200) {
-                let login_designation = data.login_designation;
-
-                // Clear the existing rows
-                $('#approval_table tbody').empty();
-
-                let designationNames = "";
-                let uniqueDesignations = new Set();
-
-                // Process designations
-                data.designation.forEach(function (document) {
-                    if (!uniqueDesignations.has(document.designation)) {
-                        uniqueDesignations.add(document.designation);
-                        designationNames += (designationNames ? ", " : "") + document.designation;
-                    }
-                });
-
-                let allUsersHaveIds = true; // Flag for "Issue Loan" button
-
-                // Iterate over approval items
-                data.item.forEach(function (document, index) {
-                    if (document.user_id === 0) allUsersHaveIds = false;
-
-                    let newRow = `<tr>
-                        <td hidden>${document.id}</td>
-                        <td>${document.level}</td>
-                        <td>${designationNames}</td>
-                        <td>${document.description}</td>
-                        <td><input type="text" class="form-control" value="${document.comment}" id="des_${index}"></td>
-                        <td>
-                            <input type="button" class="btn btn-primary" value="Approve" id="approve_btn_${document.level_id}" disabled>
-                        </td>
-                        <td>${document.user_id === 0 ? '-' : document.Full_Name}</td>
-                        <td>${document.date}</td>
-                        <td>
-                            <button class="btn btn-info btn-sm" onclick="toggleChecklist(${document.level_id})">
-                                View Checklist (<span id="checklist_progress_${document.level_id}">0%</span>)
-                            </button>
-                        </td>
-                    </tr>
-                    <tr id="checklist_row_${document.level_id}" style="display: none;">
-                        <td colspan="9">
-                            <div id="checklist_container_${document.level_id}" class="p-3 bg-light"></div>
-                        </td>
-                    </tr>`;
-
-                    $('#approval_table tbody').append(newRow);
-
-                    // Load checklist progress
-                    loadChecklistProgress(document.level_id);
-                });
-
-                // Enable or disable "Issue Loan" button
-                $('#issue_loan_btn').prop('disabled', !allUsersHaveIds);
-            } else {
-                Swal.fire("Error!", "Failed to load data!", "error");
-            }
-        },
-        error: function (xhr) {
-            console.log("Error:", xhr.responseText);
-        },
-    });
-}function load_approval_check(id) {
     $.ajax({
         type: "GET",
         url: "/load_loan_approval/" + id,
