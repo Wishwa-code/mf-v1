@@ -10,6 +10,7 @@ use App\Http\Controllers\RouteController;
 use App\Http\Controllers\TodayPaymentController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\ChartOfAccountController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -568,3 +569,9 @@ Route::post('/activate-branch/{id}','\App\Http\Controllers\BranchController@acti
 
 Route::get('/load_checklist/{levelId}/{loan_id}','\App\Http\Controllers\LoanCategoryController@loadChecklist')->name('loadChecklist');
 Route::post('/update_checklist/{itemId}','\App\Http\Controllers\LoanCategoryController@updateChecklist')->name('updateChecklist');
+
+
+
+Route::get('/user/get-details/{id}', [UserController::class, 'getUserDetails']);
+Route::post('/user/update', [UserController::class, 'updateUser']);
+Route::post('/user/reset-password/{id}', [UserController::class, 'resetPassword']);
