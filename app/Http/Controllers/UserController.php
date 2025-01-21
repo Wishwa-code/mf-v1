@@ -690,4 +690,63 @@ class UserController extends Controller
     }
 
 
+    public function getUserDetails($id)
+    {
+        $user = DB::table('user')->where('id', $id)->first();
+        return response()->json($user);
+    }
+
+
+    public function updateUser(Request $request)
+    {
+        // Validate the request inputs
+        $request->validate([
+            'epf_no' => 'required',
+            'desi' => 'required',
+            'nic' => 'required',
+            'full_name' => 'required',
+            'email' => 'required|email',
+            'tp' => 'required',
+        ]);
+
+        Log::info('Updating user:', $request->all());  // Log the request data for debugging
+
+        // Use DB::table to update the user record in the 'users' table
+        $updated = DB::table('user')
+            ->where('email', $request->email) // Find the user by id
+            ->update([
+                'Epf_no' => $request->epf_no,
+                'Designation' => $request->desi,
+                'Nic' => $request->nic,
+                'Full_Name' => $request->full_name,
+                'TP' => $request->tp,
+                'lending_officer' => $request->lending_officer ? 1 : 0,
+                'collector' => $request->collecting_officer ? 1 : 0,
+                'branch_id' => $request->branch,
+                'branch_access' => $request->branch_access ? 1 : 0,
+            ]);
+
+        // Check if the update was successful and return response
+        if ($updated) {
+            return response()->json(['success' => true]);
+        } else {
+            return response()->json(['success' => false, 'message' => 'No changes made or user not found']);
+        }
+    }
+
+    public function resetPassword($id,Request $request)
+    {
+        $updated = DB::table('user')
+            ->where('id', $id)
+            ->update(['password' => Hash::make($request->newPassword)]);
+
+        if ($updated) {
+            return response()->json(['success' => true]);
+        } else {
+            return response()->json(['success' => false]);
+        }
+    }
+
+
+
 }
