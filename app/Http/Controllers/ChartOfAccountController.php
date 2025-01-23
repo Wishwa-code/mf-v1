@@ -22,7 +22,7 @@ class ChartOfAccountController extends Controller
     public function index(Request $request, $group = null)
     {
         // Base query
-        $query = tableWithBranch('chart_of_account');
+        $query = tableWithBranch('company_bank_accounts');
 
         // Filter by group (if not 'all')
         if ($group && $group !== 'all') {
@@ -41,6 +41,9 @@ class ChartOfAccountController extends Controller
         if ($request->has('type') && !empty($request->type)) {
             $query->where('acc_type', 'LIKE', '%' . $request->type . '%');
         }
+
+        $query->where('Bank_Type', '!=', 'Bank');
+        $query->where('Bank_Type', '!=', 'Collector');
 
         // Fetch the filtered data
         $data = $query->get();
@@ -85,6 +88,7 @@ class ChartOfAccountController extends Controller
             'Account_Balance' => '0.00',
             'type' => $request->input('acc_type'),
             'cashflow' => $request->input('cash_flow_type'),
+            'acc_type_group' => $request->input('acc_type_group'),
             'User' => $user_id,
         ];
         if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('code', '=', $request->input('code'))->exists()) {
@@ -328,12 +332,10 @@ class ChartOfAccountController extends Controller
 
     public function fetchLedger($account)
     {
-        // Extract the first part of the account value
-        $accountCode = explode('-', $account)[0];
-
         // Fetch matching records from the `manual_journal_has_amount` table
-        $data = tableWithBranch('manual_journal_has_amount')
-            ->where('account', 'LIKE', "$accountCode%") // Match records starting with accountCode
+        $data = tableWithBranch('company_bank_has_log')
+            ->where('Bank_Account_Id', '=',$account) // Match records starting with accountCode
+            ->orderBy('id')
             ->get();
 
         // Return data as JSON

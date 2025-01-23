@@ -325,7 +325,7 @@ class UserController extends Controller
             ->whereNotIn('Panelty_date', $poyaDates) // Exclude dates in $poya
             ->select('installments.*', 'customer_loan.Panalty_Rate','customer_loan.idCustomer_Loan','customer_loan.Customer_idCustomer')
             ->get();
-        Log::info($installment);
+
 
         foreach ($installment as $item){
 
@@ -370,6 +370,12 @@ class UserController extends Controller
                 'user' => $user_id,
                 'branch_id' => session('branch_id')
             ]);
+            $bank_id=tableWithBranch('company_bank_accounts')
+                ->where('Bank_Type','=','System_default_9')
+                ->first();
+
+//            $this->bankLogController->index($bank_id->Idbank,"Loan Document Chargers",$bank_log_doc_comment,"-","debit",$sumAmount);
+
 
         }
 

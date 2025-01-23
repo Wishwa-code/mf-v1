@@ -444,38 +444,7 @@ class TodayPaymentController extends Controller
                 ]);
 
 
-                $loan_for_bank = tableWithBranch('customer_loan')
-                    ->where('idCustomer_Loan', '=', $loan_id)
-                    ->first();
-                $bank_log_comment = "Loan Number : {$loan_for_bank->Loan_No}\nLoan Amount : {$loan_for_bank->Amount}\n";
-                $bank_account_company = $request->bank_account_company;
-                if ($payment_type === "Bank Deposit") {
-                    $this->bankLogController->index($bank_account_company, "Loan Payment", $bank_log_comment, "Bank Deposit", "credit", $payment_amount,$savedId);
-                } else if ($payment_type === "Collector") {
-                    $this->bankLogController->index($bank_account_company, "Loan Payment", $bank_log_comment, "Collector Deposit", "credit", $payment_amount,$savedId);
-                } else if ($payment_type === "Cash") {
-                    $bank_account_company = DB::table('company_bank_accounts')
-                        ->where('branch_id', session('branch_id'))
-                        ->whereRaw('LOWER(Account_No) = ?', ['cash'])  // Case-insensitive comparison
-                        ->value('Idbank');
-                    $this->bankLogController->index($bank_account_company, "Loan Payment", $bank_log_comment, "Cash", "credit", $payment_amount,$savedId);
-                } else if ($payment_type === "Cheque") {
-                    DB::table('cheque_details')->insert([
-                        'Date_Time' => date('Y-m-d H:i:s'),
-                        'Type' => "Receive",
-                        'Company_Account' => $cheque_issue_bank,
-                        'Description' => "Customer payment",
-                        'Amount' => $payment_amount,
-                        'Cheque_No' => $chq_number,
-                        'Cheque_Type' => $chq_type,
-                        'Name_On_The_Cheque' => $name_on_cheque,
-                        'Cheque_Date' => $chq_date,
-                        'Status' => '0',
-                        'Note' => '-',
-                        'Payment_id' => $savedId,
-                        'branch_id' => session('branch_id')
-                    ]);
-                }
+
 
                 $customer_loan = tableWithBranch('customer_loan')->where('idCustomer_Loan', '=', $loan_id)->first();
 
@@ -689,6 +658,86 @@ class TodayPaymentController extends Controller
                 );
                 $this->capitalBalanceController->index($loan_id);
 
+
+                $loan_for_bank = tableWithBranch('customer_loan')
+                    ->where('idCustomer_Loan', '=', $loan_id)
+                    ->first();
+                $bank_log_comment = "Loan Number : {$loan_for_bank->Loan_No}\nLoan Amount : {$loan_for_bank->Amount}\n";
+                $bank_account_company = $request->bank_account_company;
+
+                $capital_id=tableWithBranch('company_bank_accounts')
+                    ->where('Bank_Type','=','System_default_1')
+                    ->first();
+
+                $interest_id=tableWithBranch('company_bank_accounts')
+                    ->where('Bank_Type','=','System_default_2')
+                    ->first();
+
+                $panelty_id=tableWithBranch('company_bank_accounts')
+                    ->where('Bank_Type','=','System_default_5')
+                    ->first();
+
+
+                if ($payment_type === "Bank Deposit") {
+                    //capital
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Bank Deposit", "credit", $capital_balance_tot_paid,$savedId);
+                    $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Bank Deposit", "debit", $capital_balance_tot_paid,$savedId);
+
+                    //interest
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Bank Deposit", "credit", $Interest_Balance_tot_paid,$savedId);
+                    $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Bank Deposit", "debit", $Interest_Balance_tot_paid,$savedId);
+
+                    //panelty
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Bank Deposit", "credit", $Panalty_Balance_tot_paid,$savedId);
+                    $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Bank Deposit", "debit", $Panalty_Balance_tot_paid,$savedId);
+                } else if ($payment_type === "Collector") {
+                    //capital
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Collector Deposit", "credit", $capital_balance_tot_paid,$savedId);
+                    $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Collector Deposit", "debit", $capital_balance_tot_paid,$savedId);
+
+                    //interest
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Collector Deposit", "credit", $Interest_Balance_tot_paid,$savedId);
+                    $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Collector Deposit", "debit", $Interest_Balance_tot_paid,$savedId);
+
+                    //panelty
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Collector Deposit", "credit", $Panalty_Balance_tot_paid,$savedId);
+                    $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Collector Deposit", "debit", $Panalty_Balance_tot_paid,$savedId);
+                } else if ($payment_type === "Cash") {
+                    $bank_account_company = DB::table('company_bank_accounts')
+                        ->where('branch_id', session('branch_id'))
+                        ->whereRaw('LOWER(Account_No) = ?', ['cash'])  // Case-insensitive comparison
+                        ->value('Idbank');
+                    //capital
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Cash", "credit", $capital_balance_tot_paid,$savedId);
+                    $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Cash", "debit", $capital_balance_tot_paid,$savedId);
+
+                    //interest
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Cash", "credit", $Interest_Balance_tot_paid,$savedId);
+                    $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Cash", "debit", $Interest_Balance_tot_paid,$savedId);
+
+                    //panelty
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Cash", "credit", $Panalty_Balance_tot_paid,$savedId);
+                    $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Cash", "debit", $Panalty_Balance_tot_paid,$savedId);
+
+
+                } else if ($payment_type === "Cheque") {
+                    DB::table('cheque_details')->insert([
+                        'Date_Time' => date('Y-m-d H:i:s'),
+                        'Type' => "Receive",
+                        'Company_Account' => $cheque_issue_bank,
+                        'Description' => "Customer payment",
+                        'Amount' => $payment_amount,
+                        'Cheque_No' => $chq_number,
+                        'Cheque_Type' => $chq_type,
+                        'Name_On_The_Cheque' => $name_on_cheque,
+                        'Cheque_Date' => $chq_date,
+                        'Status' => '0',
+                        'Note' => '-',
+                        'Payment_id' => $savedId,
+                        'branch_id' => session('branch_id')
+                    ]);
+                }
+
                 if ($enable_saving_process == "Yes") {
                     $saving_account = tableWithBranch('Customer_Saving_Accounts')
                         ->where('Loan_Id', '=', $loan_id)
@@ -736,39 +785,6 @@ class TodayPaymentController extends Controller
                     'Payment_type' => $payment_type,
                     'branch_id' => session('branch_id')
                 ]);
-
-                $loan_for_bank = tableWithBranch('customer_loan')
-                    ->where('idCustomer_Loan', '=', $loan_id)
-                    ->first();
-                $bank_log_comment = "Loan Number : {$loan_for_bank->Loan_No}\nLoan Amount : {$loan_for_bank->Amount}\n";
-                $bank_account_company = $request->bank_account_company;
-                if ($payment_type === "Bank Deposit") {
-                    $this->bankLogController->index($bank_account_company, "Loan Payment", $bank_log_comment, "Bank Deposit", "credit", $payment_amount,$savedId);
-                } else if ($payment_type === "Collector") {
-                    $this->bankLogController->index($bank_account_company, "Loan Payment", $bank_log_comment, "Collector Deposit", "credit", $payment_amount,$savedId);
-                } else if ($payment_type === "Cash") {
-                    $bank_account_company = DB::table('company_bank_accounts')
-                        ->where('branch_id', session('branch_id'))
-                        ->whereRaw('LOWER(Account_No) = ?', ['cash'])  // Case-insensitive comparison
-                        ->value('Idbank');
-                    $this->bankLogController->index($bank_account_company, "Loan Payment", $bank_log_comment, "Cash", "credit", $payment_amount,$savedId);
-                } else if ($payment_type === "Cheque") {
-                    DB::table('cheque_details')->insert([
-                        'Date_Time' => date('Y-m-d H:i:s'),
-                        'Type' => "Receive",
-                        'Company_Account' => $cheque_issue_bank,
-                        'Description' => "Customer payment",
-                        'Amount' => $payment_amount,
-                        'Cheque_No' => $chq_number,
-                        'Cheque_Type' => $chq_type,
-                        'Name_On_The_Cheque' => $name_on_cheque,
-                        'Cheque_Date' => $chq_date,
-                        'Status' => '0',
-                        'Note' => '-',
-                        'Payment_id' => $savedId,
-                        'branch_id' => session('branch_id')
-                    ]);
-                }
 
                 $customer_loan = tableWithBranch('customer_loan')->where('idCustomer_Loan', '=', $loan_id)->first();
 
@@ -984,6 +1000,90 @@ class TodayPaymentController extends Controller
                 );
                 $this->capitalBalanceController->index($loan_id);
 
+
+
+                $loan_for_bank = tableWithBranch('customer_loan')
+                    ->where('idCustomer_Loan', '=', $loan_id)
+                    ->first();
+                $bank_log_comment = "Loan Number : {$loan_for_bank->Loan_No}\nLoan Amount : {$loan_for_bank->Amount}\n";
+                $bank_account_company = $request->bank_account_company;
+
+                $capital_id=tableWithBranch('company_bank_accounts')
+                    ->where('Bank_Type','=','System_default_1')
+                    ->first();
+
+                $interest_id=tableWithBranch('company_bank_accounts')
+                    ->where('Bank_Type','=','System_default_2')
+                    ->first();
+
+                $panelty_id=tableWithBranch('company_bank_accounts')
+                    ->where('Bank_Type','=','System_default_5')
+                    ->first();
+
+
+                if ($payment_type === "Bank Deposit") {
+                    //capital
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Bank Deposit", "credit", $capital_balance_tot_paid,$savedId);
+                    $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Bank Deposit", "debit", $capital_balance_tot_paid,$savedId);
+
+                    //interest
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Bank Deposit", "credit", $Interest_Balance_tot_paid,$savedId);
+                    $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Bank Deposit", "debit", $Interest_Balance_tot_paid,$savedId);
+
+                    //panelty
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Bank Deposit", "credit", $Panalty_Balance_tot_paid,$savedId);
+                    $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Bank Deposit", "debit", $Panalty_Balance_tot_paid,$savedId);
+                } else if ($payment_type === "Collector") {
+                    //capital
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Collector Deposit", "credit", $capital_balance_tot_paid,$savedId);
+                    $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Collector Deposit", "debit", $capital_balance_tot_paid,$savedId);
+
+                    //interest
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Collector Deposit", "credit", $Interest_Balance_tot_paid,$savedId);
+                    $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Collector Deposit", "debit", $Interest_Balance_tot_paid,$savedId);
+
+                    //panelty
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Collector Deposit", "credit", $Panalty_Balance_tot_paid,$savedId);
+                    $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Collector Deposit", "debit", $Panalty_Balance_tot_paid,$savedId);
+                } else if ($payment_type === "Cash") {
+                    $bank_account_company = DB::table('company_bank_accounts')
+                        ->where('branch_id', session('branch_id'))
+                        ->whereRaw('LOWER(Account_No) = ?', ['cash'])  // Case-insensitive comparison
+                        ->value('Idbank');
+                    //capital
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Cash", "credit", $capital_balance_tot_paid,$savedId);
+                    $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Cash", "debit", $capital_balance_tot_paid,$savedId);
+
+                    //interest
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Cash", "credit", $Interest_Balance_tot_paid,$savedId);
+                    $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Cash", "debit", $Interest_Balance_tot_paid,$savedId);
+
+                    //panelty
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Cash", "credit", $Panalty_Balance_tot_paid,$savedId);
+                    $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Cash", "debit", $Panalty_Balance_tot_paid,$savedId);
+
+
+                } else if ($payment_type === "Cheque") {
+                    DB::table('cheque_details')->insert([
+                        'Date_Time' => date('Y-m-d H:i:s'),
+                        'Type' => "Receive",
+                        'Company_Account' => $cheque_issue_bank,
+                        'Description' => "Customer payment",
+                        'Amount' => $payment_amount,
+                        'Cheque_No' => $chq_number,
+                        'Cheque_Type' => $chq_type,
+                        'Name_On_The_Cheque' => $name_on_cheque,
+                        'Cheque_Date' => $chq_date,
+                        'Status' => '0',
+                        'Note' => '-',
+                        'Payment_id' => $savedId,
+                        'branch_id' => session('branch_id')
+                    ]);
+                }
+
+
+
+
                 if ($enable_saving_process == "Yes") {
                     $saving_account = tableWithBranch('Customer_Saving_Accounts')
                         ->where('Loan_Id', '=', $loan_id)
@@ -1034,34 +1134,7 @@ class TodayPaymentController extends Controller
                 ]);
 
 
-                $loan_for_bank = tableWithBranch('customer_loan')
-                    ->where('idCustomer_Loan', '=', $loan_id)
-                    ->first();
-                $bank_log_comment = "Loan Number : {$loan_for_bank->Loan_No}\nLoan Amount : {$loan_for_bank->Amount}\n";
-                $bank_account_company = $request->bank_account_company;
-                if ($payment_type === "Bank Deposit") {
-                    $this->bankLogController->index($bank_account_company, "Loan Payment", $bank_log_comment, "Bank Deposit", "credit", $payment_amount,$savedId);
-                } else if ($payment_type === "Collector") {
-                    $this->bankLogController->index($bank_account_company, "Loan Payment", $bank_log_comment, "Collector Deposit", "credit", $payment_amount,$savedId);
-                } else if ($payment_type === "Cash") {
-                    $this->bankLogController->index($bank_account_company, "Loan Payment", $bank_log_comment, "Cash", "credit", $payment_amount,$savedId);
-                } else if ($payment_type === "Cheque") {
-                    DB::table('cheque_details')->insert([
-                        'Date_Time' => date('Y-m-d H:i:s'),
-                        'Type' => "Receive",
-                        'Company_Account' => $cheque_issue_bank,
-                        'Description' => "Customer payment",
-                        'Amount' => $payment_amount,
-                        'Cheque_No' => $chq_number,
-                        'Cheque_Type' => $chq_type,
-                        'Name_On_The_Cheque' => $name_on_cheque,
-                        'Cheque_Date' => $chq_date,
-                        'Status' => '0',
-                        'Note' => '-',
-                        'Payment_id' => $savedId,
-                        'branch_id' => session('branch_id')
-                    ]);
-                }
+
 
                 $customer_loan = tableWithBranch('customer_loan')->where('idCustomer_Loan', '=', $loan_id)->first();
 
@@ -1319,6 +1392,86 @@ class TodayPaymentController extends Controller
                     $Interest_Balance_Log, $Capital_Balance_Log, $Total_Pending_Balance_Log, $Saving_Balance_Log
                 );
                 $this->capitalBalanceController->index($loan_id);
+
+
+                $loan_for_bank = tableWithBranch('customer_loan')
+                    ->where('idCustomer_Loan', '=', $loan_id)
+                    ->first();
+                $bank_log_comment = "Loan Number : {$loan_for_bank->Loan_No}\nLoan Amount : {$loan_for_bank->Amount}\n";
+                $bank_account_company = $request->bank_account_company;
+
+                $capital_id=tableWithBranch('company_bank_accounts')
+                    ->where('Bank_Type','=','System_default_1')
+                    ->first();
+
+                $interest_id=tableWithBranch('company_bank_accounts')
+                    ->where('Bank_Type','=','System_default_2')
+                    ->first();
+
+                $panelty_id=tableWithBranch('company_bank_accounts')
+                    ->where('Bank_Type','=','System_default_5')
+                    ->first();
+
+
+                if ($payment_type === "Bank Deposit") {
+                    //capital
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Bank Deposit", "credit", $capital_balance_tot_paid,$savedId);
+                    $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Bank Deposit", "debit", $capital_balance_tot_paid,$savedId);
+
+                    //interest
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Bank Deposit", "credit", $Interest_Balance_tot_paid,$savedId);
+                    $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Bank Deposit", "debit", $Interest_Balance_tot_paid,$savedId);
+
+                    //panelty
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Bank Deposit", "credit", $Panalty_Balance_tot_paid,$savedId);
+                    $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Bank Deposit", "debit", $Panalty_Balance_tot_paid,$savedId);
+                } else if ($payment_type === "Collector") {
+                    //capital
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Collector Deposit", "credit", $capital_balance_tot_paid,$savedId);
+                    $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Collector Deposit", "debit", $capital_balance_tot_paid,$savedId);
+
+                    //interest
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Collector Deposit", "credit", $Interest_Balance_tot_paid,$savedId);
+                    $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Collector Deposit", "debit", $Interest_Balance_tot_paid,$savedId);
+
+                    //panelty
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Collector Deposit", "credit", $Panalty_Balance_tot_paid,$savedId);
+                    $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Collector Deposit", "debit", $Panalty_Balance_tot_paid,$savedId);
+                } else if ($payment_type === "Cash") {
+                    $bank_account_company = DB::table('company_bank_accounts')
+                        ->where('branch_id', session('branch_id'))
+                        ->whereRaw('LOWER(Account_No) = ?', ['cash'])  // Case-insensitive comparison
+                        ->value('Idbank');
+                    //capital
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Cash", "credit", $capital_balance_tot_paid,$savedId);
+                    $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Cash", "debit", $capital_balance_tot_paid,$savedId);
+
+                    //interest
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Cash", "credit", $Interest_Balance_tot_paid,$savedId);
+                    $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Cash", "debit", $Interest_Balance_tot_paid,$savedId);
+
+                    //panelty
+                    $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Cash", "credit", $Panalty_Balance_tot_paid,$savedId);
+                    $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Cash", "debit", $Panalty_Balance_tot_paid,$savedId);
+
+
+                } else if ($payment_type === "Cheque") {
+                    DB::table('cheque_details')->insert([
+                        'Date_Time' => date('Y-m-d H:i:s'),
+                        'Type' => "Receive",
+                        'Company_Account' => $cheque_issue_bank,
+                        'Description' => "Customer payment",
+                        'Amount' => $payment_amount,
+                        'Cheque_No' => $chq_number,
+                        'Cheque_Type' => $chq_type,
+                        'Name_On_The_Cheque' => $name_on_cheque,
+                        'Cheque_Date' => $chq_date,
+                        'Status' => '0',
+                        'Note' => '-',
+                        'Payment_id' => $savedId,
+                        'branch_id' => session('branch_id')
+                    ]);
+                }
 
                 if ($enable_saving_process == "Yes") {
                     $saving_account = tableWithBranch('Customer_Saving_Accounts')
