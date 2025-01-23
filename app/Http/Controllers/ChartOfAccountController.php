@@ -345,63 +345,94 @@ class ChartOfAccountController extends Controller
 
     public function getAccountTrialBalance(Request $request)
     {
-        $searchOption = $request->input('searchOption');
-        $dateRange = explode(' to ', $searchOption); // Split the string by ' to '
-        $dateTo = trim($dateRange[1]);
+        $dateFrom = $request->date_from;
+        $dateTo = $request->date_to;
 
-        // Query the database for account data
-        $results = tableWithBranch('manual_journal_has_amount','manual_journal_has_amount')
-            ->leftJoin('chart_of_account', 'chart_of_account.code', '=', DB::raw("SUBSTRING_INDEX(manual_journal_has_amount.account, '-', 1)"))
-            ->select(
-                DB::raw("SUBSTRING_INDEX(manual_journal_has_amount.account, '-', 1) as code"), // Extracted code
-                'chart_of_account.code as acc_code', // Actual code from chart_of_account
-                'chart_of_account.acc_name',
-                DB::raw("SUM(manual_journal_has_amount.debit_amount) as total_debit"),
-                DB::raw("SUM(manual_journal_has_amount.credit_amount) as total_credit")
-            )
-            ->whereDate('manual_journal_has_amount.created_at', '<=', $dateTo)
-            ->groupBy('code', 'acc_code', 'chart_of_account.acc_name', 'manual_journal_has_amount.account')
-            ->get();
+        // Fetch all bank accounts with their respective Account Names
+        $bankAccounts = tableWithBranch('company_bank_accounts')->get();
 
-        // Calculate additional summary data
-        $loan = tableWithBranch('customer_loan')->where('Date_Time', '<=', $dateTo)->where('Status', 0)->sum('capital_balance');
-        $client = tableWithBranch('Savings_Account_Log')->where('Date_Time', '<=', $dateTo)->where('Type', "=", "Deposit")->sum('Credit');
-        $interest_loan = tableWithBranch('Loan_Log')->where('Date_Time', '<=', $dateTo)->sum('Interest_Payment');
-        $interest_saving = tableWithBranch('Savings_Account_Log')->where('Date_Time', '<=', $dateTo)->where('Type', "=", "Interest")->sum('Credit');
-        $expenses = tableWithBranch('expences')->where('date', '<=', $dateTo)->where('type', "=", "Expense")->sum('amount');
-        $earning = tableWithBranch('expences')->where('date', '<=', $dateTo)->where('type', '=', 'Income')->where('reason', 'NOT LIKE', '%Other loan charges for loan number:%')->sum('amount');
-        $otherchargers = tableWithBranch('expences')->where('date', '<=', $dateTo)->where('type', '=', 'Income')->where('reason', 'LIKE', '%Other loan charges for loan number:%')->sum('amount');
-        $loan_interest = tableWithBranch('customer_loan')->where('Date_Time', '<=', $dateTo)->where('Status', 0)->sum('installment_balance');
+        // Initialize an array to store additional data
+        $additionalData = [];
 
-        // Additional manual data array
-        $additionalData = [
-            ['acc_code' => '-', 'acc_name' => 'Loan Portfolio', 'total_debit' => $loan, 'total_credit' => 0.00],
-            ['acc_code' => '-', 'acc_name' => 'Client Savings', 'total_debit' => 0.00, 'total_credit' => $client],
-            ['acc_code' => '-', 'acc_name' => 'Interest Income (Loans)', 'total_debit' => 0.00, 'total_credit' => $interest_loan],
-            ['acc_code' => '-', 'acc_name' => 'Loan Other Chargers', 'total_debit' => 0.00, 'total_credit' => $otherchargers],
-            ['acc_code' => '-', 'acc_name' => 'Interest Payable (Savings)', 'total_debit' => $interest_saving, 'total_credit' => 0.00],
-            ['acc_code' => '-', 'acc_name' => 'Other Earnings', 'total_debit' => 0.00, 'total_credit' => $earning],
-            ['acc_code' => '-', 'acc_name' => 'Expenses', 'total_debit' => $expenses, 'total_credit' => 0.00],
-            ['acc_code' => '-', 'acc_name' => 'Loan Interest Receivable', 'total_debit' => $loan_interest, 'total_credit' => 0.00],
-            ['acc_code' => '-', 'acc_name' => 'Capital', 'total_debit' => 0.00, 'total_credit' => 0.00],
-            ['acc_code' => '-', 'acc_name' => 'Retained Earnings', 'total_debit' => 0.00, 'total_credit' => 0.00],
-        ];
+        // Loop through each bank account and fetch the debit/credit sums for the respective Account_Name
+        foreach ($bankAccounts as $bank) {
+            $acc_name = $bank->Account_Name; // Account Name from the company_bank_accounts table
+            $type = $bank->Bank_Type; // Bank Type from the company_bank_accounts table
+            $bank_id = $bank->Idbank;
 
-        // Combine the results and the additional data
-        $combinedData = $results->map(function ($item) {
-            return [
-                'acc_code' => $item->acc_code,  // Include acc_code
-                'acc_name' => $item->acc_name,
-                'total_debit' => $item->total_debit,
-                'total_credit' => $item->total_credit,
+            // Check if the Bank Type is one of the "System_default_X" types
+            if (strpos($type, 'System_default') !== false) {
+                $type = "System Generated";  // Custom name
+            }
+
+            if (strpos($type, 'ChartOfAccount') !== false) {
+                $type = "Chart Of Account";  // Custom name
+            }
+
+            if (strpos($type, 'Bank') !== false) {
+                $type = "Bank Account";  // Custom name
+                // Append Bank details to Account Name
+                $acc_name .= ' - ' . $bank->Bank_Name . ' (' . $bank->Account_No . ') - ' . $bank->Bank_Branch;
+            }
+
+            if (strpos($type, 'Collector') !== false) {
+                $type = "Collector Account";  // Custom name
+            }
+
+            // Fetch the total debit and credit within the given date range for this account name
+            $total_debit = DB::table('company_bank_has_log')
+                ->where('Bank_Account_Id', '=', $bank_id)
+                ->whereBetween('Date_Time', [$dateFrom, $dateTo])  // Filter by date range
+                ->sum('Debit');
+
+            $total_credit = DB::table('company_bank_has_log')
+                ->where('Bank_Account_Id', '=', $bank_id)
+                ->whereBetween('Date_Time', [$dateFrom, $dateTo])  // Filter by date range
+                ->sum('Credit');
+
+            // If no records found, set both debit and credit to 0
+            if (!$total_debit) {
+                $total_debit = 0;
+            }
+
+            if (!$total_credit) {
+                $total_credit = 0;
+            }
+
+            // Add the account data to the array
+            $additionalData[] = [
+                'acc_name' => $acc_name,
+                'type' => $type,
+                'total_debit' => $total_debit,
+                'total_credit' => $total_credit
             ];
-        })->toArray();
+        }
 
-        $finalData = array_merge($combinedData, $additionalData);
 
-        // Return the combined data as JSON
-        return response()->json($finalData);
+        // Sort the array to prioritize "System Generated" first, then "Chart Of Account", then others
+        usort($additionalData, function ($a, $b) {
+            $order = ['Bank Account','Collector Account','System Generated', 'Chart Of Account'];
+
+            // First, prioritize by type (System Generated, Chart Of Account)
+            $aTypeRank = array_search($a['type'], $order) !== false ? array_search($a['type'], $order) : 2;
+            $bTypeRank = array_search($b['type'], $order) !== false ? array_search($b['type'], $order) : 2;
+
+            // If types are equal, leave the order unchanged
+            if ($aTypeRank == $bTypeRank) {
+                return 0;
+            }
+
+            // Otherwise, sort by rank (System Generated and Chart Of Account first)
+            return $aTypeRank < $bTypeRank ? -1 : 1;
+        });
+
+        // Return the data as JSON response
+        return response()->json($additionalData);
     }
+
+
+
+
 
     public function BalanceSheetView(){
         $date_from = Carbon::now()->format('Y-m-d'); // Current date
