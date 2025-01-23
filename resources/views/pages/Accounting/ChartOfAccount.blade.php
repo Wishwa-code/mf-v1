@@ -508,6 +508,7 @@
                             <option value="15">Provision for Loan Impairment</option>
                             <option value="43">Restructured Loan</option>
                             <option value="6">Tax</option>
+                            <option value="66">Financial Expenses</option>
                         </optgroup>
                         <optgroup label="Assets">
                             <option value="10">Account Receivable</option>
@@ -571,6 +572,7 @@
                 <table class="table">
                     <thead>
                     <tr>
+                        <th>Type</th>
                         <th>Description</th>
                         <th>Debit Amount</th>
                         <th>Credit Amount</th>
@@ -643,6 +645,7 @@
                         cash_flow_type: cashFlowType,
                         description: description
                     };
+
 
                     // Ask for confirmation before saving
                     Swal.fire({
@@ -727,15 +730,14 @@
 
                     // Append rows to the table
                     data.forEach((item) => {
-                        const bringForward = item.opening_balance && item.opening_balance > 0 ? "Yes" : "No";
-                        const ledger = `<a href="#" class="view-btn" data-account="${item.code}">View</a>`;
+                        const ledger = `<a href="#" class="view-btn" data-account="${item.Idbank}">View</a>`;
                         const row = `
                 <tr>
                     <td>${item.code}</td>
-                    <td>${item.acc_name}</td>
-                    <td>${item.acc_type}</td>
+                    <td>${item.Account_Name}</td>
+                    <td>${item.type}</td>
                     <td>${item.acc_type_group}</td>
-                    <td>${item.cash_flow_type}</td>
+                    <td>${item.cashflow}</td>
                     <td>${ledger}</td>
                 </tr>`;
                         $tbody.append(row);
@@ -1043,18 +1045,16 @@
                         return;
                     }
 
-                    // Set the account as the title of the modal
-                    const firstAccount = response[0].account; // Use the first record's account value
-                    $ledgerAccountTitle.text(`Ledger Details for Account: ${firstAccount}`);
 
                     // Populate the modal table with fetched data
                     response.forEach((item) => {
                         const row = `
                 <tr>
-                    <td>${item.description}</td>
-                    <td>${parseFloat(item.debit_amount || 0).toFixed(2)}</td>
-                    <td>${parseFloat(item.credit_amount || 0).toFixed(2)}</td>
-                    <td>${item.created_at}</td>
+                    <td>${item.Type}</td>
+                    <td>${item.Description}</td>
+                    <td>${parseFloat(item.Debit || 0).toFixed(2)}</td>
+                    <td>${parseFloat(item.Credit || 0).toFixed(2)}</td>
+                    <td>${item.Date_Time}</td>
                 </tr>`;
                         $modalTableBody.append(row);
                     });

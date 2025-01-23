@@ -198,6 +198,12 @@ class PendingLoanController extends Controller
             $this->bankLogController->index($company_bank,"Issue Loan",$bank_log_comment,"-","debit",$customer_loan->Amount);
 
 
+            $bank_id=tableWithBranch('company_bank_accounts')
+                ->where('Bank_Type','=','System_default_1')
+                ->first();
+
+            $this->bankLogController->index($bank_id->Idbank,"Issue Loan",$bank_log_comment,"-","credit",$customer_loan->Amount);
+
 
 
 
@@ -215,6 +221,12 @@ class PendingLoanController extends Controller
             if ($sumAmount > 0) {
                 $bank_log_doc_comment="Loan Number : {$customer_loan->Loan_No}\nLoan Amount : {$customer_loan->Amount}\n";
                 $this->bankLogController->index($company_bank,"Loan Document Chargers",$bank_log_doc_comment,"-","credit",$sumAmount);
+
+                $bank_id=tableWithBranch('company_bank_accounts')
+                    ->where('Bank_Type','=','System_default_9')
+                    ->first();
+
+                $this->bankLogController->index($bank_id->Idbank,"Loan Document Chargers",$bank_log_doc_comment,"-","debit",$sumAmount);
 
                 $cate=tableWithBranch('income_category')
                     ->where('description','=','Other')
