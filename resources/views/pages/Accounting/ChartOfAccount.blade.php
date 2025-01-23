@@ -1,6 +1,10 @@
 @extends('layout.admin')
 
 @section('head')
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
+
+    <!-- DataTable Buttons CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.3/css/buttons.dataTables.min.css">
     <style>
         /* Container Styling */
         .content-container {
@@ -569,13 +573,14 @@
                 <button class="close" id="closeHistoryModal">&times;</button>
             </div>
             <div class="modal-body">
-                <table class="table">
+                <table  id="financialReportTable" class="table">
                     <thead>
                     <tr>
                         <th>Type</th>
                         <th>Description</th>
                         <th>Debit Amount</th>
                         <th>Credit Amount</th>
+                        <th>Balance</th>
                         <th>Created At</th>
                     </tr>
                     </thead>
@@ -595,9 +600,28 @@
 @section('script')
     <!-- Include SheetJS -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <!-- DataTable JS -->
+    <script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+
+    <!-- DataTable Buttons JS -->
+    <script src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
+
+    <!-- JS for Excel export (from xlsx library) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.3/js/buttons.html5.min.js"></script>
     <script>
         $(document).ready(function() {
-
+            $('#financialReportTable').DataTable({
+                dom: 'Bfrtip',  // Adds the button container to the top of the table
+                buttons: [
+                    {
+                        extend: 'excelHtml5',  // Exports the table to Excel
+                        text: 'Download Excel', // Text displayed on the button
+                        title: 'Ledger Details', // The name of the table in the exported Excel file
+                        className: 'btn btn-success' // Button styling (optional)
+                    }
+                ]
+            });
             // Set up AJAX headers for CSRF
             $.ajaxSetup({
                 headers: {
@@ -1054,6 +1078,7 @@
                     <td>${item.Description}</td>
                     <td>${parseFloat(item.Debit || 0).toFixed(2)}</td>
                     <td>${parseFloat(item.Credit || 0).toFixed(2)}</td>
+                    <td>${parseFloat(item.Balance || 0).toFixed(2)}</td>
                     <td>${item.Date_Time}</td>
                 </tr>`;
                         $modalTableBody.append(row);
