@@ -412,7 +412,7 @@ class ChartOfAccountController extends Controller
 
         // Sort the array to prioritize "System Generated" first, then "Chart Of Account", then others
         usort($additionalData, function ($a, $b) {
-            $order = ['Bank Account','Collector Account','System Generated', 'Chart Of Account'];
+            $order = ['Bank Account','Collector Account','System Generated', 'Chart Of Account', 'Expenses', 'Income'];
 
             // First, prioritize by type (System Generated, Chart Of Account)
             $aTypeRank = array_search($a['type'], $order) !== false ? array_search($a['type'], $order) : 2;

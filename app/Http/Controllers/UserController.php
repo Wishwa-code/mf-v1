@@ -20,7 +20,12 @@ use Illuminate\Support\Str;
 class UserController extends Controller
 {
 
+    protected $bankLogController;
 
+    public function __construct(BankLogController $bankLogController)
+    {
+        $this->bankLogController = $bankLogController;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -370,11 +375,16 @@ class UserController extends Controller
                 'user' => $user_id,
                 'branch_id' => session('branch_id')
             ]);
-            $bank_id=tableWithBranch('company_bank_accounts')
-                ->where('Bank_Type','=','System_default_9')
-                ->first();
-
-//            $this->bankLogController->index($bank_id->Idbank,"Loan Document Chargers",$bank_log_doc_comment,"-","debit",$sumAmount);
+//            $System_default_5=tableWithBranch('company_bank_accounts')
+//                ->where('Bank_Type','=','System_default_5')
+//                ->first();
+//
+//            $this->bankLogController->index($System_default_5->Idbank,"Penalty","Penalty","-","credit",$panelty_amount);
+//
+//            $System_default_6=tableWithBranch('company_bank_accounts')
+//                ->where('Bank_Type','=','System_default_6')
+//                ->first();
+//            $this->bankLogController->index($System_default_6->Idbank,"Penalty","Penalty","-","debit",$panelty_amount);
 
 
         }
