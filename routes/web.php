@@ -542,6 +542,7 @@ Route::get('/trialBalanceAccounting', function () {
     return view('pages.Accounting.TrialBalanceAccounting');
 });
 Route::get('/get-account-trialBalance-data', [ChartOfAccountController::class, 'getAccountTrialBalance']);
+Route::post('/get-financial-report', [ChartOfAccountController::class, 'getLog']);
 
 
 Route::get('/BalanceSheet', [ChartOfAccountController::class, 'BalanceSheetView'])->name('BalanceSheetView.profit');

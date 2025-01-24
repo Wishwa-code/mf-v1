@@ -401,6 +401,7 @@ class ChartOfAccountController extends Controller
 
             // Add the account data to the array
             $additionalData[] = [
+                'account_id' => $bank_id,
                 'acc_name' => $acc_name,
                 'type' => $type,
                 'total_debit' => $total_debit,
@@ -430,6 +431,23 @@ class ChartOfAccountController extends Controller
         return response()->json($additionalData);
     }
 
+
+    public function getLog(Request $request){
+        $dateFrom = $request->date_from;
+        $dateTo = $request->date_to;
+        $account_id = $request->account_id;
+
+        // Fetch matching records from the `manual_journal_has_amount` table
+        $data = tableWithBranch('company_bank_has_log')
+            ->where('Bank_Account_Id', '=',$account_id) // Match records starting with accountCode
+            ->whereBetween('Date_Time', [$dateFrom, $dateTo])  // Filter by date range
+            ->orderBy('id')
+            ->get();
+
+        // Return data as JSON
+        return response()->json($data);
+
+    }
 
 
 
