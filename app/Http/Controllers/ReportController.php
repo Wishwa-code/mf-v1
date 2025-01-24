@@ -90,20 +90,48 @@ class ReportController extends Controller
      */
     public function store(Request $request)
     {
-        DB::table('expences_category')->insert([
+        $id=DB::table('expences_category')->insertGetId([
             'description'=>$request->description,
             'branch_id' => session('branch_id')
         ]);
+        $user_id = (int)session('userid');
+        $Bank = [
+            'Bank_Type' => "Expenses",
+            'code' => $id,
+            'Bank_Name' => $request->description,
+            'Account_Name' => $request->description,
+            'Account_No' => $request->description,
+            'Bank_Branch' => $request->description,
+            'Account_Balance' => '0.00',
+            'type' => "Financial Expenses",
+            'cashflow' => "Non Applicable",
+            'User' => $user_id,
+        ];
+        insertWithBranch('company_bank_accounts', $Bank);
         return response()->json(['message' => 'Data saved successfully'], 200);
     }
 
 
     public function income_store(Request $request)
     {
-        DB::table('income_category')->insert([
+        $id=DB::table('income_category')->insertGetId([
             'description'=>$request->description,
             'branch_id' => session('branch_id')
         ]);
+        $user_id = (int)session('userid');
+        $Bank = [
+            'Bank_Type' => "Income",
+            'code' => $id,
+            'Bank_Name' => $request->description,
+            'Account_Name' => $request->description,
+            'Account_No' => $request->description,
+            'Bank_Branch' => $request->description,
+            'Account_Balance' => '0.00',
+            'type' => "Financial Income",
+            'cashflow' => "Non Applicable",
+            'User' => $user_id,
+        ];
+        insertWithBranch('company_bank_accounts', $Bank);
         return response()->json(['message' => 'Data saved successfully'], 200);
     }
 
@@ -225,12 +253,16 @@ class ReportController extends Controller
         $expenses->branch_id = session('branch_id');
 
         if ($expenses->save()) {
-
+            $bank_id=tableWithBranch('company_bank_accounts')
+                ->where('Bank_Type','=','Expenses')
+                ->where('code','=',$request->category)
+                ->first();
             if ($type=="Expense") {
-                $this->bankLogController->index($request->bank,"Expenses",$reason,"-","Debit",$amount);
+                $this->bankLogController->index($request->bank,"Expenses",$reason,"-","debit",$amount);
+                $this->bankLogController->index($bank_id->Idbank,"Expenses",$reason,"-","credit",$amount);
             }else{
                 $this->bankLogController->index($request->bank,"Income",$reason,"-","credit",$amount);
-
+                $this->bankLogController->index($bank_id->Idbank,"Income",$reason,"-","debit",$amount);
             }
 
 
