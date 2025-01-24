@@ -949,9 +949,9 @@
 
 
                                     @if($item->report_8 == 1)
-                                        <li>
-                                            <a href="/cashbook">CashBook Report</a>
-                                        </li>
+{{--                                        <li>--}}
+{{--                                            <a href="/cashbook">CashBook Report</a>--}}
+{{--                                        </li>--}}
 
                                     @else
                                     @endif
