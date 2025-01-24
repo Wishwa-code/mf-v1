@@ -846,7 +846,9 @@ function load_approval_check(id) {
                             approveButton = `<input type="button" class="btn btn-primary"  value="Approve" disabled>`;
                         }
                     }else{
+                        let designation_user=$("#designation_user").val();
                         if (designationNames.includes(designation_user) && document.user_id === 0) {
+
                             approveButton = `<input type="button" class="btn btn-primary" id="approve_btn_${document.level_id}" value="Approve" onclick="approve(${document.id}, '${index}')">`;
                         } else {
                             approveButton = `<input type="button" class="btn btn-primary" value="Approve" disabled>`;
