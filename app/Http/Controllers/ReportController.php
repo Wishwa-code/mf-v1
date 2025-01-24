@@ -73,14 +73,14 @@ class ReportController extends Controller
      */
     public function create()
     {
-        $bank = tableWithBranch('company_bank_accounts')->get();
+        $bank = tableWithBranch('company_bank_accounts')->where('Bank_Type','=','Bank')->get();
         $expences_category = tableWithBranch('expences_category')->get();
         return view('pages.CreateExpenses',compact('bank','expences_category'));
     }
 
     public function income()
     {
-        $bank = tableWithBranch('company_bank_accounts')->get();
+        $bank = tableWithBranch('company_bank_accounts')->where('Bank_Type','=','Bank')->get();
         $expences_category = tableWithBranch('income_category')->get();
         return view('pages.CreateIncome',compact('bank','expences_category'));
     }
