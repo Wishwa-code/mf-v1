@@ -253,14 +253,19 @@ class ReportController extends Controller
         $expenses->branch_id = session('branch_id');
 
         if ($expenses->save()) {
-            $bank_id=tableWithBranch('company_bank_accounts')
-                ->where('Bank_Type','=','Expenses')
-                ->where('code','=',$request->category)
-                ->first();
+
             if ($type=="Expense") {
+                $bank_id=tableWithBranch('company_bank_accounts')
+                    ->where('Bank_Type','=','Expenses')
+                    ->where('code','=',$request->category)
+                    ->first();
                 $this->bankLogController->index($request->bank,"Expenses",$reason,"-","debit",$amount);
                 $this->bankLogController->index($bank_id->Idbank,"Expenses",$reason,"-","credit",$amount);
             }else{
+                $bank_id=tableWithBranch('company_bank_accounts')
+                    ->where('Bank_Type','=','Income')
+                    ->where('code','=',$request->category)
+                    ->first();
                 $this->bankLogController->index($request->bank,"Income",$reason,"-","credit",$amount);
                 $this->bankLogController->index($bank_id->Idbank,"Income",$reason,"-","debit",$amount);
             }
