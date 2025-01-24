@@ -36,6 +36,11 @@
             background-color: #ffffff;
         }
     </style>
+    <style>
+        .modal-lg {
+            max-width: 90%;  /* Set modal to 90% of the screen width */
+        }
+    </style>
 @endsection
 
 @section('content')
@@ -82,63 +87,40 @@
         </div>
     </div>
 
+
+    <!-- Modal for Financial Report -->
+    <div class="modal fade" id="financialReportModal" tabindex="-1" role="dialog" aria-labelledby="financialReportModalLabel" aria-hidden="true">
+        <div class="modal-dialog  modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="financialReportModalLabel">Log Report</h5>
+                </div>
+                <div class="modal-body">
+                    <table id="financialReportTable" class="table">
+                        <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Debit Amount</th>
+                            <th>Credit Amount</th>
+                            <th>Balance</th>
+                            <th>Created At</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <!-- Data will be dynamically populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <!-- Select2 JavaScript -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- SheetJS (XLSX.js) for Excel export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
-{{--    <script>--}}
-{{--        // Function to get the financial year range with today as end date if within the current financial year--}}
-{{--        function getFinancialYearRange(offset, isCurrent = false) {--}}
-{{--            const today = new Date();--}}
-{{--            const currentYear = today.getFullYear();--}}
-{{--            const currentMonth = today.getMonth() + 1; // getMonth is 0-indexed--}}
-
-{{--            let startYear, endYear, endDate;--}}
-
-{{--            // Determine financial year start--}}
-{{--            if (currentMonth > 3) {--}}
-{{--                startYear = currentYear - offset;--}}
-{{--                endYear = currentYear + 1 - offset;--}}
-{{--            } else {--}}
-{{--                startYear = currentYear - 1 - offset;--}}
-{{--                endYear = currentYear - offset;--}}
-{{--            }--}}
-
-{{--            // Start date is always April 1 of the starting year--}}
-{{--            const startDate = `${startYear}-04-01`;--}}
-
-{{--            // For current financial year, use today's date as the end date if within the financial year--}}
-{{--            if (isCurrent) {--}}
-{{--                const financialYearEnd = new Date(`${endYear}-03-31`);--}}
-{{--                if (today <= financialYearEnd) {--}}
-{{--                    // If today's date is before the next year's March 31, use today's date--}}
-{{--                    const todayFormatted = today.toISOString().split('T')[0]; // Format today as YYYY-MM-DD--}}
-{{--                    endDate = todayFormatted;--}}
-{{--                } else {--}}
-{{--                    // Otherwise, use March 31 of the next year--}}
-{{--                    endDate = `${endYear}-03-31`;--}}
-{{--                }--}}
-{{--            } else {--}}
-{{--                // For past financial years, end date is always March 31--}}
-{{--                endDate = `${endYear}-03-31`;--}}
-{{--            }--}}
-
-{{--            return `${startDate} to ${endDate}`;--}}
-{{--        }--}}
-
-{{--        // Populate select options with the calculated financial years--}}
-{{--        const searchOption = document.getElementById('searchOption');--}}
-
-{{--        const currentFinancialYear = getFinancialYearRange(0, true);  // For current year, using today as end date if applicable--}}
-{{--        const oneYearAgo = getFinancialYearRange(1);--}}
-{{--        const twoYearsAgo = getFinancialYearRange(2);--}}
-{{--        const threeYearsAgo = getFinancialYearRange(3);--}}
-
-{{--        searchOption.innerHTML += `<option value="${currentFinancialYear}">${currentFinancialYear}</option>`;--}}
-{{--        searchOption.innerHTML += `<option value="${oneYearAgo}">${oneYearAgo}</option>`;--}}
-{{--        searchOption.innerHTML += `<option value="${twoYearsAgo}">${twoYearsAgo}</option>`;--}}
-{{--        searchOption.innerHTML += `<option value="${threeYearsAgo}">${threeYearsAgo}</option>`;--}}
-{{--    </script>--}}
     <script>
         $(document).ready(function () {
             // Function to download table data as Excel
@@ -146,7 +128,11 @@
                 var wb = XLSX.utils.table_to_book(document.getElementById('trialTable'), { sheet: "Trial Balance" });
                 XLSX.writeFile(wb, 'Trial_Balance.xlsx');
             });
-
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
 
 
             // Function to format numbers with commas
@@ -164,14 +150,14 @@
 
             // Send AJAX request to fetch the trial balance data based on date range
             $.ajax({
-                url: '/get-account-trialBalance-data',  // Keep the same API URL
+                url: '/get-account-trialBalance-data',
                 type: 'GET',
                 data: {
                     date_from: date_from,
                     date_to: date_to
                 },
                 success: function (data) {
-                    console.log(data);  // For debugging
+
 
                     var trialBalanceTable = $('#trialBalanceTable');
                     var totalDebit = 0;
@@ -190,14 +176,14 @@
                     } else {
                         // Populate table rows with the fetched data
                         data.forEach(function (item) {
-                            var accName = item.acc_name || 'N/A'; // Account name (e.g., Loans, Interest Income)
-                            var type = item.type || 'N/A'; // Account name (e.g., Loans, Interest Income)
+                            var accName = item.acc_name || 'N/A';
+                            var type = item.type || 'N/A';
                             var totalDebitAmount = item.total_debit ? parseFloat(item.total_debit).toFixed(2) : '0.00';
                             var totalCreditAmount = item.total_credit ? parseFloat(item.total_credit).toFixed(2) : '0.00';
 
                             // Create a table row for each account
                             var row = `
-                        <tr>
+                        <tr class="trialBalanceRow" data-account-id="${item.account_id}">
                             <td>${accName}</td>
                             <td>${type}</td>
                             <td>${formatNumber(totalDebitAmount)}</td>
@@ -215,12 +201,73 @@
                     // Update the totals for Debit and Credit
                     $('#totalDebit').text(formatNumber(totalDebit.toFixed(2)));
                     $('#totalCredit').text(formatNumber(totalCredit.toFixed(2)));
+
+                    // Add row click event to open the modal with the financial report
+                    $('.trialBalanceRow').on('click', function () {
+                        var accountId = $(this).data('account-id');
+
+                        // Fetch the financial report for the clicked account
+                        fetchFinancialReport(accountId);
+                        $('#financialReportModal').modal('show');
+
+                    });
                 },
                 error: function (xhr) {
                     console.log(xhr.responseText);
                 }
             });
         }
+
+        // Function to fetch and display the financial report data
+        function fetchFinancialReport(accountId) {
+            var date_from = $("#date_from").val();
+            var date_to = $("#date_to").val();
+
+            $.ajax({
+                url: '/get-financial-report',  // Replace with the appropriate API endpoint
+                type: 'POST',
+                data: {
+                    account_id: accountId,
+                    date_from:date_from,
+                    date_to:date_to
+                },
+                success: function (data) {
+                    console.log(data);  // For debugging
+                    var financialReportTable = $('#financialReportTable tbody');
+                    financialReportTable.empty();  // Clear existing data
+
+                    if (data.length === 0) {
+                        financialReportTable.append(`
+                    <tr>
+                        <td colspan="6" style="text-align: center;">No financial report data found</td>
+                    </tr>
+                `);
+                    } else {
+                        // Populate the modal with the financial report data
+                        data.forEach(function (item) {
+                            var row = `
+                        <tr>
+                            <td>${item.Type || 'N/A'}</td>
+                            <td>${item.Description || 'N/A'}</td>
+                            <td>${formatNumber(item.Debit || 0)}</td>
+                            <td>${formatNumber(item.Credit || 0)}</td>
+                            <td>${formatNumber(item.Balance || 0)}</td>
+                            <td>${item.Date_Time || 'N/A'}</td>
+                        </tr>
+                    `;
+                            financialReportTable.append(row);
+                        });
+                    }
+
+                    // Show the modal
+                    $('#financialReportModal').modal('show');
+                },
+                error: function (xhr) {
+                    console.log(xhr.responseText);
+                }
+            });
+        }
+
 
     </script>
 @endsection
