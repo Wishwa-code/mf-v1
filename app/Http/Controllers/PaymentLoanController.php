@@ -643,4 +643,16 @@ class PaymentLoanController extends Controller
         return response()->json(['items' => $loanId, 'message' => 'success'], 200);
     }
 
+    public function reschedule()
+    {
+        // Instantiate UserController
+        $userController = new UserController();
+        // Call the create_panelty function
+        $userController->create_panelty();
+        $group = DB::table('customer_group')->get();
+        $loan_category = DB::table('loan_category')->get();
+        $customers = DB::table('customer')->get();
+        return view('pages.Reshedule', compact('group', 'loan_category', 'customers'));
+    }
+
 }

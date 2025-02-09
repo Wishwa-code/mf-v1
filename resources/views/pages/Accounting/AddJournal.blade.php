@@ -131,10 +131,6 @@
                 <div class="col-md-6">
                     <label for="narration" class="form-label">Narration</label>
                     <textarea class="form-control" id="narration" placeholder="Enter narration"></textarea>
-{{--                    <div class="form-check mt-2">--}}
-{{--                        <input type="checkbox" class="form-check-input" id="defaultNarrationCheckbox">--}}
-{{--                        <label class="form-check-label" for="defaultNarrationCheckbox">Default narration to journal line description?</label>--}}
-{{--                    </div>--}}
                 </div>
                 <div class="col-md-6">
                     <label for="journalDate" class="form-label">Journal Date</label>
@@ -176,8 +172,8 @@
                             <select class="form-select account-select select2-account">
                                 <option value="">Select Account</option>
                                 @foreach ($chart_of_accounts as $account)
-                                    <option value="{{ $account->code }}-{{ $account->acc_name }}">
-                                        {{ $account->acc_name }} - {{ $account->acc_type }}
+                                    <option value="{{ $account->Idbank }}-{{ $account->code }}-{{ $account->Account_Name }}">
+                                        {{ $account->Account_Name }} - {{ $account->type }}
                                     </option>
                                 @endforeach
                             </select>
@@ -200,8 +196,8 @@
                             <select class="form-select account-select select2-account">
                                 <option value="">Select Account</option>
                                 @foreach ($chart_of_accounts as $account)
-                                    <option value="{{ $account->code }}-{{ $account->acc_name }}">
-                                        {{ $account->acc_name }} - {{ $account->acc_type }}
+                                    <option value="{{ $account->Idbank }}-{{ $account->code }}-{{ $account->Account_Name }}">
+                                        {{ $account->Account_Name }} - {{ $account->type }}
                                     </option>
                                 @endforeach
                             </select>
@@ -215,30 +211,30 @@
                             <button type="button" class="btn btn-danger btn-sm remove-row-btn">✖</button>
                         </td>
                     </tr>
-                    <tr>
-                        <td class="text-center">
-                            <span class="move-up">↑</span> <span class="move-down">↓</span>
-                        </td>
-                        <td><input type="text" class="form-control" placeholder="Enter description"></td>
-                        <td>
-                            <select class="form-select account-select select2-account">
-                                <option value="">Select Account</option>
-                                @foreach ($chart_of_accounts as $account)
-                                    <option value="{{ $account->code }}-{{ $account->acc_name }}">
-                                        {{ $account->acc_name }} - {{ $account->acc_type }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </td>
+{{--                    <tr>--}}
+{{--                        <td class="text-center">--}}
+{{--                            <span class="move-up">↑</span> <span class="move-down">↓</span>--}}
+{{--                        </td>--}}
+{{--                        <td><input type="text" class="form-control" placeholder="Enter description"></td>--}}
+{{--                        <td>--}}
+{{--                            <select class="form-select account-select select2-account">--}}
+{{--                                <option value="">Select Account</option>--}}
+{{--                                @foreach ($chart_of_accounts as $account)--}}
+{{--                                    <option value="{{ $account->Idbank }}-{{ $account->code }}-{{ $account->Account_Name }}">--}}
+{{--                                        {{ $account->Account_Name }} - {{ $account->type }}--}}
+{{--                                    </option>--}}
+{{--                                @endforeach--}}
+{{--                            </select>--}}
+{{--                        </td>--}}
 
 
-                        <td><input type="number" step="0.01" class="form-control tax-rate-input" placeholder="0.00"></td>
-                        <td><input type="number" step="0.01" class="form-control debit-amount" placeholder="0.00"></td>
-                        <td><input type="number" step="0.01" class="form-control credit-amount" placeholder="0.00"></td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-danger btn-sm remove-row-btn">✖</button>
-                        </td>
-                    </tr>
+{{--                        <td><input type="number" step="0.01" class="form-control tax-rate-input" placeholder="0.00"></td>--}}
+{{--                        <td><input type="number" step="0.01" class="form-control debit-amount" placeholder="0.00"></td>--}}
+{{--                        <td><input type="number" step="0.01" class="form-control credit-amount" placeholder="0.00"></td>--}}
+{{--                        <td class="text-center">--}}
+{{--                            <button type="button" class="btn btn-danger btn-sm remove-row-btn">✖</button>--}}
+{{--                        </td>--}}
+{{--                    </tr>--}}
                     </tbody>
                     <tfoot>
                     <tr>
@@ -299,9 +295,9 @@
                     const accountsOptions = `
             <option value="">Select Account</option>
             @foreach ($chart_of_accounts as $account)
-                    <option value="{{ $account->code }}-{{ $account->acc_name }}"
-                        ${detail.account === "{{ $account->code }}-{{ $account->acc_name }}" ? "selected" : ""}>
-                    {{ $account->acc_name }} - {{ $account->acc_type }}
+                    <option value="{{ $account->Idbank }}-{{ $account->code }}-{{ $account->Account_Name }}"
+                        ${detail.account === "{{ $account->code }}-{{ $account->Account_Name }}" ? "selected" : ""}>
+                    {{ $account->Account_Name }} - {{ $account->type }}
                     </option>
 @endforeach
                     `;
@@ -359,8 +355,8 @@
                 const accountsOptions = `
             <option value="">Select Account</option>
             @foreach ($chart_of_accounts as $account)
-                <option value="{{ $account->code }}-{{ $account->acc_name }}">
-                    {{ $account->acc_name }} - {{ $account->acc_type }}
+                <option value="{{ $account->Idbank }}-{{ $account->code }}-{{ $account->Account_Name }}">
+                    {{ $account->Account_Name }} - {{ $account->type }}
                 </option>
             @endforeach
                 `;
@@ -495,6 +491,8 @@
                     Swal.fire('Error', 'Total Debit Amount and Credit Amount must be equal.', 'error');
                     return;
                 }
+
+                console.log(rows);
 
                 // Confirmation Dialog
                 Swal.fire({

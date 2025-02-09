@@ -328,9 +328,6 @@ class UserController extends Controller
 
 
         foreach ($installment as $item){
-
-
-
             $total_balance=$item->Total_Balance;
             $panelty_amount=($total_balance*$item->Panalty_Rate)/100;
             $newPanaltyBalance = str_replace(',', '', number_format($item->Panalty_Balance + $panelty_amount, 2));

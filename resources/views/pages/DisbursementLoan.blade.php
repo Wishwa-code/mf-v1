@@ -32,12 +32,7 @@
                 <div class="page-title-box">
                     <div class="page-title-right">
                     </div>
-                    <h4 class="page-title">Pending Loans</h4>
-{{--                    <label style="color: red">Upload Excel</label>--}}
-{{--                    <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="form-control mb-2 w-50">--}}
-
-{{--                    <!-- Upload button, aligned below the file input -->--}}
-{{--                    <input type="button" onclick="upload_excel()" class="btn btn-success mt-2" value="Upload">--}}
+                    <h4 class="page-title">Disbursement Loans</h4>
                 </div>
 
             </div>
@@ -111,12 +106,11 @@
                                 </div>
                             </div>
 
-                            <div class="col-lg-3">
+                            <div class="col-lg-3" hidden>
                                 <div class="mb-2">
                                     <label for="status" class="form-label">Status</label>
                                     <select class="form-control select2" id="status">
-                                        <option value="-1">Pending</option>
-                                        <option value="-2">Deleted</option>
+                                        <option value="-1" selected>Pending</option>
                                     </select>
                                 </div>
                             </div>
@@ -126,6 +120,19 @@
                                     <i class="bi bi-search"></i> Search
                                 </button>
                             </div>
+
+                            <div class="row mt-4">
+                                <div class="col-lg-4">
+                                    <button class="btn btn-primary w-100" onclick="exportFundRequest();">FUND REQUEST</button>
+                                </div>
+                                <div class="col-lg-4">
+                                    <button class="btn btn-success w-100" onclick="exportDisbursementSheet();">DISBURSEMENT SHEET</button>
+                                </div>
+                                <div class="col-lg-4">
+                                    <button class="btn btn-info w-100" onclick="exportDocumentCharges();">Document Charges Register</button>
+                                </div>
+                            </div>
+
                         </div>
 
 
@@ -142,13 +149,14 @@
                                     <th>Group</th>
                                     <th>Customer</th>
                                     <th>Customer Code</th>
+                                    <th>NIC</th>
                                     <th>Product</th>
                                     <th>Amount</th>
+                                    <th>Doc Charge</th>
                                     <th>Date</th>
                                     <th>Reason</th>
                                     <th>Lending Officer</th>
                                     <th>User</th>
-                                    <th>Pending Approval Count</th>
                                     <th>Status</th>
                                     <th>Action</th>
                                 </tr>
@@ -209,8 +217,8 @@
                 </div>
                 <input type="hidden" id="loan_id_for_issue">
 
-                <div class="modal-body">
-                    <div class="card shadow mb-3">
+                <div class="modal-body" >
+                    <div class="card shadow mb-3" hidden>
                         <div class="card-header">
                             Approval Section
                         </div>
@@ -237,7 +245,7 @@
                         </div>
                     </div>
 
-                    <div class="card shadow mb-3" hidden>
+                    <div class="card shadow mb-3">
                         <div class="card-header">
                             Uploaded Document Details
                         </div>
@@ -259,7 +267,7 @@
                         </div>
                     </div>
 
-                    <div class="row mb-3" hidden>
+                    <div class="row mb-3">
                         <div class="col-12 px-3">
                             <label for="simpleinput" class="form-label">Customer Bank Account</label>
                             <select class="form-control" id="bank_acc">
@@ -267,7 +275,7 @@
                         </div>
                     </div>
 
-                    <div class="row mb-3" hidden>
+                    <div class="row mb-3">
                         <div class="col-12 px-3">
                             <label for="simpleinput" class="form-label">Company Bank Account</label>
                             <select class="form-control" id="company_bank">
@@ -281,6 +289,7 @@
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" id="issue_loan_btn" onclick="issue_loan()">Issue Loan</button>
                 </div>
             </div>
         </div>
@@ -498,8 +507,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
     <script src="../JS/validate.js"></script>
-    <script src="../JS/pending_loan.js?n=15"></script>
+    <script src="../JS/disbursement_loan.js?n=15"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
     <script>
         $(function() {
 
@@ -536,6 +546,147 @@
 
 
         })
+
+
+
+        function exportFundRequest() {
+            var table = document.getElementById('loan_table');
+            var wb = XLSX.utils.book_new();
+
+            // Prepare the data for the sheet
+            var data = [['#', 'Customer No', 'Customer Name', 'NIC', 'Amount']];
+            var rows = table.getElementsByTagName('tr');
+            var totalAmount = 0;
+
+            for (var i = 1; i < rows.length; i++) {
+                var cols = rows[i].getElementsByTagName('td');
+                if (cols.length > 0) {
+                    var index = i; // Table row number
+                    var cus_no = cols[5].innerText; // Center column (change if needed)
+                    var cus_name = cols[4].innerText; // Group column (change if needed)
+                    var nic = cols[6].innerText; // Customer column (change if needed)
+                    var amount = parseFloat(cols[8].innerText.replace(/[^0-9.-]+/g, "")) || 0; // Amount column (remove non-numeric characters)
+
+                    totalAmount += amount;
+                    data.push([index, cus_no, cus_name, nic, amount.toFixed(2)]);
+                }
+            }
+
+            // Add total row
+            data.push(['', '', '', 'Total Amount', totalAmount.toFixed(2)]);
+
+            // Add signature rows
+            data.push([]);
+            data.push(['Authorized 01:', '', '', '', 'Authorized 02:']);
+
+            // Create the worksheet
+            var ws = XLSX.utils.aoa_to_sheet(data);
+
+            // Add the sheet to the workbook
+            XLSX.utils.book_append_sheet(wb, ws, 'Fund Request');
+
+            // Export the workbook
+            XLSX.writeFile(wb, 'Fund_Request.xlsx');
+        }
+
+
+        function exportDisbursementSheet() {
+            var table = document.getElementById('loan_table');
+            var wb = XLSX.utils.book_new();
+
+            // Prepare the data for the sheet
+            var data = [['#', 'Customer Number', 'NIC', 'Customer Name', 'Amount', 'Received By']];
+            var rows = table.getElementsByTagName('tr');
+            var totalAmount = 0;
+
+            for (var i = 1; i < rows.length; i++) {
+                var cols = rows[i].getElementsByTagName('td');
+                if (cols.length > 0) {
+                    var index = i; // Table row number
+                    var customerNumber = cols[5].innerText; // Customer number column (adjust as needed)
+                    var nic = cols[6].innerText; // NIC column (adjust as needed)
+                    var customerName = cols[4].innerText; // Customer Name column (adjust as needed)
+                    var amount = parseFloat(cols[8].innerText.replace(/[^0-9.-]+/g, "")) || 0; // Amount column (clean non-numeric characters)
+
+                    totalAmount += amount;
+                    data.push([index, customerNumber, nic, customerName, amount.toFixed(2), '']);
+                }
+            }
+
+            // Add total row
+            data.push(['', '', '', 'Total Amount', totalAmount.toFixed(2), '']);
+
+            // Add signature rows
+            data.push([]);
+            data.push(['Prepared By:', '', '', '', 'Authorized 01:', '']);
+            data.push(['', '', '', '', 'Authorized 02:', '']);
+            data.push(['', '', '', '', 'All Cheques Received:', '']);
+
+            // Create the worksheet
+            var ws = XLSX.utils.aoa_to_sheet(data);
+
+            // Add the sheet to the workbook
+            XLSX.utils.book_append_sheet(wb, ws, 'Disbursement Sheet');
+
+            // Export the workbook
+            XLSX.writeFile(wb, 'Disbursement_Sheet.xlsx');
+        }
+
+        function exportDocumentCharges() {
+            var table = document.getElementById('loan_table');
+            var wb = XLSX.utils.book_new();
+
+            // Prepare the data for the sheet
+            var data = [['#', 'Customer Number', 'NIC', 'Customer Name', 'Doc Charges']];
+            var rows = table.getElementsByTagName('tr');
+            var totalDocCharges = 0;
+
+            for (var i = 1; i < rows.length; i++) {
+                var cols = rows[i].getElementsByTagName('td');
+                if (cols.length > 0) {
+                    var index = i; // Table row number
+                    var customerNumber = cols[5].innerText.trim(); // Customer number column
+                    var nic = cols[6].innerText.trim(); // NIC column
+                    var customerName = cols[4].innerText.trim(); // Customer Name column
+                    var docCharges = parseFloat(cols[9].innerText.replace(/[^0-9.-]+/g, "")) || 0; // Doc Charges column
+
+                    if (docCharges > 0) {  // Include only rows with non-zero Doc Charges
+                        totalDocCharges += docCharges;
+                        data.push([index, customerNumber, nic, customerName, docCharges.toFixed(2)]);
+                    }
+                }
+            }
+
+            // Add total row
+            data.push(['', '', '', 'Total Doc Charges', totalDocCharges.toFixed(2)]);
+
+            // Add signature rows
+            data.push([]);
+            data.push(['CRO:', '', '', '', 'Branch Manager:']);
+
+            // Create the worksheet
+            var ws = XLSX.utils.aoa_to_sheet(data);
+
+            // Auto-adjust column widths
+            var colWidths = data[0].map(col => {
+                return { wch: Math.max(col.length * 1.2, 10) }; // Auto-adjust width based on the longest value in each column
+            });
+            ws['!cols'] = colWidths;
+
+            // Add the sheet to the workbook
+            XLSX.utils.book_append_sheet(wb, ws, 'Document Charges Register');
+
+            // Export the workbook
+            XLSX.writeFile(wb, 'Document_Charges_Register.xlsx');
+        }
+
+
+
+
+
+
+
+
 
         function set_cus(id){
             $('#loan_location_id').val(id);

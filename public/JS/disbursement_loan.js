@@ -14,7 +14,7 @@ function load_table() {
 
     $.ajax({
         type: "GET",
-        url: "/pendingloanload",
+        url: "/loan_disbursementload",
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
@@ -58,13 +58,15 @@ function load_table() {
                         item.center_no,
                         item.group_name,
                         item.First_Name + ' ' + item.Last_Name,
+                        item.cus_number,
+                        item.Nic,
                         item.loan_name,
                         parseFloat(item.Amount).toFixed(2),
+                        parseFloat(item.total_other_charges).toFixed(2),
                         item.Date_Time,
                         item.reason,
                         item.lending_officer,
                         item.user_name,
-                        '<span style="color: red">'+item.pending_approvals+'</span>',
                         // Status type conditional rendering
                         status_type === "-1"
                             ? '<span class="px-2" style="background-color: #FFD700;border-radius: 10px; color: white;">Pending</span>'

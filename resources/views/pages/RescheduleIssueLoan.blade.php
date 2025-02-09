@@ -91,16 +91,16 @@
                         <div class="card">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between mb-3">
-                                    <h3 class="my-4">Create Loan</h3>
+                                    <h3 class="my-4">Reschedule Loan({{$loan->Loan_No}})</h3>
 
                                 </div>
                                 <input type="hidden" id="saturday_sunday" class="form-control" value="{{$company->saturday_sunday}}">
                                 <div class="col-lg-12">
-                                    <div class="mb-3">
+                                    <div class="mb-3" hidden>
                                         <label for="simpleinput" class="form-label">Issue Date</label>
                                         <input type="date" id="issue_date" class="form-control" value="{{date('Y-m-d')}}">
                                     </div>
-                                    <div class="mb-3">
+                                    <div class="mb-3" hidden>
                                         <label for="simpleinput" class="form-label">Type</label>
                                         <select class="form-control"  id="type" onchange="change_type(this.value)">
                                             <option value="0">Individual</option>
@@ -133,12 +133,12 @@
                                         </select>
                                     </div>
 
-                                    <div class="mb-3" id="customer_feild">
+                                    <div class="mb-3" id="customer_feild" hidden>
                                         <label for="simpleinput" class="form-label">Loan Number</label>
                                         <input type="text" id="type_loan_number" class="form-control">
                                     </div>
 
-                                    <div class="mb-3" id="customer_bank_feild">
+                                    <div class="mb-3" id="customer_bank_feild" hidden>
                                         <label for="simpleinput" class="form-label">Customer Bank Account</label>
                                         <select class="form-control" id="bank_acc">
                                         </select>
@@ -159,7 +159,7 @@
                                         </select>
                                     </div>
 
-                                    <div class="mb-3" id="leasing_feild">
+                                    <div class="mb-3" id="leasing_feild" hidden>
                                         <label for="simpleinput" class="form-label">Select Type</label>
                                         <select class="form-control"  id="lease_type" onchange="check_leasing(this.value)">
                                             <option id="0">Cash</option>
@@ -1416,7 +1416,7 @@
                     if (data && data.product_details && data.product_details.length > 0) {
                         var product = data.product_details[0];
 
-                        $('#loan_amount').val(product.Loan_amount);
+                        $('#loan_amount').val(@json($balance));
                         $('#loan_amount_from').val(product.Loan_amount);
                         $('#loan_amount_to').val(product.Loan_amount_to);
                         $("#loan_display").text("Minimum Amount "+parseFloat(product.Loan_amount).toFixed(2) +" - Maximum Amount "+parseFloat(product.Loan_amount_to).toFixed(2)).css("color", "red");

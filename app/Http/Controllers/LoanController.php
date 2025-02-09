@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Session;
+use App\Models\Reschedule;
 
 class LoanController extends Controller
 {
@@ -1129,6 +1130,109 @@ class LoanController extends Controller
 
         return response()->json(['message' => 'Installments updated successfully!']);
     }
+
+
+    public function reschedule_index($loan_id, $balance)
+    {
+        $center = DB::table('center')->get();
+        $product = DB::table('loan_category')->get();
+        $company = DB::table('company')->first();
+        $lending_officer = DB::table('user')->where('lending_officer', '=', '1')->get();
+        $collector = DB::table('user')
+            ->where('collector','=','1')
+            ->get();
+        $loan=DB::table('customer_loan')
+            ->where('idCustomer_Loan','=',$loan_id)
+            ->first();
+        $product_id=$loan->Loan_Category_idLoan_Category;
+        $loan_id=$loan->idCustomer_Loan;
+        $customer = DB::table('customer')->where('idCustomer','=',$loan->Customer_idCustomer)->first();
+        return view('pages.RescheduleIssueLoan', compact('customer','loan_id','product_id','loan', 'center', 'product', 'lending_officer','company','collector','loan_id','balance'));
+    }
+
+
+    public function save_reschedule(Request $request)
+    {
+        $loan_id=$request->loan_id;
+        $date = Carbon::now()->toDateString();
+        $user_id = (int)session('userid');
+
+
+        $tot_loan_amount=$request->total_loan_amount;
+
+        $loan = Loan::find($loan_id);  // Find the loan by its ID
+// Step 2: Prepare the data to insert into the `reschedule` table
+        $rescheduleData = $loan->toArray(); // Convert the loan model to an array
+
+        Reschedule::create($rescheduleData);  // Assuming the `reschedule` table allows mass assignment
+
+
+        $loan->Date_Time = $date;
+        $loan->Amount = $request->loan_amount;
+        $loan->Interest_Rate = $request->interest;
+        $loan->Panalty_Rate = $request->panelty_amount;
+        $loan->Installment_Count = $request->ins_count;
+        $loan->Interest_Amount = $request->interest_amount;
+        $loan->Total_Other_Amount = $request->total_loan_charge;
+        $loan->Other_Amount_Balance = $request->loan_charge_balance;
+        $loan->Total_Loan_Amount = $tot_loan_amount;
+        $loan->Installment_Amount = $request->new_interest_amount;
+        $loan->Collection_Type = $request->collection_type;
+        $loan->Collection_Date = $request->installment_date_txt;
+        $loan->Panalty_Date = $request->panelty_date;
+        $loan->Balance_Amount = $tot_loan_amount;
+        $loan->User_idUser = $user_id;
+        $loan->capital_balance = $request->total_capital_amount;
+        $loan->installment_balance = $request->total_interest_amount;
+        $loan->type = $request->interest_method;
+        $loan->Interest_period = $request->Interest_period;
+
+// Save the updated loan
+        $loan->save();
+
+        foreach ($request->installment as $item) {
+            $customerLoanId = $loan->idCustomer_Loan;
+
+
+            // Fetch the last installment and increment the 'No'
+            $lastInstallment = DB::table('installments')
+                ->where('Customer_Loan_idCustomer_Loan', $customerLoanId)
+                ->orderByRaw('CAST(No AS UNSIGNED) DESC') // Ensure the 'No' field is ordered numerically
+                ->first();
+
+            // Check if the 'lastInstallment' exists and calculate the 'No' correctly
+            $no = $lastInstallment ? (int)$lastInstallment->No + 1 : 1;
+
+            // Log the next 'No' for debugging purposes
+            Log::info("Next Installment No for Customer Loan ID $customerLoanId: $no");
+
+            // Insert the new installment record
+//            DB::table('installments')->insert([
+//                'Customer_Loan_idCustomer_Loan' => $customerLoanId,
+//                'No' => $no,
+//                'Installment_Date' => $item['installmentDate'],
+//                'Installment_Amount' => $item['installmentAmount'],
+//                'capital_amount' => $item['capitalAmount'],
+//                'interest_amount' => $item['interestAmount'],
+//                'Panalty_Amount' => $item['panaltyAmount'],
+//                'Total_Amount' => $item['totalAmount'],
+//                'Paid_Amount' => "0.00", // Assuming the initial paid amount is 0
+//                'Panalty_Balance' => $item['panaltyBalance'],
+//                'Installment_Balance' => $item['installmentBalance'],
+//                'Total_Balance' => $item['totalBalance'],
+//                'Status' => '0', // Assuming status is '0' for the new installment
+//                'Panelty_date' => $item['panaltyDate'],
+//                'Panelty_status' => '0' // Assuming penalty status is '0'
+//            ]);
+        }
+
+
+
+
+        return response()->json([ 'installment' => $request->installment], 200);
+
+    }
+
 
 
 }

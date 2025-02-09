@@ -157,8 +157,6 @@
                     date_to: date_to
                 },
                 success: function (data) {
-
-
                     var trialBalanceTable = $('#trialBalanceTable');
                     var totalDebit = 0;
                     var totalCredit = 0;
@@ -181,8 +179,10 @@
                             var totalDebitAmount = item.total_debit ? parseFloat(item.total_debit).toFixed(2) : '0.00';
                             var totalCreditAmount = item.total_credit ? parseFloat(item.total_credit).toFixed(2) : '0.00';
 
-                            // Create a table row for each account
-                            var row = `
+                            // Only add rows where either debit or credit is non-zero
+                            if (parseFloat(totalDebitAmount) !== 0 || parseFloat(totalCreditAmount) !== 0) {
+                                // Create a table row for each account
+                                var row = `
                         <tr class="trialBalanceRow" data-account-id="${item.account_id}">
                             <td>${accName}</td>
                             <td>${type}</td>
@@ -190,11 +190,12 @@
                             <td>${formatNumber(totalCreditAmount)}</td>
                         </tr>
                     `;
-                            trialBalanceTable.append(row);
+                                trialBalanceTable.append(row);
 
-                            // Add totals for debit and credit
-                            totalDebit += parseFloat(totalDebitAmount);
-                            totalCredit += parseFloat(totalCreditAmount);
+                                // Add totals for debit and credit
+                                totalDebit += parseFloat(totalDebitAmount);
+                                totalCredit += parseFloat(totalCreditAmount);
+                            }
                         });
                     }
 
@@ -209,7 +210,6 @@
                         // Fetch the financial report for the clicked account
                         fetchFinancialReport(accountId);
                         $('#financialReportModal').modal('show');
-
                     });
                 },
                 error: function (xhr) {
@@ -217,6 +217,7 @@
                 }
             });
         }
+
 
         // Function to fetch and display the financial report data
         function fetchFinancialReport(accountId) {

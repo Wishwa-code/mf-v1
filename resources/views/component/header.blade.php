@@ -502,7 +502,7 @@
                                     @endif
                                     @if($item->issue_loan == 1)
                                         <li>
-                                            <a href="/loan">Issue Loans</a>
+                                            <a href="/loan">Create Loans</a>
                                         </li>
                                             <li>
                                                 <a href="/changeCollector">Change Collector In Loan</a>
@@ -513,6 +513,9 @@
                                         <li>
                                             <a href="/pendingloan">Pending Loans</a>
                                         </li>
+                                            <li>
+                                                <a href="/loan_disbursement">Loans Disbursement</a>
+                                            </li>
                                     @else
                                     @endif
                                     @if($item->current_loan == 1)
@@ -556,6 +559,9 @@
                                             <li>
                                                 <a href="/showsettleloan">Settled Loans</a>
                                             </li>
+{{--                                            <li>--}}
+{{--                                                <a href="/loan_reschedule">Loan Reschedule</a>--}}
+{{--                                            </li>--}}
                                         @else
                                     @endif
                                     @if($item->daily_payment == 1)

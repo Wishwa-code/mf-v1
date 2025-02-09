@@ -117,7 +117,7 @@ class ChartOfAccountController extends Controller
      */
     public function show()
     {
-        $chart_of_accounts = tableWithBranch('chart_of_account')->get();
+        $chart_of_accounts = tableWithBranch('company_bank_accounts')->get();
         return view('pages.Accounting.AddJournal', compact('chart_of_accounts'));
     }
 
@@ -162,7 +162,6 @@ class ChartOfAccountController extends Controller
             Log::error('ID from request: ' . $request->input('id_manual_journal'));
 
             if ($request->filled('id_manual_journal')) {
-                // Update the manual journal
 
                 updateWithBranch('manual_journal', 'id_manual_journal', $request->center_id, [
                     'narration' => $request->narration,
@@ -176,10 +175,9 @@ class ChartOfAccountController extends Controller
 
                 $journalId = $request->id_manual_journal;
 
-                // Delete existing details for the journal
                 deleteWithBranch('manual_journal_has_amount','id_manual_journal', $journalId);
             } else {
-                Log::info("Inserting a new manual journal.");
+
                 // Insert new manual journal
                 $journalId = insertWithBranch('manual_journal',[
                     'narration' => $request->narration,
@@ -203,6 +201,21 @@ class ChartOfAccountController extends Controller
                     'credit_amount' => $row['credit_amount'],
                     'created_at' => now(),
                 ]);
+                // Split the account string by '-' and get the first part
+                $accountParts = explode('-', $row['account']);
+                $firstNumber = $accountParts[0];  // Get the first part before '-'
+
+                $bank_id=tableWithBranch('company_bank_accounts')
+                    ->where('Idbank','=',$firstNumber)
+                    ->first();
+
+                if ($row['debit_amount']>0){
+                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","debit",$row['debit_amount']);
+                }
+
+                if ($row['credit_amount']>0){
+                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","credit",$row['credit_amount']);
+                }
             }
 
             return response()->json(['status' => 'success', 'message' => 'Manual Journal saved successfully.']);
@@ -345,8 +358,9 @@ class ChartOfAccountController extends Controller
 
     public function getAccountTrialBalance(Request $request)
     {
-        $dateFrom = $request->date_from;
-        $dateTo = $request->date_to;
+        $dateFrom = Carbon::parse($request->input('date_from'))->startOfDay()->toDateTimeString();
+        $dateTo = Carbon::parse($request->input('date_to'))->endOfDay()->toDateTimeString();
+
 
         // Fetch all bank accounts with their respective Account Names
         $bankAccounts = tableWithBranch('company_bank_accounts')->get();
@@ -452,80 +466,78 @@ class ChartOfAccountController extends Controller
 
 
 
-    public function BalanceSheetView(){
-        $date_from = Carbon::now()->format('Y-m-d'); // Current date
-        $date_to = Carbon::now()->format('Y-m-d'); // Current date
-        $current_assets=[];
-        $non_current_assets=[];
-        $equity=[];
-        $liabilities=[];
+    public function BalanceSheetView()
+    {
+        $date_from = Carbon::now()->format('Y-m-d'); // Default: Current date
+        $date_to = Carbon::now()->format('Y-m-d');   // Default: Current date
+
+        // Initialize all financial categories as empty arrays
+        $revenue = [];
+        $expenses = [];
+        $current_assets = [];
+        $non_current_assets = [];
+        $equity = [];
+        $liabilities = [];
+
+        // Calculate Totals (Ensure total is `0` if dataset is empty)
+        $total_revenue =  0;
+        $total_expenses =  0;
+        $total_assets =  0;
+        $total_liabilities =  0;
+        $total_equity =  0;
+        $total_liabilities_and_equity =  0;
+
         return view('pages.Accounting.BalanceSheet', compact(
-            'current_assets', 'non_current_assets', 'liabilities', 'equity', 'date_from', 'date_to'
+            'revenue', 'expenses', 'current_assets', 'non_current_assets',
+            'liabilities', 'equity', 'total_revenue', 'total_expenses',
+            'total_assets', 'total_liabilities', 'total_equity',
+            'total_liabilities_and_equity', 'date_from', 'date_to'
         ));
     }
 
     public function BalanceSheet(Request $request)
     {
-        $date_from = $request->date_from;
-        $date_to = $request->date_to;
+        $date_to = $request->date_to ?? now()->toDateString(); // Default: Today if no date is selected
 
-        // Fetch current assets
-        $current_assets = [
-            'cash_and_bank' => $this->getBalanceByAccountType("Cash and Bank", $date_to),
-            'cash_on_hand' => tableWithBranch('company_bank_accounts')->where('Account_No', '=', 'Cash')->value('Account_Balance'),
-            'bank' => tableWithBranch('company_bank_accounts')->where('Account_No','!=','Cash')->sum('Account_Balance'),
-            'account_receivable' => $this->getBalanceByAccountType("Account Receivable", $date_to),
-            'receivable' => $this->getBalanceByAccountType("Receivable", $date_to),
-            'taxes_paid_on_purchase' => $this->getBalanceByAccountType("Taxes Paid on Purchase", $date_to),
-            'current_asset' => $this->getBalanceByAccountType("Current Asset", $date_to),
-        ];
+        // Function to get the latest balance per account type with type filtering
+        $getLatestBalance = function ($acc_type_group, $type = null) use ($date_to) {
+            $query = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
+                ->join('company_bank_has_log AS log', 'log.Bank_Account_Id', '=', 'company_bank_accounts.Idbank')
+                ->where('company_bank_accounts.acc_type_group', $acc_type_group)
+                ->whereDate('log.Date_Time', '<=', $date_to) // Filter only up to the selected date
+                ->whereRaw('log.Date_Time = (SELECT MAX(Date_Time) FROM company_bank_has_log WHERE Bank_Account_Id = log.Bank_Account_Id AND Date_Time <= ?)', [$date_to]);
 
-        // Fetch non-current assets
-        $non_current_assets = [
-            'loan' => $this->getBalanceByAccountType("Loan", $date_to),
-            'non_current_asset' => $this->getBalanceByAccountType("Non-Current Asset", $date_to),
-        ];
+            // Apply type filter if provided (for Current and Non-Current Assets)
+            if ($type) {
+                $query->where('company_bank_accounts.type', $type);
+            }
 
-        // Fetch liabilities
-        $liabilities = [
-            'accounts_payable' => $this->getBalanceByAccountType("Accounts Payable", $date_to),
-            'accumulated_depreciation' => $this->getBalanceByAccountType("Accumulated Depreciation", $date_to),
-            'investor_deposit' => $this->getBalanceByAccountType("Investor Deposit", $date_to),
-            'borrower_saving_deposit' => $this->getBalanceByAccountType("Borrower Saving Deposit", $date_to),
-            'payable' => $this->getBalanceByAccountType("Payable", $date_to),
-            'taxes_received_on_sale' => $this->getBalanceByAccountType("Taxes Received on Sale", $date_to),
-        ];
+            return $query->pluck('log.Balance', 'company_bank_accounts.Account_Name')->toArray();
+        };
 
-        // Fetch equity
-        $equity = [
-            'equity' => $this->getBalanceByAccountType("Equity", $date_to),
-            'retained_earning' => $this->getBalanceByAccountType("Retained Earning", $date_to),
-        ];
+        // Fetch latest balances for each category (If no data exists, return an empty array)
+        $revenue = $getLatestBalance('Revenue') ?? [];
+        $expenses = $getLatestBalance('Expenses') ?? [];
+        $current_assets = $getLatestBalance('Assets', 'Current Asset') ?? []; // Now filtered
+        $non_current_assets = $getLatestBalance('Assets', 'Non-Current Asset') ?? []; // Now filtered
+        $liabilities = $getLatestBalance('Liabilities') ?? [];
+        $equity = $getLatestBalance('Equity') ?? [];
+
+        // Calculate Totals (Ensure total is `0` if dataset is empty)
+        $total_revenue = array_sum($revenue) ?? 0;
+        $total_expenses = array_sum($expenses) ?? 0;
+        $total_assets = array_sum($current_assets) + array_sum($non_current_assets) ?? 0;
+        $total_liabilities = array_sum($liabilities) ?? 0;
+        $total_equity = array_sum($equity) ?? 0;
+        $total_liabilities_and_equity = $total_liabilities + $total_equity ?? 0;
 
         return view('pages.Accounting.BalanceSheet', compact(
-            'current_assets', 'non_current_assets', 'liabilities', 'equity', 'date_from', 'date_to'
+            'revenue', 'expenses', 'current_assets', 'non_current_assets',
+            'liabilities', 'equity', 'total_revenue', 'total_expenses',
+            'total_assets', 'total_liabilities', 'total_equity',
+            'total_liabilities_and_equity', 'date_to'
         ));
     }
-
-
-
-
-    public function getBalanceByAccountType($accountTypeId, $dateTo)
-    {
-        Log::info($accountTypeId);
-
-        return tableWithBranch('chart_of_account','chart_of_account')
-            ->join('manual_journal_has_amount', 'chart_of_account.code', '=', DB::raw("SUBSTRING_INDEX(manual_journal_has_amount.account, '-', 1)"))
-            ->where('chart_of_account.acc_type', $accountTypeId)
-            ->whereDate('manual_journal_has_amount.created_at', '<=', $dateTo) // Filter by date
-            ->select(DB::raw('SUM(manual_journal_has_amount.debit_amount - manual_journal_has_amount.credit_amount) as balance'))
-            ->value('balance'); // Get the calculated balance
-    }
-
-
-
-
-
 
 
 

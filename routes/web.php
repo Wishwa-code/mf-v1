@@ -576,3 +576,19 @@ Route::post('/update_checklist/{itemId}','\App\Http\Controllers\LoanCategoryCont
 Route::get('/user/get-details/{id}', [UserController::class, 'getUserDetails']);
 Route::post('/user/update', [UserController::class, 'updateUser']);
 Route::post('/user/reset-password/{id}', [UserController::class, 'resetPassword']);
+
+
+
+//Reshedule
+Route::get('/loan_reschedule','\App\Http\Controllers\PaymentLoanController@reschedule')->name('reschedule.index');
+Route::get('/loan/{loan_id}/{balance}','\App\Http\Controllers\LoanController@reschedule_index')->name('reschedule.index');
+Route::post('/loan_reschedule','\App\Http\Controllers\LoanController@save_reschedule')->name('loan_reschedule.index');
+
+
+
+//Disbursement Loan
+Route::get('/loan_disbursement','\App\Http\Controllers\PendingLoanController@index_disbursement')->name('loan_disbursement.index');
+Route::get('/loan_disbursementload','\App\Http\Controllers\PendingLoanController@create_disbursement')->name('loan_disbursement.create');
+Route::post('/pendingloanissue','\App\Http\Controllers\PendingLoanController@show')->name('pendingloan.show');
+Route::get('/pendingloandelete/{id}','\App\Http\Controllers\PendingLoanController@destroy')->name('pendingloan.destroy');
+Route::get('/show_loan/{id}/{loan}','\App\Http\Controllers\PendingLoanController@edit')->name('loan.edit');
