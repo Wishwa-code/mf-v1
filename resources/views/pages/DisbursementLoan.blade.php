@@ -123,13 +123,13 @@
 
                             <div class="row mt-4">
                                 <div class="col-lg-4">
-                                    <button class="btn btn-primary w-100" onclick="exportFundRequest();">FUND REQUEST</button>
+                                    <button class="btn btn-primary w-100" onclick="exportFundRequestPDF();">FUND REQUEST</button>
                                 </div>
                                 <div class="col-lg-4">
-                                    <button class="btn btn-success w-100" onclick="exportDisbursementSheet();">DISBURSEMENT SHEET</button>
+                                    <button class="btn btn-success w-100" onclick="exportDisbursementSheetPDF();">DISBURSEMENT SHEET</button>
                                 </div>
                                 <div class="col-lg-4">
-                                    <button class="btn btn-info w-100" onclick="exportDocumentCharges();">Document Charges Register</button>
+                                    <button class="btn btn-info w-100" onclick="exportDocumentChargesPDF();">Document Charges Register</button>
                                 </div>
                             </div>
 
@@ -497,7 +497,9 @@
 @endsection
 
 @section('script')
-    <!-- DataTables JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
     <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.0.1/js/dataTables.buttons.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
@@ -509,6 +511,8 @@
     <script src="../JS/validate.js"></script>
     <script src="../JS/disbursement_loan.js?n=15"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+
 
     <script>
         $(function() {
@@ -549,139 +553,155 @@
 
 
 
-        function exportFundRequest() {
-            var table = document.getElementById('loan_table');
-            var wb = XLSX.utils.book_new();
-
-            // Prepare the data for the sheet
+        function exportFundRequestPDF() {
+            var rows = document.getElementById('loan_table').getElementsByTagName('tr');
             var data = [['#', 'Customer No', 'Customer Name', 'NIC', 'Amount']];
-            var rows = table.getElementsByTagName('tr');
             var totalAmount = 0;
 
             for (var i = 1; i < rows.length; i++) {
                 var cols = rows[i].getElementsByTagName('td');
                 if (cols.length > 0) {
-                    var index = i; // Table row number
-                    var cus_no = cols[5].innerText; // Center column (change if needed)
-                    var cus_name = cols[4].innerText; // Group column (change if needed)
-                    var nic = cols[6].innerText; // Customer column (change if needed)
-                    var amount = parseFloat(cols[8].innerText.replace(/[^0-9.-]+/g, "")) || 0; // Amount column (remove non-numeric characters)
+                    var index = i;
+                    var cus_no = cols[5].innerText;
+                    var cus_name = cols[4].innerText;
+                    var nic = cols[6].innerText;
+                    var amount = parseFloat(cols[8].innerText.replace(/[^0-9.-]+/g, "")) || 0;
 
                     totalAmount += amount;
                     data.push([index, cus_no, cus_name, nic, amount.toFixed(2)]);
                 }
             }
 
-            // Add total row
             data.push(['', '', '', 'Total Amount', totalAmount.toFixed(2)]);
+            data.push(['', '', '', '', '']);  // Add a blank row for spacing
+            data.push(['Authorized 01:', '', '', '', 'Authorized 02:']);  // Signature row
+            data.push(['', '', '', '', '']);  // Add another blank row to create more space
 
-            // Add signature rows
-            data.push([]);
-            data.push(['Authorized 01:', '', '', '', 'Authorized 02:']);
 
-            // Create the worksheet
-            var ws = XLSX.utils.aoa_to_sheet(data);
+            // Access jsPDF from the global `window.jspdf.jsPDF`
+            var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+            pdf.setFontSize(12);
+            pdf.text('Fund Request', 14, 16);
 
-            // Add the sheet to the workbook
-            XLSX.utils.book_append_sheet(wb, ws, 'Fund Request');
+            pdf.autoTable({
+                head: [data[0]],
+                body: data.slice(1),
+                startY: 20,
+                theme: 'grid',
+                styles: { halign: 'center' },
+            });
 
-            // Export the workbook
-            XLSX.writeFile(wb, 'Fund_Request.xlsx');
+            pdf.save('Fund_Request.pdf');
         }
 
 
-        function exportDisbursementSheet() {
-            var table = document.getElementById('loan_table');
-            var wb = XLSX.utils.book_new();
 
-            // Prepare the data for the sheet
+
+        function exportDisbursementSheetPDF() {
+            var rows = document.getElementById('loan_table').getElementsByTagName('tr');
             var data = [['#', 'Customer Number', 'NIC', 'Customer Name', 'Amount', 'Received By']];
-            var rows = table.getElementsByTagName('tr');
             var totalAmount = 0;
 
             for (var i = 1; i < rows.length; i++) {
                 var cols = rows[i].getElementsByTagName('td');
                 if (cols.length > 0) {
-                    var index = i; // Table row number
-                    var customerNumber = cols[5].innerText; // Customer number column (adjust as needed)
-                    var nic = cols[6].innerText; // NIC column (adjust as needed)
-                    var customerName = cols[4].innerText; // Customer Name column (adjust as needed)
-                    var amount = parseFloat(cols[8].innerText.replace(/[^0-9.-]+/g, "")) || 0; // Amount column (clean non-numeric characters)
+                    var index = i;
+                    var customerNumber = cols[5].innerText;
+                    var nic = cols[6].innerText;
+                    var customerName = cols[4].innerText;
+                    var amount = parseFloat(cols[8].innerText.replace(/[^0-9.-]+/g, "")) || 0;
 
                     totalAmount += amount;
                     data.push([index, customerNumber, nic, customerName, amount.toFixed(2), '']);
                 }
             }
 
-            // Add total row
             data.push(['', '', '', 'Total Amount', totalAmount.toFixed(2), '']);
-
-            // Add signature rows
             data.push([]);
-            data.push(['Prepared By:', '', '', '', 'Authorized 01:', '']);
+            data.push(['', 'Prepared By:', '', '', 'Authorized 01:', '']);
             data.push(['', '', '', '', 'Authorized 02:', '']);
             data.push(['', '', '', '', 'All Cheques Received:', '']);
 
-            // Create the worksheet
-            var ws = XLSX.utils.aoa_to_sheet(data);
+            var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+            pdf.setFontSize(12);
+            pdf.text('Disbursement Sheet', 14, 16);
 
-            // Add the sheet to the workbook
-            XLSX.utils.book_append_sheet(wb, ws, 'Disbursement Sheet');
+            pdf.autoTable({
+                head: [data[0]],
+                body: data.slice(1),
+                startY: 20,
+                theme: 'grid',
+                styles: {
+                    halign: 'center',
+                    valign: 'middle',
+                    fontSize: 10,
+                },
+                columnStyles: {
+                    0: { cellWidth: 10 },   // #
+                    1: { cellWidth: 35 },  // Customer Number
+                    2: { cellWidth: 35 },  // NIC
+                    3: { cellWidth: 50 },  // Customer Name
+                    4: { cellWidth: 30 },  // Amount
+                    5: { cellWidth: 30 },  // Received By
+                }
+            });
 
-            // Export the workbook
-            XLSX.writeFile(wb, 'Disbursement_Sheet.xlsx');
+            pdf.save('Disbursement_Sheet.pdf');
         }
 
-        function exportDocumentCharges() {
-            var table = document.getElementById('loan_table');
-            var wb = XLSX.utils.book_new();
 
-            // Prepare the data for the sheet
+
+
+        function exportDocumentChargesPDF() {
+            var rows = document.getElementById('loan_table').getElementsByTagName('tr');
             var data = [['#', 'Customer Number', 'NIC', 'Customer Name', 'Doc Charges']];
-            var rows = table.getElementsByTagName('tr');
             var totalDocCharges = 0;
 
             for (var i = 1; i < rows.length; i++) {
                 var cols = rows[i].getElementsByTagName('td');
                 if (cols.length > 0) {
-                    var index = i; // Table row number
-                    var customerNumber = cols[5].innerText.trim(); // Customer number column
-                    var nic = cols[6].innerText.trim(); // NIC column
-                    var customerName = cols[4].innerText.trim(); // Customer Name column
-                    var docCharges = parseFloat(cols[9].innerText.replace(/[^0-9.-]+/g, "")) || 0; // Doc Charges column
+                    var index = i;
+                    var customerNumber = cols[5].innerText.trim();
+                    var nic = cols[6].innerText.trim();
+                    var customerName = cols[4].innerText.trim();
+                    var docCharges = parseFloat(cols[9].innerText.replace(/[^0-9.-]+/g, "")) || 0;
 
-                    if (docCharges > 0) {  // Include only rows with non-zero Doc Charges
+                    if (docCharges > 0) {
                         totalDocCharges += docCharges;
                         data.push([index, customerNumber, nic, customerName, docCharges.toFixed(2)]);
                     }
                 }
             }
 
-            // Add total row
             data.push(['', '', '', 'Total Doc Charges', totalDocCharges.toFixed(2)]);
-
-            // Add signature rows
             data.push([]);
-            data.push(['CRO:', '', '', '', 'Branch Manager:']);
+            data.push(['', 'CRO:', '', 'Branch Manager:', '']);
 
-            // Create the worksheet
-            var ws = XLSX.utils.aoa_to_sheet(data);
+            var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+            pdf.setFontSize(12);
+            pdf.text('Document Charges Register', 14, 16);
 
-            // Auto-adjust column widths
-            var colWidths = data[0].map(col => {
-                return { wch: Math.max(col.length * 1.2, 10) }; // Auto-adjust width based on the longest value in each column
+            pdf.autoTable({
+                head: [data[0]],
+                body: data.slice(1),
+                startY: 20,
+                theme: 'grid',
+                styles: {
+                    halign: 'center',
+                    valign: 'middle',
+                    fontSize: 10,
+                },
+                columnStyles: {
+                    0: { cellWidth: 10 },   // #
+                    1: { cellWidth: 35 },  // Customer Number
+                    2: { cellWidth: 35 },  // NIC
+                    3: { cellWidth: 50 },  // Customer Name
+                    4: { cellWidth: 30 },  // Doc Charges
+                }
             });
-            ws['!cols'] = colWidths;
 
-            // Add the sheet to the workbook
-            XLSX.utils.book_append_sheet(wb, ws, 'Document Charges Register');
-
-            // Export the workbook
-            XLSX.writeFile(wb, 'Document_Charges_Register.xlsx');
+            pdf.save('Document_Charges_Register.pdf');
         }
-
-
-
 
 
 

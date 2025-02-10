@@ -58,6 +58,7 @@ function load_table() {
                         item.center_no,
                         item.group_name,
                         item.First_Name + ' ' + item.Last_Name,
+                        item.cus_number,
                         item.loan_name,
                         parseFloat(item.Amount).toFixed(2),
                         item.Date_Time,
