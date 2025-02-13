@@ -28,7 +28,7 @@ class LoanController extends Controller
      */
     public function index()
     {
-        $customers = tableWithBranch('customer')->get();
+        $customers = tableWithBranch('customer')->where('Status','=','1')->get();
         $center = tableWithBranch('center')->get();
         $product = tableWithBranch('loan_category')->get();
         $company = DB::table('company')->first();
@@ -44,7 +44,7 @@ class LoanController extends Controller
      */
     public function create()
     {
-        $customers = tableWithBranch('customer')->get();
+        $customers = tableWithBranch('customer')->where('Status','=','1')->get();
         $center = tableWithBranch('center')->get();
         $product = tableWithBranch('loan_category')->get();
         $company = DB::table('company')->first();

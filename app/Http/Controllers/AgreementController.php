@@ -165,24 +165,27 @@ class AgreementController extends Controller
         foreach ($witness as $item) {
             if ($item->type === "Guarantor") {
                 $guarantor = tableWithBranch('guardian')
-                    ->select('First_Name', 'Last_Name', 'Contact_No', 'Nic', 'Address')
+                    ->select('First_Name', 'Last_Name', 'Contact_No', 'Nic', 'Address','Address_02','Address_03')
                     ->where('idGuardian', $item->cus_id)->first();
 
                 $witnessDetails[] = [
                     'type' => 'Guarantor',
-                    'details' => $guarantor ?? (object)['First_Name' => null, 'Last_Name' => null, 'Contact_No' => null, 'Nic' => null, 'Address' => null]
+                    'details' => $guarantor ?? (object)['First_Name' => null, 'Last_Name' => null, 'Contact_No' => null, 'Nic' => null, 'Address' => null, 'Address_02' => null, 'Address_03' => null]
                 ];
             } else {
                 $customer = tableWithBranch('customer')
-                    ->select('First_Name', 'Last_Name', 'Contact_No', 'Nic', 'Address')
+                    ->select('First_Name', 'Last_Name', 'Contact_No', 'Nic', 'Address','Address_02','Address_03')
                     ->where('idCustomer', $item->cus_id)->first();
 
                 $witnessDetails[] = [
                     'type' => 'Customer',
-                    'details' => $customer ?? (object)['First_Name' => null, 'Last_Name' => null, 'Contact_No' => null, 'Nic' => null, 'Address' => null]
+                    'details' => $customer ?? (object)['First_Name' => null, 'Last_Name' => null, 'Contact_No' => null, 'Nic' => null, 'Address' => null, 'Address_02' => null, 'Address_03' => null]
                 ];
             }
         }
+
+
+
 
 
 
@@ -239,37 +242,40 @@ class AgreementController extends Controller
             'class="ql-size-huge"' => 'style="font-size: 26px;"'
         ];
 
-        $placeholders['@Guarantee_First_Name@'] = "-";
-        $placeholders['@Guarantee_Last_Name@'] = "-";
-        $placeholders['@Guarantee_Contact_No@'] = "-";
-        $placeholders['@Guarantee_NIC@'] = "-";
-        $placeholders['@Guarantee_Address_Line_01@'] = "-";
-        $placeholders['@Guarantee_Address_Line_02@'] = "-";
-        $placeholders['@Guarantee_Address_Line_03@'] = "-";
+        $placeholders['@Guarantee_First_Name@'] = "";
+        $placeholders['@Guarantee_Last_Name@'] = "";
+        $placeholders['@Guarantee_Contact_No@'] = "";
+        $placeholders['@Guarantee_NIC@'] = "";
+        $placeholders['@Guarantee_Address_Line_01@'] = "";
+        $placeholders['@Guarantee_Address_Line_02@'] = "";
+        $placeholders['@Guarantee_Address_Line_03@'] = "";
 
-        // Fill in guarantee details
-        $Guarantor = 1; // Start with 1
-
-        foreach ($witnessDetails as $index => $witness) {
-            if ($Guarantor === 1) {
-                $placeholders['@Guarantee_First_Name@'] = $witness['details']->First_Name;
-                $placeholders['@Guarantee_Last_Name@'] = $witness['details']->Last_Name;
-                $placeholders['@Guarantee_Contact_No@'] = $witness['details']->Contact_No;
-                $placeholders['@Guarantee_NIC@'] = $witness['details']->Nic;
-                $placeholders['@Guarantee_Address_Line_01@'] = $witness['details']->Address;
-                $placeholders['@Guarantee_Address_Line_02@'] = property_exists($witness['details'], 'Address_2') ? $witness['details']->Address_2 : null;
-                $placeholders['@Guarantee_Address_Line_03@'] = property_exists($witness['details'], 'Address_3') ? $witness['details']->Address_3 : null;
-            } else {
-                $placeholders["@Guarantee_First_Name_$Guarantor@"] = $witness['details']->First_Name;
-                $placeholders["@Guarantee_Last_Name_$Guarantor@"] = $witness['details']->Last_Name;
-                $placeholders["@Guarantee_Contact_No_$Guarantor@"] = $witness['details']->Contact_No;
-                $placeholders["@Guarantee_NIC_$Guarantor@"] = $witness['details']->Nic;
-                $placeholders["@Guarantee_Address_Line_01_$Guarantor@"] = $witness['details']->Address;
-                $placeholders["@Guarantee_Address_Line_02_$Guarantor@"] = property_exists($witness['details'], 'Address_2') ? $witness['details']->Address_2 : null;
-                $placeholders["@Guarantee_Address_Line_03_$Guarantor@"] = property_exists($witness['details'], 'Address_3') ? $witness['details']->Address_3 : null;
-            }
-            $Guarantor++;
+        for ($i = 1; $i <= 3; $i++) {
+            $suffix = $i === 1 ? '' : "_$i";
+            $placeholders["@Guarantee_First_Name$suffix@"] = '';
+            $placeholders["@Guarantee_Last_Name$suffix@"] = '';
+            $placeholders["@Guarantee_Contact_No$suffix@"] = '';
+            $placeholders["@Guarantee_NIC$suffix@"] = '';
+            $placeholders["@Guarantee_Address_Line_01$suffix@"] = '';
+            $placeholders["@Guarantee_Address_Line_02$suffix@"] = '';
+            $placeholders["@Guarantee_Address_Line_03$suffix@"] = '';
         }
+
+        $Guarantor = 1;
+        foreach ($witnessDetails as $witness) {
+            $suffix = $Guarantor === 1 ? '' : "_$Guarantor";
+            $placeholders["@Guarantee_First_Name$suffix@"] = $witness['details']->First_Name ?? '';
+            $placeholders["@Guarantee_Last_Name$suffix@"] = $witness['details']->Last_Name ?? '';
+            $placeholders["@Guarantee_Contact_No$suffix@"] = $witness['details']->Contact_No ?? '';
+            $placeholders["@Guarantee_NIC$suffix@"] = $witness['details']->Nic ?? '';
+            $placeholders["@Guarantee_Address_Line_01$suffix@"] = $witness['details']->Address ?? '';
+            $placeholders["@Guarantee_Address_Line_02$suffix@"] = $witness['details']->Address_02 ?? '';
+            $placeholders["@Guarantee_Address_Line_03$suffix@"] =  $witness['details']->Address_03 ?? '';
+
+            $Guarantor++;
+
+        }
+
 
 
 //
