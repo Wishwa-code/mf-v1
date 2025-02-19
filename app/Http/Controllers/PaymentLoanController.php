@@ -60,14 +60,18 @@ class PaymentLoanController extends Controller
         $route = $request->route;
         $loan_number = $request->loan_number_search;
 
-        // Build the main query
         $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
-            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id
-             FROM group_has_customer
-             LEFT JOIN customer_group
-             ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
-                'customer.idCustomer', '=', 'subquery.cus_id')
+            ->leftJoin(DB::raw('(
+        SELECT 
+            group_has_customer.cus_id, 
+            group_has_customer.group_id,    -- Add group_id here
+            customer_group.Name as group_name, 
+            customer_group.center_id 
+        FROM group_has_customer 
+        LEFT JOIN customer_group 
+        ON group_has_customer.group_id = customer_group.idCustomer_Group
+    ) as subquery'), 'customer.idCustomer', '=', 'subquery.cus_id')
             ->join('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category')
             ->join('user as u1', 'customer_loan.User_idUser', '=', 'u1.id')
             ->join('user as u2', 'customer_loan.lending_officer_id', '=', 'u2.id')
@@ -78,6 +82,7 @@ class PaymentLoanController extends Controller
                 'customer_loan.*',
                 'loan_category.Name as loan_name',
                 'customer.*',
+                'center.idCenter',
                 DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
                 DB::raw('IFNULL(center.No, "-") as center_no'),
                 DB::raw('IFNULL(route.name, "-") as route_name'),
@@ -85,7 +90,6 @@ class PaymentLoanController extends Controller
                 'u2.Full_Name as lending_officer'
             );
 
-        // Apply filters based on input values
         if ($group != '0') {
             $loanQuery->where('subquery.group_id', '=', $group);
         }
@@ -110,13 +114,25 @@ class PaymentLoanController extends Controller
             $loanQuery->where('customer_loan.Loan_No', 'LIKE', '%' . $loan_number . '%');
         }
 
-        // Paginate the loans
         $loans = $loanQuery->paginate(10);
 
-        // Calculate the total counts and sums without pagination
+
         $totals = tableWithBranch('customer_loan', 'customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin(DB::raw('(
+        SELECT 
+            group_has_customer.cus_id, 
+            group_has_customer.group_id, 
+            customer_group.Name as group_name, 
+            customer_group.center_id 
+        FROM group_has_customer 
+        LEFT JOIN customer_group 
+        ON group_has_customer.group_id = customer_group.idCustomer_Group
+    ) as subquery'), 'customer.idCustomer', '=', 'subquery.cus_id')
+            ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
+            ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
             ->where('customer_loan.Status', '=', '0');
+
 
         // Apply the same filters to the totals query
         if ($group != '0') {
@@ -143,10 +159,12 @@ class PaymentLoanController extends Controller
             $totals->where('customer_loan.Loan_No', 'LIKE', '%' . $loan_number . '%');
         }
 
+        // Calculate the totals
         $totalLoanCount = $totals->count();
         $totalCapitalBalance = $totals->sum('customer_loan.capital_balance');
         $totalPendingAmount = $totals->sum('customer_loan.Balance_Amount');
         $totalLoanAmount = $totals->sum('customer_loan.Amount');
+
 
         // Combine results with pagination and totals
         return response()->json([
@@ -160,6 +178,7 @@ class PaymentLoanController extends Controller
             'message' => 'notall'
         ], 200);
     }
+
 
 
 

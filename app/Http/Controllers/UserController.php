@@ -186,7 +186,6 @@ class UserController extends Controller
 
             // Call to the penalty creation function
             $this->create_panelty();
-
             return redirect()->intended(route('home'));
         }
 
@@ -293,6 +292,35 @@ class UserController extends Controller
         if ($getuser){
             $dashboard=$getuser->dashboard;
         }
+
+
+
+//        $loan=DB::table('customer_loan')->get();
+//
+//        foreach ($loan as $loans){
+//            $id=$loans->idCustomer_Loan;
+//            $panelty_balance=tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan','=',$id)->sum('Panalty_Balance');
+//
+//
+//            $LoanLogController = new LoanLogController();
+//
+//            // Call the store method of LoanLogController
+//            $LoanLogController->index(
+//                $id,
+//                'Issue Loan',
+//                $id,
+//                'Loan Issue',
+//                $loans->Amount,
+//                '0',
+//                '0',
+//                '0',
+//                '0',
+//                $panelty_balance,
+//                $loans->Interest_Amount,
+//                $loans->capital_balance,
+//                $loans->Balance_Amount+$panelty_balance,
+//                '0');
+//        }
 
 
         return view('home',compact('dashboard','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
@@ -757,6 +785,18 @@ class UserController extends Controller
         }
     }
 
+
+    public function getHolidays()
+    {
+        // Retrieve all holiday dates from the database using DB::table()
+        $holidays = DB::table('holidays') // Replace 'holidays' with your actual table name
+        ->select('date')
+            ->get()
+            ->pluck('date')
+            ->toArray(); // Convert the collection to an array
+
+        return response()->json($holidays); // Return the dates as JSON
+    }
 
 
 }

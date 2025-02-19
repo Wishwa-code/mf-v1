@@ -747,9 +747,11 @@ class LoanController extends Controller
             ->get();
 
 
-        $customer_payments = tableWithBranch('customer_payments','customer_payments')
+        $customer_payments = tableWithBranch('customer_payments', 'customer_payments')
             ->join('user', 'customer_payments.User_idUser', '=', 'user.id')
-            ->where('Customer_Loan_idCustomer_Loan', $id)->get();
+            ->where('Customer_Loan_idCustomer_Loan', $id)
+            ->orderBy('Date', 'asc') // 'asc' for ascending, 'desc' for descending
+            ->get();
 
         $total_paid_amount = $customer_payments->sum('Amount');
 

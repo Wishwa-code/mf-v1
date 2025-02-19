@@ -1109,6 +1109,8 @@
             let x = ["#installment_amount","#offer_decided"];
             decimalFormat(x);
 
+            fetchHolidays();
+
         });
 
 
@@ -2054,6 +2056,55 @@
             $('#installment_date_txt').val(nextMonthDate.toISOString().slice(0, 10));
         }
 
+
+        let holidays = []; // Global variable for holidays
+
+        // Function to fetch holidays
+        function fetchHolidays() {
+            return new Promise((resolve, reject) => {
+                $.ajax({
+                    url: '/get-holidays',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        holidays = response.map(date => new Date(date).toISOString().split('T')[0]); // Ensure consistent format
+                        console.log('Holidays fetched successfully:', holidays);
+                        resolve(); // Resolve the Promise once holidays are fetched
+                    },
+                    error: function (error) {
+                        console.error('Failed to fetch holidays:', error);
+                        reject(error); // Reject the Promise on error
+                    }
+                });
+            });
+        }
+
+        // Function to calculate dates (returns a Promise)
+        function calculateDates(installmentCount) {
+            return new Promise(async (resolve) => {
+                const installmentDates = [];
+                let i = 0;
+                let currentDate = new Date();
+
+                while (i < installmentCount) {
+                    currentDate.setDate(currentDate.getDate() + 1);
+                    const formattedDate = new Date(currentDate).toISOString().split('T')[0];
+
+                    if (!holidays.includes(formattedDate)) {
+                        installmentDates.push(formattedDate);
+                        i++;
+                    }
+                }
+
+                console.log('Final Installment Dates:', installmentDates);
+                resolve(installmentDates); // Resolve the Promise with the installment dates
+            });
+        }
+
+
+
+
+
         function addInstallmentDates() {
 
             let startDate = $("#installment_date_txt").val();
@@ -2069,6 +2120,7 @@
             let tot_amount = 0.0;
             let installmentAmount = 0.0;  // Initialize installmentAmount
             let interest = $("#loan_interest").val();
+
 
 
             const loanAmountFrom = parseFloat($("#loan_amount_from").val());
@@ -2266,35 +2318,35 @@
                                 return year + '-' + month + '-' + day;
                             }
 
-                            // Loop through each installment count
+                            // Ensure holidays array contains consistently formatted dates
+                            holidays = holidays.map(date => new Date(date).toISOString().split('T')[0]);
+
                             for (var i = 0; i < installmentCount;) {
                                 // Add one day to the current date
-                                currentDate.setDate(currentDate.getDate());
-
-                                // Check if the current date is Saturday or Sunday
-                                var dayOfWeek = currentDate.getDay();
-
-                                if(saturday_sunday==='1'){
-                                    if (dayOfWeek !== 0 && dayOfWeek !== 6) { // 0 is Sunday, 6 is Saturday
-                                        // Format the date
-                                        var formattedDate = formatDate(currentDate);
-                                        installmentDates.push(formattedDate);
-                                        i++; // Only increment i if it's a valid date
-                                    }
-
-                                }else {
-
-
-                                    var formattedDate = formatDate(currentDate);
-                                    installmentDates.push(formattedDate);
-                                    i++;
-
-
-
-                                }
                                 currentDate.setDate(currentDate.getDate() + 1);
 
+                                // Format the current date as YYYY-MM-DD
+                                var formattedDate = new Date(currentDate).toISOString().split('T')[0]; // Ensure consistent format
+
+                                // Log both for debugging
+                                console.log('Checking date:', formattedDate);
+                                console.log('Holidays:', holidays);
+
+                                // Check if the current date is NOT in the holidays array
+                                if (!holidays.includes(formattedDate)) {
+                                    console.log('Date added:', formattedDate); // Log added dates
+                                    installmentDates.push(formattedDate);
+                                    i++; // Increment only for valid dates (non-holidays)
+                                } else {
+                                    console.log('Skipped holiday:', formattedDate); // Log skipped dates
+                                }
                             }
+                            // Usage
+
+
+
+
+
                             // Get the table body
                             var tableBody = $('#installment_table tbody');
 

@@ -4,194 +4,194 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.2.3/css/buttons.dataTables.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css">
-<style>
-    thead {
-        background-color: #d9edf7; /* Light blue color */
-        color: #31708f; /* Darker blue text for contrast */
-    }
-
-    #overlay {
-        display: none;
-        position: fixed;
-        z-index: 1;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-    }
-
-    .modal_2 {
-        display: none;
-        position: fixed;
-        z-index: 1;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        overflow: auto;
-        background-color: rgba(0,0,0,0.5);
-    }
-
-    .modal_2-content {
-        background-color: #fff;
-        margin: 5% auto;
-        padding: 20px;
-        border: 1px solid #ccc;
-        width: 90%;
-        max-width: 400px;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-
-    .close_2 {
-        color: #aaa;
-        float: right;
-        font-size: 28px;
-        font-weight: bold;
-    }
-
-    .close_2:hover,
-    .close_2:focus {
-        color: black;
-        text-decoration: none;
-        cursor: pointer;
-    }
-
-    .printer-design {
-        text-align: center;
-    }
-
-    .receipt {
-        font-family: 'Arial', sans-serif;
-        text-align: left;
-        margin: 0;
-    }
-
-    .receipt .header {
-        text-align: center;
-    }
-
-    .receipt .logo {
-        width: 80px;
-        margin: 0 auto 10px;
-    }
-
-    .receipt h1, .receipt h2 {
-        margin: 5px 0;
-    }
-
-    .receipt p {
-        margin: 5px 0;
-        line-height: 1.5;
-    }
-
-    .receipt .details p {
-        margin: 3px 0;
-    }
-
-    .receipt .payment-info {
-        margin: 10px 0;
-    }
-
-    .receipt .payment-info .item {
-        display: flex;
-        justify-content: space-between;
-        margin: 5px 0;
-    }
-
-    .receipt .payment-info .description {
-        font-weight: bold;
-    }
-
-    .receipt .payment-info .amount {
-        text-align: right;
-    }
-
-    .receipt hr {
-        border: 0;
-        border-top: 1px dashed #ddd;
-        margin: 10px 0;
-    }
-
-    .receipt .totals p {
-        margin: 5px 0;
-        font-weight: bold;
-    }
-
-    .receipt .signature {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        margin: 20px 0;
-    }
-
-    .receipt .signature-line {
-        width: 100%;
-        text-align: center;
-        margin-bottom: 5px;
-    }
-
-    .receipt .thank-you {
-        text-align: center;
-        font-size: 18px;
-        margin-top: 20px;
-    }
-
-    button {
-        background-color: #007bff;
-        color: white;
-        padding: 10px 20px;
-        margin-top: 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: background-color 0.3s;
-    }
-
-    button:hover {
-        background-color: #0056b3;
-    }
-
-    /* Print styles */
-    @media print {
-        body * {
-            visibility: hidden;
+    <style>
+        thead {
+            background-color: #d9edf7; /* Light blue color */
+            color: #31708f; /* Darker blue text for contrast */
         }
-        .printer-design, .printer-design * {
-            visibility: visible;
-        }
-        .printer-design {
-            position: absolute;
+
+        #overlay {
+            display: none;
+            position: fixed;
+            z-index: 1;
             left: 0;
             top: 0;
-            width: 80mm; /* 80mm width for thermal printer */
-            background: white;
-        }
-        .modal-content {
-            width: 80mm; /* Ensures the modal content fits the thermal printer paper */
-            border: none; /* Removes border during print */
-        }
-        .receipt {
             width: 100%;
-            padding: 10px;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
         }
-        .printer-design button {
+
+        .modal_2 {
             display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
         }
-    }
-    .bg-purple th {
-        color: #e1e1e1 !important; /* Ensure white text color for th elements */
-    }
+
+        .modal_2-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .close_2 {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close_2:hover,
+        .close_2:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .printer-design {
+            text-align: center;
+        }
+
+        .receipt {
+            font-family: 'Arial', sans-serif;
+            text-align: left;
+            margin: 0;
+        }
+
+        .receipt .header {
+            text-align: center;
+        }
+
+        .receipt .logo {
+            width: 80px;
+            margin: 0 auto 10px;
+        }
+
+        .receipt h1, .receipt h2 {
+            margin: 5px 0;
+        }
+
+        .receipt p {
+            margin: 5px 0;
+            line-height: 1.5;
+        }
+
+        .receipt .details p {
+            margin: 3px 0;
+        }
+
+        .receipt .payment-info {
+            margin: 10px 0;
+        }
+
+        .receipt .payment-info .item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+
+        .receipt .payment-info .description {
+            font-weight: bold;
+        }
+
+        .receipt .payment-info .amount {
+            text-align: right;
+        }
+
+        .receipt hr {
+            border: 0;
+            border-top: 1px dashed #ddd;
+            margin: 10px 0;
+        }
+
+        .receipt .totals p {
+            margin: 5px 0;
+            font-weight: bold;
+        }
+
+        .receipt .signature {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            margin: 20px 0;
+        }
+
+        .receipt .signature-line {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .receipt .thank-you {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Print styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .printer-design, .printer-design * {
+                visibility: visible;
+            }
+            .printer-design {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 80mm; /* 80mm width for thermal printer */
+                background: white;
+            }
+            .modal-content {
+                width: 80mm; /* Ensures the modal content fits the thermal printer paper */
+                border: none; /* Removes border during print */
+            }
+            .receipt {
+                width: 100%;
+                padding: 10px;
+            }
+            .printer-design button {
+                display: none;
+            }
+        }
+        .bg-purple th {
+            color: #e1e1e1 !important; /* Ensure white text color for th elements */
+        }
 
 
-    .bg-purple {
-        background-color: #1A2942 !important; /* Purple color */
-        color: white !important; /* White text color */
-    }
+        .bg-purple {
+            background-color: #1A2942 !important; /* Purple color */
+            color: white !important; /* White text color */
+        }
 
 
-</style>
+    </style>
 
 @endsection
 
@@ -233,13 +233,16 @@
                                 <div class="mb-3">
                                     <label for="simpleinput" class="form-label">Center</label>
                                     <select class="form-control select2" id="center_details">
-                                        <option value="0">All</option>
-                                        @foreach($center as $item)
-                                            <option value="{{$item->idCenter}}">{{ $item->Name }}-{{ $item->Route }}</option>
+                                        <option value="0" selected>None</option>
+                                        @foreach($center as $index => $item)
+                                            <option value="{{ $item->idCenter }}">
+                                                {{ $item->Name }}-{{ $item->Route }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
                             </div>
+
 
                             <div class="col-lg-3">
                                 <div class="mb-3">
@@ -292,52 +295,65 @@
                             </div>
                         </div>
                         <hr>
-                        <div class="table-responsive-sm">
-{{--                            <input type="date" name="date_bulk" id="date_bulk" value="{{date('Y-m-d')}}" class="form-control">--}}
-                            <br><br>
-                            <input type="button" class="btn btn-warning" style="float: right" value="Bulk Payment" id="bulk_payment" onclick="automatePayments();">
-                            <input type="file" name="file" id="file" hidden>
-                            <br><br><br>
-                            <div class="table-responsive">
-                                <table class="table table-striped table-bordered table-hover table-centered mb-0" id="loan_table" style="padding: 0!important;">
-                                    <thead>
-                                    <tr>
-                                        <th scope="col">Loan No</th>
-                                        <th scope="col">Member NIC</th>
-                                        <th scope="col">Loan Amount</th>
-                                        <th scope="col">Today Installment</th>
-                                        <th scope="col">Date</th>
-                                        <th scope="col">Amount</th>
-                                        <th scope="col">Member Name</th>
-                                        <th scope="col">Type</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                                <div id="pagination" class="d-flex justify-content-end mt-3 me-3"></div>
-                            </div>
-
-
-                        </div> <!-- end table-responsive-->
-
-                        <div class="row mt-1 mb-1 p-2">
-                            <div class="col-md-8 row">
-                                <div class="col-sm-3">
-                                    <div>
-                                        <span class="fw-bold">Total Today Installment</span>
+                        <div class="container">
+                            <!-- Row for Totals -->
+                            <div class="row align-items-center mt-3">
+                                <!-- Total Today Installment -->
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <span class="fw-bold">Total Entered Amount:</span>
+                                        <span id="tot_installment" class="ms-2 fs-5 fw-bold text-success">0.00</span>
                                     </div>
                                 </div>
-                                <div class="col-lg-4">
-                                    <div>
-                                        <span id="tot_amount">0.00</span>
-                                    </div>
 
+                                <!-- Total Entered Amount -->
+                                <div class="col-md-6 text-end">
+                                    <div class="d-flex align-items-center justify-content-end">
+                                        <span class="fw-bold">Total Today Installment:</span>
+                                        <span id="tot_amount" class="ms-2 fs-5 fw-bold text-primary">0.00</span>
+                                    </div>
                                 </div>
                             </div>
 
+                            <!-- Bulk Payment Button -->
+                            <div class="row mt-3">
+                                <div class="col-12 text-end">
+                                    <input type="button" class="btn btn-warning" value="Bulk Payment" id="bulk_payment" onclick="automatePayments();">
+                                    <input type="file" name="file" id="file" hidden>
+                                </div>
+                            </div>
 
+                            <!-- Loan Table -->
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-bordered table-hover table-centered mb-0" id="loan_table">
+                                            <thead class="bg-light">
+                                            <tr>
+                                                <th scope="col">Loan No</th>
+                                                <th scope="col">Member NIC</th>
+                                                <th scope="col">Loan Amount</th>
+                                                <th scope="col">Today Installment</th>
+                                                <th scope="col">Date</th>
+                                                <th scope="col">Amount</th>
+                                                <th scope="col">Member Name</th>
+                                                <th scope="col">Type</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
 
+                            <!-- Pagination -->
+                            <div class="row mt-3">
+                                <div class="col-12 text-end">
+                                    <div id="pagination" class="d-flex justify-content-end"></div>
+                                </div>
+                            </div>
                         </div>
+
 
                     </div> <!-- end card-->
                 </div> <!-- end col -->
@@ -805,7 +821,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
     <script src="../JS/validate.js"></script>
-    <script src="../JS/bulk_payment.js"></script>
+    <script src="../JS/bulk_payment.js?n=12"></script>
     <script>
 
         function load_payment_reciept(id){

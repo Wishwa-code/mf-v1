@@ -124,7 +124,9 @@
                             <div class="card-body">
                                 <h4 class="page-title">Poya Days (Full Moons)</h4>
                                 <div class="d-flex justify-content-end">
-                                    <button class="btn btn-primary" id="addWeekendDays">Add Weekend Days</button> <!-- New Button -->
+                                    <button class="btn btn-warning ms-2" id="addWeekendDays">Add Weekend Days</button>
+                                    <button class="btn btn-primary ms-2" id="addOnlySaturdays">Add Only Saturdays</button>
+                                    <button class="btn btn-info ms-2" id="addOnlySundays">Add Only Sundays</button><!-- New Button -->
                                     <button class="btn btn-danger ms-2" id="savePoyaDays">Save All</button>
                                 </div>
                                 <div class="table-responsive-sm mt-3">
@@ -251,14 +253,15 @@
 
                 while (currentDate <= endDate) {
                     const dayOfWeek = currentDate.getDay(); // 0 for Sunday, 6 for Saturday
-
                     if (dayOfWeek === 0 || dayOfWeek === 6) { // Check if it's Saturday (6) or Sunday (0)
-                        weekendDays.push({
-                            date: new Date(currentDate).toISOString().split('T')[0], // Format as YYYY-MM-DD
-                            description: dayOfWeek === 0 ? "Sunday" : "Saturday"
-                        });
+                        const formattedDate = new Date(currentDate).toISOString().split('T')[0]; // Format as YYYY-MM-DD
+                        if (!isDateInTable(formattedDate)) { // Check for duplicates
+                            weekendDays.push({
+                                date: formattedDate,
+                                description: dayOfWeek === 0 ? "Sunday" : "Saturday"
+                            });
+                        }
                     }
-
                     currentDate.setDate(currentDate.getDate() + 1); // Move to the next day
                 }
 
@@ -268,10 +271,10 @@
 // Event listener for adding weekend days
             $('#addWeekendDays').click(function () {
                 const year = new Date().getFullYear(); // Get the current year
-                const weekendDays = calculateWeekendDays(year); // Get the weekend days
+                const weekendDays = calculateWeekendDays(year); // Get the weekend days without duplicates
 
                 weekendDays.forEach(day => {
-                    // Append each weekend day to the table
+                    // Append each unique weekend day to the table
                     $('#poya-days').append(`<tr><td>${day.date}</td><td>${day.description}</td></tr>`);
                 });
 
@@ -283,6 +286,100 @@
                     timer: 1500,
                 });
             });
+
+
+
+            // Utility to check if a date is already in the table
+            function isDateInTable(date) {
+                let exists = false;
+                $('#poya-days tr').each(function () {
+                    const existingDate = $(this).find('td:first').text();
+                    if (existingDate === date) {
+                        exists = true;
+                        return false; // Break the loop
+                    }
+                });
+                return exists;
+            }
+
+// Function to calculate Saturdays only
+            function calculateOnlySaturdays(year) {
+                const saturdays = [];
+                const startDate = new Date(`${year}-01-01`);
+                const endDate = new Date(`${year}-12-31`);
+                let currentDate = startDate;
+
+                while (currentDate <= endDate) {
+                    if (currentDate.getDay() === 6) { // 6 for Saturday
+                        const formattedDate = currentDate.toISOString().split('T')[0];
+                        if (!isDateInTable(formattedDate)) { // Check for duplicates
+                            saturdays.push({ date: formattedDate, description: 'Saturday' });
+                        }
+                    }
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+
+                return saturdays;
+            }
+
+// Function to calculate Sundays only
+            function calculateOnlySundays(year) {
+                const sundays = [];
+                const startDate = new Date(`${year}-01-01`);
+                const endDate = new Date(`${year}-12-31`);
+                let currentDate = startDate;
+
+                while (currentDate <= endDate) {
+                    if (currentDate.getDay() === 0) { // 0 for Sunday
+                        const formattedDate = currentDate.toISOString().split('T')[0];
+                        if (!isDateInTable(formattedDate)) { // Check for duplicates
+                            sundays.push({ date: formattedDate, description: 'Sunday' });
+                        }
+                    }
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+
+                return sundays;
+            }
+
+// Add event listener for Only Saturdays button
+            $('#addOnlySaturdays').click(function () {
+                const year = new Date().getFullYear(); // Get current year
+                const saturdays = calculateOnlySaturdays(year); // Get Saturdays only
+
+                saturdays.forEach(day => {
+                    $('#poya-days').append(`<tr><td>${day.date}</td><td>${day.description}</td></tr>`);
+                });
+
+                Swal.fire({
+                    position: 'center',
+                    icon: 'success',
+                    title: 'Saturdays added to the table!',
+                    showConfirmButton: false,
+                    timer: 1500,
+                });
+            });
+
+// Add event listener for Only Sundays button
+            $('#addOnlySundays').click(function () {
+                const year = new Date().getFullYear(); // Get current year
+                const sundays = calculateOnlySundays(year); // Get Sundays only
+
+                sundays.forEach(day => {
+                    $('#poya-days').append(`<tr><td>${day.date}</td><td>${day.description}</td></tr>`);
+                });
+
+                Swal.fire({
+                    position: 'center',
+                    icon: 'success',
+                    title: 'Sundays added to the table!',
+                    showConfirmButton: false,
+                    timer: 1500,
+                });
+            });
+
+
+
 
         });
     </script>

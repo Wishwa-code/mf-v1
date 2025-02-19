@@ -30,7 +30,7 @@ class PendingLoanController extends Controller
     public function index()
     {
         $user_id = (int)session('userid');
-        $collector_val = DB::table('user')->where('branch_id', session('branch_id'))->where('id', '=', $user_id)->first();
+        $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
         $collector = $collector_val->collector;
 
         $group = tableWithBranch('customer_group')->get();
@@ -186,7 +186,8 @@ class PendingLoanController extends Controller
 
 
             // Check if the sumAmount is greater than zero
-            if ($sumAmount > 0) {$bank_log_doc_comment="Loan Number : {$customer_loan->Loan_No}\nLoan Amount : {$customer_loan->Amount}\n";
+            if ($sumAmount > 0) {
+                $bank_log_doc_comment="Loan Number : {$customer_loan->Loan_No}\nLoan Amount : {$customer_loan->Amount}\n";
                 $this->bankLogController->index($company_bank,"Loan Document Chargers",$bank_log_doc_comment,"-","credit",$sumAmount);
 
                 $bank_id=tableWithBranch('company_bank_accounts')
@@ -198,7 +199,7 @@ class PendingLoanController extends Controller
                 $cate=tableWithBranch('income_category')
                     ->where('description','=','Other')
                     ->first();
-
+                $user_id = (int)session('userid');
                 if ($cate){
 
                     // Create a new Expenses instance
@@ -211,6 +212,7 @@ class PendingLoanController extends Controller
                     $expenses->amount = $sumAmount;
                     $expenses->category_id = $cate->id;
                     $expenses->bank_id = 1;
+                    $expenses->user_id = $user_id;
                     $expenses->branch_id = session('branch_id');
 
                     $expenses->save();
@@ -230,6 +232,7 @@ class PendingLoanController extends Controller
                     $expenses->amount = $sumAmount;
                     $expenses->category_id = $cate_id;
                     $expenses->bank_id = 1;
+                    $expenses->user_id = $user_id;
                     $expenses->branch_id = session('branch_id');
 
                     $expenses->save();

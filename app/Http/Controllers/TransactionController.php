@@ -323,4 +323,65 @@ class TransactionController extends Controller
     {
         //
     }
+
+    public function create_hm(Request $request)
+    {
+        $center = tableWithBranch('center')->get();
+
+        // Set default values
+        $center_details = $request->center_details ?? ($center->isNotEmpty() ? $center[0]->idCenter : null);
+        $from_date = $request->from_date;
+        $to_date = $request->to_date;
+
+        // Loan Query
+        $loanQuery = tableWithBranch('installments', 'installments')
+            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
+                 FROM group_has_customer
+                 LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
+                'customer.idCustomer', '=', 'subquery.cus_id')
+            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
+            ->where('customer_loan.Status', '=', '0')
+            ->select(
+                'customer.idCustomer',
+                DB::raw('IFNULL(center.No, "-") as center_no'),
+                'customer.First_Name as customer_name',
+                'customer.Last_Name as customer_lastname',
+                'customer.Nic as NIC',
+                'customer.Contact_No as Contact_No',
+                'customer_loan.Loan_No as Loan_No',
+                'customer_loan.Amount as Loan_Amount',
+                'customer_loan.idCustomer_Loan as idCustomer_Loan',
+                'customer_loan.type as type',
+                'customer_loan.Installment_Count as Installment_Count',
+                'customer_loan.capital_balance as capital_balance',
+                'customer_loan.Installment_Amount as Installment_Amount',
+                'customer_loan.Vehicle_No as Vehicle_No',
+                DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
+                DB::raw('ROUND(customer_loan.Balance_Amount, 2) as Total_Balance'),
+                DB::raw('ROUND(CASE WHEN installments.Installment_Date < CURDATE() THEN installments.Total_Balance ELSE 0 END, 2) as arrease') // Removed SUM()
+            );
+
+        // Filter by center if selected
+        if ($center_details != '0') {
+            $loanQuery->where('center.idCenter', '=', $center_details);
+        }
+
+        // Filter by date range if provided
+        if (!empty($from_date)) {
+            $loanQuery->whereDate('installments.Installment_Date', $from_date);
+        }
+
+        $loan = $loanQuery->get();
+
+        // Group data by 'group_name'
+        $grouped_loans = $loan->groupBy('group_name');
+
+        return view('pages.DailyRepaymentNoble', compact('center', 'grouped_loans', 'center_details', 'from_date'));
+    }
+
 }
