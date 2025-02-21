@@ -1055,13 +1055,27 @@
 
 
                     @if($item->report == 1)
-{{--                        <li class="side-nav-title">Report Section</li>--}}
+                        <li class="side-nav-item">
+                            <a data-bs-toggle="collapse" href="#main_report" aria-expanded="false" aria-controls="expences"
+                               class="side-nav-link">
+                                <i class="ri-file-paper-2-fill"></i>
+                                <span> Main Reports </span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse" id="main_report">
+                                <ul class="side-nav-second-level">
+                                    <li>
+                                        <a href="/AllLoanDetailReport">Portfolio & Performance</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
 
                         <li class="side-nav-item">
                             <a data-bs-toggle="collapse" href="#report" aria-expanded="false" aria-controls="expences"
                                class="side-nav-link">
                                 <i class="ri-file-paper-2-fill"></i>
-                                <span> Report </span>
+                                <span> Sub Reports </span>
                                 <span class="menu-arrow"></span>
                             </a>
                             <div class="collapse" id="report">

@@ -44,7 +44,7 @@ class TodayPaymentController extends Controller
 
         $user_id = (int)session('userid');
 
-        $collector_val = DB::table('user')->where('branch_id','=',session('branch_id'))->where('id', '=', $user_id)->first();
+        $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
         $collector = $collector_val->collector;
 
 
@@ -82,7 +82,7 @@ class TodayPaymentController extends Controller
 
         $user_id = (int)session('userid');
 
-        $collector_val = DB::table('user')->where('branch_id','=',session('branch_id'))->where('id', '=', $user_id)->first();
+        $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
         $collector = $collector_val->collector;
         $loanQuery = tableWithBranch('customer_loan','customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
@@ -113,7 +113,7 @@ class TodayPaymentController extends Controller
 
         $user_id = (int)session('userid');
 
-        $collector_val = DB::table('user')->where('branch_id','=',session('branch_id'))->where('id', '=', $user_id)->first();
+        $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
         $collector = $collector_val->collector;
 
 
@@ -250,7 +250,7 @@ class TodayPaymentController extends Controller
 
         $user_id = (int)session('userid');
 
-        $collector_val = DB::table('user')->where('branch_id','=',session('branch_id'))->where('id', '=', $user_id)->first();
+        $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
         $collector = $collector_val->collector;
 
 
