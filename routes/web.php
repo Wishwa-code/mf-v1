@@ -445,7 +445,6 @@ Route::post('/daily_repayment_sheet_filter_hm', [TransactionController::class, '
 
 
 
-// routes/web.php
 Route::post('/update-loan-category', [LoanCategoryController::class, 'saving_update'])->name('update.loan.category');
 
 Route::get('/showsettleloan', [TransactionController::class, 'show'])->name('settleLoan.show');
@@ -616,3 +615,9 @@ Route::get('/cashier/get-saved-day-end', [CashierController::class, 'getSavedDay
 //center_collection
 Route::get('/center_collection','\App\Http\Controllers\CenterController@center_collection')->name('center_collection.index');
 Route::get('/center_collection_summary','\App\Http\Controllers\CenterController@CenterWiseCollectionSummary')->name('center_collection_summary.index');
+
+
+
+Route::get('/portfolio_performance','\App\Http\Controllers\PendingLoanController@portfolio_performance')->name('portfolio_performance');
+Route::get('/get-routes-centers','\App\Http\Controllers\PendingLoanController@getRoutesCenters')->name('getRoutesCenters');
+Route::get('/get-portfolio-performance','\App\Http\Controllers\PendingLoanController@getPortfolioPerformance')->name('getPortfolioPerformance');

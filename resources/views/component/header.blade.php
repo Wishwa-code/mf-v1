@@ -1065,7 +1065,7 @@
                             <div class="collapse" id="main_report">
                                 <ul class="side-nav-second-level">
                                     <li>
-                                        <a href="/AllLoanDetailReport">Portfolio & Performance</a>
+                                        <a href="/portfolio_performance">Portfolio & Performance</a>
                                     </li>
                                 </ul>
                             </div>
