@@ -142,4 +142,224 @@ class CenterController extends Controller
         }
 
     }
+
+
+    public function center_collection(Request $request){
+        $date_from = $request->input('date_from');
+        $collector_id = $request->input('collector_id');
+        $center_id = $request->input('center_id');
+        $center = tableWithBranch('center')->get();
+        $collector = tableWithBranch('user')->where('collector','=','1')->get();
+
+        // --- Expenses Query (Processing Fee) ---
+        $expensesQuery = DB::table('expences')
+            ->selectRaw("
+            DISTINCT SUBSTRING_INDEX(SUBSTRING_INDEX(reason, 'loan number: (', -1), ')', 1) as loan_number,
+            expences.amount,
+            expences.date,
+            customer.First_Name as f_name,
+            customer.Last_Name as l_name,
+            subquery.group_name,
+            center.Name as center_name,
+            u1.id as collector_id,
+            u1.Full_Name as collected_user,
+            company_bank_accounts.type,
+            company_bank_accounts.Bank_Name as bank_name, 
+            company_bank_accounts.Account_No as bank_account_number
+        ")
+            ->join(DB::raw("
+            (SELECT Loan_No, Customer_idCustomer, Loan_Category_idLoan_Category, User_idUser, lending_officer_id 
+             FROM customer_loan) as customer_loan_sub
+        "), DB::raw("SUBSTRING_INDEX(SUBSTRING_INDEX(expences.reason, 'loan number: (', -1), ')', 1)"), '=', 'customer_loan_sub.Loan_No')
+            ->join('customer', 'customer_loan_sub.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin(DB::raw("
+            (SELECT DISTINCT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
+             FROM group_has_customer 
+             LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery
+        "), 'customer.idCustomer', '=', 'subquery.cus_id')
+            ->join('user as u1', 'expences.user_id', '=', 'u1.id')  // Collected user
+            ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
+            ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'expences.bank_id')
+            ->where('expences.type', '=', 'Income');
+
+        if ($date_from) {
+            $expensesQuery->where('expences.date', '=', $date_from);
+        }
+        if ($center_id != "0") {
+            $expensesQuery->where('center.idCenter', '=', $center_id);
+        }
+        if (!empty($collector_id) && $collector_id != "0") {
+            $expensesQuery->where('expences.user_id', '=', $collector_id);
+        }
+
+        $expenses = $expensesQuery->get()->map(function ($expense) {
+            $expense->payment_type = 'Processing Fee';
+            $expense->center_name = $expense->center_name ?? '-';
+            $expense->group_name = $expense->group_name ?? '-';
+            return $expense;
+        });
+
+
+        // --- Payments Query (Loan Payments) ---
+        $paymentQuery = DB::table('customer_payments')
+            ->selectRaw("
+            DISTINCT customer_payments.Amount as amount,
+            customer_loan_sub.Loan_No as loan_number,
+            CONCAT(customer_payments.Date, ' ', customer_payments.time) as date,
+            customer.First_Name as f_name,
+            customer.Last_Name as l_name,
+            subquery.group_name,
+            center.Name as center_name,
+            u1.id as collector_id,
+            u1.Full_Name as collected_user,
+            company_bank_accounts.type,
+            company_bank_accounts.Bank_Name as bank_name, 
+            company_bank_accounts.Account_No as bank_account_number
+        ")
+            ->join(DB::raw("
+            (SELECT DISTINCT idCustomer_Loan, Loan_No, Customer_idCustomer, Loan_Category_idLoan_Category, User_idUser, lending_officer_id 
+             FROM customer_loan) as customer_loan_sub
+        "), 'customer_payments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan_sub.idCustomer_Loan')
+            ->join('customer', 'customer_loan_sub.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin(DB::raw("
+            (SELECT DISTINCT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
+             FROM group_has_customer 
+             LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery
+        "), 'customer.idCustomer', '=', 'subquery.cus_id')
+            ->join('user as u1', 'customer_payments.User_idUser', '=', 'u1.id')  // Collected user
+            ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
+            ->leftJoin('company_bank_has_log', 'company_bank_has_log.payment_id', '=', 'customer_payments.idCustomer_Payments')
+            ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.Bank_Account_Id')
+            ->where('company_bank_accounts.Bank_Type', '=', 'Bank');
+
+        if ($date_from) {
+            $paymentQuery->where('customer_payments.Date', '=', $date_from);
+        }
+        if ($center_id != "0") {
+            $paymentQuery->where('center.idCenter', '=', $center_id);
+        }
+        if (!empty($collector_id) && $collector_id != "0") {
+            $paymentQuery->where('customer_payments.User_idUser', '=', $collector_id);
+        }
+
+        $payments = $paymentQuery->get()->map(function ($payment) {
+            $payment->payment_type = 'Loan Payments';
+            $payment->center_name = $payment->center_name ?? '-';
+            $payment->group_name = $payment->group_name ?? '-';
+            return $payment;
+        });
+
+        // --- Merge collections and remove duplicates ---
+        $merge_query = $expenses->merge($payments)->unique();
+
+        // --- Sort by center_name ---
+        $sorted_merge_query = $merge_query->sortBy('center_name')->values();
+
+        return view('pages.CenterWiseCollection', compact('center', 'sorted_merge_query', 'date_from', 'collector', 'center_id', 'collector_id'));
+    }
+
+
+
+
+    public function CenterWiseCollectionSummary(Request $request) {
+        $date_from = $request->input('date_from');
+        $collector_id = $request->input('collector_id');
+        $collector = tableWithBranch('user')->where('collector', '=', '1')->get();
+
+        // --- Expenses Query ---
+        $expensesQuery = DB::table('expences')
+            ->selectRaw("
+            center.idCenter as center_id,
+            center.No as center_No,
+            center.Name as center_name,
+            SUM(expences.amount) as total_amount,
+            COUNT(expences.id) as transaction_count,
+            'Processing Fee' as payment_type
+        ")
+            ->leftJoin(DB::raw("
+            (SELECT Loan_No, Customer_idCustomer, Loan_Category_idLoan_Category, User_idUser, lending_officer_id 
+             FROM customer_loan) as customer_loan_sub
+        "), DB::raw("SUBSTRING_INDEX(SUBSTRING_INDEX(expences.reason, 'loan number: (', -1), ')', 1)"), '=', 'customer_loan_sub.Loan_No')
+            ->leftJoin('customer', 'customer_loan_sub.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin(DB::raw("
+            (SELECT group_has_customer.cus_id, customer_group.center_id 
+             FROM group_has_customer 
+             LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery
+        "), 'customer.idCustomer', '=', 'subquery.cus_id')
+            ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
+            ->where('expences.type', '=', 'Income')
+            ->groupBy('center.idCenter', 'center.Name', 'center.No')
+            ->orderBy('center.No', 'asc');  // Order by Center No
+
+        if ($date_from) {
+            $expensesQuery->where('expences.date', '=', $date_from);
+        }
+
+        if (!empty($collector_id) && $collector_id != "0") {
+            $expensesQuery->where('expences.user_id', '=', $collector_id);
+        }
+
+        $expenses = $expensesQuery->get();
+
+
+        // --- Payments Query ---
+        $paymentQuery = DB::table('customer_payments')
+            ->selectRaw("
+            center.idCenter as center_id,
+            center.No as center_No,
+            center.Name as center_name,
+            SUM(customer_payments.Amount) as total_amount,
+            COUNT(customer_payments.idCustomer_Payments) as transaction_count,
+            'Loan Payments' as payment_type
+        ")
+            ->leftJoin(DB::raw("
+            (SELECT idCustomer_Loan, Loan_No, Customer_idCustomer, Loan_Category_idLoan_Category, User_idUser, lending_officer_id 
+             FROM customer_loan) as customer_loan_sub
+        "), 'customer_payments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan_sub.idCustomer_Loan')
+            ->leftJoin('customer', 'customer_loan_sub.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin(DB::raw("
+            (SELECT group_has_customer.cus_id, customer_group.center_id 
+             FROM group_has_customer 
+             LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery
+        "), 'customer.idCustomer', '=', 'subquery.cus_id')
+            ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
+            ->groupBy('center.idCenter', 'center.Name', 'center.No')
+            ->orderBy('center.No', 'asc');  // Order by Center No
+
+        if (!empty($collector_id) && $collector_id != "0") {
+            $paymentQuery->where('customer_payments.User_idUser', '=', $collector_id);
+        }
+
+        if ($date_from) {
+            $paymentQuery->where('customer_payments.Date', '=', $date_from);
+        }
+
+        $payments = $paymentQuery->get();
+
+        // --- Merge Queries (Ensuring All Payment Types Appear) ---
+        $mergedData = collect();
+
+// Push Expenses Data
+        foreach ($expenses as $expense) {
+            $mergedData->push($expense);
+        }
+
+// Push Payments Data
+        foreach ($payments as $payment) {
+            $mergedData->push($payment);
+        }
+
+// Ensure Data is Sorted by `center_No` after Merging
+        $sortedData = $mergedData->sortBy('center_No')->values();
+
+// Group by Center Name for Display, Keeping Order
+        $finalGroupedData = $sortedData->groupBy('center_name');
+
+
+        return view('pages.CenterWiseCollectionSummary', compact('finalGroupedData', 'date_from', 'collector', 'collector_id'));
+    }
+
+
+
+
 }

@@ -237,6 +237,9 @@ class ReportController extends Controller
 
 
     public function saveexpenses(Request $request){
+
+        $user_id = (int)session('userid');
+
         $type=$request->type;
         $reason=$request->reason;
         $date=$request->date;
@@ -250,6 +253,7 @@ class ReportController extends Controller
         $expenses->amount=$amount;
         $expenses->category_id=$request->category;
         $expenses->bank_id=$request->bank;
+        $expenses->user_id = $user_id;
         $expenses->branch_id = session('branch_id');
 
         if ($expenses->save()) {

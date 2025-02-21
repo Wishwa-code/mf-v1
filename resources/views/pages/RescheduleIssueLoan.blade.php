@@ -91,16 +91,16 @@
                         <div class="card">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between mb-3">
-                                    <h3 class="my-4">Create Loan</h3>
+                                    <h3 class="my-4">Reschedule Loan({{$loan->Loan_No}})</h3>
 
                                 </div>
                                 <input type="hidden" id="saturday_sunday" class="form-control" value="{{$company->saturday_sunday}}">
                                 <div class="col-lg-12">
-                                    <div class="mb-3">
+                                    <div class="mb-3" hidden>
                                         <label for="simpleinput" class="form-label">Issue Date</label>
                                         <input type="date" id="issue_date" class="form-control" value="{{date('Y-m-d')}}">
                                     </div>
-                                    <div class="mb-3">
+                                    <div class="mb-3" hidden>
                                         <label for="simpleinput" class="form-label">Type</label>
                                         <select class="form-control"  id="type" onchange="change_type(this.value)">
                                             <option value="0">Individual</option>
@@ -133,12 +133,12 @@
                                         </select>
                                     </div>
 
-                                    <div class="mb-3" id="customer_feild">
+                                    <div class="mb-3" id="customer_feild" hidden>
                                         <label for="simpleinput" class="form-label">Loan Number</label>
                                         <input type="text" id="type_loan_number" class="form-control">
                                     </div>
 
-                                    <div class="mb-3" id="customer_bank_feild">
+                                    <div class="mb-3" id="customer_bank_feild" hidden>
                                         <label for="simpleinput" class="form-label">Customer Bank Account</label>
                                         <select class="form-control" id="bank_acc">
                                         </select>
@@ -159,7 +159,7 @@
                                         </select>
                                     </div>
 
-                                    <div class="mb-3" id="leasing_feild">
+                                    <div class="mb-3" id="leasing_feild" hidden>
                                         <label for="simpleinput" class="form-label">Select Type</label>
                                         <select class="form-control"  id="lease_type" onchange="check_leasing(this.value)">
                                             <option id="0">Cash</option>
@@ -1109,8 +1109,6 @@
             let x = ["#installment_amount","#offer_decided"];
             decimalFormat(x);
 
-            fetchHolidays();
-
         });
 
 
@@ -1418,7 +1416,7 @@
                     if (data && data.product_details && data.product_details.length > 0) {
                         var product = data.product_details[0];
 
-                        $('#loan_amount').val(product.Loan_amount);
+                        $('#loan_amount').val(@json($balance));
                         $('#loan_amount_from').val(product.Loan_amount);
                         $('#loan_amount_to').val(product.Loan_amount_to);
                         $("#loan_display").text("Minimum Amount "+parseFloat(product.Loan_amount).toFixed(2) +" - Maximum Amount "+parseFloat(product.Loan_amount_to).toFixed(2)).css("color", "red");
@@ -2056,55 +2054,6 @@
             $('#installment_date_txt').val(nextMonthDate.toISOString().slice(0, 10));
         }
 
-
-        let holidays = []; // Global variable for holidays
-
-        // Function to fetch holidays
-        function fetchHolidays() {
-            return new Promise((resolve, reject) => {
-                $.ajax({
-                    url: '/get-holidays',
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function (response) {
-                        holidays = response.map(date => new Date(date).toISOString().split('T')[0]); // Ensure consistent format
-                        console.log('Holidays fetched successfully:', holidays);
-                        resolve(); // Resolve the Promise once holidays are fetched
-                    },
-                    error: function (error) {
-                        console.error('Failed to fetch holidays:', error);
-                        reject(error); // Reject the Promise on error
-                    }
-                });
-            });
-        }
-
-        // Function to calculate dates (returns a Promise)
-        function calculateDates(installmentCount) {
-            return new Promise(async (resolve) => {
-                const installmentDates = [];
-                let i = 0;
-                let currentDate = new Date();
-
-                while (i < installmentCount) {
-                    currentDate.setDate(currentDate.getDate() + 1);
-                    const formattedDate = new Date(currentDate).toISOString().split('T')[0];
-
-                    if (!holidays.includes(formattedDate)) {
-                        installmentDates.push(formattedDate);
-                        i++;
-                    }
-                }
-
-                console.log('Final Installment Dates:', installmentDates);
-                resolve(installmentDates); // Resolve the Promise with the installment dates
-            });
-        }
-
-
-
-
-
         function addInstallmentDates() {
 
             let startDate = $("#installment_date_txt").val();
@@ -2120,7 +2069,6 @@
             let tot_amount = 0.0;
             let installmentAmount = 0.0;  // Initialize installmentAmount
             let interest = $("#loan_interest").val();
-
 
 
             const loanAmountFrom = parseFloat($("#loan_amount_from").val());
@@ -2318,35 +2266,35 @@
                                 return year + '-' + month + '-' + day;
                             }
 
-                            // Ensure holidays array contains consistently formatted dates
-                            holidays = holidays.map(date => new Date(date).toISOString().split('T')[0]);
-
+                            // Loop through each installment count
                             for (var i = 0; i < installmentCount;) {
                                 // Add one day to the current date
+                                currentDate.setDate(currentDate.getDate());
+
+                                // Check if the current date is Saturday or Sunday
+                                var dayOfWeek = currentDate.getDay();
+
+                                if(saturday_sunday==='1'){
+                                    if (dayOfWeek !== 0 && dayOfWeek !== 6) { // 0 is Sunday, 6 is Saturday
+                                        // Format the date
+                                        var formattedDate = formatDate(currentDate);
+                                        installmentDates.push(formattedDate);
+                                        i++; // Only increment i if it's a valid date
+                                    }
+
+                                }else {
+
+
+                                    var formattedDate = formatDate(currentDate);
+                                    installmentDates.push(formattedDate);
+                                    i++;
+
+
+
+                                }
                                 currentDate.setDate(currentDate.getDate() + 1);
 
-                                // Format the current date as YYYY-MM-DD
-                                var formattedDate = new Date(currentDate).toISOString().split('T')[0]; // Ensure consistent format
-
-                                // Log both for debugging
-                                console.log('Checking date:', formattedDate);
-                                console.log('Holidays:', holidays);
-
-                                // Check if the current date is NOT in the holidays array
-                                if (!holidays.includes(formattedDate)) {
-                                    console.log('Date added:', formattedDate); // Log added dates
-                                    installmentDates.push(formattedDate);
-                                    i++; // Increment only for valid dates (non-holidays)
-                                } else {
-                                    console.log('Skipped holiday:', formattedDate); // Log skipped dates
-                                }
                             }
-                            // Usage
-
-
-
-
-
                             // Get the table body
                             var tableBody = $('#installment_table tbody');
 

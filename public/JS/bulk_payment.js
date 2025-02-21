@@ -15,7 +15,7 @@ function load_payment_table(page = 1) {
 
     $.ajax({
         type: "POST",
-        url: `/today_payment_load_check?page=${page}`,
+        url: `/today_payment_load_check_bulk`,
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
@@ -30,10 +30,7 @@ function load_payment_table(page = 1) {
         success: function (response, textStatus, xhr) {
             if (xhr.status === 200) {
                 let data = response.item.data;
-                console.log(data);
-                let currentPage = response.item.current_page;
-                let lastPage = response.item.last_page;
-                const getTotalData = response.gettotal;
+                let getTotalData = response.gettotal;
 
                 let tot = 0.0;
 
@@ -58,7 +55,7 @@ function load_payment_table(page = 1) {
                         <td>${parseFloat(item.Today_installment).toFixed(2)}</td>
                         <td><input type="date" name="date_bulk" class="form-control" value="${inputDate || new Date().toISOString().split('T')[0]}" data-loan-id="${item.idCustomer_Loan}" /></td>
                         <td>
-                            <input type="text" class="form-control numeric-input" placeholder="Enter amount" value="${inputAmount}" data-loan-id="${item.idCustomer_Loan}" />
+                            <input type="text" class="form-control numeric-input amount-input" placeholder="Enter amount" value="${inputAmount}" data-loan-id="${item.idCustomer_Loan}" />
                             <input type="hidden" name="loan_id" value="${item.idCustomer_Loan}" />
                             <input type="hidden" name="cus_id" value="${item.idCustomer}" />
                         </td>
@@ -75,43 +72,16 @@ function load_payment_table(page = 1) {
                     tot += parseFloat(item.Today_installment);
                 });
 
-                // Update total amount
+                // Update total today installment amount
                 $("#tot_amount").text(tot.toFixed(2));
 
-                // Add pagination controls
-                let paginationControls = "";
-
-                if (currentPage > 1) {
-                    paginationControls += `
-                        <button onclick="load_payment_table(${currentPage - 1})" class="btn btn-sm btn-outline-primary me-2">
-                            <i class="bi bi-arrow-left-circle me-1"></i> Previous
-                        </button>`;
-                }
-
-                if (currentPage < lastPage) {
-                    paginationControls += `
-                        <button onclick="load_payment_table(${currentPage + 1})" class="btn btn-sm btn-outline-primary">
-                            Next <i class="bi bi-arrow-right-circle ms-1"></i>
-                        </button>`;
-                }
-
-                $("#pagination").html(paginationControls);
-
-                // Add event listeners to save input data
-                $("#loan_table input").on("input change", function () {
-                    let loanId = $(this).data("loan-id");
-                    let inputType = $(this).attr("type");
-
-                    if (!inputDataStore[loanId]) {
-                        inputDataStore[loanId] = {};
-                    }
-
-                    if (inputType === "date") {
-                        inputDataStore[loanId].date = $(this).val();
-                    } else {
-                        inputDataStore[loanId].amount = $(this).val();
-                    }
+                // Attach event listeners to input fields
+                $(".amount-input").on("input", function () {
+                    updateTotalEnteredAmount();
                 });
+
+                // Initial calculation in case prefilled values exist
+                updateTotalEnteredAmount();
             }
         },
         error: function (xhr, textStatus, errorThrown) {
@@ -119,6 +89,19 @@ function load_payment_table(page = 1) {
         },
     });
 }
+
+// Function to calculate and update total entered amount
+function updateTotalEnteredAmount() {
+    let totalEntered = 0.0;
+
+    $(".amount-input").each(function () {
+        let enteredValue = parseFloat($(this).val()) || 0;
+        totalEntered += enteredValue;
+    });
+
+    $("#tot_installment").text(totalEntered.toFixed(2));
+}
+
 
 
 // Allow only numeric input
@@ -154,8 +137,10 @@ function automatePayments() {
                 willOpen: async () => {
                     const rows = $('#loan_table tbody tr');
                     let successCount = 0;
+                    let processedCount = 0; // Count only valid payments
+                    let totalRows = rows.length; // Total rows including empty ones
 
-                    for (let i = 0; i < rows.length; i++) {
+                    for (let i = 0; i < totalRows; i++) {
                         const row = rows[i];
 
                         let loan_number = $(row).find('td:eq(0)').text();
@@ -164,23 +149,18 @@ function automatePayments() {
                         let cus_id = $(row).find('input[name="cus_id"]').val();
                         let payment_date = $(row).find('input[name="date_bulk"]').val();
 
-                        if (!payment_amount && !payment_date) continue;
-
-                        if (!payment_amount) {
-                            Swal.fire("Error!", `Payment amount is empty in loan number ${loan_number}`, "error");
-                            return;
+                        if (!payment_amount || !payment_date) {
+                            // Skip rows with empty payment amount or date
+                            continue;
                         }
 
-                        if (!payment_date) {
-                            Swal.fire("Error!", `Payment date is empty in loan number ${loan_number}`, "error");
-                            return;
-                        }
+                        processedCount++; // Increment processed count only for valid payments
 
                         // Update progress text
-                        document.getElementById("progress-text").innerText = `Processing payment ${i + 1} of ${rows.length}...`;
+                        document.getElementById("progress-text").innerText = `Processing payment ${processedCount} of ${totalRows}...`;
 
                         // Update progress bar
-                        const progress = ((i + 1) / rows.length) * 100;
+                        const progress = (processedCount / totalRows) * 100;
                         document.getElementById("progress-bar").style.width = `${progress}%`;
 
                         // Perform payment
@@ -217,6 +197,7 @@ function automatePayments() {
         }
     });
 }
+
 
 
 async function performPayment(cus_id, payment_amount, reduce_balance_loan_id, payment_date) {

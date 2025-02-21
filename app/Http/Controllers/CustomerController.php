@@ -590,12 +590,14 @@ class CustomerController extends Controller
     public function load_customers(string $id){
         $customer = tableWithBranch('customer','customer')
             ->join('group_has_customer','customer.idCustomer', '=', 'group_has_customer.cus_id')
-            ->where('group_id', $id)->get();
+            ->where('group_id', $id)
+            ->where('customer.Status','=','1')
+            ->get();
         return response()->json(['message' => 'Customers updated successfully','item' => $customer], 200);
     }
 
     public function load_individual_customer(){
-        $customer = tableWithBranch('customer')->get();
+        $customer = tableWithBranch('customer')->where('customer.Status','=','1')->get();
         return response()->json(['message' => 'Customers updated successfully','item' => $customer], 200);
     }
 

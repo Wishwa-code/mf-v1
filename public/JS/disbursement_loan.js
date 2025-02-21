@@ -14,7 +14,7 @@ function load_table() {
 
     $.ajax({
         type: "GET",
-        url: "/pendingloanload",
+        url: "/loan_disbursementload",
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
@@ -59,13 +59,14 @@ function load_table() {
                         item.group_name,
                         formatName(item.First_Name, item.Last_Name), // Use formatted name here
                         item.cus_number,
+                        item.Nic,
                         item.loan_name,
                         parseFloat(item.Amount).toFixed(2),
+                        parseFloat(item.total_other_charges).toFixed(2),
                         item.Date_Time,
                         item.reason,
                         item.lending_officer,
                         item.user_name,
-                        '<span style="color: red">'+item.pending_approvals+'</span>',
                         // Status type conditional rendering
                         status_type === "-1"
                             ? '<span class="px-2" style="background-color: #FFD700;border-radius: 10px; color: white;">Pending</span>'
@@ -104,7 +105,6 @@ function load_table() {
     });
 }
 
-// Function to format the name as required
 function formatName(firstName, lastName) {
     let firstInitial = firstName.split(' ')[0].charAt(0) + '.'; // First initial
     let lastNameParts = lastName.split(' '); // Split last name into parts
@@ -112,6 +112,8 @@ function formatName(firstName, lastName) {
     let formattedLastName = lastNameParts[lastNameParts.length - 1]; // Last part of last name
     return (lastInitial ? firstInitial + lastInitial : firstInitial) + ' ' + formattedLastName;
 }
+
+
 
 
 function change_installment(loan_id) {

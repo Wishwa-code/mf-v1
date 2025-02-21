@@ -95,6 +95,196 @@
 
 </style>
 
+<div class="modal fade" id="cashierStartModal" tabindex="-1" aria-labelledby="cashierStartLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cashierStartLabel">Cashier Start Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="cashierForm">
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount</label>
+                        <input type="number" class="form-control" id="amount" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="quantity" required>
+                    </div>
+                    <button type="button" class="btn btn-secondary" id="addToTable">Add to Table</button>
+                </form>
+
+                <!-- Table inside Modal -->
+                <!-- Table inside Modal -->
+                <h5 class="mt-3">Added Entries</h5>
+                <table class="table mt-2">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Amount</th>
+                        <th>Quantity</th>
+                        <th>Total Amount</th>
+                        <th>Action</th>
+                    </tr>
+                    </thead>
+                    <tbody id="modalTableBody">
+                    <!-- Entries will be added here -->
+                    </tbody>
+                </table>
+
+                <!-- Grand Total Row -->
+                <h5 class="mt-3">Grand Total: <span id="grandTotal">0</span></h5>
+
+
+                <button type="button" class="btn btn-primary" id="saveEntries">Save</button>
+
+            </div>
+            <button type="button" class="btn btn-success mt-3" id="printDayStartReport">Print Day Start</button>
+            <br>
+        </div>
+    </div>
+</div>
+
+<!-- Day End Modal -->
+<div class="modal fade" id="dayEndModal" tabindex="-1" aria-labelledby="dayEndLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dayEndLabel">Day End Summary</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="dayEndForm">
+                    <!-- Starting Cash -->
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Starting Cash (Plot Amount)</strong></label>
+                        <input type="number" class="form-control" id="plotAmount" readonly>
+                    </div>
+
+                    <hr> <!-- Horizontal Line for Separation -->
+
+                    <!-- Incomes Section -->
+                    <u><h5 class="mt-3"><strong>Incomes</strong></h5></u>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">Payment Amounts</label>
+                            <input type="number" class="form-control" id="paymentAmounts" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Deposit</label>
+                            <input type="number" class="form-control" id="deposit" readonly>
+                        </div>
+                    </div>
+                    <h5 class="mt-3"><strong>Other Incomes</strong></h5>
+                    <!-- Incomes Table -->
+                    <table class="table table-bordered mt-3">
+                        <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Source</th>
+                            <th>Amount</th>
+                        </tr>
+                        </thead>
+                        <tbody id="incomeTableBody">
+                        <!-- Income entries will be added dynamically -->
+                        </tbody>
+                    </table>
+                    <h5 class="mt-3"><strong>Total Income: <span id="totalIncome">0.00</span></strong></h5>
+
+                    <hr> <!-- Horizontal Line for Separation -->
+
+                    <!-- Expenses (Pawning) Section -->
+                    <u><h5 class="mt-3"><strong>Expenses</strong></h5></u>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">Pawning Amount</label>
+                            <input type="number" class="form-control" id="pawningAmount" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Withdrawal</label>
+                            <input type="number" class="form-control" id="withdrawal" readonly>
+                        </div>
+                    </div>
+
+                    <h5 class="mt-3"><strong>Other Expenses</strong></h5>
+                    <!-- Expenses Table -->
+                    <table class="table table-bordered mt-3">
+                        <thead class="table-danger">
+                        <tr>
+                            <th>#</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                        </tr>
+                        </thead>
+                        <tbody id="expensesTableBody">
+                        <!-- Expenses entries will be added dynamically -->
+                        </tbody>
+                    </table>
+                    <h5 class="mt-3"><strong>Total Expenses: <span id="totalExpenses">0.00</span></strong></h5>
+
+                    <hr> <!-- Horizontal Line for Separation -->
+                    <!-- Balance Calculation Section -->
+                    <hr> <!-- Separator -->
+                    <u><h5 class="mt-3"><strong>Balance Calculation</strong></h5></u>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label class="form-label"><strong>Balance Amount</strong></label>
+                            <input type="number" class="form-control" id="balanceAmount" readonly>
+                        </div>
+                    </div>
+                    <hr>
+
+                    <hr> <!-- Horizontal Line for Separation -->
+                    <!-- Cash Drawer Balance Section -->
+                    <h5 class="mt-3"><strong>Cash Drawer Balance</strong></h5>
+                    <form id="cashDrawerForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Denomination</label>
+                                <input type="number" class="form-control" id="cashAmount" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Quantity</label>
+                                <input type="number" class="form-control" id="cashQuantity" required>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-secondary mt-3" id="addCashToTable">Add to Table</button>
+                    </form>
+
+                    <!-- Cash Drawer Balance Table -->
+                    <table class="table table-bordered mt-3">
+                        <thead class="table-success">
+                        <tr>
+                            <th>#</th>
+                            <th>Denomination</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+                        <tbody id="cashDrawerTableBody">
+                        <!-- Entries will be added dynamically -->
+                        </tbody>
+                    </table>
+
+                    <!-- Total Cash Drawer Balance -->
+                    <h5 class="mt-3"><strong>Total Cash Drawer Balance: <span id="totalCashDrawer">0.00</span></strong></h5>
+
+                    <!-- Balance Difference Display -->
+                    <h5 class="mt-3 text-end"><strong>Balance Difference: <span id="balanceDifference" class="text-danger">0.00</span></strong></h5>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <!-- Save Button -->
+                        <button type="button" class="btn btn-primary" id="saveDayEnd">Save Day End</button>
+                        <button type="button" class="btn btn-success" id="printDayEndReport">Print Report</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <div class="navbar-custom">
     <div class="topbar container-fluid">
@@ -265,6 +455,19 @@
                     <a href="/logout" class="dropdown-item">
                         <i class="ri-logout-box-line fs-18 align-middle me-1"></i>
                         <span>Logout</span>
+                    </a>
+
+                    <hr>
+
+                    <div class=" dropdown-header noti-title">
+                        <h6 class="text-overflow m-0">Cashier Section</h6>
+                    </div>
+
+                    <a class="dropdown-item d-flex align-items-center" href="#" data-bs-toggle="modal" data-bs-target="#cashierStartModal">
+                        <i class="ri-money-dollar-box-line font-size-17 align-middle me-1"></i> Cashier Start
+                    </a>
+                    <a class="dropdown-item" href="#"  data-bs-toggle="modal" data-bs-target="#dayEndModal">
+                        <i class="mdi mdi-lock-open-outline font-size-17 align-middle me-1"></i> Cashier Close
                     </a>
 
                 </div>
@@ -502,7 +705,7 @@
                                     @endif
                                     @if($item->issue_loan == 1)
                                         <li>
-                                            <a href="/loan">Issue Loans</a>
+                                            <a href="/loan">Create Loans</a>
                                         </li>
                                             <li>
                                                 <a href="/changeCollector">Change Collector In Loan</a>
@@ -513,6 +716,9 @@
                                         <li>
                                             <a href="/pendingloan">Pending Loans</a>
                                         </li>
+                                            <li>
+                                                <a href="/loan_disbursement">Loans Disbursement</a>
+                                            </li>
                                     @else
                                     @endif
                                     @if($item->current_loan == 1)
@@ -556,6 +762,9 @@
                                             <li>
                                                 <a href="/showsettleloan">Settled Loans</a>
                                             </li>
+{{--                                            <li>--}}
+{{--                                                <a href="/loan_reschedule">Loan Reschedule</a>--}}
+{{--                                            </li>--}}
                                         @else
                                     @endif
                                     @if($item->daily_payment == 1)
@@ -579,22 +788,31 @@
                                                 <a href="/daily_repayment_sheet">Monthly Repayment Sheet</a>
                                             </li>
                                             <li>
+                                                <a href="/daily_repayment_sheet_hm">Daily Repayment Sheet</a>
+                                            </li>
+                                            <li>
                                                 <a href="/daily_repayment_sheet_lasantha">Monthly Repayment Sheet Format</a>
                                             </li>
                                     @else
                                     @endif
                                     @if($item->pending_approval_repayment == 1)
-                                        <li>
-                                            <a href="/pending_collection">Pending Approval Repayments</a>
-                                        </li>
+{{--                                        <li>--}}
+{{--                                            <a href="/pending_collection">Pending Approval Repayments</a>--}}
+{{--                                        </li>--}}
+                                            <li>
+                                                <a href="/center_collection">Center Wise collection Detail</a>
+                                            </li>
+                                            <li>
+                                                <a href="/center_collection_summary">Center Wise collection Summary</a>
+                                            </li>
                                     @else
                                     @endif
-                                    @if($item->approval_repayment == 1)
-                                        <li>
-                                            <a href="/approved_collection">Approved Repayments</a>
-                                        </li>
-                                    @else
-                                    @endif
+{{--                                    @if($item->approval_repayment == 1)--}}
+{{--                                        <li>--}}
+{{--                                            <a href="/approved_collection">Approved Repayments</a>--}}
+{{--                                        </li>--}}
+{{--                                    @else--}}
+{{--                                    @endif--}}
                                     @if($item->agent_collection == 1)
                                         <li>
                                             <a href="/collection">Agent Collection</a>
@@ -837,13 +1055,27 @@
 
 
                     @if($item->report == 1)
-{{--                        <li class="side-nav-title">Report Section</li>--}}
+                        <li class="side-nav-item">
+                            <a data-bs-toggle="collapse" href="#main_report" aria-expanded="false" aria-controls="expences"
+                               class="side-nav-link">
+                                <i class="ri-file-paper-2-fill"></i>
+                                <span> Main Reports </span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse" id="main_report">
+                                <ul class="side-nav-second-level">
+                                    <li>
+                                        <a href="/portfolio_performance">Portfolio & Performance</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
 
                         <li class="side-nav-item">
                             <a data-bs-toggle="collapse" href="#report" aria-expanded="false" aria-controls="expences"
                                class="side-nav-link">
                                 <i class="ri-file-paper-2-fill"></i>
-                                <span> Report </span>
+                                <span> Sub Reports </span>
                                 <span class="menu-arrow"></span>
                             </a>
                             <div class="collapse" id="report">
@@ -1023,5 +1255,108 @@
         <div class="clearfix"></div>
     </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{{ asset('assets/libs/jquery/jquery.min.js') }}"></script>
+<script>
+    $(document).ready(function () {
+        // Function to update the Grand Total
+        function updateGrandTotal() {
+            let grandTotal = 0;
+            $("#modalTableBody tr").each(function () {
+                let total = parseFloat($(this).find(".total-amount").text()) || 0;
+                grandTotal += total;
+            });
+            $("#grandTotal").text(grandTotal.toFixed(2));
+        }
+        // Load today's saved data when modal opens
+        $("#cashierStartModal").on('show.bs.modal', function () {
+            {{--$.ajax({--}}
+            {{--    url: "{{ route('cashier.getTodayData') }}",--}}
+            {{--    method: "GET",--}}
+            {{--    success: function (response) {--}}
+            {{--        if (response.status === 'success') {--}}
+            {{--            let tableBody = $("#modalTableBody");--}}
+            {{--            tableBody.empty(); // Clear existing entries--}}
 
+            {{--            response.entries.forEach((entry, index) => {--}}
+            {{--                tableBody.append(`--}}
+            {{--                <tr data-amount="${entry.money}">--}}
+            {{--                    <td>${index + 1}</td>--}}
+            {{--                    <td class="amount">${entry.money}</td>--}}
+            {{--                    <td class="quantity">${entry.qty}</td>--}}
+            {{--                    <td class="total-amount">${entry.amount}</td>--}}
+            {{--                    <td><button class="btn btn-danger btn-sm remove-entry">Remove</button></td>--}}
+            {{--                </tr>--}}
+            {{--            `);--}}
+            {{--            });--}}
+
+            {{--            $("#grandTotal").text(response.grandTotal);--}}
+            {{--        }--}}
+            {{--    },--}}
+            {{--    error: function () {--}}
+            {{--        Swal.fire({--}}
+            {{--            icon: 'error',--}}
+            {{--            title: 'Error',--}}
+            {{--            text: 'Failed to load saved data.',--}}
+            {{--        });--}}
+            {{--    }--}}
+            {{--});--}}
+        });
+
+        // Add to table with validation
+        $("#addToTable").click(function () {
+            let amount = parseFloat($("#amount").val());
+            let quantity = parseInt($("#quantity").val());
+
+            if (!amount || !quantity || amount <= 0 || quantity <= 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Invalid Input',
+                    text: 'Please enter valid amount and quantity!',
+                });
+                return;
+            }
+
+            let totalAmount = amount * quantity;
+            let existingRow = $("#modalTableBody").find(`tr[data-amount='${amount}']`);
+
+            if (existingRow.length > 0) {
+                let existingQuantity = parseInt(existingRow.find(".quantity").text());
+                let newQuantity = existingQuantity + quantity;
+                let newTotal = amount * newQuantity;
+
+                existingRow.find(".quantity").text(newQuantity);
+                existingRow.find(".total-amount").text(newTotal.toFixed(2));
+
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Updated Entry',
+                    text: `Quantity updated for Amount: ${amount}`,
+                });
+
+            } else {
+                let rowCount = $("#modalTableBody tr").length + 1;
+                $("#modalTableBody").append(`
+                <tr data-amount="${amount}">
+                    <td>${rowCount}</td>
+                    <td class="amount">${amount}</td>
+                    <td class="quantity">${quantity}</td>
+                    <td class="total-amount">${totalAmount.toFixed(2)}</td>
+                    <td><button class="btn btn-danger btn-sm remove-entry">Remove</button></td>
+                </tr>
+            `);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Added Successfully',
+                    text: `Amount: ${amount}, Quantity: ${quantity}, Total: ${totalAmount.toFixed(2)}`,
+                });
+            }
+
+            updateGrandTotal();
+            $("#amount").val('');
+            $("#quantity").val('');
+        });
+    });
+</script>
 

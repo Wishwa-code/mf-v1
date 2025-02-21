@@ -3,6 +3,7 @@
 use App\Http\Controllers\AssetManagementController;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\CashFlowController;
+use App\Http\Controllers\CashierController;
 use App\Http\Controllers\LoanCategoryController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\PDFController;
@@ -151,6 +152,7 @@ Route::post('/payment_save','\App\Http\Controllers\PaymentLoanController@store')
 Route::get('/installment_log/{id}','\App\Http\Controllers\PaymentLoanController@ins_log')->name('payment_save.ins_log');
 Route::get('/payment','\App\Http\Controllers\TodayPaymentController@index')->name('payment_save.index');
 Route::post('/today_payment_load_check','\App\Http\Controllers\TodayPaymentController@create')->name('payment_save.create');
+Route::post('/today_payment_load_check_bulk','\App\Http\Controllers\TodayPaymentController@Bulk_create')->name('payment_save.Bulk_create');
 
 
 Route::get('/today_payment_load_check_loan/{id}','\App\Http\Controllers\TodayPaymentController@create_view')->name('payment_save.load');
@@ -436,8 +438,13 @@ Route::post('/daily_repayment_sheet_filter', [TransactionController::class, 'cre
 Route::get('/daily_repayment_sheet_lasantha', [TransactionController::class, 'create_lasantha'])->name('transaction.handle_lasantha');
 Route::post('/daily_repayment_sheet_filter_lasantha', [TransactionController::class, 'create_lasantha'])->name('transaction.daily_repayment_sheet_filter_lasantha');
 
+//noble
+Route::get('/daily_repayment_sheet_hm', [TransactionController::class, 'create_hm'])->name('transaction.handle');
+Route::post('/daily_repayment_sheet_filter_hm', [TransactionController::class, 'create_hm'])->name('transaction.daily_repayment_sheet_filter_hm');
 
-// routes/web.php
+
+
+
 Route::post('/update-loan-category', [LoanCategoryController::class, 'saving_update'])->name('update.loan.category');
 
 Route::get('/showsettleloan', [TransactionController::class, 'show'])->name('settleLoan.show');
@@ -555,6 +562,8 @@ Route::post('/poya-days/save','\App\Http\Controllers\UserController@poya_days_sa
 Route::post('/holidays','\App\Http\Controllers\UserController@holidays_save')->name('holidays.store');
 Route::delete('/holidays/delete/{id}','\App\Http\Controllers\UserController@deleteHoliday')->name('holidays.delete');
 
+Route::get('/get-holidays','\App\Http\Controllers\UserController@getHolidays')->name('get.holidays');
+
 
 
 //branches
@@ -576,3 +585,39 @@ Route::post('/update_checklist/{itemId}','\App\Http\Controllers\LoanCategoryCont
 Route::get('/user/get-details/{id}', [UserController::class, 'getUserDetails']);
 Route::post('/user/update', [UserController::class, 'updateUser']);
 Route::post('/user/reset-password/{id}', [UserController::class, 'resetPassword']);
+
+
+
+//Reshedule
+Route::get('/loan_reschedule','\App\Http\Controllers\PaymentLoanController@reschedule')->name('reschedule.index');
+Route::get('/loan/{loan_id}/{balance}','\App\Http\Controllers\LoanController@reschedule_index')->name('reschedule.index');
+Route::post('/loan_reschedule','\App\Http\Controllers\LoanController@save_reschedule')->name('loan_reschedule.index');
+
+
+
+//Disbursement Loan
+Route::get('/loan_disbursement','\App\Http\Controllers\PendingLoanController@index_disbursement')->name('loan_disbursement.index');
+Route::get('/loan_disbursementload','\App\Http\Controllers\PendingLoanController@create_disbursement')->name('loan_disbursement.create');
+Route::post('/pendingloanissue','\App\Http\Controllers\PendingLoanController@show')->name('pendingloan.show');
+Route::get('/pendingloandelete/{id}','\App\Http\Controllers\PendingLoanController@destroy')->name('pendingloan.destroy');
+Route::get('/show_loan/{id}/{loan}','\App\Http\Controllers\PendingLoanController@edit')->name('loan.edit');
+
+
+
+//Cashier
+Route::post('/save-cashier-data', [CashierController::class, 'store'])->name('cashier.save');
+Route::get('/get-today-cashier-data', [CashierController::class, 'getTodayData'])->name('cashier.getTodayData');
+Route::get('/cashier/day-end-data', [CashierController::class, 'getDayEndData'])->name('cashier.dayEndData');
+Route::post('/cashier/save-day-end', [CashierController::class, 'saveDayEnd'])->name('cashier.saveDayEnd');
+Route::get('/cashier/get-saved-day-end', [CashierController::class, 'getSavedDayEndData'])->name('cashier.getSavedDayEndData');
+
+
+//center_collection
+Route::get('/center_collection','\App\Http\Controllers\CenterController@center_collection')->name('center_collection.index');
+Route::get('/center_collection_summary','\App\Http\Controllers\CenterController@CenterWiseCollectionSummary')->name('center_collection_summary.index');
+
+
+
+Route::get('/portfolio_performance','\App\Http\Controllers\PendingLoanController@portfolio_performance')->name('portfolio_performance');
+Route::get('/get-routes-centers','\App\Http\Controllers\PendingLoanController@getRoutesCenters')->name('getRoutesCenters');
+Route::get('/get-portfolio-performance','\App\Http\Controllers\PendingLoanController@getPortfolioPerformance')->name('getPortfolioPerformance');

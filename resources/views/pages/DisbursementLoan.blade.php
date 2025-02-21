@@ -32,12 +32,7 @@
                 <div class="page-title-box">
                     <div class="page-title-right">
                     </div>
-                    <h4 class="page-title">Pending Loans</h4>
-{{--                    <label style="color: red">Upload Excel</label>--}}
-{{--                    <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="form-control mb-2 w-50">--}}
-
-{{--                    <!-- Upload button, aligned below the file input -->--}}
-{{--                    <input type="button" onclick="upload_excel()" class="btn btn-success mt-2" value="Upload">--}}
+                    <h4 class="page-title">Disbursement Loans</h4>
                 </div>
 
             </div>
@@ -111,12 +106,11 @@
                                 </div>
                             </div>
 
-                            <div class="col-lg-3">
+                            <div class="col-lg-3" hidden>
                                 <div class="mb-2">
                                     <label for="status" class="form-label">Status</label>
                                     <select class="form-control select2" id="status">
-                                        <option value="-1">Pending</option>
-                                        <option value="-2">Deleted</option>
+                                        <option value="-1" selected>Pending</option>
                                     </select>
                                 </div>
                             </div>
@@ -126,6 +120,19 @@
                                     <i class="bi bi-search"></i> Search
                                 </button>
                             </div>
+
+                            <div class="row mt-4">
+                                <div class="col-lg-4">
+                                    <button class="btn btn-primary w-100" onclick="exportFundRequestPDF();">FUND REQUEST</button>
+                                </div>
+                                <div class="col-lg-4">
+                                    <button class="btn btn-success w-100" onclick="exportDisbursementSheetPDF();">DISBURSEMENT SHEET</button>
+                                </div>
+                                <div class="col-lg-4">
+                                    <button class="btn btn-info w-100" onclick="exportDocumentChargesPDF();">Document Charges Register</button>
+                                </div>
+                            </div>
+
                         </div>
 
 
@@ -142,13 +149,14 @@
                                     <th>Group</th>
                                     <th>Customer</th>
                                     <th>Customer Code</th>
+                                    <th>NIC</th>
                                     <th>Product</th>
                                     <th>Amount</th>
+                                    <th>Doc Charge</th>
                                     <th>Date</th>
                                     <th>Reason</th>
                                     <th>Lending Officer</th>
                                     <th>User</th>
-                                    <th>Pending Approval Count</th>
                                     <th>Status</th>
                                     <th>Action</th>
                                 </tr>
@@ -209,8 +217,8 @@
                 </div>
                 <input type="hidden" id="loan_id_for_issue">
 
-                <div class="modal-body">
-                    <div class="card shadow mb-3">
+                <div class="modal-body" >
+                    <div class="card shadow mb-3" hidden>
                         <div class="card-header">
                             Approval Section
                         </div>
@@ -237,7 +245,7 @@
                         </div>
                     </div>
 
-                    <div class="card shadow mb-3" hidden>
+                    <div class="card shadow mb-3">
                         <div class="card-header">
                             Uploaded Document Details
                         </div>
@@ -259,7 +267,7 @@
                         </div>
                     </div>
 
-                    <div class="row mb-3" hidden>
+                    <div class="row mb-3">
                         <div class="col-12 px-3">
                             <label for="simpleinput" class="form-label">Customer Bank Account</label>
                             <select class="form-control" id="bank_acc">
@@ -267,7 +275,7 @@
                         </div>
                     </div>
 
-                    <div class="row mb-3" hidden>
+                    <div class="row mb-3">
                         <div class="col-12 px-3">
                             <label for="simpleinput" class="form-label">Company Bank Account</label>
                             <select class="form-control" id="company_bank">
@@ -281,6 +289,7 @@
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" id="issue_loan_btn" onclick="issue_loan()">Issue Loan</button>
                 </div>
             </div>
         </div>
@@ -488,7 +497,9 @@
 @endsection
 
 @section('script')
-    <!-- DataTables JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
     <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.0.1/js/dataTables.buttons.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
@@ -498,8 +509,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
     <script src="../JS/validate.js"></script>
-    <script src="../JS/pending_loan.js?n=24"></script>
+    <script src="../JS/disbursement_loan.js?n=15"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+
+
     <script>
         $(function() {
 
@@ -536,6 +550,163 @@
 
 
         })
+
+
+
+        function exportFundRequestPDF() {
+            var rows = document.getElementById('loan_table').getElementsByTagName('tr');
+            var data = [['#', 'Customer No', 'Customer Name', 'NIC', 'Amount']];
+            var totalAmount = 0;
+
+            for (var i = 1; i < rows.length; i++) {
+                var cols = rows[i].getElementsByTagName('td');
+                if (cols.length > 0) {
+                    var index = i;
+                    var cus_no = cols[5].innerText;
+                    var cus_name = cols[4].innerText;
+                    var nic = cols[6].innerText;
+                    var amount = parseFloat(cols[8].innerText.replace(/[^0-9.-]+/g, "")) || 0;
+
+                    totalAmount += amount;
+                    data.push([index, cus_no, cus_name, nic, amount.toFixed(2)]);
+                }
+            }
+
+            data.push(['', '', '', 'Total Amount', totalAmount.toFixed(2)]);
+            data.push(['', '', '', '', '']);  // Add a blank row for spacing
+            data.push(['Authorized 01:', '', '', '', 'Authorized 02:']);  // Signature row
+            data.push(['', '', '', '', '']);  // Add another blank row to create more space
+
+
+            // Access jsPDF from the global `window.jspdf.jsPDF`
+            var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+            pdf.setFontSize(12);
+            pdf.text('Fund Request', 14, 16);
+
+            pdf.autoTable({
+                head: [data[0]],
+                body: data.slice(1),
+                startY: 20,
+                theme: 'grid',
+                styles: { halign: 'center' },
+            });
+
+            pdf.save('Fund_Request.pdf');
+        }
+
+
+
+
+        function exportDisbursementSheetPDF() {
+            var rows = document.getElementById('loan_table').getElementsByTagName('tr');
+            var data = [['#', 'Customer Number', 'NIC', 'Customer Name', 'Amount', 'Received By']];
+            var totalAmount = 0;
+
+            for (var i = 1; i < rows.length; i++) {
+                var cols = rows[i].getElementsByTagName('td');
+                if (cols.length > 0) {
+                    var index = i;
+                    var customerNumber = cols[5].innerText;
+                    var nic = cols[6].innerText;
+                    var customerName = cols[4].innerText;
+                    var amount = parseFloat(cols[8].innerText.replace(/[^0-9.-]+/g, "")) || 0;
+
+                    totalAmount += amount;
+                    data.push([index, customerNumber, nic, customerName, amount.toFixed(2), '']);
+                }
+            }
+
+            data.push(['', '', '', 'Total Amount', totalAmount.toFixed(2), '']);
+            data.push([]);
+            data.push(['', 'Prepared By:', '', '', 'Authorized 01:', '']);
+            data.push(['', '', '', '', 'Authorized 02:', '']);
+            data.push(['', '', '', '', 'All Cheques Received:', '']);
+
+            var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+            pdf.setFontSize(12);
+            pdf.text('Disbursement Sheet', 14, 16);
+
+            pdf.autoTable({
+                head: [data[0]],
+                body: data.slice(1),
+                startY: 20,
+                theme: 'grid',
+                styles: {
+                    halign: 'center',
+                    valign: 'middle',
+                    fontSize: 10,
+                },
+                columnStyles: {
+                    0: { cellWidth: 10 },   // #
+                    1: { cellWidth: 35 },  // Customer Number
+                    2: { cellWidth: 35 },  // NIC
+                    3: { cellWidth: 50 },  // Customer Name
+                    4: { cellWidth: 30 },  // Amount
+                    5: { cellWidth: 30 },  // Received By
+                }
+            });
+
+            pdf.save('Disbursement_Sheet.pdf');
+        }
+
+
+
+
+        function exportDocumentChargesPDF() {
+            var rows = document.getElementById('loan_table').getElementsByTagName('tr');
+            var data = [['#', 'Customer Number', 'NIC', 'Customer Name', 'Doc Charges']];
+            var totalDocCharges = 0;
+
+            for (var i = 1; i < rows.length; i++) {
+                var cols = rows[i].getElementsByTagName('td');
+                if (cols.length > 0) {
+                    var index = i;
+                    var customerNumber = cols[5].innerText.trim();
+                    var nic = cols[6].innerText.trim();
+                    var customerName = cols[4].innerText.trim();
+                    var docCharges = parseFloat(cols[9].innerText.replace(/[^0-9.-]+/g, "")) || 0;
+
+                    if (docCharges > 0) {
+                        totalDocCharges += docCharges;
+                        data.push([index, customerNumber, nic, customerName, docCharges.toFixed(2)]);
+                    }
+                }
+            }
+
+            data.push(['', '', '', 'Total Doc Charges', totalDocCharges.toFixed(2)]);
+            data.push([]);
+            data.push(['', 'CRO:', '', 'Branch Manager:', '']);
+
+            var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+            pdf.setFontSize(12);
+            pdf.text('Document Charges Register', 14, 16);
+
+            pdf.autoTable({
+                head: [data[0]],
+                body: data.slice(1),
+                startY: 20,
+                theme: 'grid',
+                styles: {
+                    halign: 'center',
+                    valign: 'middle',
+                    fontSize: 10,
+                },
+                columnStyles: {
+                    0: { cellWidth: 10 },   // #
+                    1: { cellWidth: 35 },  // Customer Number
+                    2: { cellWidth: 35 },  // NIC
+                    3: { cellWidth: 50 },  // Customer Name
+                    4: { cellWidth: 30 },  // Doc Charges
+                }
+            });
+
+            pdf.save('Document_Charges_Register.pdf');
+        }
+
+
+
+
+
 
         function set_cus(id){
             $('#loan_location_id').val(id);

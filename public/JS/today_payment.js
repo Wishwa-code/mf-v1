@@ -70,16 +70,13 @@ function load_payment_table(page = 1) {
 
 
                     let name = item.customer_name + " " + item.customer_lastname;
+                    name=formatName(name);
 
                     var row = `<tr>
                         <td>${item.Loan_No}</td>
                         <td>${name}</td>
                         <td>${parseFloat(item.Loan_Amount).toFixed(2)}</td>
-<!--                        <td>${parseFloat(item.Total_Balance).toFixed(2)}</td>-->
-<!--                        <td>${parseFloat(item.Total_Balance_until).toFixed(2)}</td>-->
                         <td>${parseFloat(item.Today_installment).toFixed(2)}</td>
-<!--                        <td>${parseFloat(item.arrease).toFixed(2)}</td>-->
-<!--                        <td>${parseFloat(item.Total_Paid_Amount).toFixed(2)}</td>-->
                         <td>
                             <div class="d-flex align-items-center">
                                 ${modalButton}
@@ -134,6 +131,8 @@ function load_payment_table(page = 1) {
         }
     });
 }
+
+
 
 
 

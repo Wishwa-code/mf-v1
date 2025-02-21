@@ -52,7 +52,7 @@ class UserController extends Controller
             $tp="-";
         }
 
-        if (DB::table('user')->where('branch_id', session('branch_id'))->where('email', '=', $request->email)->exists()) {
+        if (DB::table('user')->where('email', '=', $request->email)->exists()) {
             return redirect()->intended(route('pages.user'))->with("error","This user is already exist !");
         }else{
 
@@ -186,7 +186,6 @@ class UserController extends Controller
 
             // Call to the penalty creation function
             $this->create_panelty();
-
             return redirect()->intended(route('home'));
         }
 
@@ -213,7 +212,7 @@ class UserController extends Controller
 
         if ($getuser) {
             $newStatus = $getuser->Status == "1" ? "0" : "1"; // Toggle the Status
-            DB::table('user')->where('branch_id', session('branch_id'))->where('id', $id)->update(['Status' => $newStatus]); // Access Status as an object property
+            DB::table('user')->where('id', $id)->update(['Status' => $newStatus]); // Access Status as an object property
             return response()->json(['message' => 'Data updated successfully'], 200);
         } else {
             return response()->json(['message' => 'Customer not found'], 404);
@@ -229,7 +228,7 @@ class UserController extends Controller
         $user= tableWithBranch('user')->where('idUser', $request->user_id)->get();
         foreach ($user as $item){
             $data['password']=Hash::make($request->c_pass);
-            DB::table('user')->where('branch_id', session('branch_id'))->where('idUser', $request->user_id)->update($data);
+            DB::table('user')->where('idUser', $request->user_id)->update($data);
             return redirect()->intended(route('pages.user'))->with("success", "Password updated !");
         }
 
@@ -295,6 +294,35 @@ class UserController extends Controller
         }
 
 
+
+//        $loan=DB::table('customer_loan')->get();
+//
+//        foreach ($loan as $loans){
+//            $id=$loans->idCustomer_Loan;
+//            $panelty_balance=tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan','=',$id)->sum('Panalty_Balance');
+//
+//
+//            $LoanLogController = new LoanLogController();
+//
+//            // Call the store method of LoanLogController
+//            $LoanLogController->index(
+//                $id,
+//                'Issue Loan',
+//                $id,
+//                'Loan Issue',
+//                $loans->Amount,
+//                '0',
+//                '0',
+//                '0',
+//                '0',
+//                $panelty_balance,
+//                $loans->Interest_Amount,
+//                $loans->capital_balance,
+//                $loans->Balance_Amount+$panelty_balance,
+//                '0');
+//        }
+
+
         return view('home',compact('dashboard','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
     }
 
@@ -328,9 +356,6 @@ class UserController extends Controller
 
 
         foreach ($installment as $item){
-
-
-
             $total_balance=$item->Total_Balance;
             $panelty_amount=($total_balance*$item->Panalty_Rate)/100;
             $newPanaltyBalance = str_replace(',', '', number_format($item->Panalty_Balance + $panelty_amount, 2));
@@ -402,7 +427,7 @@ class UserController extends Controller
         $user=$request->userId;
         $checkboxValues = $request->get('checkboxValues', []);
 
-        DB::table('user')->where('branch_id', session('branch_id'))->where('id', $user)->update(array(
+        DB::table('user')->where('id', $user)->update(array(
             'customer' => $checkboxValues['customer'],
             'add_customer' => $checkboxValues['add_customer'],
             'view_customer' => $checkboxValues['view_customer'],
@@ -506,7 +531,6 @@ class UserController extends Controller
             // Update OTP in the database
             DB::table('user')
                 ->where('email', $email)
-                ->where('branch_id', session('branch_id'))
                 ->update(['otp' => $otp]);
 
             $message="Your OTP is ".$otp;
@@ -539,7 +563,7 @@ class UserController extends Controller
 
             if ($responseData_result['status']==="success") {
 
-                $user_details=DB::table('user')->where('branch_id', session('branch_id'))->where('email',$email)->first();
+                $user_details=DB::table('user')->where('email',$email)->first();
 
                 DB::table('sms')->insert([
                     'cus_id' => $user_details->id,
@@ -580,14 +604,14 @@ class UserController extends Controller
         }
 
         // Check OTP
-        $user = DB::table('user')->where('branch_id', session('branch_id'))->where('email', $email)->where('otp', $otp)->first();
+        $user = DB::table('user')->where('email', $email)->where('otp', $otp)->first();
 
         if (!$user) {
             return redirect()->route('user.recover_password')->with('error', 'Invalid OTP.');
         }
         $otp = random_int(100000, 999999);
         // Update password
-        DB::table('user')->where('branch_id', session('branch_id'))->where('email', $email)->update([
+        DB::table('user')->where('email', $email)->update([
             'password' => Hash::make($password),
             'otp' => $otp
         ]);
@@ -760,6 +784,18 @@ class UserController extends Controller
         }
     }
 
+
+    public function getHolidays()
+    {
+        // Retrieve all holiday dates from the database using DB::table()
+        $holidays = DB::table('holidays') // Replace 'holidays' with your actual table name
+        ->select('date')
+            ->get()
+            ->pluck('date')
+            ->toArray(); // Convert the collection to an array
+
+        return response()->json($holidays); // Return the dates as JSON
+    }
 
 
 }

@@ -30,7 +30,7 @@ class PendingLoanController extends Controller
     public function index()
     {
         $user_id = (int)session('userid');
-        $collector_val = DB::table('user')->where('branch_id', session('branch_id'))->where('id', '=', $user_id)->first();
+        $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
         $collector = $collector_val->collector;
 
         $group = tableWithBranch('customer_group')->get();
@@ -60,97 +60,65 @@ class PendingLoanController extends Controller
         $center_details = $request->center_details;
         $route = $request->route;
 
-        // Check if no filters are applied
-        if ($center_details == '0' && $route == '0' && $group == '0' && $category == '0' && $customer == '0') {
-            $loan = tableWithBranch('customer_loan', 'customer_loan')
-                ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
-                ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id
-             FROM group_has_customer
-             LEFT JOIN customer_group
-             ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
-                    'customer.idCustomer', '=', 'subquery.cus_id')
-                ->join('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category')
-                ->join('user as u1', 'customer_loan.User_idUser', '=', 'u1.id') // Join for User_idUser
-                ->join('user as u2', 'customer_loan.lending_officer_id', '=', 'u2.id') // Join for lending_officer_id
-                ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter') // Use the center_id from subquery
-                ->leftJoin('route', 'customer.route_id', '=', 'route.id_route') // Left join for route
-                ->leftJoin(DB::raw('(SELECT loan_id, COUNT(*) as approval_count FROM loan_has_approval GROUP BY loan_id) as approval_subquery'),
-                    'customer_loan.idCustomer_Loan', '=', 'approval_subquery.loan_id') // Subquery to get approval count
-                ->leftJoin(DB::raw('(SELECT loan_id, COUNT(*) as approved_count FROM loan_has_approval WHERE user_id != 0 GROUP BY loan_id) as approved_subquery'),
-                    'customer_loan.idCustomer_Loan', '=', 'approved_subquery.loan_id') // Subquery to get approved count
-                ->where('customer_loan.Status', '=', $status)
-                ->select(
-                    'customer_loan.*',
-                    'loan_category.Name as loan_name',
-                    'customer.*',
-                    DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
-                    DB::raw('IFNULL(center.No, "-") as center_no'), // Handle center
-                    DB::raw('IFNULL(route.name, "-") as route_name'), // Handle route
-                    'u1.Full_Name as user_name',
-                    'u2.Full_Name as lending_officer',
-                    DB::raw('IFNULL(approval_subquery.approval_count, 0) as approval_count'), // Approval count
-                    DB::raw('IFNULL(approved_subquery.approved_count, 0) as approved_count') // Approved count
-                )
-                ->get();
+        $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
+        FROM group_has_customer 
+        LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
+                'customer.idCustomer', '=', 'subquery.cus_id')
+            ->join('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category')
+            ->join('user as u1', 'customer_loan.User_idUser', '=', 'u1.id')
+            ->join('user as u2', 'customer_loan.lending_officer_id', '=', 'u2.id')
+            ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
+            ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
+            ->leftJoin(DB::raw('(SELECT loan_id, COUNT(*) as approval_count, 
+                SUM(CASE WHEN date = "-" THEN 1 ELSE 0 END) as pending_approvals 
+            FROM loan_has_approval 
+            GROUP BY loan_id) as approval_subquery'),
+                'customer_loan.idCustomer_Loan', '=', 'approval_subquery.loan_id')
+            ->where('customer_loan.Status', '=', $status)
+            ->whereNotNull('approval_subquery.loan_id')  // Ensure at least one approval exists
+            ->where('approval_subquery.pending_approvals', '>', 0)  // Ensure there are still pending approvals
+            ->select(
+                'customer_loan.*',
+                'loan_category.Name as loan_name',
+                'customer.*',
+                DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
+                DB::raw('IFNULL(center.No, "-") as center_no'),
+                DB::raw('IFNULL(route.name, "-") as route_name'),
+                'u1.Full_Name as user_name',
+                'u2.Full_Name as lending_officer',
+                DB::raw('IFNULL(approval_subquery.approval_count, 0) as approval_count'),
+                DB::raw('IFNULL(approval_subquery.pending_approvals, 0) as pending_approvals')
+            );
 
-            return response()->json(['item' => $loan, 'message' => 'all'], 200);
-        } else {
-            $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
-                ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
-                ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id
-             FROM group_has_customer
-             LEFT JOIN customer_group
-             ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
-                    'customer.idCustomer', '=', 'subquery.cus_id')
-                ->join('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category')
-                ->join('user as u1', 'customer_loan.User_idUser', '=', 'u1.id') // Join for User_idUser
-                ->join('user as u2', 'customer_loan.lending_officer_id', '=', 'u2.id') // Join for lending_officer_id
-                ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter') // Use the center_id from subquery
-                ->leftJoin('route', 'customer.route_id', '=', 'route.id_route') // Left join for route
-                ->leftJoin(DB::raw('(SELECT loan_id, COUNT(*) as approval_count FROM loan_has_approval GROUP BY loan_id) as approval_subquery'),
-                    'customer_loan.idCustomer_Loan', '=', 'approval_subquery.loan_id') // Subquery to get approval count
-                ->leftJoin(DB::raw('(SELECT loan_id, COUNT(*) as approved_count FROM loan_has_approval WHERE user_id != 0 GROUP BY loan_id) as approved_subquery'),
-                    'customer_loan.idCustomer_Loan', '=', 'approved_subquery.loan_id') // Subquery to get approved count
-                ->where('customer_loan.Status', '=', $status)
-                ->select(
-                    'customer_loan.*',
-                    'loan_category.Name as loan_name',
-                    'customer.*',
-                    DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
-                    DB::raw('IFNULL(center.No, "-") as center_no'), // Handle center
-                    DB::raw('IFNULL(route.name, "-") as route_name'), // Handle route
-                    'u1.Full_Name as user_name',
-                    'u2.Full_Name as lending_officer',
-                    DB::raw('IFNULL(approval_subquery.approval_count, 0) as approval_count'), // Approval count
-                    DB::raw('IFNULL(approved_subquery.approved_count, 0) as approved_count') // Approved count
-                );
 
-            // Apply filters based on input values
-            if ($group != '0') {
-                $loanQuery->where('subquery.group_id', '=', $group);
-            }
-
-            if ($category != '0') {
-                $loanQuery->where('loan_category.idLoan_Category', '=', $category);
-            }
-
-            if ($customer != '0') {
-                $loanQuery->where('customer.idCustomer', '=', $customer);
-            }
-
-            if ($center_details != '0') {
-                $loanQuery->where('center.idCenter', '=', $center_details);
-            }
-
-            if ($route != '0') {
-                $loanQuery->where('customer.route_id', '=', $route);
-            }
-
-            $loan = $loanQuery->get();
-
-            return response()->json(['item' => $loan, 'message' => 'notall'], 200);
+        // Apply filters based on input values
+        if ($group != '0') {
+            $loanQuery->where('subquery.group_id', '=', $group);
         }
+
+        if ($category != '0') {
+            $loanQuery->where('loan_category.idLoan_Category', '=', $category);
+        }
+
+        if ($customer != '0') {
+            $loanQuery->where('customer.idCustomer', '=', $customer);
+        }
+
+        if ($center_details != '0') {
+            $loanQuery->where('center.idCenter', '=', $center_details);
+        }
+
+        if ($route != '0') {
+            $loanQuery->where('customer.route_id', '=', $route);
+        }
+
+        $loan = $loanQuery->get();
+
+        return response()->json(['item' => $loan, 'message' => 'filtered'], 200);
     }
+
 
 
 
@@ -231,7 +199,7 @@ class PendingLoanController extends Controller
                 $cate=tableWithBranch('income_category')
                     ->where('description','=','Other')
                     ->first();
-
+                $user_id = (int)session('userid');
                 if ($cate){
 
                     // Create a new Expenses instance
@@ -244,6 +212,7 @@ class PendingLoanController extends Controller
                     $expenses->amount = $sumAmount;
                     $expenses->category_id = $cate->id;
                     $expenses->bank_id = 1;
+                    $expenses->user_id = $user_id;
                     $expenses->branch_id = session('branch_id');
 
                     $expenses->save();
@@ -263,6 +232,7 @@ class PendingLoanController extends Controller
                     $expenses->amount = $sumAmount;
                     $expenses->category_id = $cate_id;
                     $expenses->bank_id = 1;
+                    $expenses->user_id = $user_id;
                     $expenses->branch_id = session('branch_id');
 
                     $expenses->save();
@@ -482,5 +452,229 @@ class PendingLoanController extends Controller
                 ]);
         return response()->json(['item' => $affected],200);
     }
+
+
+
+    public function index_disbursement()
+    {
+        $user_id = (int)session('userid');
+        $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
+        $collector = $collector_val->collector;
+
+        $group = tableWithBranch('customer_group')->get();
+        $loan_category = tableWithBranch('loan_category')->get();
+        $customers = tableWithBranch('customer')->get();
+        $bank = tableWithBranch('company_bank_accounts')->where('Bank_Type','=','Bank')->where('status','=','1')->get();
+        if ($collector == 1) {
+            $bank = DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $user_id)->where('status', '=', '1')->get();
+        }
+        $documents = tableWithBranch('documents')->get();
+        $route = tableWithBranch('route','route')
+            ->join('user', 'route.id_officer', '=', 'user.id')
+            ->get();
+        $center = tableWithBranch('center')->get();
+        return view('pages.DisbursementLoan', compact('route','center','group', 'loan_category', 'customers','bank','documents'));
+    }
+
+    public function create_disbursement(Request $request)
+    {
+        $group = $request->group;
+        $category = $request->category;
+        $status = $request->status;
+        $customer = $request->customer;
+        $center_details = $request->center_details;
+        $route = $request->route;
+
+        $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
+            FROM group_has_customer 
+            LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
+                'customer.idCustomer', '=', 'subquery.cus_id')
+            ->join('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category')
+            ->join('user as u1', 'customer_loan.User_idUser', '=', 'u1.id')
+            ->join('user as u2', 'customer_loan.lending_officer_id', '=', 'u2.id')
+            ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
+            ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
+            ->leftJoin(DB::raw('(SELECT loan_id, COUNT(*) as approval_count, 
+                SUM(CASE WHEN date = "-" THEN 1 ELSE 0 END) as pending_approvals 
+            FROM loan_has_approval 
+            GROUP BY loan_id) as approval_subquery'),
+                'customer_loan.idCustomer_Loan', '=', 'approval_subquery.loan_id')
+            ->leftJoin(DB::raw('(SELECT Customer_Loan_idCustomer_Loan, SUM(Amount) as total_other_charges 
+            FROM loan_other_charges 
+            GROUP BY Customer_Loan_idCustomer_Loan) as charges_subquery'),
+                'customer_loan.idCustomer_Loan', '=', 'charges_subquery.Customer_Loan_idCustomer_Loan')
+            ->where('customer_loan.Status', '=', $status)
+            ->where('approval_subquery.pending_approvals', '=', 0)  // Ensure no pending approvals (fully approved)
+            ->select(
+                'customer_loan.*',
+                'loan_category.Name as loan_name',
+                'customer.*',
+                DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
+                DB::raw('IFNULL(center.No, "-") as center_no'),
+                DB::raw('IFNULL(route.name, "-") as route_name'),
+                'u1.Full_Name as user_name',
+                'u2.Full_Name as lending_officer',
+                DB::raw('IFNULL(approval_subquery.approval_count, 0) as approval_count'),
+                DB::raw('IFNULL(approval_subquery.pending_approvals, 0) as pending_approvals'),
+                DB::raw('IFNULL(charges_subquery.total_other_charges, 0) as total_other_charges') // Sum of Amount from loan_other_charges
+            );
+
+        // Apply filters based on input values
+        if ($group != '0') {
+            $loanQuery->where('subquery.group_id', '=', $group);
+        }
+
+        if ($category != '0') {
+            $loanQuery->where('loan_category.idLoan_Category', '=', $category);
+        }
+
+        if ($customer != '0') {
+            $loanQuery->where('customer.idCustomer', '=', $customer);
+        }
+
+        if ($center_details != '0') {
+            $loanQuery->where('center.idCenter', '=', $center_details);
+        }
+
+        if ($route != '0') {
+            $loanQuery->where('customer.route_id', '=', $route);
+        }
+
+        $loan = $loanQuery->get();
+
+        return response()->json(['item' => $loan, 'message' => 'filtered'], 200);
+    }
+
+
+    public function portfolio_performance()
+    {
+        $branch = DB::table('branch')->where('status','=','1')->get();
+        return view('pages.PortfolioPerformance', compact('branch'));
+    }
+
+    public function getRoutesCenters(Request $request)
+    {
+        $branch_id = $request->branch_id;
+
+        // Get Routes for selected Branch
+        $routes = DB::table('route')
+            ->where('branch_id', $branch_id)
+            ->get();
+
+        // Get Centers for selected Branch
+        $centers = DB::table('center')
+            ->where('branch_id', $branch_id)
+            ->get();
+
+        return response()->json([
+            'routes' => $routes,
+            'centers' => $centers
+        ]);
+    }
+
+    public function getPortfolioPerformance(Request $request)
+    {
+        $date_from = $request->input('date_from');
+        $date_to = $request->input('date_to');
+        $branch = $request->input('branch');
+        $route = $request->input('route');
+        $center_details = $request->input('center_details');
+
+        // Subqueries for aggregated data
+        $installment_subquery = DB::table('installments')
+            ->select('Customer_Loan_idCustomer_Loan',
+                DB::raw('SUM(Installment_Amount) as schedule_repayments'),
+                DB::raw('SUM(Paid_Amount) as collected_repayments'))
+            ->groupBy('Customer_Loan_idCustomer_Loan');
+
+        $loan_log_subquery = DB::table('Loan_Log')
+            ->select('Type_ID',
+                DB::raw('SUM(Capital_Payment) as capital_received'),
+                DB::raw('SUM(Interest_Payment) as interest_received'),
+                DB::raw('SUM(Panelty_Payment) as penalty_received'))
+            ->groupBy('Type_ID');
+
+        $loan_other_charges_subquery = DB::table('loan_other_charges')
+            ->select('Customer_Loan_idCustomer_Loan',
+                DB::raw('SUM(Amount) as processing_fee_received'))
+            ->groupBy('Customer_Loan_idCustomer_Loan');
+
+        // Main Query
+        $query = DB::table('customer_loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
+            FROM group_has_customer 
+            LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
+                'customer.idCustomer', '=', 'subquery.cus_id')
+            ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
+            ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
+            ->join('branch', 'customer_loan.branch_id', '=', 'branch.branch_id')
+            ->leftJoinSub($installment_subquery, 'installments', function ($join) {
+                $join->on('customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan');
+            })
+            ->leftJoinSub($loan_log_subquery, 'Loan_Log', function ($join) {
+                $join->on('customer_loan.idCustomer_Loan', '=', 'Loan_Log.Type_ID');
+            })
+            ->leftJoinSub($loan_other_charges_subquery, 'loan_other_charges', function ($join) {
+                $join->on('customer_loan.idCustomer_Loan', '=', 'loan_other_charges.Customer_Loan_idCustomer_Loan');
+            })
+            ->select(
+                'branch.Name as branch_name',
+                'route.name as route_name',
+                'center.Name as center_name',
+
+                // ✅ FIX: Removed DISTINCT from SUM() to sum across all loans correctly
+                DB::raw('SUM(customer_loan.Amount) as total_disbursement'),
+                DB::raw('SUM(customer_loan.Total_Loan_Amount) as total_loan_amount'),
+                DB::raw('COUNT(customer_loan.idCustomer_Loan) as issued_loan_count'),
+
+                // New Clients - Customers who have only taken one loan
+                DB::raw('COUNT(DISTINCT CASE WHEN loan_count_table.loan_count = 1 THEN customer_loan.Customer_idCustomer END) as new_clients'),
+
+                // Repeat Clients - Customers who have taken more than one loan
+                DB::raw('COUNT(DISTINCT CASE WHEN loan_count_table.loan_count > 1 THEN customer_loan.Customer_idCustomer END) as repeat_clients'),
+
+                // ✅ FIX: SUM() now correctly aggregates all installments & collected repayments
+                DB::raw('COALESCE(SUM(installments.schedule_repayments), 0) as schedule_repayments'),
+                DB::raw('COALESCE(SUM(installments.collected_repayments), 0) as collected_repayments'),
+
+                // ✅ FIX: SUM() now correctly aggregates all Loan_Log values
+                DB::raw('COALESCE(SUM(Loan_Log.capital_received), 0) as capital_received'),
+                DB::raw('COALESCE(SUM(Loan_Log.interest_received), 0) as interest_received'),
+                DB::raw('COALESCE(SUM(Loan_Log.penalty_received), 0) as penalty_received'),
+
+                // ✅ FIX: SUM() now correctly aggregates all processing fees
+                DB::raw('COALESCE(SUM(loan_other_charges.processing_fee_received), 0) as processing_fee_received')
+            )
+            ->leftJoin(DB::raw('(SELECT Customer_idCustomer, COUNT(*) as loan_count FROM customer_loan GROUP BY Customer_idCustomer) as loan_count_table'),
+                'customer_loan.Customer_idCustomer', '=', 'loan_count_table.Customer_idCustomer')
+            ->groupBy('branch.Name', 'route.name', 'center.Name');
+
+        // Apply filters
+        if (!empty($date_from)) {
+            $query->whereDate('customer_loan.Date_Time', '>=', $date_from);
+        }
+        if (!empty($date_to)) {
+            $query->whereDate('customer_loan.Date_Time', '<=', $date_to);
+        }
+        if ($branch != "0") {
+            $query->where('customer_loan.branch_id', $branch);
+        }
+        if ($route != "0") {
+            $query->where('customer.route_id', $route);
+        }
+        if ($center_details != "0") {
+            $query->where('subquery.center_id', $center_details);
+        }
+
+        $result = $query->get();
+
+        return response()->json(['data' => $result]);
+    }
+
+
+
 
 }

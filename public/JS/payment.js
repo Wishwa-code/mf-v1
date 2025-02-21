@@ -52,7 +52,7 @@ function load_table(page = 1) {
                         <td>${item.route_name}</td>
                         <td>${item.center_no}</td>
                         <td>${item.group_name}</td>
-                        <td>${item.First_Name} ${item.Last_Name}</td>
+                        <td>${formatName(item.First_Name, item.Last_Name)}</td>
                         <td>${item.loan_name}</td>
                         <td>${parseFloat(item.Amount).toFixed(2)}</td>
                         <td>${parseFloat(item.capital_balance).toFixed(2)}</td>
@@ -104,7 +104,14 @@ function load_table(page = 1) {
     });
 }
 
-
+// Function to format the name as required
+function formatName(firstName, lastName) {
+    let firstInitial = firstName.split(' ')[0].charAt(0) + '.'; // First initial
+    let lastNameParts = lastName.split(' '); // Split last name into parts
+    let lastInitial = lastNameParts.length > 1 ? lastNameParts[0].charAt(0) + '.' : ''; // Last name initial if it has more than one part
+    let formattedLastName = lastNameParts[lastNameParts.length - 1]; // Last part of last name
+    return (lastInitial ? firstInitial + lastInitial : firstInitial) + ' ' + formattedLastName;
+}
 
 
 function agreement(id) {
