@@ -52,7 +52,7 @@ class UserController extends Controller
             $tp="-";
         }
 
-        if (DB::table('user')->where('branch_id', session('branch_id'))->where('email', '=', $request->email)->exists()) {
+        if (DB::table('user')->where('email', '=', $request->email)->exists()) {
             return redirect()->intended(route('pages.user'))->with("error","This user is already exist !");
         }else{
 
@@ -212,7 +212,7 @@ class UserController extends Controller
 
         if ($getuser) {
             $newStatus = $getuser->Status == "1" ? "0" : "1"; // Toggle the Status
-            DB::table('user')->where('branch_id', session('branch_id'))->where('id', $id)->update(['Status' => $newStatus]); // Access Status as an object property
+            DB::table('user')->where('id', $id)->update(['Status' => $newStatus]); // Access Status as an object property
             return response()->json(['message' => 'Data updated successfully'], 200);
         } else {
             return response()->json(['message' => 'Customer not found'], 404);
@@ -228,7 +228,7 @@ class UserController extends Controller
         $user= tableWithBranch('user')->where('idUser', $request->user_id)->get();
         foreach ($user as $item){
             $data['password']=Hash::make($request->c_pass);
-            DB::table('user')->where('branch_id', session('branch_id'))->where('idUser', $request->user_id)->update($data);
+            DB::table('user')->where('idUser', $request->user_id)->update($data);
             return redirect()->intended(route('pages.user'))->with("success", "Password updated !");
         }
 
@@ -427,7 +427,7 @@ class UserController extends Controller
         $user=$request->userId;
         $checkboxValues = $request->get('checkboxValues', []);
 
-        DB::table('user')->where('branch_id', session('branch_id'))->where('id', $user)->update(array(
+        DB::table('user')->where('id', $user)->update(array(
             'customer' => $checkboxValues['customer'],
             'add_customer' => $checkboxValues['add_customer'],
             'view_customer' => $checkboxValues['view_customer'],
@@ -531,7 +531,6 @@ class UserController extends Controller
             // Update OTP in the database
             DB::table('user')
                 ->where('email', $email)
-                ->where('branch_id', session('branch_id'))
                 ->update(['otp' => $otp]);
 
             $message="Your OTP is ".$otp;
@@ -564,7 +563,7 @@ class UserController extends Controller
 
             if ($responseData_result['status']==="success") {
 
-                $user_details=DB::table('user')->where('branch_id', session('branch_id'))->where('email',$email)->first();
+                $user_details=DB::table('user')->where('email',$email)->first();
 
                 DB::table('sms')->insert([
                     'cus_id' => $user_details->id,
@@ -605,14 +604,14 @@ class UserController extends Controller
         }
 
         // Check OTP
-        $user = DB::table('user')->where('branch_id', session('branch_id'))->where('email', $email)->where('otp', $otp)->first();
+        $user = DB::table('user')->where('email', $email)->where('otp', $otp)->first();
 
         if (!$user) {
             return redirect()->route('user.recover_password')->with('error', 'Invalid OTP.');
         }
         $otp = random_int(100000, 999999);
         // Update password
-        DB::table('user')->where('branch_id', session('branch_id'))->where('email', $email)->update([
+        DB::table('user')->where('email', $email)->update([
             'password' => Hash::make($password),
             'otp' => $otp
         ]);

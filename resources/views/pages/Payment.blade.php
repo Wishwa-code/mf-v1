@@ -84,7 +84,7 @@
                                     <select class="form-control select2" id="group">
                                         <option value="0">All</option>
                                         @foreach($group as $item)
-                                            <option value="{{$item->idCustomer_Group}}">{{ $item->Name }}-{{ $item->Leader_name }}-{{ $item->Contact_no }}</option>
+                                            <option value="{{$item->idCustomer_Group}}">{{ $item->Name }}</option>
                                         @endforeach
                                     </select>
                                 </div>

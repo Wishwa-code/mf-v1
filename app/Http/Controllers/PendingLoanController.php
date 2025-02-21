@@ -458,7 +458,7 @@ class PendingLoanController extends Controller
     public function index_disbursement()
     {
         $user_id = (int)session('userid');
-        $collector_val = DB::table('user')->where('branch_id', session('branch_id'))->where('id', '=', $user_id)->first();
+        $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
         $collector = $collector_val->collector;
 
         $group = tableWithBranch('customer_group')->get();

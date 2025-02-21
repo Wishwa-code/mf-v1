@@ -199,26 +199,41 @@
                     data.push(row);
                 });
 
+                var cashTableBody = [
+                    [{ text: "5000", alignment: 'center' }, { text: "", alignment: 'center' }, { text: "", alignment: 'right' }],
+                    [{ text: "1000", alignment: 'center' }, { text: "", alignment: 'center' }, { text: "", alignment: 'right' }],
+                    [{ text: "500", alignment: 'center' }, { text: "", alignment: 'center' }, { text: "", alignment: 'right' }],
+                    [{ text: "100", alignment: 'center' }, { text: "", alignment: 'center' }, { text: "", alignment: 'right' }],
+                    [{ text: "50", alignment: 'center' }, { text: "", alignment: 'center' }, { text: "", alignment: 'right' }],
+                    [{ text: "20", alignment: 'center' }, { text: "", alignment: 'center' }, { text: "", alignment: 'right' }],
+                    [{ text: "10", alignment: 'center' }, { text: "", alignment: 'center' }, { text: "", alignment: 'right' }],
+                    [
+                        { text: "Total of Coins", colSpan: 2, style: 'totalRow', alignment: 'right' },
+                        {},
+                        { text: "", style: 'totalRow', alignment: 'right' }
+                    ],
+                    [
+                        { text: "Total", colSpan: 2, style: 'totalRow', alignment: 'right' },
+                        {},
+                        { text: "", style: 'totalRow', alignment: 'right' }
+                    ]
+                ];
+
                 var docDefinition = {
+                    pageSize: 'A4',
+                    pageMargins: [30, 20, 30, 20], // Keep margins minimal to fit everything
                     content: [
-                        {
-                            text: companyName,
-                            style: 'companyName'
-                        },
-                        {
-                            text: 'CASH DENOMINATION',
-                            style: 'title'
-                        },
+                        { text: companyName, style: 'companyName', margin: [0, 0, 0, 5] },
+                        { text: 'CASH DENOMINATION', style: 'title', margin: [0, 5, 0, 5] },
                         {
                             columns: [
                                 { text: `Branch: ${branchName}`, style: 'subheader' },
                                 { text: `Executive: ${executiveName}`, style: 'subheader', alignment: 'right' }
                             ]
                         },
-                        { text: `Date: ${selectedDate}`, style: 'subheader' },
-                        { text: '\n' },
+                        { text: `Date: ${selectedDate}`, style: 'subheader', margin: [0, 2, 0, 5] },
 
-                        // Table with improved styling
+                        // Collection Summary Table
                         {
                             table: {
                                 headerRows: 1,
@@ -235,16 +250,14 @@
                             },
                             layout: {
                                 fillColor: function(rowIndex) {
-                                    return rowIndex % 2 === 0 ? '#F5F5F5' : null; // Alternate row coloring
-                                },
-                                hLineWidth: function() { return 0.5; }, // Thinner horizontal lines
-                                vLineWidth: function() { return 0.5; }, // Thinner vertical lines
-                            }
+                                    return rowIndex % 2 === 0 ? '#F5F5F5' : null;
+                                }
+                            },
+                            pageBreak: 'avoid' // Prevents splitting to a new page
                         },
-
                         { text: '\n' },
 
-                        // TOTAL ROW with better contrast
+                        // Total Row
                         {
                             table: {
                                 widths: ['75%', '25%'],
@@ -255,27 +268,45 @@
                                     ]
                                 ]
                             },
-                            layout: 'noBorders'
+                            layout: 'noBorders',
+                            pageBreak: 'avoid'
                         },
 
-                        { text: '\n\n\n' }, // Space before signature section
+                        // Cash Details Table (Empty for manual input)
+                        { text: "CASH DETAILS", style: 'tableTitle', margin: [0, 10, 0, 5] },
+                        {
+                            table: {
+                                headerRows: 1,
+                                widths: ['30%', '30%', '40%'],
+                                body: [
+                                    [
+                                        { text: "Denomination", style: 'tableHeader' },
+                                        { text: "Quantity", style: 'tableHeader' },
+                                        { text: "Total Value", style: 'tableHeader' }
+                                    ],
+                                    ...cashTableBody
+                                ]
+                            },
+                            layout: 'lightHorizontalLines',
+                            pageBreak: 'avoid'
+                        },
 
-                        // Signature Section with Styling
+                        // Excess/Short & Slip Number Section with Blank Space
                         {
                             columns: [
-                                {
-                                    text: 'Executive Signature',
-                                    style: 'signatureLabel',
-                                    alignment: 'center',
-                                    margin: [0, 150, 0, 10] // Increased from 100 to 150 for more space
-                                },
-                                {
-                                    text: 'Manager Signature',
-                                    style: 'signatureLabel',
-                                    alignment: 'center',
-                                    margin: [0, 150, 0, 10] // Increased from 100 to 150
-                                }
-                            ]
+                                { text: "Excess/Short: ____________________", style: 'signatureLabel', alignment: 'left', margin: [0, 10, 0, 0] },
+                                { text: "Slip Number: ____________________", style: 'signatureLabel', alignment: 'right', margin: [0, 10, 0, 0] }
+                            ],
+                            pageBreak: 'avoid'
+                        },
+
+                        // Signature Section
+                        {
+                            columns: [
+                                { text: 'Executive Signature', style: 'signatureLabel', alignment: 'center', margin: [0, 80, 0, 5] },
+                                { text: 'Manager Signature', style: 'signatureLabel', alignment: 'center', margin: [0, 80, 0, 5] }
+                            ],
+                            pageBreak: 'avoid'
                         },
                         {
                             columns: [
@@ -290,60 +321,62 @@
                                     margin: [0, 50, 0, 20]
                                 }
                             ]
-                        },
-
-                        { text: '\n\n' } // Final spacing adjustment
+                        }
                     ],
 
                     styles: {
                         companyName: {
-                            fontSize: 20,
+                            fontSize: 18,
                             bold: true,
                             alignment: 'center',
-                            color: '#1A2942', // Dark blue for professionalism
-                            margin: [0, 0, 0, 10]
+                            color: '#1A2942',
+                            margin: [0, 0, 0, 5]
                         },
                         title: {
-                            fontSize: 16,
+                            fontSize: 14,
                             bold: true,
                             alignment: 'center',
-                            margin: [0, 10, 0, 10],
-                            color: '#004085' // Deep blue for contrast
+                            color: '#004085'
                         },
-                        subheader: {
+                        tableTitle: {
                             fontSize: 12,
                             bold: true,
-                            color: '#333333',
-                            margin: [0, 2, 0, 2]
+                            color: '#004085'
+                        },
+                        subheader: {
+                            fontSize: 10,
+                            bold: true,
+                            color: '#333333'
                         },
                         tableHeader: {
-                            fontSize: 11,
+                            fontSize: 10,
                             bold: true,
                             color: 'white',
-                            fillColor: '#004085', // Dark blue header
-                            alignment: 'center',
-                            margin: [3, 3, 3, 3]
+                            fillColor: '#004085',
+                            alignment: 'center'
                         },
                         totalRow: {
-                            fontSize: 13,
+                            fontSize: 11,
                             bold: true,
-                            fillColor: '#E0F7FA', // Light blue for better visibility
-                            color: '#333333',
-                            margin: [0, 5, 0, 5]
+                            fillColor: '#E0F7FA',
+                            color: '#333333'
                         },
                         signatureLabel: {
-                            fontSize: 13,
+                            fontSize: 11,
                             bold: true,
                             alignment: 'center',
-                            margin: [0, 150, 0, 10], // More space between text and signature line
                             color: '#004085'
                         }
                     }
                 };
 
                 pdfMake.createPdf(docDefinition).download('Cash_Denomination.pdf');
-
             });
+
+
+
+
+
 
 
 

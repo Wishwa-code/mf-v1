@@ -26,7 +26,6 @@ class PaymentLoanController extends Controller
      */
     public function index()
     {
-
         // Instantiate UserController
         $userController = new UserController();
 

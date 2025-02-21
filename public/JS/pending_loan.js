@@ -57,7 +57,7 @@ function load_table() {
                         item.route_name,
                         item.center_no,
                         item.group_name,
-                        item.First_Name + ' ' + item.Last_Name,
+                        formatName(item.First_Name, item.Last_Name), // Use formatted name here
                         item.cus_number,
                         item.loan_name,
                         parseFloat(item.Amount).toFixed(2),
@@ -104,7 +104,14 @@ function load_table() {
     });
 }
 
-
+// Function to format the name as required
+function formatName(firstName, lastName) {
+    let firstInitial = firstName.split(' ')[0].charAt(0) + '.'; // First initial
+    let lastNameParts = lastName.split(' '); // Split last name into parts
+    let lastInitial = lastNameParts.length > 1 ? lastNameParts[0].charAt(0) + '.' : ''; // Last name initial if it has more than one part
+    let formattedLastName = lastNameParts[lastNameParts.length - 1]; // Last part of last name
+    return (lastInitial ? firstInitial + lastInitial : firstInitial) + ' ' + formattedLastName;
+}
 
 
 function change_installment(loan_id) {
