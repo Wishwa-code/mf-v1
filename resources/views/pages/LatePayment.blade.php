@@ -161,17 +161,6 @@
                             </div>
                             <div class="col-lg-3">
                                 <div class="mb-3">
-                                    <label for="recovery" class="form-label">Recovery Officer</label>
-                                    <select class="form-control form-control-sm select2" id="recovery" name="recovery">
-                                        <option value="0" {{ old('recovery', $selectedRecoveryOfficer ?? 0) == 0 ? 'selected' : '' }}>All</option>
-                                        @foreach($recovery_officer as $item)
-                                            <option value="{{ $item->id }}">{{ $item->Full_Name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-lg-3">
-                                <div class="mb-3">
                                     <label for="simpleinput" class="form-label">Lending Officer</label>
                                     <select class="form-control select2" id="lending">
                                         <option value="0">All</option>
@@ -221,17 +210,15 @@
                                 <thead class="sticky-top bg-purple">
                                 <tr>
                                     <th>Loan No</th>
-                                    <th>Route</th>
                                     <th>Center No</th>
                                     <th>Group No</th>
                                     <th>Leasing</th>
                                     <th>Member NIC</th>
                                     <th>Member Name</th>
                                     <th>Pending Installments</th>
-                                    <th scope="col">Loan Amount</th>
-                                    <th scope="col">Total Loan Balance</th>
-                                    <th scope="col">Balance Until Today</th>
-                                    <th scope="col">Arrease</th>
+{{--                                    <th>Installment Total</th>--}}
+                                    <th>Penalty Total</th>
+                                    <th>Pending Total</th>
                                     <th>Status</th>
                                     <th>Action</th>
                                 </tr>
@@ -439,11 +426,10 @@
             let customer = $("#customer_id").val();
             let status = $("#status").val();
             let lending = $("#lending").val();
-            let recovery = $("#recovery").val();
 
             $.ajax({
                 type: "POST",
-                url: `/today_payment_load_check?page=${page}`,
+                url: `/latePayment_load_check`,
                 headers: {
                     "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                 },
@@ -453,7 +439,6 @@
                     group: group,
                     customer: customer,
                     lending: lending,
-                    recovery: recovery,
                     status: status
                 },
                 success: function(data, textStatus, xhr) {
@@ -488,22 +473,21 @@
                                     statusColor = "#000"; // Default color if needed
                                 }
 
+                                // Add row data to DataTable
                                 table.row.add([
                                     item.Loan_No,
-                                    item.route_name,
                                     item.center_no,
                                     item.group_name,
                                     item.Vehicle_No !== null ? item.Vehicle_No : '-',
                                     item.NIC,
                                     item.customer_name + ' ' + item.customer_lastname,
                                     item.Installment_Count,
-                                    `<td style="padding: 5px;">${formatNumber(parseFloat(item.Loan_Amount))}</td>`,
-                                    `<td style="padding: 5px;">${formatNumber(parseFloat(item.Total_Balance))}</td>`,
-                                    `<td style="padding: 5px;">${formatNumber(parseFloat(item.Total_Balance_until))}</td>`,
-                                    `<td style="padding: 5px;">${formatNumber(parseFloat(item.Today_installment))}</td>`,
+                                    // parseFloat(item.Installment_Balance).toFixed(2),
+                                    parseFloat(item.Panalty_Balance).toFixed(2),
+                                    parseFloat(item.Total_Balance).toFixed(2),
                                     `<i class="fas fa-lightbulb bulb-icon" style="color: ${statusColor}"></i>`,
                                     `<a href="/loanview/${item.idCustomer_Loan}" target="_blank" class="btn btn-warning"><i class="bi bi-eye"></i></a>`
-                                ]);
+                                ]).draw(false);
                             });
 
                             // Draw the table with new data

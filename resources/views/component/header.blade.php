@@ -1054,197 +1054,103 @@
                     @endif
 
 
-                    @if($item->report == 1)
-                        <li class="side-nav-item">
-                            <a data-bs-toggle="collapse" href="#main_report" aria-expanded="false" aria-controls="expences"
-                               class="side-nav-link">
-                                <i class="ri-file-paper-2-fill"></i>
-                                <span> Main Reports </span>
-                                <span class="menu-arrow"></span>
-                            </a>
-                            <div class="collapse" id="main_report">
-                                <ul class="side-nav-second-level">
-                                    <li>
-                                        <a href="/portfolio_performance">Portfolio & Performance</a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
+                        @if($item->report == 1)
+                            <li class="side-nav-item">
+                                <a data-bs-toggle="collapse" href="#reports_section" aria-expanded="false" class="side-nav-link">
+                                    <i class="ri-file-paper-2-fill"></i>
+                                    <span> Reports </span>
+                                    <span class="menu-arrow"></span>
+                                </a>
+                                <div class="collapse" id="reports_section">
+                                    <ul class="side-nav-second-level">
 
-                        <li class="side-nav-item">
-                            <a data-bs-toggle="collapse" href="#report" aria-expanded="false" aria-controls="expences"
-                               class="side-nav-link">
-                                <i class="ri-file-paper-2-fill"></i>
-                                <span> Sub Reports </span>
-                                <span class="menu-arrow"></span>
-                            </a>
-                            <div class="collapse" id="report">
-                                <ul class="side-nav-second-level">
-                                    @if($item->report_1 == 1)
-                                        <li>
-                                            <a href="/AllLoanDetailReport">Full Loan Detail Report</a>
-                                        </li>
-                                        <li>
-                                            <a href="/loansummaryreport">Loan Summary Report</a>
-                                        </li>
-                                        <li>
-                                            <a href="/LoanChargers">Loan Chargers Report</a>
-                                        </li>
-                                        <li>
-                                            <a href="/dandlreport">D & L Report</a>
-                                        </li>
-                                        <li>
-                                            <a href="/monthlyprofit">Loan Repayment Summary Report</a>
-                                        </li>
-                                        <li>
-                                            <a href="/savings_report">Savings Report</a>
-                                        </li>
-                                        <li>
-                                            <a href="/trialBalance">Trial Balance</a>
-                                        </li>
-                                    @else
-
-                                    @endif
-                                        @if($item->loan_in_arrease == 1)
-                                            <li>
-                                                <a href="/latePayment">Loan In Areas</a>
-                                            </li>
-                                        @else
-                                        @endif
-                                    @if($item->report_15 == 1)
-                                        <li>
-                                            <a href="/late_payment_report">Arrease Details</a>
-                                        </li>
-                                    @else
-
-                                    @endif
-                                    @if($item->report_16 == 1)
-                                        <li>
-                                            <a href="/ViewDateWiseCashFlow">Date wise cash flow details</a>
-                                        </li>
-                                    @else
-                                    @endif
-
-                                    @if($item->report_17 == 1)
-                                                <li>
-                                                    <a href="/MonthlyCollectionSummary">Monthly Collection Summary details</a>
-                                                </li>
-                                    @else
-                                    @endif
-
-                                    @if($item->report_2 == 1)
-                                        <li>
-                                            <a href="/customerreport_details">All Customer Details</a>
-                                        </li>
-                                            <li>
-                                                <a href="/customerreport_details_recover_officer">Recover Officer Wise Customers</a>
-                                            </li>
-                                    @else
-                                    @endif
-
-                                    @if($item->report_3 == 1)
-                                        <li>
-                                            <a href="/loanreport">Loan Details</a>
-                                        </li>
-                                    @else
-                                    @endif
-
-                                    @if($item->report_4 == 1)
-                                        <li>
-                                            <a href="/borrowerreport">Guardian Details</a>
-                                        </li>
-                                    @else
-                                    @endif
-
-                                    @if($item->report_5 == 1)
-                                        <li>
-                                            <a href="/repaymentreport">Agent Wise Repayment Collection</a>
-                                        </li>
-                                    @else
-                                    @endif
-
-
-                                    @if($item->report_6 == 1)
-{{--                                        <li>--}}
-{{--                                            <a href="/customerrepaymentreport">Customer Wise Repayments</a>--}}
-{{--                                        </li>--}}
-                                    @else
-                                    @endif
-
-
-                                    @if($item->report_7 == 1)
-                                        <li>
-                                            <a href="/deduct_report">Deduction Report</a>
-                                        </li>
-                                    @else
-                                    @endif
-
-
-                                    @if($item->report_8 == 1)
-{{--                                        <li>--}}
-{{--                                            <a href="/cashbook">CashBook Report</a>--}}
-{{--                                        </li>--}}
-
-                                    @else
-                                    @endif
-
-                                    @if($item->report_9 == 1)
-                                        <li>
-                                            <a href="/par">PAR (Monthly)</a>
-                                        </li>
-                                            <li>
-                                                <a href="/par_weekly">PAR (Weekly)</a>
-                                            </li>
-
-                                    @else
-                                    @endif
-
-                                    @if($item->report_10 == 1)
-{{--                                        <li>--}}
-{{--                                            <a href="#">Profit And Lost</a>--}}
-{{--                                        </li>--}}
-
-                                    @else
-                                    @endif
-
-
-                                    @if($item->report_11 == 1)
-{{--                                        <li>--}}
-{{--                                            <a href="gl_report">GL Report</a>--}}
-{{--                                        </li>--}}
-
-                                    @else
-                                    @endif
-
-
-                                    @if($item->report_12 == 1)
-{{--                                        <li>--}}
-{{--                                            <a href="#">Cash Flow Statement</a>--}}
-{{--                                        </li>--}}
-
-                                    @else
-                                    @endif
-
-                                    @if($item->report_13 == 1)
-{{--                                        <li>--}}
-{{--                                            <a href="#">Statement Of Financial Position</a>--}}
-{{--                                        </li>--}}
-
-                                    @else
-                                    @endif @if($item->report_14 == 1)
-                                        <li>
-                                            <a href="/sms_history">SMS History Report</a>
+                                        {{-- Main Reports --}}
+                                        <li class="side-nav-item">
+                                            <a data-bs-toggle="collapse" href="#main_report" aria-expanded="false" class="side-nav-link">
+                                                <span> Main Reports </span>
+                                                <span class="menu-arrow"></span>
+                                            </a>
+                                            <div class="collapse" id="main_report">
+                                                <ul class="side-nav-third-level">
+                                                    <li>
+                                                        <a href="/portfolio_performance">Portfolio & Performance</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                         </li>
 
-                                    @else
-                                    @endif
+                                        {{-- Sub Reports --}}
+                                        <li class="side-nav-item">
+                                            <a data-bs-toggle="collapse" href="#sub_report" aria-expanded="false" class="side-nav-link">
+                                                <span> Sub Reports </span>
+                                                <span class="menu-arrow"></span>
+                                            </a>
+                                            <div class="collapse" id="sub_report">
+                                                <ul class="side-nav-third-level">
+                                                    @if($item->report_1 == 1)
+                                                        <li><a href="/AllLoanDetailReport">Full Loan Detail Report</a></li>
+                                                        <li><a href="/loansummaryreport">Loan Summary Report</a></li>
+                                                        <li><a href="/LoanChargers">Loan Chargers Report</a></li>
+                                                        <li><a href="/dandlreport">D & L Report</a></li>
+                                                        <li><a href="/monthlyprofit">Loan Repayment Summary Report</a></li>
+                                                        <li><a href="/savings_report">Savings Report</a></li>
+                                                        <li><a href="/trialBalance">Trial Balance</a></li>
+                                                    @endif
 
+                                                    @if($item->loan_in_arrease == 1)
+                                                        <li><a href="/latePayment">Loan In Areas</a></li>
+                                                    @endif
 
-                                </ul>
-                            </div>
-                        </li>
-                    @else
-                    @endif
+                                                    @if($item->report_15 == 1)
+                                                        <li><a href="/late_payment_report">Arrease Details</a></li>
+                                                    @endif
+
+                                                    @if($item->report_16 == 1)
+                                                        <li><a href="/ViewDateWiseCashFlow">Date Wise Cash Flow Details</a></li>
+                                                    @endif
+
+                                                    @if($item->report_17 == 1)
+                                                        <li><a href="/MonthlyCollectionSummary">Monthly Collection Summary Details</a></li>
+                                                    @endif
+
+                                                    @if($item->report_2 == 1)
+                                                        <li><a href="/customerreport_details">All Customer Details</a></li>
+                                                        <li><a href="/customerreport_details_recover_officer">Recover Officer Wise Customers</a></li>
+                                                    @endif
+
+                                                    @if($item->report_3 == 1)
+                                                        <li><a href="/loanreport">Loan Details</a></li>
+                                                    @endif
+
+                                                    @if($item->report_4 == 1)
+                                                        <li><a href="/borrowerreport">Guardian Details</a></li>
+                                                    @endif
+
+                                                    @if($item->report_5 == 1)
+                                                        <li><a href="/repaymentreport">Agent Wise Repayment Collection</a></li>
+                                                    @endif
+
+                                                    @if($item->report_7 == 1)
+                                                        <li><a href="/deduct_report">Deduction Report</a></li>
+                                                    @endif
+
+                                                    @if($item->report_9 == 1)
+                                                        <li><a href="/par">PAR (Monthly)</a></li>
+                                                        <li><a href="/par_weekly">PAR (Weekly)</a></li>
+                                                    @endif
+
+                                                    @if($item->report_14 == 1)
+                                                        <li><a href="/sms_history">SMS History Report</a></li>
+                                                    @endif
+                                                </ul>
+                                            </div>
+                                        </li>
+
+                                    </ul>
+                                </div>
+                            </li>
+                        @endif
+
 
                 @endforeach
             @else

@@ -239,6 +239,165 @@ class TodayPaymentController extends Controller
 
 
 
+
+    public function latePayment(Request $request)
+    {
+        $center_details = $request->center_details;
+        $group = $request->group;
+        $customer = $request->customer;
+        $route = $request->route;
+        $status = $request->status;
+        $lending_officer = $request->lending;
+
+
+        if ($status == '-1') {
+            $today = Carbon::now()->toDateString();
+            $loanQuery = DB::table('installments')
+                ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+                ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+                ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
+                         FROM group_has_customer
+                         LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
+                    'customer.idCustomer', '=', 'subquery.cus_id')
+                ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+                ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+                ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+                ->leftJoin('route', 'center.route_id', '=', 'route.id_route')
+                ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
+                ->where('customer_loan.Status', '=', '0')
+                ->select(
+                    'customer.idCustomer',
+                    DB::raw('IFNULL(center.No, "-") as center_no'),
+                    'customer.First_Name as customer_name',
+                    'route.name as routename',
+                    'customer.Last_Name as customer_lastname',
+                    'customer.Nic as NIC',
+                    'customer_loan.Loan_No as Loan_No',
+                    'customer_loan.Amount as Loan_Amount',
+                    'customer_loan.idCustomer_Loan as idCustomer_Loan',
+                    'customer_loan.type as type',
+                    'customer_loan.Installment_Count as Installment_Count',
+                    'customer_loan.capital_balance as capital_balance',
+                    'customer_loan.Installment_Amount as Installment_Amount',
+                    'customer_loan.Vehicle_No as Vehicle_No',
+                    DB::raw('COUNT(installments.idInstallments) as Installment_Count'),
+                    DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
+                    DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date <= CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as Installment_Balance'),
+                    DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date <= CURDATE() THEN installments.Panalty_Balance ELSE 0 END), 2) as Panalty_Balance'),
+                    DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date <= CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as Total_Balance')
+                )
+                ->groupBy(
+                    'customer.idCustomer',
+                    'center.No',
+                    'route.name',
+                    'customer.First_Name',
+                    'customer.Last_Name',
+                    'customer.Nic',
+                    'customer_loan.Loan_No',
+                    'customer_loan.Amount',
+                    'customer_loan.type',
+                    'customer_loan.Installment_Count',
+                    'customer_loan.Vehicle_No',
+                    'customer_loan.idCustomer_Loan',
+                    'customer_loan.capital_balance',
+                    'customer_loan.Installment_Amount',
+                    'subquery.group_name'
+                );
+        }else{
+            $loanQuery = DB::table('installments')
+                ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+                ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+                ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
+             FROM group_has_customer
+             LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
+                    'customer.idCustomer', '=', 'subquery.cus_id')
+                ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+                ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+                ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+                ->leftJoin('route', 'center.route_id', '=', 'route.id_route')
+                ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
+                ->where('installments.Status', '=', '0')
+                ->where('customer_loan.Status', '=', '0')
+                ->select(
+                    'customer.idCustomer',
+                    DB::raw('IFNULL(center.No, "-") as center_no'),
+                    'customer.First_Name as customer_name',
+                    'route.name as routename',
+                    'customer.Last_Name as customer_lastname',
+                    'customer.Nic as NIC',
+                    'customer_loan.Loan_No as Loan_No',
+                    'customer_loan.Amount as Loan_Amount',
+                    'customer_loan.idCustomer_Loan as idCustomer_Loan',
+                    'customer_loan.type as type',
+                    'customer_loan.Installment_Amount as Installment_Amount',
+                    'customer_loan.Vehicle_No as Vehicle_No',
+                    'customer_loan.idCustomer_Loan as idCustomer_Loan',
+                    DB::raw('COUNT(installments.idInstallments) as Installment_Count'),
+                    DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
+                    DB::raw('ROUND(SUM(installments.Total_Balance), 2) as Installment_Balance'),
+                    DB::raw('ROUND(SUM(installments.Panalty_Balance), 2) as Panalty_Balance'),
+                    DB::raw('ROUND(SUM(installments.Total_Balance), 2) as Total_Balance')
+                )
+                ->groupBy(
+                    'customer.idCustomer',
+                    'center.No',
+                    'route.name',
+                    'customer.First_Name',
+                    'customer.Last_Name',
+                    'customer.Nic',
+                    'customer_loan.Loan_No',
+                    'customer_loan.Amount',
+                    'customer_loan.type',
+                    'customer_loan.Vehicle_No',
+                    'customer_loan.Installment_Amount',
+                    'customer_loan.idCustomer_Loan',
+                    'subquery.group_name'
+                );
+        }
+
+
+// Filter by center, group, and customer if provided
+        if ($center_details != '0') {
+            $loanQuery->where('center.idCenter', '=', $center_details);
+        }
+
+        if ($group != '0') {
+            $loanQuery->where('customer_group.idCustomer_Group', '=', $group);
+        }
+
+        if ($customer != '0') {
+            $loanQuery->where('customer.idCustomer', '=', $customer);
+        }
+
+        if ($route != '0') {
+            $loanQuery->where('route.id_route', '=', $route);
+        }
+
+        if ($lending_officer != '0') {
+            $loanQuery->where('customer_loan.lending_officer_id', '=', $lending_officer);
+        }
+
+
+// Apply status-specific filters
+        if ($status == '1') {
+            $loanQuery->whereDate('installments.Installment_Date', '=', date('Y-m-d'));
+        } elseif ($status == '2') {
+            $loanQuery->whereDate('installments.Installment_Date', '<', date('Y-m-d'));
+        } elseif ($status == '-1') {
+
+        }else{
+            $loanQuery->whereDate('installments.Installment_Date', '<=', date('Y-m-d'));
+        }
+
+        $loan = $loanQuery->get();
+
+
+
+        return response()->json(['item' => $loan, 'message' => 'all'], 200);
+    }
+
+
+
     public function Bulk_create(Request $request)
     {
         $center_details = $request->center_details;
@@ -1827,12 +1986,14 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             )
             ->groupBy(
                 'customer.idCustomer',
+                'center.No',
                 'customer.First_Name',
                 'customer.Last_Name',
                 'customer.Nic',
                 'customer_loan.Loan_No',
                 'customer_loan.type',
                 'customer_loan.idCustomer_Loan',
+                'subquery.group_name',
                 'installments.Installment_Date'
             );
 
