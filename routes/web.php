@@ -152,6 +152,7 @@ Route::post('/payment_save','\App\Http\Controllers\PaymentLoanController@store')
 Route::get('/installment_log/{id}','\App\Http\Controllers\PaymentLoanController@ins_log')->name('payment_save.ins_log');
 Route::get('/payment','\App\Http\Controllers\TodayPaymentController@index')->name('payment_save.index');
 Route::post('/today_payment_load_check','\App\Http\Controllers\TodayPaymentController@create')->name('payment_save.create');
+Route::post('/latePayment_load_check','\App\Http\Controllers\TodayPaymentController@latePayment')->name('latePayment');
 Route::post('/today_payment_load_check_bulk','\App\Http\Controllers\TodayPaymentController@Bulk_create')->name('payment_save.Bulk_create');
 
 
