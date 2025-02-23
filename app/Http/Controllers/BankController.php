@@ -431,7 +431,7 @@ class BankController extends Controller
 
 // Calculate interest amount
                 $current_loan_interest_amount += tableWithBranch('customer_loan')
-                    ->where('Status', '=', '0')
+                    ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('Interest_Amount');
 
 // Calculate penalty amount
@@ -461,7 +461,7 @@ class BankController extends Controller
 
 // Calculate interest amount
                 $past_loan_interest_amount += tableWithBranch('customer_loan')
-                    ->where('Status', '=', '0')
+                    ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('Interest_Amount');
 
 // Calculate penalty amount
@@ -538,7 +538,7 @@ class BankController extends Controller
 
 // Calculate interest amount for fully paid loans
                 $fully_paid_interest_amount += tableWithBranch('customer_loan')
-                    ->where('Status', '=', '0') // Assuming '0' is the status for fully paid loans
+                    ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('Interest_Amount');
 
 // Calculate penalty amount
@@ -704,7 +704,7 @@ class BankController extends Controller
 
 // Calculate interest amount
                 $current_loan_interest_amount += tableWithBranch('customer_loan')
-                    ->where('Status', '=', '0')
+                    ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('Interest_Amount');
 
 // Calculate penalty amount
@@ -734,7 +734,7 @@ class BankController extends Controller
 
 // Calculate interest amount
                 $past_loan_interest_amount += tableWithBranch('customer_loan')
-                    ->where('Status', '=', '0')
+                    ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('Interest_Amount');
 
 // Calculate penalty amount
@@ -843,7 +843,7 @@ class BankController extends Controller
 
 // Calculate interest amount for fully paid loans
                 $fully_paid_interest_amount += tableWithBranch('customer_loan')
-                    ->where('Status', '=', '0') // Assuming '0' is the status for fully paid loans
+                    ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('Interest_Amount');
 
 // Calculate penalty amount

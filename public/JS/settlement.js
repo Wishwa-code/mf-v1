@@ -108,6 +108,9 @@ $('#settle-loan-btn').click(function() {
 function settleLoan() {
     var loanId = $('#loan-id').val(); // Assume you store loan id in this button
     var net_balance = $('#net-balance-amount').val();
+    var net_capital = $('#net-capital-balance').val();
+    var net_interest = $('#net-interest-balance').val();
+    var net_panelty = $('#net-penalty-balance').val();
 
     var net_interest_balance_read_only = $('#net-interest-balance-readonly').val();
     var net_interest_balance = $('#net-interest-balance').val();
@@ -147,6 +150,9 @@ function settleLoan() {
         data: {
             loan_id: loanId,
             net_balance:net_balance,
+            net_capital:net_capital,
+            net_interest:net_interest,
+            net_panelty:net_panelty,
             net_interest_balance_read_only:net_interest_balance_read_only,
             net_interest_balance:net_interest_balance,
             net_penalty_balance_readonly:net_penalty_balance_readonly,
