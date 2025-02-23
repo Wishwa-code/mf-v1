@@ -173,26 +173,26 @@
                 <tr class="sub-row">
                     <td rowspan="3" class="mhead">Current loans</td>
                     <td class="text-danger">Gross Loan Amount</td>
-                    <td>{{ number_format($current_loan_capital_amount, 2) }}</td>
-                    <td>{{ number_format($current_loan_interest_amount, 2) }}</td>
-                    <td>{{ number_format($current_loan_panelty_amount, 2) }}</td>
-                    <td class="text-danger">{{ number_format($current_loan_total, 2) }}</td>
+                    <td>{{ number_format(round($current_loan_capital_amount), 2) }}</td>
+                    <td>{{ number_format(round($current_loan_interest_amount), 2) }}</td>
+                    <td>{{ number_format(round($current_loan_panelty_amount), 2) }}</td>
+                    <td class="text-danger">{{ number_format(round($current_loan_total), 2) }}</td>
                 </tr>
                 <tr class="sub-row">
                     <td class="text-success">Paid Amount</td>
-                    <td>{{ number_format($Capital_Payment, 2) }}</td>
-                    <td>{{ number_format($Interest_Payment, 2) }}</td>
-                    <td>{{ number_format($Panelty_Payment, 2) }}</td>
-                    <td class="text-success">{{ number_format($current_loan_total_payment, 2) }}</td>
+                    <td>{{ number_format(round($Capital_Payment), 2) }}</td>
+                    <td>{{ number_format(round($Interest_Payment), 2) }}</td>
+                    <td>{{ number_format(round($Panelty_Payment), 2) }}</td>
+                    <td class="text-success">{{ number_format(round($current_loan_total_payment), 2) }}</td>
                 </tr>
                 <tr class="main-row">
                     <td class="text-dark">Net Loan Balance</td>
-                    <td>{{ number_format($current_loan_capital_amount - $Capital_Payment, 2) }}</td>
-                    <td>{{ number_format($current_loan_interest_amount - $Interest_Payment, 2) }}</td>
-                    <td>{{ number_format($current_loan_panelty_amount - $Panelty_Payment, 2) }}</td>
-                    <td class="text-dark">{{ number_format(
-        ($current_loan_capital_amount + $current_loan_interest_amount + $current_loan_panelty_amount)
-        - ($Capital_Payment + $Interest_Payment + $Panelty_Payment),
+                    <td>{{ number_format(round($current_loan_capital_amount - $Capital_Payment), 2) }}</td>
+                    <td>{{ number_format(round($current_loan_interest_amount - $Interest_Payment), 2) }}</td>
+                    <td>{{ number_format(round($current_loan_panelty_amount - $Panelty_Payment), 2) }}</td>
+                    <td class="text-dark">{{ number_format(round(($current_loan_capital_amount + $current_loan_interest_amount + $current_loan_panelty_amount)
+        - ($Capital_Payment + $Interest_Payment + $Panelty_Payment))
+        ,
         2
     ) }}</td>
                 </tr>
@@ -201,26 +201,26 @@
                 <tr class="sub-row">
                     <td rowspan="3" class="mhead">Past maturity loans(Arrears)</td>
                     <td class="text-danger">Gross Loan Amount</td>
-                    <td>{{ number_format($past_capital_amount, 2) }}</td>
-                    <td>{{ number_format($past_loan_interest_amount, 2) }}</td>
-                    <td>{{ number_format($past_panelty_amount, 2) }}</td>
-                    <td class="text-danger">{{ number_format($past_total, 2) }}</td>
+                    <td>{{ number_format(round($past_capital_amount), 2) }}</td>
+                    <td>{{ number_format(round($past_loan_interest_amount), 2) }}</td>
+                    <td>{{ number_format(round($past_panelty_amount), 2) }}</td>
+                    <td class="text-danger">{{ number_format(round($past_total), 2) }}</td>
                 </tr>
                 <tr class="sub-row">
                     <td class="text-success">Paid Amount</td>
-                    <td>{{ number_format($past_Capital_Payment, 2) }}</td>
-                    <td>{{ number_format($past_Interest_Payment, 2) }}</td>
-                    <td>{{ number_format($past_Panelty_Payment, 2) }}</td>
-                    <td class="text-success">{{ number_format($past_total_payment, 2) }}</td>
+                    <td>{{ number_format(round($past_Capital_Payment), 2) }}</td>
+                    <td>{{ number_format(round($past_Interest_Payment), 2) }}</td>
+                    <td>{{ number_format(round($past_Panelty_Payment), 2) }}</td>
+                    <td class="text-success">{{ number_format(round($past_total_payment), 2) }}</td>
                 </tr>
                 <tr class="main-row">
                     <td class="text-dark">Net Loan Balance</td>
-                    <td>{{ number_format($past_capital_amount - $past_Capital_Payment, 2) }}</td>
-                    <td>{{ number_format($past_loan_interest_amount - $past_Interest_Payment, 2) }}</td>
-                    <td>{{ number_format($past_panelty_amount - $past_Panelty_Payment, 2) }}</td>
-                    <td class="text-dark">{{ number_format(
-        ($past_capital_amount + $past_loan_interest_amount + $past_panelty_amount)
-        - ($past_Capital_Payment + $past_Interest_Payment + $past_Panelty_Payment),
+                    <td>{{ number_format(round($past_capital_amount - $past_Capital_Payment), 2) }}</td>
+                    <td>{{ number_format(round($past_loan_interest_amount - $past_Interest_Payment), 2) }}</td>
+                    <td>{{ number_format(round($past_panelty_amount - $past_Panelty_Payment), 2) }}</td>
+                    <td class="text-dark">{{ number_format(round(($past_capital_amount + $past_loan_interest_amount + $past_panelty_amount)
+        - ($past_Capital_Payment + $past_Interest_Payment + $past_Panelty_Payment))
+        ,
         2
     ) }}</td>
                 </tr>
@@ -230,26 +230,26 @@
                 <tr class="sub-row">
                     <td rowspan="3" class="mhead">Settled loans</td>
                     <td class="text-danger">Gross Loan Amount</td>
-                    <td>{{ number_format($fully_paid_capital_amount, 2) }}</td>
-                    <td>{{ number_format($fully_paid_interest_amount, 2) }}</td>
-                    <td>{{ number_format($fully_paid_panelty_amount, 2) }}</td>
-                    <td class="text-danger">{{ number_format($fully_paid_total, 2) }}</td>
+                    <td>{{ number_format(round($fully_paid_capital_amount), 2) }}</td>
+                    <td>{{ number_format(round($fully_paid_interest_amount), 2) }}</td>
+                    <td>{{ number_format(round($fully_paid_panelty_amount), 2) }}</td>
+                    <td class="text-danger">{{ number_format(round($fully_paid_total), 2) }}</td>
                 </tr>
                 <tr class="sub-row">
                     <td class="text-success">Paid Amount</td>
-                    <td>{{ number_format($fully_paid_Capital_Payment, 2) }}</td>
-                    <td>{{ number_format($fully_paid_Interest_Payment, 2) }}</td>
-                    <td>{{ number_format($fully_paid_Panelty_Payment, 2) }}</td>
-                    <td class="text-success">{{ number_format($fully_paid_total_payment, 2) }}</td>
+                    <td>{{ number_format(round($fully_paid_Capital_Payment), 2) }}</td>
+                    <td>{{ number_format(round($fully_paid_Interest_Payment), 2) }}</td>
+                    <td>{{ number_format(round($fully_paid_Panelty_Payment), 2) }}</td>
+                    <td class="text-success">{{ number_format(round($fully_paid_total_payment), 2) }}</td>
                 </tr>
                 <tr class="main-row">
                     <td class="text-dark">Net Loan Balance</td>
-                    <td>{{ number_format($fully_paid_capital_amount - $fully_paid_Capital_Payment, 2) }}</td>
-                    <td>{{ number_format($fully_paid_interest_amount - $fully_paid_Interest_Payment, 2) }}</td>
-                    <td>{{ number_format($fully_paid_panelty_amount - $fully_paid_Panelty_Payment, 2) }}</td>
-                    <td class="text-dark">{{ number_format(
-        ($fully_paid_capital_amount + $fully_paid_interest_amount + $fully_paid_panelty_amount)
-        - ($fully_paid_Capital_Payment + $fully_paid_Interest_Payment + $fully_paid_Panelty_Payment),
+                    <td>{{ number_format(round($fully_paid_capital_amount - $fully_paid_Capital_Payment), 2) }}</td>
+                    <td>{{ number_format(round($fully_paid_interest_amount - $fully_paid_Interest_Payment), 2) }}</td>
+                    <td>{{ number_format(round($fully_paid_panelty_amount - $fully_paid_Panelty_Payment), 2) }}</td>
+                    <td class="text-dark">{{ number_format(round(($fully_paid_capital_amount + $fully_paid_interest_amount + $fully_paid_panelty_amount)
+        - ($fully_paid_Capital_Payment + $fully_paid_Interest_Payment + $fully_paid_Panelty_Payment))
+        ,
         2
     ) }}</td>
                 </tr>
@@ -258,28 +258,28 @@
 
 
                 <!-- Row 4 with 3 sub-rows -->
-                <tr class="sub-row">
-                    <td rowspan="3" class="mhead">Resheduled loans</td>
-                    <td class="text-danger">Gross Loan Amount</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td class="text-danger">0</td>
-                </tr>
-                <tr class="sub-row">
-                    <td class="text-success">Paid Amount</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td class="text-success">0</td>
-                </tr>
-                <tr class="main-row">
-                    <td class="text-dark">Net Laon Balance</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td class="text-dark">0</td>
-                </tr>
+{{--                <tr class="sub-row">--}}
+{{--                    <td rowspan="3" class="mhead">Resheduled loans</td>--}}
+{{--                    <td class="text-danger">Gross Loan Amount</td>--}}
+{{--                    <td>0</td>--}}
+{{--                    <td>0</td>--}}
+{{--                    <td>0</td>--}}
+{{--                    <td class="text-danger">0</td>--}}
+{{--                </tr>--}}
+{{--                <tr class="sub-row">--}}
+{{--                    <td class="text-success">Paid Amount</td>--}}
+{{--                    <td>0</td>--}}
+{{--                    <td>0</td>--}}
+{{--                    <td>0</td>--}}
+{{--                    <td class="text-success">0</td>--}}
+{{--                </tr>--}}
+{{--                <tr class="main-row">--}}
+{{--                    <td class="text-dark">Net Laon Balance</td>--}}
+{{--                    <td>0</td>--}}
+{{--                    <td>0</td>--}}
+{{--                    <td>0</td>--}}
+{{--                    <td class="text-dark">0</td>--}}
+{{--                </tr>--}}
 
             </tbody>
         </table>

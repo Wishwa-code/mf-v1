@@ -617,6 +617,9 @@ class PaymentLoanController extends Controller
         $loanId = $request->input('loan_id');
         $user_id=(int) session('userid');
         $net_balance = $request->input('net_balance');
+        $net_capital = $request->input('net_capital');
+        $net_interest = $request->input('net_interest');
+        $net_panelty = $request->input('net_panelty');
 
 
         $net_interest_balance_read_only = $request->input('net_interest_balance_read_only');
@@ -653,8 +656,8 @@ class PaymentLoanController extends Controller
         $this->loanLogController->index(
             $loanId, 'Loan Settlement', $savedId,
             'Loan Settlement', $net_balance,
-            '0.00', '0.00',
-            '0.00', '0.00', '0.00',
+            $net_panelty, $net_interest,
+            $net_capital, '0.00', '0.00',
             '0.00', '0.00', '0.00', '0.00'
         );
         $this->capitalBalanceController->index($loanId,1);
