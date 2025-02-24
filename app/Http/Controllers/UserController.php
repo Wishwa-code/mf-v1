@@ -253,6 +253,7 @@ class UserController extends Controller
         $setteled_loan_Count = tableWithBranch('customer_loan')->where('Status','=','1')->count();
         $setteled_loan_current_Amount = tableWithBranch('customer_loan')->where('Status','=','1')->sum('Amount');
         $todayinstallment = tableWithBranch('installments')->where('Installment_Date',date('Y-m-d'))->where('Status','=','0')->sum('Total_Balance');
+        $checqueamount = tableWithBranch('Cheque_payment')->where('payment_date',date('Y-m-d'))->where('chq_status','=','0')->sum('payment_amount');
         $shortcut=tableWithBranch('shortcut')->get();
         $shortcut_count=tableWithBranch('shortcut')->count();
 
@@ -285,7 +286,7 @@ class UserController extends Controller
         $todayInstallment = $loanQuery_2->Today_installment;
         $arrease = $loanQuery_2->arrease;
         $totalBalanceUntil = $loanQuery_2->Total_Balance_until;
-
+        $totalBalanceUntil=$totalBalanceUntil+$checqueamount;
         $userid=session('userid');
         $getuser = tableWithBranch('user')->where('id', $userid)->first();
         $dashboard=0;
@@ -323,7 +324,7 @@ class UserController extends Controller
 //        }
 
 
-        return view('home',compact('dashboard','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
+        return view('home',compact('dashboard','checqueamount','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
     }
 
     public function logout()

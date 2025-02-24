@@ -566,6 +566,7 @@
                                     <th scope="col">Slip</th>
                                     <th scope="col">Payment Type</th>
                                     <th scope="col">User</th>
+                                    <th scope="col">Slip</th>
                                 </tr>
                                 </thead>
                                 <tbody class="custom-scrollbar" style="max-height: 400px;">
@@ -588,8 +589,19 @@
                                         <td>{{ $customer_payment->Full_Name }} ( {{ $customer_payment->Designation }}
                                             - {{ $customer_payment->email }} )
                                         </td>
+                                        <td>
+                                            @if (!empty($customer_payment->Slip))
+                                                <button type="button" class="btn btn-success btn-sm" onclick="openSlip('{{ asset('storage/' . $customer_payment->Slip) }}')">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                            @else
+                                                <button type="button" class="btn btn-success btn-sm disabled">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                            @endif
+                                        </td>
 
-                                        @if($payment_delete_status===1)
+                                    @if($payment_delete_status===1)
                                             <td>
                                                 <button class="reverse-payment-btn btn btn-outline-danger"
                                                         onclick="undo_payment({{ $customer_payment->idCustomer_Payments }})">
@@ -905,6 +917,9 @@
                     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
                     <script>
+                        function openSlip(slipPath) {
+                            window.open(slipPath, '_blank');
+                        }
 
                         $(document).ready(function() {
                             $('#submitComment').click(function() {

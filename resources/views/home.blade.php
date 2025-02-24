@@ -131,6 +131,21 @@
                                 <div class="float-end">
                                     <i class="ri-shopping-basket-line widget-icon"></i>
                                 </div>
+                                <h6 class="text-uppercase mt-0" title="Customers">Chq Payments</h6>
+                                <h3 class="my-2">LKR {{number_format($checqueamount,'2','.',',')}}</h3>
+
+                            </div>
+                        </div>
+                    </a>
+                </div> <!-- end col-->
+
+                <div class="col-xxl-3 col-sm-6">
+                    <a href="/payment">
+                        <div class="card widget-flat text-bg-info">
+                            <div class="card-body">
+                                <div class="float-end">
+                                    <i class="ri-shopping-basket-line widget-icon"></i>
+                                </div>
                                 <h6 class="text-uppercase mt-0" title="Customers">Total Outstanding</h6>
                                 <h3 class="my-2">LKR {{number_format($totalBalanceUntil,'2','.',',')}}</h3>
 
