@@ -408,9 +408,9 @@ class PendingLoanController extends Controller
         return response()->json(['item' => $customer_loan_doc],200);
     }
 
-    public function check_the_approval(string $id){
-
-        $customer_loan_doc = tableWithBranch('loan_has_approval','loan_has_approval')
+    public function check_the_approval(string $id)
+    {
+        $customer_loan_doc = tableWithBranch('loan_has_approval', 'loan_has_approval')
             ->leftJoin('user', 'loan_has_approval.user_id', '=', 'user.id')
             ->where('loan_id', '=', $id)
             ->select(
@@ -420,23 +420,31 @@ class PendingLoanController extends Controller
             )
             ->get();
 
-        $login_designation=session('designation');;
+        $login_designation = session('designation');
 
-        $customer_loan=DB::table('customer_loan')
+        $customer_loan = DB::table('customer_loan')
             ->where('idCustomer_Loan', '=', $id)
             ->where('branch_id', session('branch_id'))
             ->first();
 
-        $level=tableWithBranch('level','level')
+        // Fetch levels with their respective designations
+        $level = tableWithBranch('level', 'level')
             ->join('level_has_designation', 'level.id', '=', 'level_has_designation.level_id')
             ->where('product_id', '=', $customer_loan->Loan_Category_idLoan_Category)
-            ->select('designation_id as designation')
+            ->select(
+                'level.id as level_id', // Keep level ID
+                'level_has_designation.designation_id' // Keep designation as it was
+            )
             ->get();
 
-
-
-        return response()->json(['item' => $customer_loan_doc,'designation' => $level,'login_designation' => $login_designation],200);
+        return response()->json([
+            'item' => $customer_loan_doc, // No changes here
+            'designation' => $level, // Now properly linked to levels
+            'login_designation' => $login_designation // Unchanged
+        ], 200);
     }
+
+
 
 
     public function approve_loan(Request $request){
