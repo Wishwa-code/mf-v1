@@ -551,7 +551,7 @@
 
         })
 
-
+        var authorizedName = "{{ session('Full_Name') }}";
 
         function exportFundRequestPDF() {
             var rows = document.getElementById('loan_table').getElementsByTagName('tr');
@@ -574,11 +574,13 @@
 
             data.push(['', '', '', 'Total Amount', totalAmount.toFixed(2)]);
             data.push(['', '', '', '', '']);  // Add a blank row for spacing
-            data.push(['Authorized 01:', '', '', '', 'Authorized 02:']);  // Signature row
+
+            // Use the authorizedName variable from Laravel
+            var authorizedText = "Authorized 01: " + authorizedName;
+
+            data.push([authorizedText, '', '', '', 'Authorized 02:']);  // Signature row
             data.push(['', '', '', '', '']);  // Add another blank row to create more space
 
-
-            // Access jsPDF from the global `window.jspdf.jsPDF`
             var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
             pdf.setFontSize(12);
             pdf.text('Fund Request', 14, 16);
@@ -593,6 +595,7 @@
 
             pdf.save('Fund_Request.pdf');
         }
+
 
 
 
@@ -615,10 +618,10 @@
                     data.push([index, customerNumber, nic, customerName, amount.toFixed(2), '']);
                 }
             }
-
+            var authorizedText = "Prepared By: " + authorizedName;
             data.push(['', '', '', 'Total Amount', totalAmount.toFixed(2), '']);
             data.push([]);
-            data.push(['', 'Prepared By:', '', '', 'Authorized 01:', '']);
+            data.push(['', authorizedText, '', '', 'Authorized 01:', '']);
             data.push(['', '', '', '', 'Authorized 02:', '']);
             data.push(['', '', '', '', 'All Cheques Received:', '']);
 
