@@ -83,7 +83,7 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <label for="simpleinput" class="form-label">First Name <span class="required-asterisk">*</span></label>
+                                        <label for="simpleinput" class="form-label">First Name - Family Name <span class="required-asterisk">*</span></label>
                                         <input type="text" id="f_name" name="f_name" class="form-control">
                                     </div>
                                     <div class="mb-3">
@@ -101,6 +101,10 @@
                                     <div class="mb-3">
                                         <label for="simpleinput" class="form-label">Mobile No 02</label>
                                         <input type="tel" id="contact_number_2" name="contact_number_2" class="form-control"  onkeypress="validateContactNumber(event)">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="simpleinput" class="form-label">Business Registration Number</label>
+                                        <input type="tel" id="business_registration" name="business_registration" class="form-control">
                                     </div>
                                     <div class="mb-3">
                                         <label for="simpleinput" class="form-label">NIC <span class="required-asterisk">*</span></label>

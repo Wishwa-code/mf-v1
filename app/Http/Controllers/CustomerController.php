@@ -188,6 +188,7 @@ class CustomerController extends Controller
             $customer->Email = $request->email;
             $customer->Contact_No = $request->contact_number;
             $customer->contact_number_2 = $request->contact_number_2;
+            $customer->business_registration = $request->business_registration;
             $customer->Nic = $request->nic;
             $customer->Gender = $request->gender;
             $customer->Dob = $request->dob;

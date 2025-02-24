@@ -24,6 +24,8 @@ $(function () {
               $("#contact_number_2").focus().select();
           }
       }  else if (e.target.id === "contact_number_2") {
+          $("#business_registration").focus().select();
+      }   else if (e.target.id === "business_registration") {
           $("#nic").focus().select();
       } else if (e.target.id === "nic") {
           if (validateRequired("nic")) {
@@ -122,6 +124,7 @@ const saveCustomer = (e) => {
     formData.append("gender", $("#gender").val());
     formData.append("dob", $("#dob").val());
     formData.append("root", $("#root").val());
+    formData.append("business_registration", $("#business_registration").val());
 
 
     formData.append("curr_address_01", $("#curr_address_01").val());
