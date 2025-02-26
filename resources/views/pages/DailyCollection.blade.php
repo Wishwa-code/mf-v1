@@ -227,8 +227,9 @@
                 <div class="page-title-box">
                     <div class="page-title-right">
                     </div>
-                    <h4 class="page-title">Daily Collection</h4>
+                    <h4 class="page-title">Daily Collection Sheet Overview</h4>
                 </div>
+                <span style="color: #a19595">"The Daily Collection Sheet provides a detailed record of all loan installments, arrears, penalties, and pending amounts collected for the day. This sheet helps in tracking payments made by customers, along with the associated details like loan ID, group, center, and collector information."</span>
             </div>
         </div>
         <!-- end page title -->
@@ -238,7 +239,7 @@
                 <div class="card">
 
                     <div class="card-body" style="width: 98%">
-                        <label style="float: right; color: black" >{{date('Y-m-d')}}</label>
+
                         <div class="row">
                             <div class="col-lg-3">
                                 <div class="mb-3">
@@ -270,6 +271,13 @@
                                         <option value="2" selected>Today Collection</option>
                                         <option value="3">Arrears</option>
                                     </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="newDropdown" class="form-label">Date</label>
+                                    <input type="date" class="form-control" value="{{date('Y-m-d')}}" disabled>
                                 </div>
                             </div>
 

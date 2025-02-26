@@ -69,10 +69,10 @@
     <div class="row">
         <div class="col-12">
             <div class="page-title-box">
-
-                <h4 class="page-title">Full Loan Detail Report</h4>
+                <h4 class="page-title">Full Loan Detail Report Overview</h4>
             </div>
         </div>
+        <span style="color: #a19595">"This report provides a comprehensive breakdown of all loans within a specified period. It includes detailed information about each loan, such as loan terms, repayment status, client details, and financial metrics. The report is highly customizable, allowing users to filter data by date range, collector, route, and loan status."</span>
     </div>
 
     <div class="row mt-3">

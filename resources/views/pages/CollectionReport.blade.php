@@ -219,8 +219,9 @@
         <div class="row">
             <div class="col-6">
                 <div class="page-title-box">
-                    <h4 class="page-title">Collection Report</h4>
+                    <h4 class="page-title">Collector Wise Collection Report Overview</h4>
                 </div>
+                <span style="color: #a19595">"The Date / Center Wise Cash Flow Details report provides a snapshot of the cash flow transactions for each center over a specific date range. It allows you to track all cash inflows and outflows related to loans and customer payments."</span>
             </div>
             <div class="col-6 d-flex justify-content-end align-items-center">
                 <div class="mb-4">
@@ -276,7 +277,7 @@
 
                             <div class="col-lg-3">
                                 <div class="mb-3">
-                                    <label for="agent" class="form-label">Agent</label>
+                                    <label for="agent" class="form-label">Collector</label>
                                     <select class="form-control select2" id="agent">
                                         <option value="0">All</option>
                                         @foreach($user as $item)
@@ -297,14 +298,14 @@
                             <table class="table table-centered mb-0" id="loan_table">
                                 <thead  class="bg-purple">
                                 <tr>
+                                    <th>Date</th>
                                     <th>Center No</th>
                                     <th>Group No</th>
                                     <th>Customer Number</th>
                                     <th>Loan Number</th>
                                     <th>Customer Name</th>
-                                    <th>Date</th>
                                     <th>Amount</th>
-                                    <th>Agent</th>
+                                    <th>Collector</th>
                                     <th>Action</th>
                                 </tr>
                                 </thead>
@@ -525,21 +526,25 @@
     <script>
 
         $(document).ready(function() {
-
+// Initialize or re-initialize DataTable
+            $('#loan_table').DataTable({
+                destroy: true,
+                ordering: false,
+                paging: false,
+                searching: false,
+            });
             load_payment_table();
 
             $('#loyalty_section').hide();
-            // Initialize or re-initialize DataTable
-            $('#loan_table').DataTable({
-                destroy: true,
-                ordering: true,
-                paging: false,
-                searching: false,
-                columnDefs: [{
-                    orderable: false,
-                    targets: -1 // Disable sorting on the last column (Action)
-                }]
-            });
+            let x = ["#payment_amount"];
+            decimalFormat(x);
+            //Initialize Select2 Elements
+            $('.select2').select2()
+
+            //Initialize Select2 Elements
+            $('.select2bs4').select2({
+                theme: 'bootstrap4'
+            })
         });
 
 
@@ -570,20 +575,81 @@
         });
 
 
+        function load_payment_table() {
+            let center_details = $("#center_details").val();
+            let group = $("#group").val();
+            let customer = $("#customer_id").val();
+            let date_from = $("#select_date_from").val();
+            let date_to = $("#select_date_to").val();
+            let user = $("#agent").val();
 
-        $(function() {
+            console.log(date_from, date_to);
 
-            let x = ["#payment_amount"];
-            decimalFormat(x);
-            //Initialize Select2 Elements
-            $('.select2').select2()
+            $.ajax({
+                type: "POST",
+                url: "/repaymentreport",
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                },
+                data: {
+                    center_details: center_details,
+                    group: group,
+                    customer: customer,
+                    date_from: date_from,
+                    date_to: date_to,
+                    user: user
+                },
+                success: function (data, textStatus, xhr) {
+                    console.log("AJAX Success:", data);
 
-            //Initialize Select2 Elements
-            $('.select2bs4').select2({
-                theme: 'bootstrap4'
-            })
+                    if (xhr.status === 200) {
+                        var table = $('#loan_table'); // Reference to table
+                        var tableBody = table.find('tbody');
+                        tableBody.empty(); // Clear existing rows
 
-        })
+                        let totalAmount = 0.0;
+
+                        data.item.forEach(function(item) {
+                            var amount = parseFloat(item.Amount);
+                            totalAmount += amount;
+                            var formattedAmount = amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                            var paymentButton = `<button type="button" class="btn btn-danger btn-sm" onclick="payment_slip(${item.idCustomer_Payments})">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </button>`;
+
+                            var row = `<tr>
+                        <td style="vertical-align: middle">${item.Date}</td>
+                        <td style="vertical-align: middle">${item.center_name || item.center_no ? (item.center_name || '-') + ' (' + (item.center_no || '-') + ')' : '-'}</td>
+                        <td style="vertical-align: middle">${item.group_name || item.group_no ? (item.group_name || '-') + ' (' + (item.group_no || '-') + ')' : '-'}</td>
+                        <td style="vertical-align: middle">${item.cus_number}</td>
+                        <td style="vertical-align: middle">${item.Loan_No}</td>
+                        <td style="vertical-align: middle">${item.customer_name} ${item.customer_lastname}</td>
+                        <td style="vertical-align: middle">${formattedAmount}</td>
+                        <td style="vertical-align: middle">${item.Full_Name}</td>
+                        <td style="vertical-align: middle">
+                            <div class="d-flex flex-nowrap gap-2">
+                                ${paymentButton}
+                            </div>
+                        </td>
+                    </tr>`;
+
+                            tableBody.append(row);
+                        });
+
+                        $("#tot_amount").text(totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+
+
+
+                        console.log("DataTable reinitialized successfully.");
+                    }
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    console.log("Error:", errorThrown);
+                }
+            });
+        }
+
 
         // Close the modal if the overlay is clicked
         document.getElementById('overlay').addEventListener('click', function() {
@@ -686,83 +752,7 @@
 
 
 
-        function load_payment_table() {
-            let center_details = $("#center_details").val();
-            let group = $("#group").val();
-            let customer = $("#customer_id").val();
-            let date_from = $("#select_date_from").val();
-            let date_to = $("#select_date_to").val();
-            let user = $("#agent").val();
 
-
-            console.log(date_from,date_to);
-
-            $.ajax({
-                type: "POST",
-                url: "/repaymentreport",
-                headers: {
-                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-                },
-                data: {
-                    center_details: center_details,
-                    group: group,
-                    customer: customer,
-                    date_from: date_from,
-                    date_to: date_to,
-                    user: user
-                },
-                success: function (data, textStatus, xhr) {
-                    console.log(data);
-                    if (xhr.status === 200) {
-                        var tableBody = $('#loan_table tbody');
-                        tableBody.empty(); // Clear existing rows
-
-                        let totalAmount = 0.0;
-
-                        data.item.forEach(function(item) {
-                            var amount = parseFloat(item.Amount);
-                            totalAmount += amount;
-
-                            var formattedAmount = amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-
-
-
-                            var paymentButton = `<button type="button" class="btn btn-danger btn-sm" onclick="payment_slip(${item.idCustomer_Payments})">
-    <i class="bi bi-file-earmark-text"></i>
-</button>`;
-
-                            var row = `<tr>
-    <td style="vertical-align: middle">${item.center_name || item.center_no ? (item.center_name || '-') + ' (' + (item.center_no || '-') + ')' : '-'}</td>
-    <td style="vertical-align: middle">${item.group_name || item.group_no ? (item.group_name || '-') + ' (' + (item.group_no || '-') + ')' : '-'}</td>
-    <td style="vertical-align: middle">${item.cus_number}</td>
-    <td style="vertical-align: middle">${item.Loan_No}</td>
-    <td style="vertical-align: middle">${item.customer_name} ${item.customer_lastname}</td>
-    <td style="vertical-align: middle">${item.Date}</td>
-    <td style="vertical-align: middle">${formattedAmount}</td>
-    <td style="vertical-align: middle">${item.Full_Name}</td>
-    <td style="vertical-align: middle">
-        <div class="d-flex flex-nowrap gap-2">
-            ${paymentButton}
-        </div>
-    </td>
-</tr>`;
-
-                            tableBody.append(row);
-                        });
-
-                        $("#tot_amount").text(totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-
-
-
-                    }
-                }
-                ,
-                error: function (xhr, textStatus, errorThrown) {
-                    console.log("Error:", errorThrown);
-                }
-            });
-        }
 
         function payment_slip(id) {
             openModal();

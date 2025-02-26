@@ -80,9 +80,10 @@
         <div class="col-12">
             <div class="page-title-box">
 
-                <h4 class="page-title">Loan Repayment Summary Report</h4>
+                <h4 class="page-title">Loan Repayment Summary Report Overview</h4>
             </div>
         </div>
+        <span style="color: #a19595">"The Loan Repayment Summary Report provides an overview of loan repayments for a specified date range, helping you track the capital and interest payments made by each borrower. It allows you to see the due and paid amounts, as well as the balance remaining for both the capital and interest portions of the loan."</span>
     </div>
 
     <div class="row mt-3">

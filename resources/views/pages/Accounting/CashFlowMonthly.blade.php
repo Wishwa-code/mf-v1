@@ -82,8 +82,9 @@
 
 @section('content')
     <div class="container mt-4">
-        <h2>Cash Flow Monthly</h2>
-
+        <h2>Cash Flow Monthly Overview</h2>
+        <span style="color: #a19595">"This section provides a detailed view of the cash inflows and outflows on a monthly basis, helping you track your organization's financial health and liquidity each month. You can select the desired month to view the cash flow for that period."</span>
+        <br><br>
         <!-- Search Section -->
         <form class="row g-3 mb-4">
             <div class="col-md-3" hidden>

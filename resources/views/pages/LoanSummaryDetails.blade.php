@@ -59,8 +59,10 @@
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between mb-3">
-                        <h4 class="page-title">Loan Summary Report</h4>
+                        <h4 class="page-title">Loan Summary Report Overview</h4>
                     </div>
+                    <span style="color: #a19595">"This report provides a detailed view of your loan portfolio, with options to filter by branch, center, and group. It includes key loan information such as customer details, loan amounts, outstanding balances, loan status, arrears, and payment history. Use this report to track loan performance, overdue amounts, and identify any risk areas for better portfolio management."</span>
+                    <br><br>
 
                     <!-- Center Filter Dropdown -->
                     <div class="row mb-4">

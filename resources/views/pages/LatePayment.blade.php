@@ -100,11 +100,10 @@
         <div class="row">
             <div class="col-12">
                 <div class="page-title-box">
-                    <div class="page-title-right">
-                    </div>
-                    <h4 class="page-title">Loan In Areas</h4>
+                    <h4 class="page-title">Loan in Arrears Report Overview</h4>
                 </div>
             </div>
+            <span style="color: #a19595">"The Loan in Arrears Report provides insights into overdue installments for loans, categorized based on the number of installments in arrears. It helps you track customers who are behind on payments, enabling you to take timely actions for collection or resolution."</span>
         </div>
         <!-- end page title -->
 

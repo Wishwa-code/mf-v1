@@ -151,7 +151,9 @@
 
 @section('content')
     <div class="container mt-5">
-        <h1>Profit / Loss Statement</h1>
+        <h1>Profit / Loss Statement Overview</h1>
+        <span style="color: #a19595">"This section provides a detailed breakdown of your organization's revenue, expenses, and net income for a specific period, helping you evaluate financial performance. The statement includes both operating and non-operating revenues and expenses, along with tax-related figures."</span>
+        <br><br>
         <div class="filters shadow-sm">
 {{--            <div class="basis-options">--}}
 {{--                <label>--}}

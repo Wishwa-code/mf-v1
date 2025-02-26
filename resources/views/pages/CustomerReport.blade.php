@@ -49,10 +49,10 @@
     <div class="row">
         <div class="col-12">
             <div class="page-title-box">
-
-                <h4 class="page-title">Customer Details Report</h4>
+                <h4 class="page-title">Customer Details Report Overview</h4>
             </div>
         </div>
+        <span style="color: #a19595">"The Customer Details Report provides a comprehensive overview of customer information, allowing you to track and manage client data efficiently. This report includes key personal details, contact information, and status, which can be used for customer service, communication, and internal record-keeping."</span>
     </div>
 
     <div class="row mt-3">

@@ -82,7 +82,9 @@
 
 @section('content')
     <div class="container mt-4">
-        <h2>Cash Flow Accumulated</h2>
+        <h2>Cash Flow Accumulated Overview</h2>
+        <span style="color: #a19595">"This section provides a comprehensive view of the cash inflows and outflows over a specified period, giving insights into your organization’s financial health. You can select the desired financial year to view the detailed cash flow for that period."</span>
+        <br><br>
 
         <!-- Search Section -->
         <form class="row g-3 mb-4">

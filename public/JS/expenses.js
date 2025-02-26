@@ -15,10 +15,10 @@ $(function () {
 
       if (e.target.id === "reason") {
         if (validateRequired("reason")) {
-          $("#amount").focus().select();
+          $("#expences_amount").focus().select();
         }
-      } else if (e.target.id === "amount") {
-        if (validateRequired("amount")) {
+      } else if (e.target.id === "expences_amount") {
+        if (validateRequired("expences_amount")) {
             validateSubmitExpense(e);
         }
       }
@@ -31,7 +31,7 @@ const validateSubmitExpense = (event) => {
 
   let err = 0;
 
-  let arr = ["reason", "amount"];
+  let arr = ["reason", "expences_amount"];
   err = check_validate(arr, err);
 
   if (err == 0) {
@@ -50,7 +50,7 @@ const saveExpenses = (e) => {
   const type = $("#type").val();
   const reason = $("#reason").val();
   const date = $("#date_choose").val();
-  const amount = $("#amount").val();
+  const amount = $("#expences_amount").val();
   const bank = $("#bank").val();
   const category = $("#category").val();
 

@@ -59,8 +59,10 @@
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between mb-3">
-                        <h4 class="page-title">Loan Details Report</h4>
+                        <h4 class="page-title">Loan Details Report Overview</h4>
                     </div>
+                    <span style="color: #a19595">"The Date / Center Wise Cash Flow Details report provides a snapshot of the cash flow transactions for each center over a specific date range. It allows you to track all cash inflows and outflows related to loans and customer payments."</span>
+                    <br><br>
 
                     <!-- Center Filter Dropdown -->
                     <div class="row mb-4">

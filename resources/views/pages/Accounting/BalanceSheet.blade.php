@@ -86,7 +86,9 @@
 
 @section('content')
     <div class="container mt-5">
-        <h1>Balance Sheet</h1>
+        <h1>Balance Sheet Overview</h1>
+        <span style="color: #a19595">"This section provides a snapshot of your organization’s financial position as of a specific date, helping you evaluate the financial health by showing assets, liabilities, and equity."</span>
+        <br><br>
 
         <div class="filters">
             <form action="{{route('BalanceSheetView.profit')}}" method="POST">

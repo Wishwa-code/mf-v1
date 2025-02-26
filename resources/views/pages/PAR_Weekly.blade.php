@@ -13,8 +13,9 @@
         <div class="row">
             <div class="col-12">
                 <div class="page-title-box">
-                    <h4 class="page-title">Portfolio at Risk (PAR)-Weekly</h4>
+                    <h4 class="page-title">Portfolio at Risk (PAR) - Weekly Overview</h4>
                 </div>
+                <span style="color: #a19595">"This section provides an overview of the portfolio at risk, helping you track the health of your loan portfolio based on weekly overdue amounts. It shows the percentage of principal at risk for loans overdue within 7, 14, and 21 days, as well as the total outstanding amount."</span>
             </div>
         </div>
         <!-- end page title -->

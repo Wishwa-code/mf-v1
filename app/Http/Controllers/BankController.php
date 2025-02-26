@@ -251,6 +251,7 @@ class BankController extends Controller
         $panelty=0.00;
         $other_chargers=0.00;
         $loan_expenses=0.00;
+        $system_expenses=0.00;
         $total_income=0.00;
         $total_expenses=0.00;
 
@@ -283,6 +284,24 @@ class BankController extends Controller
             ->whereBetween('date', [$date_from, $date_to])
             ->where('type', '=', 'Expense')
             ->sum('amount');
+
+
+//        $system_expenses = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
+//            ->join('company_bank_has_log as log', function ($join) {
+//                $join->on('company_bank_accounts.Idbank', '=', 'log.Bank_Account_Id')
+//                    ->whereRaw('log.Date_Time = (
+//                SELECT MAX(Date_Time)
+//                FROM company_bank_has_log
+//                WHERE Bank_Account_Id = log.Bank_Account_Id
+//            )');
+//            })
+//            ->where('Bank_Type', '=', 'Expenses')
+//            ->select('log.Bank_Account_Id', 'log.Balance', 'log.Date_Time')
+//            ->get(); // ✅ Get data before summing
+//
+//
+//        dd($system_expenses);
+
 
 
 

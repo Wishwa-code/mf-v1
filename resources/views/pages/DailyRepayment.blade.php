@@ -132,9 +132,10 @@
         <div class="row">
             <div class="col-6">
                 <div class="page-title-box">
-                    <h4 class="page-title">Repayment Sheet</h4>
+                    <h4 class="page-title">Monthly Repayment Sheet</h4>
                 </div>
             </div>
+            <span style="color: #a19595">"The Repayment Sheet is a detailed record that helps you track loan repayments for each client on a monthly basis. It includes details such as the client’s loan balance, due amounts, arrears, and collections. This sheet also provides an overview of the performance of each group and center for the month."</span>
         </div>
 
         <!-- Form to filter by center -->

@@ -86,9 +86,10 @@
                 <div class="page-title-box">
                     <div class="page-title-right">
                     </div>
-                    <h4 class="page-title">Loan In Areas</h4>
+                    <h4 class="page-title">Loan in Arrears Report Overview</h4>
                 </div>
             </div>
+            <span style="color: #a19595">"The Loan in Arrears Report helps you track overdue loans based on the number of days the installments are pending. It categorizes loans based on their overdue duration"</span>
         </div>
         <!-- end page title -->
 

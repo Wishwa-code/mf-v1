@@ -100,11 +100,10 @@
         <div class="row">
             <div class="col-12">
                 <div class="page-title-box">
-                    <div class="page-title-right">
-                    </div>
-                    <h4 class="page-title">Savings Report</h4>
+                    <h4 class="page-title">Savings Report Overview</h4>
                 </div>
             </div>
+            <span style="color: #a19595">"The Savings Report provides a detailed record of the savings contributions made by customers over a specified period. It allows you to track the savings details for each center, group, and customer, providing an overview of how much has been saved by each individual."</span>
         </div>
         <!-- end page title -->
 

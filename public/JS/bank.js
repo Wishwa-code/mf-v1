@@ -153,7 +153,10 @@ function change_status(id){
         }
     });
 }
-function view_log(id) {
+function view_log(id, bankName, accountName, accountNumber) {
+
+    $('#standard-modal .modal-header h4').html(`Bank Log Report - <b>${bankName} (${accountName} - ${accountNumber})</b>`);
+
     $.ajax({
         type: "GET",
         url: "/bank/view_log/" + id,

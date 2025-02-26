@@ -582,7 +582,9 @@ class PendingLoanController extends Controller
         ]);
     }
 
-    public function getPortfolioPerformance(Request $request)
+
+
+    public function getPortfolioPerformanceExcel(Request $request)
     {
         $date_from = $request->input('date_from');
         $date_to = $request->input('date_to');
@@ -609,8 +611,8 @@ class PendingLoanController extends Controller
                 DB::raw('SUM(Amount) as processing_fee_received'))
             ->groupBy('Customer_Loan_idCustomer_Loan');
 
-        // Main Query
-        $query = DB::table('customer_loan')
+        // 📌 1️⃣ Center-wise Summary Query
+        $centerSummaryQuery = DB::table('customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
             FROM group_has_customer 
@@ -632,55 +634,114 @@ class PendingLoanController extends Controller
                 'branch.Name as branch_name',
                 'route.name as route_name',
                 'center.Name as center_name',
-
-                // ✅ FIX: Removed DISTINCT from SUM() to sum across all loans correctly
                 DB::raw('SUM(customer_loan.Amount) as total_disbursement'),
                 DB::raw('SUM(customer_loan.Total_Loan_Amount) as total_loan_amount'),
                 DB::raw('COUNT(customer_loan.idCustomer_Loan) as issued_loan_count'),
-
-                // New Clients - Customers who have only taken one loan
                 DB::raw('COUNT(DISTINCT CASE WHEN loan_count_table.loan_count = 1 THEN customer_loan.Customer_idCustomer END) as new_clients'),
-
-                // Repeat Clients - Customers who have taken more than one loan
                 DB::raw('COUNT(DISTINCT CASE WHEN loan_count_table.loan_count > 1 THEN customer_loan.Customer_idCustomer END) as repeat_clients'),
-
-                // ✅ FIX: SUM() now correctly aggregates all installments & collected repayments
                 DB::raw('COALESCE(SUM(installments.schedule_repayments), 0) as schedule_repayments'),
                 DB::raw('COALESCE(SUM(installments.collected_repayments), 0) as collected_repayments'),
-
-                // ✅ FIX: SUM() now correctly aggregates all Loan_Log values
                 DB::raw('COALESCE(SUM(Loan_Log.capital_received), 0) as capital_received'),
                 DB::raw('COALESCE(SUM(Loan_Log.interest_received), 0) as interest_received'),
                 DB::raw('COALESCE(SUM(Loan_Log.penalty_received), 0) as penalty_received'),
-
-                // ✅ FIX: SUM() now correctly aggregates all processing fees
                 DB::raw('COALESCE(SUM(loan_other_charges.processing_fee_received), 0) as processing_fee_received')
             )
             ->leftJoin(DB::raw('(SELECT Customer_idCustomer, COUNT(*) as loan_count FROM customer_loan GROUP BY Customer_idCustomer) as loan_count_table'),
-                'customer_loan.Customer_idCustomer', '=', 'loan_count_table.Customer_idCustomer')
-            ->groupBy('branch.Name', 'route.name', 'center.Name');
+                'customer_loan.Customer_idCustomer', '=', 'loan_count_table.Customer_idCustomer');
 
-        // Apply filters
+        // 📌 Apply Filters to Center Summary Query
         if (!empty($date_from)) {
-            $query->whereDate('customer_loan.Date_Time', '>=', $date_from);
+            $centerSummaryQuery->whereDate('customer_loan.Date_Time', '>=', $date_from);
         }
         if (!empty($date_to)) {
-            $query->whereDate('customer_loan.Date_Time', '<=', $date_to);
+            $centerSummaryQuery->whereDate('customer_loan.Date_Time', '<=', $date_to);
         }
         if ($branch != "0") {
-            $query->where('customer_loan.branch_id', $branch);
+            $centerSummaryQuery->where('customer_loan.branch_id', $branch);
         }
         if ($route != "0") {
-            $query->where('customer.route_id', $route);
+            $centerSummaryQuery->where('customer.route_id', $route);
         }
         if ($center_details != "0") {
-            $query->where('subquery.center_id', $center_details);
+            $centerSummaryQuery->where('subquery.center_id', $center_details);
         }
 
-        $result = $query->get();
+        $centerSummaryQuery = $centerSummaryQuery->groupBy('branch.Name', 'route.name', 'center.Name')->get();
 
-        return response()->json(['data' => $result]);
+        // 📌 2️⃣ Loan-wise Details Query
+        $loanDetailsQuery = DB::table('customer_loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
+            FROM group_has_customer 
+            LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
+                'customer.idCustomer', '=', 'subquery.cus_id')
+            ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
+            ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
+            ->join('branch', 'customer_loan.branch_id', '=', 'branch.branch_id')
+            ->leftJoinSub($installment_subquery, 'installments', function ($join) {
+                $join->on('customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan');
+            })
+            ->leftJoinSub($loan_log_subquery, 'Loan_Log', function ($join) {
+                $join->on('customer_loan.idCustomer_Loan', '=', 'Loan_Log.Type_ID');
+            })
+            ->leftJoinSub($loan_other_charges_subquery, 'loan_other_charges', function ($join) {
+                $join->on('customer_loan.idCustomer_Loan', '=', 'loan_other_charges.Customer_Loan_idCustomer_Loan');
+            })
+            ->select(
+                'center.Name as center_name',
+                'customer_loan.idCustomer_Loan as loan_id',
+                'customer_loan.Loan_No as Loan_No',
+                'customer.First_Name as customer_name',
+                'customer_loan.Amount as loan_disbursement',
+                'customer_loan.Total_Loan_Amount as loan_amount',
+                'installments.schedule_repayments',
+                'installments.collected_repayments',
+                'Loan_Log.capital_received',
+                'Loan_Log.interest_received',
+                'Loan_Log.penalty_received',
+                'loan_other_charges.processing_fee_received'
+            );
+
+        // 📌 Apply Filters to Loan Details Query
+        if (!empty($date_from)) {
+            $loanDetailsQuery->whereDate('customer_loan.Date_Time', '>=', $date_from);
+        }
+        if (!empty($date_to)) {
+            $loanDetailsQuery->whereDate('customer_loan.Date_Time', '<=', $date_to);
+        }
+        if ($branch != "0") {
+            $loanDetailsQuery->where('customer_loan.branch_id', $branch);
+        }
+        if ($route != "0") {
+            $loanDetailsQuery->where('customer.route_id', $route);
+        }
+        if ($center_details != "0") {
+            $loanDetailsQuery->where('subquery.center_id', $center_details);
+        }
+
+        $loanDetailsQuery = $loanDetailsQuery->get();
+
+        // 📌 3️⃣ Combine Data: Center Summary + Loan Details
+        $finalData = [];
+
+        foreach ($centerSummaryQuery as $center) {
+            $centerData = (array) $center;
+            $centerData['loan_details'] = [];
+
+            foreach ($loanDetailsQuery as $loan) {
+                if ($loan->center_name === $center->center_name) {
+                    $centerData['loan_details'][] = (array) $loan;
+                }
+            }
+
+            $finalData[] = $centerData;
+        }
+
+        return response()->json(['data' => $finalData]);
     }
+
+
+
 
 
 
