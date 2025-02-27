@@ -3,6 +3,15 @@
 @section('head')
     <!-- Select2 CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <!-- DataTables Buttons CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+
+
+
+
     <style>
         h1 {
             color: #495057;
@@ -155,20 +164,12 @@
         <span style="color: #a19595">"This section provides a detailed breakdown of your organization's revenue, expenses, and net income for a specific period, helping you evaluate financial performance. The statement includes both operating and non-operating revenues and expenses, along with tax-related figures."</span>
         <br><br>
         <div class="filters shadow-sm">
-{{--            <div class="basis-options">--}}
-{{--                <label>--}}
-{{--                    <input type="radio" name="basis" checked> Cash Basis--}}
-{{--                </label>--}}
-{{--                <label>--}}
-{{--                    <input type="radio" name="basis"> Accrual Basis--}}
-{{--                </label>--}}
-{{--            </div>--}}
 
             <form action="{{route('profitreport.profit')}}" method="POST">
                 @csrf
                 <div class="date-range">
-                    <input type="date" name="date_from" value="{{$date_from}}"> to
-                    <input type="date" name="date_to" value="{{$date_to}}">
+                    <input type="date" name="date_from" id="date_from" value="{{$date_from}}"> to
+                    <input type="date" name="date_to" id="date_to" value="{{$date_to}}">
                 </div>
 
 
@@ -177,7 +178,6 @@
                 </div>
             </form>
         </div>
-        <button id="exportButton" class="export">Export to Excel</button>
 
 
         <div class="statement shadow-sm">
@@ -185,90 +185,106 @@
                 <thead>
                 <tr>
                     <th></th>
-                    <th>{{$date_from}}-{{$date_to}}</th>
+                    <th>{{$date_from}} - {{$date_to}}</th>
                 </tr>
                 </thead>
                 <tbody>
+                <!-- Revenue Section -->
                 <tr class="revenue fw-bold">
                     <td class="text-success">Revenue</td>
                     <td></td>
                 </tr>
                 <tr>
                     <td class="ps-3">Revenue from Loans</td>
+                </tr>
+                <tr class="interest-on-loans" style="cursor: pointer;">
+                    <td class="ps-5">
+                        <a href="javascript:void(0);">Interest on Loans</a>
+                    </td>
+                    <td>{{ number_format($interest,2,'.',',') }}</td>
+                </tr>
 
-                </tr>
-                <tr>
-                    <td class="ps-5">Interest on Loans</td>
-                    <td>{{number_format($interest,2,'.',',')}}</td>
-                </tr>
+
                 <tr>
                     <td class="ps-5">Penalty on Loans</td>
-                    <td>{{number_format($panelty,2,'.',',')}}</td>
+                    <td>{{ number_format($panelty,2,'.',',') }}</td>
                 </tr>
                 <tr>
-                    <td class="ps-5">Other Chargers On Loans</td>
-                    <td>{{number_format($other_chargers,2,'.',',')}}</td>
+                    <td class="ps-5">Other Charges On Loans</td>
+                    <td>{{ number_format($other_chargers,2,'.',',') }}</td>
                 </tr>
                 <tr class="total-revenue fw-bold border-bottom-light">
                     <td class="ps-3">Total Revenue</td>
-                    <td>{{number_format($interest+$panelty+$other_chargers,2,'.',',')}}</td>
+                    <td>{{ number_format($interest + $panelty + $other_chargers,2,'.',',') }}</td>
                 </tr>
+
+                <!-- Expenses Section -->
                 <tr class="expenses fw-bold">
                     <td class="text-danger">Expenses</td>
                     <td></td>
                 </tr>
-                <tr>
+
+                @php
+                    $total_expenses = 0;
+                @endphp
+                @if (!empty($system_expenses) && is_iterable($system_expenses) && count($system_expenses) > 0)
+                    @foreach ($system_expenses as $expense)
+                        @php
+                            $total_expenses += $expense->Balance;
+                        @endphp
+                        <tr>
+                            <td class="ps-3">{{ $expense->Bank_Name }} ({{ $expense->type }})</td>
+                            <td>{{ number_format($expense->Balance,2,'.',',') }}</td>
+                        </tr>
+                    @endforeach
+                @endif
+
+                <tr class="fw-bold border-top-light">
                     <td class="ps-3">Total Expenses</td>
-                    <td>{{number_format($loan_expenses,2,'.',',')}}</td>
-                </tr>
-                <tr class="net-operating-income border-top-bottom-dark bg-light">
-                    <td>Net Operating Income</td>
-                    <td>{{number_format(($interest+$panelty+$other_chargers)-$loan_expenses,2,'.',',')}}</td>
+                    <td>{{ number_format($total_expenses,2,'.',',') }}</td>
                 </tr>
 
-                <tr class="revenue fw-bold">
-                    <td class="text-success">Non-Operating Revenue</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td class="ps-5">Total Income</td>
-                    <td>{{number_format($total_income,2,'.',',')}}</td>
-                </tr>
-                <tr class="expenses fw-bold">
-                    <td class="text-danger">Expenses</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td  class="ps-5">Non-Operating Expenses</td>
-                    <td>{{number_format($total_expenses,2,'.',',')}}</td>
-                </tr>
-                <tr class="net-operating-income border-top-bottom-dark bg-light">
-                    <td>Net Non-Operating Income</td>
-                    <td>{{number_format(($total_income)-$total_expenses,2,'.',',')}}</td>
-                </tr>
+                <!-- Net Income Section -->
                 <tr class="net-income-after border-top-bottom-dark bg-light fw-bold" style="font-size: 17px;">
-                    <td >Net Income Before Taxes and Subsidy</td>
-                    <td>{{ number_format((($interest + $panelty + $other_chargers) - $loan_expenses + $total_income - $total_expenses), 2, '.', ',') }}</td>
-
-                </tr>
-                <tr class="taxes fw-bold">
-                    <td>Taxes</td>
-                    <td></td>
-                </tr>
-                <tr class="income-tax-expense">
-                    <td class="ps-5">Income Tax Expense</td>
-                    <td>0.00</td>
-                </tr>
-                <tr class="net-income-after border-top-bottom-dark bg-light fw-bold" style="font-size: 20px;">
-                    <td>Net Income After Taxes and Subsidy</td>
-                    <td>{{ number_format((($interest + $panelty + $other_chargers) - $loan_expenses + $total_income - $total_expenses), 2, '.', ',') }}</td>
+                    <td>Net Income</td>
+                    <td>
+                        {{ number_format((($interest + $panelty + $other_chargers) - $total_expenses + $total_income - $total_expenses), 2, '.', ',') }}
+                    </td>
                 </tr>
                 </tbody>
             </table>
+        </div>
 
+    </div>
 
+    <!-- Bootstrap Modal -->
+    <div class="modal fade" id="loanInterestModal" tabindex="-1" aria-labelledby="loanInterestModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="loanInterestModalLabel">Loan Interest Details</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <table id="loanInterestTable" class="table table-bordered">
+                        <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Interest Amount</th>
+                        </tr>
+                        </thead>
+                        <tbody id="loanInterestTableBody">
+                        <!-- Data will be loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
+
+
 @endsection
 
 @section('script')
@@ -281,19 +297,101 @@
     <!-- Select2 JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <!-- DataTables Buttons JS -->
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+
     <script>
         $(document).ready(function () {
-            $("#exportButton").click(function () {
-                // Get the table element
-                var table = document.querySelector("table");
+            // Ensure DataTables is loaded dynamically
+            $.getScript("https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js", function() {
+                console.log("✅ DataTables manually loaded.");
+            });
 
-                // Convert the table to a worksheet
-                var wb = XLSX.utils.table_to_book(table, { sheet: "Sheet 1" });
+            $(document).on("click", ".interest-on-loans", function () {
+                const date_from = $("#date_from").val();
+                const date_to = $("#date_to").val();
 
-                // Export the table to an Excel file
-                XLSX.writeFile(wb, "profit_loss_statement.xlsx");
+                $.ajax({
+                    url: "{{ route('getLoanInterestDetails') }}",
+                    type: "POST",
+                    data: {
+                        date_to: date_to,
+                        date_from: date_from
+                    },
+                    headers: {
+                        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                    },
+                    success: function (response) {
+                        var tableBody = $("#loanInterestTableBody");
+                        tableBody.empty();
+
+                        if (response.length > 0) {
+                            response.forEach(function (loan) {
+                                tableBody.append(`
+                            <tr>
+                                <td>${loan.Name}</td>
+                                <td>${parseFloat(loan.total_interest).toFixed(2)}</td>
+                            </tr>
+                        `);
+                            });
+                        } else {
+                            tableBody.append('<tr><td colspan="3" class="text-center">No data available</td></tr>');
+                        }
+
+                        // Destroy existing DataTable instance if it exists
+                        if ($.fn.DataTable.isDataTable("#loanInterestTable")) {
+                            $("#loanInterestTable").DataTable().destroy();
+                        }
+
+                        // Initialize DataTable with export buttons
+                        setTimeout(function () {
+                            $("#loanInterestTable").DataTable({
+                                paging: true,
+                                lengthChange: true,
+                                searching: true,
+                                ordering: true,
+                                info: true,
+                                autoWidth: false,
+                                responsive: true,
+                                dom: 'Bfrtip',
+                                buttons: [
+                                    {
+                                        extend: 'excelHtml5',
+                                        text: 'Export to Excel',
+                                        className: 'btn btn-success'
+                                    },
+                                    {
+                                        extend: 'pdfHtml5',
+                                        text: 'Export to PDF',
+                                        className: 'btn btn-danger'
+                                    },
+                                    {
+                                        extend: 'print',
+                                        text: 'Print',
+                                        className: 'btn btn-primary'
+                                    }
+                                ]
+                            });
+                        }, 300);
+
+                        // Open the modal
+                        $("#loanInterestModal").modal("show");
+                    },
+                    error: function () {
+                        alert("Failed to load data. Please try again.");
+                    }
+                });
             });
         });
+
     </script>
 
 @endsection

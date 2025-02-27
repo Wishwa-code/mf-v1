@@ -622,3 +622,6 @@ Route::get('/center_collection_summary','\App\Http\Controllers\CenterController@
 Route::get('/portfolio_performance','\App\Http\Controllers\PendingLoanController@portfolio_performance')->name('portfolio_performance');
 Route::get('/get-routes-centers','\App\Http\Controllers\PendingLoanController@getRoutesCenters')->name('getRoutesCenters');
 Route::get('/get-portfolio-performance-excel','\App\Http\Controllers\PendingLoanController@getPortfolioPerformanceExcel')->name('getPortfolioPerformance');
+
+
+Route::post('/get-loan-interest-details','\App\Http\Controllers\BankController@profitLog')->name('getLoanInterestDetails');

@@ -81,6 +81,7 @@ class BankController extends Controller
             'Account_Balance' => $request->opening_balance,
             'type' => "Cash and Bank",
             'cashflow' => "Non Applicable",
+            'acc_type_group' => "Assets",
             'User' => $user_id,
         ];
 
@@ -232,15 +233,16 @@ class BankController extends Controller
     }
 
     public function profitView(){
-        $date_from = Carbon::now()->format('Y-m-d'); // Current date
-        $date_to = Carbon::now()->format('Y-m-d'); // Current date
+        $date_from = date('Y-m-d'); // Current date
+        $date_to = date('Y-m-d'); // Current date
         $interest=0.00;
         $panelty=0.00;
         $other_chargers=0.00;
         $loan_expenses=0.00;
         $total_income=0.00;
         $total_expenses=0.00;
-        return view('pages.Accounting.ProfitLoss',compact('date_from','date_to','interest','panelty','other_chargers','loan_expenses','total_income','total_expenses'));
+        $system_expenses=[];
+        return view('pages.Accounting.ProfitLoss',compact('date_from','system_expenses','date_to','interest','panelty','other_chargers','loan_expenses','total_income','total_expenses'));
     }
 
 
@@ -255,59 +257,75 @@ class BankController extends Controller
         $total_income=0.00;
         $total_expenses=0.00;
 
-        $date_to = Carbon::parse($date_to)->endOfDay();
-        $date_from = Carbon::parse($date_from)->startOfDay(); // To ensure you're starting from the beginning of the day
+        $date_to_2 = Carbon::parse($date_to)->endOfDay();
+        $date_from_2 = Carbon::parse($date_from)->startOfDay(); // To ensure you're starting from the beginning of the day
 
 
 
         $interest = tableWithBranch('Loan_Log')
-            ->whereBetween('Date_Time', [$date_from, $date_to])
+            ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
             ->sum('Interest_Payment');
 
         $panelty = tableWithBranch('Loan_Log')
-            ->whereBetween('Date_Time', [$date_from, $date_to])
+            ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
             ->sum('Panelty_Payment');
 
         $other_chargers = tableWithBranch('expences')
-            ->whereBetween('date', [$date_from, $date_to])
+            ->whereBetween('date', [$date_from_2, $date_to_2])
             ->where('reason', 'like', '%Other loan charges for loan number:%')
             ->where('type', '=', 'Income')
             ->sum('amount');
 
         $total_income = tableWithBranch('expences')
-            ->whereBetween('date', [$date_from, $date_to])
+            ->whereBetween('date', [$date_from_2, $date_to_2])
             ->where('reason', 'not like', '%Other loan charges for loan number:%')
             ->where('type', '=', 'Income')
             ->sum('amount');
 
         $total_expenses = tableWithBranch('expences')
-            ->whereBetween('date', [$date_from, $date_to])
+            ->whereBetween('date', [$date_from_2, $date_to_2])
             ->where('type', '=', 'Expense')
             ->sum('amount');
 
 
-//        $system_expenses = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
-//            ->join('company_bank_has_log as log', function ($join) {
-//                $join->on('company_bank_accounts.Idbank', '=', 'log.Bank_Account_Id')
-//                    ->whereRaw('log.Date_Time = (
-//                SELECT MAX(Date_Time)
-//                FROM company_bank_has_log
-//                WHERE Bank_Account_Id = log.Bank_Account_Id
-//            )');
-//            })
-//            ->where('Bank_Type', '=', 'Expenses')
-//            ->select('log.Bank_Account_Id', 'log.Balance', 'log.Date_Time')
-//            ->get(); // ✅ Get data before summing
-//
-//
-//        dd($system_expenses);
+        $system_expenses = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
+            ->join('company_bank_has_log', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.Bank_Account_Id')
+            ->where('acc_type_group', '=', 'Expenses')
+            ->where('company_bank_accounts.Bank_Type', '=', 'ChartOfAccount')
+            ->whereBetween('company_bank_has_log.Date_Time', [$date_from_2, $date_to_2])
+            ->where('company_bank_has_log.Balance', '>', 0) // Filter balances greater than 0
+            ->orderByDesc('company_bank_has_log.Date_Time')
+            ->select('company_bank_has_log.Balance','company_bank_has_log.type', 'company_bank_accounts.Bank_Name')
+            ->get(); // <-- Ensure we use 'get()' instead of 'sum()'
+
+        return view('pages.Accounting.ProfitLoss',compact('date_from','system_expenses','date_to','interest','panelty','other_chargers','loan_expenses','total_income','total_expenses'));
+    }
+
+    public function profitLog(Request $request){
+        $date_from=$request->date_from;
+        $date_to=$request->date_to;
+
+        $date_to = Carbon::parse($date_to)->endOfDay();
+        $date_from = Carbon::parse($date_from)->startOfDay(); // To ensure you're starting from the beginning of the day
 
 
 
+        $interest = tableWithBranch('Loan_Log', 'Loan_Log')
+            ->join('customer_loan', 'customer_loan.idCustomer_Loan', '=', 'Loan_Log.Loan_ID')
+            ->join('loan_category', 'loan_category.idLoan_Category', '=', 'customer_loan.Loan_Category_idLoan_Category')
+            ->whereBetween('Loan_Log.Date_Time', [$date_from, $date_to])
+            ->groupBy('loan_category.idLoan_Category', 'loan_category.Name') // Group only by category
+            ->select(
+                DB::raw('GROUP_CONCAT(DISTINCT customer_loan.Loan_No ORDER BY customer_loan.Loan_No ASC SEPARATOR ", ") as Loan_No'), // Concatenates loan numbers
+                'loan_category.Name',
+                DB::raw('SUM(Loan_Log.Interest_Payment) as total_interest')
+            )
+            ->havingRaw('total_interest > 0') // Apply HAVING instead of WHERE
+            ->get();
 
 
+        return response()->json($interest);
 
-        return view('pages.Accounting.ProfitLoss',compact('date_from','date_to','interest','panelty','other_chargers','loan_expenses','total_income','total_expenses'));
     }
 
 

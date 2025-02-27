@@ -6,6 +6,7 @@ use App\Models\Expenses;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ReportController extends Controller
 {
@@ -74,7 +75,7 @@ class ReportController extends Controller
     public function create()
     {
         $bank = tableWithBranch('company_bank_accounts')->where('Bank_Type','=','Bank')->get();
-        $expences_category = tableWithBranch('company_bank_accounts')->where('Bank_Type','=','Expenses')->get();
+        $expences_category = tableWithBranch('company_bank_accounts')->where('acc_type_group','=','Expenses')->where('Bank_Type','=','ChartOfAccount')->get();
         return view('pages.CreateExpenses',compact('bank','expences_category'));
     }
 
@@ -245,6 +246,8 @@ class ReportController extends Controller
         $date=$request->date;
         $amount=$request->amount;
 
+        Log::info($request->bank);
+
         $expenses=new Expenses();
 
         $expenses->type=$type;
@@ -260,15 +263,15 @@ class ReportController extends Controller
 
             if ($type=="Expense") {
                 $bank_id=tableWithBranch('company_bank_accounts')
-                    ->where('Bank_Type','=','Expenses')
-                    ->where('code','=',$request->category)
+                    ->where('acc_type_group','=','Expenses')
+                    ->where('Idbank','=',$request->category)
                     ->first();
                 $this->bankLogController->index($request->bank,"Expenses",$reason,"-","debit",$amount);
                 $this->bankLogController->index($bank_id->Idbank,"Expenses",$reason,"-","credit",$amount);
             }else{
                 $bank_id=tableWithBranch('company_bank_accounts')
-                    ->where('Bank_Type','=','Income')
-                    ->where('code','=',$request->category)
+                    ->where('acc_type_group','=','Income')
+                    ->where('Idbank','=',$request->category)
                     ->first();
                 $this->bankLogController->index($request->bank,"Income",$reason,"-","credit",$amount);
                 $this->bankLogController->index($bank_id->Idbank,"Income",$reason,"-","debit",$amount);

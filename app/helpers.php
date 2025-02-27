@@ -165,4 +165,16 @@ function updateOrInsertWithBranch($table, $conditions, $data)
 
 
 
+if (!function_exists('formatNegativeInParentheses')) {
+    function formatNegativeInParentheses($value) {
+        if ($value < 0) {
+            return '(' . number_format(abs($value), 2, '.', ',') . ')';
+        }
+        return number_format($value, 2, '.', ',');
+    }
+}
+
+
+
+
 

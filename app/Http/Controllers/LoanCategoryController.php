@@ -56,6 +56,7 @@ class LoanCategoryController extends Controller
         $loancategory->enable_saving_process = $request->enable_saving;
         $loancategory->saving_amount_type = $request->saving_account_amount_type;
         $loancategory->saving_amount = $request->saving_amount;
+        $loancategory->saving_payment = $request->saving_payment;
         $loancategory->default_loan_duration_period = $request->default_loan_duration_period;
         $loancategory->branch_id = session('branch_id');
 
