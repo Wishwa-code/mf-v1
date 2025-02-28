@@ -359,7 +359,7 @@
                 </div>
             </li>
             <?php
-            $query = "SELECT * FROM company";
+            $query = "SELECT * FROM company where branch_id='" . session('branch_id') . "'";
             $company = DB::select($query);
             ?>
             <li class="dropdown">

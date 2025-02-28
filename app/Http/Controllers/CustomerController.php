@@ -115,7 +115,7 @@ class CustomerController extends Controller
             $customer->Title = $request->title;
             $customer->Customer_Group_idCustomer_Group = 1;
 
-            $company= DB::table('company')->first();
+            $company= tableWithBranch('company')->first();
 
             // Get the customer number from the request
             $cus_number = $request->cus_number;
@@ -132,12 +132,13 @@ class CustomerController extends Controller
             $sms_cus_number="";
             if (strpos($cus_number, '@Auto_Id@') !== false) {
                 // Fetch the maximum customer ID
-                $customer_max = DB::table('company')->first();
+                $customer_max = tableWithBranch('company')->first();
 
 
+                $cus_count=tableWithBranch('customer')->count('idCustomer') ?? 1;
 
                 // Increment the maximum ID by 1
-                $customer_max = $customer_max->customer_num_start_from + 1;
+                $customer_max = $customer_max->customer_num_start_from + $cus_count;
 
                 // Format the ID with leading zeros (e.g., 001, 010, 100, etc.)
                 $formatted_customer_id = str_pad($customer_max, 3, '0', STR_PAD_LEFT);

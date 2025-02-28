@@ -166,14 +166,14 @@ class UserController extends Controller
                 }
 
                 // Store user information in session
-                $company = DB::table('company')->first();
-                $session->put('company_name', $company->company_name);
+
                 $session->put('userid', $item->id);
                 $session->put('Full_Name', $item->Full_Name);
                 $session->put('designation', $item->Designation);
                 $session->put('branch_id', $item->branch_id);
                 $session->put('branch_access', $item->branch_access);
-
+                $company = tableWithBranch('company')->first();
+                $session->put('company_name', $company->company_name);
                 // Get branch information
                 $branch = DB::table('branch')->where('branch_id', '=', $item->branch_id)->first();
                 $session->put('branch_name', $branch->Name);
@@ -536,7 +536,7 @@ class UserController extends Controller
 
             $message="Your OTP is ".$otp;
 
-            $company=DB::table('company')->first();
+            $company=tableWithBranch('company')->first();
 
             $client_data = new Client([
                 'base_uri' => 'https://e-sms.dialog.lk/api/v1/',
@@ -667,20 +667,30 @@ class UserController extends Controller
     }
 
 
-    public function holidays_save(Request $request){
+    public function holidays_save(Request $request)
+    {
+        $holidayDate = $request->date;
+        $reason = $request->reason;
+
+        // Check if the date is already a holiday
+        if (tableWithBranch('holidays')->where('date', $holidayDate)->exists()) {
+            return response()->json(["id" => "0"], 200);
+        }
+
+        // Insert the new holiday
         $Holidays = [
-            'date' => $request->date,
-            'reason' => $request->reason,
+            'date' => $holidayDate,
+            'reason' => $reason,
             'created_at' => now(),
         ];
+        insertWithBranch('holidays', $Holidays);
 
-        if (tableWithBranch('holidays')->where('date', '=', $request->date)->exists()) {
-            return response()->json(["id" => "0"], 200);
-        } else {
-            $insertedId = insertWithBranch('holidays', $Holidays);
-            return response()->json(["id" => "1"], 200);
-        }
+        $holiday=new HolidayController();
+        $holiday->index();
+
+        return response()->json(["id" => "1"], 200);
     }
+
 
     public function poya_days_save(Request $request)
     {
@@ -701,8 +711,13 @@ class UserController extends Controller
             }
         }
 
+        $holiday=new HolidayController();
+        $holiday->index();
+
+
         return response()->json(["message" => "Poya Days saved successfully!"], 200);
     }
+
 
 
     public function deleteHoliday($id)
