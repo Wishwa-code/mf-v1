@@ -280,6 +280,7 @@ class UserController extends Controller
                 DB::raw('SUM(CASE WHEN Installment_Date < CURDATE() THEN Total_Balance ELSE 0 END) as arrease'),
                 DB::raw('SUM(CASE WHEN Installment_Date <= CURDATE() THEN Total_Balance ELSE 0 END) as Total_Balance_until')
             )
+            ->where('customer_loan.Status', '=', '0')
             ->first();  // Try without grouping for now
 
 // Assign the values to variables
