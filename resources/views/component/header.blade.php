@@ -359,7 +359,7 @@
                 </div>
             </li>
             <?php
-            $query = "SELECT * FROM company";
+            $query = "SELECT * FROM company where branch_id='" . session('branch_id') . "'";
             $company = DB::select($query);
             ?>
             <li class="dropdown">
@@ -725,6 +725,9 @@
                                         <li>
                                             <a href="/payment_step_1">Current Loans</a>
                                         </li>
+                                            <li>
+                                                <a href="/showsettleloan">Settled Loans</a>
+                                            </li>
                                     @else
                                     @endif
 
@@ -755,56 +758,29 @@
                                         </li>
                                     @else
                                     @endif
+                                        @if($item->add_bulk_re_payment == 1)
+                                            <li>
+                                                <a href="/bulk_repayment">Bulk Repayment</a>
+                                            </li>
+                                        @else
+                                        @endif
                                         @if($item->add_re_payment == 1)
                                             <li>
                                                 <a href="/loan_settlement">Loan Settlement</a>
                                             </li>
-                                            <li>
-                                                <a href="/showsettleloan">Settled Loans</a>
-                                            </li>
+
 {{--                                            <li>--}}
 {{--                                                <a href="/loan_reschedule">Loan Reschedule</a>--}}
 {{--                                            </li>--}}
                                         @else
                                     @endif
-                                    @if($item->daily_payment == 1)
-                                        <li>
-                                            <a href="/daily">Daily Collection</a>
-                                        </li>
-                                    @else
-                                    @endif
-                                    @if($item->add_bulk_re_payment == 1)
-                                        <li>
-                                            <a href="/bulk_repayment">Bulk Repayment</a>
-                                        </li>
-                                    @else
-                                    @endif
+
+
 
                                     @if($item->view_repayment == 1)
                                         <li>
                                             <a href="/viewpayment">View Repayment</a>
                                         </li>
-                                            <li>
-                                                <a href="/daily_repayment_sheet">Monthly Repayment Sheet</a>
-                                            </li>
-                                            <li>
-                                                <a href="/daily_repayment_sheet_hm">Daily Repayment Sheet</a>
-                                            </li>
-                                            <li>
-                                                <a href="/daily_repayment_sheet_lasantha">Monthly Repayment Sheet Format</a>
-                                            </li>
-                                    @else
-                                    @endif
-                                    @if($item->pending_approval_repayment == 1)
-{{--                                        <li>--}}
-{{--                                            <a href="/pending_collection">Pending Approval Repayments</a>--}}
-{{--                                        </li>--}}
-                                            <li>
-                                                <a href="/center_collection">Center Wise collection Detail</a>
-                                            </li>
-                                            <li>
-                                                <a href="/center_collection_summary">Center Wise collection Summary</a>
-                                            </li>
                                     @else
                                     @endif
 {{--                                    @if($item->approval_repayment == 1)--}}
@@ -815,16 +791,16 @@
 {{--                                    @endif--}}
                                     @if($item->agent_collection == 1)
                                         <li>
-                                            <a href="/collection">Agent Collection</a>
+                                            <a href="/collection">Collector Wise Collection</a>
                                         </li>
                                     @else
                                     @endif
-                                    @if($item->view_repayment == 1)
-                                        <li>
-                                            <a href="/date_wise_installment">Date Wise Installment</a>
-                                        </li>
-                                    @else
-                                    @endif
+{{--                                    @if($item->view_repayment == 1)--}}
+{{--                                        <li>--}}
+{{--                                            <a href="/date_wise_installment">Date Wise Installment</a>--}}
+{{--                                        </li>--}}
+{{--                                    @else--}}
+{{--                                    @endif--}}
 
 
                                 </ul>
@@ -847,9 +823,7 @@
                                             <li>
                                                 <a href="/bank_account">Bank/Cash Account</a>
                                             </li>
-                                            <li>
-                                                <a href="/ChartOfAccount">Chart Of Account</a>
-                                            </li>
+
                                             <li>
                                                 <a href="/InnerBankTransfer">Internal Account Transfer</a>
                                             </li>
@@ -893,36 +867,14 @@
                                         <li>
                                             <a href="/AssetManagement">Asset Management</a>
                                         </li>
-
-{{--                                        <li>--}}
-{{--                                            <a href="/AddManualJournal">Asset Manual Journal</a>--}}
-{{--                                        </li>--}}
-                                        <li>
-                                            <a href="/CashFlow">CashFlow Accumulated</a>
-                                        </li>
-                                        <li>
-                                            <a href="/CashFlowMonthly">CashFlow Monthly</a>
-                                        </li>
-                                        <li>
-                                            <a href="/ProfitLoss">Profit & Loss (P&L)</a>
-                                        </li>
                                         <li>
                                             <a href="/BankReconciliation">Bank Reconciliation</a>
                                         </li>
                                         <li>
-                                            <a href="/loanStatus">Loan Status</a>
-                                        </li>
-
-                                        <li>
-                                            <a href="/BalanceSheet">Balance Sheet</a>
-                                        </li>
-                                        <li>
-                                            <a href="/trialBalanceAccounting">Trial Balance</a>
-                                        </li>
-
-
-                                        <li>
                                             <a href="/ManualJournal">Manual Journal</a>
+                                        </li>
+                                        <li>
+                                            <a href="/ChartOfAccount">Chart Of Account</a>
                                         </li>
                                     </ul>
                                 </div>
@@ -1073,13 +1025,78 @@
                                             <div class="collapse" id="main_report">
                                                 <ul class="side-nav-third-level">
                                                     <li>
-                                                        <a href="/portfolio_performance">Portfolio & Performance</a>
+                                                        <a href="/portfolio_performance">Portfolio & Performance - Dashboard</a>
+                                                    </li>
+                                                    <li><a href="/AllLoanDetailReport">Full Loan Detail Report</a></li>
+                                                    <li><a href="/loansummaryreport">Loan Summary Report</a></li>
+                                                    @if($item->report_9 == 1)
+                                                        <li><a href="/par">PAR (Monthly)</a></li>
+                                                        <li><a href="/par_weekly">PAR (Weekly)</a></li>
+                                                    @endif
+                                                    <li>
+                                                        <a href="/loanStatus">Loan Status</a>
+                                                    </li>
+
+                                                </ul>
+                                            </div>
+                                        </li>
+
+                                        <li class="side-nav-item">
+                                            <a data-bs-toggle="collapse" href="#acc_report" aria-expanded="false" class="side-nav-link">
+                                                <span> Accounting Reports </span>
+                                                <span class="menu-arrow"></span>
+                                            </a>
+                                            <div class="collapse" id="acc_report">
+                                                <ul class="side-nav-third-level">
+                                                    <li>
+                                                        <a href="/CashFlow">CashFlow Accumulated</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="/CashFlowMonthly">CashFlow Monthly</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="/ProfitLoss">Profit & Loss (P&L)</a>
+                                                    </li>
+
+
+                                                    <li>
+                                                        <a href="/BalanceSheet">Balance Sheet</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="/trialBalanceAccounting">Trial Balance</a>
                                                     </li>
                                                 </ul>
                                             </div>
                                         </li>
 
-                                        {{-- Sub Reports --}}
+                                        <li class="side-nav-item">
+                                            <a data-bs-toggle="collapse" href="#payment_report" aria-expanded="false" class="side-nav-link">
+                                                <span> Payment Reports </span>
+                                                <span class="menu-arrow"></span>
+                                            </a>
+                                            <div class="collapse" id="payment_report">
+                                                <ul class="side-nav-third-level">
+                                                    <li>
+                                                        <a href="/daily">Daily Collection Sheet</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="/daily_repayment_sheet">Monthly Repayment Sheet</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="/daily_repayment_sheet_hm">Daily Repayment Sheet</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="/daily_repayment_sheet_lasantha">Monthly Repayment Sheet Format</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="/center_collection">Center Wise collection Detail</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="/center_collection_summary">Center Wise collection Summary</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </li>
                                         <li class="side-nav-item">
                                             <a data-bs-toggle="collapse" href="#sub_report" aria-expanded="false" class="side-nav-link">
                                                 <span> Sub Reports </span>
@@ -1088,13 +1105,11 @@
                                             <div class="collapse" id="sub_report">
                                                 <ul class="side-nav-third-level">
                                                     @if($item->report_1 == 1)
-                                                        <li><a href="/AllLoanDetailReport">Full Loan Detail Report</a></li>
-                                                        <li><a href="/loansummaryreport">Loan Summary Report</a></li>
                                                         <li><a href="/LoanChargers">Loan Chargers Report</a></li>
-                                                        <li><a href="/dandlreport">D & L Report</a></li>
+                                                        <li><a href="/dandlreport">Center Collection Dashboard</a></li>
                                                         <li><a href="/monthlyprofit">Loan Repayment Summary Report</a></li>
                                                         <li><a href="/savings_report">Savings Report</a></li>
-                                                        <li><a href="/trialBalance">Trial Balance</a></li>
+
                                                     @endif
 
                                                     @if($item->loan_in_arrease == 1)
@@ -1113,31 +1128,23 @@
                                                         <li><a href="/MonthlyCollectionSummary">Monthly Collection Summary Details</a></li>
                                                     @endif
 
-                                                    @if($item->report_2 == 1)
-                                                        <li><a href="/customerreport_details">All Customer Details</a></li>
-                                                        <li><a href="/customerreport_details_recover_officer">Recover Officer Wise Customers</a></li>
-                                                    @endif
+
 
                                                     @if($item->report_3 == 1)
                                                         <li><a href="/loanreport">Loan Details</a></li>
                                                     @endif
 
-                                                    @if($item->report_4 == 1)
-                                                        <li><a href="/borrowerreport">Guardian Details</a></li>
-                                                    @endif
+
 
                                                     @if($item->report_5 == 1)
-                                                        <li><a href="/repaymentreport">Agent Wise Repayment Collection</a></li>
+                                                        <li><a href="/repaymentreport">Collector Wise Repayment Collection</a></li>
                                                     @endif
 
-                                                    @if($item->report_7 == 1)
-                                                        <li><a href="/deduct_report">Deduction Report</a></li>
-                                                    @endif
+                                                    {{--                                                    @if($item->report_7 == 1)--}}
+                                                    {{--                                                        <li><a href="/deduct_report">Deduction Report</a></li>--}}
+                                                    {{--                                                    @endif--}}
 
-                                                    @if($item->report_9 == 1)
-                                                        <li><a href="/par">PAR (Monthly)</a></li>
-                                                        <li><a href="/par_weekly">PAR (Weekly)</a></li>
-                                                    @endif
+
 
                                                     @if($item->report_14 == 1)
                                                         <li><a href="/sms_history">SMS History Report</a></li>
@@ -1145,6 +1152,29 @@
                                                 </ul>
                                             </div>
                                         </li>
+
+                                        <li class="side-nav-item">
+                                            <a data-bs-toggle="collapse" href="#people_report" aria-expanded="false" class="side-nav-link">
+                                                <span> People Reports </span>
+                                                <span class="menu-arrow"></span>
+                                            </a>
+                                            <div class="collapse" id="people_report">
+                                                <ul class="side-nav-third-level">
+                                                    @if($item->report_2 == 1)
+                                                        <li><a href="/customerreport_details">All Customer Details</a></li>
+                                                        <li><a href="/customerreport_details_recover_officer">Recover Officer Wise Customers</a></li>
+                                                    @endif
+                                                        @if($item->report_4 == 1)
+                                                            <li><a href="/borrowerreport">Guardian Details</a></li>
+                                                        @endif
+                                                        <li><a href="#">User Logs</a></li>
+                                                </ul>
+
+                                            </div>
+                                        </li>
+
+                                        {{-- Sub Reports --}}
+
 
                                     </ul>
                                 </div>

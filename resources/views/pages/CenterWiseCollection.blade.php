@@ -69,10 +69,10 @@
     <div class="row">
         <div class="col-12">
             <div class="page-title-box">
-
-                <h4 class="page-title">Center Wise Collection Detail</h4>
+                <h4 class="page-title">Center Wise Collection Detail Overview</h4>
             </div>
         </div>
+        <span style="color: #a19595">"The Center Wise Collection Detail provides a breakdown of collections made across different centers on a specific date. It includes detailed information on the loan payments, including payment types, amounts collected, and the associated users and company account details. This helps to track the collection activities of different centers, groups, and collectors."</span>
     </div>
 
     <div class="row mt-3">

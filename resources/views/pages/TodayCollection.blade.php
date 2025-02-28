@@ -46,7 +46,7 @@
                 <div class="page-title-box">
                     <div class="page-title-right">
                     </div>
-                    <h4 class="page-title">Collection</h4>
+                    <h4 class="page-title">Collector Wise Collection</h4>
                 </div>
             </div>
         </div>

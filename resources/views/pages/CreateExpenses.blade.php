@@ -33,11 +33,11 @@
                             <label for="simpleinput" class="form-label">Category<span class="required-asterisk">*</span></label>
                             <select id="category" class="form-control select2">
                                 @foreach($expences_category as $item)
-                                    <option value="{{ $item->id }}">{{ $item->description }}</option>
+                                    <option value="{{ $item->Idbank }}">{{ $item->Bank_Name }}</option>
                                 @endforeach
                             </select>
                             <br><br>
-                            <input type="button" class="btn btn-danger" id="addCategory" value="Add Category">
+{{--                            <input type="button" class="btn btn-danger" id="addCategory" value="Add Category">--}}
                         </div>
 
                         <div class="mb-3">
@@ -58,7 +58,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="simpleinput" class="form-label">Amount<span class="required-asterisk">*</span></label>
-                            <input type="text" id="amount" class="form-control">
+                            <input type="text" id="expences_amount" class="form-control">
                         </div>
 
                         <div class="modal-footer">
@@ -99,14 +99,12 @@
                             <thead>
                             <tr>
                                 <th>Description</th>
-                                <th>Actions</th>
                             </tr>
                             </thead>
                             <tbody>
                                 @foreach($expences_category as $item)
                                     <tr>
-                                        <td>{{$item->description}}</td>
-                                        <td><button class="btn btn-danger btn-sm delete-category" data-id="{{$item->id}}">Delete</button></td>
+                                        <td>{{$item->Bank_Name}}</td>
                                     </tr>
                                 @endforeach
                             </tbody>

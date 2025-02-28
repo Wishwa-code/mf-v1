@@ -101,11 +101,10 @@
         <div class="row">
             <div class="col-12">
                 <div class="page-title-box">
-                    <div class="page-title-right">
-                    </div>
-                    <h4 class="page-title">Date / Center wise cash flow details</h4>
+                    <h4 class="page-title">Date / Center Wise Cash Flow Details Overview</h4>
                 </div>
             </div>
+            <span style="color: #a19595">"The Date / Center Wise Cash Flow Details report provides a snapshot of the cash flow transactions for each center over a specific date range. It allows you to track all cash inflows and outflows related to loans and customer payments."</span>
         </div>
         <!-- end page title -->
 

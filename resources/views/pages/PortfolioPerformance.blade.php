@@ -32,8 +32,9 @@
                 <div class="page-title-box">
                     <div class="page-title-right">
                     </div>
-                    <h4 class="page-title">Portfolio & Performance</h4>
+                    <h4 class="page-title">Portfolio & Performance - Dashboard Report Overview</h4>
                 </div>
+                <span style="color: #a19595">"This report provides a comprehensive summary of loan portfolio performance across branches, routes, and centers. It helps track key metrics related to loan disbursements, repayments, client activity, and revenue generation. The report is highly customizable, allowing users to filter data by date range, branch, route, center, and report type."</span>
 
             </div>
         </div>
@@ -94,6 +95,16 @@
                                     </div>
                                 </div>
 
+                                <div class="col-lg-3">
+                                    <div class="mb-2">
+                                        <label for="center_details" class="form-label">Report Type</label>
+                                        <select class="form-control select2" id="report_type" name="center_details">
+                                            <option value="0">Summary Report</option>
+                                            <option value="1">Detail Report</option>
+                                        </select>
+                                    </div>
+                                </div>
+
 
                                 <!-- Search Button -->
                                 <div class="col-lg-3 d-flex align-items-center">
@@ -142,6 +153,11 @@
                                 </tbody>
                             </table>
                         </div> <!-- end table-responsive-->
+
+
+
+
+
                     </div> <!-- end card-->
                 </div> <!-- end col -->
 
@@ -180,14 +196,16 @@
 
 
     <script>
-        $(document).ready(function() {
+        let responseData = null; // Global variable to store API response
+
+        $(document).ready(function () {
             $('.select2').select2({
                 placeholder: "Select an option",
                 allowClear: true
             });
 
             // Load Routes and Centers when Branch is selected
-            $("#branch").change(function() {
+            $("#branch").change(function () {
                 let branch_id = $(this).val();
 
                 if (branch_id == 0) {
@@ -201,7 +219,7 @@
                     type: "GET",
                     url: "/get-routes-centers",
                     data: { branch_id: branch_id },
-                    success: function(response) {
+                    success: function (response) {
                         let routes = response.routes;
                         let centers = response.centers;
 
@@ -223,7 +241,7 @@
             });
 
             // Load table data on form submit
-            $("form").submit(function(e) {
+            $("form").submit(function (e) {
                 e.preventDefault(); // Prevent form from refreshing
 
                 let date_from = $("#date_from").val();
@@ -234,7 +252,7 @@
 
                 $.ajax({
                     type: "GET",
-                    url: "/get-portfolio-performance",
+                    url: "/get-portfolio-performance-excel",
                     data: {
                         date_from: date_from,
                         date_to: date_to,
@@ -242,92 +260,127 @@
                         route: route,
                         center_details: center_details
                     },
-                    success: function(response) {
-                        let table = $("#loan_table tbody");
-                        table.empty(); // Clear previous data
-
-                        // Initialize totals
-                        let total_disbursement = 0;
-                        let total_loan_amount = 0;
-                        let total_issued_loans = 0;
-                        let total_new_clients = 0;
-                        let total_repeat_clients = 0;
-                        let total_schedule_repayments = 0;
-                        let total_collected_repayments = 0;
-                        let total_capital_received = 0;
-                        let total_interest_received = 0;
-                        let total_penalty_received = 0;
-                        let total_processing_fee = 0;
-
-                        response.data.forEach(row => {
-                            // Convert numeric values to float and sum them
-                            total_disbursement += parseFloat(row.total_disbursement);
-                            total_loan_amount += parseFloat(row.total_loan_amount);
-                            total_issued_loans += parseInt(row.issued_loan_count);
-                            total_new_clients += parseInt(row.new_clients);
-                            total_repeat_clients += parseInt(row.repeat_clients);
-                            total_schedule_repayments += parseFloat(row.schedule_repayments);
-                            total_collected_repayments += parseFloat(row.collected_repayments);
-                            total_capital_received += parseFloat(row.capital_received);
-                            total_interest_received += parseFloat(row.interest_received);
-                            total_penalty_received += parseFloat(row.penalty_received);
-                            total_processing_fee += parseFloat(row.processing_fee_received);
-
-                            // Add row data
-                            let newRow = `<tr>
-                    <td>${row.branch_name}</td>
-                    <td>${row.route_name}</td>
-                    <td>${row.center_name}</td>
-                    <td>${row.total_disbursement.toFixed(2)}</td>
-                    <td>${row.total_loan_amount.toFixed(2)}</td>
-                    <td>${row.issued_loan_count}</td>
-                    <td>${row.new_clients}</td>
-                    <td>${row.repeat_clients}</td>
-                    <td>${row.schedule_repayments.toFixed(2)}</td>
-                    <td>${row.collected_repayments.toFixed(2)}</td>
-                    <td>${row.capital_received.toFixed(2)}</td>
-                    <td>${row.interest_received.toFixed(2)}</td>
-                    <td>${row.penalty_received.toFixed(2)}</td>
-                    <td>${row.processing_fee_received.toFixed(2)}</td>
-                </tr>`;
-                            table.append(newRow);
-                        });
-
-                        // Append Total Row at the bottom
-                        let totalRow = `<tr style="font-weight:bold; background-color: #f8f9fa;">
-                <td colspan="3" class="text-center">Total</td>
-                <td>${total_disbursement.toFixed(2)}</td>
-                <td>${total_loan_amount.toFixed(2)}</td>
-                <td>${total_issued_loans}</td>
-                <td>${total_new_clients}</td>
-                <td>${total_repeat_clients}</td>
-                <td>${total_schedule_repayments.toFixed(2)}</td>
-                <td>${total_collected_repayments.toFixed(2)}</td>
-                <td>${total_capital_received.toFixed(2)}</td>
-                <td>${total_interest_received.toFixed(2)}</td>
-                <td>${total_penalty_received.toFixed(2)}</td>
-                <td>${total_processing_fee.toFixed(2)}</td>
-            </tr>`;
-
-                        table.append(totalRow); // Add totals at the bottom of the table
+                    success: function (response) {
+                        responseData = response; // Store response globally
+                        generateReport($("#report_type").val()); // Generate table based on selected report type
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error fetching data:", error);
                     }
                 });
             });
 
-            // Export to Excel
-            $("#exportExcel").click(function() {
+            // Handle Export to Excel
+            $("#exportExcel").click(function () {
                 let table = document.getElementById("loan_table");
                 let wb = XLSX.utils.table_to_book(table, { sheet: "Portfolio Report" });
                 XLSX.writeFile(wb, "Portfolio_Performance.xlsx");
             });
 
-
-
-
-
-
-
+            // Change Report Type
+            $("#report_type").change(function () {
+                if (responseData) {
+                    generateReport($(this).val()); // Re-generate table when report type changes
+                }
+            });
         });
+
+        // Function to Generate Report
+        function generateReport(reportType) {
+            let table = $("#loan_table tbody");
+            table.empty(); // Clear previous data
+
+            if (!responseData) return; // If no data, do nothing
+
+            // Initialize totals
+            let total_disbursement = 0;
+            let total_loan_amount = 0;
+            let total_issued_loans = 0;
+            let total_new_clients = 0;
+            let total_repeat_clients = 0;
+            let total_schedule_repayments = 0;
+            let total_collected_repayments = 0;
+            let total_capital_received = 0;
+            let total_interest_received = 0;
+            let total_penalty_received = 0;
+            let total_processing_fee = 0;
+
+            responseData.data.forEach(row => {
+                // Convert numeric values to float and sum them
+                total_disbursement += parseFloat(row.total_disbursement);
+                total_loan_amount += parseFloat(row.total_loan_amount);
+                total_issued_loans += parseInt(row.issued_loan_count);
+                total_new_clients += parseInt(row.new_clients);
+                total_repeat_clients += parseInt(row.repeat_clients);
+                total_schedule_repayments += parseFloat(row.schedule_repayments);
+                total_collected_repayments += parseFloat(row.collected_repayments);
+                total_capital_received += parseFloat(row.capital_received);
+                total_interest_received += parseFloat(row.interest_received);
+                total_penalty_received += parseFloat(row.penalty_received);
+                total_processing_fee += parseFloat(row.processing_fee_received);
+
+                // Add Main Row with Branch, Route, and Center
+                let mainRow = `<tr style="font-weight: bold; background-color: #f8f9fa;">
+            <td>${row.branch_name}</td>
+            <td>${row.route_name}</td>
+            <td>${row.center_name}</td>
+            <td>${row.total_disbursement.toFixed(2)}</td>
+            <td>${row.total_loan_amount.toFixed(2)}</td>
+            <td>${row.issued_loan_count}</td>
+            <td>${row.new_clients}</td>
+            <td>${row.repeat_clients}</td>
+            <td>${row.schedule_repayments.toFixed(2)}</td>
+            <td>${row.collected_repayments.toFixed(2)}</td>
+            <td>${row.capital_received.toFixed(2)}</td>
+            <td>${row.interest_received.toFixed(2)}</td>
+            <td>${row.penalty_received.toFixed(2)}</td>
+            <td>${row.processing_fee_received.toFixed(2)}</td>
+        </tr>`;
+
+                table.append(mainRow);
+
+                // If Detail Report is selected, add Loan Details Rows
+                if (reportType === "1") {
+                    row.loan_details.forEach(loan => {
+                        let loanRow = `<tr>
+                    <td colspan="3" class="text-center">${loan.Loan_No}</td>
+                    <td>${parseFloat(loan.loan_disbursement).toFixed(2)}</td>
+                    <td>${parseFloat(loan.loan_amount).toFixed(2)}</td>
+                    <td>-</td>  <!-- Empty since it's per-loan -->
+                    <td>-</td>
+                    <td>-</td>
+                    <td>${parseFloat(loan.schedule_repayments).toFixed(2)}</td>
+                    <td>${parseFloat(loan.collected_repayments).toFixed(2)}</td>
+                    <td>${parseFloat(loan.capital_received).toFixed(2)}</td>
+                    <td>${parseFloat(loan.interest_received).toFixed(2)}</td>
+                    <td>${parseFloat(loan.penalty_received).toFixed(2)}</td>
+                    <td>${loan.processing_fee_received ? parseFloat(loan.processing_fee_received).toFixed(2) : "0.00"}</td>
+                </tr>`;
+
+                        table.append(loanRow);
+                    });
+                }
+            });
+
+            // Append Total Row at the bottom
+            let totalRow = `<tr style="font-weight:bold; background-color: #d1ecf1;">
+        <td colspan="3" class="text-center">Total</td>
+        <td>${total_disbursement.toFixed(2)}</td>
+        <td>${total_loan_amount.toFixed(2)}</td>
+        <td>${total_issued_loans}</td>
+        <td>${total_new_clients}</td>
+        <td>${total_repeat_clients}</td>
+        <td>${total_schedule_repayments.toFixed(2)}</td>
+        <td>${total_collected_repayments.toFixed(2)}</td>
+        <td>${total_capital_received.toFixed(2)}</td>
+        <td>${total_interest_received.toFixed(2)}</td>
+        <td>${total_penalty_received.toFixed(2)}</td>
+        <td>${total_processing_fee.toFixed(2)}</td>
+    </tr>`;
+
+            table.append(totalRow); // Add totals at the bottom of the table
+        }
+
 
     </script>
 @endsection

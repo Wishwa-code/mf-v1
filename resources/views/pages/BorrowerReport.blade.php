@@ -68,6 +68,8 @@
                     <div class="d-flex justify-content-between mb-3">
                         <h4 class="page-title">Guardian Details Report</h4>
                     </div>
+                    <span style="color: #a19595">"The Guardian Details Report provides valuable information about the guardians of customers, helping to track and manage cases that involve dependents or minors. This report contains essential details about both the customer and their guardian, ensuring that all necessary information is captured for customer relationship management."</span>
+                    <br><br>
 
                     <!-- DataTable -->
                     <table id="customerTable" class="display nowrap table table-striped table-bordered" style="width:100%">

@@ -3,9 +3,16 @@
 @section('head')
     <!-- Select2 CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
-
-    <!-- jQuery -->
+    <!-- jQuery (must be before DataTables) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+
     <style>
         .table thead th {
             background-color: #007bff;
@@ -45,7 +52,9 @@
 
 @section('content')
     <div class="container mt-4">
-        <h2>Trial Balance</h2>
+        <h2>Trial Balance Overview</h2>
+        <span style="color: #a19595">"The Trial Balance is a financial report used to ensure that the debits and credits in your accounting system are in balance. This report lists all accounts with their respective debit and credit balances, helping you identify discrepancies before preparing financial statements."</span>
+        <br><br>
 
         <!-- Search Section -->
         <form class="row g-3 mb-4">
@@ -90,19 +99,19 @@
 
     <!-- Modal for Financial Report -->
     <div class="modal fade" id="financialReportModal" tabindex="-1" role="dialog" aria-labelledby="financialReportModalLabel" aria-hidden="true">
-        <div class="modal-dialog  modal-lg" role="document">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="financialReportModalLabel">Log Report</h5>
+                    <h5 class="modal-title" id="financialReportModalLabel">Financial Report</h5>
                 </div>
                 <div class="modal-body">
-                    <table id="financialReportTable" class="table">
+                    <table id="financialReportTable" class="table table-striped">
                         <thead>
                         <tr>
                             <th>Type</th>
                             <th>Description</th>
-                            <th>Debit Amount</th>
                             <th>Credit Amount</th>
+                            <th>Debit Amount</th>
                             <th>Balance</th>
                             <th>Created At</th>
                         </tr>
@@ -117,9 +126,9 @@
     </div>
 
 
-    <!-- Select2 JavaScript -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- SheetJS (XLSX.js) for Excel export -->
+
+
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
     <script>
         $(document).ready(function () {
@@ -133,9 +142,21 @@
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 }
             });
+            $.getScript("https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js", function() {
+                console.log("✅ DataTables manually loaded.");
+            });
 
 
-            // Function to format numbers with commas
+            // Initialize DataTable with pagination
+            $('#financialReportTable').DataTable({
+                paging: true,             // Enables pagination
+                lengthChange: true,       // Allows the user to change the number of records per page
+                searching: true,          // Enables search functionality
+                ordering: true,           // Enables column sorting
+                info: true,               // Shows table information
+                autoWidth: false,         // Disables automatic column width adjustment
+                responsive: true          // Makes the table responsive
+            });
 
         });
         // Function to format numbers with commas
@@ -219,23 +240,28 @@
         }
 
 
-        // Function to fetch and display the financial report data
         function fetchFinancialReport(accountId) {
             var date_from = $("#date_from").val();
             var date_to = $("#date_to").val();
 
             $.ajax({
-                url: '/get-financial-report',  // Replace with the appropriate API endpoint
+                url: '/get-financial-report',
                 type: 'POST',
                 data: {
                     account_id: accountId,
-                    date_from:date_from,
-                    date_to:date_to
+                    date_from: date_from,
+                    date_to: date_to
                 },
                 success: function (data) {
-                    console.log(data);  // For debugging
                     var financialReportTable = $('#financialReportTable tbody');
-                    financialReportTable.empty();  // Clear existing data
+                    var accountName = $(`tr[data-account-id='${accountId}'] td:first`).text();
+                    var accountType = $(`tr[data-account-id='${accountId}'] td:nth-child(2)`).text();
+
+                    // Update modal title with Account Name and Type
+                    $('#financialReportModalLabel').html(`Financial Report - <b>${accountName} (${accountType})</b>`);
+
+                    // Clear existing table data
+                    financialReportTable.empty();
 
                     if (data.length === 0) {
                         financialReportTable.append(`
@@ -244,7 +270,7 @@
                     </tr>
                 `);
                     } else {
-                        // Populate the modal with the financial report data
+                        // Populate table with data
                         data.forEach(function (item) {
                             var row = `
                         <tr>
@@ -259,6 +285,26 @@
                             financialReportTable.append(row);
                         });
                     }
+
+                    // Ensure DataTable is properly initialized
+                    if (!$.fn.DataTable) {
+                        console.error("DataTables library is not loaded.");
+                        return;
+                    }
+
+                    // Check if DataTable is already initialized before destroying it
+                    if ($.fn.DataTable.isDataTable('#financialReportTable')) {
+                        $('#financialReportTable').DataTable().destroy();
+                    }
+
+                    // Reinitialize DataTable
+                    $('#financialReportTable').DataTable({
+                        "responsive": true,
+                        "paging": true,
+                        "ordering": true,
+                        "info": true,
+                        "searching": true
+                    });
 
                     // Show the modal
                     $('#financialReportModal').modal('show');

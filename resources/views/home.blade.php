@@ -1,6 +1,7 @@
 @extends('layout.admin')
 
 @section('head')
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
 @endsection
 
@@ -48,7 +49,7 @@
 
                 <div class="col-xxl-3 col-sm-6">
                     <a href="/payment_step_1">
-                        <div class="card widget-flat text-bg-purple">
+                        <div class="card widget-flat text-bg-info">
                             <div class="card-body">
                                 <div class="float-end">
                                     <i class="ri-wallet-2-line widget-icon"></i>
@@ -63,7 +64,7 @@
 
                 <div class="col-xxl-3 col-sm-6">
                     <a href="/showsettleloan">
-                        <div class="card widget-flat text-bg-danger">
+                        <div class="card widget-flat text-bg-warning">
                             <div class="card-body">
                                 <div class="float-end">
                                     <i class="ri-file-paper-2-fill widget-icon"></i>
@@ -96,12 +97,13 @@
 
                 <div class="col-xxl-3 col-sm-6">
                     <a href="/payment">
-                        <div class="card widget-flat text-bg-info">
+                        <div class="card widget-flat text-bg-success">
                             <div class="card-body">
                                 <div class="float-end">
                                     <i class="ri-shopping-basket-line widget-icon"></i>
                                 </div>
                                 <h6 class="text-uppercase mt-0" title="Customers">Today Collection</h6>
+                                <h6 class="text-uppercase mt-0" title="Customers">&nbsp;</h6>
                                 <h3 class="my-2">LKR {{number_format($todayinstallment,'2','.',',')}}</h3>
 
                             </div>
@@ -111,12 +113,13 @@
 
                 <div class="col-xxl-3 col-sm-6">
                     <a href="/payment">
-                        <div class="card widget-flat text-bg-info">
+                        <div class="card widget-flat text-bg-danger">
                             <div class="card-body">
                                 <div class="float-end">
                                     <i class="ri-shopping-basket-line widget-icon"></i>
                                 </div>
                                 <h6 class="text-uppercase mt-0" title="Customers">Total Arease</h6>
+                                <h6 class="text-uppercase mt-0" title="Customers">&nbsp;</h6>
                                 <h3 class="my-2">LKR {{number_format($arrease,'2','.',',')}}</h3>
 
                             </div>
@@ -126,12 +129,30 @@
 
                 <div class="col-xxl-3 col-sm-6">
                     <a href="/payment">
-                        <div class="card widget-flat text-bg-info">
+                        <div class="card widget-flat text-bg-purple">
+                            <div class="card-body">
+                                <div class="float-end">
+                                    <i class="ri-shopping-basket-line widget-icon"></i>
+                                </div>
+                                <h6 class="text-uppercase mt-0" title="Customers">Chq Payments</h6>
+                                <h6 class="text-uppercase mt-0" title="Customers">&nbsp;</h6>
+
+                                <h3 class="my-2">LKR {{number_format($checqueamount,'2','.',',')}}</h3>
+
+                            </div>
+                        </div>
+                    </a>
+                </div> <!-- end col-->
+
+                <div class="col-xxl-3 col-sm-6">
+                    <a href="/payment">
+                        <div class="card widget-flat text-bg-secondary">
                             <div class="card-body">
                                 <div class="float-end">
                                     <i class="ri-shopping-basket-line widget-icon"></i>
                                 </div>
                                 <h6 class="text-uppercase mt-0" title="Customers">Total Outstanding</h6>
+                                <h6 class="text-uppercase mt-0" title="Customers">(Today Collection+Arease+Chques)</h6>
                                 <h3 class="my-2">LKR {{number_format($totalBalanceUntil,'2','.',',')}}</h3>
 
                             </div>
@@ -139,62 +160,6 @@
                     </a>
                 </div> <!-- end col-->
 
-            </div>
-
-            @if($shortcut_count>0)
-                <div class="row">
-                    <div class="col-12">
-                        <div class="page-title-box">
-                            <h4 class="page-title">Shortcuts</h4>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-
-
-            <div class="row">
-                @foreach($shortcut as $item)
-                        <?php $url="/"; $name="";?>
-                    @if($item->name==="Add_Customer")
-                            <?php $url="/customers"; $name="Add Customer"; ?>
-                    @elseif($item->name==="View_Customer")
-                            <?php $url="/showcustomers"; $name="View Customer"; ?>
-                    @elseif($item->name==="Assign_Customers_to_group")
-                            <?php $url="/customergroupassign"; $name="Add Customers To Group"; ?>
-                    @elseif($item->name==="View_Products")
-                            <?php $url="/viewproduct"; $name="View Product"; ?>
-                    @elseif($item->name==="Pending_Loans")
-                            <?php $url="/pendingloan"; $name="Pending Loans"; ?>
-                    @elseif($item->name==="Current_Loans")
-                            <?php $url="/payment_step_1"; $name="Current Loans"; ?>
-                    @elseif($item->name==="Loan_In_arrears")
-                            <?php $url="/latePayment"; $name="Loan In Areas"; ?>
-                    @elseif($item->name==="Add_Repayment")
-                            <?php $url="/payment"; $name="Add Repayment"; ?>
-                    @elseif($item->name==="Repayment_details")
-                            <?php $url="/viewpayment"; $name="View Repayment"; ?>
-                    @elseif($item->name==="Collector_wise_collections")
-                            <?php $url="/collection"; $name="Agent Collection"; ?>
-                    @elseif($item->name==="Loan_Calculator")
-                            <?php $url="/calculator"; $name="Loan Calculator"; ?>
-                    @elseif($item->name==="Add_Expenses")
-                            <?php $url="/expenses"; $name="Add Expenses"; ?>
-                    @elseif($item->name==="Add_Income")
-                            <?php $url="/income"; $name="Add Income"; ?>
-                    @endif
-                    <div class="col-xxl-3 col-sm-6">
-                        <a href="<?php echo $url ?>">
-                            <div class="card widget-flat text-bg-purple">
-                                <div class="card-body">
-
-                                    <h6 class="text-uppercase mt-0" title="Customers"><?php echo $name ?></h6>
-                                </div>
-                            </div>
-                        </a>
-
-                    </div>
-                @endforeach
             </div>
 
 
@@ -209,6 +174,88 @@
             </div>
         </div>
 
+        @if($shortcut_count>0)
+            <div class="row">
+                <div class="col-12">
+                    <div class="page-title-box">
+                        <h4 class="page-title">Shortcuts</h4>
+                    </div>
+                </div>
+            </div>
+        @endif
+        @php
+            // New set of vibrant colors
+            $colors = ['#FF5733', '#3498DB', '#9B59B6', '#E74C3C', '#1ABC9C', '#F39C12', '#2ECC71', '#D35400'];
+        @endphp
+
+        <style>
+            .shortcut-card {
+                transition: transform 0.2s ease-in-out, background-color 0.3s ease-in-out;
+                padding: 8px; /* Reduced padding */
+                border-radius: 8px; /* Slightly smaller rounded corners */
+            }
+            .shortcut-card:hover {
+                filter: brightness(85%);
+                transform: scale(1.03); /* Smaller zoom effect */
+            }
+            .shortcut-card i {
+                font-size: 1.5rem !important; /* Reduce icon size */
+            }
+            .shortcut-card small {
+                font-size: 0.8rem !important; /* Reduce text size */
+            }
+        </style>
+
+        <div class="row g-1"> {{-- Reduced spacing --}}
+            @foreach($shortcut as $index => $item)
+                @php
+                    $url = "/";
+                    $name = "";
+                    $icon = "";
+                    $bgColor = $colors[$index % count($colors)];
+                @endphp
+
+                @if($item->name === "Add_Customer")
+                    @php $url = "/customers"; $name = "Add Customer"; $icon = "fas fa-user-plus"; @endphp
+                @elseif($item->name === "View_Customer")
+                    @php $url = "/showcustomers"; $name = "View Customer"; $icon = "fas fa-users"; @endphp
+                @elseif($item->name === "Assign_Customers_to_group")
+                    @php $url = "/customergroupassign"; $name = "Add to Group"; $icon = "fas fa-user-friends"; @endphp
+                @elseif($item->name === "View_Products")
+                    @php $url = "/viewproduct"; $name = "View Product"; $icon = "fas fa-box-open"; @endphp
+                @elseif($item->name === "Pending_Loans")
+                    @php $url = "/pendingloan"; $name = "Pending Loans"; $icon = "fas fa-hourglass-half"; @endphp
+                @elseif($item->name === "Current_Loans")
+                    @php $url = "/payment_step_1"; $name = "Current Loans"; $icon = "fas fa-hand-holding-usd"; @endphp
+                @elseif($item->name === "Loan_In_arrears")
+                    @php $url = "/latePayment"; $name = "Loan In Arrears"; $icon = "fas fa-exclamation-triangle"; @endphp
+                @elseif($item->name === "Add_Repayment")
+                    @php $url = "/payment"; $name = "Add Repayment"; $icon = "fas fa-money-check-alt"; @endphp
+                @elseif($item->name === "Repayment_details")
+                    @php $url = "/viewpayment"; $name = "View Repayment"; $icon = "fas fa-file-invoice-dollar"; @endphp
+                @elseif($item->name === "Collector_wise_collections")
+                    @php $url = "/collection"; $name = "Agent Collection"; $icon = "fas fa-user-tie"; @endphp
+                @elseif($item->name === "Loan_Calculator")
+                    @php $url = "/calculator"; $name = "Loan Calculator"; $icon = "fas fa-calculator"; @endphp
+                @elseif($item->name === "Add_Expenses")
+                    @php $url = "/expenses"; $name = "Add Expenses"; $icon = "fas fa-receipt"; @endphp
+                @elseif($item->name === "Add_Income")
+                    @php $url = "/income"; $name = "Add Income"; $icon = "fas fa-hand-holding-usd"; @endphp
+                @endif
+
+                <div class="col-lg-2 col-md-3 col-sm-4 col-6"> {{-- Compact grid --}}
+                    <a href="{{ $url }}" class="text-decoration-none">
+                        <div class="card shadow-sm text-center border-0 shortcut-card"
+                             style="background-color: {{ $bgColor }};">
+                            <div class="card-body p-2 d-flex flex-column align-items-center">
+                                <i class="{{ $icon }} text-white"></i> {{-- Smaller icon --}}
+                                <small class="text-white mt-1 fw-bold">{{ $name }}</small> {{-- Smaller text --}}
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            @endforeach
+        </div>
 
 
 

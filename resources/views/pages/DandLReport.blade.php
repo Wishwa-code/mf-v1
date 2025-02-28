@@ -80,10 +80,10 @@
     <div class="row">
         <div class="col-12">
             <div class="page-title-box">
-
-                <h4 class="page-title">D & L Report</h4>
+                <h4 class="page-title">Center Collection Dashboard Overview</h4>
             </div>
         </div>
+        <span style="color: #a19595">"The Center Collection Dashboard gives a clear overview of the total collections of a center over a selected period. It helps track the total due amounts, collections, arrears, and any additional charges like document fees. This report provides valuable insights into the overall performance of a center's collections and helps identify areas that may need attention, such as overdue amounts."</span>
     </div>
 
     <div class="row mt-3">
@@ -128,22 +128,25 @@
                         <table id="customerTable" class="display nowrap table table-striped table-bordered" style="width:100%">
                             <thead class="sticky-top bg-purple">
                             <tr>
+                                <th>Center</th>
                                 <th>Date</th>
-                                <th>Collection Due</th>
+                                <th>Due Amount Total</th>
+                                <th>Collected Amount Total</th>
                                 <th>Arrease</th>
-                                <th>Collected Loan Amount</th>
                                 <th>Collected Document Charges</th>
                                 <th>Total Collected</th>
+
                             </tr>
                             </thead>
                             <tbody>
                             @php $totalAmount = 0; @endphp
                             @foreach($loan as $item)
                                 <tr>
+                                    <td>{{ $item->Center_name }}</td>
                                     <td>{{ $item->Installment_Date }}</td>
                                     <td>{{ number_format($item->Total_Amount, 2) }}</td>
-                                    <td>{{ number_format($item->Total_Balance, 2) }}</td>
                                     <td>{{ number_format($item->Paid_Amount, 2) }}</td>
+                                    <td>{{ number_format($item->Total_Balance, 2) }}</td>
                                     <td>{{ number_format($item->Doc_Amount, 2) }}</td>
                                     <td>{{ number_format($item->Paid_Amount+$item->Doc_Amount, 2) }}</td>
                                 </tr>
@@ -153,7 +156,7 @@
                             <!-- Total Row -->
                             <tfoot>
                             <tr class="bg-light">
-                                <th colspan="5" class="text-right">Total Amount</th>
+                                <th colspan="6" class="text-right">Total Amount</th>
                                 <th>{{ number_format($totalAmount, 2) }}</th>
                             </tr>
                             </tfoot>

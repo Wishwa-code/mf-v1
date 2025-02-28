@@ -49,8 +49,9 @@
         <div class="page-title-box">
             <div class="row align-items-center">
                 <div class="col-md-8">
-                    <h6 class="page-title">Loan Status</h6>
+                    <h6 class="page-title">Loan Status Overview</h6>
                 </div>
+                <span style="color: #a19595">"This section provides a breakdown of the loan status, offering insights into the loan amounts, paid amounts, and outstanding balances. It helps you track the progress of loans in different stages—current, past maturity (arrears), and settled. The report includes the gross loan amount, paid amounts, and the net balance for each loan status."</span>
             </div>
         </div>
 

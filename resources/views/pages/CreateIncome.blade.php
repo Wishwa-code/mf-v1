@@ -36,7 +36,6 @@
                                 @endforeach
                             </select>
                             <br><br>
-                            <input type="button" class="btn btn-danger" id="addCategory" value="Add Category">
                         </div>
 
                         <div class="mb-3">

@@ -44,7 +44,7 @@
                             @foreach($expenses as $item)
                                 <tr class="style-tr">
                                     <td>{{$item->date}}</td>
-                                    <td>{{$item->description}}</td>
+                                    <td>{{$item->Bank_Name ?? '-'}}</td>
                                     <td>{{$item->reason}}</td>
                                     <td>{{ number_format($item->amount, 2) }}</td>
                                     <td  class="text-center">

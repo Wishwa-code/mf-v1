@@ -69,10 +69,10 @@
     <div class="row">
         <div class="col-12">
             <div class="page-title-box">
-
-                <h4 class="page-title">Center Wise Collection Summary</h4>
+                <h4 class="page-title">Center Wise Collection Summary Overview</h4>
             </div>
         </div>
+        <span style="color: #a19595">"The Center Wise Collection Summary provides a high-level overview of the total collections made at each center on a specific date. It consolidates the payment details by center, helping to monitor and compare the collection performance across different centers."</span>
     </div>
 
     <div class="row mt-3">

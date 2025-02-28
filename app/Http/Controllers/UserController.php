@@ -166,14 +166,14 @@ class UserController extends Controller
                 }
 
                 // Store user information in session
-                $company = DB::table('company')->first();
-                $session->put('company_name', $company->company_name);
+
                 $session->put('userid', $item->id);
                 $session->put('Full_Name', $item->Full_Name);
                 $session->put('designation', $item->Designation);
                 $session->put('branch_id', $item->branch_id);
                 $session->put('branch_access', $item->branch_access);
-
+                $company = tableWithBranch('company')->first();
+                $session->put('company_name', $company->company_name);
                 // Get branch information
                 $branch = DB::table('branch')->where('branch_id', '=', $item->branch_id)->first();
                 $session->put('branch_name', $branch->Name);
@@ -253,6 +253,7 @@ class UserController extends Controller
         $setteled_loan_Count = tableWithBranch('customer_loan')->where('Status','=','1')->count();
         $setteled_loan_current_Amount = tableWithBranch('customer_loan')->where('Status','=','1')->sum('Amount');
         $todayinstallment = tableWithBranch('installments')->where('Installment_Date',date('Y-m-d'))->where('Status','=','0')->sum('Total_Balance');
+        $checqueamount = tableWithBranch('Cheque_payment')->where('payment_date',date('Y-m-d'))->where('chq_status','=','0')->sum('payment_amount');
         $shortcut=tableWithBranch('shortcut')->get();
         $shortcut_count=tableWithBranch('shortcut')->count();
 
@@ -285,7 +286,7 @@ class UserController extends Controller
         $todayInstallment = $loanQuery_2->Today_installment;
         $arrease = $loanQuery_2->arrease;
         $totalBalanceUntil = $loanQuery_2->Total_Balance_until;
-
+        $totalBalanceUntil=$totalBalanceUntil+$checqueamount;
         $userid=session('userid');
         $getuser = tableWithBranch('user')->where('id', $userid)->first();
         $dashboard=0;
@@ -323,7 +324,7 @@ class UserController extends Controller
 //        }
 
 
-        return view('home',compact('dashboard','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
+        return view('home',compact('dashboard','checqueamount','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
     }
 
     public function logout()
@@ -535,7 +536,7 @@ class UserController extends Controller
 
             $message="Your OTP is ".$otp;
 
-            $company=DB::table('company')->first();
+            $company=tableWithBranch('company')->first();
 
             $client_data = new Client([
                 'base_uri' => 'https://e-sms.dialog.lk/api/v1/',
@@ -666,20 +667,30 @@ class UserController extends Controller
     }
 
 
-    public function holidays_save(Request $request){
+    public function holidays_save(Request $request)
+    {
+        $holidayDate = $request->date;
+        $reason = $request->reason;
+
+        // Check if the date is already a holiday
+        if (tableWithBranch('holidays')->where('date', $holidayDate)->exists()) {
+            return response()->json(["id" => "0"], 200);
+        }
+
+        // Insert the new holiday
         $Holidays = [
-            'date' => $request->date,
-            'reason' => $request->reason,
+            'date' => $holidayDate,
+            'reason' => $reason,
             'created_at' => now(),
         ];
+        insertWithBranch('holidays', $Holidays);
 
-        if (tableWithBranch('holidays')->where('date', '=', $request->date)->exists()) {
-            return response()->json(["id" => "0"], 200);
-        } else {
-            $insertedId = insertWithBranch('holidays', $Holidays);
-            return response()->json(["id" => "1"], 200);
-        }
+        $holiday=new HolidayController();
+        $holiday->index();
+
+        return response()->json(["id" => "1"], 200);
     }
+
 
     public function poya_days_save(Request $request)
     {
@@ -700,8 +711,13 @@ class UserController extends Controller
             }
         }
 
+        $holiday=new HolidayController();
+        $holiday->index();
+
+
         return response()->json(["message" => "Poya Days saved successfully!"], 200);
     }
+
 
 
     public function deleteHoliday($id)

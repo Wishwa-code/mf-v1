@@ -80,10 +80,10 @@
     <div class="row">
         <div class="col-12">
             <div class="page-title-box">
-
-                <h4 class="page-title">Other Chargers Report</h4>
+                <h4 class="page-title">Other Charges Report Overview</h4>
             </div>
         </div>
+        <span style="color: #a19595">"The Other Charges Report tracks additional charges applied to loans over a selected period. It provides a detailed list of various charges, such as document fees, insurance, and other types of percentage-based or fixed amount charges added to loans. This report is essential for monitoring and managing non-interest charges, ensuring transparency in financial transactions."</span>
     </div>
 
     <div class="row mt-3">

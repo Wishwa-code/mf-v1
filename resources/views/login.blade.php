@@ -35,7 +35,7 @@
                             <div class="d-flex flex-column h-100">
                                 <div class="auth-brand p-4">
                                     <?php
-                                    $query = "SELECT * FROM company";
+                                    $query = "SELECT * FROM company where branch_id='1'";
                                     $company = DB::select($query);
                                     ?>
                                     @foreach($company as $item)

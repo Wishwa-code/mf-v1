@@ -118,7 +118,7 @@
 
                                                         <button type="button" class="btn btn-danger" onclick="remove_loan_category({{$item->idLoan_Category}})">
                                                             <i class="bi bi-trash fs-4"></i></button>
-                                                        <button type="button" class="btn btn-info" onclick="view_doc_3({{$item->idLoan_Category}},'{{$item->enable_saving_process}}','{{$item->saving_amount_type}}','{{$item->saving_amount}}')">
+                                                        <button type="button" class="btn btn-info" onclick="view_doc_3({{$item->idLoan_Category}},'{{$item->enable_saving_process}}','{{$item->saving_amount_type}}','{{$item->saving_amount}}','{{$item->saving_payment}}')">
                                                             <i class="bi bi-bank fs-4"></i>
                                                         </button>
 
@@ -179,6 +179,15 @@
                                 <div class="mb-3">
                                     <label for="saving_amount" class="form-label">Amount<span class="required-asterisk">*</span></label>
                                     <input type="text" id="saving_amount" class="form-control" value="0.00">
+                                </div>
+                            </div>
+                            <div class="col-md-6" id="saving-amount">
+                                <div class="mb-3">
+                                    <label for="interest_method" class="form-label">Saving Payment Type</label>
+                                    <select class="form-select" id="saving_payment">
+                                        <option value="0" selected>Deduct Savings From Installment</option>
+                                        <option value="1">Collect Savings Separately</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -763,23 +772,26 @@
             });
         });
         // Function to show the modal with data
-        function view_doc_3(id, saving, type, amount) {
+        function view_doc_3(id, saving, type, amount,amount_type) {
             // Set default values
             document.getElementById('enable_saving').value = 'No';
             $('#saving_account_amount_type').closest('.col-md-6').hide();
             $('#saving_amount').closest('.col-md-6').hide();
+            $('#saving_payment').closest('.col-md-6').hide();
 
             // Show fields if 'saving' is 'Yes'
             if (saving === "Yes") {
                 document.getElementById('enable_saving').value = 'Yes';
                 $('#saving_account_amount_type').closest('.col-md-6').show();
                 $('#saving_amount').closest('.col-md-6').show();
+                $('#saving_payment').closest('.col-md-6').show();
             }
 
             // Populate the modal fields
             document.getElementById('saving_id').value = id;
             document.getElementById('saving_account_amount_type').value = type;
             document.getElementById('saving_amount').value = amount;
+            document.getElementById('saving_payment').value = amount_type;
 
             // Show the modal
             var myModal = new bootstrap.Modal(document.getElementById('info-modal'));

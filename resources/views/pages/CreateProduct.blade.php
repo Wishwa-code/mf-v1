@@ -446,6 +446,15 @@
                                     <input type="text" id="saving_amount" class="form-control" value="0.00">
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="interest_method" class="form-label">Saving Payment Type</label>
+                                    <select class="form-select" id="saving_payment">
+                                        <option value="0" selected>Deduct Savings From Installment</option>
+                                        <option value="1">Collect Savings Separately</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
 
 
@@ -498,9 +507,11 @@
                 if (enableSaving === 'No') {
                     $('#saving_account_amount_type').closest('.col-md-6').hide();
                     $('#saving_amount').closest('.col-md-6').hide();
+                    $('#saving_payment').closest('.col-md-6').hide();
                 } else {
                     $('#saving_account_amount_type').closest('.col-md-6').show();
                     $('#saving_amount').closest('.col-md-6').show();
+                    $('#saving_payment').closest('.col-md-6').show();
                 }
             }
 

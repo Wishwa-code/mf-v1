@@ -86,9 +86,10 @@
                 <div class="page-title-box">
                     <div class="page-title-right">
                     </div>
-                    <h4 class="page-title">Loan In Areas</h4>
+                    <h4 class="page-title">Loan in Arrears Report Overview</h4>
                 </div>
             </div>
+            <span style="color: #a19595">"The Loan in Arrears Report helps you track overdue loans based on the number of days the installments are pending. It categorizes loans based on their overdue duration"</span>
         </div>
         <!-- end page title -->
 
@@ -235,25 +236,11 @@
                     status: status
                 },
                 success: function (data, textStatus, xhr) {
-                    console.log(data);
                     if (xhr.status === 200) {
                         var tableBody = $('#loan_table' + tabIndex + ' tbody');
                         tableBody.empty(); // Clear any existing rows
                         let tot = 0.0;
                         let totalInstallments = 0;
-
-                        // Helper function to filter unique loans by highest Late_Days
-                        function getUniqueLoans(loans) {
-                            const uniqueLoans = {};
-                            loans.forEach(function (loan) {
-                                // Use loan ID as key
-                                if (!uniqueLoans[loan.idCustomer_Loan] ||
-                                    uniqueLoans[loan.idCustomer_Loan].Late_Days < loan.Late_Days) {
-                                    uniqueLoans[loan.idCustomer_Loan] = loan; // Keep the one with the highest Late_Days
-                                }
-                            });
-                            return Object.values(uniqueLoans);
-                        }
 
                         let filteredLoans = [];
                         if (tabIndex === 2) {
@@ -272,17 +259,17 @@
                             totalInstallments++;
 
                             var row = `<tr>
-                                <td style="text-align: left">${item.Loan_No}</td>
-                                <td>${item.center_no}</td>
-                                <td>${item.group_name}</td>
-                                <td style="text-align: left">${item.NIC}</td>
-                                <td style="text-align: left">${item.customer_name} ${item.customer_lastname}</td>
-                                <td>${parseFloat(item.Installment_Balance).toFixed(2)}</td>
-                                <td>${parseFloat(item.Panalty_Balance).toFixed(2)}</td>
-                                <td>${parseFloat(item.Total_Balance).toFixed(2)}</td>
-                                <td>${item.Late_Days}</td>
-                                <td><a href="/loanview/${item.idCustomer_Loan}" target="_blank" class="btn btn-warning"><i class="bi bi-eye"></i></a></td>
-                            </tr>`;
+                        <td style="text-align: left">${item.Loan_No}</td>
+                        <td>${item.center_no}</td>
+                        <td>${item.group_name}</td>
+                        <td style="text-align: left">${item.NIC}</td>
+                        <td style="text-align: left">${item.customer_name} ${item.customer_lastname}</td>
+                        <td>${parseFloat(item.Installment_Balance).toFixed(2)}</td>
+                        <td>${parseFloat(item.Panalty_Balance).toFixed(2)}</td>
+                        <td>${parseFloat(item.Total_Balance).toFixed(2)}</td>
+                        <td>${item.Late_Days}</td>
+                        <td class="noExport"><a href="/loanview/${item.idCustomer_Loan}" target="_blank" class="btn btn-warning"><i class="bi bi-eye"></i></a></td>
+                    </tr>`;
 
                             tableBody.append(row);
                         });
@@ -290,29 +277,66 @@
                         $("#tot_amount" + tabIndex).text(formatNumber(tot));
                         $("#total_installments" + tabIndex).text(totalInstallments);
 
-                        // Initialize DataTable after loading the data
+                        // Destroy previous DataTable instance before reinitializing
+                        if ($.fn.DataTable.isDataTable("#loan_table" + tabIndex)) {
+                            $("#loan_table" + tabIndex).DataTable().destroy();
+                        }
+
+                        // Initialize DataTable with PDF & Excel export
                         $('#loan_table' + tabIndex).DataTable({
                             "paging": true,
                             "searching": true,
                             "ordering": true,
                             "info": true,
                             "responsive": true,
-                            "lengthChange": false, // Disable page length change
-                            "autoWidth": false, // Disable auto width calculation
+                            "lengthChange": false,
+                            "autoWidth": false,
 
                             "language": {
                                 "emptyTable": "No data available in table"
                             },
+
                             "buttons": [
                                 {
                                     extend: 'excelHtml5',
-                                    className: 'btn btn-primary',
-                                    text: '<i class="bi bi-file-earmark-excel"></i> Excel',
+                                    className: 'btn btn-success',
+                                    text: '<i class="fas fa-file-excel"></i> Export to Excel',
                                     exportOptions: {
-                                        columns: ':visible'
+                                        columns: [0,1,2,3,4,5,6,7,8], // Exclude Action column
+                                        modifier: {
+                                            page: 'all' // Export all pages
+                                        }
+                                    }
+                                },
+                                {
+                                    extend: 'pdfHtml5',
+                                    className: 'btn btn-danger',
+                                    text: '<i class="fas fa-file-pdf"></i> Export to PDF',
+                                    orientation: 'landscape',
+                                    pageSize: 'A4',
+                                    customize: function (doc) {
+                                        doc.content[1].table.body.pop(); // Remove last row
+                                    },
+                                    exportOptions: {
+                                        columns: [0,1,2,3,4,5,6,7,8], // Exclude Action column
+                                        modifier: {
+                                            page: 'all' // Export all pages
+                                        }
+                                    }
+                                },
+                                {
+                                    extend: 'print',
+                                    className: 'btn btn-primary',
+                                    text: '<i class="fas fa-print"></i> Print',
+                                    exportOptions: {
+                                        columns: [0,1,2,3,4,5,6,7,8], // Exclude Action column
+                                        modifier: {
+                                            page: 'all' // Export all pages
+                                        }
                                     }
                                 }
                             ],
+
                             "dom": 'Bfrtip',
                         });
                     }
@@ -322,6 +346,8 @@
                 }
             });
         }
+
+
 
 
         function getUniqueLoans(loans) {

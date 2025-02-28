@@ -71,9 +71,10 @@
     <div class="row">
         <div class="col-12">
             <div class="page-title-box">
-                <h4 class="page-title">SMS History Report</h4>
+                <h4 class="page-title">SMS History Report Overview</h4>
             </div>
         </div>
+        <span style="color: #a19595">"The SMS History Report provides a detailed record of all SMS communications sent to customers over a selected period. It allows you to track the type, content, and delivery status of each message sent, providing insights into customer engagement and communication effectiveness."</span>
     </div>
 
     <div class="row mt-3">

@@ -145,9 +145,10 @@
         <div class="row">
             <div class="col-6">
                 <div class="page-title-box">
-                    <h4 class="page-title">Daily Repayment Sheet</h4>
+                    <h4 class="page-title">Daily Repayment Sheet Overview</h4>
                 </div>
             </div>
+            <span style="color: #a19595">"The Daily Repayment Sheet displays the loan repayments that need to be collected from clients on a specific day. It provides an overview of the total due amounts for each client, including their loan balance, due amounts, and the payments that are expected. This sheet helps monitor the daily repayment obligations for each group and center."</span>
         </div>
 
         <!-- Form to filter by center -->

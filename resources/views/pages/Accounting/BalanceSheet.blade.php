@@ -86,7 +86,9 @@
 
 @section('content')
     <div class="container mt-5">
-        <h1>Balance Sheet</h1>
+        <h1>Balance Sheet Overview</h1>
+        <span style="color: #a19595">"This section provides a snapshot of your organization’s financial position as of a specific date, helping you evaluate the financial health by showing assets, liabilities, and equity."</span>
+        <br><br>
 
         <div class="filters">
             <form action="{{route('BalanceSheetView.profit')}}" method="POST">
@@ -112,91 +114,58 @@
                 </thead>
                 <tbody>
 
-                <!-- Revenue Section -->
-                <tr class="fw-bold"><td>1. Revenue</td><td></td></tr>
-                @foreach($revenue as $type => $balance)
-                    @if($balance != 0)
-                        <tr>
-                            <td class="ps-3">{{ ucwords(str_replace('_', ' ', $type)) }}</td>
-                            <td>{{ formatNegativeInParentheses($balance) }}</td>
-                        </tr>
-                    @endif
-                @endforeach
-                <tr class="fw-bold total-row">
-                    <td>Total Revenue</td>
-                    <td>{{ formatNegativeInParentheses($total_revenue) }}</td>
-                </tr>
-
-                <!-- Expenses Section -->
-                <tr class="fw-bold"><td>2. Expenses</td><td></td></tr>
-                @foreach($expenses as $type => $balance)
-                    @if($balance != 0)
-                        <tr>
-                            <td class="ps-3">{{ ucwords(str_replace('_', ' ', $type)) }}</td>
-                            <td>{{ formatNegativeInParentheses($balance) }}</td>
-                        </tr>
-                    @endif
-                @endforeach
-                <tr class="fw-bold total-row">
-                    <td>Total Expenses</td>
-                    <td>{{ formatNegativeInParentheses($total_expenses) }}</td>
-                </tr>
-
                 <!-- Assets Section -->
-                <tr class="fw-bold"><td>3. Assets</td><td></td></tr>
+                <tr class="fw-bold"><td>1. Assets</td><td></td></tr>
 
-                <!-- Current Assets -->
-                <tr class="fw-bold"><td class="ps-3">Current Assets</td><td></td></tr>
-                @foreach($current_assets as $key => $value)
-                    @if($value != 0)
+                @if (!empty($assets))
+                    @foreach($assets as $name => $balance)
                         <tr>
-                            <td class="ps-5">{{ ucwords(str_replace('_', ' ', $key)) }}</td>
-                            <td>{{ formatNegativeInParentheses($value) }}</td>
+                            <td class="ps-3">{{ $name }}</td>
+                            <td>{{ formatNegativeInParentheses($balance) }}</td>
                         </tr>
-                    @endif
-                @endforeach
+                    @endforeach
+                @endif
 
-                <!-- Non-Current Assets -->
-                <tr class="fw-bold"><td class="ps-3">Non-Current Assets</td><td></td></tr>
-                @foreach($non_current_assets as $key => $value)
-                    @if($value != 0)
-                        <tr>
-                            <td class="ps-5">{{ ucwords(str_replace('_', ' ', $key)) }}</td>
-                            <td>{{ formatNegativeInParentheses($value) }}</td>
-                        </tr>
-                    @endif
-                @endforeach
                 <tr class="fw-bold total-row">
                     <td>Total Assets</td>
                     <td>{{ formatNegativeInParentheses($total_assets) }}</td>
                 </tr>
 
                 <!-- Liabilities Section -->
-                <tr class="fw-bold"><td>4. Liabilities</td><td></td></tr>
-                @foreach($liabilities as $key => $value)
-                    @if($value != 0)
+                <tr class="fw-bold"><td>2. Liabilities</td><td></td></tr>
+
+                @if (!empty($liabilities))
+                    @foreach($liabilities as $name => $balance)
                         <tr>
-                            <td class="ps-3">{{ ucwords(str_replace('_', ' ', $key)) }}</td>
-                            <td>{{ formatNegativeInParentheses($value) }}</td>
+                            <td class="ps-3">{{ $name }}</td>
+                            <td>{{ formatNegativeInParentheses($balance) }}</td>
                         </tr>
-                    @endif
-                @endforeach
+                    @endforeach
+                @endif
+
+                <tr class="fw-bold total-row">
+                    <td>Total Liabilities</td>
+                    <td>{{ formatNegativeInParentheses($total_liabilities) }}</td>
+                </tr>
 
                 <!-- Equity Section -->
-                <tr class="fw-bold"><td>5. Equity</td><td></td></tr>
-                @foreach($equity as $key => $value)
-                    @if($value != 0)
+                <tr class="fw-bold"><td>3. Equity</td><td></td></tr>
+
+                @if (!empty($equity))
+                    @foreach($equity as $name => $balance)
                         <tr>
-                            <td class="ps-3">{{ ucwords(str_replace('_', ' ', $key)) }}</td>
-                            <td>{{ formatNegativeInParentheses($value) }}</td>
+                            <td class="ps-3">{{ $name }}</td>
+                            <td>{{ formatNegativeInParentheses($balance) }}</td>
                         </tr>
-                    @endif
-                @endforeach
+                    @endforeach
+                @endif
+
                 <tr class="fw-bold total-row">
                     <td>Total Equity</td>
                     <td>{{ formatNegativeInParentheses($total_equity) }}</td>
                 </tr>
 
+                <!-- Final Check -->
                 <tr class="fw-bold total-row">
                     <td>Total Liabilities & Equity</td>
                     <td>{{ formatNegativeInParentheses($total_liabilities_and_equity) }}</td>
@@ -204,21 +173,19 @@
 
                 <tr class="fw-bold highlight">
                     <td>(Must Equal Total Assets)</td>
-                    <td>{{ formatNegativeInParentheses($total_assets) }}</td>
+                    <td>{{ formatNegativeInParentheses($total_assets+$total_liabilities_and_equity) }}</td>
                 </tr>
 
                 </tbody>
             </table>
         </div>
+
+
+
+
+
     </div>
 
-    @php
-        function formatNegativeInParentheses($value) {
-            if ($value < 0) {
-                return '(' . number_format(abs($value), 2, '.', ',') . ')';
-            }
-            return number_format($value, 2, '.', ',');
-        }
-    @endphp
+
 
 @endsection

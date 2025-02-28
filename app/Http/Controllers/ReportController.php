@@ -6,6 +6,7 @@ use App\Models\Expenses;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ReportController extends Controller
 {
@@ -74,7 +75,7 @@ class ReportController extends Controller
     public function create()
     {
         $bank = tableWithBranch('company_bank_accounts')->where('Bank_Type','=','Bank')->get();
-        $expences_category = tableWithBranch('expences_category')->get();
+        $expences_category = tableWithBranch('company_bank_accounts')->where('acc_type_group','=','Expenses')->where('Bank_Type','=','ChartOfAccount')->get();
         return view('pages.CreateExpenses',compact('bank','expences_category'));
     }
 
@@ -245,6 +246,8 @@ class ReportController extends Controller
         $date=$request->date;
         $amount=$request->amount;
 
+        Log::info($request->bank);
+
         $expenses=new Expenses();
 
         $expenses->type=$type;
@@ -260,15 +263,15 @@ class ReportController extends Controller
 
             if ($type=="Expense") {
                 $bank_id=tableWithBranch('company_bank_accounts')
-                    ->where('Bank_Type','=','Expenses')
-                    ->where('code','=',$request->category)
+                    ->where('acc_type_group','=','Expenses')
+                    ->where('Idbank','=',$request->category)
                     ->first();
                 $this->bankLogController->index($request->bank,"Expenses",$reason,"-","debit",$amount);
                 $this->bankLogController->index($bank_id->Idbank,"Expenses",$reason,"-","credit",$amount);
             }else{
                 $bank_id=tableWithBranch('company_bank_accounts')
-                    ->where('Bank_Type','=','Income')
-                    ->where('code','=',$request->category)
+                    ->where('acc_type_group','=','Income')
+                    ->where('Idbank','=',$request->category)
                     ->first();
                 $this->bankLogController->index($request->bank,"Income",$reason,"-","credit",$amount);
                 $this->bankLogController->index($bank_id->Idbank,"Income",$reason,"-","debit",$amount);
@@ -287,9 +290,8 @@ class ReportController extends Controller
 
     public function viewexpenses(){
         $expenses = tableWithBranch('expences','expences')
-            ->join('expences_category', 'expences_category.id', '=', 'expences.category_id')
-            ->where('type', 'Expense')
-            ->select('expences.*','expences_category.description as description')
+            ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'expences.category_id')
+            ->where('company_bank_accounts.Bank_Type', 'Expenses')
             ->get();
         return view('pages.ViewExpenses', compact('expenses'));
     }
@@ -497,6 +499,7 @@ class ReportController extends Controller
             ->select(
                 'installments.Installment_Date',
                 'center.idCenter',
+                'center.Name as Center_name',
                 DB::raw('SUM(installments.Total_Amount) as Total_Amount'),
                 DB::raw('SUM(installments.Paid_Amount) as Paid_Amount'),
                 DB::raw('SUM(COALESCE(charges.Doc_Amount, 0)) as Doc_Amount'), // Summing Doc_Amount
@@ -510,7 +513,7 @@ class ReportController extends Controller
             ->when($dateTo, function ($query) use ($dateTo) {
                 $query->where('installments.Installment_Date', '<=', $dateTo);
             })
-            ->groupBy('installments.Installment_Date', 'center.idCenter');
+            ->groupBy('installments.Installment_Date', 'center.idCenter','center.Name');
 
         // Main query filtering by center_id if provided
         $loanQuery = DB::table(DB::raw("({$installmentsSubQuery->toSql()}) as sub"))

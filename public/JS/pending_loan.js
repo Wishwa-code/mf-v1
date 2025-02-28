@@ -27,7 +27,7 @@ function load_table() {
             status: status_type
         },
         success: function(data, textStatus, xhr) {
-            console.log(data);
+
             if (xhr.status === 200) {
                 // Initialize DataTable if not already initialized
                 if (!$.fn.DataTable.isDataTable('#loan_table')) {
@@ -131,7 +131,7 @@ function change_installment(loan_id) {
 
 
             if (response.interest === "Twice A Month") {
-                console.log(response.interest)
+
                 $('#twice_a_month').show(); // Show the div
             } else {
                 $('#twice_a_month').hide(); // Hide the div
@@ -615,7 +615,7 @@ function agreement(id) {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
         success: function (data, textStatus, xhr) {
-            console.log(data);
+
             var tbody = $("#agreement_table tbody");
             tbody.empty(); // Clear existing data
 
@@ -675,7 +675,6 @@ function issue_request(id) {
         },
         success: function (data, textStatus, xhr) {
 
-            console.log(data);
             // Clear the current options in the Select2 dropdown
             $('#bank_acc').empty();
 
@@ -710,7 +709,7 @@ function load_document_check(id) {
         },
         success: function (data, textStatus, xhr) {
             if (xhr.status === 200) {
-                console.log(data);
+
 
                 // Clear the existing rows
                 $('#file_table tbody').empty();
@@ -822,74 +821,69 @@ function load_approval_check(id) {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
         success: function (data, textStatus, xhr) {
+
+            console.log(data);
+
             if (xhr.status === 200) {
                 let login_designation = data.login_designation;
 
                 // Clear the existing rows
                 $('#approval_table tbody').empty();
 
-                let designationNames = "";
-                let uniqueDesignations = new Set();
-
-                // Process designations
-                data.designation.forEach(function (document) {
-                    if (!uniqueDesignations.has(document.designation)) {
-                        uniqueDesignations.add(document.designation);
-                        designationNames += (designationNames ? ", " : "") + document.designation;
-                    }
-                });
-
                 let allUsersHaveIds = true; // Flag for "Issue Loan" button
 
                 // Iterate over approval items
                 data.item.forEach(function (document, index) {
-                    if (document.user_id === 0) allUsersHaveIds = false;
+                    let levelDesignations = data.designation
+                        .filter(designationObj => designationObj.level_id == document.level_id) // Match correct level
+                        .map(designationObj => designationObj.designation_id) // Use correct designation field
+                        .join(", ");
 
+                    let approveButton;
+                    if (login_designation === "Admin") {
+                        approveButton = document.user_id === 0
+                            ? `<input type="button" class="btn btn-primary" id="approve_btn_${document.level_id}" value="Approve" onclick="approve(${document.id}, '${index}')">`
+                            : `<input type="button" class="btn btn-primary" value="Approve" disabled>`;
+                    } else {
+                        let userDesignation = $("#designation_user").val().trim(); // Get logged-in user's designation and remove spaces
 
-                    var approveButton;
-                    if (login_designation==="Admin"){
-                        if (document.user_id === 0) {
-                            approveButton = `<input type="button" class="btn btn-primary" id="approve_btn_${document.level_id}" value="Approve" onclick="approve(${document.id}, '${index}')">`;
-                        } else {
-                            approveButton = `<input type="button" class="btn btn-primary"  value="Approve" disabled>`;
-                        }
-                    }else{
-                        let designation_user=$("#designation_user").val();
-                        if (designationNames.includes(designation_user) && document.user_id === 0) {
+// Get designations for the current level only
+                        let levelDesignationArray = data.designation
+                            .filter(designationObj => designationObj.level_id == document.level_id) // Only for this level
+                            .map(designationObj => designationObj.designation_id.trim()); // Remove extra spaces
 
+// Check if logged-in user's designation matches this level's designation(s)
+                        if (levelDesignationArray.includes(userDesignation) && document.user_id === 0) {
                             approveButton = `<input type="button" class="btn btn-primary" id="approve_btn_${document.level_id}" value="Approve" onclick="approve(${document.id}, '${index}')">`;
                         } else {
                             approveButton = `<input type="button" class="btn btn-primary" value="Approve" disabled>`;
                         }
+
                     }
 
-
                     let newRow = `<tr>
-                        <td hidden>${document.id}</td>
-                        <td>${document.level}</td>
-                        <td>${designationNames}</td>
-                        <td>${document.description}</td>
-                        <td><input type="text" class="form-control" value="${document.comment}" id="des_${index}"></td>
-                        <td>${approveButton}</td>
-                        <td>${document.user_id === 0 ? '-' : document.Full_Name}</td>
-                        <td>${document.date}</td>
-                        <td>
-    <button class="btn btn-info btn-sm" onclick="toggleChecklist(${document.level_id},${id})">
-        View Checklist (<span id="checklist_progress_${document.level_id}">0/0</span>)
-    </button>
-</td>
-
-                    </tr>
-                    <tr id="checklist_row_${document.level_id}" style="display: none;">
-                        <td colspan="9">
-                            <div id="checklist_container_${document.level_id}" class="p-3 bg-light"></div>
-                        </td>
-                    </tr>`;
+        <td hidden>${document.id}</td>
+        <td>${document.level}</td>
+        <td>${levelDesignations}</td>
+        <td>${document.description}</td>
+        <td><input type="text" class="form-control" value="${document.comment}" id="des_${index}"></td>
+        <td>${approveButton}</td>
+        <td>${document.user_id === 0 ? '-' : document.Full_Name}</td>
+        <td>${document.date}</td>
+        <td>
+            <button class="btn btn-info btn-sm" onclick="toggleChecklist(${document.level_id},${id})">
+                View Checklist (<span id="checklist_progress_${document.level_id}">0/0</span>)
+            </button>
+        </td>
+    </tr>
+    <tr id="checklist_row_${document.level_id}" style="display: none;">
+        <td colspan="9">
+            <div id="checklist_container_${document.level_id}" class="p-3 bg-light"></div>
+        </td>
+    </tr>`;
 
                     $('#approval_table tbody').append(newRow);
-
-                    // Load checklist progress
-                    loadChecklistProgress(document.level_id,id);
+                    loadChecklistProgress(document.level_id, id);
                 });
 
                 // Enable or disable "Issue Loan" button
@@ -905,6 +899,7 @@ function load_approval_check(id) {
 }
 
 
+
 function loadChecklistProgress(levelId,loan_id) {
     $.ajax({
         type: "GET",
@@ -913,7 +908,7 @@ function loadChecklistProgress(levelId,loan_id) {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
         success: function (data) {
-            console.log(data); // Debugging to ensure correct data is received
+
             if (data.success) {
                 const total = data.checklist.length;
                 const completed = data.checklist.filter(item => parseInt(item.status) === 1).length;

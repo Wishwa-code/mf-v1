@@ -2651,7 +2651,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
 
 
         $today = date('Y-m-d');
-        $collector_user = DB::table('user')->get();
+        $collector_user = DB::table('user')->where('collector', '=', '1')->get();
 
 
         $check = DB::table('collector_data')->where('date', '=', $today)->get();

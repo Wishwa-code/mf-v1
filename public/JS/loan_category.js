@@ -135,6 +135,7 @@ const saveLoanCategory = (e) => {
     const enable_saving = $("#enable_saving").val();
     const saving_account_amount_type = $("#saving_account_amount_type").val();
     let saving_amount = $("#saving_amount").val();
+    let saving_payment = $("#saving_payment").val();
     let error_count=0;
     if (enable_saving==="Yes"){
         if (saving_amount===""){
@@ -241,6 +242,7 @@ const saveLoanCategory = (e) => {
                             enable_saving:enable_saving,
                             saving_account_amount_type:saving_account_amount_type,
                             saving_amount:saving_amount,
+                            saving_payment:saving_payment,
                             default_loan_duration_period:default_loan_duration_period
                         },
                         success: function (data, textStatus, xhr) {

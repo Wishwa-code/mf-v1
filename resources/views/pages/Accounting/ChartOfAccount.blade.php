@@ -754,7 +754,11 @@
 
                     // Append rows to the table
                     data.forEach((item) => {
-                        const ledger = `<a href="#" class="view-btn" data-account="${item.Idbank}">View</a>`;
+                        const ledger = `<a href="#" class="view-btn"
+                data-account="${item.Idbank}"
+                data-account-name="${item.Account_Name}"
+                data-account-type="${item.type}"
+                data-acc-type-group="${item.acc_type_group}">View</a>`;
                         const row = `
                 <tr>
                     <td>${item.code}</td>
@@ -1053,38 +1057,63 @@
         $(document).on('click', '.view-btn', function () {
             const account = $(this).data('account'); // Get the account value from the button
 
+            const accountName = $(this).data('account-name');
+            const accountType = $(this).data('account-type');
+            const accTypeGroup = $(this).data('acc-type-group');
+
+            // ✅ Set the modal header dynamically
+            $("#ledgerAccountTitle").html(`<b>${accountName} - ${accountType} - ${accTypeGroup}</b>`);
+
             // Fetch ledger data via AJAX
             $.ajax({
                 url: `/manual_journal/ledger/${account}`,
                 method: "GET",
                 success: function (response) {
-                    const $modalTableBody = $("#accountHistoryModal table tbody");
-                    const $ledgerAccountTitle = $("#ledgerAccountTitle");
+                    const $modalTable = $("#financialReportTable");
+                    const $modalTableBody = $("#financialReportTable tbody");
+                    const $modalContent = $(".large-modal-content");
+
+                    // ✅ Destroy existing DataTable before updating (prevents duplication issues)
+                    if ($.fn.DataTable.isDataTable($modalTable)) {
+                        $modalTable.DataTable().destroy();
+                    }
 
                     $modalTableBody.empty(); // Clear any existing rows
 
                     if (response.length === 0) {
-                        $modalTableBody.html("<tr><td colspan='4' class='text-center'>No records found</td></tr>");
-                        $ledgerAccountTitle.text("Ledger Details");
-                        return;
+                        $modalTableBody.html("<tr><td colspan='6' class='text-center'>No records found</td></tr>");
+                    } else {
+                        // Populate the modal table with fetched data
+                        response.forEach((item) => {
+                            const row = `
+                        <tr>
+                            <td>${item.Type}</td>
+                            <td>${item.Description}</td>
+                            <td>${parseFloat(item.Debit || 0).toFixed(2)}</td>
+                            <td>${parseFloat(item.Credit || 0).toFixed(2)}</td>
+                            <td>${parseFloat(item.Balance || 0).toFixed(2)}</td>
+                            <td>${item.Date_Time}</td>
+                        </tr>`;
+                            $modalTableBody.append(row);
+                        });
+
+                        // ✅ Reinitialize DataTable after adding rows
+                        $modalTable.DataTable({
+                            "responsive": true,
+                            "paging": true,          // Enable pagination
+                            "ordering": true,        // Enable sorting
+                            "info": true,            // Show table info
+                            "searching": true,       // Enable search bar
+                            "pageLength": 10,        // Default number of rows per page
+                            "lengthMenu": [10, 25, 50, 100] // Dropdown to select number of rows
+                        });
                     }
 
+                    // ✅ Dynamically Adjust Modal Height based on DataTable rows
+                    let newHeight = Math.min(response.length * 40 + 300, $(window).height() - 100);
+                    $modalContent.css({ "max-height": newHeight + "px", "overflow-y": "auto" });
 
-                    // Populate the modal table with fetched data
-                    response.forEach((item) => {
-                        const row = `
-                <tr>
-                    <td>${item.Type}</td>
-                    <td>${item.Description}</td>
-                    <td>${parseFloat(item.Debit || 0).toFixed(2)}</td>
-                    <td>${parseFloat(item.Credit || 0).toFixed(2)}</td>
-                    <td>${parseFloat(item.Balance || 0).toFixed(2)}</td>
-                    <td>${item.Date_Time}</td>
-                </tr>`;
-                        $modalTableBody.append(row);
-                    });
-
-                    // Show the modal
+                    // ✅ Show the modal
                     $('#accountHistoryModal').css('display', 'flex');
                 },
                 error: function () {
@@ -1092,6 +1121,8 @@
                 }
             });
         });
+
+
 
 
 

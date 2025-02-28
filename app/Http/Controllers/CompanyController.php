@@ -14,7 +14,7 @@ class CompanyController extends Controller
      */
     public function index()
     {
-        $company= DB::table('company')->first();
+        $company= tableWithBranch('company')->first();
         return view('pages.Company',compact('company'));
     }
 
@@ -81,7 +81,7 @@ class CompanyController extends Controller
         }
 
 // Update the database with the constructed $updateData array
-        DB::table('company')->update($updateData);
+        DB::table('company')->where('branch_id','=',session('branch_id'))->update($updateData);
 
         return response()->json(['message' => 'Data saved successfully', 'id' => '1'], 200);
 

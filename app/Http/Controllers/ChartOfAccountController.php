@@ -497,47 +497,62 @@ class ChartOfAccountController extends Controller
 
     public function BalanceSheet(Request $request)
     {
-        $date_to = $request->date_to ?? now()->toDateString(); // Default: Today if no date is selected
+        $date_to = $request->date_to ?? now()->toDateString(); // Default to today
 
-        // Function to get the latest balance per account type with type filtering
-        $getLatestBalance = function ($acc_type_group, $type = null) use ($date_to) {
-            $query = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
-                ->join('company_bank_has_log AS log', 'log.Bank_Account_Id', '=', 'company_bank_accounts.Idbank')
-                ->where('company_bank_accounts.acc_type_group', $acc_type_group)
-                ->whereDate('log.Date_Time', '<=', $date_to) // Filter only up to the selected date
-                ->whereRaw('log.Date_Time = (SELECT MAX(Date_Time) FROM company_bank_has_log WHERE Bank_Account_Id = log.Bank_Account_Id AND Date_Time <= ?)', [$date_to]);
+        // Fetch latest balances per account for Assets, Liabilities, and Equity
+        $system_expenses = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
+            ->join('company_bank_has_log AS log1', 'company_bank_accounts.Idbank', '=', 'log1.Bank_Account_Id')
+            ->where('log1.Date_Time', '<=', $date_to)
+            ->where('log1.Balance', '!=', 0) // Only positive balances
+            ->where('company_bank_accounts.Bank_Type', '!=', 'Collector') // Exclude collectors
+            ->whereIn('company_bank_accounts.acc_type_group', ['Assets', 'Liabilities', 'Equity']) // Filter for specific groups
+            ->whereRaw('log1.Date_Time = (SELECT MAX(log2.Date_Time) FROM company_bank_has_log AS log2 WHERE log2.Bank_Account_Id = log1.Bank_Account_Id)')
+            ->select('company_bank_accounts.acc_type_group', 'company_bank_accounts.Bank_Name', 'log1.Balance', 'log1.type')
+            ->get()
+            ->groupBy('acc_type_group'); // Group by Assets, Liabilities, Equity
 
-            // Apply type filter if provided (for Current and Non-Current Assets)
-            if ($type) {
-                $query->where('company_bank_accounts.type', $type);
+        // ✅ Ensure variables are always defined
+        $total_assets = 0;
+        $total_liabilities = 0;
+        $total_equity = 0;
+
+        // ✅ Define empty arrays for each category (Prevents Undefined Variable error)
+        $assets = isset($system_expenses['Assets']) ? [] : [];
+        $liabilities = isset($system_expenses['Liabilities']) ? [] : [];
+        $equity = isset($system_expenses['Equity']) ? [] : [];
+
+        // ✅ Process data and categorize it
+        foreach ($system_expenses as $category => $items) {
+            foreach ($items as $item) {
+                switch ($category) {
+                    case 'Assets':
+                        $assets[$item->Bank_Name] = $item->Balance;
+                        $total_assets += $item->Balance;
+                        break;
+                    case 'Liabilities':
+                        $liabilities[$item->Bank_Name] = $item->Balance;
+                        $total_liabilities += $item->Balance;
+                        break;
+                    case 'Equity':
+                        $equity[$item->Bank_Name] = $item->Balance;
+                        $total_equity += $item->Balance;
+                        break;
+                }
             }
+        }
 
-            return $query->pluck('log.Balance', 'company_bank_accounts.Account_Name')->toArray();
-        };
+        $total_liabilities_and_equity = $total_liabilities + $total_equity;
 
-        // Fetch latest balances for each category (If no data exists, return an empty array)
-        $revenue = $getLatestBalance('Revenue') ?? [];
-        $expenses = $getLatestBalance('Expenses') ?? [];
-        $current_assets = $getLatestBalance('Assets', 'Current Asset') ?? []; // Now filtered
-        $non_current_assets = $getLatestBalance('Assets', 'Non-Current Asset') ?? []; // Now filtered
-        $liabilities = $getLatestBalance('Liabilities') ?? [];
-        $equity = $getLatestBalance('Equity') ?? [];
-
-        // Calculate Totals (Ensure total is `0` if dataset is empty)
-        $total_revenue = array_sum($revenue) ?? 0;
-        $total_expenses = array_sum($expenses) ?? 0;
-        $total_assets = array_sum($current_assets) + array_sum($non_current_assets) ?? 0;
-        $total_liabilities = array_sum($liabilities) ?? 0;
-        $total_equity = array_sum($equity) ?? 0;
-        $total_liabilities_and_equity = $total_liabilities + $total_equity ?? 0;
-
+        // ✅ Now these variables are always defined and passed to the view
         return view('pages.Accounting.BalanceSheet', compact(
-            'revenue', 'expenses', 'current_assets', 'non_current_assets',
-            'liabilities', 'equity', 'total_revenue', 'total_expenses',
-            'total_assets', 'total_liabilities', 'total_equity',
-            'total_liabilities_and_equity', 'date_to'
+            'date_to', 'assets', 'liabilities', 'equity',
+            'total_assets', 'total_liabilities', 'total_equity', 'total_liabilities_and_equity'
         ));
     }
+
+
+
+
 
 
 

@@ -49,10 +49,10 @@
     <div class="row">
         <div class="col-12">
             <div class="page-title-box">
-
-                <h4 class="page-title">Customer Details Report</h4>
+                <h4 class="page-title">Recover Officer Wise Customer Details Report</h4>
             </div>
         </div>
+        <span style="color: #a19595">"The  Recover Officer Wise Customer Details Report allows you to view customers categorized based on the Recovery Officer assigned to them. This helps you track and manage customers more efficiently, especially in the context of recovery processes."</span>
     </div>
     <div class="row">
         <form action="{{ route('report.recover_officer_wise_index') }}" method="GET" class="row g-2"> <!-- Smaller gap between rows -->
