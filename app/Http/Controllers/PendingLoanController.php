@@ -593,26 +593,26 @@ class PendingLoanController extends Controller
         $center_details = $request->input('center_details');
 
         // Subqueries for aggregated data
-        $installment_subquery = DB::table('installments')
+        $installment_subquery = tableWithBranch('installments')
             ->select('Customer_Loan_idCustomer_Loan',
                 DB::raw('SUM(Installment_Amount) as schedule_repayments'),
                 DB::raw('SUM(Paid_Amount) as collected_repayments'))
             ->groupBy('Customer_Loan_idCustomer_Loan');
 
-        $loan_log_subquery = DB::table('Loan_Log')
+        $loan_log_subquery = tableWithBranch('Loan_Log')
             ->select('Type_ID',
                 DB::raw('SUM(Capital_Payment) as capital_received'),
                 DB::raw('SUM(Interest_Payment) as interest_received'),
                 DB::raw('SUM(Panelty_Payment) as penalty_received'))
             ->groupBy('Type_ID');
 
-        $loan_other_charges_subquery = DB::table('loan_other_charges')
+        $loan_other_charges_subquery = tableWithBranch('loan_other_charges')
             ->select('Customer_Loan_idCustomer_Loan',
                 DB::raw('SUM(Amount) as processing_fee_received'))
             ->groupBy('Customer_Loan_idCustomer_Loan');
 
         // 📌 1️⃣ Center-wise Summary Query
-        $centerSummaryQuery = DB::table('customer_loan')
+        $centerSummaryQuery = tableWithBranch('customer_loan','customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
             FROM group_has_customer 
@@ -669,7 +669,7 @@ class PendingLoanController extends Controller
         $centerSummaryQuery = $centerSummaryQuery->groupBy('branch.Name', 'route.name', 'center.Name')->get();
 
         // 📌 2️⃣ Loan-wise Details Query
-        $loanDetailsQuery = DB::table('customer_loan')
+        $loanDetailsQuery = tableWithBranch('customer_loan','customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
             FROM group_has_customer 
