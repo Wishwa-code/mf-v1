@@ -758,8 +758,9 @@ class LoanController extends Controller
         $customers = tableWithBranch('customer')->where('idCustomer', $loan->Customer_idCustomer)->first();
 
         // Fetch the user
-        $User = tableWithBranch('user')->where('id', $loan->User_idUser)->first();
-        $Lending_Officer = tableWithBranch('user')->where('id', $loan->lending_officer_id)->first();
+        $User = DB::table('user')->where('id', $loan->User_idUser)->first();
+        $Lending_Officer = DB::table('user')->where('id', $loan->lending_officer_id)->first();
+
 
         // Fetch the loan category
         $Loan_Category = tableWithBranch('loan_category')->where('idLoan_Category', $loan->Loan_Category_idLoan_Category)->first();
@@ -809,7 +810,7 @@ class LoanController extends Controller
         }
         $user_id = (int)session('userid');
 
-        $payment_delete=tableWithBranch('user')->where('id','=',$user_id)->first();
+        $payment_delete=DB::table('user')->where('id','=',$user_id)->first();
         $payment_delete_status=$payment_delete->payment_delete;
 
 
