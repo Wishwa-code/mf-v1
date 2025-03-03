@@ -350,8 +350,6 @@
 
 
         function LogReport() {
-
-
             var date_from = $("#date_from").val();
             var date_to = $("#date_to").val();
 
@@ -363,7 +361,6 @@
                     date_to: date_to
                 },
                 success: function (data) {
-
                     var financialReportTable = $('#financialFullReportTable tbody');
 
                     // Update modal title
@@ -372,29 +369,50 @@
                     // Clear existing data
                     financialReportTable.empty();
 
+                    let totalCredit = 0;
+                    let totalDebit = 0;
+
                     data.forEach(function (item) {
+                        let debitAmount = parseFloat(item.Debit) || 0;
+                        let creditAmount = parseFloat(item.Credit) || 0;
+
+                        totalDebit += debitAmount;
+                        totalCredit += creditAmount;
+
                         var row = `
-                <tr>
-                    <td>${item.Account_Name}-${item.Bank_Name}(${item.Account_No})</td>
-                    <td>${item.Type || 'N/A'}</td>
-                    <td>${item.Description || 'N/A'}</td>
-                    <td>${formatNumber(parseFloat(item.Debit).toFixed(2) || 0)}</td>
-                    <td>${formatNumber(parseFloat(item.Credit).toFixed(2) || 0)}</td>
-                    <td>${formatNumber(parseFloat(item.Balance).toFixed(2) || 0)}</td>
-                    <td>${item.Date_Time || 'N/A'}</td>
-                </tr>
-            `;
+                    <tr>
+                        <td>${item.Account_Name}-${item.Bank_Name} (${item.Account_No})</td>
+                        <td>${item.Type || 'N/A'}</td>
+                        <td>${item.Description || 'N/A'}</td>
+                        <td>${formatNumber(debitAmount.toFixed(2))}</td>
+                        <td>${formatNumber(creditAmount.toFixed(2))}</td>
+                        <td>${formatNumber(parseFloat(item.Balance).toFixed(2) || 0)}</td>
+                        <td>${item.Date_Time || 'N/A'}</td>
+                    </tr>
+                `;
                         financialReportTable.append(row);
                     });
+
+                    // Append Total Row
+                    var totalRow = `
+                <tr class="fw-bold bg-light">
+                    <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                    <td><strong>${formatNumber(totalDebit.toFixed(2))}</strong></td>
+                    <td><strong>${formatNumber(totalCredit.toFixed(2))}</strong></td>
+                    <td colspan="2"></td>
+                </tr>
+            `;
+                    financialReportTable.append(totalRow);
+
                     $('#financialFullReportModal').modal('show');
-                }
-                ,
+                },
                 error: function (xhr) {
                     console.error("AJAX error:", xhr.responseText);
                     alert("Error fetching financial report. Check console for details.");
                 }
             });
         }
+
 
 
 
