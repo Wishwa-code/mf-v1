@@ -453,15 +453,34 @@ class ChartOfAccountController extends Controller
         $dateTo = Carbon::parse($request->input('date_to'))->toDateString() . ' 23:59:59';
         $account_id = $request->account_id;
 
-        // Fetch matching records from the `manual_journal_has_amount` table
-        $data = tableWithBranch('company_bank_has_log')
-            ->where('Bank_Account_Id', '=',$account_id) // Match records starting with accountCode
-            ->whereBetween('Date_Time', [$dateFrom, $dateTo])  // Filter by date range
+
+        if (isset($request->account_id)){
+            // Fetch matching records from the `manual_journal_has_amount` table
+            $data = tableWithBranch('company_bank_has_log')
+                ->where('Bank_Account_Id', '=',$account_id) // Match records starting with accountCode
+                ->whereBetween('Date_Time', [$dateFrom, $dateTo])  // Filter by date range
+                ->orderBy('id')
+                ->get();
+
+            // Return data as JSON
+            return response()->json($data);
+        }
+
+        // Fetch matching records from the `company_bank_has_log` table
+        $data = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
+            ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.Bank_Account_Id')
+            ->whereBetween('company_bank_has_log.Date_Time', [$dateFrom, $dateTo])  // Filter by date range
+            ->where(function ($query) {
+                $query->where('company_bank_has_log.Credit', '>', 0)
+                    ->orWhere('company_bank_has_log.Debit', '>', 0);
+            })  // Ensure at least one of Credit or Debit is greater than 0
             ->orderBy('id')
             ->get();
 
+
         // Return data as JSON
         return response()->json($data);
+
 
     }
 

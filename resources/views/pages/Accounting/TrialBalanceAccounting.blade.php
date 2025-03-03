@@ -68,13 +68,16 @@
                 <input type="date" class="form-control" name="date_to" id="date_to" value="{{date('Y-m-d')}}">
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <button type="button" onclick="search_trial()" class="btn btn-primary w-100">Search</button>
             </div>
-
-            <div class="col-md-3">
+            <div class="col-md-2">
+                <button class="btn btn-danger w-100" type="button" onclick="LogReport();">Full Log</button>
+            </div>
+            <div class="col-md-2">
                 <button id="btnExportExcel" class="btn btn-success w-100">Download Excel</button>
             </div>
+
         </form>
 
 
@@ -119,6 +122,36 @@
                     <table id="financialReportTable" class="table table-striped">
                         <thead>
                         <tr>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Debit Amount</th>
+                            <th>Credit Amount</th>
+                            <th>Balance</th>
+                            <th>Created At</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <!-- Data will be dynamically populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal for Financial Report -->
+    <div class="modal fade" id="financialFullReportModal" tabindex="-1" role="dialog" aria-labelledby="financialReportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="financialFullReportModalLabel">Financial Report</h5>
+                </div>
+                <div class="modal-body">
+                    <table id="financialFullReportTable" class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th>Account</th>
                             <th>Type</th>
                             <th>Description</th>
                             <th>Debit Amount</th>
@@ -306,6 +339,56 @@
             `;
                         financialReportTable.append(row);
                     });
+                }
+                ,
+                error: function (xhr) {
+                    console.error("AJAX error:", xhr.responseText);
+                    alert("Error fetching financial report. Check console for details.");
+                }
+            });
+        }
+
+
+
+
+        function LogReport() {
+
+
+            var date_from = $("#date_from").val();
+            var date_to = $("#date_to").val();
+
+            $.ajax({
+                url: '/get-financial-report',
+                type: 'POST',
+                data: {
+                    date_from: date_from,
+                    date_to: date_to
+                },
+                success: function (data) {
+
+                    var financialReportTable = $('#financialFullReportTable tbody');
+
+                    // Update modal title
+                    $('#financialFullReportModalLabel').html(`<strong>Full Log Report</strong>`);
+
+                    // Clear existing data
+                    financialReportTable.empty();
+
+                    data.forEach(function (item) {
+                        var row = `
+                <tr>
+                    <td>${item.Account_Name}-${item.Bank_Name}(${item.Account_No})</td>
+                    <td>${item.Type || 'N/A'}</td>
+                    <td>${item.Description || 'N/A'}</td>
+                    <td>${formatNumber(parseFloat(item.Debit).toFixed(2) || 0)}</td>
+                    <td>${formatNumber(parseFloat(item.Credit).toFixed(2) || 0)}</td>
+                    <td>${formatNumber(parseFloat(item.Balance).toFixed(2) || 0)}</td>
+                    <td>${item.Date_Time || 'N/A'}</td>
+                </tr>
+            `;
+                        financialReportTable.append(row);
+                    });
+                    $('#financialFullReportModal').modal('show');
                 }
                 ,
                 error: function (xhr) {
