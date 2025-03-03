@@ -45,7 +45,7 @@
     </style>
     <style>
         .modal-lg {
-            max-width: 90%;  /* Set modal to 90% of the screen width */
+            max-width: 70%;  /* Set modal to 90% of the screen width */
         }
     </style>
 @endsection
@@ -57,17 +57,26 @@
         <br><br>
 
         <!-- Search Section -->
-        <form class="row g-3 mb-4">
-            <div class="col-md-6">
-                <div class="date-range">
-                    <input type="date" class="form-control"  name="date_from" id="date_from" value="{{date('Y-m-d')}}"> to
-                    <input type="date" class="form-control"   name="date_to" id="date_to" value="{{date('Y-m-d')}}">
-                </div>
-                <br>
-                <input type="button" onclick="search_trial()" class="btn btn-primary" value="Search">
-                <button id="btnExportExcel" style="float: right" class="btn btn-success">Download Excel</button>
+        <form class="row g-3 mb-4 align-items-end">
+            <div class="col-md-3">
+                <label for="date_from" class="form-label">Date From:</label>
+                <input type="date" class="form-control" name="date_from" id="date_from" value="{{date('Y-m-d')}}">
+            </div>
+
+            <div class="col-md-3">
+                <label for="date_to" class="form-label">Date To:</label>
+                <input type="date" class="form-control" name="date_to" id="date_to" value="{{date('Y-m-d')}}">
+            </div>
+
+            <div class="col-md-3">
+                <button type="button" onclick="search_trial()" class="btn btn-primary w-100">Search</button>
+            </div>
+
+            <div class="col-md-3">
+                <button id="btnExportExcel" class="btn btn-success w-100">Download Excel</button>
             </div>
         </form>
+
 
         <div class="mb-3">
         </div>
@@ -77,10 +86,10 @@
             <table class="table table-bordered" id="trialTable">
                 <thead class="thead-light">
                 <tr>
-                    <th>Account Name</th>
-                    <th>Type</th>
-                    <th>Debit</th>
-                    <th>Credit</th>
+                    <th style="text-align: left;">Account Name</th>
+                    <th style="text-align: left;">Type</th>
+                    <th style="text-align: right;">Debit</th>
+                    <th style="text-align: right;">Credit</th>
                 </tr>
                 </thead>
                 <tbody id="trialBalanceTable">
@@ -90,8 +99,8 @@
                 <tr>
                     <th>Total</th>
                     <th></th>
-                    <th id="totalDebit"></th>
-                    <th id="totalCredit"></th>
+                    <th id="totalDebit" style="text-align: right"></th>
+                    <th id="totalCredit" style="text-align: right"></th>
                 </tr>
                 </tfoot>
             </table>
@@ -200,6 +209,7 @@
                         data.forEach(function (item) {
                             var accName = item.acc_name || 'N/A';
                             var type = item.type || 'N/A';
+                            var acc_type = item.acc_type || 'N/A';
                             var totalDebitAmount = item.total_debit ? parseFloat(item.total_debit).toFixed(2) : '0.00';
                             var totalCreditAmount = item.total_credit ? parseFloat(item.total_credit).toFixed(2) : '0.00';
 
@@ -208,10 +218,11 @@
                                 // Create a table row for each account
                                 var row = `
                         <tr class="trialBalanceRow" data-account-id="${item.account_id}">
-                            <td>${accName}</td>
-                            <td>${type}</td>
-                            <td>${formatNumber(totalDebitAmount)}</td>
-                            <td>${formatNumber(totalCreditAmount)}</td>
+                            <td style="text-align: left;">${accName}</td>
+
+                            <td style="text-align: left;">${type} <strong>(${acc_type})</strong></td>
+                            <td style="text-align: right;">${formatNumber(totalDebitAmount)}</td>
+                            <td style="text-align: right;">${formatNumber(totalCreditAmount)}</td>
                         </tr>
                     `;
                                 trialBalanceTable.append(row);
@@ -274,7 +285,7 @@
                     var accountType = $(`tr[data-account-id='${accountId}'] td:nth-child(2)`).text();
 
                     // Update modal title
-                    $('#financialReportModalLabel').html(`Financial Report - <b>${accountName} (${accountType})</b>`);
+                    $('#financialReportModalLabel').html(`${accountName} | <strong>${accountType}</strong>`);
 
                     // Clear existing data
                     financialReportTable.empty();

@@ -182,8 +182,8 @@ function view_log(id, bankName, accountName, accountNumber) {
                         <td>${log.Type}</td>
                         <td>${log.Description}</td>
                         <td>${log.Note}</td>
-                        <td>${log.Credit}</td>
                         <td>${log.Debit}</td>
+                        <td>${log.Credit}</td>
                         <td>${log.Balance}</td>
                         <td>${log.Full_Name}</td>
                     </tr>`;

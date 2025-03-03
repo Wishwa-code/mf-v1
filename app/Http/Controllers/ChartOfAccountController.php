@@ -373,6 +373,7 @@ class ChartOfAccountController extends Controller
             $acc_name = $bank->Account_Name; // Account Name from the company_bank_accounts table
             $type = $bank->Bank_Type; // Bank Type from the company_bank_accounts table
             $bank_id = $bank->Idbank;
+            $acc_type_group = $bank->acc_type_group;
 
             // Check if the Bank Type is one of the "System_default_X" types
             if (strpos($type, 'System_default') !== false) {
@@ -417,6 +418,7 @@ class ChartOfAccountController extends Controller
             $additionalData[] = [
                 'account_id' => $bank_id,
                 'acc_name' => $acc_name,
+                'acc_type' => $acc_type_group,
                 'type' => $type,
                 'total_debit' => $total_debit,
                 'total_credit' => $total_credit

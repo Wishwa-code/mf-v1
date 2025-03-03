@@ -291,7 +291,7 @@
         <!-- Header Section -->
         <div class="content-header">
             <h2>View Manual Journal</h2>
-            <button class="btn btn-primary" id="exportBtn">Export Data</button>
+{{--            <button class="btn btn-primary" id="exportBtn">Export Data</button>--}}
         </div>
 
         <!-- Search Section -->
@@ -346,8 +346,8 @@
                 <tr>
                     <th>Narration</th>
                     <th>Journal Date</th>
-                    <th>Debit Amount</th>
-                    <th>Credit Amount</th>
+                    <th>Amount</th>
+                    <th>Created Time</th>
                     <th>Action</th>
                 </tr>
                 </thead>
@@ -362,9 +362,9 @@
                 <thead>
                 <tr>
                     <th>Narration</th>
-                    <th>Date</th>
-                    <th>Debit Amount</th>
-                    <th>Credit Amount</th>
+                    <th>Journal Date</th>
+                    <th>Amount</th>
+                    <th>Created Time</th>
                     <th>Action</th>
                 </tr>
                 </thead>
@@ -386,7 +386,7 @@
                     <tr>
                         <th>Description</th>
                         <th>Account</th>
-                        <th>Tax Rate</th>
+
                         <th>Debit Amount</th>
                         <th>Credit Amount</th>
                     </tr>
@@ -485,13 +485,13 @@
         <tr>
             <td>${item.narration}</td>
             <td>${item.date}</td>
-            <td>${parseFloat(item.tot_debit || 0).toFixed(2)}</td>
             <td>${parseFloat(item.tot_credit || 0).toFixed(2)}</td>
+            <td>${item.created_at}</td>
             <td>
                 <button class="btn btn-info btn-sm view-btn" data-id="${item.id_manual_journal}">View</button>
 <button class="btn btn-warning btn-sm edit-btn" data-id="${item.id_manual_journal}" disabled>Edit</button>
                 ${item.status === "1"
-                        ? `<button class="btn btn-danger btn-sm delete-btn" data-id="${item.id_manual_journal}">Delete</button>`
+                        ? `<button class="btn btn-danger btn-sm delete-btn" data-id="${item.id_manual_journal}" disabled>Delete</button>`
                         : `<button class="btn btn-warning btn-sm restore-btn" data-id="${item.id_manual_journal}">Restore</button>`}
             </td>
         </tr>`;
@@ -605,7 +605,7 @@
                     <tr>
                         <td>${item.description}</td>
                         <td>${item.account}</td>
-                        <td>${parseFloat(item.tax_rate || 0).toFixed(2)}%</td>
+
                         <td>${parseFloat(item.debit_amount || 0).toFixed(2)}</td>
                         <td>${parseFloat(item.credit_amount || 0).toFixed(2)}</td>
                     </tr>`;
