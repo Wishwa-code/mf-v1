@@ -274,51 +274,24 @@
                     // Clear existing data
                     financialReportTable.empty();
 
-                    if (!data || data.length === 0) {
-                        financialReportTable.append(`
-                    <tr>
-                        <td colspan="6" style="text-align: center;">No financial report data found</td>
-                    </tr>
-                `);
-                    } else {
-                        data.forEach(function (item) {
-                            var row = `
-                        <tr>
-                            <td>${item.Type || 'N/A'}</td>
-                            <td>${item.Description || 'N/A'}</td>
-                            <td>${formatNumber(item.Debit || 0)}</td>
-                            <td>${formatNumber(item.Credit || 0)}</td>
-                            <td>${formatNumber(item.Balance || 0)}</td>
-                            <td>${item.Date_Time || 'N/A'}</td>
-                        </tr>
-                    `;
-                            financialReportTable.append(row);
-                        });
-                    }
+                    // Filter data for the selected account only
+                    var filteredData = data.filter(item => item.Bank_Account_Id == accountId);
 
-                    // Ensure DataTable is properly initialized
-                    if (!$.fn.DataTable) {
-                        console.error("DataTables library is not loaded.");
-                        return;
-                    }
-
-                    // Destroy existing DataTable if necessary
-                    if ($.fn.DataTable.isDataTable('#financialReportTable')) {
-                        $('#financialReportTable').DataTable().destroy();
-                    }
-
-                    // Reinitialize DataTable
-                    $('#financialReportTable').DataTable({
-                        "responsive": true,
-                        "paging": true,
-                        "ordering": true,
-                        "info": true,
-                        "searching": true
+                    filteredData.forEach(function (item) {
+                        var row = `
+                <tr>
+                    <td>${item.Type || 'N/A'}</td>
+                    <td>${item.Description || 'N/A'}</td>
+                    <td>${formatNumber(item.Debit || 0)}</td>
+                    <td>${formatNumber(item.Credit || 0)}</td>
+                    <td>${formatNumber(item.Balance || 0)}</td>
+                    <td>${item.Date_Time || 'N/A'}</td>
+                </tr>
+            `;
+                        financialReportTable.append(row);
                     });
-
-                    // Show modal
-                    $('#financialReportModal').modal('show');
-                },
+                }
+                ,
                 error: function (xhr) {
                     console.error("AJAX error:", xhr.responseText);
                     alert("Error fetching financial report. Check console for details.");
