@@ -662,7 +662,8 @@ class UserController extends Controller
     public function holidays(){
         $year = date('Y');
         $holidays = tableWithBranch('holidays')->whereYear('date', $year)->get();
-
+        $holiday=new HolidayController();
+        $holiday->index();
 
         return view('pages.Holidays', compact('holidays','year'));
     }
