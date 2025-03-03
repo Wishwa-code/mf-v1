@@ -60,14 +60,16 @@
         <form class="row g-3 mb-4">
             <div class="col-md-6">
                 <div class="date-range">
-                    <input type="date" class="form-control" onchange="search_trial()" name="date_from" id="date_from" value="{{date('Y-m-d')}}"> to
-                    <input type="date" class="form-control" onchange="search_trial()"  name="date_to" id="date_to" value="{{date('Y-m-d')}}">
+                    <input type="date" class="form-control"  name="date_from" id="date_from" value="{{date('Y-m-d')}}"> to
+                    <input type="date" class="form-control"   name="date_to" id="date_to" value="{{date('Y-m-d')}}">
                 </div>
+                <br>
+                <input type="button" onclick="search_trial()" class="btn btn-primary" value="Search">
+                <button id="btnExportExcel" style="float: right" class="btn btn-success">Download Excel</button>
             </div>
         </form>
 
         <div class="mb-3">
-            <button id="btnExportExcel" class="btn btn-success">Download Excel</button>
         </div>
 
         <!-- Table Section -->
@@ -110,8 +112,8 @@
                         <tr>
                             <th>Type</th>
                             <th>Description</th>
-                            <th>Credit Amount</th>
                             <th>Debit Amount</th>
+                            <th>Credit Amount</th>
                             <th>Balance</th>
                             <th>Created At</th>
                         </tr>
@@ -178,6 +180,7 @@
                     date_to: date_to
                 },
                 success: function (data) {
+                    console.log(data);
                     var trialBalanceTable = $('#trialBalanceTable');
                     var totalDebit = 0;
                     var totalCredit = 0;
@@ -262,6 +265,8 @@
                 },
                 success: function (data) {
 
+                    console.log(data);
+
                     var financialReportTable = $('#financialReportTable tbody');
 
                     // Get account details from the UI
@@ -282,9 +287,9 @@
                 <tr>
                     <td>${item.Type || 'N/A'}</td>
                     <td>${item.Description || 'N/A'}</td>
-                    <td>${formatNumber(item.Debit || 0)}</td>
-                    <td>${formatNumber(item.Credit || 0)}</td>
-                    <td>${formatNumber(item.Balance || 0)}</td>
+                    <td>${formatNumber(parseFloat(item.Debit).toFixed(2) || 0)}</td>
+                    <td>${formatNumber(parseFloat(item.Credit).toFixed(2) || 0)}</td>
+                    <td>${formatNumber(parseFloat(item.Balance).toFixed(2) || 0)}</td>
                     <td>${item.Date_Time || 'N/A'}</td>
                 </tr>
             `;
