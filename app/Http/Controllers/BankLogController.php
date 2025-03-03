@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BankLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class BankLogController extends Controller
 {
@@ -28,28 +29,53 @@ class BankLogController extends Controller
             $currentBalance = 0.00; // Default balance if no records exist
         }
 
+        $bank = tableWithBranch('company_bank_accounts')->where('Idbank', '=', $bank_id)->first();
+        $acc_type=$bank->acc_type_group;
         if ($type == "Account Creation") {
             $BankLog->Credit = $amount;
             $BankLog->Debit = '0.00';
             $BankLog->Balance = $amount;
         } else {
-            if ($system == "credit") {
-                $BankLog->Credit = $amount;
-                $BankLog->Debit = '0.00';
-                $BankLog->Balance = $currentBalance + $amount;
+            if ($system == "debit") {
 
-                // Update the account balance
-                updateWithBranch('company_bank_accounts', 'Idbank', $bank_id, [
-                    'Account_Balance' => $currentBalance + $amount
-                ]);
-            } else {
                 $BankLog->Credit = '0.00';
                 $BankLog->Debit = $amount;
-                $BankLog->Balance = $currentBalance - $amount;
+
+                if ($acc_type=="Liabilities"){
+                    $new_current_balance= $currentBalance - $amount;
+                }else if ($acc_type=="Equity"){
+                    $new_current_balance= $currentBalance - $amount;
+                }else if ($acc_type=="Revenue"){
+                    $new_current_balance= $currentBalance - $amount;
+                }else{
+                    $new_current_balance= $currentBalance + $amount;
+                }
+
+                $BankLog->Balance=$new_current_balance;
 
                 // Update the account balance
                 updateWithBranch('company_bank_accounts', 'Idbank', $bank_id, [
-                    'Account_Balance' => $currentBalance - $amount
+                    'Account_Balance' => $new_current_balance
+                ]);
+            } else {
+                $BankLog->Credit = $amount;
+                $BankLog->Debit = '0.00';
+
+                if ($acc_type=="Liabilities"){
+                    $new_current_balance= $currentBalance + $amount;
+                }else if ($acc_type=="Equity"){
+                    $new_current_balance= $currentBalance + $amount;
+                }else if ($acc_type=="Revenue"){
+                    $new_current_balance= $currentBalance + $amount;
+                }else{
+                    $new_current_balance= $currentBalance - $amount;
+                }
+
+                $BankLog->Balance=$new_current_balance;
+
+                // Update the account balance
+                updateWithBranch('company_bank_accounts', 'Idbank', $bank_id, [
+                    'Account_Balance' => $new_current_balance
                 ]);
             }
         }

@@ -134,15 +134,11 @@
                 </div>
                 <div class="col-md-6">
                     <label for="journalDate" class="form-label">Journal Date</label>
-                    <input type="date" class="form-control" id="journalDate">
-                    <div class="mt-3">
+                    <input type="date" class="form-control" id="journalDate" value="{{date('Y-m-d')}}">
+                    <div class="mt-3" hidden>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="basis" id="accrualOnly" value="Accrual">
+                            <input class="form-check-input" type="radio" name="basis" id="accrualOnly" value="Accrual" checked>
                             <label class="form-check-label" for="accrualOnly">Accrual Basis Only</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="basis" id="cashAndAccrual" value="CashAndAccrual">
-                            <label class="form-check-label" for="cashAndAccrual">Cash and Accrual Basis</label>
                         </div>
                     </div>
                 </div>
@@ -156,7 +152,6 @@
                         <th style="width: 5%;">Move</th>
                         <th style="width: 30%;">Description</th>
                         <th style="width: 20%;">Account</th>
-                        <th style="width: 15%;">Tax Rate</th>
                         <th style="width: 15%;">Debit Amount</th>
                         <th style="width: 15%;">Credit Amount</th>
                         <th style="width: 5%;">Remove</th>
@@ -178,9 +173,6 @@
                                 @endforeach
                             </select>
                         </td>
-
-
-                        <td><input type="number" step="0.01" class="form-control tax-rate-input" placeholder="0.00"></td>
                         <td><input type="number" step="0.01" class="form-control debit-amount" placeholder="0.00"></td>
                         <td><input type="number" step="0.01" class="form-control credit-amount" placeholder="0.00"></td>
                         <td class="text-center">
@@ -202,50 +194,23 @@
                                 @endforeach
                             </select>
                         </td>
-
-
-                        <td><input type="number" step="0.01" class="form-control tax-rate-input" placeholder="0.00"></td>
                         <td><input type="number" step="0.01" class="form-control debit-amount" placeholder="0.00"></td>
                         <td><input type="number" step="0.01" class="form-control credit-amount" placeholder="0.00"></td>
                         <td class="text-center">
                             <button type="button" class="btn btn-danger btn-sm remove-row-btn">✖</button>
                         </td>
                     </tr>
-{{--                    <tr>--}}
-{{--                        <td class="text-center">--}}
-{{--                            <span class="move-up">↑</span> <span class="move-down">↓</span>--}}
-{{--                        </td>--}}
-{{--                        <td><input type="text" class="form-control" placeholder="Enter description"></td>--}}
-{{--                        <td>--}}
-{{--                            <select class="form-select account-select select2-account">--}}
-{{--                                <option value="">Select Account</option>--}}
-{{--                                @foreach ($chart_of_accounts as $account)--}}
-{{--                                    <option value="{{ $account->Idbank }}-{{ $account->code }}-{{ $account->Account_Name }}">--}}
-{{--                                        {{ $account->Account_Name }} - {{ $account->type }}--}}
-{{--                                    </option>--}}
-{{--                                @endforeach--}}
-{{--                            </select>--}}
-{{--                        </td>--}}
-
-
-{{--                        <td><input type="number" step="0.01" class="form-control tax-rate-input" placeholder="0.00"></td>--}}
-{{--                        <td><input type="number" step="0.01" class="form-control debit-amount" placeholder="0.00"></td>--}}
-{{--                        <td><input type="number" step="0.01" class="form-control credit-amount" placeholder="0.00"></td>--}}
-{{--                        <td class="text-center">--}}
-{{--                            <button type="button" class="btn btn-danger btn-sm remove-row-btn">✖</button>--}}
-{{--                        </td>--}}
-{{--                    </tr>--}}
                     </tbody>
                     <tfoot>
                     <tr>
-                        <td colspan="3"></td>
+                        <td colspan="2"></td>
                         <td class="text-end fw-bold">Subtotal</td>
                         <td class="text-end"><span id="subtotalDebit">0.00</span></td>
                         <td class="text-end"><span id="subtotalCredit">0.00</span></td>
                         <td></td>
                     </tr>
                     <tr>
-                        <td colspan="3"></td>
+                        <td colspan="2"></td>
                         <td class="text-end fw-bold">Total</td>
                         <td class="text-end"><span id="totalDebit">0.00</span></td>
                         <td class="text-end"><span id="totalCredit">0.00</span></td>
@@ -313,7 +278,6 @@
                         ${accountsOptions}
                     </select>
                 </td>
-                <td><input type="number" step="0.01" class="form-control tax-rate-input" value="${detail.tax_rate}" placeholder="0.00"></td>
                 <td><input type="number" step="0.01" class="form-control debit-amount" value="${detail.debit_amount}" placeholder="0.00"></td>
                 <td><input type="number" step="0.01" class="form-control credit-amount" value="${detail.credit_amount}" placeholder="0.00"></td>
                 <td class="text-center">
@@ -372,7 +336,7 @@
                         ${accountsOptions}
                     </select>
             </td>
-            <td><input type="number" step="0.01" class="form-control tax-rate-input" placeholder="0.00"></td>
+
             <td><input type="number" step="0.01" class="form-control debit-amount" placeholder="0.00"></td>
             <td><input type="number" step="0.01" class="form-control credit-amount" placeholder="0.00"></td>
             <td class="text-center">
@@ -449,7 +413,7 @@
                 $('#journalTable tbody tr').each(function () {
                     const description = $(this).find('input[type="text"]').val().trim();
                     const account = $(this).find('.account-select').val();
-                    const taxRate = parseFloat($(this).find('.tax-rate-input').val()) || 0;
+                    const taxRate = 0;
                     const debitAmount = parseFloat($(this).find('.debit-amount').val()) || 0;
                     const creditAmount = parseFloat($(this).find('.credit-amount').val()) || 0;
 
@@ -471,6 +435,7 @@
                         });
                     }
                 });
+                console.log(rows);
 
                 // Validation
                 if (!narration || !date || !type) {
@@ -492,7 +457,7 @@
                     return;
                 }
 
-                console.log(rows);
+
 
                 // Confirmation Dialog
                 Swal.fire({

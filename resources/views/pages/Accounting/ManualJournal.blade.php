@@ -489,7 +489,7 @@
             <td>${parseFloat(item.tot_credit || 0).toFixed(2)}</td>
             <td>
                 <button class="btn btn-info btn-sm view-btn" data-id="${item.id_manual_journal}">View</button>
-<button class="btn btn-warning btn-sm edit-btn" data-id="${item.id_manual_journal}">Edit</button>
+<button class="btn btn-warning btn-sm edit-btn" data-id="${item.id_manual_journal}" disabled>Edit</button>
                 ${item.status === "1"
                         ? `<button class="btn btn-danger btn-sm delete-btn" data-id="${item.id_manual_journal}">Delete</button>`
                         : `<button class="btn btn-warning btn-sm restore-btn" data-id="${item.id_manual_journal}">Restore</button>`}

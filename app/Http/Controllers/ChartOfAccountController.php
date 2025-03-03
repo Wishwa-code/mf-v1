@@ -210,11 +210,11 @@ class ChartOfAccountController extends Controller
                     ->first();
 
                 if ($row['debit_amount']>0){
-                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","credit",$row['debit_amount']);
+                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","debit",$row['debit_amount']);
                 }
 
                 if ($row['credit_amount']>0){
-                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","debit",$row['credit_amount']);
+                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","credit",$row['credit_amount']);
                 }
             }
 
@@ -358,8 +358,8 @@ class ChartOfAccountController extends Controller
 
     public function getAccountTrialBalance(Request $request)
     {
-        $dateFrom = Carbon::parse($request->input('date_from'))->startOfDay()->toDateTimeString();
-        $dateTo = Carbon::parse($request->input('date_to'))->endOfDay()->toDateTimeString();
+        $dateFrom = Carbon::parse($request->input('date_from'))->toDateString() . ' 00:00:00';
+        $dateTo = Carbon::parse($request->input('date_to'))->toDateString() . ' 23:59:59';
 
 
         // Fetch all bank accounts with their respective Account Names
@@ -447,8 +447,8 @@ class ChartOfAccountController extends Controller
 
 
     public function getLog(Request $request){
-        $dateFrom = $request->date_from;
-        $dateTo = $request->date_to;
+        $dateFrom = Carbon::parse($request->input('date_from'))->toDateString() . ' 00:00:00';
+        $dateTo = Carbon::parse($request->input('date_to'))->toDateString() . ' 23:59:59';
         $account_id = $request->account_id;
 
         // Fetch matching records from the `manual_journal_has_amount` table
