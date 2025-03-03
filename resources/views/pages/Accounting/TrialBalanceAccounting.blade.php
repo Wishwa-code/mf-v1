@@ -241,8 +241,16 @@
 
 
         function fetchFinancialReport(accountId) {
+            alert("Fetching report for Account ID: " + accountId);
+
             var date_from = $("#date_from").val();
             var date_to = $("#date_to").val();
+
+            console.log("Fetching financial report for:", {
+                account_id: accountId,
+                date_from: date_from,
+                date_to: date_to
+            });
 
             $.ajax({
                 url: '/get-financial-report',
@@ -253,24 +261,26 @@
                     date_to: date_to
                 },
                 success: function (data) {
+                    console.log("Received data:", data); // Debugging
                     var financialReportTable = $('#financialReportTable tbody');
+
+                    // Get account details from the UI
                     var accountName = $(`tr[data-account-id='${accountId}'] td:first`).text();
                     var accountType = $(`tr[data-account-id='${accountId}'] td:nth-child(2)`).text();
 
-                    // Update modal title with Account Name and Type
+                    // Update modal title
                     $('#financialReportModalLabel').html(`Financial Report - <b>${accountName} (${accountType})</b>`);
 
-                    // Clear existing table data
+                    // Clear existing data
                     financialReportTable.empty();
 
-                    if (data.length === 0) {
+                    if (!data || data.length === 0) {
                         financialReportTable.append(`
                     <tr>
                         <td colspan="6" style="text-align: center;">No financial report data found</td>
                     </tr>
                 `);
                     } else {
-                        // Populate table with data
                         data.forEach(function (item) {
                             var row = `
                         <tr>
@@ -292,7 +302,7 @@
                         return;
                     }
 
-                    // Check if DataTable is already initialized before destroying it
+                    // Destroy existing DataTable if necessary
                     if ($.fn.DataTable.isDataTable('#financialReportTable')) {
                         $('#financialReportTable').DataTable().destroy();
                     }
@@ -306,14 +316,16 @@
                         "searching": true
                     });
 
-                    // Show the modal
+                    // Show modal
                     $('#financialReportModal').modal('show');
                 },
                 error: function (xhr) {
-                    console.log(xhr.responseText);
+                    console.error("AJAX error:", xhr.responseText);
+                    alert("Error fetching financial report. Check console for details.");
                 }
             });
         }
+
 
 
     </script>
