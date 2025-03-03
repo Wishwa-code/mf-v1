@@ -47,6 +47,12 @@
         .modal-lg {
             max-width: 70%;  /* Set modal to 90% of the screen width */
         }
+        /* Hover effect for better UX */
+        .clickable-row:hover {
+            background-color: #f6f1f1 !important; /* Light green */
+            cursor: pointer;
+            font-weight: bold;
+        }
     </style>
 @endsection
 
@@ -72,7 +78,7 @@
                 <button type="button" onclick="search_trial()" class="btn btn-primary w-100">Search</button>
             </div>
             <div class="col-md-2">
-                <button class="btn btn-danger w-100" type="button" onclick="LogReport();">Full Log</button>
+                <button class="btn btn-danger w-100" type="button" onclick="LogReport();">Detail View</button>
             </div>
             <div class="col-md-2">
                 <button id="btnExportExcel" class="btn btn-success w-100">Download Excel</button>
@@ -250,7 +256,7 @@
                             if (parseFloat(totalDebitAmount) !== 0 || parseFloat(totalCreditAmount) !== 0) {
                                 // Create a table row for each account
                                 var row = `
-                        <tr class="trialBalanceRow" data-account-id="${item.account_id}">
+                        <tr class="trialBalanceRow clickable-row blinking" data-account-id="${item.account_id}">
                             <td style="text-align: left;">${accName}</td>
 
                             <td style="text-align: left;">${type} <strong>(${acc_type})</strong></td>
