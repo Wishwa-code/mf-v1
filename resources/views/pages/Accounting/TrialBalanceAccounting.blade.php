@@ -241,7 +241,7 @@
 
 
         function fetchFinancialReport(accountId) {
-            alert("Fetching report for Account ID: " + accountId);
+
 
             var date_from = $("#date_from").val();
             var date_to = $("#date_to").val();
@@ -261,7 +261,7 @@
                     date_to: date_to
                 },
                 success: function (data) {
-                    console.log("Received data:", data); // Debugging
+
                     var financialReportTable = $('#financialReportTable tbody');
 
                     // Get account details from the UI
