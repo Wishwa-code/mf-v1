@@ -178,17 +178,18 @@ function view_log(id, bankName, accountName, accountNumber) {
                 // Iterate over the data and create new rows
                 data.item.forEach(function(log) {
                     var newRow = `<tr>
-                        <td>${log.Date_Time}</td>
-                        <td>${log.Type}</td>
-                        <td>${log.Description}</td>
-                        <td>${log.Note}</td>
-                        <td>${log.Debit}</td>
-                        <td>${log.Credit}</td>
-                        <td>${log.Balance}</td>
-                        <td>${log.Full_Name}</td>
-                    </tr>`;
+        <td>${log.Date_Time}</td>
+        <td>${log.Type}</td>
+        <td>${log.Description}</td>
+        <td>${log.Note}</td>
+        <td>${isNaN(log.Debit) ? log.Debit : Number(log.Debit).toFixed(2)}</td>
+        <td>${isNaN(log.Credit) ? log.Credit : Number(log.Credit).toFixed(2)}</td>
+        <td>${isNaN(log.Balance) ? log.Balance : Number(log.Balance).toFixed(2)}</td>
+        <td>${log.Full_Name}</td>
+    </tr>`;
                     $('#bank_table_log tbody').append(newRow);
                 });
+
 
                 // Reinitialize DataTable
                 $('#bank_table_log').DataTable({

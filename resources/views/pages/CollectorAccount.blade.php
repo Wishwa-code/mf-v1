@@ -134,8 +134,8 @@
                                         <th>Type</th>
                                         <th>Description</th>
                                         <th>Note</th>
-                                        <th>Credit</th>
                                         <th>Debit</th>
+                                        <th>Credit</th>
                                         <th>Balance</th>
                                         <th>User</th>
                                     </tr>

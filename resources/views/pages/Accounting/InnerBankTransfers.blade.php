@@ -106,8 +106,8 @@
                         <th>Date Time</th>
                         <th>Description</th>
                         <th>Reason</th>
-                        <th>Credit Amount</th>
                         <th>Debit Amount</th>
+                        <th>Credit Amount</th>
                     </tr>
                     </thead>
                     <tbody>

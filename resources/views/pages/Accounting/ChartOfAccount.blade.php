@@ -384,6 +384,7 @@
                 <th>Type</th>
                 <th>Group</th>
                 <th>Cash Flow Type</th>
+                <th>Created As</th>
                 <th>Ledger</th>
             </tr>
             </thead>
@@ -400,6 +401,7 @@
                 <th>Type</th>
                 <th>Group</th>
                 <th>Cash Flow Type</th>
+                <th>Created As</th>
                 <th>Ledger</th>
             </tr>
             </thead>
@@ -416,6 +418,7 @@
                 <th>Type</th>
                 <th>Group</th>
                 <th>Cash Flow Type</th>
+                <th>Created As</th>
                 <th>Ledger</th>
             </tr>
             </thead>
@@ -432,6 +435,7 @@
                 <th>Type</th>
                 <th>Group</th>
                 <th>Cash Flow Type</th>
+                <th>Created As</th>
                 <th>Ledger</th>
             </tr>
             </thead>
@@ -448,6 +452,7 @@
                 <th>Type</th>
                 <th>Group</th>
                 <th>Cash Flow Type</th>
+                <th>Created As</th>
                 <th>Ledger</th>
             </tr>
             </thead>
@@ -464,6 +469,7 @@
                 <th>Type</th>
                 <th>Group</th>
                 <th>Cash Flow Type</th>
+                <th>Created As</th>
                 <th>Ledger</th>
             </tr>
             </thead>
@@ -754,22 +760,29 @@
 
                     // Append rows to the table
                     data.forEach((item) => {
+                        // Check if Bank_Type starts with "System_default_"
+                        const bankType = item.Bank_Type.startsWith("System_default_") ? "System Default" : item.Bank_Type;
+
                         const ledger = `<a href="#" class="view-btn"
-                data-account="${item.Idbank}"
-                data-account-name="${item.Account_Name}"
-                data-account-type="${item.type}"
-                data-acc-type-group="${item.acc_type_group}">View</a>`;
+        data-account="${item.Idbank}"
+        data-account-name="${item.Account_Name}"
+        data-account-type="${item.type}"
+        data-acc-type-group="${item.acc_type_group}">View</a>`;
+
                         const row = `
-                <tr>
-                    <td>${item.code}</td>
-                    <td>${item.Account_Name}</td>
-                    <td>${item.type}</td>
-                    <td>${item.acc_type_group}</td>
-                    <td>${item.cashflow}</td>
-                    <td>${ledger}</td>
-                </tr>`;
+        <tr>
+            <td>${item.code ? item.code : '-'}</td>
+            <td>${item.Account_Name}</td>
+            <td>${item.type}</td>
+            <td>${item.acc_type_group}</td>
+            <td>${item.cashflow ? item.cashflow : '-'}</td>
+            <td>${bankType}</td> <!-- Updated -->
+            <td>${ledger}</td>
+        </tr>`;
+
                         $tbody.append(row);
                     });
+
                 }
 
                 // Attach event handler for the search button

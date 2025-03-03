@@ -131,8 +131,8 @@ class BankController extends Controller
         $reason=$request->reason;
         $toBank=$request->toBank;
         $toBankDetails = tableWithBranch('company_bank_accounts')->where('Idbank', $toBank)->first();
-        $this->bankLogController->index($fromBank,"InterBank Transfer",'To ('.$toBankDetails->Account_No.')',$reason,"debit",$fromAmount);
-        $this->bankLogController->index($toBank,"InterBank Transfer",'From'.' ('.$fromBankDetails->Account_No.')',$reason,"credit",$fromAmount);
+        $this->bankLogController->index($fromBank,"InterBank Transfer",'To ('.$toBankDetails->Account_No.')',$reason,"credit",$fromAmount);
+        $this->bankLogController->index($toBank,"InterBank Transfer",'From'.' ('.$fromBankDetails->Account_No.')',$reason,"debit",$fromAmount);
         return response()->json(["id" => "1"], 200);
     }
 

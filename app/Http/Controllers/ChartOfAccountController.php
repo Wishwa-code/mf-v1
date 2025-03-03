@@ -42,8 +42,8 @@ class ChartOfAccountController extends Controller
             $query->where('acc_type', 'LIKE', '%' . $request->type . '%');
         }
 
-        $query->where('Bank_Type', '!=', 'Bank');
-        $query->where('Bank_Type', '!=', 'Collector');
+//        $query->where('Bank_Type', '!=', 'Bank');
+//        $query->where('Bank_Type', '!=', 'Collector');
 
         // Fetch the filtered data
         $data = $query->get();
