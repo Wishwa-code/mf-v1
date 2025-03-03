@@ -288,16 +288,8 @@
 
 
         function fetchFinancialReport(accountId) {
-
-
             var date_from = $("#date_from").val();
             var date_to = $("#date_to").val();
-
-            console.log("Fetching financial report for:", {
-                account_id: accountId,
-                date_from: date_from,
-                date_to: date_to
-            });
 
             $.ajax({
                 url: '/get-financial-report',

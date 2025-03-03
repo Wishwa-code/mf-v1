@@ -555,6 +555,7 @@ Route::post('/get-financial-report', [ChartOfAccountController::class, 'getLog']
 
 Route::get('/BalanceSheet', [ChartOfAccountController::class, 'BalanceSheetView'])->name('BalanceSheetView.profit');
 Route::post('/BalanceSheet', [ChartOfAccountController::class, 'BalanceSheet'])->name('BalanceSheetView.profit');
+Route::post('/get-financial-full-report', [ChartOfAccountController::class, 'getBalanceSheetLog'])->name('getBalanceSheetLog.profit');
 
 
 

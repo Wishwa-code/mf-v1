@@ -485,6 +485,24 @@ class ChartOfAccountController extends Controller
     }
 
 
+    public function getBalanceSheetLog(Request $request){
+        $date_to = $request->date_to ?? now()->toDateString(); // Default to today
+        $account_id = $request->account_id;
+
+        // Fetch matching records from the `manual_journal_has_amount` table
+        $data = tableWithBranch('company_bank_has_log')
+            ->where('Bank_Account_Id', '=',$account_id) // Match records starting with accountCode
+            ->where('Date_Time','<=',$date_to) // Filter by date range
+            ->orderBy('id')
+            ->get();
+
+        // Return data as JSON
+        return response()->json($data);
+
+
+    }
+
+
 
 
     public function BalanceSheetView()
@@ -524,11 +542,17 @@ class ChartOfAccountController extends Controller
         $system_expenses = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
             ->join('company_bank_has_log AS log1', 'company_bank_accounts.Idbank', '=', 'log1.Bank_Account_Id')
             ->where('log1.Date_Time', '<=', $date_to)
-            ->where('log1.Balance', '!=', 0) // Only positive balances
+            ->where('log1.Balance', '!=', 0) // Only non-zero balances
             ->where('company_bank_accounts.Bank_Type', '!=', 'Collector') // Exclude collectors
             ->whereIn('company_bank_accounts.acc_type_group', ['Assets', 'Liabilities', 'Equity']) // Filter for specific groups
             ->whereRaw('log1.Date_Time = (SELECT MAX(log2.Date_Time) FROM company_bank_has_log AS log2 WHERE log2.Bank_Account_Id = log1.Bank_Account_Id)')
-            ->select('company_bank_accounts.acc_type_group', 'company_bank_accounts.Bank_Name', 'log1.Balance', 'log1.type')
+            ->select(
+                'company_bank_accounts.Idbank',  // Include Idbank
+                'company_bank_accounts.acc_type_group',
+                'company_bank_accounts.Bank_Name',
+                'log1.Balance',
+                'log1.type'
+            )
             ->get()
             ->groupBy('acc_type_group'); // Group by Assets, Liabilities, Equity
 
@@ -538,24 +562,36 @@ class ChartOfAccountController extends Controller
         $total_equity = 0;
 
         // ✅ Define empty arrays for each category (Prevents Undefined Variable error)
-        $assets = isset($system_expenses['Assets']) ? [] : [];
-        $liabilities = isset($system_expenses['Liabilities']) ? [] : [];
-        $equity = isset($system_expenses['Equity']) ? [] : [];
+        $assets = [];
+        $liabilities = [];
+        $equity = [];
 
-        // ✅ Process data and categorize it
+        // ✅ Process data and categorize it with Idbank
         foreach ($system_expenses as $category => $items) {
             foreach ($items as $item) {
                 switch ($category) {
                     case 'Assets':
-                        $assets[$item->Bank_Name] = $item->Balance;
+                        $assets[] = [
+                            'idbank' => $item->Idbank,
+                            'name' => $item->Bank_Name,
+                            'balance' => $item->Balance
+                        ];
                         $total_assets += $item->Balance;
                         break;
                     case 'Liabilities':
-                        $liabilities[$item->Bank_Name] = $item->Balance;
+                        $liabilities[] = [
+                            'idbank' => $item->Idbank,
+                            'name' => $item->Bank_Name,
+                            'balance' => $item->Balance
+                        ];
                         $total_liabilities += $item->Balance;
                         break;
                     case 'Equity':
-                        $equity[$item->Bank_Name] = $item->Balance;
+                        $equity[] = [
+                            'idbank' => $item->Idbank,
+                            'name' => $item->Bank_Name,
+                            'balance' => $item->Balance
+                        ];
                         $total_equity += $item->Balance;
                         break;
                 }
@@ -570,6 +606,7 @@ class ChartOfAccountController extends Controller
             'total_assets', 'total_liabilities', 'total_equity', 'total_liabilities_and_equity'
         ));
     }
+
 
 
 
