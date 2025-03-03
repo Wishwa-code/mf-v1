@@ -153,7 +153,7 @@
                                 </div>
                                 <h6 class="text-uppercase mt-0" title="Customers">Total Outstanding</h6>
                                 <h6 class="text-uppercase mt-0" title="Customers">(Today Collection+Arease+Chques)</h6>
-                                <h3 class="my-2">LKR {{number_format($totalBalanceUntil,'2','.',',')}}</h3>
+                                <h3 class="my-2">LKR {{number_format($todayinstallment+$checqueamount+$arrease,'2','.',',')}}</h3>
 
                             </div>
                         </div>

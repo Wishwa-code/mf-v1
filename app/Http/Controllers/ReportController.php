@@ -266,15 +266,15 @@ class ReportController extends Controller
                     ->where('acc_type_group','=','Expenses')
                     ->where('Idbank','=',$request->category)
                     ->first();
-                $this->bankLogController->index($request->bank,"Expenses",$reason,"-","debit",$amount);
-                $this->bankLogController->index($bank_id->Idbank,"Expenses",$reason,"-","credit",$amount);
+                $this->bankLogController->index($request->bank,"Expenses",$reason,"-","credit",$amount);
+                $this->bankLogController->index($bank_id->Idbank,"Expenses",$reason,"-","debit",$amount);
             }else{
                 $bank_id=tableWithBranch('company_bank_accounts')
                     ->where('acc_type_group','=','Income')
                     ->where('Idbank','=',$request->category)
                     ->first();
-                $this->bankLogController->index($request->bank,"Income",$reason,"-","credit",$amount);
-                $this->bankLogController->index($bank_id->Idbank,"Income",$reason,"-","debit",$amount);
+                $this->bankLogController->index($request->bank,"Income",$reason,"-","debit",$amount);
+                $this->bankLogController->index($bank_id->Idbank,"Income",$reason,"-","credit",$amount);
             }
 
 

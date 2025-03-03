@@ -82,6 +82,29 @@
             color: #dc3545;
         }
     </style>
+    <style>
+        .modal-lg {
+            max-width: 70%;  /* Set modal to 90% of the screen width */
+        }
+
+        /* Blinking effect for table rows */
+        .blinking {
+            animation: blink-animation 1s infinite alternate;
+        }
+
+        @keyframes blink-animation {
+            0% { background-color: #ffffff; } /* Light yellow */
+            100% { background-color: #e3d7d7; } /* Light red */
+        }
+
+        /* Hover effect for better UX */
+        .clickable-row:hover {
+            background-color: #c3e6cb !important; /* Light green */
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+    </style>
 @endsection
 
 @section('content')
@@ -118,10 +141,11 @@
                 <tr class="fw-bold"><td>1. Assets</td><td></td></tr>
 
                 @if (!empty($assets))
-                    @foreach($assets as $name => $balance)
-                        <tr>
-                            <td class="ps-3">{{ $name }}</td>
-                            <td>{{ formatNegativeInParentheses($balance) }}</td>
+                    @foreach($assets as $asset)
+                        <tr onclick="openFinancialReportModal('{{ $asset['idbank'] }}', '{{ $asset['name'] }}')"
+                            class="clickable-row blinking">
+                            <td class="ps-3">{{ $asset['name'] }}</td>
+                            <td>{{ formatNegativeInParentheses($asset['balance']) }}</td>
                         </tr>
                     @endforeach
                 @endif
@@ -135,10 +159,11 @@
                 <tr class="fw-bold"><td>2. Liabilities</td><td></td></tr>
 
                 @if (!empty($liabilities))
-                    @foreach($liabilities as $name => $balance)
-                        <tr>
-                            <td class="ps-3">{{ $name }}</td>
-                            <td>{{ formatNegativeInParentheses($balance) }}</td>
+                    @foreach($liabilities as $liability)
+                        <tr onclick="openFinancialReportModal('{{ $liability['idbank'] }}', '{{ $liability['name'] }}')"
+                            class="clickable-row blinking">
+                            <td class="ps-3">{{ $liability['name'] }}</td>
+                            <td>{{ formatNegativeInParentheses($liability['balance']) }}</td>
                         </tr>
                     @endforeach
                 @endif
@@ -152,10 +177,11 @@
                 <tr class="fw-bold"><td>3. Equity</td><td></td></tr>
 
                 @if (!empty($equity))
-                    @foreach($equity as $name => $balance)
-                        <tr>
-                            <td class="ps-3">{{ $name }}</td>
-                            <td>{{ formatNegativeInParentheses($balance) }}</td>
+                    @foreach($equity as $equityItem)
+                        <tr onclick="openFinancialReportModal('{{ $equityItem['idbank'] }}', '{{ $equityItem['name'] }}')"
+                            class="clickable-row blinking">
+                            <td class="ps-3">{{ $equityItem['name'] }}</td>
+                            <td>{{ formatNegativeInParentheses($equityItem['balance']) }}</td>
                         </tr>
                     @endforeach
                 @endif
@@ -187,5 +213,85 @@
     </div>
 
 
+    <!-- Modal for Financial Report -->
+    <div class="modal fade" id="financialReportModal" tabindex="-1" role="dialog" aria-labelledby="financialReportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="financialReportModalLabel">Financial Report</h5>
+                </div>
+                <div class="modal-body">
+                    <table id="financialReportTable" class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Debit Amount</th>
+                            <th>Credit Amount</th>
+                            <th>Balance</th>
+                            <th>Created At</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <!-- Data will be dynamically populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
 
 @endsection
+
+<script>
+    function openFinancialReportModal(idbank, bankName) {
+        $('#financialReportModalLabel').text('Financial Report for - ' + bankName);
+        $('#financialReportModal').modal('show'); // Open modal
+
+        // Clear previous data
+        $('#financialReportTable tbody').empty();
+
+        var date_from = $("#date_from").val();
+        var date_to = $("#date_to").val();
+
+        $.ajax({
+            url: '/get-financial-full-report',
+            type: 'POST',
+            data: {
+                account_id: idbank,
+                date_from: date_from,
+                date_to: date_to
+            }, headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }, success: function (data) {
+
+                data.forEach(function (item) {
+                    var row = `
+                <tr>
+                    <td>${item.Type || 'N/A'}</td>
+                    <td>${item.Description || 'N/A'}</td>
+                    <td>${formatNumber(parseFloat(item.Debit).toFixed(2) || 0)}</td>
+                    <td>${formatNumber(parseFloat(item.Credit).toFixed(2) || 0)}</td>
+                    <td>${formatNumber(parseFloat(item.Balance).toFixed(2) || 0)}</td>
+                    <td>${item.Date_Time || 'N/A'}</td>
+                </tr>
+            `;
+                    $('#financialReportTable tbody').append(row);
+                });
+            }
+            ,
+            error: function (xhr) {
+                console.error("AJAX error:", xhr.responseText);
+                alert("Error fetching financial report. Check console for details.");
+            }
+        });
+
+    }
+    // Function to format numbers with commas
+    function formatNumber(num) {
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+</script>
+

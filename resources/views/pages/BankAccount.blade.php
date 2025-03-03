@@ -62,7 +62,7 @@
                                                     <div class="form-group">
                                                         <label for="bank_code" class="form-label">
                                                             Account Code
-                                                            <span style="color: red; font-weight: bold; font-size: 0.9rem; display: block; margin-top: 5px; background-color: #ffe6e6; padding: 5px; border-radius: 5px;">
+                                                            <span style="color: #462d2d; font-weight: bold; font-size: 0.9rem; display: block; margin-top: 5px; background-color: #f6eeee; padding: 5px; border-radius: 5px;">
                     This code will be used as a Chart of Accounts code. It cannot be duplicated.
                 </span>
                                                         </label>
@@ -121,7 +121,7 @@
                                                 <tbody>
                                                     @foreach($banks as $item)
                                                         <tr>
-                                                            <td>{{$item->code}}</td>
+                                                            <td>{{$item->code ?? '-'}}</td>
                                                             <td>{{$item->Bank_Name}}</td>
                                                             <td>{{$item->Account_Name}}</td>
                                                             <td>{{$item->Account_No}}</td>
@@ -139,11 +139,11 @@
                                                                             style="background-color: white; color: #5691FF; border:none"
                                                                             data-bs-target="#standard-modal" onclick="view_log({{$item->Idbank}}, '{{$item->Bank_Name}}', '{{$item->Account_Name}}', '{{$item->Account_No}}')"><i
                                                                                 class="bi bi-eye fs-4"></i></button>
-                                                                    <button type="button" class="btn btn-success" data-bs-toggle="modal"
-                                                                            style="background-color: white; color: #5691FF; border:none"
-                                                                            data-bs-target="#standard-modal-2" onclick="openTransferModal({{$item->Idbank}}, {{$item->Account_Balance}})">
-                                                                        <i class="bi bi-pen fs-4"></i>
-                                                                    </button>
+{{--                                                                    <button type="button" class="btn btn-success" data-bs-toggle="modal"--}}
+{{--                                                                            style="background-color: white; color: #5691FF; border:none"--}}
+{{--                                                                            data-bs-target="#standard-modal-2" onclick="openTransferModal({{$item->Idbank}}, {{$item->Account_Balance}})">--}}
+{{--                                                                        <i class="bi bi-pen fs-4"></i>--}}
+{{--                                                                    </button>--}}
                                                                 </td>
                                                             @else
                                                                 <td style="text-align: center">
@@ -156,18 +156,18 @@
                                                                             onclick="change_status({{$item->Idbank}});"><i
                                                                                 class="bi bi-rewind-circle fs-4"></i> </button>
 
-                                                                    <button type="button" class="btn btn-success"
-                                                                            data-bs-toggle="modal"
-                                                                            style="background-color: white; color: #5691FF; border:none"
-                                                                            data-bs-target="#standard-modal-3"
-                                                                            onclick="openTopUpModal({{$item->Idbank}});"><i
-                                                                                class="bi bi-bank fs-4"></i> </button>
+{{--                                                                    <button type="button" class="btn btn-success"--}}
+{{--                                                                            data-bs-toggle="modal"--}}
+{{--                                                                            style="background-color: white; color: #5691FF; border:none"--}}
+{{--                                                                            data-bs-target="#standard-modal-3"--}}
+{{--                                                                            onclick="openTopUpModal({{$item->Idbank}});"><i--}}
+{{--                                                                                class="bi bi-bank fs-4"></i> </button>--}}
 
-                                                                    <button type="button" class="btn btn-success" data-bs-toggle="modal"
-                                                                            style="background-color: white; color: #5691FF; border:none"
-                                                                            data-bs-target="#standard-modal-2" onclick="openTransferModal({{$item->Idbank}}, {{$item->Account_Balance}})">
-                                                                        <i class="bi bi-pen fs-4"></i>
-                                                                    </button>
+{{--                                                                    <button type="button" class="btn btn-success" data-bs-toggle="modal"--}}
+{{--                                                                            style="background-color: white; color: #5691FF; border:none"--}}
+{{--                                                                            data-bs-target="#standard-modal-2" onclick="openTransferModal({{$item->Idbank}}, {{$item->Account_Balance}})">--}}
+{{--                                                                        <i class="bi bi-pen fs-4"></i>--}}
+{{--                                                                    </button>--}}
                                                                 </td>
                                                             @endif
                                                         </tr>
@@ -220,8 +220,8 @@
                                         <th>Type</th>
                                         <th>Description</th>
                                         <th>Note</th>
-                                        <th>Credit</th>
                                         <th>Debit</th>
+                                        <th>Credit</th>
                                         <th>Balance</th>
                                         <th>User</th>
                                     </tr>
