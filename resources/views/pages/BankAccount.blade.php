@@ -96,9 +96,9 @@
                                                     <label for="branch" class="form-label">Branch</label>
                                                     <input type="text" id="branch" class="form-control">
                                                 </div>
-                                                <div class="col-md-6">
+                                                <div class="col-md-6" hidden>
                                                     <label for="account_number" class="form-label">Account Balance</label>
-                                                    <input type="text" id="opening_balance" class="form-control">
+                                                    <input type="text" id="opening_balance" class="form-control" value="0">
                                                 </div>
                                             </div>
                                             <button type="button" class="btn btn-success" id="addBankBtn" onclick="validateSubmitBank(event)">Save Bank Account</button>
