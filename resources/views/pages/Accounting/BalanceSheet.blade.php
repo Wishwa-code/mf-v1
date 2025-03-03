@@ -92,14 +92,10 @@
             animation: blink-animation 1s infinite alternate;
         }
 
-        @keyframes blink-animation {
-            0% { background-color: #ffffff; } /* Light yellow */
-            100% { background-color: #e3d7d7; } /* Light red */
-        }
 
         /* Hover effect for better UX */
         .clickable-row:hover {
-            background-color: #c3e6cb !important; /* Light green */
+            background-color: #f6f1f1 !important; /* Light green */
             cursor: pointer;
             font-weight: bold;
         }
