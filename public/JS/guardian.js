@@ -91,39 +91,9 @@ function validatePhoneNumber(err) {
 const saveCustomer = (e) => {
     e.preventDefault();
 
-    const formData = new FormData();
-    formData.append("title", $("#title").val());
-    formData.append("f_name", $("#f_name").val());
-    formData.append("last_name", $("#last_name").val());
-    formData.append("email", $("#email").val());
-    formData.append("contact_number", $("#contact_number").val());
-    formData.append("nic", $("#nic").val());
-    formData.append("gender", $("#gender").val());
-    formData.append("dob", $("#dob").val());
-
-    formData.append("address", $("#address").val());
-    formData.append("address_2", $("#address_2").val());
-    formData.append("address_3", $("#address_3").val());
-
-    formData.append("city", $("#city").val());
-    formData.append("state", $("#state").val());
-    formData.append("landline", $("#landline").val());
-    formData.append("cus_phto", $("#cus_phto")[0].files[0]); // File input
-    formData.append("note", $("#note").val());
-    formData.append("longitude", $("#longitude").val());
-    formData.append("latitude", $("#latitude").val());
-    formData.append("gua_title", $("#gua_title").val());
-    formData.append("gua_name", $("#gua_name").val());
-    formData.append("guardian_gender", $("#guardian_gender").val());
-    formData.append("gua_relation", $("#gua_relation").val());
-    formData.append("gua_occu", $("#gua_occu").val());
-    formData.append("gua_contact", $("#gua_contact").val());
-    formData.append("gua_address", $("#gua_address").val());
-    formData.append("risk_level", "1");
-
     Swal.fire({
         title: "Are you sure?",
-        text: "Do you want to save this Guarantee ?",
+        text: "Do you want to save this Guarantee?",
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: "#3085d6",
@@ -131,6 +101,49 @@ const saveCustomer = (e) => {
         confirmButtonText: "Yes, Save it!",
     }).then((result) => {
         if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Processing...',
+                html: '<p>The guarantee saving process may take some time depending on your document upload sizes.</p>' +
+                    '<div id="progress-container" style="width: 100%; background-color: #e9ecef; border-radius: 0.25rem;">' +
+                    '<div id="progress-bar" style="width: 0%; height: 20px; background-color: #1A2942; border-radius: 0.25rem;"></div>' +
+                    '</div>',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            const formData = new FormData();
+            formData.append("title", $("#title").val());
+            formData.append("f_name", $("#f_name").val());
+            formData.append("last_name", $("#last_name").val());
+            formData.append("email", $("#email").val());
+            formData.append("contact_number", $("#contact_number").val());
+            formData.append("nic", $("#nic").val());
+            formData.append("gender", $("#gender").val());
+            formData.append("dob", $("#dob").val());
+
+            formData.append("address", $("#address").val());
+            formData.append("address_2", $("#address_2").val());
+            formData.append("address_3", $("#address_3").val());
+
+            formData.append("city", $("#city").val());
+            formData.append("state", $("#state").val());
+            formData.append("landline", $("#landline").val());
+            formData.append("cus_phto", $("#cus_phto")[0].files[0]); // File input
+            formData.append("note", $("#note").val());
+            formData.append("longitude", $("#longitude").val());
+            formData.append("latitude", $("#latitude").val());
+            formData.append("gua_title", $("#gua_title").val());
+            formData.append("gua_name", $("#gua_name").val());
+            formData.append("guardian_gender", $("#guardian_gender").val());
+            formData.append("gua_relation", $("#gua_relation").val());
+            formData.append("gua_occu", $("#gua_occu").val());
+            formData.append("gua_contact", $("#gua_contact").val());
+            formData.append("gua_address", $("#gua_address").val());
+            formData.append("risk_level", "1");
+
             $.ajax({
                 type: "POST",
                 url: "/guardian",
@@ -140,28 +153,39 @@ const saveCustomer = (e) => {
                 data: formData,
                 contentType: false,
                 processData: false,
+                xhr: function () {
+                    var xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener("progress", function (evt) {
+                        if (evt.lengthComputable) {
+                            var percentComplete = Math.round((evt.loaded / evt.total) * 100);
+                            $("#progress-bar").css("width", percentComplete + "%");
+                        }
+                    }, false);
+                    return xhr;
+                },
                 success: function (data, textStatus, xhr) {
-                    console.log(data);
                     if (xhr.status === 200) {
-                        save_doc(data.id);
-                        Swal.fire({
-                            position: "center",
-                            icon: "success",
-                            title: "Successfully saved!",
-                        }).then(function () {
-                            window.location.reload();
+                        save_doc(data.id, function () {
+                            Swal.fire({
+                                position: "center",
+                                icon: "success",
+                                title: "Successfully saved!",
+                            }).then(function () {
+                                window.location.reload();
+                            });
                         });
                     } else {
                         Swal.fire("Error!", "Failed to save data!", "error");
                     }
                 },
-                error: function (xhr, textStatus, errorThrown) {
+                error: function () {
                     Swal.fire("Error!", "Failed to save data!", "error");
                 }
             });
         }
     });
 };
+
 
 
 
@@ -248,23 +272,20 @@ function check_group(val){
 
 
 
-function save_doc(id) {
+function save_doc(id, callback) {
     var formData = new FormData();
 
-    // Scope the file input selector to the document table only
-    $('#documenttable input[type="file"]').each(function(index, element) {
-        // Get the file and document name
+    $('#documenttable input[type="file"]').each(function (index, element) {
         var file = element.files[0];
         var documentName = $(element).closest('tr').find('td:first').text().trim();
 
         if (file) {
-            // Append the file and document name to the FormData object
             formData.append('documents[]', file);
-            formData.append('documentNames[]', documentName); // Append document name
+            formData.append('documentNames[]', documentName);
         }
     });
 
-    formData.append('id', id); // Append the general ID
+    formData.append('id', id);
 
     $.ajax({
         url: "/save-files-guardian",
@@ -275,13 +296,22 @@ function save_doc(id) {
         data: formData,
         contentType: false,
         processData: false,
-        success: function(response) {
-            // Handle success
-            console.log("Documents saved successfully");
+        xhr: function () {
+            var xhr = new window.XMLHttpRequest();
+            xhr.upload.addEventListener("progress", function (evt) {
+                if (evt.lengthComputable) {
+                    var percentComplete = Math.round((evt.loaded / evt.total) * 100);
+                    $("#progress-bar").css("width", percentComplete + "%");
+                }
+            }, false);
+            return xhr;
         },
-        error: function(xhr, status, error) {
-            // Handle error
-            console.error(error);
+        success: function (response) {
+            console.log("Documents saved successfully");
+            callback(); // Proceed to final success message
+        },
+        error: function () {
+            console.error("Error saving documents.");
         }
     });
 }
