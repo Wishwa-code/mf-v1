@@ -136,7 +136,7 @@
                                             <button type="button" class="btn btn-danger" onclick="deleteCustomer({{$customer->idCustomer}})">
                                                 <i class="bi bi-trash fs-4"></i>
                                             </button>
-                                            @if (!empty($customer->Cus_phto) && Storage::exists($customer->Cus_phto))
+                                            @if (!empty($customer->Cus_phto))
                                                 <a href="{{ Storage::url($customer->Cus_phto) }}" target="_blank" class="btn btn-dark">
                                                     <i class="bi bi-people fs-4"></i>
                                                 </a>
