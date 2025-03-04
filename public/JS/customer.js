@@ -113,90 +113,104 @@ function validatePhoneNumber(err) {
 const saveCustomer = (e) => {
     e.preventDefault();
 
+
+
     Swal.fire({
-        title: 'Processing...',
-        html: '<p>The customer saving process may take some time depending on your document upload sizes.</p>' +
-            '<div id="progress-container" style="width: 100%; background-color: #e9ecef; border-radius: 0.25rem;">' +
-            '<div id="progress-bar" style="width: 0%; height: 20px; background-color: #1A2942; border-radius: 0.25rem;"></div>' +
-            '</div>',
-        allowOutsideClick: false,
-        showConfirmButton: false,
-        didOpen: () => {
-            Swal.showLoading();
-        }
-    });
-
-    const formData = new FormData();
-    formData.append("title", $("#title").val());
-    formData.append("f_name", $("#f_name").val());
-    formData.append("last_name", $("#last_name").val());
-    formData.append("email", $("#email").val());
-    formData.append("contact_number", $("#contact_number").val());
-    formData.append("nic", $("#nic").val());
-    formData.append("new_nic", $("#new_nic").val());
-    formData.append("gender", $("#gender").val());
-    formData.append("dob", $("#dob").val());
-    formData.append("root", $("#root").val());
-    formData.append("business_registration", $("#business_registration").val());
-
-    formData.append("curr_address_01", $("#curr_address_01").val());
-    formData.append("curr_address_02", $("#curr_address_02").val());
-    formData.append("curr_address_03", $("#curr_address_03").val());
-
-    formData.append("per_address_01", $("#per_address_01").val());
-    formData.append("per_address_02", $("#per_address_02").val());
-    formData.append("per_address_03", $("#per_address_03").val());
-
-    formData.append("city", $("#city").val());
-    formData.append("state", $("#state").val());
-    formData.append("landline", $("#landline").val());
-    formData.append("cus_phto", $("#cus_phto")[0].files[0]); // File input
-    formData.append("note", $("#note").val());
-
-    // AJAX call with progress tracking
-    $.ajax({
-        type: "POST",
-        url: "/customers",
-        headers: {
-            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-        },
-        data: formData,
-        contentType: false,
-        processData: false,
-        xhr: function () {
-            var xhr = new window.XMLHttpRequest();
-            xhr.upload.addEventListener("progress", function (evt) {
-                if (evt.lengthComputable) {
-                    var percentComplete = Math.round((evt.loaded / evt.total) * 100);
-                    $("#progress-bar").css("width", percentComplete + "%");
+        title: "Are you sure?",
+        text: "Do you want to save this Customer?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, Save it!",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Processing...',
+                html: '<p>The customer saving process may take some time depending on your document upload sizes.</p>' +
+                    '<div id="progress-container" style="width: 100%; background-color: #e9ecef; border-radius: 0.25rem;">' +
+                    '<div id="progress-bar" style="width: 0%; height: 20px; background-color: #1A2942; border-radius: 0.25rem;"></div>' +
+                    '</div>',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
                 }
-            }, false);
-            return xhr;
-        },
-        success: function (data, textStatus, xhr) {
-            if (xhr.status === 200) {
-                if (data.id === "0") {
-                    Swal.fire("Error!", "This customer already exists!", "error");
-                } else {
-                    // Proceed to document and bank saving
-                    save_doc(data.id, function () {
-                        save_bank(data.id, function () {
-                            Swal.fire({
-                                position: "center",
-                                icon: "success",
-                                title: "Successfully saved!",
-                            }).then(function () {
-                                window.location.reload();
+            });
+
+            const formData = new FormData();
+            formData.append("title", $("#title").val());
+            formData.append("f_name", $("#f_name").val());
+            formData.append("last_name", $("#last_name").val());
+            formData.append("email", $("#email").val());
+            formData.append("contact_number", $("#contact_number").val());
+            formData.append("nic", $("#nic").val());
+            formData.append("new_nic", $("#new_nic").val());
+            formData.append("gender", $("#gender").val());
+            formData.append("dob", $("#dob").val());
+            formData.append("root", $("#root").val());
+            formData.append("business_registration", $("#business_registration").val());
+
+            formData.append("curr_address_01", $("#curr_address_01").val());
+            formData.append("curr_address_02", $("#curr_address_02").val());
+            formData.append("curr_address_03", $("#curr_address_03").val());
+
+            formData.append("per_address_01", $("#per_address_01").val());
+            formData.append("per_address_02", $("#per_address_02").val());
+            formData.append("per_address_03", $("#per_address_03").val());
+
+            formData.append("city", $("#city").val());
+            formData.append("state", $("#state").val());
+            formData.append("landline", $("#landline").val());
+            formData.append("cus_phto", $("#cus_phto")[0].files[0]); // File input
+            formData.append("note", $("#note").val());
+
+            // AJAX call with progress tracking
+            $.ajax({
+                type: "POST",
+                url: "/customers",
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                },
+                data: formData,
+                contentType: false,
+                processData: false,
+                xhr: function () {
+                    var xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener("progress", function (evt) {
+                        if (evt.lengthComputable) {
+                            var percentComplete = Math.round((evt.loaded / evt.total) * 100);
+                            $("#progress-bar").css("width", percentComplete + "%");
+                        }
+                    }, false);
+                    return xhr;
+                },
+                success: function (data, textStatus, xhr) {
+                    if (xhr.status === 200) {
+                        if (data.id === "0") {
+                            Swal.fire("Error!", "This customer already exists!", "error");
+                        } else {
+                            // Proceed to document and bank saving
+                            save_doc(data.id, function () {
+                                save_bank(data.id, function () {
+                                    Swal.fire({
+                                        position: "center",
+                                        icon: "success",
+                                        title: "Successfully saved!",
+                                    }).then(function () {
+                                        window.location.reload();
+                                    });
+                                });
                             });
-                        });
-                    });
+                        }
+                    } else {
+                        Swal.fire("Error!", "Failed to save data!", "error");
+                    }
+                },
+                error: function () {
+                    Swal.fire("Error!", "Failed to save data!", "error");
                 }
-            } else {
-                Swal.fire("Error!", "Failed to save data!", "error");
-            }
-        },
-        error: function () {
-            Swal.fire("Error!", "Failed to save data!", "error");
+            });
         }
     });
 };
