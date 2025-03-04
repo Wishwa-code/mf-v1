@@ -113,6 +113,19 @@ function validatePhoneNumber(err) {
 const saveCustomer = (e) => {
     e.preventDefault();
 
+    Swal.fire({
+        title: 'Processing...',
+        html: '<p>The customer saving process may take some time depending on your document upload sizes.</p>' +
+            '<div id="progress-container" style="width: 100%; background-color: #e9ecef; border-radius: 0.25rem;">' +
+            '<div id="progress-bar" style="width: 0%; height: 20px; background-color: #1A2942; border-radius: 0.25rem;"></div>' +
+            '</div>',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
     const formData = new FormData();
     formData.append("title", $("#title").val());
     formData.append("f_name", $("#f_name").val());
@@ -126,7 +139,6 @@ const saveCustomer = (e) => {
     formData.append("root", $("#root").val());
     formData.append("business_registration", $("#business_registration").val());
 
-
     formData.append("curr_address_01", $("#curr_address_01").val());
     formData.append("curr_address_02", $("#curr_address_02").val());
     formData.append("curr_address_03", $("#curr_address_03").val());
@@ -135,69 +147,40 @@ const saveCustomer = (e) => {
     formData.append("per_address_02", $("#per_address_02").val());
     formData.append("per_address_03", $("#per_address_03").val());
 
-
-
     formData.append("city", $("#city").val());
     formData.append("state", $("#state").val());
     formData.append("landline", $("#landline").val());
     formData.append("cus_phto", $("#cus_phto")[0].files[0]); // File input
     formData.append("note", $("#note").val());
-    formData.append("longitude", $("#longitude").val());
-    formData.append("latitude", $("#latitude").val());
-    formData.append("gua_title", $("#gua_title").val());
-    formData.append("gua_name", $("#gua_name").val());
-    formData.append("guardian_gender", $("#guardian_gender").val());
-    formData.append("gua_relation", $("#gua_relation").val());
-    formData.append("gua_occu", $("#gua_occu").val());
-    formData.append("gua_contact", $("#gua_contact").val());
 
-    formData.append("gua_address_01", $("#gua_address_01").val());
-    formData.append("gua_address_02", $("#gua_address_02").val());
-    formData.append("gua_address_03", $("#gua_address_03").val());
-
-    formData.append("cus_number", $("#formatted_num_use").text());
-    formData.append("gua_nic", $("#gua_nic").val());
-    formData.append("risk_level", "1");
-    formData.append("civil_status", $("#civil_status").val());
-    formData.append("contact_number_2", $("#contact_number_2").val());
-
-    formData.append("occu_job_position", $("#occu_job_position").val());
-    formData.append("occu_monthly_salary", $("#occu_monthly_salary").val());
-    formData.append("occu_address_01", $("#occu_address_01").val());
-    formData.append("occu_address_02", $("#occu_address_02").val());
-    formData.append("occu_address_03", $("#occu_address_03").val());
-    formData.append("occu_contact_no", $("#occu_contact_no").val());
-    formData.append("occu_longitude", $("#occu_longitude").val());
-    formData.append("occu_latitude", $("#occu_latitude").val());
-
-    Swal.fire({
-        title: "Are you sure?",
-        text: "Do you want to save this Customer?",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, Save it!",
-    }).then((result) => {
-        if (result.isConfirmed) {
-            $.ajax({
-                type: "POST",
-                url: "/customers",
-                headers: {
-                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-                },
-                data: formData,
-                contentType: false,
-                processData: false,
-                success: function (data, textStatus, xhr) {
-                    console.log(data);
-                    if (xhr.status === 200) {
-
-                        if (data.id==="0"){
-                            Swal.fire("Error!", "This customer is already exist !", "error");
-                        }else{
-                            save_doc(data.id);
-                            save_bank(data.id);
+    // AJAX call with progress tracking
+    $.ajax({
+        type: "POST",
+        url: "/customers",
+        headers: {
+            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+        },
+        data: formData,
+        contentType: false,
+        processData: false,
+        xhr: function () {
+            var xhr = new window.XMLHttpRequest();
+            xhr.upload.addEventListener("progress", function (evt) {
+                if (evt.lengthComputable) {
+                    var percentComplete = Math.round((evt.loaded / evt.total) * 100);
+                    $("#progress-bar").css("width", percentComplete + "%");
+                }
+            }, false);
+            return xhr;
+        },
+        success: function (data, textStatus, xhr) {
+            if (xhr.status === 200) {
+                if (data.id === "0") {
+                    Swal.fire("Error!", "This customer already exists!", "error");
+                } else {
+                    // Proceed to document and bank saving
+                    save_doc(data.id, function () {
+                        save_bank(data.id, function () {
                             Swal.fire({
                                 position: "center",
                                 icon: "success",
@@ -205,16 +188,15 @@ const saveCustomer = (e) => {
                             }).then(function () {
                                 window.location.reload();
                             });
-                        }
-
-                    } else {
-                        Swal.fire("Error!", "Failed to save data!", "error");
-                    }
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    Swal.fire("Error!", "Failed to save data!", "error");
+                        });
+                    });
                 }
-            });
+            } else {
+                Swal.fire("Error!", "Failed to save data!", "error");
+            }
+        },
+        error: function () {
+            Swal.fire("Error!", "Failed to save data!", "error");
         }
     });
 };
@@ -274,38 +256,23 @@ function saveDocument() {
 }
 
 
-function save_bank(id) {
+function save_bank(id, callback) {
     var formData = new FormData();
 
-    // Get the values from the input fields
-    var bankName = $('#bank_name').val();
-    var accountName = $('#account_name').val();
-    var accountNumber = $('#account_number').val();
-    var branch = $('#branch').val();
+    formData.append('bankName', $('#bank_name').val());
+    formData.append('accountName', $('#account_name').val());
+    formData.append('accountNumber', $('#account_number').val());
+    formData.append('branch', $('#branch').val());
+    formData.append('id', id);
 
-    // Append the values to the FormData object
-    formData.append('bankName', bankName);
-    formData.append('accountName', accountName);
-    formData.append('accountNumber', accountNumber);
-    formData.append('branch', branch);
-    formData.append('id', id); // Append the general ID
-
-    // Iterate over table rows to collect bank details
-    $('#bank_table tbody tr').each(function() {
+    $('#bank_table tbody tr').each(function () {
         var row = $(this);
-        var rowBankName = row.find('td').eq(0).text().trim();
-        var rowAccountName = row.find('td').eq(1).text().trim();
-        var rowAccountNumber = row.find('td').eq(2).text().trim();
-        var rowBranch = row.find('td').eq(3).text().trim();
-
-        // Append each row's data to the FormData object
-        formData.append('tableBankNames[]', rowBankName);
-        formData.append('tableAccountNames[]', rowAccountName);
-        formData.append('tableAccountNumbers[]', rowAccountNumber);
-        formData.append('tableBranches[]', rowBranch);
+        formData.append('tableBankNames[]', row.find('td').eq(0).text().trim());
+        formData.append('tableAccountNames[]', row.find('td').eq(1).text().trim());
+        formData.append('tableAccountNumbers[]', row.find('td').eq(2).text().trim());
+        formData.append('tableBranches[]', row.find('td').eq(3).text().trim());
     });
 
-    // Send the form data via AJAX
     $.ajax({
         url: "/save-bank-details",
         method: "POST",
@@ -315,16 +282,26 @@ function save_bank(id) {
         data: formData,
         contentType: false,
         processData: false,
-        success: function(response) {
-            // Handle success
-            console.log("Bank details saved successfully");
+        xhr: function () {
+            var xhr = new window.XMLHttpRequest();
+            xhr.upload.addEventListener("progress", function (evt) {
+                if (evt.lengthComputable) {
+                    var percentComplete = Math.round((evt.loaded / evt.total) * 100);
+                    $("#progress-bar").css("width", percentComplete + "%");
+                }
+            }, false);
+            return xhr;
         },
-        error: function(xhr, status, error) {
-            // Handle error
-            console.error(error);
+        success: function (response) {
+            console.log("Bank details saved successfully");
+            callback(); // Final callback to show success message
+        },
+        error: function () {
+            console.error("Error saving bank details.");
         }
     });
 }
+
 
 
 
@@ -358,24 +335,20 @@ function check_group(val){
 }
 
 
-
-function save_doc(id) {
+function save_doc(id, callback) {
     var formData = new FormData();
 
-    // Scope the file input selector to the document table only
-    $('#documenttable input[type="file"]').each(function(index, element) {
-        // Get the file and document name
+    $('#documenttable input[type="file"]').each(function (index, element) {
         var file = element.files[0];
         var documentName = $(element).closest('tr').find('td:first').text().trim();
 
         if (file) {
-            // Append the file and document name to the FormData object
             formData.append('documents[]', file);
-            formData.append('documentNames[]', documentName); // Append document name
+            formData.append('documentNames[]', documentName);
         }
     });
 
-    formData.append('id', id); // Append the general ID
+    formData.append('id', id);
 
     $.ajax({
         url: "/save-files-customer",
@@ -386,16 +359,26 @@ function save_doc(id) {
         data: formData,
         contentType: false,
         processData: false,
-        success: function(response) {
-            // Handle success
-            console.log("Documents saved successfully");
+        xhr: function () {
+            var xhr = new window.XMLHttpRequest();
+            xhr.upload.addEventListener("progress", function (evt) {
+                if (evt.lengthComputable) {
+                    var percentComplete = Math.round((evt.loaded / evt.total) * 100);
+                    $("#progress-bar").css("width", percentComplete + "%");
+                }
+            }, false);
+            return xhr;
         },
-        error: function(xhr, status, error) {
-            // Handle error
-            console.error(error);
+        success: function (response) {
+            console.log("Documents saved successfully");
+            callback(); // Proceed to the next step (Bank Saving)
+        },
+        error: function () {
+            console.error("Error saving documents.");
         }
     });
 }
+
 
 
 

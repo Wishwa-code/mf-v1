@@ -465,6 +465,16 @@
 
 
     </div>
+
+
+
+    <div id="progress-container" style="display:none;">
+        <div class="progress">
+            <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+        </div>
+    </div>
+
+
 @endsection
 
 @section('script')
