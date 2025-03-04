@@ -152,7 +152,7 @@
                                     <th scope="col">Loan Stock</th>
                                     <th scope="col">Loan Portfolio</th>
                                     <th scope="col">Total Paid Amount</th>
-                                    <th scope="col">Saving Amount</th>
+                                    <th scope="col">Scheduled Saving Amount</th>
                                     <th scope="col">Saving Balance</th>
                                     <th scope="col">Total Balance</th>
                                     <th scope="col">Capital Balance</th>
