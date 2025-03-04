@@ -491,8 +491,6 @@
                         @else
                             <img src="https://via.placeholder.com/150" class="logo-img rounded-logo">
                         @endif
-{{--            <span class="logo-lg">{{ $item->company_name }}</span>--}}
-{{--            <span class="logo-sm">{{ $item->company_name }}</span>--}}
         @endforeach
     </a>
 
@@ -507,8 +505,6 @@
                         @else
                             <img src="https://via.placeholder.com/150" class="logo-img rounded-logo">
                         @endif
-{{--            <span class="logo-lg">{{ $item->company_name }}</span>--}}
-{{--            <span class="logo-sm">{{ $item->company_name }}</span>--}}
         @endforeach
     </a>
 
@@ -528,7 +524,16 @@
     <div class="h-100" id="leftside-menu-container" data-simplebar>
         <!--- Sidemenu -->
         <ul class="side-nav">
-            <li class="side-nav-title" style="color: red">{{$item->company_name}}</li>
+            <?php
+            $query = "SELECT * FROM company where branch_id='" . session('branch_id') . "'";
+            $check = DB::select($query);
+            ?>
+
+
+            @foreach($check as $item)
+                <li class="side-nav-title" style="color: red">{{$item->company_name}}</li>
+            @endforeach
+
 
 
 
