@@ -406,10 +406,10 @@
                     </a>
 
                     <?php
-
-                    $query = "SELECT * FROM company";
-                    $user_details = DB::select($query);
+                        $query = "SELECT * FROM company where branch_id='" . session('branch_id') . "'";
+                        $user_details = DB::select($query);
                     ?>
+
 
                     @foreach($user_details as $item)
                         @if($item->mask != null)
