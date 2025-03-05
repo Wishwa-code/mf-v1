@@ -303,7 +303,7 @@ class UserController extends Controller
         $loan=DB::table('customer_loan')->get();
         foreach ($loan as $loans){
             $capitalBalanceController->index($loans->idCustomer_Loan);
-            $loan_log=DB::table('loan_log')->where('Loan_ID','=',$loans->idCustomer_Loan)->where('Type','=','Issue Loan')->first();
+            $loan_log=DB::table('Loan_Log')->where('Loan_ID','=',$loans->idCustomer_Loan)->where('Type','=','Issue Loan')->first();
             if (!$loan_log){
                 $id=$loans->idCustomer_Loan;
                 $branch_id=$loans->branch_id;
