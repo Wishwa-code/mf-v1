@@ -575,7 +575,7 @@ Route::post('/update-branch','\App\Http\Controllers\BranchController@updateBranc
 
 
 
-Route::post('/activate-branch/{id}','\App\Http\Controllers\BranchController@activateBranch')->name('update.activateBranch');
+Route::get('/activate-branch/{id}','\App\Http\Controllers\BranchController@activateBranch')->name('update.activateBranch');
 
 
 

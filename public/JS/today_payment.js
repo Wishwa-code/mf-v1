@@ -69,12 +69,9 @@ function load_payment_table(page = 1) {
 
 
 
-                    let name = item.customer_name + " " + item.customer_lastname;
-                    name=formatName(name);
-
                     var row = `<tr>
                         <td>${item.Loan_No}</td>
-                        <td>${name}</td>
+                        <td>${formatName(item.customer_name, item.customer_lastname)}</td>
                         <td>${parseFloat(item.Loan_Amount).toFixed(2)}</td>
                         <td>${parseFloat(item.Today_installment).toFixed(2)}</td>
                         <td>
@@ -144,18 +141,12 @@ function open_model(id){
 
 
 
-function formatName(fullName) {
-    // Split the full name into an array of individual names
-    let nameParts = fullName.trim().split(' ');
-
-    // Extract the last name (assumed to be the last part)
-    let lastName = nameParts.pop(); // Removes and returns the last element (last name)
-
-    // Get the initials of each remaining part of the name
-    let initials = nameParts.map(name => name[0].toUpperCase()).join('.');
-
-    // Return the formatted name with initials and last name
-    return `${initials}. ${lastName}`;
+function formatName(firstName, lastName) {
+    let firstInitial = firstName.split(' ')[0].charAt(0) + '.'; // First initial
+    let lastNameParts = lastName.split(' '); // Split last name into parts
+    let lastInitial = lastNameParts.length > 1 ? lastNameParts[0].charAt(0) + '.' : ''; // Last name initial if it has more than one part
+    let formattedLastName = lastNameParts[lastNameParts.length - 1]; // Last part of last name
+    return (lastInitial ? firstInitial + lastInitial : firstInitial) + ' ' + formattedLastName;
 }
 
 
