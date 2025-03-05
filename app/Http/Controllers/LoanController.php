@@ -61,12 +61,9 @@ class LoanController extends Controller
     public function store(Request $request)
     {
 
-
         $user_id = (int)session('userid');
 
-
         $loan = new Loan();
-
 
         $date = Carbon::now()->toDateString();
 
@@ -363,8 +360,8 @@ class LoanController extends Controller
             }
         }
 
-
-
+        $HolidayController=new HolidayController();
+        $HolidayController->store($id);
 
         if (isset($request->witnessesArray) && count($request->witnessesArray) > 0) {
             foreach ($request->witnessesArray as $item) {
@@ -734,7 +731,7 @@ class LoanController extends Controller
         }
 
         // Fetch the installments
-        $installments = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', $id)->get();
+        $installments = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', $id)->orderBy('Installment_Date')->get();
         $savingBalanceSum = $installments->sum('Saving_balance');
         $Saving_amountSum = $installments->sum('Saving_amount');
         // Extracting installment IDs from installments

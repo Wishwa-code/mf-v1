@@ -201,6 +201,7 @@ function automatePayments() {
 
 
 async function performPayment(cus_id, payment_amount, reduce_balance_loan_id, payment_date) {
+    console.log(cus_id);
     let file = $('#file')[0]?.files[0];
     let formData = new FormData();
     formData.append('cus_id', cus_id);

@@ -9,14 +9,6 @@ use Illuminate\Support\Facades\Log;
 class CapitalBalanceController extends Controller
 {
 
-    protected $loanLogController;
-
-    // Single constructor to inject both controllers
-    public function __construct(LoanLogController $loanLogController)
-    {
-        $this->loanLogController = $loanLogController;
-    }
-
 
     /**
      * Display a listing of the resource.
@@ -58,7 +50,8 @@ class CapitalBalanceController extends Controller
                     'Status' => '1',
                 ]);
                 if ($status==0){
-                    $this->loanLogController->index(
+                    $loanLogController=new LoanLogController();
+                    $loanLogController->index(
                         $loan_id, 'Loan Settlement', '0',
                         'Automatic Loan Settlement', '0.00',
                         '0.00', '0.00',
