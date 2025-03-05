@@ -3,96 +3,39 @@
 @section('head')
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <style>
-        h1, h2 {
-            text-align: center;
-            color: #343a40;
-        }
-        .date-range, .compare-period {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .date-range input, .compare-period input {
-            padding: 8px;
-            border-radius: 5px;
-            border: 1px solid #ced4da;
-            width: 200px;
-        }
-        .filters {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 20px;
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .statement {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .total-row {
-            background-color: #f1f1f1;
-            font-weight: bold;
-            padding: 10px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        thead th, tbody td {
-            text-align: left;
-            padding: 12px;
-            border: 1px solid #dee2e6;
-        }
-        thead th {
-            background-color: #e9ecef;
-        }
-        .buttons {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .buttons button {
-            padding: 10px 20px;
-            font-size: 1rem;
-            border-radius: 5px;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        .search {
-            background-color: #28a745;
-            color: #fff;
-        }
-        .export {
+        .table thead th {
             background-color: #007bff;
-            color: #fff;
-            border: none;
-            padding: 10px 15px;
-            cursor: pointer;
-            border-radius: 5px;
+            color: #000000;
+            text-align: center;
         }
-        .highlight {
+
+        .table tbody td {
+            text-align: center;
+        }
+
+        .table tfoot th {
+            background-color: #0e0e0e;
             font-weight: bold;
-            color: #dc3545;
+            text-align: center;
+        }
+
+        .table tfoot th:first-child {
+            text-align: left;
+        }
+
+        .table th,
+        .table td {
+            padding: 12px;
+        }
+
+        body {
+            background-color: #ffffff;
         }
     </style>
     <style>
         .modal-lg {
             max-width: 70%;  /* Set modal to 90% of the screen width */
         }
-
-        /* Blinking effect for table rows */
-        .blinking {
-            animation: blink-animation 1s infinite alternate;
-        }
-
-
         /* Hover effect for better UX */
         .clickable-row:hover {
             background-color: #f6f1f1 !important; /* Light green */
@@ -100,36 +43,131 @@
             font-weight: bold;
         }
 
+        /* General Table Styling */
+        .statement table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #ffffff;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* Table Headings */
+        .statement thead th {
+            background-color: #ffffff;
+            color: #000000;
+            text-align: center;
+            padding: 14px;
+            font-size: 16px;
+            border-bottom: 3px solid #262626;
+        }
+
+        /* Table Rows */
+        .statement tbody tr {
+            border-bottom: 1px solid #ddd;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        /* Alternating Row Colors */
+        .statement tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        /* Hover Effect */
+        .statement tbody tr:hover {
+            background-color: #e9f5ff !important;
+            cursor: pointer;
+        }
+
+        /* Cells */
+        .statement td {
+            padding: 12px;
+            text-align: right;
+            font-size: 15px;
+        }
+
+        /* Left Align Category Names */
+        .statement td:first-child {
+            text-align: left;
+            font-weight: bold;
+        }
+
+        /* Totals and Highlighted Rows */
+        .statement .total-row {
+            background-color: #e3e5e5 !important;
+            font-weight: bold;
+            color: #393a3a;
+            border-top: 2px solid #000000;
+        }
+
+        /* Highlighted Balance Check */
+        .statement .highlight {
+            background-color: #363228 !important;
+            color: #fff5f5;
+            font-weight: bold;
+        }
+
+        /* Modal Styling */
+        .modal-content {
+            border-radius: 10px;
+            box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+            background-color: #eeeeef;
+            color: #000000;
+            border-bottom: 3px solid #7a7f85;
+        }
+
+        .modal-title {
+            font-weight: bold;
+        }
+
     </style>
 @endsection
 
 @section('content')
-    <div class="container mt-5">
-        <h1>Balance Sheet Overview</h1>
+
+    <div class="container mt-4">
+        <h2>Balance Sheet Overview</h2>
         <span style="color: #a19595">"This section provides a snapshot of your organization’s financial position as of a specific date, helping you evaluate the financial health by showing assets, liabilities, and equity."</span>
         <br><br>
 
-        <div class="filters">
-            <form action="{{route('BalanceSheetView.profit')}}" method="POST">
-                @csrf
-                <div class="date-range">
-{{--                    <input type="date" name="date_from" value="{{$date_from}}"> to--}}
-                    To :<input type="date" name="date_to" value="{{$date_to}}">
-                </div>
-                <div class="buttons">
-                    <button class="search" type="submit">Search!</button>
-                </div>
-            </form>
-        </div>
+        <!-- Search Section -->
+        <form class="row g-3 mb-4 align-items-end" action="{{route('BalanceSheetView.profit')}}" method="POST">
+            @csrf
+            <div class="col-md-3">
+                <label for="date_from" class="form-label">Generate Balance Sheet Untill :</label>
+                <input type="date" class="form-control" name="date_to" id="date_to" value="{{$date_to}}">
+            </div>
 
-        <button id="exportButton" class="export">Export to Excel</button>
-        <button id="exportPdfButton" class="export">Export to PDF</button>
-        <br><br>
+
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Generate</button>
+            </div>
+            <div class="col-md-2">
+                <button id="btnExportExcel" class="btn btn-success w-100">Download Excel</button>
+            </div>
+            <div class="col-md-2">
+                <button id="btnExportPDF" class="btn btn-danger w-100">Download PDF</button>
+            </div>
+
+
+        </form>
+
+
+    </div>
+
+
+
+    <div class="container mt-5">
 
         <div class="statement">
             <table>
                 <thead>
-                <tr><th>Category</th><th>Amount</th></tr>
+                <tr><th style="text-align: left">Accounts</th><th style="text-align: right">Balance Amount</th></tr>
                 </thead>
                 <tbody>
 
@@ -190,13 +228,13 @@
                 <!-- Final Check -->
                 <tr class="fw-bold total-row">
                     <td>Total Liabilities & Equity</td>
-                    <td>{{ formatNegativeInParentheses($total_liabilities_and_equity) }}</td>
+                    <td >{{ formatNegativeInParentheses($total_liabilities_and_equity) }}</td>
                 </tr>
 
-                <tr class="fw-bold highlight">
-                    <td>(Must Equal Total Assets)</td>
-                    <td>{{ formatNegativeInParentheses($total_assets+$total_liabilities_and_equity) }}</td>
-                </tr>
+{{--                <tr class="fw-bold highlight">--}}
+{{--                    <td>(Must Equal Total Assets)</td>--}}
+{{--                    <td>{{ formatNegativeInParentheses($total_assets+$total_liabilities_and_equity) }}</td>--}}
+{{--                </tr>--}}
 
                 </tbody>
             </table>
@@ -220,12 +258,12 @@
                     <table id="financialReportTable" class="table table-striped">
                         <thead>
                         <tr>
-                            <th>Type</th>
-                            <th>Description</th>
-                            <th>Debit Amount</th>
-                            <th>Credit Amount</th>
-                            <th>Balance</th>
-                            <th>Created At</th>
+                            <th style="text-align: left">Type</th>
+                            <th style="text-align: left">Description</th>
+                            <th style="text-align: right">Debit Amount</th>
+                            <th style="text-align: right">Credit Amount</th>
+                            <th style="text-align: right">Balance</th>
+                            <th style="text-align: right">Created At</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -240,54 +278,99 @@
 
 
 @endsection
+@section('script')
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.20/jspdf.plugin.autotable.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Export to Excel
+            $("#btnExportExcel").click(function (e) {
+                e.preventDefault();
+                exportTableToExcel();
+            });
 
-<script>
-    function openFinancialReportModal(idbank, bankName) {
-        $('#financialReportModalLabel').text('Financial Report for - ' + bankName);
-        $('#financialReportModal').modal('show'); // Open modal
+            // Export to PDF
+            $("#btnExportPDF").click(function (e) {
+                e.preventDefault();
+                exportTableToPDF();
+            });
 
-        // Clear previous data
-        $('#financialReportTable tbody').empty();
-
-        var date_from = $("#date_from").val();
-        var date_to = $("#date_to").val();
-
-        $.ajax({
-            url: '/get-financial-full-report',
-            type: 'POST',
-            data: {
-                account_id: idbank,
-                date_from: date_from,
-                date_to: date_to
-            }, headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            }, success: function (data) {
-
-                data.forEach(function (item) {
-                    var row = `
-                <tr>
-                    <td>${item.Type || 'N/A'}</td>
-                    <td>${item.Description || 'N/A'}</td>
-                    <td>${formatNumber(parseFloat(item.Debit).toFixed(2) || 0)}</td>
-                    <td>${formatNumber(parseFloat(item.Credit).toFixed(2) || 0)}</td>
-                    <td>${formatNumber(parseFloat(item.Balance).toFixed(2) || 0)}</td>
-                    <td>${item.Date_Time || 'N/A'}</td>
-                </tr>
-            `;
-                    $('#financialReportTable tbody').append(row);
-                });
+            function exportTableToExcel() {
+                let table = document.querySelector(".statement table");
+                let workbook = XLSX.utils.table_to_book(table, { sheet: "Balance Sheet" });
+                XLSX.writeFile(workbook, "Balance_Sheet.xlsx");
             }
-            ,
-            error: function (xhr) {
-                console.error("AJAX error:", xhr.responseText);
-                alert("Error fetching financial report. Check console for details.");
+
+            function exportTableToPDF() {
+                const { jsPDF } = window.jspdf;
+                let doc = new jsPDF();
+
+                doc.setFontSize(14);
+                doc.text("Balance Sheet Overview", 14, 10);
+
+                doc.autoTable({
+                    html: '.statement table',
+                    startY: 20,
+                    styles: { fontSize: 10, textColor: [0, 0, 0] },
+                    theme: 'grid'
+                });
+
+                doc.save("Balance_Sheet.pdf");
             }
         });
+    </script>
 
-    }
-    // Function to format numbers with commas
-    function formatNumber(num) {
-        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    }
-</script>
+    <script>
+
+        function openFinancialReportModal(idbank, bankName) {
+            $('#financialReportModalLabel').text('Financial Report for - ' + bankName);
+            $('#financialReportModal').modal('show'); // Open modal
+
+            // Clear previous data
+            $('#financialReportTable tbody').empty();
+
+            var date_from = $("#date_from").val();
+            var date_to = $("#date_to").val();
+
+            $.ajax({
+                url: '/get-financial-full-report',
+                type: 'POST',
+                data: {
+                    account_id: idbank,
+                    date_from: date_from,
+                    date_to: date_to
+                }, headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }, success: function (data) {
+
+                    data.forEach(function (item) {
+                        var row = `
+                <tr>
+                    <td style="text-align: left">${item.Type || 'N/A'}</td>
+                    <td style="text-align: left">${item.Description || 'N/A'}</td>
+                    <td style="text-align: right">${formatNumber(parseFloat(item.Debit).toFixed(2) || 0)}</td>
+                    <td style="text-align: right">${formatNumber(parseFloat(item.Credit).toFixed(2) || 0)}</td>
+                    <td style="text-align: right">${formatNumber(parseFloat(item.Balance).toFixed(2) || 0)}</td>
+                    <td style="text-align: right">${item.Date_Time || 'N/A'}</td>
+                </tr>
+            `;
+                        $('#financialReportTable tbody').append(row);
+                    });
+                }
+                ,
+                error: function (xhr) {
+                    console.error("AJAX error:", xhr.responseText);
+                    alert("Error fetching financial report. Check console for details.");
+                }
+            });
+
+        }
+        // Function to format numbers with commas
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+    </script>
+@endsection
+
 

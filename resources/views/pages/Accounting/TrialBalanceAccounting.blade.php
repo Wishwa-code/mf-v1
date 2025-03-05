@@ -174,11 +174,8 @@
             </div>
         </div>
     </div>
-
-
-
-
-
+@endsection
+@section('script')
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
     <script>
         $(document).ready(function () {
