@@ -265,7 +265,7 @@ class BranchController extends Controller
             }
 
             // Redirect to a confirmation page
-            return redirect()->route('login')->with('success', 'Branch activated successfully!');
+            return redirect()->route('login')->with('error', 'Branch activated successfully!');
         } else {
             return redirect()->route('login')->with('error', 'Branch activation failed ! Please check your activation code !');
         }
