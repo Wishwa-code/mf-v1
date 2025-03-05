@@ -411,18 +411,19 @@ class UserController extends Controller
                 'user' => $user_id,
                 'branch_id' => session('branch_id')
             ]);
+
             $bankLogController = new BankLogController();
 
             $System_default_5=tableWithBranch('company_bank_accounts')
                 ->where('Bank_Type','=','System_default_5')
                 ->first();
 
-            $bankLogController->index($System_default_5->Idbank,"Penalty","Penalty","-","credit",$panelty_amount);
+            $bankLogController->index($System_default_5->Idbank,"Penalty","Penalty","-","debit",$panelty_amount);
 
             $System_default_6=tableWithBranch('company_bank_accounts')
                 ->where('Bank_Type','=','System_default_6')
                 ->first();
-            $bankLogController->index($System_default_6->Idbank,"Penalty","Penalty","-","debit",$panelty_amount);
+            $bankLogController->index($System_default_6->Idbank,"Penalty","Penalty","-","credit",$panelty_amount);
 
 
         }

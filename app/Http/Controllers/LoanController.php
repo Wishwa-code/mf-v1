@@ -808,7 +808,10 @@ class LoanController extends Controller
         $user_id = (int)session('userid');
 
         $payment_delete=DB::table('user')->where('id','=',$user_id)->first();
-        $payment_delete_status=$payment_delete->payment_delete;
+        $payment_delete_status=0;
+        if ($payment_delete){
+            $payment_delete_status=$payment_delete->payment_delete;
+        }
 
 
         // Pass the data to the view with compact and handle potential nulls

@@ -240,31 +240,31 @@
 
 
 @endsection
+@section('script')
+    <script>
+        function openFinancialReportModal(idbank, bankName) {
+            $('#financialReportModalLabel').text('Financial Report for - ' + bankName);
+            $('#financialReportModal').modal('show'); // Open modal
 
-<script>
-    function openFinancialReportModal(idbank, bankName) {
-        $('#financialReportModalLabel').text('Financial Report for - ' + bankName);
-        $('#financialReportModal').modal('show'); // Open modal
+            // Clear previous data
+            $('#financialReportTable tbody').empty();
 
-        // Clear previous data
-        $('#financialReportTable tbody').empty();
+            var date_from = $("#date_from").val();
+            var date_to = $("#date_to").val();
 
-        var date_from = $("#date_from").val();
-        var date_to = $("#date_to").val();
+            $.ajax({
+                url: '/get-financial-full-report',
+                type: 'POST',
+                data: {
+                    account_id: idbank,
+                    date_from: date_from,
+                    date_to: date_to
+                }, headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }, success: function (data) {
 
-        $.ajax({
-            url: '/get-financial-full-report',
-            type: 'POST',
-            data: {
-                account_id: idbank,
-                date_from: date_from,
-                date_to: date_to
-            }, headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            }, success: function (data) {
-
-                data.forEach(function (item) {
-                    var row = `
+                    data.forEach(function (item) {
+                        var row = `
                 <tr>
                     <td>${item.Type || 'N/A'}</td>
                     <td>${item.Description || 'N/A'}</td>
@@ -274,20 +274,22 @@
                     <td>${item.Date_Time || 'N/A'}</td>
                 </tr>
             `;
-                    $('#financialReportTable tbody').append(row);
-                });
-            }
-            ,
-            error: function (xhr) {
-                console.error("AJAX error:", xhr.responseText);
-                alert("Error fetching financial report. Check console for details.");
-            }
-        });
+                        $('#financialReportTable tbody').append(row);
+                    });
+                }
+                ,
+                error: function (xhr) {
+                    console.error("AJAX error:", xhr.responseText);
+                    alert("Error fetching financial report. Check console for details.");
+                }
+            });
 
-    }
-    // Function to format numbers with commas
-    function formatNumber(num) {
-        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    }
-</script>
+        }
+        // Function to format numbers with commas
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+    </script>
+@endsection
+
 
