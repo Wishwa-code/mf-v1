@@ -45,8 +45,10 @@ class TodayPaymentController extends Controller
         $user_id = (int)session('userid');
 
         $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
-        $collector = $collector_val->collector;
-
+        $collector=0;
+        if ($collector_val){
+            $collector = $collector_val->collector;
+        }
 
         $loanQuery = tableWithBranch('customer_loan','customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
@@ -963,7 +965,6 @@ class TodayPaymentController extends Controller
 
                 $loan_log = DB::table('Loan_Log')
                     ->where('Loan_ID', '=', $loan_id)
-                    ->where('branch_id', session('branch_id'))
                     ->orderBy('Loan_Log_ID', 'desc')  // Assuming 'id' is the primary key or auto-increment column
                     ->first();
 
@@ -2367,9 +2368,11 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
         $loan = $loanQuery->get();
 
         $user_id = (int)session('userid');
-
         $payment_delete=tableWithBranch('user')->where('id','=',$user_id)->first();
-        $payment_delete_status=$payment_delete->payment_delete;
+        $payment_delete_status=0;
+        if ($payment_delete){
+            $payment_delete_status=$payment_delete->payment_delete;
+        }
 
         return response()->json(['item' => $loan, 'test' => $date,'payment_delete_status'=>$payment_delete_status], 200);
     }

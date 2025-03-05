@@ -61,12 +61,9 @@ class LoanController extends Controller
     public function store(Request $request)
     {
 
-
         $user_id = (int)session('userid');
 
-
         $loan = new Loan();
-
 
         $date = Carbon::now()->toDateString();
 
@@ -363,8 +360,8 @@ class LoanController extends Controller
             }
         }
 
-
-
+        $HolidayController=new HolidayController();
+        $HolidayController->store($id);
 
         if (isset($request->witnessesArray) && count($request->witnessesArray) > 0) {
             foreach ($request->witnessesArray as $item) {
