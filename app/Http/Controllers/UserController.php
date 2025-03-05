@@ -297,9 +297,13 @@ class UserController extends Controller
 
 
 
-//        $loan=DB::table('customer_loan')->get();
-//
-//        foreach ($loan as $loans){
+
+
+        $capitalBalanceController = new CapitalBalanceController();
+        $loan=DB::table('customer_loan')->get();
+        foreach ($loan as $loans){
+            $capitalBalanceController->index($loans->idCustomer_Loan);
+        }
 //            $id=$loans->idCustomer_Loan;
 //            $panelty_balance=tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan','=',$id)->sum('Panalty_Balance');
 //

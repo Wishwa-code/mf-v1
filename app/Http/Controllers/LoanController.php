@@ -734,7 +734,7 @@ class LoanController extends Controller
         }
 
         // Fetch the installments
-        $installments = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', $id)->get();
+        $installments = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', $id)->orderBy('Installment_Date')->get();
         $savingBalanceSum = $installments->sum('Saving_balance');
         $Saving_amountSum = $installments->sum('Saving_amount');
         // Extracting installment IDs from installments
