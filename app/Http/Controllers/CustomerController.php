@@ -119,67 +119,67 @@ class CustomerController extends Controller
 
             // Get the customer number from the request
             $cus_number = $request->cus_number;
-
-
-            $type = $company->customer_format;
-
+            Log::info($cus_number);
             $branch_name=$company->branch;
             $show_branch="";
             if ($branch_name!="") {
                 $show_branch='';
             }
 
-            $sms_cus_number="";
             if (strpos($cus_number, '@Auto_Id@') !== false) {
-                // Fetch the maximum customer ID
-                $customer_max = tableWithBranch('company')->first();
 
 
-                $cus_count=tableWithBranch('customer')->count('idCustomer') ?? 1;
+                $customer_max = $company->customer_num_start_from ?? 1;
+
+                // Get the current customer count
+                $cus_count = tableWithBranch('customer')->count('idCustomer') ?? 1;
 
                 // Increment the maximum ID by 1
-                $customer_max = $customer_max->customer_num_start_from + $cus_count;
+                $customer_max += $cus_count;
 
                 // Format the ID with leading zeros (e.g., 001, 010, 100, etc.)
                 $formatted_customer_id = str_pad($customer_max, 3, '0', STR_PAD_LEFT);
 
-                $root_code= tableWithBranch('route')
-                    ->where('id_route','=',$request->root)
+                // Fetch route details
+                $root_code = tableWithBranch('route')
+                    ->where('id_route', '=', $request->root)
                     ->first();
+
+                // Replace placeholders
                 $new_type = str_replace('@Auto_Id@', $formatted_customer_id, $cus_number);
-                $new_type = str_replace('@Root@', $root_code->root_code, $new_type);
-                $new_type = str_replace('@Branch_No@', $branch_name, $new_type);
+                if ($root_code) {
+                    $new_type = str_replace('@Root@', $root_code->root_code, $new_type);
+                }
+                $new_type = str_replace('@Branch_No@', $branch_name ?? '', $new_type);
 
-
-                // Assuming you have the request object available
-                $data = [
-                    'customer_num_start_from' => $customer_max,
-                ];
-
-// Use the new helper function to update the customer record
+                // Update company table with new max ID
+                $data = ['customer_num_start_from' => $customer_max];
                 updateWithBranch('company', 'id', '1', $data);
 
                 // Split the new customer number by the separator
-                $parts = explode($company->customer_seperate_from, $new_type);
-                foreach ($parts as &$part) {
-                    if (is_numeric($part)) {
-                        $part = $formatted_customer_id;
-                        break;
+                if (!empty($company->customer_seperate_from)) {
+                    $parts = explode($company->customer_seperate_from, $new_type);
+                    foreach ($parts as &$part) {
+                        if (is_numeric($part)) {
+                            $part = $formatted_customer_id;
+                            break;
+                        }
                     }
+                    unset($part); // Unset reference variable
+                    $new_cus_number = implode($company->customer_seperate_from, $parts);
+                } else {
+                    $new_cus_number = $new_type;
                 }
-                unset($part); // Unset reference variable
 
-                // Recombine the parts into the new customer number
-                $new_cus_number = implode($company->customer_seperate_from, $parts);
-
-                // Set the customer number with the desired prefix
+                // Set the customer number with the prefix
                 $customer->cus_number = $show_branch . $new_cus_number;
-                $sms_cus_number=$show_branch . $new_cus_number;
+                $sms_cus_number = $show_branch . $new_cus_number;
             } else {
-                // If the @Auto_ID@ placeholder is not present, just set the customer number with the prefix
+                // If @Auto_ID@ placeholder is not present, just set the customer number with the prefix
                 $customer->cus_number = $show_branch . $cus_number;
-                $sms_cus_number=$show_branch . $cus_number;
+                $sms_cus_number = $show_branch . $cus_number;
             }
+
 
 
 

@@ -223,18 +223,28 @@
                                     <tr>
                                         <th colspan="9">Group No :- {{ $group_name }}</th>
                                     </tr>
+                                    @php
+                                        function formatName($firstName, $lastName) {
+                                            // Get the first initial
+                                            $firstInitial = strtoupper(substr(explode(' ', trim($firstName))[0], 0, 1)) . '.';
+
+                                            // Split last name into parts
+                                            $lastNameParts = explode(' ', trim($lastName));
+
+                                            // Get last name initial (if there are multiple parts)
+                                            $lastInitial = count($lastNameParts) > 1 ? strtoupper(substr($lastNameParts[0], 0, 1)) . '.' : '';
+
+                                            // Get the last part of the last name
+                                            $formattedLastName = end($lastNameParts);
+
+                                            // Construct the formatted name
+                                            return trim(($lastInitial ? $firstInitial . $lastInitial : $firstInitial) . ' ' . $formattedLastName);
+                                        }
+                                    @endphp
+
                                     @foreach ($group as $item)
-                                        @php
-                                            // Split the full name into parts
-                                            $nameParts = explode(' ', $item->customer_name . ' ' . $item->customer_lastname);
-                                            if (count($nameParts) >= 2) {
-                                                $shortName = strtoupper(substr($nameParts[0], 0, 1)) . '.' . strtoupper(substr($nameParts[1], 0, 1)) . '.' . end($nameParts);
-                                            } else {
-                                                $shortName = $item->customer_name . ' ' . $item->customer_lastname;
-                                            }
-                                        @endphp
                                         <tr>
-                                            <td>{{ $shortName }}</td>
+                                            <td>{{ formatName($item->customer_name, $item->customer_lastname) }}</td>
                                             <td>{{ $item->Loan_No }}</td>
                                             <td>{{ $item->Contact_No }}</td>
                                             <td class="loan-amount">{{ number_format($item->Loan_Amount, 2) }}</td>

@@ -54,7 +54,10 @@
                             </div>
                             <div class="card-body">
                                 <div class="profile-image">
-                                    <img src="{{ $company->logo ? asset('storage/' . $company->logo) : 'https://via.placeholder.com/100' }}" id="profileImagePreview" alt="Profile Image">
+                                    <img src="{{ isset($company) && $company->logo ? asset('storage/' . $company->logo) : 'https://via.placeholder.com/100' }}"
+                                         id="profileImagePreview"
+                                         alt="Profile Image">
+
                                 </div>
 
                                 <form method="POST" action="#" enctype="multipart/form-data">
