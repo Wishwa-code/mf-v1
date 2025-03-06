@@ -495,7 +495,7 @@ class CustomerController extends Controller
 
     public function load(){
         $center= tableWithBranch('center')->get();
-        $company= DB::table('company')->first();
+        $company= tableWithBranch('company')->first();
         $route= tableWithBranch('route')->get();
 
         // Fetch the maximum customer ID
@@ -568,11 +568,36 @@ class CustomerController extends Controller
         // Toggle the status
         $newStatus = $customer->Status == 1 ? 0 : 1;
 
-        // Update the status and note in the database
+// Determine the action description
+        $actionDescription = $newStatus == 1 ? 'Removed from Blacklist' : 'Added to Blacklist';
+
+        // Determine the action type
+        $type = $newStatus == 1 ? 'Remove Blacklist' : 'Blacklist';
+
+// Update the status and note in the database
         $updated = updateWithBranch('customer', 'idCustomer', $id, [
             'Status' => $newStatus,
             'Comment' => $note
         ]);
+
+// Get customer details
+        $customer_table = tableWithBranch('customer')->where('idCustomer', $id)->first();
+        $user_id = (int)session('userid');
+
+// Log the action
+        DB::table('customer_log')->insert([
+            'customer_id' => $id,
+            'customer_name' => $customer_table->First_Name.' '.$customer_table->Last_Name,
+            'date' => date('Y-m-d'),
+            'time' => date('H:i:s'),
+            'description' => $note ?? $actionDescription,
+            'description_id' => $id,
+            'comment' => ' ',
+            'type' => $type,
+            'user' => $user_id,
+            'branch_id' => session('branch_id')
+        ]);
+
 
         // Check if update was successful
         if ($updated) {
