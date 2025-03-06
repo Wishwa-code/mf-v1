@@ -440,10 +440,14 @@
                         <td>${item.group_name}</td>
                         <td>${item.NIC}</td>
                         <td>${item.customer_name} ${item.customer_lastname}</td>
-                        <td>${parseFloat(item.Today_Installment).toFixed(2)}</td>
-                        <td>${parseFloat(item.Installment_Balance_Before_Today).toFixed(2)}</td>
-                        <td>${parseFloat(item.Panalty_Balance_Before_Today).toFixed(2)}</td>
-                        <td>${(parseFloat(item.Today_Installment) + parseFloat(item.Installment_Balance_Before_Today) + parseFloat(item.Panalty_Balance_Before_Today)).toFixed(2)}</td>
+<td>${parseFloat(item.Today_Installment).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${parseFloat(item.Installment_Balance_Before_Today).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${parseFloat(item.Panalty_Balance_Before_Today).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td>${(
+                                parseFloat(item.Today_Installment || 0) +
+                                parseFloat(item.Installment_Balance_Before_Today || 0) +
+                                parseFloat(item.Panalty_Balance_Before_Today || 0)
+                            ).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td>${item.lending}</td>
                         <td>${item.collector}</td>
                         <td hidden>${item.collector_id}</td>
@@ -479,7 +483,7 @@
                     });
 
                     // Update total amount
-                    $("#tot_amount").text(tot.toFixed(2));
+                    $("#tot_amount").text(tot.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
                 },
                 error: function (xhr, textStatus, errorThrown) {
                     console.log("Error:", errorThrown);

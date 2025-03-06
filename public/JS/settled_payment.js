@@ -53,8 +53,8 @@ function load_table() {
                         item.group_name,
                         item.First_Name + ' ' + item.Last_Name,
                         item.loan_name,
-                        parseFloat(item.Amount).toFixed(2),
-                        item.Total_Loan_Amount,
+                        parseFloat(item.Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                        parseFloat(item.Total_Loan_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                         item.Date_Time,
                         item.lending_officer,
                         item.user_name,
@@ -65,7 +65,7 @@ function load_table() {
                 });
 
                 // Update total amount and loan count
-                $('#tot_amount').text(tot.toFixed(2));
+                $('#tot_amount').text(tot.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
                 $('#loan_count').text(loan_count);
             }
         },

@@ -103,7 +103,7 @@
                                     <tr>
                                         <td>{{ $payment['username'] }}</td>
                                         <td>{{ $payment['date'] }}</td>
-                                        <td>{{ number_format($payment['total_amount'], 2, '.', '') }}</td>
+                                        <td>{{ number_format($payment['total_amount'], 2, '.', ',') }}</td>
                                         @if($payment['confirm_user']==="-")
                                             <td><span class="px-1" style="background-color: #ff0000;border-radius: 10px; color: #ff0000;">-</span></td>
                                         @else
@@ -127,7 +127,7 @@
                             <div class="total-pending-details">
                                 <div>
                                     <span class="total-pending-label">Total Pending Amount :</span>
-                                    <span id="tot_amount">Rs. <?php echo number_format($tot, 2, '.', ''); ?></span>
+                                    <span id="tot_amount">Rs. <?php echo number_format($tot, 2, '.', ','); ?></span>
                                 </div>
                             </div>
                         </div>
@@ -237,7 +237,7 @@
                                 "<td>" + item.cus_number + "</td>" +
                                 "<td>" + item.First_Name + " " + item.Last_Name + "</td>" +
                                 "<td>" + item.Description + "</td>" +
-                                "<td>" + parseFloat(item.PayedAmount).toFixed(2) + "</td>" +
+                                "<td>" + parseFloat(item.PayedAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "</td>" +
                                 "</tr>";
 
                             // Append row to table body
