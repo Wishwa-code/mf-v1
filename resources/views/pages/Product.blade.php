@@ -88,8 +88,8 @@
                                                 <tr class="style-tr">
                                                     <td>{{$item->Name}}</td>
                                                     <td>{{$item->Product_code}}</td>
-                                                    <td class="text-center">{{ number_format($item->Loan_amount ?? 0, 2, '.', '') }}</td>
-                                                    <td class="text-center">{{ number_format((float) ($item->Loan_amount_to ?? 0), 2, '.', '') }}</td>
+                                                    <td class="text-center">{{ number_format($item->Loan_amount ?? 0, 2, '.', ',') }}</td>
+                                                    <td class="text-center">{{ number_format((float) ($item->Loan_amount_to ?? 0), 2, '.', ',') }}</td>
                                                     <td>{{$item->Interest_method}}</td>
                                                     <td>{{$item->Interest_period}}</td>
                                                     <td class="text-center">{{$item->Loan_interest ?? 0}}</td>

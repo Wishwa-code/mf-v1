@@ -72,8 +72,8 @@ function load_payment_table(page = 1) {
                     var row = `<tr>
                         <td>${item.Loan_No}</td>
                         <td>${formatName(item.customer_name, item.customer_lastname)}</td>
-                        <td>${parseFloat(item.Loan_Amount).toFixed(2)}</td>
-                        <td>${parseFloat(item.Today_installment).toFixed(2)}</td>
+                        <td>${parseFloat(item.Loan_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td>${parseFloat(item.Today_installment).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td>
                             <div class="d-flex align-items-center">
                                 ${modalButton}
@@ -98,10 +98,10 @@ function load_payment_table(page = 1) {
                 });
 
                 // Update totals
-                $("#tot_amount").text(tot.toFixed(2));
-                $("#balance_until").text(pending_amount.toFixed(2));
-                $("#today_installment").text(ins.toFixed(2));
-                $("#total_arrease").text(arrese.toFixed(2));
+                $("#tot_amount").text(tot.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                $("#balance_until").text(pending_amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                $("#today_installment").text(ins.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                $("#total_arrease").text(arrese.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
                 // Add pagination controls
                 let paginationControls = '';

@@ -324,17 +324,17 @@
             <td>${row.branch_name}</td>
             <td>${row.route_name}</td>
             <td>${row.center_name}</td>
-            <td>${row.total_disbursement.toFixed(2)}</td>
-            <td>${row.total_loan_amount.toFixed(2)}</td>
+<td>${parseFloat(row.total_disbursement).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${parseFloat(row.total_loan_amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             <td>${row.issued_loan_count}</td>
             <td>${row.new_clients}</td>
             <td>${row.repeat_clients}</td>
-            <td>${row.schedule_repayments.toFixed(2)}</td>
-            <td>${row.collected_repayments.toFixed(2)}</td>
-            <td>${row.capital_received.toFixed(2)}</td>
-            <td>${row.interest_received.toFixed(2)}</td>
-            <td>${row.penalty_received.toFixed(2)}</td>
-            <td>${row.processing_fee_received.toFixed(2)}</td>
+<td>${parseFloat(row.schedule_repayments).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${parseFloat(row.collected_repayments).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${parseFloat(row.capital_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${parseFloat(row.interest_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${parseFloat(row.penalty_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${parseFloat(row.processing_fee_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
         </tr>`;
 
                 table.append(mainRow);
@@ -344,16 +344,16 @@
                     row.loan_details.forEach(loan => {
                         let loanRow = `<tr>
                     <td colspan="3" class="text-center">${loan.Loan_No}</td>
-                    <td>${parseFloat(loan.loan_disbursement).toFixed(2)}</td>
-                    <td>${parseFloat(loan.loan_amount).toFixed(2)}</td>
+<td>${parseFloat(loan.loan_disbursement).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${parseFloat(loan.loan_amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td>-</td>  <!-- Empty since it's per-loan -->
                     <td>-</td>
                     <td>-</td>
-                    <td>${parseFloat(loan.schedule_repayments).toFixed(2)}</td>
-                    <td>${parseFloat(loan.collected_repayments).toFixed(2)}</td>
-                    <td>${parseFloat(loan.capital_received).toFixed(2)}</td>
-                    <td>${parseFloat(loan.interest_received).toFixed(2)}</td>
-                    <td>${parseFloat(loan.penalty_received).toFixed(2)}</td>
+<td>${parseFloat(loan.schedule_repayments).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${parseFloat(loan.collected_repayments).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${parseFloat(loan.capital_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${parseFloat(loan.interest_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${parseFloat(loan.penalty_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td>${loan.processing_fee_received ? parseFloat(loan.processing_fee_received).toFixed(2) : "0.00"}</td>
                 </tr>`;
 
@@ -365,17 +365,17 @@
             // Append Total Row at the bottom
             let totalRow = `<tr style="font-weight:bold; background-color: #d1ecf1;">
         <td colspan="3" class="text-center">Total</td>
-        <td>${total_disbursement.toFixed(2)}</td>
-        <td>${total_loan_amount.toFixed(2)}</td>
+<td>${total_disbursement.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${total_loan_amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
         <td>${total_issued_loans}</td>
         <td>${total_new_clients}</td>
         <td>${total_repeat_clients}</td>
-        <td>${total_schedule_repayments.toFixed(2)}</td>
-        <td>${total_collected_repayments.toFixed(2)}</td>
-        <td>${total_capital_received.toFixed(2)}</td>
-        <td>${total_interest_received.toFixed(2)}</td>
-        <td>${total_penalty_received.toFixed(2)}</td>
-        <td>${total_processing_fee.toFixed(2)}</td>
+<td>${total_schedule_repayments.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${total_collected_repayments.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${total_capital_received.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${total_interest_received.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${total_penalty_received.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${total_processing_fee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
     </tr>`;
 
             table.append(totalRow); // Add totals at the bottom of the table
