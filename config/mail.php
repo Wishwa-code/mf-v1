@@ -39,8 +39,8 @@ return [
         'smtp' => [
             'transport' => 'smtp',
             'url' => env('MAIL_URL'),
-            'host' => env('MAIL_HOST', 'asipiya.lk'), // Your SMTP server
-            'port' => env('MAIL_PORT', 465), // Port 465 for SSL
+            'host' => env('MAIL_HOST', 'smtp.gmail.com'), // Your SMTP server
+            'port' => env('MAIL_PORT', 587), // Port 465 for SSL
             'encryption' => env('MAIL_ENCRYPTION', 'ssl'), // SSL encryption
             'username' => env('MAIL_USERNAME'), // SMTP username
             'password' => env('MAIL_PASSWORD'), // SMTP password
@@ -101,7 +101,7 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'info@asipiya.lk'), // Your default "from" email address
+        'address' => env('MAIL_FROM_ADDRESS', 'asipiyasoftsolution@gmail.com'), // Your default "from" email address
         'name' => env('MAIL_FROM_NAME', 'Asipiya App'), // Your app name
     ],
 

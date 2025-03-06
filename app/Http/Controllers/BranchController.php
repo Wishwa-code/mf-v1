@@ -311,7 +311,7 @@ class BranchController extends Controller
 
         if ($company) {
             // Generate the activation link (modify this URL as per your application)
-            $activationLink = url('/activate-branch/'.$branch); // Assuming the URL is like /activate-branch/{id}
+            $activationLink = url('/activate-branch/'.$id); // Assuming the URL is like /activate-branch/{id}
 
             Mail::to('janeesameera@gmail.com')->send(new BranchCreated($request->branch, $activationLink));
 
