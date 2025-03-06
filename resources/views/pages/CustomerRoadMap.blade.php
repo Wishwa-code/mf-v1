@@ -234,6 +234,18 @@
                 <div class="title">{{ $item->type }} ({{ $item->Full_Name }})</div>
                 <div class="descr">{{ $item->description }}</div>
             </li>
+        @elseif($item->type === "Blacklist")
+            <li style="--accent-color:#ff0000">
+                <div class="date">{{ $item->date }} ({{ $item->time }})</div>
+                <div class="title">{{ $item->type }} ({{ $item->Full_Name }})</div>
+                <div class="descr">{{ $item->description }}</div>
+            </li>
+        @elseif($item->type === "Remove Blacklist")
+            <li style="--accent-color:#46f100">
+                <div class="date">{{ $item->date }} ({{ $item->time }})</div>
+                <div class="title">{{ $item->type }} ({{ $item->Full_Name }})</div>
+                <div class="descr">{{ $item->description }}</div>
+            </li>
         @else
             <li style="--accent-color:#343030">
                 <div class="date">{{ $item->date }} ({{ $item->time }})</div>
