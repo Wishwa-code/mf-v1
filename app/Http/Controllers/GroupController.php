@@ -350,15 +350,55 @@ class GroupController extends Controller
             ->where('branch_id', session('branch_id'))
             ->delete();
 
-        $customer_group=tableWithBranch('customer_group')->where('idCustomer_Group', $groupId)->first();
+        $customer_group = tableWithBranch('customer_group')->where('idCustomer_Group', $groupId)->first();
 
         DB::table('center')
             ->where('idCenter', $customer_group->center_id)
             ->where('branch_id', session('branch_id'))
             ->decrement('Members');
 
+        $company = tableWithBranch('company')->first();
+        $type = $company->customer_format ?? '';
 
-        $request = new Request([
+        $customer = DB::table('customer')
+            ->where('idCustomer', '=', $customerId)
+            ->where('branch_id', '=', session('branch_id'))
+            ->first();
+
+        if ($customer) {
+            $oldnum = $customer->cus_number;
+            $newnum = $oldnum; // Keep the existing number as default
+
+            $center = DB::table('center')
+                ->where('idCenter', $customer_group->center_id)
+                ->where('branch_id', session('branch_id'))
+                ->first();
+
+            // Remove Center_No if it exists in the format
+            if (strpos($type, '@Center_No@') !== false && $center) {
+                $centerNo = $center->No; // Assuming 'No' is the center number column
+                if (strpos($oldnum, $centerNo) !== false) {
+                    $newnum = str_replace($centerNo, 'C000', $oldnum);
+                }
+            }
+
+            // Remove Group_No if it exists in the format
+            if (strpos($type, '@Group_No@') !== false && $customer_group) {
+                $groupNo = $customer_group->Group_No; // Assuming 'Group_No' is the correct column
+                if (strpos($newnum, $groupNo) !== false) {
+                    $newnum = str_replace($groupNo, 'G000', $newnum);
+                }
+            }
+
+            // Update only if the number was modified
+            if ($newnum !== $oldnum) {
+                updateWithBranch('customer', 'idCustomer', $customerId, [
+                    'cus_number' => $newnum
+                ]);
+            }
+        }
+
+        $logRequest = new Request([
             'customer_id' => $customerId,
             'description' => 'Remove From Group',
             'description_id' => $groupId,
@@ -367,12 +407,13 @@ class GroupController extends Controller
         ]);
 
         // Call the store method of CustomerLogController
-        $this->customerLogController->store($request);
-
-
+        $this->customerLogController->store($logRequest);
 
         return response()->json(['message' => 'Customer removed from group successfully.']);
     }
+
+
+
 
 
 

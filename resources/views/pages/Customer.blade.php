@@ -25,8 +25,6 @@
                             <h4 class="page-title">Customer Details</h4>
                         </div>
 
-
-
                         <div class="modal-body">
                             <div class="row">
                                 <div class="col-lg-12">
