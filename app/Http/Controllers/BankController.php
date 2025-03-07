@@ -298,9 +298,6 @@ class BankController extends Controller
             ->orderByDesc('balance_difference') // Order by highest difference
             ->get();
 
-
-
-
         return view('pages.Accounting.ProfitLoss',compact('date_from','system_expenses','date_to','interest','panelty','other_chargers','loan_expenses','total_income','total_expenses'));
     }
 
