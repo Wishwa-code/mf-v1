@@ -282,21 +282,21 @@ class BankController extends Controller
             ->where('type', '=', 'Income')
             ->sum('amount');
 
-        $total_expenses = tableWithBranch('expences')
-            ->whereBetween('date', [$date_from_2, $date_to_2])
-            ->where('type', '=', 'Expense')
-            ->sum('amount');
-
-
         $system_expenses = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
             ->join('company_bank_has_log', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.Bank_Account_Id')
-            ->where('acc_type_group', '=', 'Expenses')
             ->where('company_bank_accounts.Bank_Type', '=', 'ChartOfAccount')
+            ->where('acc_type_group', '=', 'Expenses')
             ->whereBetween('company_bank_has_log.Date_Time', [$date_from_2, $date_to_2])
-            ->where('company_bank_has_log.Balance', '>', 0) // Filter balances greater than 0
-            ->orderByDesc('company_bank_has_log.Date_Time')
-            ->select('company_bank_has_log.Balance','company_bank_has_log.type', 'company_bank_accounts.Bank_Name')
-            ->get(); // <-- Ensure we use 'get()' instead of 'sum()'
+            ->select(
+                'company_bank_accounts.Bank_Name',
+                DB::raw("SUM(COALESCE(company_bank_has_log.Credit, 0)) as total_credit"),
+                DB::raw("SUM(COALESCE(company_bank_has_log.Debit, 0)) as total_debit"),
+                DB::raw("(SUM(COALESCE(company_bank_has_log.Credit, 0)) - SUM(COALESCE(company_bank_has_log.Debit, 0))) as balance_difference")
+            )
+            ->groupBy('company_bank_accounts.Bank_Name')
+            ->havingRaw("balance_difference != 0") // Exclude zero balance difference
+            ->orderByDesc('balance_difference') // Order by highest difference
+            ->get();
 
         return view('pages.Accounting.ProfitLoss',compact('date_from','system_expenses','date_to','interest','panelty','other_chargers','loan_expenses','total_income','total_expenses'));
     }

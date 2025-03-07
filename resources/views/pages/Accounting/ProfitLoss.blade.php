@@ -225,23 +225,28 @@
                 </tr>
 
                 @php
-                    $total_expenses = 0;
+                    $total_difference = 0;
                 @endphp
+
                 @if (!empty($system_expenses) && is_iterable($system_expenses) && count($system_expenses) > 0)
                     @foreach ($system_expenses as $expense)
                         @php
-                            $total_expenses += $expense->Balance;
+                            $total_difference += $expense->balance_difference; // Running total of balance differences
                         @endphp
                         <tr>
-                            <td class="ps-3">{{ $expense->Bank_Name }} ({{ $expense->type }})</td>
-                            <td>{{ number_format($expense->Balance,2,'.',',') }}</td>
+                            <td class="ps-3">{{ $expense->Bank_Name }}</td>
+                            <td>{{ number_format($expense->balance_difference,2,'.',',') }}</td> {{-- Show only the difference --}}
                         </tr>
                     @endforeach
+
                 @endif
+
+
+
 
                 <tr class="fw-bold border-top-light">
                     <td class="ps-3">Total Expenses</td>
-                    <td>{{ number_format($total_expenses,2,'.',',') }}</td>
+                    <td>{{ number_format($total_difference,2,'.',',') }}</td>
                 </tr>
 
                 <!-- Net Income Section -->
