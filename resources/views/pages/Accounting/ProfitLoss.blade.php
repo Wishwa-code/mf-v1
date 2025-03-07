@@ -155,6 +155,39 @@
         .ps-5 {
             padding-left: 2rem;
         }
+
+        .buttons button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .export-buttons {
+            text-align: right;
+            margin-top: 15px;
+        }
+
+        .export-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: white;
+            margin-left: 5px;
+        }
+
+        .export-excel { background: #28a745; }
+        .export-pdf { background: #dc3545; }
+        .export-print { background: #007bff; }
     </style>
 @endsection
 
@@ -178,10 +211,15 @@
                 </div>
             </form>
         </div>
-
+        <!-- Export Buttons -->
+        <div class="export-buttons">
+            <button id="exportExcel" class="export-btn export-excel">Export to Excel</button>
+            <button id="exportPDF" class="export-btn export-pdf">Export to PDF</button>
+            <button id="printReport" class="export-btn export-print">Print</button>
+        </div>
 
         <div class="statement shadow-sm">
-            <table class="table table-bordered">
+            <table class="table table-bordered" id="load_table">
                 <thead>
                 <tr>
                     <th></th>
@@ -293,6 +331,12 @@
 @endsection
 
 @section('script')
+    <!-- jsPDF (For PDF Export) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- SheetJS (For Excel Export) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
     <script src="assets/vendor/daterangepicker/moment.min.js"></script>
     <script src="assets/vendor/daterangepicker/daterangepicker.js"></script>
     <script src="assets/js/pages/dashboard.js"></script>
@@ -312,6 +356,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+
+
 
     <script>
         $(document).ready(function () {
@@ -395,7 +441,106 @@
                     }
                 });
             });
+
+            // ✅ Excel Export (Using SheetJS)
+            $("#exportExcel").click(function () {
+                let table = document.getElementById("load_table");
+                let wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+                XLSX.writeFile(wb, "Profit_Loss_Report.xlsx");
+            });
+
+// ✅ PDF Export (Using jsPDF)
+            $("#exportPDF").click(function () {
+                const { jsPDF } = window.jspdf;
+                let doc = new jsPDF("p", "pt", "a4");
+
+                // ✅ Set Correct Font
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(16);
+                doc.text("Profit / Loss Statement", 180, 30);
+
+                // Define table headers
+                const tableHeaders = ["Description", "Amount"];
+
+                // ✅ Extract Table Data Properly (Fixes Encoding Issues)
+                let tableData = [];
+                $("#load_table tbody tr").each(function () {
+                    let description = $(this).find("td:first").text().trim();
+                    let amount = $(this).find("td:last").text().trim();
+
+                    let rowData = {
+                        description: description,
+                        amount: amount
+                    };
+
+                    // ✅ Fix Encoding and Bold Formatting
+                    if (description.toLowerCase().includes("revenue")) {
+                        rowData.description = "Revenue";
+                        rowData.bold = true;
+                        rowData.color = [41, 128, 185]; // Blue
+                    } else if (description.toLowerCase().includes("expenses")) {
+                        rowData.description = "Expenses";
+                        rowData.bold = true;
+                        rowData.color = [231, 76, 60]; // Red
+                    } else if (description.toLowerCase().includes("net income")) {
+                        rowData.bold = true;
+                        rowData.background = [236, 240, 241]; // Light gray background
+                    } else if ($(this).hasClass("ps-5")) {
+                        rowData.description = "   " + description; // Indent subcategories properly
+                    }
+
+                    tableData.push(rowData);
+                });
+
+                // ✅ Generate PDF Table (Fix Text Encoding + Apply Colors Correctly)
+                doc.autoTable({
+                    head: [tableHeaders],
+                    body: tableData.map(row => [row.description, row.amount]),
+                    startY: 50,
+                    theme: "grid",
+                    styles: { fontSize: 10, textColor: [44, 62, 80], cellPadding: 5 },
+                    headStyles: { fillColor: [0, 123, 255], textColor: 255, fontSize: 12 },
+                    columnStyles: {
+                        0: { cellWidth: 300 }, // Description column
+                        1: { cellWidth: 150, halign: "right" } // Amount column, right aligned
+                    },
+                    didParseCell: function (data) {
+                        if (tableData[data.row.index]?.bold) {
+                            data.cell.styles.fontStyle = "bold";
+                            if (tableData[data.row.index]?.color) {
+                                data.cell.styles.textColor = tableData[data.row.index].color;
+                            }
+                        }
+                        if (tableData[data.row.index]?.background) {
+                            data.cell.styles.fillColor = tableData[data.row.index].background;
+                        }
+                    }
+                });
+
+                // ✅ Save the PDF
+                doc.save("Profit_Loss_Report.pdf");
+            });
+
+
+
+
+
+            // Print Report
+            $("#printReport").click(function () {
+                printTable("load_table");
+            });
         });
+
+
+
+        // Function to Print Table
+        function printTable(tableID) {
+            let printContents = document.getElementById(tableID).outerHTML;
+            let originalContents = document.body.innerHTML;
+            document.body.innerHTML = "<html><head><title>Print Table</title></head><body>" + printContents + "</body></html>";
+            window.print();
+            document.body.innerHTML = originalContents;
+        }
 
     </script>
 
