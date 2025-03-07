@@ -172,7 +172,7 @@ class UserController extends Controller
                 $session->put('designation', $item->Designation);
                 $session->put('branch_id', $item->branch_id);
                 $session->put('branch_access', $item->branch_access);
-                $company = tableWithBranch('company')->first();
+                $company = DB::table('company')->first();
                 $session->put('company_name', $company->company_name);
                 // Get branch information
                 $branch = DB::table('branch')->where('branch_id', '=', $item->branch_id)->first();
