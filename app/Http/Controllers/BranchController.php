@@ -313,7 +313,7 @@ class BranchController extends Controller
             // Generate the activation link (modify this URL as per your application)
             $activationLink = url('/activate-branch/'.$id); // Assuming the URL is like /activate-branch/{id}
 
-            Mail::to('janeesameera@gmail.com')->send(new BranchCreated($request->branch, $activationLink));
+            Mail::to('asipiyasoftsolution@gmail.com')->send(new BranchCreated($request->branch, $activationLink));
 
             return response()->json(['success' => true, 'message' => 'Branch saved successfully and email sent.']);
         } else {
