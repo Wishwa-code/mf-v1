@@ -1002,7 +1002,7 @@
                     $modalTableBody.empty(); // Clear any existing rows
 
                     if (response.length === 0) {
-                        $modalTableBody.html("<tr><td colspan='6' class='text-center'>No records found</td></tr>");
+                        $modalTableBody.html("<tr><td colspan='8' class='text-center'>No records found</td></tr>");
                     } else {
                         // Populate the modal table with fetched data
                         response.forEach((item) => {
