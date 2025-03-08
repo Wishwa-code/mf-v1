@@ -354,7 +354,7 @@
                     <td style="text-align: right">${formatNumber(parseFloat(item.Debit).toFixed(2) || 0)}</td>
                     <td style="text-align: right">${formatNumber(parseFloat(item.Credit).toFixed(2) || 0)}</td>
                     <td style="text-align: right">${formatNumber(parseFloat(item.Balance).toFixed(2) || 0)}</td>
-                    <td style="text-align: right">${item.Account_Name || 'N/A'}</td>
+                    <td style="text-align: right">${item.Account_Name ?? '-'}</td>
 <td style="text-align: right">${item.reconsilation_status || 'N/A'}</td>
 <td style="text-align: right">${item.Date_Time || 'N/A'}</td>
                 </tr>

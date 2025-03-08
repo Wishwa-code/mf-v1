@@ -1013,7 +1013,7 @@
                             <td>${parseFloat(item.Debit || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             <td>${parseFloat(item.Credit || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             <td>${parseFloat(item.Balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                            <td>${item.Account_Name}</td>
+                            <td>${item.Account_Name ?? '-'}</td>
 <td>${item.reconsilation_status}</td>
 <td>${item.Date_Time}</td>
                         </tr>`;

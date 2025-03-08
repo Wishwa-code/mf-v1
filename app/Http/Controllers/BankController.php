@@ -58,10 +58,17 @@ class BankController extends Controller
     public function create(string $id)
     {
         $bank_log = tableWithBranch('company_bank_has_log','company_bank_has_log')
-            ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
+            ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
             ->join('user', 'company_bank_has_log.User', '=', 'user.id')
             ->where('Bank_Account_Id', $id)
             ->get();
+
+        // Replace NULL values with '-'
+        $bank_log->transform(function ($item) {
+            $item->account_name = $item->account_name ?? '-';
+            return $item;
+        });
+
 
         return response()->json(["item" => $bank_log], 200);
     }
