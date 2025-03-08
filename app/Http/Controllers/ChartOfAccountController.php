@@ -464,11 +464,17 @@ class ChartOfAccountController extends Controller
         if (isset($request->account_id)){
             // Fetch matching records from the `manual_journal_has_amount` table
             $data = tableWithBranch('company_bank_has_log','company_bank_has_log')
-                ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
+                ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
                 ->where('Bank_Account_Id', '=',$account_id) // Match records starting with accountCode
                 ->whereBetween('Date_Time', [$dateFrom, $dateTo])  // Filter by date range
                 ->orderBy('id')
                 ->get();
+
+            // Replace NULL values with '-'
+            $data->transform(function ($item) {
+                $item->account_name = $item->account_name ?? '-';
+                return $item;
+            });
 
             // Return data as JSON
             return response()->json($data);
@@ -476,7 +482,7 @@ class ChartOfAccountController extends Controller
 
         // Fetch matching records from the `company_bank_has_log` table
         $data = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
-            ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.Bank_Account_Id')
+            ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.Bank_Account_Id')
             ->whereBetween('company_bank_has_log.Date_Time', [$dateFrom, $dateTo])  // Filter by date range
             ->where(function ($query) {
                 $query->where('company_bank_has_log.Credit', '>', 0)
@@ -485,7 +491,11 @@ class ChartOfAccountController extends Controller
             ->orderBy('id')
             ->get();
 
-
+// Replace NULL values with '-'
+        $data->transform(function ($item) {
+            $item->account_name = $item->account_name ?? '-';
+            return $item;
+        });
         // Return data as JSON
         return response()->json($data);
 
