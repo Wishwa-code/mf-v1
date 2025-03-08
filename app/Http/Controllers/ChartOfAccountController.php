@@ -347,10 +347,16 @@ class ChartOfAccountController extends Controller
     {
         // Fetch matching records from the `manual_journal_has_amount` table
         $data = tableWithBranch('company_bank_has_log','company_bank_has_log')
-            ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
+            ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
             ->where('Bank_Account_Id', '=',$account) // Match records starting with accountCode
             ->orderBy('id')
             ->get();
+        // Replace NULL values with '-'
+        $data->transform(function ($item) {
+            $item->account_name = $item->account_name ?? '-';
+            return $item;
+        });
+
 
         // Return data as JSON
         return response()->json($data);
@@ -493,11 +499,18 @@ class ChartOfAccountController extends Controller
 
         // Fetch matching records from the `manual_journal_has_amount` table
         $data = tableWithBranch('company_bank_has_log','company_bank_has_log')
-            ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
+            ->leftjoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
             ->where('Bank_Account_Id', '=',$account_id) // Match records starting with accountCode
             ->where('Date_Time','<=',$date_to) // Filter by date range
             ->orderBy('id')
             ->get();
+
+        // Replace NULL values with '-'
+        $data->transform(function ($item) {
+            $item->account_name = $item->account_name ?? '-';
+            return $item;
+        });
+
 
         // Return data as JSON
         return response()->json($data);
