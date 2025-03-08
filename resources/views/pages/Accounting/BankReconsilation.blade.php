@@ -311,7 +311,8 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Bank Account</label>
-                            <select id="modal-account" class="form-select select2">
+                            <select id="modal-account" class="form-select select2" onchange="load_data(this.value)">
+                                <option value="0">Select Account</option>
                                 @foreach($bank as $item)
                                     @if($item->Bank_Type=="Bank")
                                         <option value="{{$item->Idbank}}">{{$item->Bank_Name}} - {{$item->Account_No}}</option>
@@ -443,32 +444,13 @@
             $("#openModal").click(function () {
                 let selectedAccount = $("#bank-account").val();
 
-                // **AJAX request to fetch last reconciliation details**
-                $.ajax({
-                    url: "{{ route('get.last.reconciliation') }}",
-                    type: "GET",
-                    data: { account_id: selectedAccount },
-                    success: function (response) {
-                        if (response) {
-                            $("#modal-last-reconciliation-date").val(response.date || ""); // Set Last Reconciliation Date
-                            $("#modal-beginning-balance").val(response.balance || "0.00"); // Set Beginning Balance
-                        } else {
-                            $("#modal-last-reconciliation-date").val(""); // If no record found, keep empty
-                            $("#modal-beginning-balance").val("0.00"); // Default balance
-                        }
-                    },
-                    error: function () {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error Fetching Data',
-                            text: 'Could not retrieve the last reconciliation record.',
-                        });
-                    }
-                });
 
+                load_data(selectedAccount);
 
                 $("#reconciliationModal").modal('show'); // ✅ Open modal
             });
+
+
 
 
             $(".btn-close").click(function () {
@@ -698,7 +680,30 @@
             });
 
         });
-
+        function load_data(selectedAccount){
+            // **AJAX request to fetch last reconciliation details**
+            $.ajax({
+                url: "{{ route('get.last.reconciliation') }}",
+                type: "GET",
+                data: { account_id: selectedAccount },
+                success: function (response) {
+                    if (response) {
+                        $("#modal-last-reconciliation-date").val(response.date || ""); // Set Last Reconciliation Date
+                        $("#modal-beginning-balance").val(parseFloat(response.balance).toFixed(2) || "0.00"); // Set Beginning Balance
+                    } else {
+                        $("#modal-last-reconciliation-date").val(""); // If no record found, keep empty
+                        $("#modal-beginning-balance").val("0.00"); // Default balance
+                    }
+                },
+                error: function () {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error Fetching Data',
+                        text: 'Could not retrieve the last reconciliation record.',
+                    });
+                }
+            });
+        }
 
 
 

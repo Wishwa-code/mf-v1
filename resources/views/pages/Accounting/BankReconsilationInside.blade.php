@@ -207,7 +207,7 @@
                     <tbody>
                     @foreach($bank_log as $transaction)
                         @if($transaction->Credit > 0)  <!-- Filter Credit Transactions -->
-                        <tr>
+                        <tr id="{{$transaction->id}}">
                             <td><input type="checkbox" class="mark-transaction"></td>
                             <td>{{ $transaction->Date_Time }}</td>
                             <td>{{ $transaction->Description }}</td>
@@ -235,7 +235,7 @@
                     <tbody>
                     @foreach($bank_log as $transaction)
                         @if($transaction->Debit > 0)  <!-- Filter Debit Transactions -->
-                        <tr>
+                        <tr id="{{$transaction->id}}">
                             <td><input type="checkbox" class="mark-transaction"></td>
                             <td>{{ $transaction->Date_Time }}</td>
                             <td>{{ $transaction->Description }}</td>
@@ -272,7 +272,7 @@
                     </thead>
                     <tbody>
                         @foreach($reconciliation_log as $item)
-                            <tr>
+                            <tr id="{{$transaction->account_id}}">
                                 <td>{{$item->Account_Name}}</td>
                                 <td>{{$item->description}}</td>
                                 <td>{{$item->date}}</td>
@@ -286,7 +286,7 @@
             </div>
             <div class="summary-content">
                 <div class="summary-left">
-                    <div class="summary-values"><span>Beginning Balance:</span> <span id="beginningBalance">5000.00</span></div>
+                    <div class="summary-values"><span>Beginning Balance:</span> <span id="beginningBalance">{{number_format($balance, 2,'.', '') ?? '0.00'}}</span></div>
                 </div>
 
                 <div class="summary-right">
@@ -297,6 +297,10 @@
             </div>
 
             <!-- ✅ Transaction Table (Replaces Service Charge & Interest Earned) -->
+            <div class="action-buttons">
+                <button class="btn btn-success" id="startReconciliation">Start Reconciliation</button>
+            </div>
+
 
         </div>
 
@@ -497,6 +501,119 @@
             }
 
             updateSummary();
+
+
+
+
+            // ✅ Start Reconciliation Click Event
+            $("#startReconciliation").click(function () {
+                // ✅ Collect Checked Transactions from Credit Table
+                let creditTransactions = [];
+                $("#creditTable tbody tr").each(function () {
+                    if ($(this).find(".mark-transaction").prop("checked")) {
+                        creditTransactions.push({
+                            id: $(this).attr("id"),
+                            date: $(this).find("td:nth-child(2)").text().trim(),
+                            description: $(this).find("td:nth-child(3)").text().trim(),
+                            type: $(this).find("td:nth-child(4)").text().trim(),
+                            amount: parseFloat($(this).find("td:nth-child(5)").text().replace(/,/g, '')) || 0
+                        });
+                    }
+                });
+
+                // ✅ Collect Checked Transactions from Debit Table
+                let debitTransactions = [];
+                $("#debitTable tbody tr").each(function () {
+                    if ($(this).find(".mark-transaction").prop("checked")) {
+                        debitTransactions.push({
+                            id: $(this).attr("id"),
+                            date: $(this).find("td:nth-child(2)").text().trim(),
+                            memo: $(this).find("td:nth-child(3)").text().trim(),
+                            type: $(this).find("td:nth-child(4)").text().trim(),
+                            amount: parseFloat($(this).find("td:nth-child(5)").text().replace(/,/g, '')) || 0
+                        });
+                    }
+                });
+
+                // ✅ Collect All Transactions from Transaction Table
+                let transactionEntries = [];
+                $("#transactionTable tbody tr").each(function () {
+                    transactionEntries.push({
+                        id: $(this).attr("id"),
+                        account: $(this).find("td:nth-child(1)").text().trim(),
+                        description: $(this).find("td:nth-child(2)").text().trim(),
+                        date: $(this).find("td:nth-child(3)").text().trim(),
+                        credit: parseFloat($(this).find("td:nth-child(4)").text().replace(/,/g, '')) || 0,
+                        debit: parseFloat($(this).find("td:nth-child(5)").text().replace(/,/g, '')) || 0
+                    });
+                });
+
+                // ✅ Collect Summary Values
+                let summaryData = {
+                    beginningBalance: parseFloat($("#beginningBalance").text().replace(/,/g, '')) || 0,
+                    endingBalance: parseFloat($("#endingBalance").text().replace(/,/g, '')) || 0,
+                    clearedBalance: parseFloat($("#clearedBalance").text().replace(/,/g, '')) || 0,
+                    difference: parseFloat($("#difference").text().replace(/,/g, '')) || 0
+                };
+
+                console.log(creditTransactions);
+                console.log(debitTransactions);
+                console.log(transactionEntries);
+                console.log(summaryData);
+
+                // ✅ Validate before sending
+                // if (summaryData.difference !== 0) {
+                //     Swal.fire({
+                //         icon: "warning",
+                //         title: "Reconciliation Not Balanced!",
+                //         text: "The difference is not zero. Please check your transactions.",
+                //     });
+                //     return;
+                // }
+
+
+
+                // ✅ Confirm before submitting
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "Once submitted, this reconciliation cannot be changed!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, submit it!"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // ✅ Send AJAX request to Laravel
+                        $.ajax({
+                            url: "{{ route('reconciliation.store') }}", // ✅ Define this in web.php
+                            type: "POST",
+                            headers: {
+                                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                            },
+                            data: {
+                                id: {{$id}},
+                                creditTransactions: creditTransactions,
+                                debitTransactions: debitTransactions,
+                                transactionEntries: transactionEntries,
+                                summary: summaryData
+                            },
+                            success: function (response) {
+                                Swal.fire("Success!", "Reconciliation saved successfully.", "success").then(() => {
+                                    location.reload(); // Reload page after success
+                                });
+                            },
+                            error: function (error) {
+                                Swal.fire("Error!", "Something went wrong while saving.", "error");
+                            }
+                        });
+                    }
+                });
+            });
+
+
+
+
         });
 
     </script>
