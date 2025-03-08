@@ -65,11 +65,11 @@ class CashierController extends Controller
                 $balance_amount=$total-$newTotal;
                 $bank=DB::table('company_bank_accounts')->where('Account_No','=',session('userid'))->first();
                 if ($balance_amount < 0) {
-                    $this->bankLogController->index($bank->Idbank, "Deposit", "Update Morning Plot", 'Update Morning Plot', "credit", abs($balance_amount));
-                    $this->bankLogController->index("1", "Withdraw", "Update Morning Plot", 'Update Morning Plot', "debit", abs($balance_amount));
+                    $this->bankLogController->index($bank->Idbank, "Deposit", "Update Morning Plot", 'Update Morning Plot', "credit", abs($balance_amount),'1');
+                    $this->bankLogController->index("1", "Withdraw", "Update Morning Plot", 'Update Morning Plot', "debit", abs($balance_amount),$bank->Idbank);
                 } else {
-                    $this->bankLogController->index($bank->Idbank, "Deposit", "Update Morning Plot", 'Update Morning Plot', "debit", $balance_amount);
-                    $this->bankLogController->index("1", "Withdraw", "Update Morning Plot", 'Update Morning Plot', "credit", $balance_amount);
+                    $this->bankLogController->index($bank->Idbank, "Deposit", "Update Morning Plot", 'Update Morning Plot', "debit", $balance_amount,'1');
+                    $this->bankLogController->index("1", "Withdraw", "Update Morning Plot", 'Update Morning Plot', "credit", $balance_amount,$bank->Idbank);
                 }
 
                 $plotId = $existingPlot->id_plot;
@@ -86,8 +86,8 @@ class CashierController extends Controller
                     'last_updated_user' => $user_id
                 ]);
                 $bank=DB::table('company_bank_accounts')->where('Account_No','=',session('userid'))->first();
-                $this->bankLogController->index($bank->Idbank,"Deposit","Morning Plot",'Morning Plot',"credit",$request->grandTotal);
-                $this->bankLogController->index("1","Withdraw","Morning Plot",'Morning Plot',"debit",$request->grandTotal);
+                $this->bankLogController->index($bank->Idbank,"Deposit","Morning Plot",'Morning Plot',"credit",$request->grandTotal,'1');
+                $this->bankLogController->index("1","Withdraw","Morning Plot",'Morning Plot',"debit",$request->grandTotal,$bank->Idbank);
             }
 
 
@@ -255,8 +255,8 @@ class CashierController extends Controller
 
 
             $bank=DB::table('company_bank_accounts')->where('Account_No','=',session('userid'))->first();
-            $this->bankLogController->index($bank->Idbank,"Withdraw","Day End",'Day End',"debit",$request->cash_drawer_total);
-            $this->bankLogController->index("1","Deposit","Day End",'Day End',"credit",$request->cash_drawer_total);
+            $this->bankLogController->index($bank->Idbank,"Withdraw","Day End",'Day End',"debit",$request->cash_drawer_total,'1');
+            $this->bankLogController->index("1","Deposit","Day End",'Day End',"credit",$request->cash_drawer_total,$bank->Idbank);
 
             // Save cash drawer entries
             $cashDrawerEntries = $request->cash_drawer_entries;

@@ -185,7 +185,8 @@ function view_log(id, bankName, accountName, accountNumber) {
         <td>${isNaN(log.Debit) ? log.Debit : Number(log.Debit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 <td>${isNaN(log.Credit) ? log.Credit : Number(log.Credit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 <td>${isNaN(log.Balance) ? log.Balance : Number(log.Balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-
+<td>${log.Account_Name}</td>
+<td>${log.reconsilation_status}</td>
         <td>${log.Full_Name}</td>
     </tr>`;
                     $('#bank_table_log tbody').append(newRow);

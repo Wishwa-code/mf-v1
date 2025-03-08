@@ -263,11 +263,13 @@
                             <th style="text-align: right">Debit Amount</th>
                             <th style="text-align: right">Credit Amount</th>
                             <th style="text-align: right">Balance</th>
+                            <th style="text-align: right">Contra Account</th>
+                            <th style="text-align: right">Reconciliation No</th>
                             <th style="text-align: right">Created At</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <!-- Data will be dynamically populated here -->
+
                         </tbody>
                     </table>
                 </div>
@@ -352,7 +354,9 @@
                     <td style="text-align: right">${formatNumber(parseFloat(item.Debit).toFixed(2) || 0)}</td>
                     <td style="text-align: right">${formatNumber(parseFloat(item.Credit).toFixed(2) || 0)}</td>
                     <td style="text-align: right">${formatNumber(parseFloat(item.Balance).toFixed(2) || 0)}</td>
-                    <td style="text-align: right">${item.Date_Time || 'N/A'}</td>
+                    <td style="text-align: right">${item.Account_Name || 'N/A'}</td>
+<td style="text-align: right">${item.reconsilation_status || 'N/A'}</td>
+<td style="text-align: right">${item.Date_Time || 'N/A'}</td>
                 </tr>
             `;
                         $('#financialReportTable tbody').append(row);

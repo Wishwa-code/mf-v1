@@ -58,6 +58,7 @@ class BankController extends Controller
     public function create(string $id)
     {
         $bank_log = tableWithBranch('company_bank_has_log','company_bank_has_log')
+            ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
             ->join('user', 'company_bank_has_log.User', '=', 'user.id')
             ->where('Bank_Account_Id', $id)
             ->get();
@@ -91,7 +92,7 @@ class BankController extends Controller
             return response()->json(["id" => "0"], 200);
         } else {
             $insertedId = insertWithBranch('company_bank_accounts', $Bank);
-            $this->bankLogController->index($insertedId,"Account Creation","-","-","credit",$request->opening_balance);
+            $this->bankLogController->index($insertedId,"Account Creation","-","-","credit",$request->opening_balance,'-');
             return response()->json(["id" => "1"], 200);
         }
 
@@ -131,8 +132,8 @@ class BankController extends Controller
         $reason=$request->reason;
         $toBank=$request->toBank;
         $toBankDetails = tableWithBranch('company_bank_accounts')->where('Idbank', $toBank)->first();
-        $this->bankLogController->index($fromBank,"InterBank Transfer",'To ('.$toBankDetails->Account_No.')',$reason,"credit",$fromAmount);
-        $this->bankLogController->index($toBank,"InterBank Transfer",'From'.' ('.$fromBankDetails->Account_No.')',$reason,"debit",$fromAmount);
+        $this->bankLogController->index($fromBank,"InterBank Transfer",'To ('.$toBankDetails->Account_No.')',$reason,"credit",$fromAmount,$toBank);
+        $this->bankLogController->index($toBank,"InterBank Transfer",'From'.' ('.$fromBankDetails->Account_No.')',$reason,"debit",$fromAmount,$fromBank);
         return response()->json(["id" => "1"], 200);
     }
 
@@ -189,7 +190,6 @@ class BankController extends Controller
 
         if ($chq) {
             updateWithBranch('cheque_details', 'Id', $id, ['Status' => '1']);
-            $this->bankLogController->index($chq->Company_Account, "Cheque Deposit", "-", "-", "credit", $chq->Amount);
             return response()->json(['id' => '1'], 200);
         }
 
@@ -998,13 +998,13 @@ class BankController extends Controller
         $bank=tableWithBranch('company_bank_accounts')->where('Idbank','=',$selectedBankId)->first();
         $description="Bank Name :".$bank->Bank_Name."- Account Name :".$bank->Account_Name."- Account Num :".$bank->Account_No;
 
-        $this->bankLogController->index($bankId, "Return To Company", $description, "-", "debit", $amount);
+        $this->bankLogController->index($bankId, "Return To Company", $description, "-", "credit", $amount,$selectedBankId);
 
 
         $bank_2=tableWithBranch('company_bank_accounts')->where('Idbank','=',$bankId)->first();
         $description_2="Account Name :".$bank_2->Account_Name."- Account Num :".$bank_2->Account_No;
 
-        $this->bankLogController->index($selectedBankId, "Return From Collector", $description_2, "-", "credit", $amount);
+        $this->bankLogController->index($selectedBankId, "Return From Collector", $description_2, "-", "debit", $amount,$bankId);
         return response()->json(['success' => true, 'message' => 'Status updated successfully']);
     }
 
@@ -1018,13 +1018,13 @@ class BankController extends Controller
         $bank=tableWithBranch('company_bank_accounts')->where('Idbank','=',$selectedBankId)->first();
         $description="Bank Name :".$bank->Bank_Name."- Account Name :".$bank->Account_Name."- Account Num :".$bank->Account_No;
 
-        $this->bankLogController->index($bankId, "Return To Collector", $description, "-", "debit", $amount);
+        $this->bankLogController->index($bankId, "Return To Collector", $description, "-", "debit", $amount,$selectedBankId);
 
 
         $bank_2=tableWithBranch('company_bank_accounts')->where('Idbank','=',$bankId)->first();
         $description_2="Account Name :".$bank_2->Account_Name."- Account Num :".$bank_2->Account_No;
 
-        $this->bankLogController->index($selectedBankId, "Return From Company", $description_2, "-", "credit", $amount);
+        $this->bankLogController->index($selectedBankId, "Return From Company", $description_2, "-", "credit", $amount,$bankId);
         return response()->json(['success' => true, 'message' => 'Status updated successfully']);
     }
 
@@ -1033,16 +1033,123 @@ class BankController extends Controller
         $bankId = $request->bankId;
         $amount = $request->amount;
         $note = $request->note??'-';
-
-        $this->bankLogController->index($bankId, "Cash Top up", "-", "-", "credit", $amount);
-
         $bank=tableWithBranch('company_bank_accounts')->where('Account_No','=',"Cash")->first();
+        $this->bankLogController->index($bankId, "Cash Top up", "-", "-", "credit", $amount,$bank->Idbank);
+
+
         $bank_2=tableWithBranch('company_bank_accounts')->where('Idbank','=',$bankId)->first();
         $description_2="Account Name :".$bank_2->Account_Name."- Account Num :".$bank_2->Account_No;
-        $this->bankLogController->index($bank->Idbank, "Cash Deposit", $description_2, $note, "debit", $amount);
+        $this->bankLogController->index($bank->Idbank, "Cash Deposit", $description_2, $note, "debit", $amount,$bankId);
 
         return response()->json(['success' => true, 'message' => 'Status updated successfully']);
     }
 
 
+    public function searchReconciliation(Request $request)
+    {
+
+        $query = tableWithBranch('reconciliation','reconciliation')
+            ->join('company_bank_accounts', 'reconciliation.account_id', '=', 'company_bank_accounts.Idbank')
+            ->whereBetween('date', [$request->date_from, $request->date_to])
+            ->select('reconciliation.*', 'company_bank_accounts.Bank_Name', 'company_bank_accounts.Account_Name', 'company_bank_accounts.Account_No')
+            ->orderBy('date', 'desc');
+
+        if ($request->account_id!=0){
+            $query=$query->where('account_id', $request->account_id);
+        }
+
+
+        $query = $query->get();
+
+        return response()->json($query);
+    }
+
+    public function getLastReconciliation(Request $request)
+    {
+        // Fetch the last reconciliation entry for the selected account
+        $lastReconciliation = tableWithBranch('reconciliation')
+            ->where('account_id', $request->account_id)
+            ->orderBy('date', 'desc') // Get the most recent record
+            ->first(); // Retrieve only one row
+
+        return response()->json($lastReconciliation);
+    }
+
+    public function storeReconciliation(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            $note=$request->note??'-';
+
+            $reconciliation = [
+                'account_id' => $request->account_id,
+                'date' => $request->date,
+                'created_date_time' => Carbon::now(),
+                'note' => $note,
+                'balance' => $request->balance,
+                'status' => '0'
+            ];
+
+            // Insert into reconciliation table
+            $reconciliationId = insertWithBranch('reconciliation', $reconciliation);
+
+            // Insert transactions into reconciliation_has_data table
+            foreach ($request->transactions as $transaction) {
+                $reconciliation_has_data = [
+                    'id_reconciliation' => $reconciliationId,
+                    'description' => $transaction['description'],
+                    'date' => $transaction['date'],
+                    'credit' => $transaction['credit'],
+                    'debit' => $transaction['debit'],
+                    'account_id' => $transaction['account_id'],
+                ];
+                insertWithBranch('reconciliation_has_data',$reconciliation_has_data);
+            }
+
+            DB::commit();
+
+            return response()->json(['status' => 'success', 'id' => $reconciliationId]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+
+    public  function reconciliation($id){
+
+        $reconciliation=tableWithBranch('reconciliation')->where('id_reconciliation','=',$id)->first();
+        $date=$reconciliation->date;
+        $last_bank_log_date=tableWithBranch('company_bank_has_log')->where('Bank_Account_Id','=',$reconciliation->account_id)->orderBy('Date_Time','desc')->first();
+        $bank_log=tableWithBranch('company_bank_has_log')
+            ->whereBetween('Date_Time', [$last_bank_log_date->Date_Time, $date])
+            ->where('Bank_Account_Id','=',$reconciliation->account_id)
+            ->get();
+
+        return view('pages.Accounting.BankReconsilationInside',compact('reconciliation','bank_log'));
+    }
+
+    public function Reconciliation_delete(Request $request)
+    {
+
+        try {
+            DB::beginTransaction();
+
+            // Delete transactions first (Foreign Key Dependency)
+            deleteWithBranch('reconciliation_has_data','id_reconciliation', $request->id);
+
+            // Delete reconciliation record
+            deleteWithBranch('reconciliation','id_reconciliation', $request->id);
+
+            DB::commit();
+
+            return response()->json(['status' => 'success']);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
 }
