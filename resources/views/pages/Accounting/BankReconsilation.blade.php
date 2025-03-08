@@ -582,7 +582,7 @@
                             });
 
                         } else {
-                            $("#bankReconciliationTable tbody").append(`<tr><td colspan="7" class="text-center">No records found</td></tr>`);
+                            $("#bankReconciliationTable tbody").append(`<tr><td colspan="9" class="text-center">No records found</td></tr>`);
                         }
                     },
                     error: function () {
