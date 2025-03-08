@@ -107,7 +107,7 @@ class ChartOfAccountController extends Controller
                 'updated_at' => Carbon::now()
             ]);
             $insertedId = insertWithBranch('company_bank_accounts', $Bank);
-            $this->bankLogController->index($insertedId,"Account Creation","-","-","credit","0.00");
+            $this->bankLogController->index($insertedId,"Account Creation","-","-","credit","0.00",'-');
             return response()->json(['status' => 'success']);
         }
     }
@@ -210,11 +210,11 @@ class ChartOfAccountController extends Controller
                     ->first();
 
                 if ($row['debit_amount']>0){
-                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","debit",$row['debit_amount']);
+                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","debit",$row['debit_amount'],'-');
                 }
 
                 if ($row['credit_amount']>0){
-                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","credit",$row['credit_amount']);
+                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","credit",$row['credit_amount'],'-');
                 }
             }
 
@@ -346,7 +346,8 @@ class ChartOfAccountController extends Controller
     public function fetchLedger($account)
     {
         // Fetch matching records from the `manual_journal_has_amount` table
-        $data = tableWithBranch('company_bank_has_log')
+        $data = tableWithBranch('company_bank_has_log','company_bank_has_log')
+            ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
             ->where('Bank_Account_Id', '=',$account) // Match records starting with accountCode
             ->orderBy('id')
             ->get();
@@ -456,7 +457,8 @@ class ChartOfAccountController extends Controller
 
         if (isset($request->account_id)){
             // Fetch matching records from the `manual_journal_has_amount` table
-            $data = tableWithBranch('company_bank_has_log')
+            $data = tableWithBranch('company_bank_has_log','company_bank_has_log')
+                ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
                 ->where('Bank_Account_Id', '=',$account_id) // Match records starting with accountCode
                 ->whereBetween('Date_Time', [$dateFrom, $dateTo])  // Filter by date range
                 ->orderBy('id')
@@ -490,7 +492,8 @@ class ChartOfAccountController extends Controller
         $account_id = $request->account_id;
 
         // Fetch matching records from the `manual_journal_has_amount` table
-        $data = tableWithBranch('company_bank_has_log')
+        $data = tableWithBranch('company_bank_has_log','company_bank_has_log')
+            ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
             ->where('Bank_Account_Id', '=',$account_id) // Match records starting with accountCode
             ->where('Date_Time','<=',$date_to) // Filter by date range
             ->orderBy('id')

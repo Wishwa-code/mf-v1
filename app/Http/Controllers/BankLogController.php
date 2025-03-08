@@ -12,7 +12,7 @@ class BankLogController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index($bank_id,$type,$description,$note,$system,$amount, $payment_id = 0)
+    public function index($bank_id,$type,$description,$note,$system,$amount,$contra_account, $payment_id = 0,$reconsilation_status = "0")
     {
         $user_id = (int)session('userid');
 // Create a new BankLog entry
@@ -94,6 +94,8 @@ class BankLogController extends Controller
             'Balance' => $BankLog->Balance,
             'User' => $BankLog->User,
             'payment_id' => $payment_id,
+            'contra_account' => $contra_account,
+            'reconsilation_status' => $reconsilation_status,
         ];
 
 // Insert the BankLog entry using the helper function

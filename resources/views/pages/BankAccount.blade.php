@@ -223,6 +223,8 @@
                                         <th>Debit</th>
                                         <th>Credit</th>
                                         <th>Balance</th>
+                                        <th>Contra Account</th>
+                                        <th>Reconciliation No</th>
                                         <th>User</th>
                                     </tr>
                                     </thead>
