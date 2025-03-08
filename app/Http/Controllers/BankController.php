@@ -1096,14 +1096,16 @@ class BankController extends Controller
             DB::beginTransaction();
 
             $note=$request->note??'-';
-
+            $user_id = (int)session('userid');
             $reconciliation = [
                 'account_id' => $request->account_id,
                 'date' => $request->date,
                 'created_date_time' => Carbon::now(),
                 'note' => $note,
-                'balance' => $request->balance,
-                'status' => '0'
+                'balance' => $request->beginig_balance,
+                'endingBalance' => $request->balance,
+                'status' => '0',
+                'user_id' => $user_id
             ];
 
             // Insert into reconciliation table
@@ -1133,14 +1135,22 @@ class BankController extends Controller
     }
 
 
-    public function reconciliation($id)
+    public function reconciliation($id,$status)
     {
-        $reconciliation = tableWithBranch('reconciliation')
+        $reconciliation = tableWithBranch('reconciliation','reconciliation')
+            ->join('company_bank_accounts', 'reconciliation.account_id', '=', 'company_bank_accounts.Idbank')
             ->where('id_reconciliation', '=', $id)
+            ->select('reconciliation.*', 'company_bank_accounts.Bank_Name', 'company_bank_accounts.Account_Name', 'company_bank_accounts.Account_No', 'company_bank_accounts.code')
             ->first();
 
         if (!$reconciliation) {
             return redirect()->back()->with('error', 'Reconciliation record not found.');
+        }
+
+        if ($reconciliation->status == "-1") {
+            if ($status == "edit") {
+                return redirect()->route('bankReconciliation.reconciliation', ['id' => $id, 'status' => "view"]);
+            }
         }
 
         $date = $reconciliation->date;
@@ -1179,7 +1189,7 @@ class BankController extends Controller
 // ✅ Normalize the balance value from the correct column
         $balance = $lastReconciliation ? ($lastReconciliation->balance ?? $lastReconciliation->Balance ?? 0) : 0;
 
-        return view('pages.Accounting.BankReconsilationInside', compact('reconciliation','balance','reconciliation_log','bank', 'bank_log','id'));
+        return view('pages.Accounting.BankReconsilationInside', compact('reconciliation','balance','reconciliation_log','bank', 'bank_log','id','status'));
     }
 
 
@@ -1217,10 +1227,10 @@ class BankController extends Controller
 
             // ✅ 1. Update reconciliation table
             updateWithBranch('reconciliation', 'id_reconciliation', $reco_id, [
-                'balance' => $beginningBalance,
                 'endingBalance' => $endingBalance,
                 'clearedBalance' => $clearedBalance,
                 'difference' => $difference,
+                'status' => "-1",
             ]);
 
             // ✅ 2. Update checked credit transactions in company_bank_has_log
@@ -1229,14 +1239,35 @@ class BankController extends Controller
                 updateWithBranch('company_bank_has_log', 'id', $bank_id, [
                     'reconsilation_status' => $reco_id,
                 ]);
-            }
+                $reconciliation_log_credit = [
+                    'log_id' => $bank_id,
+                    'description' => $transaction['description'],
+                    'date' => $transaction['date'],
+                    'type' => $transaction['type'],
+                    'credit' => $transaction['amount'],
+                    'debit' => '0.00',
+                ];
+                insertWithBranch('reconciliation_logs', $reconciliation_log_credit);
 
+
+
+            }
             // ✅ 3. Update checked debit transactions in company_bank_has_log
             foreach ($request->debitTransactions as $transaction) {
                 $bank_id = $transaction['id'];
                 updateWithBranch('company_bank_has_log', 'id', $bank_id, [
                     'reconsilation_status' => $reco_id,
                 ]);
+
+                $reconciliation_log_credit = [
+                    'log_id' => $bank_id,
+                    'description' => $transaction['description'],
+                    'date' => $transaction['date'],
+                    'type' => $transaction['type'],
+                    'credit' => '0.00',
+                    'debit' => $transaction['amount'],
+                ];
+                insertWithBranch('reconciliation_logs', $reconciliation_log_credit);
             }
 
             // ✅ 4. Delete old reconciliation_has_data records
@@ -1245,6 +1276,7 @@ class BankController extends Controller
             // ✅ 5. Insert new reconciliation_has_data records
             foreach ($request->transactionEntries as $entry) {
                 $bank_id = $entry['id'];
+
                 $reconciliation_has_data = [
                     'id_reconciliation' => $reco_id,
                     'description' => $entry['description'],
@@ -1254,6 +1286,11 @@ class BankController extends Controller
                     'account_id' => $bank_id,
                 ];
                 insertWithBranch('reconciliation_has_data', $reconciliation_has_data);
+
+//                $bank=tableWithBranch('company_bank_accounts')->where('Idbank','=',$selectedBankId)->first();
+//                $description="Bank Name :".$bank->Bank_Name."- Account Name :".$bank->Account_Name."- Account Num :".$bank->Account_No;
+//
+//                $this->bankLogController->index($bankId, "Return To Company", $description, "-", "credit", $amount,$selectedBankId);
             }
 
             DB::commit(); // ✅ Commit transaction if all operations succeed
