@@ -171,10 +171,15 @@
         .btn-primary:hover {
             opacity: 0.9;
         }
-        .selected-row {
-            background-color: #d4edda !important; /* Light Green */
+
+
+        /* ✅ Force row color when checkbox is checked */
+        table tbody tr.selected-row {
+            background-color: #000000 !important;
+            color: #4CAF50; /* Keep text white for better contrast */
             transition: background-color 0.3s ease-in-out;
         }
+
 
 
     </style>
@@ -207,7 +212,7 @@
                             <td>{{ $transaction->Date_Time }}</td>
                             <td>{{ $transaction->Description }}</td>
                             <td>{{ $transaction->Type }}</td>
-                            <td>{{ number_format($transaction->Credit, 2) }}</td>
+                            <td>{{ number_format($transaction->Credit, 2, '.', '') }}</td>
                         </tr>
                         @endif
                     @endforeach
@@ -235,7 +240,7 @@
                             <td>{{ $transaction->Date_Time }}</td>
                             <td>{{ $transaction->Description }}</td>
                             <td>{{ $transaction->Type }}</td>
-                            <td>{{ number_format($transaction->Debit, 2) }}</td>
+                            <td>{{ number_format($transaction->Debit, 2, '.', '') }}</td>
                         </tr>
                         @endif
                     @endforeach
@@ -248,68 +253,250 @@
         <div class="summary-section">
             <div class="summary-header">
                 <div class="summary-buttons">
-                    <button id="markAll" class="btn btn-mark">Mark All</button>
-                    <button id="unmarkAll" class="btn btn-unmark">Unmark All</button>
+                    <button id="markAll" class="btn btn-primary btn-sm">Mark All</button>
+                    <button id="unmarkAll" class="btn btn-danger btn-sm">Unmark All</button>
+                    <button id="modifyEntry" class="btn btn-warning btn-sm">Modify</button> <!-- New Modify Button -->
                 </div>
             </div>
-
+            <div class="table-responsive mt-2">
+                <table class="table table-bordered" id="transactionTable">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Account</th>
+                        <th>Description</th>
+                        <th>Date</th>
+                        <th>Credit</th>
+                        <th>Debit</th>
+                        <th>Action</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($reconciliation_log as $item)
+                            <tr>
+                                <td>{{$item->Account_Name}}</td>
+                                <td>{{$item->description}}</td>
+                                <td>{{$item->date}}</td>
+                                <td>{{$item->credit}}</td>
+                                <td>{{$item->debit}}</td>
+                                <td><button class="btn btn-danger btn-sm removeRow">X</button></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
             <div class="summary-content">
                 <div class="summary-left">
-                    <div class="summary-values"><span>Beginning Balance:</span> <span id="beginningBalance">0.00</span></div>
+                    <div class="summary-values"><span>Beginning Balance:</span> <span id="beginningBalance">5000.00</span></div>
                 </div>
 
                 <div class="summary-right">
-                    <div class="summary-values"><span>Service Charge:</span> <span id="serviceCharge">0.00</span></div>
-                    <div class="summary-values"><span>Interest Earned:</span> <span id="interestEarned">0.00</span></div>
-                    <div class="summary-values"><span>Ending Balance:</span> <span id="endingBalance">{{number_format($reconciliation->balance),2,'.',','}}</span></div>
+                    <div class="summary-values"><span>Ending Balance:</span> <span id="endingBalance">{{ number_format($reconciliation->balance, 2, '.', ',') }}</span></div>
                     <div class="summary-values"><span>Cleared Balance:</span> <span id="clearedBalance">0.00</span></div>
                     <div class="summary-values"><span>Difference:</span> <span id="difference">0.00</span></div>
                 </div>
             </div>
 
-            <div class="action-buttons">
-                <button class="btn btn-primary" id="reconcileNow">Reconcile Now</button>
+            <!-- ✅ Transaction Table (Replaces Service Charge & Interest Earned) -->
+
+        </div>
+
+    </div>
+
+    <!-- ✅ Transaction Entry Modal -->
+    <div class="modal fade" id="transactionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Add Transaction</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Account</label>
+                            <select id="modal-account-data" class="form-select select2">
+                                @foreach($bank as $item)
+                                    <option value="{{$item->Idbank}}">{{$item->Bank_Name}} - {{$item->Account_No}}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Description</label>
+                            <input type="text" id="modal-description" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Date</label>
+                            <input type="date" id="modal-entry-date" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Transaction Type</label>
+                            <select id="modal-type" class="form-select">
+                                <option value="credit">Credit</option>
+                                <option value="debit">Debit</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Amount</label>
+                            <input type="text" id="modal-amount" class="form-control">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button class="btn btn-success w-100" id="addEntry">Add to Table</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+
 @endsection
 
 
 @section('script')
     <script>
         $(document).ready(function () {
-            $(".mark-transaction").change(function () {
+            // Ensure background color changes when checkbox is checked
+            $(document).on("change", ".mark-transaction", function () {
                 let row = $(this).closest("tr");
 
-                if (this.checked) {
-                    row.addClass("selected-row"); // Add highlight color when checked
+                if ($(this).is(":checked")) {
+                    row.addClass("selected-row").css("background-color", "#b5f7b6"); // ✅ Apply green color manually
                 } else {
-                    row.removeClass("selected-row"); // Remove highlight color when unchecked
+                    row.removeClass("selected-row").css("background-color", ""); // ✅ Reset to default
                 }
 
-                updateSummary(); // Call update function on check/uncheck
+                updateSummary(); // Update summary calculations
             });
 
+            // Mark all checkboxes
             $("#markAll").click(function () {
-                $(".mark-transaction").prop("checked", true).change();
+                $(".mark-transaction").prop("checked", true).trigger("change");
             });
 
+            // Unmark all checkboxes
             $("#unmarkAll").click(function () {
-                $(".mark-transaction").prop("checked", false).change();
+                $(".mark-transaction").prop("checked", false).trigger("change");
             });
 
-            function updateSummary() {
-                let beginningBalance = 0.00; // Sample starting balance
-                let clearedBalance = beginningBalance;
 
-                $(".mark-transaction:checked").each(function () {
-                    let amount = parseFloat($(this).closest("tr").find("td:last-child").text().replace(/,/g, '')) || 0;
-                    clearedBalance += amount;
+            // ✅ Open Modal on "Modify" Button Click
+            $("#modifyEntry").click(function () {
+                $("#transactionModal").modal("show");
+            });
+
+            // ✅ Add Entry to Table
+            $("#addEntry").click(function () {
+                let account_id = $("#modal-account-data").val();
+                let account_text = $("#modal-account-data option:selected").text();
+                let description = $("#modal-description").val();
+                let date = $("#modal-entry-date").val();
+                let type = $("#modal-type").val();
+                let amount = $("#modal-amount").val();
+
+                if (!account_id || !description || !date || !amount) {
+                    Swal.fire({
+                        icon: "warning",
+                        title: "Missing Information",
+                        text: "All fields are required!",
+                    });
+                    return;
+                }
+
+                let credit = type === "credit" ? amount : "0.00";
+                let debit = type === "debit" ? amount : "0.00";
+
+                let row = `
+            <tr data-account-id="${account_id}">
+                <td>${account_text}</td>
+                <td>${description}</td>
+                <td>${date}</td>
+                <td>${credit}</td>
+                <td>${debit}</td>
+                <td><button class="btn btn-danger btn-sm removeRow">X</button></td>
+            </tr>
+        `;
+
+                $("#transactionTable tbody").append(row);
+
+                // ✅ Clear Fields After Adding
+                $("#modal-description").val("");
+                $("#modal-entry-date").val("");
+                $("#modal-amount").val("");
+                $("#modal-type").val("credit");
+                updateSummary();
+                // ✅ Attach Remove Event to New Rows
+                $(".removeRow").click(function () {
+                    $(this).closest("tr").remove();
+                    updateSummary();
+                });
+            });
+
+            // ✅ Remove Row When "X" Button is Clicked
+            $(document).on("click", ".removeRow", function () {
+                $(this).closest("tr").remove();
+            });
+
+            // ✅ Enable Select2 in Modal
+            $('#transactionModal').on('shown.bs.modal', function () {
+                $('.select2').select2({
+                    dropdownParent: $('#transactionModal')
+                });
+            });
+
+            // ✅ Function to calculate totals and update balances
+            // ✅ Function to calculate totals and update balances
+            function updateSummary() {
+                let beginningBalance = 0;
+                let clearedBalance = 0;
+                let transactionCreditTotal = 0;
+                let transactionDebitTotal = 0;
+                let endingBalance = parseFloat($("#endingBalance").text().replace(/,/g, '')) || 0;
+
+                // ✅ Calculate beginning balance from selected `creditTable` rows
+                let creditTableSelectedSum = 0;
+                $("#creditTable tbody tr").each(function () {
+                    if ($(this).find(".mark-transaction").prop("checked")) {  // Only checked rows
+                        let amount = parseFloat($(this).find("td:last-child").text().replace(/,/g, '')) || 0;
+                        creditTableSelectedSum += amount;
+                    }
                 });
 
-                $("#clearedBalance").text(clearedBalance.toFixed(2)); // Update cleared balance
-                $("#difference").text((0.00 - clearedBalance).toFixed(2)); // Update difference
+                // ✅ Calculate `debitTable` sum from selected rows
+                let debitTableSelectedSum = 0;
+                $("#debitTable tbody tr").each(function () {
+                    if ($(this).find(".mark-transaction").prop("checked")) {  // Only checked rows
+                        let amount = parseFloat($(this).find("td:last-child").text().replace(/,/g, '')) || 0;
+                        debitTableSelectedSum += amount;
+                    }
+                });
+
+                // ✅ Calculate transactionTable totals (all rows)
+                $("#transactionTable tbody tr").each(function () {
+                    let credit = parseFloat($(this).find("td:nth-child(4)").text().replace(/,/g, '')) || 0;
+                    let debit = parseFloat($(this).find("td:nth-child(5)").text().replace(/,/g, '')) || 0;
+
+                    transactionCreditTotal += credit;
+                    transactionDebitTotal += debit;
+                });
+
+
+
+                // ✅ Final `clearedBalance` calculation
+                clearedBalance = (beginningBalance - creditTableSelectedSum) + debitTableSelectedSum;
+
+                // ✅ Add transaction table calculations
+                clearedBalance += (transactionCreditTotal - transactionDebitTotal);
+
+                // ✅ Compute difference
+                let difference = clearedBalance - endingBalance;
+
+                $("#clearedBalance").text(clearedBalance.toFixed(2));
+                $("#difference").text(difference.toFixed(2));
             }
+
+            updateSummary();
         });
 
     </script>

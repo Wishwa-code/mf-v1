@@ -1125,18 +1125,39 @@ class BankController extends Controller
     }
 
 
-    public  function reconciliation($id){
+    public function reconciliation($id)
+    {
+        $reconciliation = tableWithBranch('reconciliation')
+            ->where('id_reconciliation', '=', $id)
+            ->first();
 
-        $reconciliation=tableWithBranch('reconciliation')->where('id_reconciliation','=',$id)->first();
-        $date=$reconciliation->date;
-        $last_bank_log_date=tableWithBranch('company_bank_has_log')->where('Bank_Account_Id','=',$reconciliation->account_id)->orderBy('Date_Time','desc')->first();
-        $bank_log=tableWithBranch('company_bank_has_log')
-            ->whereBetween('Date_Time', [$last_bank_log_date->Date_Time, $date])
-            ->where('Bank_Account_Id','=',$reconciliation->account_id)
+        if (!$reconciliation) {
+            return redirect()->back()->with('error', 'Reconciliation record not found.');
+        }
+
+        $date = $reconciliation->date;
+
+        $date_to = $date . ' 23:59:59';
+
+        $bank_log = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
+            ->join('reconciliation', 'reconciliation.account_id', '=', 'company_bank_has_log.Bank_Account_Id')
+            ->where('company_bank_has_log.Date_Time', '<=', $date_to) // ✅ Includes all past transactions up to this date
+            ->whereRaw('CAST(reconciliation.status AS SIGNED) < 1')
+            ->where('company_bank_has_log.Bank_Account_Id', '=', $reconciliation->account_id)
             ->get();
 
-        return view('pages.Accounting.BankReconsilationInside',compact('reconciliation','bank_log'));
+
+        $bank = tableWithBranch('company_bank_accounts')->get();
+
+        $reconciliation_log=tableWithBranch('reconciliation_has_data','reconciliation_has_data')
+            ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'reconciliation_has_data.account_id')
+            ->where('reconciliation_has_data.id_reconciliation', '=', $id)
+            ->select('reconciliation_has_data.*', 'company_bank_accounts.Bank_Name', 'company_bank_accounts.Account_Name', 'company_bank_accounts.Account_No')
+            ->get();
+
+        return view('pages.Accounting.BankReconsilationInside', compact('reconciliation','reconciliation_log','bank', 'bank_log'));
     }
+
 
     public function Reconciliation_delete(Request $request)
     {

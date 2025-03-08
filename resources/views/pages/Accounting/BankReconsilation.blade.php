@@ -313,7 +313,9 @@
                             <label class="form-label">Bank Account</label>
                             <select id="modal-account" class="form-select select2">
                                 @foreach($bank as $item)
-                                    <option value="{{$item->Idbank}}">{{$item->Bank_Name}} - {{$item->Account_No}}</option>
+                                    @if($item->Bank_Type=="Bank")
+                                        <option value="{{$item->Idbank}}">{{$item->Bank_Name}} - {{$item->Account_No}}</option>
+                                    @endif
                                 @endforeach
                             </select>
                         </div>
@@ -431,18 +433,15 @@
                 let selectedAccount = $(this).val();
                 $("#openModal").prop("disabled", selectedAccount === "0");
             });
+            // Reinitialize Select2 inside the modal when it's opened
+            $('#reconciliationModal').on('shown.bs.modal', function () {
+                $('.select2').select2({
+                    dropdownParent: $('#reconciliationModal') // Fixes Select2 inside modal
+                });
+            });
 
             $("#openModal").click(function () {
                 let selectedAccount = $("#bank-account").val();
-
-                if (!selectedAccount || selectedAccount === "0") {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Select an Account',
-                        text: 'Please select an account before proceeding.',
-                    });
-                    return;
-                }
 
                 // **AJAX request to fetch last reconciliation details**
                 $.ajax({
@@ -467,8 +466,7 @@
                     }
                 });
 
-                // Open the Modal after AJAX request starts
-                $("#modal-account").val(selectedAccount).trigger('change');
+
                 $("#reconciliationModal").modal('show'); // ✅ Open modal
             });
 
