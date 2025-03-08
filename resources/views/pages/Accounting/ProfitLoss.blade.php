@@ -291,7 +291,7 @@
                 <tr class="net-income-after border-top-bottom-dark bg-light fw-bold" style="font-size: 17px;">
                     <td>Net Income</td>
                     <td>
-                        {{ number_format(($interest + $panelty + $other_chargers - $total_difference), 2, '.', ',') }}
+                        {{ number_format(($interest + $panelty + $other_chargers + $total_difference), 2, '.', ',') }}
                     </td>
                 </tr>
                 </tbody>
