@@ -188,6 +188,7 @@
 @section('content')
     <div class="container">
         <h2>Bank Reconciliation</h2>
+        <h4 style="float: right">{{$reconciliation->code}}/{{$reconciliation->Account_Name}}/{{$reconciliation->Bank_Name}}</h4>
         <div class="period">For period: {{$reconciliation->date}}</div>
 
         <div class="reconciliation-wrapper">
@@ -207,8 +208,12 @@
                     <tbody>
                     @foreach($bank_log as $transaction)
                         @if($transaction->Credit > 0)  <!-- Filter Credit Transactions -->
-                        <tr>
-                            <td><input type="checkbox" class="mark-transaction"></td>
+                        <tr id="{{$transaction->id}}"
+                            class="{{ $transaction->reconsilation_status == $id ? 'selected-row' : '' }}">
+                            <td>
+                                <input type="checkbox" class="mark-transaction"
+                                        {{ $transaction->reconsilation_status == $id ? 'checked' : '' }}>
+                            </td>
                             <td>{{ $transaction->Date_Time }}</td>
                             <td>{{ $transaction->Description }}</td>
                             <td>{{ $transaction->Type }}</td>
@@ -235,8 +240,12 @@
                     <tbody>
                     @foreach($bank_log as $transaction)
                         @if($transaction->Debit > 0)  <!-- Filter Debit Transactions -->
-                        <tr>
-                            <td><input type="checkbox" class="mark-transaction"></td>
+                        <tr id="{{$transaction->id}}"
+                            class="{{ $transaction->reconsilation_status == $id ? 'selected-row' : '' }}">
+                            <td>
+                                <input type="checkbox" class="mark-transaction"
+                                        {{ $transaction->reconsilation_status == $id ? 'checked' : '' }}>
+                            </td>
                             <td>{{ $transaction->Date_Time }}</td>
                             <td>{{ $transaction->Description }}</td>
                             <td>{{ $transaction->Type }}</td>
@@ -247,17 +256,22 @@
                     </tbody>
                 </table>
             </div>
+
+
         </div>
 
         <!-- Summary Section -->
         <div class="summary-section">
-            <div class="summary-header">
-                <div class="summary-buttons">
-                    <button id="markAll" class="btn btn-primary btn-sm">Mark All</button>
-                    <button id="unmarkAll" class="btn btn-danger btn-sm">Unmark All</button>
-                    <button id="modifyEntry" class="btn btn-warning btn-sm">Modify</button> <!-- New Modify Button -->
+            @if($status=="edit")
+                <div class="summary-header">
+                    <div class="summary-buttons">
+                        <button id="markAll" class="btn btn-primary btn-sm">Mark All</button>
+                        <button id="unmarkAll" class="btn btn-danger btn-sm">Unmark All</button>
+                        <button id="modifyEntry" class="btn btn-warning btn-sm">Modify</button> <!-- New Modify Button -->
+                    </div>
                 </div>
-            </div>
+            @endif
+
             <div class="table-responsive mt-2">
                 <table class="table table-bordered" id="transactionTable">
                     <thead class="table-light">
@@ -272,7 +286,7 @@
                     </thead>
                     <tbody>
                         @foreach($reconciliation_log as $item)
-                            <tr>
+                            <tr id="{{$transaction->account_id}}">
                                 <td>{{$item->Account_Name}}</td>
                                 <td>{{$item->description}}</td>
                                 <td>{{$item->date}}</td>
@@ -286,17 +300,38 @@
             </div>
             <div class="summary-content">
                 <div class="summary-left">
-                    <div class="summary-values"><span>Beginning Balance:</span> <span id="beginningBalance">5000.00</span></div>
+                    <div class="summary-values"><span>Beginning Balance:</span> <span id="beginningBalance">{{number_format($balance, 2,'.', '') ?? '0.00'}}</span></div>
                 </div>
 
                 <div class="summary-right">
-                    <div class="summary-values"><span>Ending Balance:</span> <span id="endingBalance">{{ number_format($reconciliation->balance, 2, '.', ',') }}</span></div>
-                    <div class="summary-values"><span>Cleared Balance:</span> <span id="clearedBalance">0.00</span></div>
-                    <div class="summary-values"><span>Difference:</span> <span id="difference">0.00</span></div>
+                    <div class="summary-values"><span>Ending Balance:</span> <span id="endingBalance">{{ number_format($reconciliation->endingBalance, 2, '.', ',') }}</span></div>
+                    @if($status=="edit")
+                        <div class="summary-values"><span>Cleared Balance:</span> <span id="clearedBalance">0.00</span></div>
+                        <div class="summary-values"><span>Difference:</span> <span id="difference">0.00</span></div>
+                    @endif
                 </div>
             </div>
 
             <!-- ✅ Transaction Table (Replaces Service Charge & Interest Earned) -->
+                <br><br>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+
+                        <label class="form-label mb-0" for="note">Note</label>
+                        @if($status=="edit")
+                            <input type="text" id="note" class="form-control" style="width: 800px;">
+                        @else
+                            <input type="text" id="note" class="form-control" value="{{$reconciliation->note}}" style="width: 800px;" readonly>
+                        @endif
+
+                    </div>
+                    @if($status=="edit")
+                        <button class="btn btn-success" id="startReconciliation">Start Reconciliation</button>
+                    @endif
+                </div>
+
+
+
 
         </div>
 
@@ -313,14 +348,6 @@
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Account</label>
-                            <select id="modal-account-data" class="form-select select2">
-                                @foreach($bank as $item)
-                                    <option value="{{$item->Idbank}}">{{$item->Bank_Name}} - {{$item->Account_No}}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-6">
                             <label class="form-label">Description</label>
                             <input type="text" id="modal-description" class="form-control">
                         </div>
@@ -331,8 +358,16 @@
                         <div class="col-md-6">
                             <label class="form-label">Transaction Type</label>
                             <select id="modal-type" class="form-select">
-                                <option value="credit">Credit</option>
-                                <option value="debit">Debit</option>
+                                <option value="credit">Credit(Interest Or Other Receivables)</option>
+                                <option value="debit">Debit(Service Chargers Or Other Payable)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Contra Account</label>
+                            <select id="modal-account-data" class="form-select select2">
+                                @foreach($bank as $item)
+                                    <option value="{{$item->Idbank}}">{{$item->Bank_Name}} - {{$item->Account_No}}</option>
+                                @endforeach
                             </select>
                         </div>
                     </div>
@@ -408,7 +443,7 @@
                 let debit = type === "debit" ? amount : "0.00";
 
                 let row = `
-            <tr data-account-id="${account_id}">
+            <tr id="${account_id}">
                 <td>${account_text}</td>
                 <td>${description}</td>
                 <td>${date}</td>
@@ -436,6 +471,7 @@
             // ✅ Remove Row When "X" Button is Clicked
             $(document).on("click", ".removeRow", function () {
                 $(this).closest("tr").remove();
+                updateSummary();
             });
 
             // ✅ Enable Select2 in Modal
@@ -497,6 +533,124 @@
             }
 
             updateSummary();
+
+
+
+
+            // ✅ Start Reconciliation Click Event
+            $("#startReconciliation").click(function () {
+                // ✅ Collect Checked Transactions from Credit Table
+                let creditTransactions = [];
+                $("#creditTable tbody tr").each(function () {
+                    let creditTransactionsCheck="0"
+                    if ($(this).find(".mark-transaction").prop("checked")) {
+                        creditTransactionsCheck="1"
+                    }
+                    creditTransactions.push({
+                        creditTransactionsCheck: creditTransactionsCheck,
+                        id: $(this).attr("id"),
+                        date: $(this).find("td:nth-child(2)").text().trim(),
+                        description: $(this).find("td:nth-child(3)").text().trim(),
+                        type: $(this).find("td:nth-child(4)").text().trim(),
+                        amount: parseFloat($(this).find("td:nth-child(5)").text().replace(/,/g, '')) || 0
+                    });
+                });
+
+                // ✅ Collect Checked Transactions from Debit Table
+                let debitTransactions = [];
+                $("#debitTable tbody tr").each(function () {
+                    let debitTransactionsCheck="0"
+                    if ($(this).find(".mark-transaction").prop("checked")) {
+                        debitTransactionsCheck="1"
+                    }
+                    debitTransactions.push({
+                        debitTransactionsCheck: debitTransactionsCheck,
+                        id: $(this).attr("id"),
+                        date: $(this).find("td:nth-child(2)").text().trim(),
+                        description: $(this).find("td:nth-child(3)").text().trim(),
+                        type: $(this).find("td:nth-child(4)").text().trim(),
+                        amount: parseFloat($(this).find("td:nth-child(5)").text().replace(/,/g, '')) || 0
+                    });
+                });
+
+                // ✅ Collect All Transactions from Transaction Table
+                let transactionEntries = [];
+                $("#transactionTable tbody tr").each(function () {
+                    transactionEntries.push({
+                        id: $(this).attr("id"),
+                        account: $(this).find("td:nth-child(1)").text().trim(),
+                        description: $(this).find("td:nth-child(2)").text().trim(),
+                        date: $(this).find("td:nth-child(3)").text().trim(),
+                        credit: parseFloat($(this).find("td:nth-child(4)").text().replace(/,/g, '')) || 0,
+                        debit: parseFloat($(this).find("td:nth-child(5)").text().replace(/,/g, '')) || 0
+                    });
+                });
+
+                // ✅ Collect Summary Values
+                let summaryData = {
+                    beginningBalance: parseFloat($("#beginningBalance").text().replace(/,/g, '')) || 0,
+                    endingBalance: parseFloat($("#endingBalance").text().replace(/,/g, '')) || 0,
+                    clearedBalance: parseFloat($("#clearedBalance").text().replace(/,/g, '')) || 0,
+                    difference: parseFloat($("#difference").text().replace(/,/g, '')) || 0,
+                    note: $("#note").val() || '-'
+                };
+
+
+
+                // ✅ Validate before sending
+                if (summaryData.difference !== 0) {
+                    Swal.fire({
+                        icon: "warning",
+                        title: "Reconciliation Not Balanced!",
+                        text: "The difference is not zero. Please check your transactions.",
+                    });
+                    return;
+                }
+
+
+
+                // ✅ Confirm before submitting
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "Once submitted, this reconciliation cannot be changed!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, submit it!"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // ✅ Send AJAX request to Laravel
+                        $.ajax({
+                            url: "{{ route('reconciliation.store') }}", // ✅ Define this in web.php
+                            type: "POST",
+                            headers: {
+                                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                            },
+                            data: {
+                                id: {{$id}},
+                                bank_id: {{$reconciliation->Idbank}},
+                                creditTransactions: creditTransactions,
+                                debitTransactions: debitTransactions,
+                                transactionEntries: transactionEntries,
+                                summary: summaryData
+                            },
+                            success: function (response) {
+                                Swal.fire("Success!", "Reconciliation saved successfully.", "success").then(() => {
+                                    location.reload(); // Reload page after success
+                                });
+                            },
+                            error: function (error) {
+                                Swal.fire("Error!", "Something went wrong while saving.", "error");
+                            }
+                        });
+                    }
+                });
+            });
+
+
+
+
         });
 
     </script>

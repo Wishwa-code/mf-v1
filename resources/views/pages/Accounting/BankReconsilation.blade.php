@@ -251,7 +251,7 @@
 @section('content')
     <div>
         <br>
-        <h2>Bank Reconciliation Report</h2>
+        <h2>Bank Reconciliation</h2>
         <br>
         <div class="filters">
             <div>
@@ -268,12 +268,12 @@
 
             <div>
                 <label>Date From</label>
-                <input type="date" class="form-control" id="date-from">
+                <input type="date" class="form-control" id="date-from" value="{{date('Y-m-d')}}">
             </div>
 
             <div>
                 <label>Date To</label>
-                <input type="date" class="form-control" id="date-to">
+                <input type="date" class="form-control" id="date-to" value="{{date('Y-m-d')}}">
             </div>
 
             <button id="searchReconciliation" class="btn btn-primary">Search</button>
@@ -282,21 +282,29 @@
         </div>
 
         <div class="table-container mt-4">
-            <table id="bankReconciliationTable">
-                <thead>
-                <tr>
-                    <th>Account</th>
-                    <th>Date</th>
-                    <th>Created Date/Time</th>
-                    <th>Note</th>
-                    <th>Balance Amount</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+            <div class="table-responsive">
+                <table id="bankReconciliationTable" class="table table-bordered w-100">
+                    <thead>
+                    <tr>
+                        <th>Account</th>
+                        <th>Date</th>
+                        <th>Created Date/Time</th>
+                        <th>Note</th>
+                        <th>Opening Balance</th>
+                        <th>Ending Balance</th>
+                        <th>Status</th>
+                        <th style="width: 150px;">Action</th>
+                        <th style="width: 150px;">Report</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+
+                    </tbody>
+                </table>
+            </div>
         </div>
+
+
     </div>
 
     <div class="modal fade" id="reconciliationModal" tabindex="-1" aria-hidden="true">
@@ -311,7 +319,8 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Bank Account</label>
-                            <select id="modal-account" class="form-select select2">
+                            <select id="modal-account" class="form-select select2" onchange="load_data(this.value)">
+                                <option value="0">Select Account</option>
                                 @foreach($bank as $item)
                                     @if($item->Bank_Type=="Bank")
                                         <option value="{{$item->Idbank}}">{{$item->Bank_Name}} - {{$item->Account_No}}</option>
@@ -340,7 +349,7 @@
                         </div>
                     </div>
 
-                    <div class="row g-3 mt-3">
+                    <div class="row g-3 mt-3" hidden>
                         <div class="col-md-6">
                             <label class="form-label">Note</label>
                             <input type="text" id="note" class="form-control">
@@ -352,14 +361,6 @@
                     <!-- Transactions Section -->
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Account</label>
-                            <select id="modal-account-data" class="form-select select2">
-                                @foreach($bank as $item)
-                                    <option value="{{$item->Idbank}}">{{$item->Bank_Name}} - {{$item->Account_No}}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-6">
                             <label class="form-label">Description</label>
                             <input type="text" id="modal-description" class="form-control">
                         </div>
@@ -370,8 +371,17 @@
                         <div class="col-md-6">
                             <label class="form-label">Transaction Type</label>
                             <select id="modal-type" class="form-select">
-                                <option value="credit">Credit</option>
-                                <option value="debit">Debit</option>
+                                <option value="credit">Credit(Interest Or Other Receivables)</option>
+                                <option value="debit">Debit(Service Chargers Or Other Payable)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Contra
+                                Account</label>
+                            <select id="modal-account-data" class="form-select select2">
+                                @foreach($bank as $item)
+                                    <option value="{{$item->Idbank}}">{{$item->Bank_Name}} - {{$item->Account_No}}</option>
+                                @endforeach
                             </select>
                         </div>
                     </div>
@@ -443,32 +453,13 @@
             $("#openModal").click(function () {
                 let selectedAccount = $("#bank-account").val();
 
-                // **AJAX request to fetch last reconciliation details**
-                $.ajax({
-                    url: "{{ route('get.last.reconciliation') }}",
-                    type: "GET",
-                    data: { account_id: selectedAccount },
-                    success: function (response) {
-                        if (response) {
-                            $("#modal-last-reconciliation-date").val(response.date || ""); // Set Last Reconciliation Date
-                            $("#modal-beginning-balance").val(response.balance || "0.00"); // Set Beginning Balance
-                        } else {
-                            $("#modal-last-reconciliation-date").val(""); // If no record found, keep empty
-                            $("#modal-beginning-balance").val("0.00"); // Default balance
-                        }
-                    },
-                    error: function () {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error Fetching Data',
-                            text: 'Could not retrieve the last reconciliation record.',
-                        });
-                    }
-                });
 
+                load_data(selectedAccount);
 
                 $("#reconciliationModal").modal('show'); // ✅ Open modal
             });
+
+
 
 
             $(".btn-close").click(function () {
@@ -548,30 +539,44 @@
 
                                 console.log(reconciliation.status);
 
-                                let statusLabel = reconciliation.status == '0'
-                                    ? '<span class="badge bg-danger">Pending</span>'
-                                    : '<span class="badge bg-success">Completed</span>';
+                                let statusLabel = reconciliation.status == '-1'
+                                    ? '<span class="badge bg-success">Completed</span>'
+                                    : '<span class="badge bg-danger">Pending</span>';
 
                                 // Enable Edit button only if status is Pending (0)
-                                let editButton = reconciliation.status == '0'
-                                    ? `<button class="btn btn-sm btn-warning edit-btn">Edit</button>`
-                                    : `<button class="btn btn-sm btn-secondary" disabled>Edit</button>`;
+                                let editButton = reconciliation.status == '-1'
+                                    ? `<button class="btn btn-sm btn-secondary" disabled>Edit</button>`
+                                    : `<button class="btn btn-sm btn-warning edit-btn">Edit</button>`;
+
+                                let deleteButton = reconciliation.status == '-1'
+                                    ? `<button class="btn btn-sm btn-secondary" disabled>Delete</button>`
+                                    : `<button class="btn btn-sm btn-danger delete-btn">Delete</button>`;
 
                                 let row = `
     <tr data-id="${reconciliation.id_reconciliation}">
         <td>${reconciliation.Account_Name}-${reconciliation.Account_No}</td>
         <td>${reconciliation.date}</td>
         <td>${reconciliation.created_date_time}</td>
-        <td>${reconciliation.note}</td>
-        <td>${reconciliation.balance}</td>
+        <td>${reconciliation.note || '-'}</td>
+        <td>${parseFloat(reconciliation.balance).toFixed(2)}</td>
+        <td>${parseFloat(reconciliation.endingBalance).toFixed(2)}</td>
         <td>${statusLabel}</td>
-        <td>
-            <button class="btn btn-sm btn-info view-btn">View</button>
-            <button class="btn btn-sm btn-danger delete-btn">Delete</button>
-            ${editButton}
+        <td style="min-width: 160px; text-align: center;">
+            <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-sm btn-primary view-btn">View</button>
+                ${deleteButton}
+                ${editButton}
+            </div>
+        </td>
+        <td style="min-width: 160px; text-align: center;">
+            <div class="d-flex justify-content-center gap-2">
+<button class="btn btn-sm btn-dark" onclick="open_details_report(${reconciliation.id_reconciliation})">Detail</button>
+                <button class="btn btn-sm btn-dark" onclick="open_summary_report(${reconciliation.id_reconciliation})">Summary</button>
+            </div>
         </td>
     </tr>
 `;
+
 
                                 $("#bankReconciliationTable tbody").append(row);
                             });
@@ -589,6 +594,11 @@
                     }
                 });
             });
+
+
+
+
+
 
             // Handle Delete
             $(document).on("click", ".delete-btn", function () {
@@ -628,13 +638,13 @@
             // Handle Edit
             $(document).on("click", ".edit-btn", function () {
                 let id = $(this).closest("tr").data("id");
-                window.location.href = "BankReconsilationInside/" + id;
+                window.location.href = "BankReconsilationInside/" + id+"/edit";
             });
 
             // Handle View
             $(document).on("click", ".view-btn", function () {
                 let id = $(this).closest("tr").data("id");
-                window.location.href = "BankReconsilationInside/" + id;
+                window.location.href = "BankReconsilationInside/" + id+"/view";
             });
 
             // Handle Start Reconciliation
@@ -642,6 +652,7 @@
                 let account_id = $("#modal-account").val();
                 let statement_date = $("#modal-statement-date").val();
                 let balance = $("#modal-ending-balance").val();
+                let beginig_balance = $("#modal-beginning-balance").val();
                 let note = $("#note").val();
 
                 let transactions = [];
@@ -675,6 +686,7 @@
                                     account_id: account_id,
                                     date: statement_date,
                                     balance: balance,
+                                    beginig_balance: beginig_balance,
                                     note: note,
                                     transactions: transactions
                                 },
@@ -683,7 +695,7 @@
                                 },
                                 success: function (response) {
                                     Swal.fire("Saved!", "Reconciliation has been saved.", "success").then(() => {
-                                        window.location.href = "BankReconsilationInside/" + response.id;
+                                        window.location.href = "BankReconsilationInside/" + response.id+"/edit";
                                     });
                                 },
                                 error: function () {
@@ -698,8 +710,46 @@
             });
 
         });
+        function load_data(selectedAccount){
+            // **AJAX request to fetch last reconciliation details**
+            $.ajax({
+                url: "{{ route('get.last.reconciliation') }}",
+                type: "GET",
+                data: { account_id: selectedAccount },
+                success: function (response) {
+                    if (response) {
+                        $("#modal-last-reconciliation-date").val(response.date || ""); // Set Last Reconciliation Date
+                        $("#modal-beginning-balance").val(parseFloat(response.balance).toFixed(2) || "0.00"); // Set Beginning Balance
+                    } else {
+                        $("#modal-last-reconciliation-date").val(""); // If no record found, keep empty
+                        $("#modal-beginning-balance").val("0.00"); // Default balance
+                    }
+                },
+                error: function () {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error Fetching Data',
+                        text: 'Could not retrieve the last reconciliation record.',
+                    });
+                }
+            });
+        }
 
+        function open_details_report(id){
+            // Define the Laravel route and append the ID
+            let url = `/ReconciliationDetails/${id}`;
 
+            // Redirect to the route
+            window.open(url, '_blank');
+        }
+
+        function open_summary_report(id){
+            // Define the Laravel route and append the ID
+            let url = `/ReconciliationSummary/${id}`;
+
+            // Redirect to the route
+            window.open(url, '_blank');
+        }
 
 
     </script>

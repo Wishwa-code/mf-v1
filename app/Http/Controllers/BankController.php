@@ -1058,7 +1058,7 @@ class BankController extends Controller
         $query = tableWithBranch('reconciliation','reconciliation')
             ->join('company_bank_accounts', 'reconciliation.account_id', '=', 'company_bank_accounts.Idbank')
             ->whereBetween('date', [$request->date_from, $request->date_to])
-            ->select('reconciliation.*', 'company_bank_accounts.Bank_Name', 'company_bank_accounts.Account_Name', 'company_bank_accounts.Account_No')
+            ->select('reconciliation.*',  'company_bank_accounts.Bank_Name', 'company_bank_accounts.Account_Name', 'company_bank_accounts.Account_No')
             ->orderBy('date', 'desc');
 
         if ($request->account_id!=0){
@@ -1079,6 +1079,14 @@ class BankController extends Controller
             ->orderBy('date', 'desc') // Get the most recent record
             ->first(); // Retrieve only one row
 
+        if (!$lastReconciliation) {
+            $lastReconciliation = tableWithBranch('company_bank_has_log')
+                ->where('Bank_Account_Id', $request->account_id)
+                ->orderBy('id', 'desc') // Order by the latest date-time
+                ->select('company_bank_has_log.Balance as balance')
+                ->first(); // Get only the first row
+        }
+
         return response()->json($lastReconciliation);
     }
 
@@ -1088,14 +1096,16 @@ class BankController extends Controller
             DB::beginTransaction();
 
             $note=$request->note??'-';
-
+            $user_id = (int)session('userid');
             $reconciliation = [
                 'account_id' => $request->account_id,
                 'date' => $request->date,
                 'created_date_time' => Carbon::now(),
                 'note' => $note,
-                'balance' => $request->balance,
-                'status' => '0'
+                'balance' => $request->beginig_balance,
+                'endingBalance' => $request->balance,
+                'status' => '0',
+                'user_id' => $user_id
             ];
 
             // Insert into reconciliation table
@@ -1125,14 +1135,22 @@ class BankController extends Controller
     }
 
 
-    public function reconciliation($id)
+    public function reconciliation($id,$status)
     {
-        $reconciliation = tableWithBranch('reconciliation')
+        $reconciliation = tableWithBranch('reconciliation','reconciliation')
+            ->join('company_bank_accounts', 'reconciliation.account_id', '=', 'company_bank_accounts.Idbank')
             ->where('id_reconciliation', '=', $id)
+            ->select('reconciliation.*','company_bank_accounts.Idbank', 'company_bank_accounts.Bank_Name', 'company_bank_accounts.Account_Name', 'company_bank_accounts.Account_No', 'company_bank_accounts.code')
             ->first();
 
         if (!$reconciliation) {
             return redirect()->back()->with('error', 'Reconciliation record not found.');
+        }
+
+        if ($reconciliation->status == "-1") {
+            if ($status == "edit") {
+                return redirect()->route('bankReconciliation.reconciliation', ['id' => $id, 'status' => "view"]);
+            }
         }
 
         $date = $reconciliation->date;
@@ -1155,7 +1173,23 @@ class BankController extends Controller
             ->select('reconciliation_has_data.*', 'company_bank_accounts.Bank_Name', 'company_bank_accounts.Account_Name', 'company_bank_accounts.Account_No')
             ->get();
 
-        return view('pages.Accounting.BankReconsilationInside', compact('reconciliation','reconciliation_log','bank', 'bank_log'));
+        // Fetch the last reconciliation entry for the selected account
+        $lastReconciliation = tableWithBranch('reconciliation')
+            ->where('account_id', $reconciliation->account_id)
+            ->orderBy('date', 'desc') // Get the most recent record
+            ->first(); // Retrieve only one row
+
+        if (!$lastReconciliation) {
+            $lastReconciliation = tableWithBranch('company_bank_has_log')
+                ->where('Bank_Account_Id', $reconciliation->account_id)
+                ->orderBy('id', 'desc') // Order by the latest date-time
+                ->first(); // Get only the first row
+        }
+
+// ✅ Normalize the balance value from the correct column
+        $balance = $lastReconciliation ? ($lastReconciliation->balance ?? $lastReconciliation->Balance ?? 0) : 0;
+
+        return view('pages.Accounting.BankReconsilationInside', compact('reconciliation','balance','reconciliation_log','bank', 'bank_log','id','status'));
     }
 
 
@@ -1180,4 +1214,122 @@ class BankController extends Controller
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
+
+    public function reconciliation_store(Request $request){
+        DB::beginTransaction(); // ✅ Begin transaction
+
+        try {
+            $reco_id = $request->id;
+            $main_bank_id = $request->bank_id;
+            $endingBalance = $request->summary['endingBalance'];
+            $clearedBalance = $request->summary['clearedBalance'];
+            $difference = $request->summary['difference'];
+            $note = $request->summary['note'];
+
+            // ✅ 1. Update reconciliation table
+            updateWithBranch('reconciliation', 'id_reconciliation', $reco_id, [
+                'endingBalance' => $endingBalance,
+                'clearedBalance' => $clearedBalance,
+                'difference' => $difference,
+                'note' => $note,
+                'status' => "-1",
+            ]);
+
+            // ✅ 2. Update checked credit transactions in company_bank_has_log
+            foreach ($request->creditTransactions as $transaction) {
+                $bank_id = $transaction['id'];
+                $check = $transaction['creditTransactionsCheck'];
+                if ($check=="1"){
+                    updateWithBranch('company_bank_has_log', 'id', $bank_id, [
+                        'reconsilation_status' => $reco_id,
+                    ]);
+                }
+
+                $reconciliation_log_credit = [
+                    'log_id' => $bank_id,
+                    'id_reconciliation' => $reco_id,
+                    'description' => $transaction['description'],
+                    'date' => $transaction['date'],
+                    'type' => $transaction['type'],
+                    'credit' => $transaction['amount'],
+                    'debit' => '0.00',
+                    'check_status' => $check,
+                ];
+                insertWithBranch('reconciliation_logs', $reconciliation_log_credit);
+
+
+
+            }
+            // ✅ 3. Update checked debit transactions in company_bank_has_log
+            foreach ($request->debitTransactions as $transaction) {
+                $bank_id = $transaction['id'];
+                $check = $transaction['debitTransactionsCheck'];
+                if ($check=="1"){
+                    updateWithBranch('company_bank_has_log', 'id', $bank_id, [
+                        'reconsilation_status' => $reco_id,
+                    ]);
+                }
+
+
+                $reconciliation_log_credit = [
+                    'log_id' => $bank_id,
+                    'id_reconciliation' => $reco_id,
+                    'description' => $transaction['description'],
+                    'date' => $transaction['date'],
+                    'type' => $transaction['type'],
+                    'credit' => '0.00',
+                    'debit' => $transaction['amount'],
+                    'check_status' => $check,
+                ];
+                insertWithBranch('reconciliation_logs', $reconciliation_log_credit);
+            }
+
+            // ✅ 4. Delete old reconciliation_has_data records
+            deleteWithBranch('reconciliation_has_data', 'id_reconciliation', $reco_id);
+
+            // ✅ 5. Insert new reconciliation_has_data records
+            foreach ($request->transactionEntries as $entry) {
+                $bank_id = $entry['id'];
+
+                $reconciliation_has_data = [
+                    'id_reconciliation' => $reco_id,
+                    'description' => $entry['description'],
+                    'date' => $entry['date'],
+                    'credit' => $entry['credit'],
+                    'debit' => $entry['debit'],
+                    'account_id' => $bank_id,
+                ];
+                insertWithBranch('reconciliation_has_data', $reconciliation_has_data);
+
+                $bank=tableWithBranch('company_bank_accounts')->where('Idbank','=',$bank_id)->first();
+                $description=$entry['description'];
+
+                if ($entry['credit']>0){
+                    $this->bankLogController->index($bank->Idbank, "Bank Reconciliation", $description, "-", "credit", $entry['credit'],$main_bank_id,0,$reco_id);
+                    $this->bankLogController->index($main_bank_id, "Bank Reconciliation", $description, "-", "debit", $entry['credit'],$bank->Idbank,0,$reco_id);
+                }
+
+                if ($entry['debit']>0){
+                    $this->bankLogController->index($bank->Idbank, "Bank Reconciliation", $description, "-", "debit", $entry['credit'],$main_bank_id,0,$reco_id);
+                    $this->bankLogController->index($main_bank_id, "Bank Reconciliation", $description, "-", "credit", $entry['credit'],$bank->Idbank,0,$reco_id);
+                }
+            }
+
+            DB::commit(); // ✅ Commit transaction if all operations succeed
+            return response()->json(['status' => 'success']);
+
+        } catch (\Exception $e) {
+            DB::rollback(); // ❌ Rollback if any operation fails
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function ReconciliationDetails($id){
+        return view('pages.Accounting.ReconciliationsDetails');
+    }
+
+    public function ReconciliationSummary($id){
+        return view('pages.Accounting.ReconciliationsSummary');
+    }
+
 }
