@@ -305,17 +305,31 @@
 
                 <div class="summary-right">
                     <div class="summary-values"><span>Ending Balance:</span> <span id="endingBalance">{{ number_format($reconciliation->endingBalance, 2, '.', ',') }}</span></div>
-                    <div class="summary-values"><span>Cleared Balance:</span> <span id="clearedBalance">0.00</span></div>
-                    <div class="summary-values"><span>Difference:</span> <span id="difference">0.00</span></div>
+                    @if($status=="edit")
+                        <div class="summary-values"><span>Cleared Balance:</span> <span id="clearedBalance">0.00</span></div>
+                        <div class="summary-values"><span>Difference:</span> <span id="difference">0.00</span></div>
+                    @endif
                 </div>
             </div>
 
             <!-- ✅ Transaction Table (Replaces Service Charge & Interest Earned) -->
-            @if($status=="edit")
-                <div class="action-buttons">
-                    <button class="btn btn-success" id="startReconciliation">Start Reconciliation</button>
+                <br><br>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+
+                        <label class="form-label mb-0" for="note">Note</label>
+                        @if($status=="edit")
+                            <input type="text" id="note" class="form-control" style="width: 800px;">
+                        @else
+                            <input type="text" id="note" class="form-control" value="{{$reconciliation->note}}" style="width: 800px;" readonly>
+                        @endif
+
+                    </div>
+                    @if($status=="edit")
+                        <button class="btn btn-success" id="startReconciliation">Start Reconciliation</button>
+                    @endif
                 </div>
-            @endif
+
 
 
 
@@ -528,29 +542,35 @@
                 // ✅ Collect Checked Transactions from Credit Table
                 let creditTransactions = [];
                 $("#creditTable tbody tr").each(function () {
+                    let creditTransactionsCheck="0"
                     if ($(this).find(".mark-transaction").prop("checked")) {
-                        creditTransactions.push({
-                            id: $(this).attr("id"),
-                            date: $(this).find("td:nth-child(2)").text().trim(),
-                            description: $(this).find("td:nth-child(3)").text().trim(),
-                            type: $(this).find("td:nth-child(4)").text().trim(),
-                            amount: parseFloat($(this).find("td:nth-child(5)").text().replace(/,/g, '')) || 0
-                        });
+                        creditTransactionsCheck="1"
                     }
+                    creditTransactions.push({
+                        creditTransactionsCheck: creditTransactionsCheck,
+                        id: $(this).attr("id"),
+                        date: $(this).find("td:nth-child(2)").text().trim(),
+                        description: $(this).find("td:nth-child(3)").text().trim(),
+                        type: $(this).find("td:nth-child(4)").text().trim(),
+                        amount: parseFloat($(this).find("td:nth-child(5)").text().replace(/,/g, '')) || 0
+                    });
                 });
 
                 // ✅ Collect Checked Transactions from Debit Table
                 let debitTransactions = [];
                 $("#debitTable tbody tr").each(function () {
+                    let debitTransactionsCheck="0"
                     if ($(this).find(".mark-transaction").prop("checked")) {
-                        debitTransactions.push({
-                            id: $(this).attr("id"),
-                            date: $(this).find("td:nth-child(2)").text().trim(),
-                            description: $(this).find("td:nth-child(3)").text().trim(),
-                            type: $(this).find("td:nth-child(4)").text().trim(),
-                            amount: parseFloat($(this).find("td:nth-child(5)").text().replace(/,/g, '')) || 0
-                        });
+                        debitTransactionsCheck="1"
                     }
+                    debitTransactions.push({
+                        debitTransactionsCheck: debitTransactionsCheck,
+                        id: $(this).attr("id"),
+                        date: $(this).find("td:nth-child(2)").text().trim(),
+                        description: $(this).find("td:nth-child(3)").text().trim(),
+                        type: $(this).find("td:nth-child(4)").text().trim(),
+                        amount: parseFloat($(this).find("td:nth-child(5)").text().replace(/,/g, '')) || 0
+                    });
                 });
 
                 // ✅ Collect All Transactions from Transaction Table
@@ -571,13 +591,11 @@
                     beginningBalance: parseFloat($("#beginningBalance").text().replace(/,/g, '')) || 0,
                     endingBalance: parseFloat($("#endingBalance").text().replace(/,/g, '')) || 0,
                     clearedBalance: parseFloat($("#clearedBalance").text().replace(/,/g, '')) || 0,
-                    difference: parseFloat($("#difference").text().replace(/,/g, '')) || 0
+                    difference: parseFloat($("#difference").text().replace(/,/g, '')) || 0,
+                    note: $("#note").val() || '-'
                 };
 
-                console.log(creditTransactions);
-                console.log(debitTransactions);
-                console.log(transactionEntries);
-                console.log(summaryData);
+
 
                 // ✅ Validate before sending
                 if (summaryData.difference !== 0) {
@@ -611,6 +629,7 @@
                             },
                             data: {
                                 id: {{$id}},
+                                bank_id: {{$reconciliation->Idbank}},
                                 creditTransactions: creditTransactions,
                                 debitTransactions: debitTransactions,
                                 transactionEntries: transactionEntries,

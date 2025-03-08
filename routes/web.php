@@ -468,7 +468,8 @@ Route::post('/bank-reconciliation/store', [BankController::class, 'storeReconcil
 Route::get('/BankReconsilationInside/{id}/{status}', [BankController::class, 'reconciliation'])->name('bankReconciliation.reconciliation');
 Route::delete('/bank-reconciliation/delete', [BankController::class, 'Reconciliation_delete'])->name('delete.reconciliation');
 Route::post('/reconciliation/store', [BankController::class, 'reconciliation_store'])->name('reconciliation.store');
-
+Route::get('/ReconciliationDetails/{id}', [BankController::class, 'ReconciliationDetails'])->name('ReconciliationDetails.reconciliation');
+Route::get('/ReconciliationSummary/{id}', [BankController::class, 'ReconciliationSummary'])->name('ReconciliationSummary.reconciliation');
 
 
 
