@@ -554,23 +554,23 @@ class ChartOfAccountController extends Controller
     {
         $date_to = $request->date_to ?? now()->toDateString(); // Default to today
 
-        // Fetch latest balances per account for Assets, Liabilities, and Equity
         $system_expenses = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
             ->join('company_bank_has_log AS log1', 'company_bank_accounts.Idbank', '=', 'log1.Bank_Account_Id')
             ->where('log1.Date_Time', '<=', $date_to)
-            ->where('log1.Balance', '!=', 0) // Only non-zero balances
-            ->where('company_bank_accounts.Bank_Type', '!=', 'Collector') // Exclude collectors
-            ->whereIn('company_bank_accounts.acc_type_group', ['Assets', 'Liabilities', 'Equity']) // Filter for specific groups
+            ->where('log1.Balance', '!=', 0)
+            ->where('company_bank_accounts.Bank_Type', '!=', 'Collector')
+            ->whereIn('company_bank_accounts.acc_type_group', ['Assets', 'Liabilities', 'Equity'])
             ->whereRaw('log1.Date_Time = (SELECT MAX(log2.Date_Time) FROM company_bank_has_log AS log2 WHERE log2.Bank_Account_Id = log1.Bank_Account_Id)')
             ->select(
-                'company_bank_accounts.Idbank',  // Include Idbank
+                'company_bank_accounts.Idbank',
                 'company_bank_accounts.acc_type_group',
                 'company_bank_accounts.Bank_Name',
-                'log1.Balance',
-                'log1.type'
+                \DB::raw('MAX(log1.Balance) as Balance'), // Get the latest balance
+                \DB::raw('MAX(log1.type) as type') // Get the latest type
             )
+            ->groupBy('company_bank_accounts.Idbank', 'company_bank_accounts.acc_type_group', 'company_bank_accounts.Bank_Name')
             ->get()
-            ->groupBy('acc_type_group'); // Group by Assets, Liabilities, Equity
+            ->groupBy('acc_type_group');
 
         // ✅ Ensure variables are always defined
         $total_assets = 0;
@@ -613,6 +613,8 @@ class ChartOfAccountController extends Controller
                 }
             }
         }
+
+
 
         $total_liabilities_and_equity = $total_liabilities + $total_equity;
 
