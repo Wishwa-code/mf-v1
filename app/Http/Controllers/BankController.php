@@ -1082,7 +1082,7 @@ class BankController extends Controller
         if (!$lastReconciliation) {
             $lastReconciliation = tableWithBranch('company_bank_has_log')
                 ->where('Bank_Account_Id', $request->account_id)
-                ->orderBy('id', 'desc') // Order by the latest date-time
+                ->orderBy('id', 'asc') // Order by the latest date-time
                 ->select('company_bank_has_log.Balance as balance')
                 ->first(); // Get only the first row
         }
@@ -1182,7 +1182,7 @@ class BankController extends Controller
         if (!$lastReconciliation) {
             $lastReconciliation = tableWithBranch('company_bank_has_log')
                 ->where('Bank_Account_Id', $reconciliation->account_id)
-                ->orderBy('id', 'desc') // Order by the latest date-time
+                ->orderBy('id', 'asc') // Order by the latest date-time
                 ->first(); // Get only the first row
         }
 
