@@ -357,6 +357,8 @@
                     </div>
 
                     <hr>
+                    <br> <br> <br>
+                    <span>Enter any service charge or interest earned</span>
 
                     <!-- Transactions Section -->
                     <div class="row g-3">
