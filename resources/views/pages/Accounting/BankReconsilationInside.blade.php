@@ -307,7 +307,6 @@
                     <div class="summary-buttons">
                         <button id="markAll" class="btn btn-primary btn-sm">Mark All</button>
                         <button id="unmarkAll" class="btn btn-danger btn-sm">Unmark All</button>
-                        <button id="modifyEntry" class="btn btn-warning btn-sm">Modify</button> <!-- New Modify Button -->
                     </div>
                 </div>
             @endif
@@ -340,7 +339,11 @@
 
                     </tbody>
                 </table>
+                @if($status=="edit")
+                    <button id="modifyEntry" class="btn btn-warning btn-sm">Modify</button> <!-- New Modify Button -->
+                @endif
             </div>
+                <br>
             <div class="summary-content">
                 <div class="summary-left">
                     <div class="summary-values"><span>Beginning Balance:</span> <span id="beginningBalance">{{number_format($balance, 2,'.', '') ?? '0.00'}}</span></div>
@@ -358,7 +361,7 @@
             <!-- ✅ Transaction Table (Replaces Service Charge & Interest Earned) -->
                 <br><br>
                 <div class="d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center gap-5">
 
                         <label class="form-label mb-0" for="note">Note</label>
                         @if($status=="edit")
@@ -370,6 +373,9 @@
                     </div>
                     @if($status=="edit")
                         <button class="btn btn-success" id="startReconciliation">Start Reconciliation</button>
+                    @else
+                        <button class="btn btn-dark" onclick="open_details_report({{$id}})">Detail Report</button>
+                        <button class="btn btn-dark"  onclick="open_summary_report({{$id}})">Summary Report</button>
                     @endif
                 </div>
 
@@ -694,7 +700,22 @@
 
 
 
-        });
 
+        });
+        function open_details_report(id){
+            // Define the Laravel route and append the ID
+            let url = `/ReconciliationDetails/${id}`;
+
+            // Redirect to the route
+            window.open(url, '_blank');
+        }
+
+        function open_summary_report(id){
+            // Define the Laravel route and append the ID
+            let url = `/ReconciliationSummary/${id}`;
+
+            // Redirect to the route
+            window.open(url, '_blank');
+        }
     </script>
 @endsection
