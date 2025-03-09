@@ -355,11 +355,11 @@
                             <input type="text" id="note" class="form-control">
                         </div>
                     </div>
-
+                    <br>
                     <hr>
-                    <br> <br> <br>
+                    <br>
                     <span>Enter any service charge or interest earned</span>
-
+                    <br><br>
                     <!-- Transactions Section -->
                     <div class="row g-3">
                         <div class="col-md-6">
