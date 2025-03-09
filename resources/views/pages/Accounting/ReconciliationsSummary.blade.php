@@ -59,70 +59,72 @@
 @section('content')
     <div class="container mt-4">
         <h3 class="text-center">Reconciliation Summary</h3>
-        <h5 class="text-center">Bank 1, Period Ending <span id="summaryEndDate">31/01/2021</span></h5>
+        <h5 class="text-center">Bank {{$reconciliation->Bank_Name}}, Period <span id="summaryEndDate">{{$reconciliation->date}},User - {{$reconciliation->Full_Name}}</span></h5>
+        <button id="downloadPdf" class="btn btn-primary mb-3">Download PDF</button>
+
 
         <table class="table table-bordered mt-3">
             <tbody>
             <tr>
                 <th>Beginning Balance</th>
-                <td class="text-end" id="beginningBalance">945,800.00</td>
+                <td class="text-end" id="beginningBalance">{{number_format($reconciliation->balance,2,'.',',')}}</td>
             </tr>
             <tr class="table-secondary">
                 <th colspan="2">Cleared Transactions</th>
             </tr>
             <tr>
-                <td>Checks and Payments - <span id="clearedChecksCount">14</span> items</td>
-                <td class="text-end" id="clearedChecksTotal">-287,200.00</td>
+                <td>Checks and Payments - <span id="clearedChecksCount">{{$Checks_and_Payments_count}}</span> items</td>
+                <td class="text-end" id="clearedChecksTotal">{{number_format($Checks_and_Payments_sum*-1,2,'.',',')}}</td>
             </tr>
             <tr>
-                <td>Deposits and Credits - <span id="clearedDepositsCount">3</span> items</td>
-                <td class="text-end" id="clearedDepositsTotal">1,003,500.00</td>
+                <td>Deposits and Credits - <span id="clearedDepositsCount">{{$Deposits_and_Credits_count}}</span> items</td>
+                <td class="text-end" id="clearedDepositsTotal">{{number_format($Deposits_and_Credits_sum,2,'.',',')}}</td>
             </tr>
             <tr>
                 <th>Total Cleared Transactions</th>
-                <td class="text-end fw-bold" id="totalClearedTransactions">716,300.00</td>
+                <td class="text-end fw-bold" id="totalClearedTransactions">{{number_format($Checks_and_Payments_sum*-1 +$Deposits_and_Credits_sum,2,'.',',')}}</td>
             </tr>
             <tr>
                 <th>Cleared Balance</th>
-                <td class="text-end fw-bold text-primary" id="clearedBalance">1,662,100.00</td>
+                <td class="text-end fw-bold text-primary" id="clearedBalance">{{number_format(($Checks_and_Payments_sum*-1 +$Deposits_and_Credits_sum)+$reconciliation->balance,2,'.',',')}}</td>
             </tr>
             <tr class="table-secondary">
                 <th colspan="2">Uncleared Transactions</th>
             </tr>
             <tr>
-                <td>Checks and Payments - <span id="unclearedChecksCount">4</span> items</td>
-                <td class="text-end" id="unclearedChecksTotal">-120,000.00</td>
+                <td>Checks and Payments - <span id="unclearedChecksCount">{{$Checks_and_Payments_count_uncleared}}</span> items</td>
+                <td class="text-end" id="unclearedChecksTotal">{{number_format($Checks_and_Payments_sum_uncleared*-1,2,'.',',')}}</td>
             </tr>
             <tr>
-                <td>Deposits and Credits - <span id="unclearedDepositsCount">1</span> item</td>
-                <td class="text-end" id="unclearedDepositsTotal">5,600.00</td>
+                <td>Deposits and Credits - <span id="unclearedDepositsCount">{{$Deposits_and_Credits_count_uncleared}}</span> item</td>
+                <td class="text-end" id="unclearedDepositsTotal">{{number_format($Deposits_and_Credits_sum_uncleared,2,'.',',')}}</td>
             </tr>
             <tr>
                 <th>Total Uncleared Transactions</th>
-                <td class="text-end fw-bold text-danger" id="totalUnclearedTransactions">-114,400.00</td>
+                <td class="text-end fw-bold text-danger" id="totalUnclearedTransactions">{{number_format($Checks_and_Payments_sum_uncleared*-1 +$Deposits_and_Credits_sum_uncleared,2,'.',',')}}</td>
             </tr>
             <tr>
-                <th>Register Balance as of <span id="registerBalanceDate">31/01/2021</span></th>
-                <td class="text-end fw-bold text-primary" id="registerBalance">1,547,700.00</td>
+                <th>Register Balance</th>
+                <td class="text-end fw-bold text-primary" id="registerBalance">{{number_format((($Checks_and_Payments_sum*-1 +$Deposits_and_Credits_sum)+$reconciliation->balance)+$Checks_and_Payments_sum_uncleared*-1 +$Deposits_and_Credits_sum_uncleared,2,'.',',')}}</td>
             </tr>
             <tr class="table-secondary">
                 <th colspan="2">New Transactions</th>
             </tr>
             <tr>
-                <td>Checks and Payments - <span id="newChecksCount">14</span> items</td>
-                <td class="text-end" id="newChecksTotal">-103,375.00</td>
+                <td>Checks and Payments - <span id="newChecksCount">{{$Checks_and_Payments_count_new}}</span> items</td>
+                <td class="text-end" id="newChecksTotal">{{number_format($Checks_and_Payments_sum_new*-1,2,'.',',')}}</td>
             </tr>
             <tr>
-                <td>Deposits and Credits - <span id="newDepositsCount">2</span> items</td>
-                <td class="text-end" id="newDepositsTotal">4,707.00</td>
+                <td>Deposits and Credits - <span id="newDepositsCount">{{$Deposits_and_Credits_count_new}}</span> items</td>
+                <td class="text-end" id="newDepositsTotal">{{number_format($Deposits_and_Credits_sum_new,2,'.',',')}}</td>
             </tr>
             <tr>
                 <th>Total New Transactions</th>
-                <td class="text-end fw-bold text-warning" id="totalNewTransactions">-98,668.00</td>
+                <td class="text-end fw-bold text-warning" id="totalNewTransactions">{{number_format($Checks_and_Payments_sum_new*-1 +$Deposits_and_Credits_sum_new,2,'.',',')}}</td>
             </tr>
             <tr>
                 <th>Ending Balance</th>
-                <td class="text-end fw-bold text-success" id="endingBalance">1,449,032.00</td>
+                <td class="text-end fw-bold text-success" id="endingBalance">{{number_format($reconciliation->endingBalance,2,'.',',')}}</td>
             </tr>
             </tbody>
         </table>
@@ -133,4 +135,38 @@
 @endsection
 @section('script')
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $("#downloadPdf").click(function () {
+                const { jsPDF } = window.jspdf;
+                let doc = new jsPDF('p', 'mm', 'a4');
+
+                // Get the reconciliation summary container
+                let element = document.querySelector(".container");
+
+                // Hide the download button before capturing
+                $("#downloadPdf").hide();
+
+                html2canvas(element, { scale: 2 }).then(canvas => {
+                    let imgData = canvas.toDataURL("image/png");
+                    let imgWidth = 190; // A4 width in mm
+                    let pageHeight = 280; // A4 height in mm
+                    let imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                    doc.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
+
+                    // Show the button again after capturing
+                    $("#downloadPdf").show();
+
+                    // Save the PDF
+                    doc.save("Reconciliation_Summary.pdf");
+                });
+            });
+        });
+    </script>
+
+
 @endsection
+

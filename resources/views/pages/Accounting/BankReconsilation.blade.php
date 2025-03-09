@@ -670,7 +670,7 @@
                     });
                 });
 
-                if (account_id && statement_date && balance && transactions.length > 0) {
+                if (account_id && statement_date && balance) {
                     Swal.fire({
                         title: "Are you sure?",
                         text: "Do you want to start reconciliation?",
