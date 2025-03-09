@@ -266,10 +266,10 @@
                 </select>
             </div>
 
-            <div>
+            <div hidden>
                 <label>Date From</label>
-                <input type="date" class="form-control" id="date-from" value="{{date('Y-m-d')}}">
-            </div>
+                <input type="date" class="form-control" id="date-from" value="2023-01-01">
+            </div hidden>
 
             <div>
                 <label>Date To</label>
@@ -450,6 +450,11 @@
                 $('.select2').select2({
                     dropdownParent: $('#reconciliationModal') // Fixes Select2 inside modal
                 });
+            });
+
+            // Destroy Select2 when the modal is closed
+            $('#reconciliationModal').on('hidden.bs.modal', function () {
+                $('.select2').select2({ width: '100%' });
             });
 
             $("#openModal").click(function () {
