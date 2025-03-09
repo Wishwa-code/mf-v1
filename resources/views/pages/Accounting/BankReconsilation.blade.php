@@ -355,11 +355,11 @@
                             <input type="text" id="note" class="form-control">
                         </div>
                     </div>
-
+                    <br>
                     <hr>
-                    <br> <br> <br>
+                    <br>
                     <span>Enter any service charge or interest earned</span>
-
+                    <br><br>
                     <!-- Transactions Section -->
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -649,12 +649,26 @@
                 window.location.href = "BankReconsilationInside/" + id+"/view";
             });
 
+            $("#modal-statement-date").on("change", function () {
+                let statement_date = new Date($(this).val());
+                let ending_date = new Date($("#modal-last-reconciliation-date").val());
+
+                // Check if ending_date is selected and if statement_date is earlier than ending_date
+                if ($("#modal-last-reconciliation-date").val() && statement_date < ending_date) {
+                    Swal.fire("Error", "Statement Date cannot be earlier than the Ending Date!", "error");
+                    $(this).val(""); // Clear the invalid date
+                }
+            });
+
+
+
+
             // Handle Start Reconciliation
             $(".btn-danger").click(function () {
                 let account_id = $("#modal-account").val();
                 let statement_date = $("#modal-statement-date").val();
                 let balance = $("#modal-ending-balance").val();
-                let beginig_balance = $("#modal-beginning-balance").val();
+                let beginig_balance = parseFloat($("#modal-beginning-balance").val()) || 0;
                 let note = $("#note").val();
 
                 let transactions = [];
@@ -670,7 +684,7 @@
                     });
                 });
 
-                if (account_id && statement_date && balance && transactions.length > 0) {
+                if (account_id && statement_date && balance) {
                     Swal.fire({
                         title: "Are you sure?",
                         text: "Do you want to start reconciliation?",
@@ -721,7 +735,9 @@
                 success: function (response) {
                     if (response) {
                         $("#modal-last-reconciliation-date").val(response.date || ""); // Set Last Reconciliation Date
-                        $("#modal-beginning-balance").val(parseFloat(response.balance).toFixed(2) || "0.00"); // Set Beginning Balance
+                        let balance = parseFloat(response.balance);
+                        $("#modal-beginning-balance").val(isNaN(balance) ? "0.00" : balance.toFixed(2));
+
                     } else {
                         $("#modal-last-reconciliation-date").val(""); // If no record found, keep empty
                         $("#modal-beginning-balance").val("0.00"); // Default balance

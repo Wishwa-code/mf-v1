@@ -206,21 +206,41 @@
                     </tr>
                     </thead>
                     <tbody>
-                    @foreach($bank_log as $transaction)
-                        @if($transaction->Credit > 0)  <!-- Filter Credit Transactions -->
-                        <tr id="{{$transaction->id}}"
-                            class="{{ $transaction->reconsilation_status == $id ? 'selected-row' : '' }}">
-                            <td>
-                                <input type="checkbox" class="mark-transaction"
-                                        {{ $transaction->reconsilation_status == $id ? 'checked' : '' }}>
-                            </td>
-                            <td>{{ $transaction->Date_Time }}</td>
-                            <td>{{ $transaction->Description }}</td>
-                            <td>{{ $transaction->Type }}</td>
-                            <td>{{ number_format($transaction->Credit, 2, '.', '') }}</td>
-                        </tr>
+                    @if($bank_log->isNotEmpty())
+                        @if($status=="edit")
+                            @foreach($bank_log as $transaction)
+                                @if($transaction->Credit > 0)  <!-- Filter Credit Transactions -->
+                                <tr id="{{$transaction->id}}"
+                                    class="{{ $transaction->reconsilation_status == $id ? 'selected-row' : '' }}">
+                                    <td>
+                                        <input type="checkbox" class="mark-transaction"
+                                                {{ $transaction->reconsilation_status == $id ? 'checked' : '' }}>
+                                    </td>
+                                    <td>{{ $transaction->Date_Time }}</td>
+                                    <td>{{ $transaction->Description }}</td>
+                                    <td>{{ $transaction->Type }}</td>
+                                    <td>{{ number_format($transaction->Credit, 2, '.', '') }}</td>
+                                </tr>
+                                @endif
+                            @endforeach
+                        @else
+                            @foreach($bank_log as $transaction)
+                                @if($transaction->credit > 0)  <!-- Filter Credit Transactions -->
+                                <tr id="{{$transaction->id_reconciliation_logs}}"
+                                    class="{{ $transaction->check_status == '1' ? 'selected-row' : '' }}">
+                                    <td>
+                                        <input type="checkbox" class="mark-transaction"
+                                                {{ $transaction->check_status == '1' ? 'checked' : '' }}>
+                                    </td>
+                                    <td>{{ $transaction->date }}</td>
+                                    <td>{{ $transaction->description }}</td>
+                                    <td>{{ $transaction->type }}</td>
+                                    <td>{{ number_format($transaction->credit, 2, '.', '') }}</td>
+                                </tr>
+                                @endif
+                            @endforeach
                         @endif
-                    @endforeach
+                    @endif
                     </tbody>
                 </table>
             </div>
@@ -238,21 +258,41 @@
                     </tr>
                     </thead>
                     <tbody>
-                    @foreach($bank_log as $transaction)
-                        @if($transaction->Debit > 0)  <!-- Filter Debit Transactions -->
-                        <tr id="{{$transaction->id}}"
-                            class="{{ $transaction->reconsilation_status == $id ? 'selected-row' : '' }}">
-                            <td>
-                                <input type="checkbox" class="mark-transaction"
-                                        {{ $transaction->reconsilation_status == $id ? 'checked' : '' }}>
-                            </td>
-                            <td>{{ $transaction->Date_Time }}</td>
-                            <td>{{ $transaction->Description }}</td>
-                            <td>{{ $transaction->Type }}</td>
-                            <td>{{ number_format($transaction->Debit, 2, '.', '') }}</td>
-                        </tr>
+                    @if($bank_log->isNotEmpty())
+                        @if($status=="edit")
+                            @foreach($bank_log as $transaction)
+                                @if($transaction->Debit > 0)  <!-- Filter Debit Transactions -->
+                                <tr id="{{$transaction->id}}"
+                                    class="{{ $transaction->reconsilation_status == $id ? 'selected-row' : '' }}">
+                                    <td>
+                                        <input type="checkbox" class="mark-transaction"
+                                                {{ $transaction->reconsilation_status == $id ? 'checked' : '' }}>
+                                    </td>
+                                    <td>{{ $transaction->Date_Time }}</td>
+                                    <td>{{ $transaction->Description }}</td>
+                                    <td>{{ $transaction->Type }}</td>
+                                    <td>{{ number_format($transaction->Debit, 2, '.', '') }}</td>
+                                </tr>
+                                @endif
+                            @endforeach
+                        @else
+                            @foreach($bank_log as $transaction)
+                                @if($transaction->debit > 0)  <!-- Filter Debit Transactions -->
+                                <tr id="{{$transaction->id_reconciliation_logs}}"
+                                    class="{{ $transaction->check_status == '1' ? 'selected-row' : '' }}">
+                                    <td>
+                                        <input type="checkbox" class="mark-transaction"
+                                                {{ $transaction->check_status == '1' ? 'checked' : '' }}>
+                                    </td>
+                                    <td>{{ $transaction->date }}</td>
+                                    <td>{{ $transaction->description }}</td>
+                                    <td>{{ $transaction->type }}</td>
+                                    <td>{{ number_format($transaction->debit, 2, '.', '') }}</td>
+                                </tr>
+                                @endif
+                            @endforeach
                         @endif
-                    @endforeach
+                    @endif
                     </tbody>
                 </table>
             </div>
@@ -296,10 +336,6 @@
                                 <td><button class="btn btn-danger btn-sm removeRow">X</button></td>
                             </tr>
                         @endforeach
-                    @else
-                        <tr>
-                            <td colspan="6" class="text-center">No data available</td>
-                        </tr>
                     @endif
 
                     </tbody>
