@@ -269,7 +269,7 @@
             <div hidden>
                 <label>Date From</label>
                 <input type="date" class="form-control" id="date-from" value="2023-01-01">
-            </div hidden>
+            </div>
 
             <div>
                 <label>Date To</label>
