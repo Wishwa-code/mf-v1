@@ -115,6 +115,12 @@
         .table-bordered td, .table-bordered th {
             border: 1px solid #ddd;
         }
+        /* Reduce row height */
+        .table th, .table td {
+            padding: 10px !important; /* Reduce padding to decrease row height */
+            line-height: 1.2 !important; /* Adjust line spacing */
+        }
+
     </style>
 
 @endsection
@@ -122,15 +128,15 @@
 @section('content')
     <div class="container mt-4">
         <h3 class="text-center">Reconciliation Detail</h3>
-        <h5 class="text-center">Bank {{$reconciliation->Bank_Name}}, Period <span id="summaryEndDate">{{$reconciliation->date}},User - {{$reconciliation->Full_Name}}</span></h5>
+        <h5 class="text-center">Bank - {{$reconciliation->Bank_Name}}, Period <span id="summaryEndDate">{{$reconciliation->date}},User - {{$reconciliation->Full_Name}}</span></h5>
         <button id="downloadPdf" class="btn btn-primary mb-3">Download PDF</button>
 
 
         <table class="table table-bordered mt-3">
             <tbody>
             <tr>
-                <th>Beginning Balance</th>
-                <td class="text-end" id="beginningBalance">{{number_format($reconciliation->balance,2,'.',',')}}</td>
+                <th><h4>Beginning Balance</h4></th>
+                <td class="text-end" id="beginningBalance"><h4>{{number_format($reconciliation->balance,2,'.',',')}}</h4></td>
             </tr>
             <tr class="table-secondary">
                 <th colspan="2">Cleared Transactions</th>
@@ -138,34 +144,34 @@
             @foreach($Checks_and_Payments as $item)
                 @if($item->credit>0)
                     <tr>
-                        <td><span id="clearedChecksCount">{{$item->type}}</span></td>
+                        <th><span id="clearedChecksCount">{{$item->type}}</span></th>
                         <td class="text-end" id="clearedChecksTotal">({{number_format($item->credit,2,'.',',')}})</td>
                     </tr>
                 @endif
             @endforeach
             <tr>
-                <th>Checks and Payments - <span id="clearedChecksCount">{{$Checks_and_Payments_count}}</span> items</th>
-                <td class="text-end" id="clearedChecksTotal">{{number_format($Checks_and_Payments_sum*-1,2,'.',',')}}</td>
+                <th><h4>Checks and Payments - <span id="clearedChecksCount">{{$Checks_and_Payments_count}}</span> items</h4></th>
+                <td class="text-end" id="clearedChecksTotal"><h4>{{number_format($Checks_and_Payments_sum*-1,2,'.',',')}}</h4></td>
             </tr>
             @foreach($Checks_and_Payments as $item)
                 @if($item->debit>0)
                     <tr>
-                        <td><span id="clearedChecksCount">{{$item->type}}</span></td>
+                        <th><span id="clearedChecksCount">{{$item->type}}</span></th>
                         <td class="text-end" id="clearedChecksTotal">{{number_format($item->debit,2,'.',',')}}</td>
                     </tr>
                 @endif
             @endforeach
             <tr>
-                <th>Deposits and Credits - <span id="clearedDepositsCount">{{$Deposits_and_Credits_count}}</span> items</th>
-                <td class="text-end" id="clearedDepositsTotal">{{number_format($Deposits_and_Credits_sum,2,'.',',')}}</td>
+                <th><h4>Deposits and Credits - <span id="clearedDepositsCount">{{$Deposits_and_Credits_count}}</span> items</h4></th>
+                <td class="text-end" id="clearedDepositsTotal"><h4>{{number_format($Deposits_and_Credits_sum,2,'.',',')}}</h4></td>
             </tr>
             <tr>
-                <th>Total Cleared Transactions</th>
-                <td class="text-end fw-bold" id="totalClearedTransactions">{{number_format($Checks_and_Payments_sum*-1 +$Deposits_and_Credits_sum,2,'.',',')}}</td>
+                <th><h4>Total Cleared Transactions</h4></th>
+                <td class="text-end fw-bold" id="totalClearedTransactions"><h4>{{number_format($Checks_and_Payments_sum*-1 +$Deposits_and_Credits_sum,2,'.',',')}}</h4></td>
             </tr>
             <tr>
-                <th>Cleared Balance</th>
-                <td class="text-end fw-bold text-primary" id="clearedBalance">{{number_format(($Checks_and_Payments_sum*-1 +$Deposits_and_Credits_sum)+$reconciliation->balance,2,'.',',')}}</td>
+                <th><h4>Cleared Balance</h4></th>
+                <td class="text-end fw-bold text-primary" id="clearedBalance"><h4>{{number_format(($Checks_and_Payments_sum*-1 +$Deposits_and_Credits_sum)+$reconciliation->balance,2,'.',',')}}</h4></td>
             </tr>
             <tr class="table-secondary">
                 <th colspan="2">Uncleared Transactions</th>
@@ -173,34 +179,34 @@
             @foreach($Checks_and_Payments_uncleared as $item)
                 @if($item->credit>0)
                     <tr>
-                        <td><span id="clearedChecksCount">{{$item->type}}</span></td>
+                        <th><span id="clearedChecksCount">{{$item->type}}</span></th>
                         <td class="text-end" id="clearedChecksTotal">({{number_format($item->credit,2,'.',',')}})</td>
                     </tr>
                 @endif
             @endforeach
             <tr>
-                <th>Checks and Payments - <span id="unclearedChecksCount">{{$Checks_and_Payments_count_uncleared}}</span> items</th>
-                <td class="text-end" id="unclearedChecksTotal">{{number_format($Checks_and_Payments_sum_uncleared*-1,2,'.',',')}}</td>
+                <th><h4>Checks and Payments - <span id="unclearedChecksCount">{{$Checks_and_Payments_count_uncleared}}</span> items</h4></th>
+                <td class="text-end" id="unclearedChecksTotal"><h4>{{number_format($Checks_and_Payments_sum_uncleared*-1,2,'.',',')}}</h4></td>
             </tr>
             @foreach($Checks_and_Payments_uncleared as $item)
                 @if($item->debit>0)
                     <tr>
-                        <td><span id="clearedChecksCount">{{$item->type}}</span></td>
+                        <th><span id="clearedChecksCount">{{$item->type}}</span></th>
                         <td class="text-end" id="clearedChecksTotal">({{number_format($item->debit,2,'.',',')}})</td>
                     </tr>
                 @endif
             @endforeach
             <tr>
-                <th>Deposits and Credits - <span id="unclearedDepositsCount">{{$Deposits_and_Credits_count_uncleared}}</span> item</td>
-                <td class="text-end" id="unclearedDepositsTotal">{{number_format($Deposits_and_Credits_sum_uncleared,2,'.',',')}}</td>
+                <th><h4>Deposits and Credits - <span id="unclearedDepositsCount">{{$Deposits_and_Credits_count_uncleared}}</span> item</h4></th>
+                <td class="text-end" id="unclearedDepositsTotal"><h4>{{number_format($Deposits_and_Credits_sum_uncleared,2,'.',',')}}</h4></td>
             </tr>
             <tr>
-                <th>Total Uncleared Transactions</th>
-                <td class="text-end fw-bold text-danger" id="totalUnclearedTransactions">{{number_format($Checks_and_Payments_sum_uncleared*-1 +$Deposits_and_Credits_sum_uncleared,2,'.',',')}}</td>
+                <th><h4>Total Uncleared Transactions</h4></th>
+                <td class="text-end fw-bold text-danger" id="totalUnclearedTransactions"><h4>{{number_format($Checks_and_Payments_sum_uncleared*-1 +$Deposits_and_Credits_sum_uncleared,2,'.',',')}}</h4></td>
             </tr>
             <tr>
-                <th>Register Balance</th>
-                <td class="text-end fw-bold text-primary" id="registerBalance">{{number_format((($Checks_and_Payments_sum*-1 +$Deposits_and_Credits_sum)+$reconciliation->balance)+$Checks_and_Payments_sum_uncleared*-1 +$Deposits_and_Credits_sum_uncleared,2,'.',',')}}</td>
+                <th><h4>Register Balance</h4></th>
+                <td class="text-end fw-bold text-primary" id="registerBalance"><h4>{{number_format((($Checks_and_Payments_sum*-1 +$Deposits_and_Credits_sum)+$reconciliation->balance)+$Checks_and_Payments_sum_uncleared*-1 +$Deposits_and_Credits_sum_uncleared,2,'.',',')}}</h4></td>
             </tr>
             <tr class="table-secondary">
                 <th colspan="2">New Transactions</th>
@@ -209,34 +215,34 @@
             @foreach($Checks_and_Payments_new as $item)
                 @if($item->credit>0)
                     <tr>
-                        <td><span id="clearedChecksCount">{{$item->description}}</span></td>
+                        <th><span id="clearedChecksCount">{{$item->description}}</span></th>
                         <td class="text-end" id="clearedChecksTotal">({{number_format($item->credit,2,'.',',')}})</td>
                     </tr>
                 @endif
             @endforeach
             <tr>
-                <th>Checks and Payments - <span id="newChecksCount">{{$Checks_and_Payments_count_new}}</span> items</td>
-                <td class="text-end" id="newChecksTotal">{{number_format($Checks_and_Payments_sum_new*-1,2,'.',',')}}</td>
+                <th><h4>Checks and Payments - <span id="newChecksCount">{{$Checks_and_Payments_count_new}}</span> items</h4></th>
+                <td class="text-end" id="newChecksTotal"><h4>{{number_format($Checks_and_Payments_sum_new*-1,2,'.',',')}}</h4></td>
             </tr>
             @foreach($Checks_and_Payments_new as $item)
                 @if($item->debit>0)
                     <tr>
-                        <td><span id="clearedChecksCount">{{$item->description}}</span></td>
+                        <th><span id="clearedChecksCount">{{$item->description}}</span></th>
                         <td class="text-end" id="clearedChecksTotal">({{number_format($item->debit,2,'.',',')}})</td>
                     </tr>
                 @endif
             @endforeach
             <tr>
-                <th>Deposits and Credits - <span id="newDepositsCount">{{$Deposits_and_Credits_count_new}}</span> items</td>
-                <td class="text-end" id="newDepositsTotal">{{number_format($Deposits_and_Credits_sum_new,2,'.',',')}}</td>
+                <th><h4>Deposits and Credits - <span id="newDepositsCount">{{$Deposits_and_Credits_count_new}}</span> items</h4></th>
+                <td class="text-end" id="newDepositsTotal"><h4>{{number_format($Deposits_and_Credits_sum_new,2,'.',',')}}</h4></td>
             </tr>
             <tr>
-                <th>Total New Transactions</th>
-                <td class="text-end fw-bold text-warning" id="totalNewTransactions">{{number_format($Checks_and_Payments_sum_new*-1 +$Deposits_and_Credits_sum_new,2,'.',',')}}</td>
+                <th><h4>Total New Transactions</h4></th>
+                <td class="text-end fw-bold text-warning" id="totalNewTransactions"><h4>{{number_format($Checks_and_Payments_sum_new*-1 +$Deposits_and_Credits_sum_new,2,'.',',')}}</h4></td>
             </tr>
             <tr>
-                <th>Ending Balance</th>
-                <td class="text-end fw-bold text-success" id="endingBalance">{{number_format($reconciliation->endingBalance,2,'.',',')}}</td>
+                <th><h4>Ending Balance</h4></th>
+                <td class="text-end fw-bold text-success" id="endingBalance"><h4>{{number_format($reconciliation->endingBalance,2,'.',',')}}</h4></td>
             </tr>
             </tbody>
         </table>
@@ -264,7 +270,7 @@
                 html2canvas(element, { scale: 2 }).then(canvas => {
                     let imgData = canvas.toDataURL("image/png");
                     let imgWidth = 190; // A4 width in mm
-                    let pageHeight = 280; // A4 height in mm
+                    let pageHeight = 400; // A4 height in mm
                     let imgHeight = (canvas.height * imgWidth) / canvas.width;
 
                     doc.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);

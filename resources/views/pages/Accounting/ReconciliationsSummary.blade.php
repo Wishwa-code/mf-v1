@@ -73,11 +73,11 @@
                 <th colspan="2">Cleared Transactions</th>
             </tr>
             <tr>
-                <td>Checks and Payments - <span id="clearedChecksCount">{{$Checks_and_Payments_count}}</span> items</td>
+                <th>Checks and Payments - <span id="clearedChecksCount">{{$Checks_and_Payments_count}}</span> items</th>
                 <td class="text-end" id="clearedChecksTotal">{{number_format($Checks_and_Payments_sum*-1,2,'.',',')}}</td>
             </tr>
             <tr>
-                <td>Deposits and Credits - <span id="clearedDepositsCount">{{$Deposits_and_Credits_count}}</span> items</td>
+                <th>Deposits and Credits - <span id="clearedDepositsCount">{{$Deposits_and_Credits_count}}</span> items</th>
                 <td class="text-end" id="clearedDepositsTotal">{{number_format($Deposits_and_Credits_sum,2,'.',',')}}</td>
             </tr>
             <tr>
@@ -92,11 +92,11 @@
                 <th colspan="2">Uncleared Transactions</th>
             </tr>
             <tr>
-                <td>Checks and Payments - <span id="unclearedChecksCount">{{$Checks_and_Payments_count_uncleared}}</span> items</td>
+                <th>Checks and Payments - <span id="unclearedChecksCount">{{$Checks_and_Payments_count_uncleared}}</span> items</th>
                 <td class="text-end" id="unclearedChecksTotal">{{number_format($Checks_and_Payments_sum_uncleared*-1,2,'.',',')}}</td>
             </tr>
             <tr>
-                <td>Deposits and Credits - <span id="unclearedDepositsCount">{{$Deposits_and_Credits_count_uncleared}}</span> item</td>
+                <th>Deposits and Credits - <span id="unclearedDepositsCount">{{$Deposits_and_Credits_count_uncleared}}</span> item</th>
                 <td class="text-end" id="unclearedDepositsTotal">{{number_format($Deposits_and_Credits_sum_uncleared,2,'.',',')}}</td>
             </tr>
             <tr>
@@ -111,11 +111,11 @@
                 <th colspan="2">New Transactions</th>
             </tr>
             <tr>
-                <td>Checks and Payments - <span id="newChecksCount">{{$Checks_and_Payments_count_new}}</span> items</td>
+                <th>Checks and Payments - <span id="newChecksCount">{{$Checks_and_Payments_count_new}}</span> items</th>
                 <td class="text-end" id="newChecksTotal">{{number_format($Checks_and_Payments_sum_new*-1,2,'.',',')}}</td>
             </tr>
             <tr>
-                <td>Deposits and Credits - <span id="newDepositsCount">{{$Deposits_and_Credits_count_new}}</span> items</td>
+                <th>Deposits and Credits - <span id="newDepositsCount">{{$Deposits_and_Credits_count_new}}</span> items</th>
                 <td class="text-end" id="newDepositsTotal">{{number_format($Deposits_and_Credits_sum_new,2,'.',',')}}</td>
             </tr>
             <tr>
