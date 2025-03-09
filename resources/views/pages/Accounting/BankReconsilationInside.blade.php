@@ -285,8 +285,9 @@
                     </tr>
                     </thead>
                     <tbody>
+                    @if($reconciliation_log->isNotEmpty())
                         @foreach($reconciliation_log as $item)
-                            <tr id="{{$transaction->account_id}}">
+                            <tr id="{{$item->account_id}}">
                                 <td>{{$item->Account_Name}}</td>
                                 <td>{{$item->description}}</td>
                                 <td>{{$item->date}}</td>
@@ -295,6 +296,12 @@
                                 <td><button class="btn btn-danger btn-sm removeRow">X</button></td>
                             </tr>
                         @endforeach
+                    @else
+                        <tr>
+                            <td colspan="6" class="text-center">No data available</td>
+                        </tr>
+                    @endif
+
                     </tbody>
                 </table>
             </div>

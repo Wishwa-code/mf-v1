@@ -1325,6 +1325,7 @@ class BankController extends Controller
     }
 
     public function ReconciliationDetails($id){
+
         return view('pages.Accounting.ReconciliationsDetails');
     }
 
