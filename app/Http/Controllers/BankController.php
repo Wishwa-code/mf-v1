@@ -1343,8 +1343,88 @@ class BankController extends Controller
     }
 
     public function ReconciliationDetails($id){
-        $reconciliation=tableWithBranch('reconciliation')->where('','=',$id)->first();
-        return view('pages.Accounting.ReconciliationsDetails',compact('reconciliation'));
+        $reconciliation=tableWithBranch('reconciliation','reconciliation')
+            ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'reconciliation.account_id')
+            ->join('user', 'user.id', '=', 'reconciliation.user_id')
+            ->where('id_reconciliation','=',$id)->first();
+
+
+
+        $Checks_and_Payments_count=tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation','=',$id)
+            ->where('check_status','=','1')
+            ->where('credit','>',0)
+            ->count();
+        $Checks_and_Payments_sum=tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation','=',$id)
+            ->where('check_status','=','1')
+            ->sum('credit');
+
+        $Deposits_and_Credits_count=tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation','=',$id)
+            ->where('check_status','=','1')
+            ->where('debit','>',0)
+            ->count();
+        $Deposits_and_Credits_sum=tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation','=',$id)
+            ->where('check_status','=','1')
+            ->sum('debit');
+
+        $Checks_and_Payments=tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation','=',$id)
+            ->where('check_status','=','1')
+            ->get();
+
+
+
+        $Checks_and_Payments_count_uncleared=tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation','=',$id)
+            ->where('check_status','=','0')
+            ->where('credit','>',0)
+            ->count();
+        $Checks_and_Payments_sum_uncleared=tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation','=',$id)
+            ->where('check_status','=','0')
+            ->sum('credit');
+
+        $Deposits_and_Credits_count_uncleared=tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation','=',$id)
+            ->where('check_status','=','0')
+            ->where('debit','>',0)
+            ->count();
+        $Deposits_and_Credits_sum_uncleared=tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation','=',$id)
+            ->where('check_status','=','0')
+            ->sum('debit');
+
+        $Checks_and_Payments_uncleared=tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation','=',$id)
+            ->where('check_status','=','0')
+            ->get();
+
+
+        $Checks_and_Payments_count_new=tableWithBranch('reconciliation_has_data')
+            ->where('id_reconciliation','=',$id)
+            ->where('credit','>',0)
+            ->count();
+        $Checks_and_Payments_sum_new=tableWithBranch('reconciliation_has_data')
+            ->where('id_reconciliation','=',$id)
+            ->sum('credit');
+
+        $Deposits_and_Credits_count_new=tableWithBranch('reconciliation_has_data')
+            ->where('id_reconciliation','=',$id)
+            ->where('debit','>',0)
+            ->count();
+        $Deposits_and_Credits_sum_new=tableWithBranch('reconciliation_has_data')
+            ->where('id_reconciliation','=',$id)
+            ->sum('debit');
+
+        $Checks_and_Payments_new=tableWithBranch('reconciliation_has_data')
+            ->where('id_reconciliation','=',$id)
+            ->get();
+
+
+        return view('pages.Accounting.ReconciliationsDetails',compact('Checks_and_Payments_new','Checks_and_Payments_uncleared','Checks_and_Payments','Deposits_and_Credits_sum_new','Deposits_and_Credits_count_new','Checks_and_Payments_sum_new','Checks_and_Payments_count_new','Deposits_and_Credits_sum_uncleared','Deposits_and_Credits_count_uncleared','Checks_and_Payments_sum_uncleared','Checks_and_Payments_count_uncleared','Deposits_and_Credits_sum','Deposits_and_Credits_count','reconciliation','Checks_and_Payments_count','Checks_and_Payments_sum'));
     }
 
     public function ReconciliationSummary($id){
