@@ -139,6 +139,7 @@ const saveCustomer = (e) => {
             });
 
             const formData = new FormData();
+            formData.append("cus_number", $("#cus_number").val());
             formData.append("title", $("#title").val());
             formData.append("f_name", $("#f_name").val());
             formData.append("last_name", $("#last_name").val());

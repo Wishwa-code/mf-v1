@@ -69,7 +69,8 @@
                                 <div class="d-flex justify-content-between mb-3">
                                     <h4 class="page-title">Holiday Details</h4>
                                 </div>
-
+                                <h5 style="color: #ff0000">"Once a holiday is added, it cannot be removed as installment dates depend on it."</h5>
+                                <br><br><br>
                                 <!-- Holiday Form -->
                                 <div class="mb-3">
                                     <div class="row mb-3">
@@ -92,7 +93,6 @@
                                         <tr>
                                             <th>Date</th>
                                             <th>Reason</th>
-                                            <th style="text-align: center">Action</th>
                                         </tr>
                                         </thead>
                                         <tbody>
@@ -100,9 +100,6 @@
                                             <tr>
                                                 <td>{{$item->date}}</td>
                                                 <td>{{$item->reason}}</td>
-                                                <td style="text-align: center">
-                                                    <a href="#" class="btn btn-danger btn-sm" onclick="deleteHolidays({{$item->id_holidays}})">Delete</a>
-                                                </td>
                                             </tr>
                                         @endforeach
                                         </tbody>

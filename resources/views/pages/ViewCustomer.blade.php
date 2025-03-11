@@ -105,10 +105,11 @@
                                     </td>
                                     @if($customer->Status == "1")
                                         <td class="text-center"><span class="badge bg-primary">Active</span></td>
+                                        <td><button class="btn btn-warning" onclick="change_status({{$customer->idCustomer}})">Move To Blacklist</button></td>
                                     @else
                                         <td class="text-center"><span class="badge bg-danger">Blacklisted</span></td>
+                                        <td><button class="btn btn-warning" disabled>Move To Blacklist</button></td>
                                     @endif
-                                    <td><button class="btn btn-warning" onclick="change_status({{$customer->idCustomer}})">Move To Blacklist</button></td>
                                     <td>
                                         <div class="d-flex justify-content-center">
                                             <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#view-modal" onclick="load_document({{$customer->idCustomer}});">

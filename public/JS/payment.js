@@ -54,10 +54,10 @@ function load_table(page = 1) {
                         <td>${item.group_name}</td>
                         <td>${formatName(item.First_Name, item.Last_Name)}</td>
                         <td>${item.loan_name}</td>
-                        <td>${parseFloat(item.Amount).toFixed(2)}</td>
-                        <td>${parseFloat(item.capital_balance).toFixed(2)}</td>
-                        <td>${item.Total_Loan_Amount}</td>
-                        <td>${parseFloat(item.Balance_Amount).toFixed(2)}</td>
+                        <td>${parseFloat(item.Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td>${parseFloat(item.capital_balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td>${parseFloat(item.Total_Loan_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td>${parseFloat(item.Balance_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td>${item.Date_Time}</td>
                         <td>${item.lending_officer}</td>
                         <td>${item.user_name}</td>
@@ -72,9 +72,9 @@ function load_table(page = 1) {
             });
 
             // Update total amount and loan count
-            $('#tot_amount').text(tot.toFixed(2));
-            $('#cap_balance').text(capital_balance.toFixed(2));
-            $('#loan_amount').text(loan_amount.toFixed(2));
+            $('#tot_amount').text(tot.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            $('#cap_balance').text(capital_balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            $('#loan_amount').text(loan_amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
             $('#loan_count').text(loan_count);
 
             // Add pagination controls

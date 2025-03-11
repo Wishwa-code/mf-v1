@@ -51,8 +51,8 @@ function load_payment_table(page = 1) {
                         var row = `<tr>
                         <td>${item.Loan_No}</td>
                         <td>${name}</td>
-                        <td>${parseFloat(item.Loan_Amount).toFixed(2)}</td>
-                        <td>${parseFloat(item.Today_installment).toFixed(2)}</td>
+                        <td>${parseFloat(item.Loan_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td>${parseFloat(item.Today_installment).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td><input type="date" name="date_bulk" class="form-control" value="${inputDate || new Date().toISOString().split('T')[0]}" data-loan-id="${item.idCustomer_Loan}" /></td>
                         <td>
                             <input type="text" class="form-control numeric-input amount-input" placeholder="Enter amount" value="${inputAmount}" data-loan-id="${item.idCustomer_Loan}" />
@@ -73,8 +73,7 @@ function load_payment_table(page = 1) {
                 });
 
                 // Update total today installment amount
-                $("#tot_amount").text(tot.toFixed(2));
-
+                $('#tot_amount').text(tot.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
                 // Attach event listeners to input fields
                 $(".amount-input").on("input", function () {
                     updateTotalEnteredAmount();
@@ -99,7 +98,7 @@ function updateTotalEnteredAmount() {
         totalEntered += enteredValue;
     });
 
-    $("#tot_installment").text(totalEntered.toFixed(2));
+    $('#tot_installment').text(totalEntered.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 }
 
 

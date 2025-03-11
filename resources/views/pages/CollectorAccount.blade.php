@@ -70,7 +70,7 @@
                                                         <td>{{$item->Account_Name}}</td>
                                                         <td>{{$item->Account_No}}</td>
                                                         <td>{{$item->Bank_Branch}}</td>
-                                                        <td id="balance-{{$item->Idbank}}">{{number_format($item->Account_Balance,2,'.','')}}</td>
+                                                        <td id="balance-{{$item->Idbank}}">{{number_format($item->Account_Balance,2,'.',',')}}</td>
                                                         <td>{{$item->Full_Name}}</td>
                                                         <td style="text-align: center">
                                                             <button type="button" class="btn btn-success" data-bs-toggle="modal"
@@ -137,6 +137,8 @@
                                         <th>Debit</th>
                                         <th>Credit</th>
                                         <th>Balance</th>
+                                        <th>Contra Account</th>
+                                        <th>Reconciliation No</th>
                                         <th>User</th>
                                     </tr>
                                     </thead>

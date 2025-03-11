@@ -587,6 +587,8 @@
                         <th>Debit Amount</th>
                         <th>Credit Amount</th>
                         <th>Balance</th>
+                        <th>Contra Account</th>
+                        <th>Reconciliation No</th>
                         <th>Created At</th>
                     </tr>
                     </thead>
@@ -821,100 +823,6 @@
             });
 
 
-
-
-        {{--// Function to load data for a specific group and populate its table--}}
-{{--            function loadDataForGroup(group) {--}}
-
-{{--                // Get search input values--}}
-{{--                const code = $('#code').val();--}}
-{{--                const name = $('#name').val();--}}
-{{--                const type = $('#type').val();--}}
-
-{{--                $.ajax({--}}
-{{--                    url: "{{ route('chart_of_account.list', '') }}/" + group,--}}
-{{--                    type: 'GET',--}}
-{{--                    data: {--}}
-{{--                        code: code,--}}
-{{--                        name: name,--}}
-{{--                        type: type--}}
-{{--                    },--}}
-{{--                    success: function(data) {--}}
-{{--                        // data is an array of chart_of_account records--}}
-{{--                        // Determine which table to populate--}}
-{{--                        var tableId = "table-" + group;--}}
-{{--                        if (group === "all") {--}}
-{{--                            tableId = "table-all";--}}
-{{--                        }--}}
-
-{{--                        var $tbody = $("#" + tableId + " tbody");--}}
-{{--                        $tbody.empty(); // clear old rows--}}
-
-{{--                        // Append new rows--}}
-{{--                        $.each(data, function(index, item) {--}}
-{{--                            // Construct a row--}}
-{{--                            // Adjust columns as per your fields. Example:--}}
-{{--                            // Code, Name, Type, Group, Cash Flow Type, Bring Forward, Ledger, Action--}}
-{{--                            // "Bring Forward" and "Ledger" are not explicitly in DB fields shown.--}}
-{{--                            // For demo, assume "Bring Forward" = "Yes" if opening_balance > 0, else "No"--}}
-{{--                            // "Ledger" = "Locked" (or a link)--}}
-
-{{--                            var bringForward = (item.opening_balance && item.opening_balance > 0) ? "Yes" : "No";--}}
-{{--                            var ledger = '<a href="#" class="view-btn"  data-account="'+ item.acc_name +'">View</a>'; // Example action--}}
-
-{{--                            var row = '<tr>' +--}}
-{{--                                '<td>' + item.code + '</td>' +--}}
-{{--                                '<td>' + item.acc_name + '</td>' +--}}
-{{--                                '<td>' + item.acc_type + '</td>' +--}}
-{{--                                '<td>' + item.acc_type_group + '</td>' +--}}
-{{--                                '<td>' + item.cash_flow_type + '</td>' +--}}
-{{--                                '<td>' + bringForward + '</td>' +--}}
-{{--                                '<td>' + ledger + '</td>' +--}}
-{{--                                '<td>Locked</td>' +--}}
-{{--                                '</tr>';--}}
-
-{{--                            $tbody.append(row);--}}
-{{--                        });--}}
-{{--                    },--}}
-{{--                    error: function() {--}}
-{{--                        console.error("Failed to load data for " + group);--}}
-{{--                    }--}}
-{{--                });--}}
-{{--            }--}}
-
-{{--            // Load data for all accounts on initial load--}}
-//             loadDataForGroup('all');
-
-{{--            // Tab switching logic--}}
-{{--            const tabButtons = document.querySelectorAll('.tab-btn');--}}
-{{--            const tabTables = document.querySelectorAll('.tab-table');--}}
-
-{{--            tabButtons.forEach(btn => {--}}
-{{--                btn.addEventListener('click', () => {--}}
-{{--                    // Remove active class from all tabs--}}
-{{--                    tabButtons.forEach(b => b.classList.remove('active'));--}}
-{{--                    // Add active class to clicked tab--}}
-{{--                    btn.classList.add('active');--}}
-
-{{--                    // Hide all tables--}}
-{{--                    tabTables.forEach(table => {--}}
-{{--                        table.classList.remove('active');--}}
-{{--                    });--}}
-
-{{--                    // Show the selected table--}}
-{{--                    const tabName = btn.getAttribute('data-tab');--}}
-{{--                    const activeTable = document.getElementById(`table-${tabName}`);--}}
-{{--                    if (activeTable) {--}}
-{{--                        activeTable.classList.add('active');--}}
-{{--                    }--}}
-
-{{--                    // Load data via AJAX for this tab (except if it's all)--}}
-{{--                    loadDataForGroup(tabName);--}}
-{{--                });--}}
-{{--            });--}}
-
-
-
             // When the export button is clicked
             $('.export-btn').on('click', function(e) {
                 e.preventDefault();
@@ -1094,7 +1002,7 @@
                     $modalTableBody.empty(); // Clear any existing rows
 
                     if (response.length === 0) {
-                        $modalTableBody.html("<tr><td colspan='6' class='text-center'>No records found</td></tr>");
+                        $modalTableBody.html("<tr><td colspan='8' class='text-center'>No records found</td></tr>");
                     } else {
                         // Populate the modal table with fetched data
                         response.forEach((item) => {
@@ -1102,10 +1010,12 @@
                         <tr>
                             <td>${item.Type}</td>
                             <td>${item.Description}</td>
-                            <td>${parseFloat(item.Debit || 0).toFixed(2)}</td>
-                            <td>${parseFloat(item.Credit || 0).toFixed(2)}</td>
-                            <td>${parseFloat(item.Balance || 0).toFixed(2)}</td>
-                            <td>${item.Date_Time}</td>
+                            <td>${parseFloat(item.Debit || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td>${parseFloat(item.Credit || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td>${parseFloat(item.Balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td>${item.Account_Name ?? '-'}</td>
+<td>${item.reconsilation_status}</td>
+<td>${item.Date_Time}</td>
                         </tr>`;
                             $modalTableBody.append(row);
                         });

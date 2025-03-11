@@ -133,6 +133,8 @@
                             <th>Debit Amount</th>
                             <th>Credit Amount</th>
                             <th>Balance</th>
+                            <th>Contra Account</th>
+                            <th>Reconciliation No</th>
                             <th>Created At</th>
                         </tr>
                         </thead>
@@ -174,11 +176,8 @@
             </div>
         </div>
     </div>
-
-
-
-
-
+@endsection
+@section('script')
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
     <script>
         $(document).ready(function () {
@@ -332,7 +331,9 @@
                     <td>${formatNumber(parseFloat(item.Debit).toFixed(2) || 0)}</td>
                     <td>${formatNumber(parseFloat(item.Credit).toFixed(2) || 0)}</td>
                     <td>${formatNumber(parseFloat(item.Balance).toFixed(2) || 0)}</td>
-                    <td>${item.Date_Time || 'N/A'}</td>
+                    <td style="text-align: right">${item.Account_Name || 'N/A'}</td>
+<td style="text-align: right">${item.reconsilation_status || 'N/A'}</td>
+<td>${item.Date_Time || 'N/A'}</td>
                 </tr>
             `;
                         financialReportTable.append(row);

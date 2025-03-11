@@ -458,6 +458,22 @@ Route::post('/BankReconciliation', [BankController::class, 'BankReconciliation']
 Route::post('/bank-log/update-status', [BankController::class, 'updateStatus'])->name('bankLog.updateStatus');
 
 
+
+Route::get('/search-reconciliation', [BankController::class, 'searchReconciliation'])->name('search.reconciliation');
+Route::get('/get-last-reconciliation', [BankController::class, 'getLastReconciliation'])->name('get.last.reconciliation');
+Route::get('/BankReconsilationInside', function () {
+    return view('pages.Accounting.BankReconsilationInside');
+});
+Route::post('/bank-reconciliation/store', [BankController::class, 'storeReconciliation'])->name('bankReconciliation.store');
+Route::get('/BankReconsilationInside/{id}/{status}', [BankController::class, 'reconciliation'])->name('bankReconciliation.reconciliation');
+Route::delete('/bank-reconciliation/delete', [BankController::class, 'Reconciliation_delete'])->name('delete.reconciliation');
+Route::post('/reconciliation/store', [BankController::class, 'reconciliation_store'])->name('reconciliation.store');
+Route::get('/ReconciliationDetails/{id}', [BankController::class, 'ReconciliationDetails'])->name('ReconciliationDetails.reconciliation');
+Route::get('/ReconciliationSummary/{id}', [BankController::class, 'ReconciliationSummary'])->name('ReconciliationSummary.reconciliation');
+
+
+
+
 Route::get('/viewroutes', [RouteController::class, 'index'])->name('routes.index');
 Route::post('/route/update', [RouteController::class, 'update'])->name('route.update');
 Route::get('/route/delete/{id}', [RouteController::class, 'destroy'])->name('route.delete');

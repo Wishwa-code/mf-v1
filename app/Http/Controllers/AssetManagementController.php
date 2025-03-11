@@ -125,10 +125,6 @@ class AssetManagementController extends Controller
             'current_value' => number_format($validated['purchase_value'], 2, '.', ''),
         ]);
 
-
-        // Call the bank log method
-        $this->bankLogController->index($validated['source_funds'], "Add Asset(".$validated['replacement_value'].")", "-", "-", "debit", number_format($validated['purchase_value'],2,'.',''));
-
         // Return a success message
         return response()->json(['success' => 'Asset added successfully']);
     }
@@ -200,7 +196,6 @@ class AssetManagementController extends Controller
             'note' => $request->notes,
         ]);
 
-        $this->bankLogController->index($request->sold_bank, "Sold Asset(".$request->notes.")", "-", "-", "credit", number_format($request->soldValue,2,'.',''));
 
         if ($updated) {
             return response()->json(['success' => true]);

@@ -485,7 +485,7 @@
         <tr>
             <td>${item.narration}</td>
             <td>${item.date}</td>
-            <td>${parseFloat(item.tot_credit || 0).toFixed(2)}</td>
+            <td>${parseFloat(item.tot_credit || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             <td>${item.created_at}</td>
             <td>
                 <button class="btn btn-info btn-sm view-btn" data-id="${item.id_manual_journal}">View</button>
@@ -606,8 +606,8 @@
                         <td>${item.description}</td>
                         <td>${item.account}</td>
 
-                        <td>${parseFloat(item.debit_amount || 0).toFixed(2)}</td>
-                        <td>${parseFloat(item.credit_amount || 0).toFixed(2)}</td>
+                        <td>${parseFloat(item.debit_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td>${parseFloat(item.credit_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     </tr>`;
                             $detailsTableBody.append(row);
                         });

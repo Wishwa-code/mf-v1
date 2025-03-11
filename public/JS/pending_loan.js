@@ -60,7 +60,7 @@ function load_table() {
                         formatName(item.First_Name, item.Last_Name), // Use formatted name here
                         item.cus_number,
                         item.loan_name,
-                        parseFloat(item.Amount).toFixed(2),
+                        parseFloat(item.Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                         item.Date_Time,
                         item.reason,
                         item.lending_officer,

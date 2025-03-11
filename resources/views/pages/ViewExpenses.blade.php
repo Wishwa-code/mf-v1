@@ -46,7 +46,7 @@
                                     <td>{{$item->date}}</td>
                                     <td>{{$item->Bank_Name ?? '-'}}</td>
                                     <td>{{$item->reason}}</td>
-                                    <td>{{ number_format($item->amount, 2) }}</td>
+                                    <td>{{ number_format($item->amount, 2,'.',',') }}</td>
                                     <td  class="text-center">
                                         <button type="button" class="btn btn-danger" onclick="delete_expense('{{$item->id}}')">
                                             <i class="bi bi-trash fs-4"></i></button>

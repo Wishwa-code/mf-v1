@@ -163,14 +163,18 @@ class PendingLoanController extends Controller
 
             $bank_log_comment="Loan Number : {$customer_loan->Loan_No}\nLoan Amount : {$customer_loan->Amount}\n";
 
-            $this->bankLogController->index($company_bank,"Issue Loan",$bank_log_comment,"-","debit",$customer_loan->Amount);
-
 
             $bank_id=tableWithBranch('company_bank_accounts')
                 ->where('Bank_Type','=','System_default_1')
                 ->first();
 
-            $this->bankLogController->index($bank_id->Idbank,"Issue Loan",$bank_log_comment,"-","credit",$customer_loan->Amount);
+
+            $this->bankLogController->index($company_bank,"Issue Loan",$bank_log_comment,"-","credit",$customer_loan->Amount,$bank_id->Idbank);
+
+
+
+
+            $this->bankLogController->index($bank_id->Idbank,"Issue Loan",$bank_log_comment,"-","debit",$customer_loan->Amount,$company_bank);
 
 
 
@@ -188,13 +192,15 @@ class PendingLoanController extends Controller
             // Check if the sumAmount is greater than zero
             if ($sumAmount > 0) {
                 $bank_log_doc_comment="Loan Number : {$customer_loan->Loan_No}\nLoan Amount : {$customer_loan->Amount}\n";
-                $this->bankLogController->index($company_bank,"Loan Document Chargers",$bank_log_doc_comment,"-","credit",$sumAmount);
 
                 $bank_id=tableWithBranch('company_bank_accounts')
                     ->where('Bank_Type','=','System_default_9')
                     ->first();
 
-                $this->bankLogController->index($bank_id->Idbank,"Loan Document Chargers",$bank_log_doc_comment,"-","debit",$sumAmount);
+
+                $this->bankLogController->index($company_bank,"Loan Document Chargers",$bank_log_doc_comment,"-","debit",$sumAmount,$bank_id->Idbank);
+
+                $this->bankLogController->index($bank_id->Idbank,"Loan Document Chargers",$bank_log_doc_comment,"-","credit",$sumAmount,$company_bank);
 
                 $cate=tableWithBranch('income_category')
                     ->where('description','=','Other')

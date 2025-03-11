@@ -107,7 +107,7 @@ class ChartOfAccountController extends Controller
                 'updated_at' => Carbon::now()
             ]);
             $insertedId = insertWithBranch('company_bank_accounts', $Bank);
-            $this->bankLogController->index($insertedId,"Account Creation","-","-","credit","0.00");
+            $this->bankLogController->index($insertedId,"Account Creation","-","-","credit","0.00",'-');
             return response()->json(['status' => 'success']);
         }
     }
@@ -210,11 +210,11 @@ class ChartOfAccountController extends Controller
                     ->first();
 
                 if ($row['debit_amount']>0){
-                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","debit",$row['debit_amount']);
+                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","debit",$row['debit_amount'],'-');
                 }
 
                 if ($row['credit_amount']>0){
-                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","credit",$row['credit_amount']);
+                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","credit",$row['credit_amount'],'-');
                 }
             }
 
@@ -346,10 +346,17 @@ class ChartOfAccountController extends Controller
     public function fetchLedger($account)
     {
         // Fetch matching records from the `manual_journal_has_amount` table
-        $data = tableWithBranch('company_bank_has_log')
+        $data = tableWithBranch('company_bank_has_log','company_bank_has_log')
+            ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
             ->where('Bank_Account_Id', '=',$account) // Match records starting with accountCode
             ->orderBy('id')
             ->get();
+        // Replace NULL values with '-'
+        $data->transform(function ($item) {
+            $item->account_name = $item->account_name ?? '-';
+            return $item;
+        });
+
 
         // Return data as JSON
         return response()->json($data);
@@ -456,11 +463,18 @@ class ChartOfAccountController extends Controller
 
         if (isset($request->account_id)){
             // Fetch matching records from the `manual_journal_has_amount` table
-            $data = tableWithBranch('company_bank_has_log')
+            $data = tableWithBranch('company_bank_has_log','company_bank_has_log')
+                ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
                 ->where('Bank_Account_Id', '=',$account_id) // Match records starting with accountCode
                 ->whereBetween('Date_Time', [$dateFrom, $dateTo])  // Filter by date range
                 ->orderBy('id')
                 ->get();
+
+            // Replace NULL values with '-'
+            $data->transform(function ($item) {
+                $item->account_name = $item->account_name ?? '-';
+                return $item;
+            });
 
             // Return data as JSON
             return response()->json($data);
@@ -468,7 +482,7 @@ class ChartOfAccountController extends Controller
 
         // Fetch matching records from the `company_bank_has_log` table
         $data = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
-            ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.Bank_Account_Id')
+            ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.Bank_Account_Id')
             ->whereBetween('company_bank_has_log.Date_Time', [$dateFrom, $dateTo])  // Filter by date range
             ->where(function ($query) {
                 $query->where('company_bank_has_log.Credit', '>', 0)
@@ -477,7 +491,11 @@ class ChartOfAccountController extends Controller
             ->orderBy('id')
             ->get();
 
-
+// Replace NULL values with '-'
+        $data->transform(function ($item) {
+            $item->account_name = $item->account_name ?? '-';
+            return $item;
+        });
         // Return data as JSON
         return response()->json($data);
 
@@ -490,11 +508,19 @@ class ChartOfAccountController extends Controller
         $account_id = $request->account_id;
 
         // Fetch matching records from the `manual_journal_has_amount` table
-        $data = tableWithBranch('company_bank_has_log')
+        $data = tableWithBranch('company_bank_has_log','company_bank_has_log')
+            ->leftjoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
             ->where('Bank_Account_Id', '=',$account_id) // Match records starting with accountCode
             ->where('Date_Time','<=',$date_to) // Filter by date range
             ->orderBy('id')
             ->get();
+
+        // Replace NULL values with '-'
+        $data->transform(function ($item) {
+            $item->account_name = $item->account_name ?? '-';
+            return $item;
+        });
+
 
         // Return data as JSON
         return response()->json($data);
@@ -538,23 +564,23 @@ class ChartOfAccountController extends Controller
     {
         $date_to = $request->date_to ?? now()->toDateString(); // Default to today
 
-        // Fetch latest balances per account for Assets, Liabilities, and Equity
         $system_expenses = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
             ->join('company_bank_has_log AS log1', 'company_bank_accounts.Idbank', '=', 'log1.Bank_Account_Id')
             ->where('log1.Date_Time', '<=', $date_to)
-            ->where('log1.Balance', '!=', 0) // Only non-zero balances
-            ->where('company_bank_accounts.Bank_Type', '!=', 'Collector') // Exclude collectors
-            ->whereIn('company_bank_accounts.acc_type_group', ['Assets', 'Liabilities', 'Equity']) // Filter for specific groups
+            ->where('log1.Balance', '!=', 0)
+            ->where('company_bank_accounts.Bank_Type', '!=', 'Collector')
+            ->whereIn('company_bank_accounts.acc_type_group', ['Assets', 'Liabilities', 'Equity'])
             ->whereRaw('log1.Date_Time = (SELECT MAX(log2.Date_Time) FROM company_bank_has_log AS log2 WHERE log2.Bank_Account_Id = log1.Bank_Account_Id)')
             ->select(
-                'company_bank_accounts.Idbank',  // Include Idbank
+                'company_bank_accounts.Idbank',
                 'company_bank_accounts.acc_type_group',
                 'company_bank_accounts.Bank_Name',
-                'log1.Balance',
-                'log1.type'
+                \DB::raw('MAX(log1.Balance) as Balance'), // Get the latest balance
+                \DB::raw('MAX(log1.type) as type') // Get the latest type
             )
+            ->groupBy('company_bank_accounts.Idbank', 'company_bank_accounts.acc_type_group', 'company_bank_accounts.Bank_Name')
             ->get()
-            ->groupBy('acc_type_group'); // Group by Assets, Liabilities, Equity
+            ->groupBy('acc_type_group');
 
         // ✅ Ensure variables are always defined
         $total_assets = 0;
@@ -597,6 +623,8 @@ class ChartOfAccountController extends Controller
                 }
             }
         }
+
+
 
         $total_liabilities_and_equity = $total_liabilities + $total_equity;
 
