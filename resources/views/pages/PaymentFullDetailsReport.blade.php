@@ -222,7 +222,7 @@
                         <td>{{number_format($payment->TotalPenaltyAmount, 2)}}</td>
                         <td>{{ number_format($payment->TotalInstallmentAmount+$payment->TotalPenaltyAmount, 2) }}</td>
                         <td>{{ number_format($payment->TotalPaidAmount, 2) }}</td>
-                        <td>{{ number_format(($payment->TotalInstallmentAmount+$payment->TotalPenaltyAmount)-$payment->TotalPaidAmount, 2) }}</td>
+                        <td>{{ number_format(max(($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) - $payment->TotalPaidAmount, 0), 2) }}</td>
                         <td>
                             @if ($payment->TotalPaidAmount < 1)
                                 <span class="text-danger font-weight-bold">Not Paid</span>
