@@ -188,8 +188,8 @@
                     <th>Branch</th>
                     <th>Route</th>
                     <th>Center</th>
-                    <th>Loan No</th>
                     <th>Group</th>
+                    <th>Loan No</th>
                     <th>Customer Name</th>
                     <th>Loan Product</th>
                     <th>Loan Amount</th>
@@ -211,8 +211,8 @@
                         <td>{{ $payment->Branch }}</td>
                         <td>{{ $payment->Route }}</td>
                         <td>{{ $payment->Center }}</td>
-                        <td>{{ $payment->LoanNo }}</td>
                         <td>{{ $payment->GroupName }}</td>
+                        <td>{{ $payment->LoanNo }}</td>
                         <td>{{ $payment->CustomerName }}</td>
                         <td>{{ $payment->LoanProduct }}</td>
                         <td>{{ number_format($payment->LoanAmount, 2) }}</td>
