@@ -718,7 +718,124 @@ class ReportController extends Controller
 
 
 
+    public function payment_report(Request $request){
 
+        // Get filter values from request
+        $branchId = $request->input('branch_id');
+        $routeId = $request->input('route_id');
+        $centerId = $request->input('center_id');
+        $collectorId = $request->input('collector_id');
+        $loanProductId = $request->input('loan_product_id');
+        $paidType = $request->input('paid_type', 'All');
+        $startDate = $request->input('start_date', now()->subMonth()->toDateString());
+        $endDate = $request->input('end_date', now()->toDateString());
+
+        $payments = DB::table('installments as i')
+            ->join('customer_loan as l', 'i.Customer_Loan_idCustomer_Loan', '=', 'l.idCustomer_Loan')
+            ->join('customer_payments as p', 'l.idCustomer_Loan', '=', 'p.Customer_Loan_idCustomer_Loan')
+            ->join('customer as cust', 'l.Customer_idCustomer', '=', 'cust.idCustomer')
+            ->join('loan_category as lp', 'l.Loan_Category_idLoan_Category', '=', 'lp.idLoan_Category')
+            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
+        FROM group_has_customer
+        LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
+                'cust.idCustomer', '=', 'subquery.cus_id')
+            ->leftJoin('group_has_customer', 'cust.idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->leftJoin('route', 'center.route_id', '=', 'route.id_route')
+            ->leftJoin('branch', 'route.branch_id', '=', 'branch.branch_id') // Join branch table
+            ->join('user as u', 'p.User_idUser', '=', 'u.id')
+            ->select([
+                'branch.name as Branch',
+                'route.name as Route',
+                'center.name as Center',
+                'l.loan_no as LoanNo',
+                'l.idCustomer_Loan as idCustomer_Loan',
+                'l.Balance_Amount as Balance_Amount',
+                DB::raw('IFNULL(subquery.group_name, "-") as GroupName'),
+                DB::raw('CONCAT(cust.First_Name, " ", cust.Last_Name) as CustomerName'),
+
+                // Overdue Days Calculation
+                DB::raw('(SELECT DATEDIFF("'.$endDate.'", MIN(i2.Installment_Date)) 
+                  FROM installments i2 
+                  WHERE i2.Customer_Loan_idCustomer_Loan = i.Customer_Loan_idCustomer_Loan 
+                    AND i2.Installment_Date BETWEEN "'.$startDate.'" AND "'.$endDate.'") AS OverdueDays'),
+
+                // Total Overdue Calculation
+                DB::raw('( (SELECT DATEDIFF("'.$endDate.'", MIN(i2.Installment_Date)) 
+                  FROM installments i2 
+                  WHERE i2.Customer_Loan_idCustomer_Loan = i.Customer_Loan_idCustomer_Loan 
+                    AND i2.Installment_Date BETWEEN "'.$startDate.'" AND "'.$endDate.'") * l.installment_amount) AS TotalOverdue'),
+
+                'lp.name as LoanProduct',
+                'l.Amount as LoanAmount',
+                'l.installment_amount as InstallmentAmount',
+
+                // Sum Installment Amount Within Date Range
+                DB::raw('(SELECT SUM(i2.installment_amount) 
+                  FROM installments i2 
+                  WHERE i2.Customer_Loan_idCustomer_Loan = i.Customer_Loan_idCustomer_Loan 
+                    AND i2.Installment_Date BETWEEN "'.$startDate.'" AND "'.$endDate.'") AS TotalInstallmentAmount'),
+
+                // Sum Penalty Amount Within Date Range
+                DB::raw('(SELECT SUM(i2.Panalty_Amount) 
+                  FROM installments i2 
+                  WHERE i2.Customer_Loan_idCustomer_Loan = i.Customer_Loan_idCustomer_Loan 
+                    AND i2.Installment_Date BETWEEN "'.$startDate.'" AND "'.$endDate.'") AS TotalPenaltyAmount'),
+
+                // Sum Paid Amount Within Date Range
+                DB::raw('(SELECT SUM(i2.Paid_Amount) 
+                  FROM installments i2 
+                  WHERE i2.Customer_Loan_idCustomer_Loan = i.Customer_Loan_idCustomer_Loan 
+                    AND i2.Installment_Date BETWEEN "'.$startDate.'" AND "'.$endDate.'") AS TotalPaidAmount'),
+
+                'u.Full_Name as Collector'
+            ])
+            ->whereBetween('i.Installment_Date', [$startDate, $endDate]);
+
+// Apply filters only when values are not '0'
+        if ($branchId != '0') {
+            $payments->where('branch.branch_id', '=', $branchId);
+        }
+        if ($routeId != '0') {
+            $payments->where('route.id_route', '=', $routeId);
+        }
+        if ($centerId != '0') {
+            $payments->where('center.idCenter', '=', $centerId);
+        }
+        if ($collectorId != '0') {
+            $payments->where('u.id', '=', $collectorId);
+        }
+        if ($loanProductId != '0') {
+            $payments->where('lp.idLoan_Category', '=', $loanProductId);
+        }
+        if ($paidType != 'All') {
+            $payments->where('p.paid_type', '=', $paidType);
+        }
+
+// Group by necessary fields
+        $payments->groupBy(
+            'i.Customer_Loan_idCustomer_Loan',
+            'l.Amount', 'l.installment_amount',
+            'branch.name', 'route.name', 'center.name',
+            'l.loan_no', 'subquery.group_name',
+            'cust.First_Name', 'cust.Last_Name',
+            'lp.name', 'u.Full_Name','l.Balance_Amount','l.idCustomer_Loan'
+        );
+
+// Execute query
+        $payments = $payments->get();
+
+
+
+        $branches = tableWithBranch('branch')->where('status', '=', '1')->get();
+        $routes = tableWithBranch('route')->get();
+        $centers = tableWithBranch('center')->get();
+        $collectors = tableWithBranch('user')->where('collector','=','1')->get();
+        $loanProducts = tableWithBranch('loan_category')->get();
+
+        return view('pages.PaymentFullDetailsReport', compact('loanProducts','payments','collectors','branches','routes','centers'));
+    }
 
 
 

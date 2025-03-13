@@ -518,7 +518,7 @@ class UserController extends Controller
 
         if ($user) {
 
-
+            $branch_id=$user->branch_id;
             $client = new Client([
                 'base_uri' => 'https://e-sms.dialog.lk/api/v1/',
             ]);
@@ -553,7 +553,7 @@ class UserController extends Controller
 
             $message="Your OTP is ".$otp;
 
-            $company=tableWithBranch('company')->first();
+            $company=DB::table('company')->where('branch_id','=',$branch_id)->first();
 
             $client_data = new Client([
                 'base_uri' => 'https://e-sms.dialog.lk/api/v1/',
@@ -591,7 +591,7 @@ class UserController extends Controller
                     'type' => "OTP",
                     'date' => date('Y-m-d'),
                     'time' => date('H:i:s'),
-                    'branch_id' => session('branch_id')
+                    'branch_id' => $branch_id
                 ]);
                 return view('recover_password',compact('email'));
             }else{

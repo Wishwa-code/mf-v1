@@ -1032,6 +1032,9 @@
                                                     <li>
                                                         <a href="/portfolio_performance">Portfolio & Performance - Dashboard</a>
                                                     </li>
+                                                    <li>
+                                                        <a href="/PaymentFullDetailsReport">Payment Details Report</a>
+                                                    </li>
                                                     <li><a href="/AllLoanDetailReport">Full Loan Detail Report</a></li>
                                                     <li><a href="/loansummaryreport">Loan Summary Report</a></li>
                                                     @if($item->report_9 == 1)
