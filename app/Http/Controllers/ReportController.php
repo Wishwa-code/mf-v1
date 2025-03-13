@@ -857,7 +857,7 @@ class ReportController extends Controller
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
             ->leftJoin('route', 'center.route_id', '=', 'route.id_route')
             ->leftJoin('branch', 'route.branch_id', '=', 'branch.branch_id')
-            ->leftJoin('user as u', 'p.User_idUser', '=', 'u.id') // Ensure loans appear even without payments
+            ->leftJoin('user as u', 'l.collector_id', '=', 'u.id') // Ensure loans appear even without payments
             ->select([
                 'branch.name as Branch',
                 'route.name as Route',
