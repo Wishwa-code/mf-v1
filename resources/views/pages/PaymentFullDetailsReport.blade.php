@@ -270,6 +270,50 @@
                     rows[i].deleteCell(-1); // Remove last cell from each row
                 }
 
+                // Get selected filter values
+                let branch = $("select[name='branch_id'] option:selected").text();
+                let route = $("select[name='route_id'] option:selected").text();
+                let center = $("select[name='center_id'] option:selected").text();
+                let collector = $("select[name='collector_id'] option:selected").text();
+                let loanProduct = $("select[name='loan_product_id'] option:selected").text();
+                let paidType = $("select[name='paid_type'] option:selected").text();
+                let startDate = $("input[name='start_date']").val();
+                let endDate = $("input[name='end_date']").val();
+
+                // Create the filter info to display at the top of the PDF
+                let filterInfo = `
+        <div style="text-align:center; margin-bottom: 10px;">
+            <h2 style="color:#1A2942; font-size: 18px; font-weight:bold; margin-bottom:5px;">Payment Detail Report</h2>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px; background-color: #f8f9fa; padding: 10px; border-radius: 5px;">
+            <tr>
+                <td style="padding: 5px; font-weight: bold; width: 20%;">Branch:</td>
+                <td style="padding: 5px; width: 30%;">${branch}</td>
+                <td style="padding: 5px; font-weight: bold; width: 20%;">Route:</td>
+                <td style="padding: 5px; width: 30%;">${route}</td>
+            </tr>
+            <tr>
+                <td style="padding: 5px; font-weight: bold;">Center:</td>
+                <td style="padding: 5px;">${center}</td>
+                <td style="padding: 5px; font-weight: bold;">Collector:</td>
+                <td style="padding: 5px;">${collector}</td>
+            </tr>
+            <tr>
+                <td style="padding: 5px; font-weight: bold;">Loan Product:</td>
+                <td style="padding: 5px;">${loanProduct}</td>
+                <td style="padding: 5px; font-weight: bold;">Paid Type:</td>
+                <td style="padding: 5px;">${paidType}</td>
+            </tr>
+            <tr>
+                <td style="padding: 5px; font-weight: bold;">Start Date:</td>
+                <td style="padding: 5px;">${startDate}</td>
+                <td style="padding: 5px; font-weight: bold;">End Date:</td>
+                <td style="padding: 5px;">${endDate}</td>
+            </tr>
+        </table>
+        <br>
+    `;
+
                 // Custom styles for better readability in PDF
                 let style = `
         <style>
@@ -279,7 +323,7 @@
         </style>
     `;
 
-                let htmlContent = style + clonedTable.outerHTML; // Include custom styles
+                let htmlContent = style + filterInfo + clonedTable.outerHTML; // Include custom styles & filters
 
                 let opt = {
                     margin: [0.2, 0.2, 0.2, 0.2],
@@ -291,6 +335,7 @@
 
                 html2pdf().from(htmlContent).set(opt).save();
             });
+
 
 
             $('#excelButton').click(function () {
