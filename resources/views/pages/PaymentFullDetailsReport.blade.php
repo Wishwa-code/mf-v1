@@ -46,6 +46,30 @@
                 margin: 0.5in; /* Adjust margins as needed */
             }
         }
+        .table-responsive {
+            width: 100%;
+        }
+
+        #repaymentTable {
+            width: 100% !important;
+            border-collapse: collapse;
+            table-layout: auto; /* Adjusts columns automatically */
+        }
+
+        #repaymentTable th, #repaymentTable td {
+            padding: 8px; /* More spacing */
+            white-space: nowrap; /* Prevent text wrapping */
+        }
+        #repaymentTable td:nth-child(7),
+        #repaymentTable td:nth-child(8),
+        #repaymentTable td:nth-child(9),
+        #repaymentTable td:nth-child(10),
+        #repaymentTable td:nth-child(11),
+        #repaymentTable td:nth-child(12),
+        #repaymentTable td:nth-child(13) {
+            text-align: right !important;
+        }
+
 
     </style>
 
@@ -200,11 +224,11 @@
                         <td>{{ number_format(($payment->TotalInstallmentAmount+$payment->TotalPenaltyAmount)-$payment->TotalPaidAmount, 2) }}</td>
                         <td>
                             @if (($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) > $payment->TotalPaidAmount)
-                                <span class="text-danger">Under Paid</span>
+                                <span class="text-danger font-weight-bold">Under Paid</span>
                             @elseif (($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) < $payment->TotalPaidAmount)
-                                <span class="text-success">Over Paid</span>
+                                <span class="text-success font-weight-bold">Over Paid</span>
                             @else
-                                <span class="text-primary">Normal</span>
+                                <span class="text-primary font-weight-bold">Normal</span>
                             @endif
                         </td>
                         <td>{{ number_format($payment->Balance_Amount, 2) }}</td>
@@ -234,24 +258,40 @@
         $(document).ready(function () {
             $('.select2').select2(); // Initialize Select2 elements
 
-            // PDF Download
             $('#pdfButton').click(function () {
                 const element = document.getElementById('repaymentTable');
+
                 const opt = {
-                    margin: [0.5, 0.5, 0.5, 0.5],
+                    margin: [0.2, 0.2, 0.2, 0.2],
                     filename: `Payment_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
-                    image: {type: 'jpeg', quality: 0.98},
-                    html2canvas: {scale: 2, useCORS: true},
-                    jsPDF: {unit: 'in', format: 'a4', orientation: 'landscape'}
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 3, useCORS: true },
+                    jsPDF: { unit: 'in', format: [16, 11], orientation: 'landscape' } // Wider format
                 };
+
+
+
                 html2pdf().from(element).set(opt).save();
             });
 
-            // Excel Download
+
             $('#excelButton').click(function () {
-                let wb = XLSX.utils.table_to_book(document.getElementById('repaymentTable'), {sheet: "Payments"});
+                let table = document.getElementById('repaymentTable');
+
+                // Clone the table to modify without affecting the displayed table
+                let clonedTable = table.cloneNode(true);
+
+                // Remove the last column (Action column) from cloned table
+                let rows = clonedTable.rows;
+                for (let i = 0; i < rows.length; i++) {
+                    rows[i].deleteCell(-1); // Remove last cell from each row
+                }
+
+                // Convert the modified table to Excel
+                let wb = XLSX.utils.table_to_book(clonedTable, {sheet: "Payments"});
                 XLSX.writeFile(wb, `Payment_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
             });
+
 
             // Print functionality
             $('#printButton').click(function () {

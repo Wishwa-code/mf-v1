@@ -126,6 +126,145 @@
         .table-hover tbody tr:hover {
             background-color: rgba(0, 0, 0, 0.1); /* Customize hover color */
         }
+
+        #overlay {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+
+        .bg-purple th {
+            color: #e1e1e1 !important; /* Ensure white text color for th elements */
+        }
+
+        .bg-purple {
+            background-color: #1A2942 !important; /* Purple color */
+            color: white !important; /* White text color */
+        }
+
+        .modal_2 {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal_2-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .close_2 {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close_2:hover,
+        .close_2:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .printer-design {
+            text-align: center;
+        }
+
+        .receipt {
+            font-family: 'Arial', sans-serif;
+            text-align: left;
+            margin: 0;
+        }
+
+        .receipt .header {
+            text-align: center;
+        }
+
+        .receipt .logo {
+            width: 80px;
+            margin: 0 auto 10px;
+        }
+
+        .receipt h1, .receipt h2 {
+            margin: 5px 0;
+        }
+
+        .receipt p {
+            margin: 5px 0;
+            line-height: 1.5;
+        }
+
+        .receipt .details p {
+            margin: 3px 0;
+        }
+
+        .receipt .payment-info {
+            margin: 10px 0;
+        }
+
+        .receipt .payment-info .item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+
+        .receipt .payment-info .description {
+            font-weight: bold;
+        }
+
+        .receipt .payment-info .amount {
+            text-align: right;
+        }
+
+        .receipt hr {
+            border: 0;
+            border-top: 1px dashed #ddd;
+            margin: 10px 0;
+        }
+
+        .receipt .totals p {
+            margin: 5px 0;
+            font-weight: bold;
+        }
+
+        .receipt .signature {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            margin: 20px 0;
+        }
+
+        .receipt .signature-line {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .receipt .thank-you {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+
     </style>
 
 @endsection
@@ -566,6 +705,7 @@
                                     <th scope="col">Payment Type</th>
                                     <th scope="col">User</th>
                                     <th scope="col">Slip</th>
+                                    <th scope="col">Payment Slip</th>
                                 </tr>
                                 </thead>
                                 <tbody class="custom-scrollbar" style="max-height: 400px;">
@@ -599,7 +739,11 @@
                                                 </button>
                                             @endif
                                         </td>
-
+                                        <td>
+                                            <button type="button" class="btn btn-info btn-sm" onclick="payment_slip({{$customer_payment->idCustomer_Payments}})">
+                                                <i class="bi bi-printer"></i>
+                                            </button>
+                                        </td>
                                     @if($payment_delete_status===1)
                                             <td>
                                                 <button class="reverse-payment-btn btn btn-outline-danger"
@@ -797,14 +941,119 @@
                             </div>
                         </div>
                     </div>
-                @endforeach
+@endforeach
+
+
+                <div id="overlay"></div>
+                <div id="printerModal" class="modal_2">
+                    <div class="modal_2-content">
+                        <span class="close_2">&times;</span>
+{{--                        <button onclick="printReceipt_view()" class="btn btn-danger">Print Receipt</button>--}}
+                        <div class="printer-design">
+                            <div class="receipt">
+                                <div class="header">
+                                    <img src="{{ asset('storage/' . $company->logo) }}" alt="Company Logo" class="logo">
+                                    <h1>{{$company->company_name}}</h1>
+                                    <p>Contact Number: {{$company->contact_no}}</p>
+                                    <p> <span id="Inv_number">Receipt No. 001</span></p>
+                                </div>
+                                <hr>
+                                <h2>Payment Receipt</h2>
+                                <div class="details">
+                                    <p><strong>Customer Name:</strong> <span id="customer_name">John Doe</span></p>
+                                    <p><strong>Customer No:</strong> <span id="customer_number">001</span></p>
+                                    <p><strong>Loan Number:</strong> <span id="loan_number">001</span></p>
+                                    <p><strong>Payment Date:</strong> <span id="payment_date">001</span></p>
+                                    <p><strong>Payment Time:</strong> <span id="payment_time">001</span></p>
+                                </div>
+                                <hr>
+                                <div class="payment-info">
+
+                                    <div class="item">
+                                        <span class="description">Loan Amount</span>
+                                        <span class="amount" id="loan_amount">10,000.00</span>
+                                    </div>
+                                    <div class="item">
+                                        <span class="description">Loan With Interest</span>
+                                        <span class="amount" id="full_loan_amount">10,000.00</span>
+                                    </div>
+                                    <div class="item">
+                                        <span class="description">Payed Amount</span>
+                                        <span class="amount"  id="payed_amount">1,000.00</span>
+                                    </div>
+
+                                </div>
+                                <hr>
+                                <div class="payment-info">
+                                    <div class="item">
+                                        <span class="description">Balance Amount</span>
+                                        <b><span class="amount"  id="capital_balance">0.00</span></b>
+                                    </div>
+                                </div>
+                                <div class="payment-info balance">
+                                    <div class="item">
+                                        <span class="description">Penalty Balance</span>
+                                        <b><span class="amount"  id="panelty_balance">0.00</span></b>
+                                    </div>
+                                </div>
+                                <div class="payment-info balance">
+                                    <div class="item">
+                                        <span class="description">Total Balance</span>
+                                        <b><span class="amount"  id="tot_balance">9,000.00</span></b>
+                                    </div>
+                                </div>
+                                <div class="payment-info">
+                                    <div class="item">
+                                        <span class="description">Payment Type</span>
+                                        <b><span class="amount"  id="payment_type_view">-</span></b>
+                                    </div>
+                                </div>
+                                <div class="payment-info cheque-section" id="cheque_section" style="display:none; padding: 15px; border: 1px solid #ccc; border-radius: 8px;  background-color: #f9f9f9;">
+                                    <div class="item" style="display: flex; justify-content: space-between;">
+                                        <span class="description">Cheque No:</span>
+                                        <b><span class="amount" id="cheque_no">-</span></b>
+                                    </div>
+                                    <div class="item" style="display: flex; justify-content: space-between;">
+                                        <span class="description">Cheque Date:</span>
+                                        <b><span class="amount" id="cheque_date">-</span></b>
+                                    </div>
+                                    <div class="item" style="display: flex; justify-content: space-between;">
+                                        <span class="description">Name On Cheque:</span>
+                                        <b><span class="amount" id="cheque_name">-</span></b>
+                                    </div>
+                                    <div class="item" style="display: flex; justify-content: space-between;">
+                                        <span class="description">Cheque Type:</span>
+                                        <b><span class="amount" id="cheque_type">-</span></b>
+                                    </div>
+                                </div>
+
+
+                                <hr>
+                                <div class="payment-info" id="loyalty_section">
+                                    <div class="item">
+                                        <span class="description">Loyalty Points</span>
+                                        <b><span class="amount"  id="loyalty_points">9,000.00</span></b>
+                                    </div>
+                                </div>
+                                <hr>
+                                <br>
+                                <div class="signature">
+                                    <p class="signature-line">________________________</p>
+                                    <span class="signature-line" id="signature">John Doe</span>
+                                </div>
+                                <hr>
+                                <p class="thank-you">Thank you for your payment!</p>
+                                <hr>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
 
 
 
-
-                @endsection
-                @section('script')
+@endsection
+@section('script')
 
 
                     <script>
@@ -918,6 +1167,96 @@
                     <script>
                         function openSlip(slipPath) {
                             window.open(slipPath, '_blank');
+                        }
+
+                        function payment_slip(id) {
+                            openModal();
+                            load_payment_reciept(id);
+                        }
+
+                        function openModal() {
+                            document.getElementById('overlay').style.display = 'block';
+                            document.getElementById('printerModal').style.display = 'block';
+                        }
+
+                        function closeModal() {
+                            document.getElementById('overlay').style.display = 'none';
+                            document.getElementById('printerModal').style.display = 'none';
+                        }
+
+                        // Close modal when clicking outside
+                        document.getElementById('overlay').addEventListener('click', closeModal);
+
+
+
+                        function load_payment_reciept(id) {
+                            $.ajax({
+                                type: "POST",
+                                url: "/view_payment_load_reciept/" + id + "/0",
+                                headers: {
+                                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                                },
+                                success: function (data, textStatus, xhr) {
+                                    console.log(data);
+                                    let customer = data.customer;
+                                    let payment = data.payment;
+                                    let loan = data.loan;
+                                    let user = data.user;
+                                    let chequeDetails = data.cheque_details;
+
+                                    if (xhr.status === 200) {
+                                        if (data.point_check === "1") {
+
+                                            $('#loyalty_section').show();
+                                        } else {
+
+                                            $('#loyalty_section').hide();
+                                        }
+                                        $("#Inv_number").text("Receipt No. :"+payment.idCustomer_Payments);
+                                        $("#customer_name").text(customer.First_Name + " " + customer.Last_Name);
+                                        $("#customer_number").text(customer.cus_number);
+                                        $("#loyalty_points").text(parseFloat(data.points_to_add).toFixed(2));
+                                        $("#loan_number").text(loan.Loan_No);
+                                        $("#payment_date").text(payment.Date);
+                                        $("#payment_time").text(payment.time);
+                                        $("#payment_type_view").text(payment.Payment_type);
+
+                                        if (parseFloat(data.panelty_balance) > 0) {
+                                            $("#panelty_balance").text(parseFloat(data.panelty_balance).toFixed(2));
+                                            $("#tot_balance").text(parseFloat(data.tot_balance).toFixed(2));
+
+                                            // Show the relevant sections if they are hidden
+                                            $(".payment-info.balance").show();
+                                        } else {
+                                            // Optionally hide the sections if no penalty balance exists
+                                            $(".payment-info.balance").hide();
+                                        }
+                                        if (payment.Payment_type === "Cheque") {
+                                            console.log(chequeDetails.Cheque_No
+                                            );
+                                            // Show the cheque section
+                                            $('#cheque_section').show();
+
+                                            // // Populate the cheque details
+                                            $("#cheque_no").text(chequeDetails.Cheque_No);
+                                            $("#cheque_date").text(chequeDetails.Cheque_Date);
+                                            $("#cheque_name").text(chequeDetails.Name_On_The_Cheque);
+                                            $("#cheque_type").text(chequeDetails.Cheque_Type);
+                                        } else {
+                                            $('#cheque_section').hide(); // Hide the cheque section if payment type is not "Cheque"
+                                        }
+
+
+                                        $("#loan_amount").text(parseFloat(loan.Amount).toFixed(2));
+                                        $("#full_loan_amount").text(parseFloat(loan.Total_Loan_Amount).toFixed(2));
+                                        $("#payed_amount").text(parseFloat(payment.Amount).toFixed(2));
+                                        $("#capital_balance").text(parseFloat(loan.Balance_Amount).toFixed(2));
+
+
+                                        $("#signature").text(user.Full_Name);
+                                    }
+                                }
+                            });
                         }
 
                         $(document).ready(function() {
