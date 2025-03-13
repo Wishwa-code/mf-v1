@@ -294,6 +294,77 @@
 
         </div>
 
+        @php
+            $notPaidCount = 0;
+            $overPaidCount = 0;
+            $underPaidCount = 0;
+            $normalCount = 0;
+            $totalCount = count($payments); // Get total number of records
+
+            foreach ($payments as $payment) {
+                if ($payment->TotalPaidAmount < 1) {
+                    $notPaidCount++;
+                } elseif (($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) > $payment->TotalPaidAmount) {
+                    $underPaidCount++;
+                } elseif (($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) < $payment->TotalPaidAmount) {
+                    $overPaidCount++;
+                } else {
+                    $normalCount++;
+                }
+            }
+
+            // Calculate percentages
+            $notPaidPercentage = ($totalCount > 0) ? ($notPaidCount / $totalCount) * 100 : 0;
+            $underPaidPercentage = ($totalCount > 0) ? ($underPaidCount / $totalCount) * 100 : 0;
+            $overPaidPercentage = ($totalCount > 0) ? ($overPaidCount / $totalCount) * 100 : 0;
+            $normalPercentage = ($totalCount > 0) ? ($normalCount / $totalCount) * 100 : 0;
+        @endphp
+
+                <!-- Summary Table Below -->
+        <div class="mt-4">
+            <h4>Payment Status Summary</h4>
+            <table class="table table-bordered table-striped">
+                <thead class="bg-purple text-white">
+                <tr>
+                    <th>Not Paid</th>
+                    <th>Under Paid</th>
+                    <th>Over Paid</th>
+                    <th>Normal</th>
+                    <th>Total</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td class="text-center">
+                        <strong>{{ $notPaidCount }}</strong>
+                        <br>
+                        <small><strong>({{ number_format($notPaidPercentage, 2) }}%)</strong></small>
+                    </td>
+                    <td class="text-center">
+                        <strong>{{ $underPaidCount }}</strong>
+                        <br>
+                        <small><strong>({{ number_format($underPaidPercentage, 2) }}%)</strong></small>
+                    </td>
+                    <td class="text-center">
+                        <strong>{{ $overPaidCount }}</strong>
+                        <br>
+                        <small><strong>({{ number_format($overPaidPercentage, 2) }}%)</strong></small>
+                    </td>
+                    <td class="text-center">
+                        <strong>{{ $normalCount }}</strong>
+                        <br>
+                        <small><strong>({{ number_format($normalPercentage, 2) }}%)</strong></small>
+                    </td>
+                    <td class="text-center">
+                        <strong>{{ $totalCount }}</strong>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+
+
 
 
     </div>
@@ -330,50 +401,97 @@
                 let startDate = $("input[name='start_date']").val();
                 let endDate = $("input[name='end_date']").val();
 
+                // Count the payment statuses
+                let notPaidCount = 0, underPaidCount = 0, overPaidCount = 0, normalCount = 0;
+                let totalCount = $('#repaymentTable tbody tr').length;
+
+                $('#repaymentTable tbody tr').each(function () {
+                    let statusText = $(this).find("td:eq(14)").text().trim(); // Paid Type Column
+
+                    if (statusText === "Not Paid") {
+                        notPaidCount++;
+                    } else if (statusText === "Under Paid") {
+                        underPaidCount++;
+                    } else if (statusText === "Over Paid") {
+                        overPaidCount++;
+                    } else if (statusText === "Normal") {
+                        normalCount++;
+                    }
+                });
+
+                // Calculate percentages
+                let notPaidPercentage = (totalCount > 0) ? ((notPaidCount / totalCount) * 100).toFixed(2) : 0;
+                let underPaidPercentage = (totalCount > 0) ? ((underPaidCount / totalCount) * 100).toFixed(2) : 0;
+                let overPaidPercentage = (totalCount > 0) ? ((overPaidCount / totalCount) * 100).toFixed(2) : 0;
+                let normalPercentage = (totalCount > 0) ? ((normalCount / totalCount) * 100).toFixed(2) : 0;
+
                 // Create the filter info to display at the top of the PDF
                 let filterInfo = `
-        <div style="text-align:center; margin-bottom: 10px;">
-            <h2 style="color:#1A2942; font-size: 18px; font-weight:bold; margin-bottom:5px;">Payment Detail Report</h2>
-        </div>
-        <table style="width: 100%; border-collapse: collapse; font-size: 12px; background-color: #f8f9fa; padding: 10px; border-radius: 5px;">
-            <tr>
-                <td style="padding: 5px; font-weight: bold; width: 20%;">Branch:</td>
-                <td style="padding: 5px; width: 30%;">${branch}</td>
-                <td style="padding: 5px; font-weight: bold; width: 20%;">Route:</td>
-                <td style="padding: 5px; width: 30%;">${route}</td>
+    <div style="text-align:center; margin-bottom: 10px;">
+        <h2 style="color:#1A2942; font-size: 18px; font-weight:bold; margin-bottom:5px;">Payment Detail Report</h2>
+    </div>
+    <table style="width: 100%; border-collapse: collapse; font-size: 12px; background-color: #f8f9fa; padding: 10px; border-radius: 5px;">
+        <tr>
+            <td style="padding: 5px; font-weight: bold; width: 20%;">Branch:</td>
+            <td style="padding: 5px; width: 30%;">${branch}</td>
+            <td style="padding: 5px; font-weight: bold; width: 20%;">Route:</td>
+            <td style="padding: 5px; width: 30%;">${route}</td>
+        </tr>
+        <tr>
+            <td style="padding: 5px; font-weight: bold;">Center:</td>
+            <td style="padding: 5px;">${center}</td>
+            <td style="padding: 5px; font-weight: bold;">Collector:</td>
+            <td style="padding: 5px;">${collector}</td>
+        </tr>
+        <tr>
+            <td style="padding: 5px; font-weight: bold;">Loan Product:</td>
+            <td style="padding: 5px;">${loanProduct}</td>
+            <td style="padding: 5px; font-weight: bold;">Paid Type:</td>
+            <td style="padding: 5px;">${paidType}</td>
+        </tr>
+        <tr>
+            <td style="padding: 5px; font-weight: bold;">Start Date:</td>
+            <td style="padding: 5px;">${startDate}</td>
+            <td style="padding: 5px; font-weight: bold;">End Date:</td>
+            <td style="padding: 5px;">${endDate}</td>
+        </tr>
+    </table>
+    <br>`;
+
+                // Payment Status Summary Table
+                let summaryTable = `
+    <h3 style="text-align:center; margin-top: 20px;">Payment Status Summary</h3>
+    <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: center;">
+        <thead>
+            <tr style="background-color: #1A2942; color: white;">
+                <th>Not Paid</th>
+                <th>Under Paid</th>
+                <th>Over Paid</th>
+                <th>Normal</th>
+                <th>Total</th>
             </tr>
+        </thead>
+        <tbody>
             <tr>
-                <td style="padding: 5px; font-weight: bold;">Center:</td>
-                <td style="padding: 5px;">${center}</td>
-                <td style="padding: 5px; font-weight: bold;">Collector:</td>
-                <td style="padding: 5px;">${collector}</td>
+                <td><strong>${notPaidCount}</strong> <br> <small>(${notPaidPercentage}%)</small></td>
+                <td><strong>${underPaidCount}</strong> <br> <small>(${underPaidPercentage}%)</small></td>
+                <td><strong>${overPaidCount}</strong> <br> <small>(${overPaidPercentage}%)</small></td>
+                <td><strong>${normalCount}</strong> <br> <small>(${normalPercentage}%)</small></td>
+                <td><strong>${totalCount}</strong> <br> <small>(100%)</small></td>
             </tr>
-            <tr>
-                <td style="padding: 5px; font-weight: bold;">Loan Product:</td>
-                <td style="padding: 5px;">${loanProduct}</td>
-                <td style="padding: 5px; font-weight: bold;">Paid Type:</td>
-                <td style="padding: 5px;">${paidType}</td>
-            </tr>
-            <tr>
-                <td style="padding: 5px; font-weight: bold;">Start Date:</td>
-                <td style="padding: 5px;">${startDate}</td>
-                <td style="padding: 5px; font-weight: bold;">End Date:</td>
-                <td style="padding: 5px;">${endDate}</td>
-            </tr>
-        </table>
-        <br>
-    `;
+        </tbody>
+    </table>
+    <br>`;
 
                 // Custom styles for better readability in PDF
                 let style = `
-        <style>
-            table { width: 100%; border-collapse: collapse; font-size: 12px; }
-            th, td { border: 1px solid black; padding: 5px; text-align: center; }
-            thead { background-color: #1A2942; color: white; }
-        </style>
-    `;
+    <style>
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { border: 1px solid black; padding: 5px; text-align: center; }
+        thead { background-color: #1A2942; color: white; }
+    </style>`;
 
-                let htmlContent = style + filterInfo + clonedTable.outerHTML; // Include custom styles & filters
+                let htmlContent = style + filterInfo + clonedTable.outerHTML + summaryTable; // Include Summary Table
 
                 let opt = {
                     margin: [0.2, 0.2, 0.2, 0.2],
@@ -385,6 +503,7 @@
 
                 html2pdf().from(htmlContent).set(opt).save();
             });
+
 
 
 
