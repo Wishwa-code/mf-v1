@@ -227,6 +227,8 @@
                                 <span class="text-danger font-weight-bold">Under Paid</span>
                             @elseif (($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) < $payment->TotalPaidAmount)
                                 <span class="text-success font-weight-bold">Over Paid</span>
+                            @elseif ($payment->TotalPaidAmount === 0)
+                                <span class="text-success font-weight-bold">Not Paid</span>
                             @else
                                 <span class="text-primary font-weight-bold">Normal</span>
                             @endif

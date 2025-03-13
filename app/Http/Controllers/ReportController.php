@@ -743,7 +743,7 @@ class ReportController extends Controller
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
             ->leftJoin('route', 'center.route_id', '=', 'route.id_route')
-            ->leftJoin('branch', 'route.branch_id', '=', 'branch.branch_id') // Join branch table
+            ->leftJoin('branch', 'route.branch_id', '=', 'branch.branch_id')
             ->join('user as u', 'p.User_idUser', '=', 'u.id')
             ->select([
                 'branch.name as Branch',
@@ -757,15 +757,15 @@ class ReportController extends Controller
 
                 // Overdue Days Calculation
                 DB::raw('(SELECT DATEDIFF("'.$endDate.'", MIN(i2.Installment_Date)) 
-                  FROM installments i2 
-                  WHERE i2.Customer_Loan_idCustomer_Loan = i.Customer_Loan_idCustomer_Loan 
-                    AND i2.Installment_Date BETWEEN "'.$startDate.'" AND "'.$endDate.'") AS OverdueDays'),
+          FROM installments i2 
+          WHERE i2.Customer_Loan_idCustomer_Loan = i.Customer_Loan_idCustomer_Loan 
+            AND i2.Installment_Date BETWEEN "'.$startDate.'" AND "'.$endDate.'") AS OverdueDays'),
 
                 // Total Overdue Calculation
                 DB::raw('( (SELECT DATEDIFF("'.$endDate.'", MIN(i2.Installment_Date)) 
-                  FROM installments i2 
-                  WHERE i2.Customer_Loan_idCustomer_Loan = i.Customer_Loan_idCustomer_Loan 
-                    AND i2.Installment_Date BETWEEN "'.$startDate.'" AND "'.$endDate.'") * l.installment_amount) AS TotalOverdue'),
+          FROM installments i2 
+          WHERE i2.Customer_Loan_idCustomer_Loan = i.Customer_Loan_idCustomer_Loan 
+            AND i2.Installment_Date BETWEEN "'.$startDate.'" AND "'.$endDate.'") * l.installment_amount) AS TotalOverdue'),
 
                 'lp.name as LoanProduct',
                 'l.Amount as LoanAmount',
@@ -773,25 +773,29 @@ class ReportController extends Controller
 
                 // Sum Installment Amount Within Date Range
                 DB::raw('(SELECT SUM(i2.installment_amount) 
-                  FROM installments i2 
-                  WHERE i2.Customer_Loan_idCustomer_Loan = i.Customer_Loan_idCustomer_Loan 
-                    AND i2.Installment_Date BETWEEN "'.$startDate.'" AND "'.$endDate.'") AS TotalInstallmentAmount'),
+          FROM installments i2 
+          WHERE i2.Customer_Loan_idCustomer_Loan = i.Customer_Loan_idCustomer_Loan 
+            AND DATE(i2.Installment_Date) >= "'.$startDate.'" 
+            AND DATE(i2.Installment_Date) <= "'.$endDate.'") AS TotalInstallmentAmount'),
 
                 // Sum Penalty Amount Within Date Range
                 DB::raw('(SELECT SUM(i2.Panalty_Amount) 
-                  FROM installments i2 
-                  WHERE i2.Customer_Loan_idCustomer_Loan = i.Customer_Loan_idCustomer_Loan 
-                    AND i2.Installment_Date BETWEEN "'.$startDate.'" AND "'.$endDate.'") AS TotalPenaltyAmount'),
+          FROM installments i2 
+          WHERE i2.Customer_Loan_idCustomer_Loan = i.Customer_Loan_idCustomer_Loan 
+            AND DATE(i2.Installment_Date) >= "'.$startDate.'" 
+            AND DATE(i2.Installment_Date) <= "'.$endDate.'") AS TotalPenaltyAmount'),
 
                 // Sum Paid Amount Within Date Range
                 DB::raw('(SELECT SUM(i2.Paid_Amount) 
-                  FROM installments i2 
-                  WHERE i2.Customer_Loan_idCustomer_Loan = i.Customer_Loan_idCustomer_Loan 
-                    AND i2.Installment_Date BETWEEN "'.$startDate.'" AND "'.$endDate.'") AS TotalPaidAmount'),
+          FROM installments i2 
+          WHERE i2.Customer_Loan_idCustomer_Loan = i.Customer_Loan_idCustomer_Loan 
+            AND DATE(i2.Installment_Date) >= "'.$startDate.'" 
+            AND DATE(i2.Installment_Date) <= "'.$endDate.'") AS TotalPaidAmount'),
 
                 'u.Full_Name as Collector'
             ])
-            ->whereBetween('i.Installment_Date', [$startDate, $endDate]);
+            ->whereDate('i.Installment_Date', '>=', $startDate)
+            ->whereDate('i.Installment_Date', '<=', $endDate);
 
 // Apply filters only when values are not '0'
         if ($branchId != '0') {
@@ -809,6 +813,7 @@ class ReportController extends Controller
         if ($loanProductId != '0') {
             $payments->where('lp.idLoan_Category', '=', $loanProductId);
         }
+
 // Group by necessary fields
         $payments->groupBy(
             'i.Customer_Loan_idCustomer_Loan',
@@ -816,11 +821,10 @@ class ReportController extends Controller
             'branch.name', 'route.name', 'center.name',
             'l.loan_no', 'subquery.group_name',
             'cust.First_Name', 'cust.Last_Name',
-            'lp.name', 'u.Full_Name','l.Balance_Amount','l.idCustomer_Loan'
+            'lp.name', 'u.Full_Name', 'l.Balance_Amount', 'l.idCustomer_Loan'
         );
 
-
-        // Execute query first
+// Execute query first
         $payments = $payments->get();
 
 // Apply the paid type filter AFTER fetching the data
@@ -839,8 +843,6 @@ class ReportController extends Controller
                 return false;
             });
         }
-
-
 
         $branches = tableWithBranch('branch')->where('status', '=', '1')->get();
         $routes = tableWithBranch('route')->get();
