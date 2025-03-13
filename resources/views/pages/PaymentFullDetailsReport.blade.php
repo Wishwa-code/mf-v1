@@ -149,6 +149,7 @@
                     <label>Paid Type</label>
                     <select name="paid_type" class="form-control">
                         <option value="All" {{ request('paid_type') == 'All' ? 'selected' : '' }}>All</option>
+                        <option value="Not Paid" {{ request('paid_type') == 'Not Paid' ? 'selected' : '' }}>Not Paid</option>
                         <option value="Over Paid" {{ request('paid_type') == 'Over Paid' ? 'selected' : '' }}>Over Paid</option>
                         <option value="Under Paid" {{ request('paid_type') == 'Under Paid' ? 'selected' : '' }}>Under Paid</option>
                         <option value="Normal" {{ request('paid_type') == 'Normal' ? 'selected' : '' }}>Normal</option>
@@ -223,12 +224,12 @@
                         <td>{{ number_format($payment->TotalPaidAmount, 2) }}</td>
                         <td>{{ number_format(($payment->TotalInstallmentAmount+$payment->TotalPenaltyAmount)-$payment->TotalPaidAmount, 2) }}</td>
                         <td>
-                            @if (($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) > $payment->TotalPaidAmount)
-                                <span class="text-danger font-weight-bold">Under Paid</span>
+                            @if ($payment->TotalPaidAmount < 1)
+                                <span class="text-danger font-weight-bold">Not Paid</span>
+                            @elseif (($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) > $payment->TotalPaidAmount)
+                                <span class="text-warning font-weight-bold">Under Paid</span>
                             @elseif (($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) < $payment->TotalPaidAmount)
                                 <span class="text-success font-weight-bold">Over Paid</span>
-                            @elseif ($payment->TotalPaidAmount === 0)
-                                <span class="text-success font-weight-bold">Not Paid</span>
                             @else
                                 <span class="text-primary font-weight-bold">Normal</span>
                             @endif
