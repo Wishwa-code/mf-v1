@@ -944,9 +944,11 @@ class ReportController extends Controller
                 $totalPayable = $payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount;
                 $totalPaid = $payment->TotalPaidAmount;
 
-                if ($paidType == 'Under Paid' && $totalPayable > $totalPaid) {
+                if ($paidType == 'Under Paid' && $totalPayable > $totalPaid && $totalPaid != 0) {
                     return true;
                 } elseif ($paidType == 'Over Paid' && $totalPayable < $totalPaid) {
+                    return true;
+                } elseif ($paidType == 'Not Paid' && $totalPaid == 0) {
                     return true;
                 } elseif ($paidType == 'Normal' && $totalPayable == $totalPaid) {
                     return true;
