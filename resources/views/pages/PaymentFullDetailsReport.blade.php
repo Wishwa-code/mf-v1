@@ -60,15 +60,21 @@
             padding: 8px; /* More spacing */
             white-space: nowrap; /* Prevent text wrapping */
         }
-        #repaymentTable td:nth-child(7),
+        #repaymentTable td, #repaymentTable th {
+            text-align: center; /* Center text for all columns */
+        }
+
         #repaymentTable td:nth-child(8),
         #repaymentTable td:nth-child(9),
         #repaymentTable td:nth-child(10),
         #repaymentTable td:nth-child(11),
         #repaymentTable td:nth-child(12),
-        #repaymentTable td:nth-child(13) {
-            text-align: right !important;
+        #repaymentTable td:nth-child(13),
+        #repaymentTable td:nth-child(14),
+        #repaymentTable td:nth-child(16) {
+            text-align: right !important; /* Right-align numeric values */
         }
+
 
 
     </style>
@@ -207,7 +213,28 @@
                 </tr>
                 </thead>
                 <tbody>
+                @php
+                    $totalLoanAmount = 0;
+                    $totalInstallmentAmount = 0;
+                    $totalInstallmentTotal = 0;
+                    $totalPenaltyAmount = 0;
+                    $totalPayableAmount = 0;
+                    $totalPaidAmount = 0;
+                    $totalBalanceAmount = 0;
+                    $totalLoanBalance = 0;
+                @endphp
+
                 @foreach($payments as $payment)
+                    @php
+                        $totalLoanAmount += $payment->LoanAmount;
+                        $totalInstallmentAmount += $payment->InstallmentAmount;
+                        $totalInstallmentTotal += $payment->TotalInstallmentAmount;
+                        $totalPenaltyAmount += $payment->TotalPenaltyAmount;
+                        $totalPayableAmount += $payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount;
+                        $totalPaidAmount += $payment->TotalPaidAmount;
+                        $totalBalanceAmount += max(($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) - $payment->TotalPaidAmount, 0);
+                        $totalLoanBalance += $payment->Balance_Amount;
+                    @endphp
                     <tr>
                         <td>{{ $payment->Branch }}</td>
                         <td>{{ $payment->Route }}</td>
@@ -218,9 +245,9 @@
                         <td>{{ $payment->LoanProduct }}</td>
                         <td>{{ number_format($payment->LoanAmount, 2) }}</td>
                         <td>{{ number_format($payment->InstallmentAmount, 2) }}</td>
-                        <td>{{number_format($payment->TotalInstallmentAmount, 2)}}</td>
-                        <td>{{number_format($payment->TotalPenaltyAmount, 2)}}</td>
-                        <td>{{ number_format($payment->TotalInstallmentAmount+$payment->TotalPenaltyAmount, 2) }}</td>
+                        <td>{{ number_format($payment->TotalInstallmentAmount, 2) }}</td>
+                        <td>{{ number_format($payment->TotalPenaltyAmount, 2) }}</td>
+                        <td>{{ number_format($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount, 2) }}</td>
                         <td>{{ number_format($payment->TotalPaidAmount, 2) }}</td>
                         <td>{{ number_format(max(($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) - $payment->TotalPaidAmount, 0), 2) }}</td>
                         <td>
@@ -244,7 +271,27 @@
                     </tr>
                 @endforeach
                 </tbody>
+                <tfoot>
+                <tr class="font-weight-bold bg-light">
+                    <td colspan="7" class="text-right">Total:</td>
+                    <td class="text-right" style="text-align: right"><strong>{{ number_format($totalLoanAmount, 2) }}</strong></td>
+                    <td class="text-right" style="text-align: right"><strong>{{ number_format($totalInstallmentAmount, 2) }}</strong></td>
+                    <td class="text-right" style="text-align: right"><strong>{{ number_format($totalInstallmentTotal, 2) }}</strong></td>
+                    <td class="text-right" style="text-align: right"><strong>{{ number_format($totalPenaltyAmount, 2) }}</strong></td>
+                    <td class="text-right" style="text-align: right"><strong>{{ number_format($totalPayableAmount, 2) }}</strong></td>
+                    <td class="text-right" style="text-align: right"><strong>{{ number_format($totalPaidAmount, 2) }}</strong></td>
+                    <td class="text-right" style="text-align: right"><strong>{{ number_format($totalBalanceAmount, 2) }}</strong></td>
+                    <td></td> <!-- Empty for Paid Type -->
+                    <td class="text-right" style="text-align: right"><strong>{{ number_format($totalLoanBalance, 2) }}</strong></td>
+                    <td></td> <!-- Empty for Collector -->
+                    <td></td> <!-- Empty for Action -->
+                </tr>
+                </tfoot>
+
+
+
             </table>
+
         </div>
 
 
