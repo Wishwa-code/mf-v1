@@ -809,10 +809,6 @@ class ReportController extends Controller
         if ($loanProductId != '0') {
             $payments->where('lp.idLoan_Category', '=', $loanProductId);
         }
-        if ($paidType != 'All') {
-            $payments->where('p.paid_type', '=', $paidType);
-        }
-
 // Group by necessary fields
         $payments->groupBy(
             'i.Customer_Loan_idCustomer_Loan',
@@ -823,8 +819,26 @@ class ReportController extends Controller
             'lp.name', 'u.Full_Name','l.Balance_Amount','l.idCustomer_Loan'
         );
 
-// Execute query
+
+        // Execute query first
         $payments = $payments->get();
+
+// Apply the paid type filter AFTER fetching the data
+        if ($paidType != 'All') {
+            $payments = $payments->filter(function ($payment) use ($paidType) {
+                $totalPayable = $payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount;
+                $totalPaid = $payment->TotalPaidAmount;
+
+                if ($paidType == 'Under Paid' && $totalPayable > $totalPaid) {
+                    return true;
+                } elseif ($paidType == 'Over Paid' && $totalPayable < $totalPaid) {
+                    return true;
+                } elseif ($paidType == 'Normal' && $totalPayable == $totalPaid) {
+                    return true;
+                }
+                return false;
+            });
+        }
 
 
 
