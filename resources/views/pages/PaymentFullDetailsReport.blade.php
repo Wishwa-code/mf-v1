@@ -174,7 +174,7 @@
 
         <!-- Export Buttons -->
         <div class="mt-3">
-            <button id="pdfButton" class="btn btn-danger" hidden>Download PDF</button>
+            <button id="pdfButton" class="btn btn-danger">Download PDF</button>
             <button id="excelButton" class="btn btn-success">Download Excel</button>
         </div>
 
@@ -259,19 +259,37 @@
             $('.select2').select2(); // Initialize Select2 elements
 
             $('#pdfButton').click(function () {
-                const element = document.getElementById('repaymentTable');
+                let table = document.getElementById('repaymentTable');
 
-                const opt = {
+                // Clone the table to modify without affecting the displayed table
+                let clonedTable = table.cloneNode(true);
+
+                // Remove the last column (Action column) from cloned table
+                let rows = clonedTable.rows;
+                for (let i = 0; i < rows.length; i++) {
+                    rows[i].deleteCell(-1); // Remove last cell from each row
+                }
+
+                // Custom styles for better readability in PDF
+                let style = `
+        <style>
+            table { width: 100%; border-collapse: collapse; font-size: 12px; }
+            th, td { border: 1px solid black; padding: 5px; text-align: center; }
+            thead { background-color: #1A2942; color: white; }
+        </style>
+    `;
+
+                let htmlContent = style + clonedTable.outerHTML; // Include custom styles
+
+                let opt = {
                     margin: [0.2, 0.2, 0.2, 0.2],
                     filename: `Payment_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
                     image: { type: 'jpeg', quality: 0.98 },
                     html2canvas: { scale: 3, useCORS: true },
-                    jsPDF: { unit: 'in', format: [16, 11], orientation: 'landscape' } // Wider format
+                    jsPDF: { unit: 'in', format: [16, 11], orientation: 'landscape' } // Ensure full width
                 };
 
-
-
-                html2pdf().from(element).set(opt).save();
+                html2pdf().from(htmlContent).set(opt).save();
             });
 
 
