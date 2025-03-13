@@ -732,7 +732,7 @@ class ReportController extends Controller
 
         $payments = DB::table('installments as i')
             ->join('customer_loan as l', 'i.Customer_Loan_idCustomer_Loan', '=', 'l.idCustomer_Loan')
-            ->join('customer_payments as p', 'l.idCustomer_Loan', '=', 'p.Customer_Loan_idCustomer_Loan')
+            ->leftJoin('customer_payments as p', 'l.idCustomer_Loan', '=', 'p.Customer_Loan_idCustomer_Loan')
             ->join('customer as cust', 'l.Customer_idCustomer', '=', 'cust.idCustomer')
             ->join('loan_category as lp', 'l.Loan_Category_idLoan_Category', '=', 'lp.idLoan_Category')
             ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
