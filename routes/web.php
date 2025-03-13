@@ -642,3 +642,10 @@ Route::get('/get-portfolio-performance-excel','\App\Http\Controllers\PendingLoan
 
 
 Route::post('/get-loan-interest-details','\App\Http\Controllers\BankController@profitLog')->name('getLoanInterestDetails');
+
+
+
+Route::get('/RightWayDailyRepayment', [TransactionController::class, 'rightway'])->name('transaction.rightway');
+
+
+Route::get('/PaymentFullDetailsReport','\App\Http\Controllers\ReportController@payment_report')->name('payment-detail.index');
