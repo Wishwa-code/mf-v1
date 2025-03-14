@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+env:
+  FTP_DEPLOY_TIMEOUT: 120000  # Increase FTP timeout to 2 minutes
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -30,13 +33,17 @@ jobs:
 
       # 🔴 First FTP Deployment
       - name: Deploy to First FTP Location
+        run: echo "Deploying to First FTP Server: ${{ secrets.FTP_HOST }}"
+
+      - name: Deploy to First FTP Location
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps  # Try FTPS for secure connection
           local-dir: ./
-          server-dir: / # Change this if needed
+          server-dir: /
           exclude: |
             .DS_Store
             .git/**
@@ -47,22 +54,25 @@ jobs:
             .htaccess
             *.log
             vendor/bin/*
-          passive: true  # Enable passive mode
-          dry-run: false
+          dry-run: false  # Set to true for testing without deploying
 
-      # 🕒 Add a short delay to avoid connection issues
-      - name: Wait for 10 seconds
+      # 🕒 Add a short delay to avoid FTP connection issues
+      - name: Wait for 10 seconds before second deployment
         run: sleep 10
 
       # 🟢 Second FTP Deployment
+      - name: Deploy to Second FTP Location
+        run: echo "Deploying to Second FTP Server: ${{ secrets.FTP_HOST }}"
+
       - name: Deploy to Second FTP Location
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME_2 }}
           password: ${{ secrets.FTP_PASSWORD_2 }}
+          protocol: ftps  # Try FTPS for secure connection
           local-dir: ./
-          server-dir: / # Change this if needed
+          server-dir: /
           exclude: |
             .DS_Store
             .git/**
@@ -73,5 +83,4 @@ jobs:
             .htaccess
             *.log
             vendor/bin/*
-          passive: true  # Enable passive mode
-          dry-run: false
+          dry-run: false  # Set to true for testing without deploying
