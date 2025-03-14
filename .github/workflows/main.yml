@@ -28,7 +28,8 @@ jobs:
       - name: Debug local files
         run: ls -lR
 
-      - name: Deploy to FTP
+      # 🔴 Existing FTP Deployment (First Location)
+      - name: Deploy to First FTP Location
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
           server: ${{ secrets.FTP_HOST }}
@@ -36,6 +37,27 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./ # Deploy everything from the repository root
           server-dir: / # Adjust this path based on your server
+          exclude: |
+            .DS_Store
+            .git/** # Ensure all Git files are excluded
+            node_modules/**
+            storage/**
+            .github/**
+            *.env
+            .htaccess
+            *.log
+            vendor/bin/*
+          dry-run: false # Set to true for testing without deployment
+
+      # 🟢 New FTP Deployment (Second Location)
+      - name: Deploy to Second FTP Location
+        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+        with:
+          server: ${{ secrets.FTP_HOST_2 }} # New FTP host for the second location
+          username: ${{ secrets.FTP_USERNAME_2 }} # New username for the second location
+          password: ${{ secrets.FTP_PASSWORD_2 }} # New password for the second location
+          local-dir: ./ # Deploy everything from the repository root
+          server-dir: / # Adjust this path based on the second server
           exclude: |
             .DS_Store
             .git/** # Ensure all Git files are excluded
