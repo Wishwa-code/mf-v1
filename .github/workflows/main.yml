@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  FTP_DEPLOY_TIMEOUT: 300000  # Increase FTP timeout to 2 minutes
+  FTP_DEPLOY_TIMEOUT: 500000  # Increase FTP timeout to 2 minutes
 
 jobs:
   deploy:
