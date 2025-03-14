@@ -28,18 +28,18 @@ jobs:
       - name: Debug local files
         run: ls -lR
 
-      # 🔴 Existing FTP Deployment (First Location)
+      # 🔴 First FTP Deployment
       - name: Deploy to First FTP Location
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./ # Deploy everything from the repository root
-          server-dir: / # Adjust this path based on your server
+          local-dir: ./
+          server-dir: / # Change this if needed
           exclude: |
             .DS_Store
-            .git/** # Ensure all Git files are excluded
+            .git/**
             node_modules/**
             storage/**
             .github/**
@@ -47,20 +47,25 @@ jobs:
             .htaccess
             *.log
             vendor/bin/*
-          dry-run: false # Set to true for testing without deployment
+          passive: true  # Enable passive mode
+          dry-run: false
 
-      # 🟢 New FTP Deployment (Second Location)
+      # 🕒 Add a short delay to avoid connection issues
+      - name: Wait for 10 seconds
+        run: sleep 10
+
+      # 🟢 Second FTP Deployment
       - name: Deploy to Second FTP Location
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
-          server: ${{ secrets.FTP_HOST }} # New FTP host for the second location
-          username: ${{ secrets.FTP_USERNAME_2 }} # New username for the second location
-          password: ${{ secrets.FTP_PASSWORD_2 }} # New password for the second location
-          local-dir: ./ # Deploy everything from the repository root
-          server-dir: / # Adjust this path based on the second server
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME_2 }}
+          password: ${{ secrets.FTP_PASSWORD_2 }}
+          local-dir: ./
+          server-dir: / # Change this if needed
           exclude: |
             .DS_Store
-            .git/** # Ensure all Git files are excluded
+            .git/**
             node_modules/**
             storage/**
             .github/**
@@ -68,4 +73,5 @@ jobs:
             .htaccess
             *.log
             vendor/bin/*
-          dry-run: false # Set to true for testing without deployment
+          passive: true  # Enable passive mode
+          dry-run: false
