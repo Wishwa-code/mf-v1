@@ -32,8 +32,8 @@ jobs:
         run: ls -lR
 
       # 🔴 First FTP Deployment
-      - name: Deploy to First FTP Location
-        run: echo "Deploying to First FTP Server: ${{ secrets.FTP_HOST }}"
+      - name: Deploying to First FTP Server
+        run: echo "Deploying to First FTP Server (masked for security)"
 
       - name: Deploy to First FTP Location
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
@@ -61,8 +61,8 @@ jobs:
         run: sleep 10
 
       # 🟢 Second FTP Deployment
-      - name: Deploy to Second FTP Location
-        run: echo "Deploying to Second FTP Server: ${{ secrets.FTP_HOST }}"
+      - name: Deploying to Second FTP Server
+        run: echo "Deploying to Second FTP Server (masked for security)"
 
       - name: Deploy to Second FTP Location
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
