@@ -53,7 +53,7 @@ jobs:
       - name: Deploy to Second FTP Location
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
-          server: ${{ secrets.FTP_HOST_2 }} # New FTP host for the second location
+          server: ${{ secrets.FTP_HOST }} # New FTP host for the second location
           username: ${{ secrets.FTP_USERNAME_2 }} # New username for the second location
           password: ${{ secrets.FTP_PASSWORD_2 }} # New password for the second location
           local-dir: ./ # Deploy everything from the repository root
