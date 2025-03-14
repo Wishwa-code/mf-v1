@@ -31,34 +31,6 @@ jobs:
       - name: Debug local files
         run: ls -lR
 
-      # 🔴 First FTP Deployment
-      - name: Deploying to First FTP Server
-        run: echo "Deploying to First FTP Server (masked for security)"
-
-      - name: Deploy to First FTP Location
-        uses: SamKirkland/FTP-Deploy-Action@4.3.0
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps  # Try FTPS for secure connection
-          local-dir: ./
-          server-dir: /
-          exclude: |
-            .DS_Store
-            .git/**
-            node_modules/**
-            storage/**
-            .github/**
-            *.env
-            .htaccess
-            *.log
-            vendor/bin/*
-          dry-run: false  # Set to true for testing without deploying
-
-      # 🕒 Add a short delay to avoid FTP connection issues
-      - name: Wait for 10 seconds before second deployment
-        run: sleep 10
 
       # 🟢 Second FTP Deployment
       - name: Deploying to Second FTP Server
