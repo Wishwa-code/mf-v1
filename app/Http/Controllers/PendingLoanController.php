@@ -262,13 +262,6 @@ class PendingLoanController extends Controller
             $this->customerLogController->store($request);
 
 
-            // Instantiate UserController
-            $userController = new UserController();
-
-            // Call the create_panelty function
-            $userController->create_panelty();
-
-
             if (!empty($document_details)) {
                 // Process the tableData as needed
                 foreach ($document_details as $row) {
@@ -305,6 +298,11 @@ class PendingLoanController extends Controller
                 $customer_loan->Balance_Amount+$panelty_balance,
                 '0');
 
+// Instantiate UserController
+            $userController = new UserController();
+
+            // Call the create_panelty function
+            $userController->create_panelty();
 
             // Check if any rows were affected
             if ($affected) {

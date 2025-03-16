@@ -175,6 +175,20 @@ class BranchController extends Controller
                 'acc_type_group' => "Revenue",
                 'User' => '1',
                 'branch_id' => $id,
+            ],
+            [
+                'Bank_Type' => "System_default_10",
+                'code' => "1225",
+                'Bank_Name' => "Customer Savings",
+                'Account_Name' => "Customer Savings",
+                'Account_No' => "Customer Savings",
+                'Bank_Branch' => "Customer Savings",
+                'Account_Balance' => '0.00',
+                'type' => "Borrower Saving Deposit",
+                'cashflow' => "Financing activities",
+                'acc_type_group' => "Liabilities",
+                'User' => '1',
+                'branch_id' => $id,
             ]
         ];
 

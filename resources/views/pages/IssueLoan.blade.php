@@ -750,6 +750,10 @@
                                                     <div class="col-6 fw-bold fw-size ">Enable Savings Account Process</div>
                                                     <div class="col-6 text-left fw-bold fw-size " id="enable_saving">Yes</div>
                                                 </div>
+                                                <div class="row mb-3" hidden>
+                                                    <div class="col-6 fw-bold fw-size ">Enable Savings Account Process 02</div>
+                                                    <div class="col-6 text-left fw-bold fw-size " id="saving_payment_active">0.00</div>
+                                                </div>
                                                 <div class="row mb-3">
                                                     <div class="col-6 fw-bold fw-size ">Saving Account Amount Type</div>
                                                     <div class="col-6 text-left fw-bold fw-size " id="saving_account_amount_type">0.00</div>
@@ -1450,6 +1454,7 @@
 
                         let enable_saving_process = product.enable_saving_process;
                         $("#enable_saving").text(product.enable_saving_process);
+                        $("#saving_payment_active").text(product.saving_payment);
                         if (enable_saving_process === "Yes") {
                             document.getElementById('saving_section').style.display = 'block';
 
@@ -2256,6 +2261,7 @@
 
 
                 let saving=$("#enable_saving").text();
+                let saving_payment_active=$("#saving_payment_active").text();
 
 
 
@@ -2263,6 +2269,9 @@
                 if (saving==="Yes"){
                     let saving_amount=$("#saving_amount").text();
                     saving_amount_value=saving_amount;
+                    if(saving_payment_active==="1"){
+                        saving_amount_value=0.00;
+                    }
                 }
 
 

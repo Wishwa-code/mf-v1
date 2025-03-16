@@ -411,6 +411,18 @@ class UserController extends Controller
                 'user' => $user_id,
                 'branch_id' => session('branch_id')
             ]);
+            $loanLogController = new LoanLogController();
+
+            $last_log = DB::table('loan_log')->where('Loan_ID','=',$item->Customer_idCustomer)->orderBy('Loan_Log_ID', 'desc')->first();
+            $Panelty_Balance = number_format((float)$last_log->Panelty_Balance + (float)$panelty_amount, 2, '.', '');
+            $Total_Pending_Balance = number_format((float)$last_log->Total_Pending_Balance + (float)$panelty_amount, 2, '.', '');
+            $loanLogController->index(
+                $item->Customer_idCustomer, 'Penalty', $item->idInstallments,
+                'Penalty-Installment No : '.$item->idInstallments, $panelty_amount,
+                $last_log->Panelty_Payment, $last_log->Interest_Payment,
+                $last_log->Capital_Payment, $last_log->Savings_Payment, $Panelty_Balance,
+                $last_log->Interest_Balance, $last_log->Capital_Balance, $Total_Pending_Balance, $last_log->Saving_Account_Balance
+            );
 
             $bankLogController = new BankLogController();
 
@@ -420,10 +432,7 @@ class UserController extends Controller
             $System_default_6=tableWithBranch('company_bank_accounts')
                 ->where('Bank_Type','=','System_default_6')
                 ->first();
-
             $bankLogController->index($System_default_5->Idbank,"Penalty","Penalty","-","debit",$panelty_amount,$System_default_6->Idbank);
-
-
             $bankLogController->index($System_default_6->Idbank,"Penalty","Penalty","-","credit",$panelty_amount,$System_default_5->Idbank);
 
 

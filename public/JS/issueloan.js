@@ -152,6 +152,7 @@ function save_loan(){
     let ins_count = $("#loan_period").val();
     let interest_amount = $("#interest_amount").val();
     let total_loan_charge = $("#total_loan_charge").text();
+    let saving_amount = $("#saving_amount").text();
     let loanChargesBalanceCheckbox = document.getElementById("loanChargesBalance");
     let deductCharges = document.getElementById("deductCharges");
     let separateCharges = document.getElementById("separateCharges");
@@ -355,70 +356,6 @@ function save_loan(){
             // Push the row data object to the table data array
             installment.push(rowData);
         });
-//     }else{
-//
-// // Iterate over each row of the table
-//         $('#installment_table tbody tr').each(function() {
-//             // Initialize an empty object to store row data
-//             var rowData = {};
-//
-//             // Iterate over each cell of the row
-//             $(this).find('td').each(function(index) {
-//                 // Get the text content of the cell
-//                 var cellData = $(this).text();
-//
-//                 // Assign the cell data to the corresponding property of the row data object
-//                 // Assuming the order of cells matches the order of headers in the table
-//                 switch(index) {
-//                     case 0:
-//                         rowData.No = cellData; // Add No column data
-//                         break;
-//                     case 1:
-//                         rowData.installmentDate = cellData;
-//                         break;
-//                     case 2:
-//                         rowData.installmentAmount = cellData;
-//                         break;
-//                     case 3:
-//                         rowData.capitalAmount = cellData;
-//                         break;
-//                     case 4:
-//                         rowData.interestAmount = cellData;
-//                         break;
-//                     case 5:
-//                         rowData.panaltyDate = cellData;
-//                         break;
-//                     case 6:
-//                         rowData.panaltyAmount = cellData;
-//                         break;
-//                     case 7:
-//                         rowData.totalAmount = cellData;
-//                         break;
-//                     case 8:
-//                         rowData.paidAmount = cellData;
-//                         break;
-//                     case 9:
-//                         rowData.panaltyBalance = cellData;
-//                         break;
-//                     case 10:
-//                         rowData.installmentBalance = cellData;
-//                         break;
-//                     case 11:
-//                         rowData.totalBalance = cellData;
-//                         break;
-//                     case 12:
-//                         rowData.status = cellData;
-//                         break;
-//                     default:
-//                         break;
-//                 }
-//
-//             });
-//
-//             // Push the row data object to the table data array
-//             installment.push(rowData);
-//         });
-//     }
 
     // Initialize an empty array to store table data
     loan_charge_table=[];
@@ -508,6 +445,7 @@ function save_loan(){
                         "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                     },
                     data: {
+                        saving_amount:saving_amount,
                         issue_date:issue_date,
                         loan_broker:loan_broker,
                         loan_broker_commission:loan_broker_commission,

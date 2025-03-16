@@ -88,6 +88,9 @@ class LoanController extends Controller
         $product_code=tableWithBranch('loan_category')
             ->where('idLoan_Category','=',$request->loan_cate_id)
             ->first();
+        $cus_loan_count=tableWithBranch('customer_loan')
+            ->where('Customer_idCustomer','=',$customer_id)
+            ->count();
         if ($type_loan_number==""){
             if ($loan_num_type === "Customize") {
                 $branch_no_txt=$branch_no . '/';
@@ -96,9 +99,7 @@ class LoanController extends Controller
                 }
                 $loan_number_txt = $branch_no_txt . $formatted_loan_id;
             } else {
-                $cus_loan_count=tableWithBranch('customer_loan')
-                    ->where('Customer_idCustomer','=',$customer_id)
-                    ->count();
+
                 if ($type == "0") {
                     $loan_format = $company->inv_loan_format;
                     $cus_root=tableWithBranch('customer','customer')
@@ -191,6 +192,7 @@ class LoanController extends Controller
         $loan->repayment_duration = $request->repayment_duration_period;
         $loan->loan_broker = $request->loan_broker;
         $loan->loan_broker_commission = $request->loan_broker_commission;
+        $loan->saving_amount = $request->saving_amount ?? '0.00';
         $loan->branch_id = session('branch_id');
 
         $loan->save();
@@ -225,6 +227,7 @@ class LoanController extends Controller
                             '@Group_No@' => $loan_no->Group_No,
                             '@Customer_No@' => $loan_no->idCustomer,
                             '@Auto_Id@' => $formatted_loan_id,
+                            '@Loan_Count@' => $cus_loan_count+1,
                         ];
 
                         // Step 3: Replace placeholders in the loan_format
@@ -732,8 +735,11 @@ class LoanController extends Controller
 
         // Fetch the installments
         $installments = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', $id)->orderBy('Installment_Date')->get();
-        $savingBalanceSum = $installments->sum('Saving_balance');
         $Saving_amountSum = $installments->sum('Saving_amount');
+
+        $last_log = DB::table('loan_log')->where('Loan_ID','=',$id)->orderBy('Loan_Log_ID', 'desc')->first();
+
+        $savingBalanceSum = $last_log->Saving_Account_Balance;
         // Extracting installment IDs from installments
         $installmentIds = $installments->pluck('idInstallments');
 
