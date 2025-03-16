@@ -413,7 +413,7 @@ class UserController extends Controller
             ]);
             $loanLogController = new LoanLogController();
 
-            $last_log = DB::table('loan_log')->where('Loan_ID','=',$item->Customer_idCustomer)->orderBy('Loan_Log_ID', 'desc')->first();
+            $last_log = DB::table('Loan_Log')->where('Loan_ID','=',$item->Customer_idCustomer)->orderBy('Loan_Log_ID', 'desc')->first();
             $Panelty_Balance = number_format((float)$last_log->Panelty_Balance + (float)$panelty_amount, 2, '.', '');
             $Total_Pending_Balance = number_format((float)$last_log->Total_Pending_Balance + (float)$panelty_amount, 2, '.', '');
             $loanLogController->index(

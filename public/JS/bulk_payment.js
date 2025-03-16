@@ -46,22 +46,34 @@ function load_payment_table(page = 1) {
                         let storedInputData = inputDataStore[item.idCustomer_Loan] || {};
                         let inputDate = storedInputData.date || "";
                         let inputAmount = storedInputData.amount || "";
+                        let savingAmount = storedInputData.savingAmount || "";
+
+                        // Change placeholder text based on saving_payment
+                        let installmentPlaceholder = item.saving_payment === "1" ? "Installment Amount" : "Enter amount";
+
+                        // Define payment field
+                        let paymentField = `<input type="text" class="form-control numeric-input amount-input" placeholder="${installmentPlaceholder}" value="${inputAmount}" data-loan-id="${item.idCustomer_Loan}" />`;
+
+                        // Add extra input if saving_payment is "1"
+                        if (item.saving_payment === "1") {
+                            paymentField += `<br><input type="text" class="form-control numeric-input saving-amount-input" placeholder="Enter Saving Amount" value="${savingAmount}" data-loan-id="${item.idCustomer_Loan}" />`;
+                        }
 
                         // Construct row HTML
                         var row = `<tr>
-                        <td>${item.Loan_No}</td>
-                        <td>${name}</td>
-                        <td>${parseFloat(item.Loan_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        <td>${parseFloat(item.Today_installment).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        <td><input type="date" name="date_bulk" class="form-control" value="${inputDate || new Date().toISOString().split('T')[0]}" data-loan-id="${item.idCustomer_Loan}" /></td>
-                        <td>
-                            <input type="text" class="form-control numeric-input amount-input" placeholder="Enter amount" value="${inputAmount}" data-loan-id="${item.idCustomer_Loan}" />
-                            <input type="hidden" name="loan_id" value="${item.idCustomer_Loan}" />
-                            <input type="hidden" name="cus_id" value="${item.idCustomer}" />
-                        </td>
-                        <td>${item.NIC}</td>
-                        <td>${item.type}</td>
-                    </tr>`;
+                            <td>${item.Loan_No}</td>
+                            <td>${name}</td>
+                            <td>${parseFloat(item.Loan_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td>${parseFloat(item.Today_installment).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td><input type="date" name="date_bulk" class="form-control" value="${inputDate || new Date().toISOString().split('T')[0]}" data-loan-id="${item.idCustomer_Loan}" /></td>
+                            <td>
+                                ${paymentField}
+                                <input type="hidden" name="loan_id" value="${item.idCustomer_Loan}" />
+                                <input type="hidden" name="cus_id" value="${item.idCustomer}" />
+                            </td>
+                            <td>${item.NIC}</td>
+                            <td>${item.type}</td>
+                        </tr>`;
 
                         // Add row to DataTable
                         $("#loan_table tbody").append(row);
@@ -74,8 +86,9 @@ function load_payment_table(page = 1) {
 
                 // Update total today installment amount
                 $('#tot_amount').text(tot.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+
                 // Attach event listeners to input fields
-                $(".amount-input").on("input", function () {
+                $(".amount-input, .saving-amount-input").on("input", function () {
                     updateTotalEnteredAmount();
                 });
 
@@ -88,6 +101,7 @@ function load_payment_table(page = 1) {
         },
     });
 }
+
 
 // Function to calculate and update total entered amount
 function updateTotalEnteredAmount() {
@@ -143,7 +157,9 @@ function automatePayments() {
                         const row = rows[i];
 
                         let loan_number = $(row).find('td:eq(0)').text();
-                        let payment_amount = $(row).find('input.numeric-input').val();
+                        // Get the installment amount (first input field)
+                        let payment_amount = $(row).find('input.numeric-input.amount-input').val();
+                        let saving_amount = $(row).find('input.saving-amount-input').val() || 0;
                         let reduce_balance_loan_id = $(row).find('input[name="loan_id"]').val();
                         let cus_id = $(row).find('input[name="cus_id"]').val();
                         let payment_date = $(row).find('input[name="date_bulk"]').val();
@@ -163,7 +179,7 @@ function automatePayments() {
                         document.getElementById("progress-bar").style.width = `${progress}%`;
 
                         // Perform payment
-                        const success = await performPayment(cus_id, payment_amount, reduce_balance_loan_id, payment_date);
+                        const success = await performPayment(cus_id, payment_amount, reduce_balance_loan_id, payment_date,saving_amount);
                         if (success) {
                             successCount++;
                         }
@@ -199,12 +215,13 @@ function automatePayments() {
 
 
 
-async function performPayment(cus_id, payment_amount, reduce_balance_loan_id, payment_date) {
+async function performPayment(cus_id, payment_amount, reduce_balance_loan_id, payment_date,saving_amount) {
     console.log(cus_id);
     let file = $('#file')[0]?.files[0];
     let formData = new FormData();
     formData.append('cus_id', cus_id);
     formData.append('payment_amount', payment_amount);
+    formData.append('saving_amount', saving_amount);
     formData.append('file', file || "");
     formData.append('loan_id', reduce_balance_loan_id);
     formData.append('payment_date', payment_date);
