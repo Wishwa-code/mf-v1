@@ -64,7 +64,7 @@ jobs:
       - name: Deploy to Second FTP Server
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
-          server: ${{ secrets.FTP_HOST_2 }}
+          server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME_2 }}
           password: ${{ secrets.FTP_PASSWORD_2 }}
           protocol: ftp  # Use ftps if required
