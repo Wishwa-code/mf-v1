@@ -440,6 +440,7 @@ class TodayPaymentController extends Controller
             ->joinSub($subquery, 'installment_summary', function ($join) {
                 $join->on('customer_loan.idCustomer_Loan', '=', 'installment_summary.Customer_Loan_idCustomer_Loan');
             })
+            ->join('loan_category','customer_loan.Loan_Category_idLoan_Category','=','loan_category.idLoan_Category')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
@@ -449,6 +450,7 @@ class TodayPaymentController extends Controller
             ->select(
                 'customer.First_Name as customer_name',
                 'customer.Last_Name as customer_lastname',
+                'loan_category.saving_payment as saving_payment',
                 'customer.Nic as NIC',
                 'customer.idCustomer',
                 'customer_loan.Loan_No as Loan_No',
@@ -565,6 +567,9 @@ class TodayPaymentController extends Controller
         }
 
         $gettotal = $loanQuery_2->get();
+
+
+
 
         return response()->json(['item' => $loan, 'message' => 'all', 'gettotal' => $gettotal], 200);
     }
