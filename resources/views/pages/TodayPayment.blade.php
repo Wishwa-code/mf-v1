@@ -560,6 +560,16 @@
                             </div>
                         </div>
 
+                        <div class="row mb-3" id="savings_section" style="display: none;">
+                            <div class="col-sm-4">
+                                <label for="saving_amount" class="form-label fw-bold">Savings Amount (LKR)</label>
+                            </div>
+                            <div class="col-sm-8">
+                                <input type="text" id="saving_amount" class="form-control">
+                            </div>
+                        </div>
+
+
                         <div class="row mb-3">
                             <div class="col-sm-4">
                                 <label for="file" class="form-label fw-bold">Receipt</label>
@@ -1087,7 +1097,7 @@
 @section('script')
 
      <script src="../JS/validate.js"></script>
-    <script src="../JS/today_payment.js?n=15"></script>
+    <script src="../JS/today_payment.js?n=20"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         $(document).ready(function() {

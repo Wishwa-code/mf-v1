@@ -198,6 +198,16 @@ function payment_model(cus_id, topic, loan_id,Today_installment) {
                 $('#ins_amount').val(Installment_Amount.toFixed(2));
                 $('#tot_paid_amount').val(Total_Paid_Amount.toFixed(2));
             });
+            // Assuming response is already defined somewhere in your script
+            if (response.saving==="1") {
+                document.getElementById("savings_section").style.display = "flex";
+                document.querySelector("label[for='payment_amount']").textContent = "Installment Amount (LKR)";
+            } else {
+                document.querySelector("label[for='payment_amount']").textContent = "Paid Amount (LKR)";
+                document.getElementById("savings_section").style.display = "none";
+            }
+
+
 
         },
         error: function(error) {
@@ -366,6 +376,7 @@ function payment_model_3(cus_id, pending_amount, loan_id, topic, loan_capital_ba
 function payment() {
     let cus_id = $('#cus_id').val();
     let payment_amount = $('#payment_amount').val();
+    let saving_amount = $('#saving_amount').val() || 0.00;
     let reduce_balance_loan_id = $('#reduce_balance_loan_id').val();
     let file = $('#file')[0].files[0];
     let payment_date = $('#payment_date').val();
@@ -418,6 +429,7 @@ function payment() {
                         let formData = new FormData();
                         formData.append('cus_id', cus_id);
                         formData.append('payment_amount', payment_amount);
+                        formData.append('saving_amount', saving_amount);
                         formData.append('file', file);
                         formData.append('loan_id', reduce_balance_loan_id);
                         formData.append('payment_date', payment_date);
@@ -501,6 +513,7 @@ function payment() {
                     let formData = new FormData();
                     formData.append('cus_id', cus_id);
                     formData.append('payment_amount', payment_amount);
+                    formData.append('saving_amount', saving_amount);
                     formData.append('file', file);
                     formData.append('loan_id', reduce_balance_loan_id);
                     formData.append('payment_date', payment_date);

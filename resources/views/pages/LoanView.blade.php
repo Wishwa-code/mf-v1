@@ -2,11 +2,7 @@
 @extends('layout.admin')
 
 @section('head')
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
-    <link rel="stylesheet" type="text/css"
-          href="https://cdn.datatables.net/buttons/2.2.3/css/buttons.dataTables.min.css">
-    <link rel="stylesheet" type="text/css"
-          href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
 
     <style>
@@ -832,16 +828,19 @@
                                             <th>Penalty Payment</th>
                                             <th>Interest Payment</th>
                                             <th>Capital Payment</th>
+                                            <th>Savings Payment</th>
                                             <th>Penalty Balance</th>
                                             <th>Interest Balance</th>
                                             <th>Capital Balance</th>
+                                            <th>Savings Balance</th>
                                             <th>Total Pending Balance</th>
                                         </tr>
                                         </thead>
                                         <tbody>
-                                        <!-- AJAX loaded data will go here -->
+                                        <!-- Data will be loaded dynamically via AJAX -->
                                         </tbody>
                                     </table>
+
                                 </div>
                             </div>
                         </div>
@@ -1163,7 +1162,7 @@
                     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
                     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
                     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
+                    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
                     <script>
                         function openSlip(slipPath) {
                             window.open(slipPath, '_blank');
@@ -1307,6 +1306,17 @@
 
 
                             // Handle the Loan Log button click
+                            var table = $('#loanLogTable').DataTable({
+                                "columnDefs": [
+                                    { "orderable": true, "targets": 0 },  // Enable sorting only for the first column
+                                    { "orderable": false, "targets": "_all" }  // Disable sorting for all other columns
+                                ]
+                            });
+
+
+
+
+
                             $('.btn-danger').click(function(e) {
                                 e.preventDefault();
 
@@ -1319,26 +1329,25 @@
                                     method: 'GET',
                                     success: function(response) {
                                         // Clear the table body
-                                        $('#loanLogTable tbody').empty();
+                                        table.clear().draw();
 
+                                        // Loop through response and add rows dynamically
                                         $.each(response, function(index, log) {
-                                            $('#loanLogTable tbody').append(
-                                                '<tr>' +
-                                                '<td>' + log.Date_Time + '</td>' +
-                                                '<td>' + log.Description + '</td>' +
-                                                '<td>' + parseFloat(log.Amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +
-                                                '<td>' + parseFloat(log.Panelty_Payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +
-                                                '<td>' + parseFloat(log.Interest_Payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +
-                                                '<td>' + parseFloat(log.Capital_Payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +
-                                                '<td>' + parseFloat(log.Panelty_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +
-                                                '<td>' + parseFloat(log.Interest_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +
-                                                '<td>' + parseFloat(log.Capital_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +
-                                                '<td>' + parseFloat(log.Total_Pending_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +
-                                                '</tr>'
-                                            );
+                                            table.row.add([
+                                                log.Date_Time,
+                                                log.Description,
+                                                parseFloat(log.Amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                                parseFloat(log.Panelty_Payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                                parseFloat(log.Interest_Payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                                parseFloat(log.Capital_Payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                                parseFloat(log.Savings_Payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                                parseFloat(log.Panelty_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                                parseFloat(log.Interest_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                                parseFloat(log.Capital_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                                parseFloat(log.Saving_Account_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                                parseFloat(log.Total_Pending_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                                            ]).draw(false);
                                         });
-
-
 
                                         // Show the modal
                                         $('#loanLogModal').modal('show');
