@@ -738,8 +738,11 @@ class LoanController extends Controller
         $Saving_amountSum = $installments->sum('Saving_amount');
 
         $last_log = DB::table('Loan_Log')->where('Loan_ID','=',$id)->orderBy('Loan_Log_ID', 'desc')->first();
+        $savingBalanceSum=0.00;
+        if ($last_log){
+            $savingBalanceSum = $last_log->Saving_Account_Balance;
+        }
 
-        $savingBalanceSum = $last_log->Saving_Account_Balance;
         // Extracting installment IDs from installments
         $installmentIds = $installments->pluck('idInstallments');
 
