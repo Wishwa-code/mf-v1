@@ -737,7 +737,7 @@ class LoanController extends Controller
         $installments = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', $id)->orderBy('Installment_Date')->get();
         $Saving_amountSum = $installments->sum('Saving_amount');
 
-        $last_log = DB::table('loan_log')->where('Loan_ID','=',$id)->orderBy('Loan_Log_ID', 'desc')->first();
+        $last_log = DB::table('Loan_Log')->where('Loan_ID','=',$id)->orderBy('Loan_Log_ID', 'desc')->first();
 
         $savingBalanceSum = $last_log->Saving_Account_Balance;
         // Extracting installment IDs from installments
