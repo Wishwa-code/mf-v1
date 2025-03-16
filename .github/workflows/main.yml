@@ -31,18 +31,15 @@ jobs:
       - name: Debug local files
         run: ls -lR
 
-      # 🔴 First FTP Deployment
-      - name: Deploying to First FTP Server
-        run: echo "Deploying to First FTP Server (masked for security)"
-
-      - name: Deploy to First FTP Location
+      # 🔴 First FTP Deployment (Server 1)
+      - name: Deploy to First FTP Server
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftp  # Switched from ftps to ftp (try ftps if needed)
-          ftp-passive: true  # Enables passive mode
+          protocol: ftp  # Use ftps if required
+          ftp-passive: true
           local-dir: ./
           server-dir: /
           exclude: |
@@ -55,26 +52,23 @@ jobs:
             .htaccess
             *.log
             vendor/bin/*
-          dry-run: false  # Set to true for testing without deploying
-          concurrent-transfers: 5  # Limit concurrent transfers
-          transfer-speed: 100000  # Throttle transfer speed to prevent server overload
+          dry-run: false
+          concurrent-transfers: 3  # Reduce transfers to prevent overload
+          transfer-speed: 50000  # Throttle transfer speed to avoid timeout issues
 
-      # 🕒 Increased delay to prevent FTP server connection issues
+      # 🕒 Wait before Second Deployment
       - name: Wait for 30 seconds before second deployment
         run: sleep 30
 
-      # 🟢 Second FTP Deployment
-      - name: Deploying to Second FTP Server
-        run: echo "Deploying to Second FTP Server (masked for security)"
-
-      - name: Deploy to Second FTP Location
+      # 🟢 Second FTP Deployment (Server 2)
+      - name: Deploy to Second FTP Server
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
-          server: ${{ secrets.FTP_HOST }}
+          server: ${{ secrets.FTP_HOST_2 }}
           username: ${{ secrets.FTP_USERNAME_2 }}
           password: ${{ secrets.FTP_PASSWORD_2 }}
-          protocol: ftp  # Switched from ftps to ftp (try ftps if needed)
-          ftp-passive: true  # Enables passive mode
+          protocol: ftp  # Use ftps if required
+          ftp-passive: true
           local-dir: ./
           server-dir: /
           exclude: |
@@ -87,6 +81,6 @@ jobs:
             .htaccess
             *.log
             vendor/bin/*
-          dry-run: false  # Set to true for testing without deploying
-          concurrent-transfers: 5  # Limit concurrent transfers
-          transfer-speed: 100000  # Throttle transfer speed to prevent server overload
+          dry-run: false
+          concurrent-transfers: 3
+          transfer-speed: 50000
