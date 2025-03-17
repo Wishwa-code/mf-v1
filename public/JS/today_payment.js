@@ -184,8 +184,10 @@ function payment_model(cus_id, topic, loan_id,Today_installment) {
         url: '/today_payment_load_check_loan/'+loan_id, // The route we'll define in Laravel
         method: 'GET',
         success: function(response) {
+            let savings=parseFloat(response.savings);
             $.each(response.item, function (index, item) {
                 let Total_Balance=parseFloat(item.Total_Balance);
+
                 let arrease=parseFloat(item.arrease);
                 let Total_Balance_until=parseFloat(item.Total_Balance_until);
                 let Installment_Amount=parseFloat(item.Today_installment);
@@ -195,6 +197,7 @@ function payment_model(cus_id, topic, loan_id,Today_installment) {
                 $('#today_arrese').val(arrease.toFixed(2));
                 $('#total_outstanding').val(Total_Balance_until.toFixed(2));
                 $('#total_loan_balance').val(Total_Balance.toFixed(2));
+                $('#total_savings_balance').val(savings.toFixed(2));
                 $('#ins_amount').val(Installment_Amount.toFixed(2));
                 $('#tot_paid_amount').val(Total_Paid_Amount.toFixed(2));
             });

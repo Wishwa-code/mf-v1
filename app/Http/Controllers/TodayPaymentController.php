@@ -593,8 +593,9 @@ class TodayPaymentController extends Controller
             ->join('loan_category','customer_loan.Loan_Category_idLoan_Category','=','loan_category.idLoan_Category')
             ->where('idCustomer_Loan','=',$id)->first();
         $saving=$saving_query->saving_payment;
+        $last_log = DB::table('Loan_Log')->where('Loan_ID','=',$id)->orderBy('Loan_Log_ID', 'desc')->first();
 
-        return response()->json(['item' => $loan,'saving' => $saving], 200);
+        return response()->json(['item' => $loan,'saving' => $saving,'savings'=>$last_log->Saving_Account_Balance], 200);
     }
 
     /**

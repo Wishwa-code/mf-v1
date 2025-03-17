@@ -426,6 +426,15 @@
 
                         <div class="row mb-3">
                             <div class="col-sm-4">
+                                <label for="payment_date" class="form-label fw-bold">Savings Balance</label>
+                            </div>
+                            <div class="col-sm-8">
+                                <input type="text" id="total_savings_balance" class="form-control" readonly disabled>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-sm-4">
                                 <label for="payment_date" class="form-label fw-bold">Installment Amount</label>
                             </div>
                             <div class="col-sm-8">

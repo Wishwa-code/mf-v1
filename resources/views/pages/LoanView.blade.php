@@ -287,7 +287,6 @@
                                     <th scope="col">Loan Stock</th>
                                     <th scope="col">Loan Portfolio</th>
                                     <th scope="col">Total Paid Amount</th>
-                                    <th scope="col">Scheduled Saving Amount</th>
                                     <th scope="col">Saving Balance</th>
                                     <th scope="col">Total Outstanding</th>
                                     <th scope="col">Capital Balance</th>
@@ -300,7 +299,6 @@
                                     <td>{{ number_format($loan->Amount, 2, '.', ',') }}</td>
                                     <td>{{ number_format($loan->Total_Loan_Amount, 2, '.', ',') }}</td>
                                     <td>{{ number_format($total_paid_amount, 2, '.', ',') }}</td>
-                                    <td>{{ number_format($Saving_amountSum, 2, '.', ',') }}</td>
                                     <td>{{ number_format($savingBalanceSum, 2, '.', ',') }}</td>
                                     <td>{{ number_format($loan->Balance_Amount, 2, '.', ',') }}</td>
                                     <td>{{ number_format($loan->capital_balance, 2, '.', ',') }}</td>
