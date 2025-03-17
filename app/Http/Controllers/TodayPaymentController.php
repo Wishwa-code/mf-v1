@@ -3264,21 +3264,38 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
     {
         $idCustomer_Loan = $request->idCustomer_Loan;
 
-        // Fetch data from the installments table
+        // Fetch data from the installments table (excluding Saving_balance)
         $loanDetails = DB::table('installments')
             ->where('Customer_Loan_idCustomer_Loan', $idCustomer_Loan)
             ->select(
                 DB::raw('SUM(Panalty_Balance) as Panalty_Balance'),
                 DB::raw('SUM(Interest_Balance) as Interest_Balance'),
                 DB::raw('SUM(capital_balance) as capital_balance'),
-                DB::raw('SUM(Saving_balance) as Saving_balance'),
                 DB::raw('SUM(Total_Balance) as Total_Balance')
             )
             ->first();
 
+        // Get last log entry for the loan
+        $last_log = DB::table('Loan_Log')
+            ->where('Loan_ID', '=', $idCustomer_Loan)
+            ->orderBy('Loan_Log_ID', 'desc')
+            ->first();
+
+        // Default saving balance sum
+        $savingBalanceSum = 0.00;
+
+        // If a log entry exists, use its Saving_Account_Balance
+        if ($last_log) {
+            $savingBalanceSum = $last_log->Saving_Account_Balance;
+        }
+
+        // Convert the result to an array and add savingBalanceSum
+        $loanDetailsArray = (array) $loanDetails;
+        $loanDetailsArray['Saving_balance'] = $savingBalanceSum;
 
         // Return the response as JSON
-        return response()->json($loanDetails);
+        return response()->json($loanDetailsArray);
     }
+
 
 }

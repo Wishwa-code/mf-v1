@@ -175,13 +175,16 @@ function load_payment_reciept(id) {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
         success: function (data, textStatus, xhr) {
+
             console.log(data);
             let customer = data.customer;
             let payment = data.payment;
             let loan = data.loan;
             let user = data.user;
             let chequeDetails = data.cheque_details;
+            let saving_on = data.saving_on;
 
+            let saving_amount = data.saving_amount;
             if (xhr.status === 200) {
                 if (data.point_check === "1") {
 
@@ -223,11 +226,37 @@ function load_payment_reciept(id) {
                 } else {
                     $('#cheque_section').hide(); // Hide the cheque section if payment type is not "Cheque"
                 }
+                if (saving_on === "1") {
+                    let saving_amounts = parseFloat(saving_amount) || 0; // Ensure it's a valid number
+                    let savingContainer = document.getElementById("saving_amount_container");
+
+                    if (savingContainer) {
+                        savingContainer.style.display = "block"; // Make sure it's visible
+                        savingContainer.innerHTML = `
+            <table width="100%">
+                <tr>
+                    <td><strong>Saving Amount</strong></td>
+                    <td align="right">${saving_amounts.toFixed(2)}</td>
+                </tr>
+            </table>
+        `;
+                    }
+                } else {
+                    let savingContainer = document.getElementById("saving_amount_container");
+                    if (savingContainer) {
+                        savingContainer.style.display = "none"; // Hide it if not needed
+                    }
+                }
+
 
 
                 $("#loan_amount").text(parseFloat(loan.Amount).toFixed(2));
                 $("#full_loan_amount").text(parseFloat(loan.Total_Loan_Amount).toFixed(2));
-                $("#payed_amount").text(parseFloat(payment.Amount).toFixed(2));
+                if(saving_on === "1"){
+                    $("#payed_amount").text(parseFloat(payment.Amount-saving_amount).toFixed(2));
+                }else{
+                    $("#payed_amount").text(parseFloat(payment.Amount).toFixed(2));
+                }
                 $("#capital_balance").text(parseFloat(loan.Balance_Amount).toFixed(2));
 
 

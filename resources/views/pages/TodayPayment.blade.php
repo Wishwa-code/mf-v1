@@ -851,7 +851,7 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <span class="fw-bold text-dark">Total Due Saving Amount</span>
+                                    <span class="fw-bold text-dark">Total Saving Amount</span>
                                     <div class="p-2 rounded bg-light border">
                                         <span id="total_due_saving_amount" class="fw-bold text-dark"></span>
                                     </div>
