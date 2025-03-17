@@ -2741,8 +2741,15 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
         $panelty_balance = DB::table('installments')->where('Customer_Loan_idCustomer_Loan', '=', $customer_payment->Customer_Loan_idCustomer_Loan)->sum('Panalty_Balance');
         $tot_balance = DB::table('installments')->where('Customer_Loan_idCustomer_Loan', '=', $customer_payment->Customer_Loan_idCustomer_Loan)->sum('Total_Balance');
 
+        $loan_category=tableWithBranch('loan_category')->where('idLoan_Category','=',$loan->Loan_Category_idLoan_Category)->first();
 
-        return response()->json(['tot_balance'=>$tot_balance,'panelty_balance'=>$panelty_balance,'payment' => $customer_payment, 'cheque_details' => $cheque_details, 'loan' => $loan, 'customer' => $customer, 'user' => $user, 'points_to_add' => $points_to_add, 'point_check' => $company->points], 200);
+        $saving_amount="0.00";
+        if ($loan_category->saving_payment=="1") {
+            $last_log = DB::table('Loan_Log')->where('Type_ID','=',$id)->orderBy('Loan_Log_ID', 'desc')->first();
+            $saving_amount=$last_log->Savings_Payment;
+        }
+
+        return response()->json(['saving_amount'=>$saving_amount,'saving_on'=>$loan_category->saving_payment,'tot_balance'=>$tot_balance,'panelty_balance'=>$panelty_balance,'payment' => $customer_payment, 'cheque_details' => $cheque_details, 'loan' => $loan, 'customer' => $customer, 'user' => $user, 'points_to_add' => $points_to_add, 'point_check' => $company->points], 200);
     }
 
 

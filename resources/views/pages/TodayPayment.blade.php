@@ -189,6 +189,7 @@
     .table th{
         padding: 10px !important; /* Adjust the padding as needed */
     }
+
 </style>
 
 @endsection
@@ -985,8 +986,11 @@
                             <span class="amount" id="full_loan_amount">10,000.00</span>
                         </div>
                         <div class="item">
-                            <span class="description">Payed Amount</span>
+                            <span class="description" for="payed_amount">Payed Amount</span>
                             <span class="amount"  id="payed_amount">1,000.00</span>
+                        </div>
+                        <div class="item" id="saving_amount_container">
+
                         </div>
                     </div>
                     <hr>
@@ -1203,7 +1207,6 @@
         function load_payment_reciept(id){
             // document.getElementById('issue-loan-modal').style.display = 'none';
             // document.getElementById('issue-loan-modal_2').style.display = 'none';
-
             openModal();
             $('.btn-success').prop('disabled', true);
 
@@ -1220,12 +1223,13 @@
                     let loan = data.loan;
                     let user = data.user;
                     let chequeDetails = data.cheque_details;
+                    let saving_on = data.saving_on;
+                    let saving_amount = data.saving_amount;
+
                     if (xhr.status === 200) {
                         if (data.point_check==="1"){
-
                             $('#loyalty_section').show();
                         }else{
-
                             $('#loyalty_section').hide();
                         }
                         $("#Inv_number").text("Receipt No."+payment.idCustomer_Payments);
@@ -1244,6 +1248,25 @@
                             // Optionally hide the sections if no penalty balance exists
                             $(".payment-info.balance").hide();
                         }
+
+                        if (saving_on === "1") {
+                            let saving_amounts = parseFloat(saving_amount) || 0; // Ensures it's a valid number
+                            document.getElementById("saving_amount_container").innerHTML = `
+        <table width="100%">
+            <tr>
+                <td><strong>Saving Amount</strong></td>
+                <td align="right">${saving_amounts.toFixed(2)}</td>
+            </tr>
+        </table>
+    `;
+                            // document.querySelector('.description[for="payed_amount"]').textContent = "Installment Amount";
+                        } else {
+                            document.getElementById("saving_amount_container").style.display = "none";
+                            // document.querySelector('.description[for="payed_amount"]').textContent = "Payed Amount";
+                        }
+
+
+
 
 
                         if (payment.Payment_type === "Cheque") {
@@ -1265,7 +1288,12 @@
 
                         $("#loan_amount").text(parseFloat(loan.Amount).toFixed(2));
                         $("#full_loan_amount").text(parseFloat(loan.Total_Loan_Amount).toFixed(2));
-                        $("#payed_amount").text(parseFloat(payment.Amount).toFixed(2));
+
+                        if(saving_on === "1"){
+                            $("#payed_amount").text(parseFloat(payment.Amount-saving_amount).toFixed(2));
+                        }else{
+                            $("#payed_amount").text(parseFloat(payment.Amount).toFixed(2));
+                        }
                         $("#capital_balance").text(parseFloat(loan.Balance_Amount).toFixed(2));
                         $("#payment_type_view").text(payment.Payment_type);
 
