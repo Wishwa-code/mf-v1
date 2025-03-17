@@ -590,7 +590,12 @@
                 body: data.slice(1),
                 startY: 20,
                 theme: 'grid',
-                styles: { halign: 'center' },
+                styles: {
+                    halign: 'center',
+                    lineWidth: 0.5,
+                    lineColor: [0, 0, 0] // Black table borders
+                },
+                headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] }, // Dark header for better visibility
             });
 
             pdf.save('Fund_Request.pdf');
@@ -638,7 +643,10 @@
                     halign: 'center',
                     valign: 'middle',
                     fontSize: 10,
+                    lineColor: [0, 0, 0], // Black table borders
+                    lineWidth: 0.4  // Increase border thickness
                 },
+                headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] }, // Dark header for better visibility
                 columnStyles: {
                     0: { cellWidth: 10 },   // #
                     1: { cellWidth: 35 },  // Customer Number
@@ -693,7 +701,10 @@
                     halign: 'center',
                     valign: 'middle',
                     fontSize: 10,
+                    lineColor: [0, 0, 0],  // Fully black borders
+                    lineWidth: 0.4  // Increase border thickness
                 },
+                headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] }, // Dark header for better visibility
                 columnStyles: {
                     0: { cellWidth: 10 },   // #
                     1: { cellWidth: 35 },  // Customer Number
