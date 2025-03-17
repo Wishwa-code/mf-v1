@@ -471,8 +471,11 @@
                             <span class="amount" id="full_loan_amount">10,000.00</span>
                         </div>
                         <div class="item">
-                            <span class="description">Payed Amount</span>
+                            <span class="description" for="payed_amount">Payed Amount</span>
                             <span class="amount"  id="payed_amount">1,000.00</span>
+                        </div>
+                        <div class="item" id="saving_amount_container">
+
                         </div>
 
                     </div>
@@ -549,7 +552,7 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
     <script src="../JS/validate.js"></script>
-    <script src="../JS/re_payment.js?n=16"></script>
+    <script src="../JS/re_payment.js?n=17"></script>
     <script>
 
         $(document).ready(function() {
