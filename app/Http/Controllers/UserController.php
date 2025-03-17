@@ -90,6 +90,7 @@ class UserController extends Controller
                     'type' => "Cash and Bank",
                     'cashflow' => "Non Applicable",
                     'User' => $user->id,
+                    'branch_id' => $request->has('branch_access'),
                 ];
 
                 if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $request->account_number)->exists()) {
@@ -107,6 +108,7 @@ class UserController extends Controller
                         'Debit' => "0.00",
                         'Balance' => "0.00",
                         'User' => $user->id,
+                        'branch_id' => $request->has('branch_access'),
                     ];
 
 // Insert the BankLog entry using the helper function
@@ -789,8 +791,6 @@ class UserController extends Controller
             'tp' => 'required',
         ]);
 
-        Log::info('Updating user:', $request->all());  // Log the request data for debugging
-
         // Use DB::table to update the user record in the 'users' table
         $updated = DB::table('user')
             ->where('email', $request->email) // Find the user by id
@@ -805,6 +805,28 @@ class UserController extends Controller
                 'branch_id' => $request->branch,
                 'branch_access' => $request->branch_access ? 1 : 0,
             ]);
+
+//        $user = DB::table('user')->where('email', $request->email)->first();
+//        if ($user){
+//            $user_id=$user->id;
+//            Log::info($user_id);
+//            if ($user->collector=="1"){
+//                DB::table('company_bank_accounts')
+//                    ->where('Account_No',(string) $user_id) // Find the user by id
+//                    ->update([
+//                        'branch_id' => $request->branch,
+//                    ]);
+//                $bank = DB::table('company_bank_accounts')->where('Account_No', $user_id)->first();
+//                if ($bank){
+//                    $bank_id=$bank->Idbank;
+//                    DB::table('company_bank_has_log')
+//                        ->where('Bank_Account_Id', $bank_id) // Find the user by id
+//                        ->update([
+//                            'branch_id' => $request->branch,
+//                        ]);
+//                }
+//            }
+//        }
 
         // Check if the update was successful and return response
         if ($updated) {
