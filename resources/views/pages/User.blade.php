@@ -338,7 +338,7 @@
                                             </div>
 
                                             <!-- Branch -->
-                                            <div class="form-group">
+                                            <div class="form-group" hidden>
                                                 <label for="editBranch">Branch</label>
                                                 <select class="form-control" id="editBranch" name="branch">
                                                     @foreach($branch as $item)

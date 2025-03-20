@@ -262,6 +262,7 @@
                     },
                     success: function (response) {
                         responseData = response; // Store response globally
+                        console.log(responseData);
                         generateReport($("#report_type").val()); // Generate table based on selected report type
                     },
                     error: function (xhr, status, error) {

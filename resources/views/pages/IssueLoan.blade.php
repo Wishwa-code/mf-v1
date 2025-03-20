@@ -133,7 +133,7 @@
                                         </select>
                                     </div>
 
-                                    <div class="mb-3" id="customer_feild">
+                                    <div class="mb-3" id="customer_feild" hidden>
                                         <label for="simpleinput" class="form-label">Loan Number</label>
                                         <input type="text" id="type_loan_number" class="form-control">
                                     </div>
@@ -159,10 +159,10 @@
                                         </select>
                                     </div>
 
-                                    <div class="mb-3" id="leasing_feild">
+                                    <div class="mb-3" id="leasing_feild" hidden>
                                         <label for="simpleinput" class="form-label">Select Type</label>
                                         <select class="form-control"  id="lease_type" onchange="check_leasing(this.value)">
-                                            <option id="0">Cash</option>
+                                            <option id="0" selected>Cash</option>
                                             <option id="1">Leasing</option>
 
                                         </select>

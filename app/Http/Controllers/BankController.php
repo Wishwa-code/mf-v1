@@ -277,11 +277,15 @@ class BankController extends Controller
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
             ->sum('Panelty_Payment');
 
-        $other_chargers = tableWithBranch('expences')
-            ->whereBetween('date', [$date_from_2, $date_to_2])
-            ->where('reason', 'like', '%Other loan charges for loan number:%')
-            ->where('type', '=', 'Income')
-            ->sum('amount');
+
+
+        $loanQuery = tableWithBranch('loan_other_charges', 'loan_other_charges')
+            ->join('customer_loan', 'customer_loan.idCustomer_Loan', '=', 'loan_other_charges.Customer_Loan_idCustomer_Loan')
+            ->whereBetween('customer_loan.Date_Time', [$date_from, $date_to])
+            ->where('customer_loan.Status', '=', '0');
+
+        // Get the sum of Amount
+        $other_chargers = $loanQuery->sum('loan_other_charges.Amount');
 
         $total_income = tableWithBranch('expences')
             ->whereBetween('date', [$date_from_2, $date_to_2])
@@ -298,7 +302,7 @@ class BankController extends Controller
                 'company_bank_accounts.Bank_Name',
                 DB::raw("SUM(COALESCE(company_bank_has_log.Credit, 0)) as total_credit"),
                 DB::raw("SUM(COALESCE(company_bank_has_log.Debit, 0)) as total_debit"),
-                DB::raw("(SUM(COALESCE(company_bank_has_log.Credit, 0)) - SUM(COALESCE(company_bank_has_log.Debit, 0))) as balance_difference")
+                DB::raw("(SUM(COALESCE(company_bank_has_log.Debit, 0)) - SUM(COALESCE(company_bank_has_log.Credit, 0))) as balance_difference")
             )
             ->groupBy('company_bank_accounts.Bank_Name')
             ->havingRaw("balance_difference != 0") // Exclude zero balance difference
