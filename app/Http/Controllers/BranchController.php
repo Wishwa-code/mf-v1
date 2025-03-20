@@ -388,6 +388,11 @@ class BranchController extends Controller
         // Update the session with the new branch ID
         session(['branch_id' => $request->branch_id]);
 
+        $userController = new UserController();
+
+        // Call the create_panelty function
+        $userController->create_panelty();
+
 
         return response()->json(['success' => true, 'message' => 'Branch updated successfully']);
     }

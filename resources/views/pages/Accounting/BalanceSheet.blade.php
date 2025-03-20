@@ -2,6 +2,10 @@
 
 @section('head')
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
+
+    <!-- DataTable Buttons CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.3/css/buttons.dataTables.min.css">
     <style>
         .table thead th {
             background-color: #007bff;
@@ -258,6 +262,7 @@
                     <table id="financialReportTable" class="table table-striped">
                         <thead>
                         <tr>
+                            <th style="text-align: left">Id</th>
                             <th style="text-align: left">Type</th>
                             <th style="text-align: left">Description</th>
                             <th style="text-align: right">Debit Amount</th>
@@ -284,8 +289,44 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.20/jspdf.plugin.autotable.min.js"></script>
+    <!-- Include SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <!-- DataTable JS -->
+    <script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+
+    <!-- DataTable Buttons JS -->
+    <script src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
+
+    <!-- JS for Excel export (from xlsx library) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.3/js/buttons.html5.min.js"></script>
     <script>
         $(document).ready(function () {
+
+            $('#financialReportTable').DataTable({
+                destroy: true,  // Destroy any existing DataTable instance
+                dom: 'Bfrtip',  // Adds the button container to the top of the table
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        text: 'Download Excel',
+                        title: 'Ledger Details',
+                        className: 'btn btn-success'
+                    }
+                ],
+                order: [[0, 'asc']], // Sort by the first column (index 0) in ascending order
+                columnDefs: [
+                    {
+                        orderable: true,  // Enable sorting for the first column
+                        targets: 0       // First column (index 0)
+                    },
+                    {
+                        orderable: false,  // Disable sorting for all other columns
+                        targets: '_all'   // Targets all columns except the first one
+                    }
+                ]
+            });
+
             // Export to Excel
             $("#btnExportExcel").click(function (e) {
                 e.preventDefault();
@@ -330,7 +371,12 @@
             $('#financialReportModal').modal('show'); // Open modal
 
             // Clear previous data
-            $('#financialReportTable tbody').empty();
+            var financialReportTable = $('#financialReportTable');
+
+            // Destroy any existing DataTable instance to avoid reinitialization error
+            if ($.fn.dataTable.isDataTable(financialReportTable)) {
+                financialReportTable.DataTable().clear().destroy(); // Clear and destroy the old DataTable instance
+            }
 
             var date_from = $("#date_from").val();
             var date_to = $("#date_to").val();
@@ -342,34 +388,60 @@
                     account_id: idbank,
                     date_from: date_from,
                     date_to: date_to
-                }, headers: {
+                },
+                headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }, success: function (data) {
-
+                },
+                success: function (data) {
+                    // Populate the table with new data
                     data.forEach(function (item) {
                         var row = `
                 <tr>
+                    <td style="text-align: left">${item.id}</td>
                     <td style="text-align: left">${item.Type || 'N/A'}</td>
                     <td style="text-align: left">${item.Description || 'N/A'}</td>
                     <td style="text-align: right">${formatNumber(parseFloat(item.Debit).toFixed(2) || 0)}</td>
                     <td style="text-align: right">${formatNumber(parseFloat(item.Credit).toFixed(2) || 0)}</td>
                     <td style="text-align: right">${formatNumber(parseFloat(item.Balance).toFixed(2) || 0)}</td>
                     <td style="text-align: right">${item.Account_Name ?? '-'}</td>
-<td style="text-align: right">${item.reconsilation_status || 'N/A'}</td>
-<td style="text-align: right">${item.Date_Time || 'N/A'}</td>
+                    <td style="text-align: right">${item.reconsilation_status || 'N/A'}</td>
+                    <td style="text-align: right">${item.Date_Time || 'N/A'}</td>
                 </tr>
             `;
                         $('#financialReportTable tbody').append(row);
                     });
-                }
-                ,
+
+                    $('#financialReportTable').DataTable({
+                        destroy: true,  // Destroy any existing DataTable instance
+                        dom: 'Bfrtip',  // Adds the button container to the top of the table
+                        buttons: [
+                            {
+                                extend: 'excelHtml5',
+                                text: 'Download Excel',
+                                title: 'Ledger Details',
+                                className: 'btn btn-success'
+                            }
+                        ],
+                        order: [[0, 'asc']], // Sort by the first column (index 0) in ascending order
+                        columnDefs: [
+                            {
+                                orderable: true,  // Enable sorting for the first column
+                                targets: 0       // First column (index 0)
+                            },
+                            {
+                                orderable: false,  // Disable sorting for all other columns
+                                targets: '_all'   // Targets all columns except the first one
+                            }
+                        ]
+                    });
+                },
                 error: function (xhr) {
                     console.error("AJAX error:", xhr.responseText);
                     alert("Error fetching financial report. Check console for details.");
                 }
             });
-
         }
+
         // Function to format numbers with commas
         function formatNumber(num) {
             return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");

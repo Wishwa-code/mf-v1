@@ -22,6 +22,49 @@
         font-size: 1.8rem; /* Increase the font size for the time */
     }
 
+    <?php
+        $query = "SELECT * FROM company where branch_id='" . session('branch_id') . "'";
+        $banner = DB::select($query);
+        ?>
+        @foreach($banner as $item)
+            @if($item->banner_status==1)
+                .installment-banner {
+                background-color: #ff9800; /* Orange background */
+                color: #ffffff; /* White text */
+                text-align: center;
+                font-size: 16px;
+                font-weight: bold;
+                padding: 10px;
+                position: fixed; /* Ensures it's always on top */
+                width: 100%;
+                top: 0;
+                left: 0;
+                z-index: 1050; /* Higher than navbar */
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .navbar-custom {
+                margin-top: 40px; /* Push navbar down so it's not hidden under the banner */
+            }
+
+            .installment-banner p {
+                margin: 0;
+                flex: 1;
+            }
+
+            .installment-banner a {
+                color: #fff;
+                text-decoration: underline;
+            }
+
+            @endif
+        @endforeach
+
+
+
+
     /* Ensure alignment with other elements */
     .navbar-custom .topbar {
         padding: 0.5rem 2rem; /* Adjust padding as needed */
@@ -284,6 +327,21 @@
         </div>
     </div>
 </div>
+
+<?php
+$query = "SELECT * FROM company where branch_id='" . session('branch_id') . "'";
+$banner = DB::select($query);
+?>
+@foreach($banner as $item)
+    @if($item->banner_status==1)
+        <div class="installment-banner">
+            <p>
+                📢 **Reminder:** {{$item->banner}}
+            </p>
+        </div>
+    @endif
+@endforeach
+
 
 
 <div class="navbar-custom">

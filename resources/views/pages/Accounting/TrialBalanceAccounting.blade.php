@@ -4,13 +4,11 @@
     <!-- Select2 CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <!-- jQuery (must be before DataTables) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
 
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <!-- DataTable Buttons CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.3/css/buttons.dataTables.min.css">
 
 
     <style>
@@ -128,6 +126,7 @@
                     <table id="financialReportTable" class="table table-striped">
                         <thead>
                         <tr>
+                            <th>Id</th>
                             <th>Type</th>
                             <th>Description</th>
                             <th>Debit Amount</th>
@@ -178,7 +177,20 @@
     </div>
 @endsection
 @section('script')
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.20/jspdf.plugin.autotable.min.js"></script>
+    <!-- Include SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <!-- DataTable JS -->
+    <script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+
+    <!-- DataTable Buttons JS -->
+    <script src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
+
+    <!-- JS for Excel export (from xlsx library) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.3/js/buttons.html5.min.js"></script>
     <script>
         $(document).ready(function () {
             // Function to download table data as Excel
@@ -191,21 +203,34 @@
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 }
             });
-            $.getScript("https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js", function() {
-                console.log("✅ DataTables manually loaded.");
-            });
 
-
-            // Initialize DataTable with pagination
             $('#financialReportTable').DataTable({
-                paging: true,             // Enables pagination
-                lengthChange: true,       // Allows the user to change the number of records per page
-                searching: true,          // Enables search functionality
-                ordering: true,           // Enables column sorting
-                info: true,               // Shows table information
-                autoWidth: false,         // Disables automatic column width adjustment
-                responsive: true          // Makes the table responsive
+                destroy: true,  // Destroy any existing DataTable instance
+                dom: 'Bfrtip',  // Adds the button container to the top of the table
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        text: 'Download Excel',
+                        title: 'Ledger Details',
+                        className: 'btn btn-success'
+                    }
+                ],
+                order: [[0, 'asc']], // Sort by the first column (index 0) in ascending order
+                columnDefs: [
+                    {
+                        orderable: true,  // Enable sorting for the first column
+                        targets: 0       // First column (index 0)
+                    },
+                    {
+                        orderable: false,  // Disable sorting for all other columns
+                        targets: '_all'   // Targets all columns except the first one
+                    }
+                ]
             });
+
+
+
+
 
         });
         // Function to format numbers with commas
@@ -270,6 +295,7 @@
                                 totalCredit += parseFloat(totalCreditAmount);
                             }
                         });
+
                     }
 
                     // Update the totals for Debit and Credit
@@ -305,10 +331,9 @@
                     date_to: date_to
                 },
                 success: function (data) {
-
                     console.log(data);
 
-                    var financialReportTable = $('#financialReportTable tbody');
+                    var financialReportTable = $('#financialReportTable').DataTable();
 
                     // Get account details from the UI
                     var accountName = $(`tr[data-account-id='${accountId}'] td:first`).text();
@@ -318,34 +343,38 @@
                     $('#financialReportModalLabel').html(`${accountName} | <strong>${accountType}</strong>`);
 
                     // Clear existing data
-                    financialReportTable.empty();
+                    financialReportTable.clear();
 
                     // Filter data for the selected account only
                     var filteredData = data.filter(item => item.Bank_Account_Id == accountId);
 
                     filteredData.forEach(function (item) {
-                        var row = `
-                <tr>
-                    <td>${item.Type || 'N/A'}</td>
-                    <td>${item.Description || 'N/A'}</td>
-                    <td>${formatNumber(parseFloat(item.Debit).toFixed(2) || 0)}</td>
-                    <td>${formatNumber(parseFloat(item.Credit).toFixed(2) || 0)}</td>
-                    <td>${formatNumber(parseFloat(item.Balance).toFixed(2) || 0)}</td>
-                    <td style="text-align: right">${item.Account_Name || 'N/A'}</td>
-<td style="text-align: right">${item.reconsilation_status || 'N/A'}</td>
-<td>${item.Date_Time || 'N/A'}</td>
-                </tr>
-            `;
-                        financialReportTable.append(row);
+                        var row = [
+                            item.id,
+                            item.Type || 'N/A',
+                            item.Description || 'N/A',
+                            formatNumber(parseFloat(item.Debit).toFixed(2) || 0),
+                            formatNumber(parseFloat(item.Credit).toFixed(2) || 0),
+                            formatNumber(parseFloat(item.Balance).toFixed(2) || 0),
+                            item.Account_Name || 'N/A',
+                            item.reconsilation_status || 'N/A',
+                            item.Date_Time || 'N/A'
+                        ];
+                        financialReportTable.row.add(row);
                     });
-                }
-                ,
+
+                    // Redraw the table
+                    financialReportTable.draw();
+                },
                 error: function (xhr) {
                     console.error("AJAX error:", xhr.responseText);
                     alert("Error fetching financial report. Check console for details.");
                 }
             });
         }
+
+
+
 
 
 

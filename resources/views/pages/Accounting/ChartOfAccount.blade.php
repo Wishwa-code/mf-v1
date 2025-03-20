@@ -384,6 +384,7 @@
                 <th>Type</th>
                 <th>Group</th>
                 <th>Cash Flow Type</th>
+                <th>Acc Balance</th>
                 <th>Created As</th>
                 <th>Ledger</th>
             </tr>
@@ -401,6 +402,7 @@
                 <th>Type</th>
                 <th>Group</th>
                 <th>Cash Flow Type</th>
+                <th>Acc Balance</th>
                 <th>Created As</th>
                 <th>Ledger</th>
             </tr>
@@ -418,6 +420,7 @@
                 <th>Type</th>
                 <th>Group</th>
                 <th>Cash Flow Type</th>
+                <th>Acc Balance</th>
                 <th>Created As</th>
                 <th>Ledger</th>
             </tr>
@@ -435,6 +438,7 @@
                 <th>Type</th>
                 <th>Group</th>
                 <th>Cash Flow Type</th>
+                <th>Acc Balance</th>
                 <th>Created As</th>
                 <th>Ledger</th>
             </tr>
@@ -452,6 +456,7 @@
                 <th>Type</th>
                 <th>Group</th>
                 <th>Cash Flow Type</th>
+                <th>Acc Balance</th>
                 <th>Created As</th>
                 <th>Ledger</th>
             </tr>
@@ -469,6 +474,7 @@
                 <th>Type</th>
                 <th>Group</th>
                 <th>Cash Flow Type</th>
+                <th>Acc Balance</th>
                 <th>Created As</th>
                 <th>Ledger</th>
             </tr>
@@ -582,6 +588,7 @@
                 <table  id="financialReportTable" class="table">
                     <thead>
                     <tr>
+                        <th>Id</th>
                         <th>Type</th>
                         <th>Description</th>
                         <th>Debit Amount</th>
@@ -628,8 +635,13 @@
                         title: 'Ledger Details', // The name of the table in the exported Excel file
                         className: 'btn btn-success' // Button styling (optional)
                     }
+                ],
+                order: [[0, 'asc']],  // Sort by the first column (ascending order)
+                columnDefs: [
+                    { orderable: false, targets: '_all' } // Disable sorting for all columns except the first one
                 ]
             });
+
             // Set up AJAX headers for CSRF
             $.ajaxSetup({
                 headers: {
@@ -764,7 +776,7 @@
                     data.forEach((item) => {
                         // Check if Bank_Type starts with "System_default_"
                         const bankType = item.Bank_Type.startsWith("System_default_") ? "System Default" : item.Bank_Type;
-
+                        let balance=parseFloat(item.Account_Balance).toFixed(2);
                         const ledger = `<a href="#" class="view-btn"
         data-account="${item.Idbank}"
         data-account-name="${item.Account_Name}"
@@ -778,6 +790,7 @@
             <td>${item.type}</td>
             <td>${item.acc_type_group}</td>
             <td>${item.cashflow ? item.cashflow : '-'}</td>
+            <td style="text-align: right">${balance}</td> <!-- Updated -->
             <td>${bankType}</td> <!-- Updated -->
             <td>${ledger}</td>
         </tr>`;
@@ -1008,6 +1021,7 @@
                         response.forEach((item) => {
                             const row = `
                         <tr>
+                            <td>${item.id}</td>
                             <td>${item.Type}</td>
                             <td>${item.Description}</td>
                             <td>${parseFloat(item.Debit || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>

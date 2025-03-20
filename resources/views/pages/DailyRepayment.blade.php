@@ -162,6 +162,21 @@
 
                                 <div class="col-lg-3">
                                     <div class="mb-3">
+                                        <label for="center_details" class="form-label">Group</label>
+                                        <select class="form-control select2" id="group_details" name="group_details">
+                                            <option value="0">All</option>
+                                            @foreach ($group as $item)
+                                                <option value="{{ $item->idCustomer_Group }}"
+                                                        {{ $item->idCustomer_Group == $group_details ? 'selected' : '' }}>
+                                                    {{ $item->Group_No }}-{{ $item->Name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
                                         <button type="submit" class="btn btn-danger"><i class="bi bi-search"></i> Search</button>
                                     </div>
                                 </div>

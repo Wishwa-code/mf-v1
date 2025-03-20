@@ -28,15 +28,18 @@ class TransactionController extends Controller
     public function create(Request $request)
     {
         $center = tableWithBranch('center')->get();
+        $group = tableWithBranch('customer_group')->get();
 
         // Check if $center is empty
         if ($center->isEmpty()) {
             // Handle the case when the center table has no values
             $center_details = null; // Or any default value you want to assign
+            $group_details = null; // Or any default value you want to assign
             $grouped_loans = array(); // Or any default value you want to assign
             return view('pages.DailyRepayment', compact('center', 'grouped_loans','center_details'));
         } else {
             // If $center is not empty, set the default center value
+            $group_details = $request->group_details ?? $group[0]->idCustomer_Group;
             $center_details = $request->center_details ?? $center[0]->idCenter;
         }
 
@@ -98,12 +101,33 @@ class TransactionController extends Controller
             $loanQuery->where('center.idCenter', '=', $center_details);
         }
 
+        if ($group_details != '0') {
+            $loanQuery->where('customer_group.idCustomer_Group', '=', $group_details);
+        }
+
         $loan = $loanQuery->get();
 
         // Group data by 'group_name'
         $grouped_loans = $loan->groupBy('group_name');
 
-        return view('pages.DailyRepayment', compact('center', 'grouped_loans','center_details'));
+        // Convert the grouped loans array to an array (if not already)
+        $grouped_loans = is_array($grouped_loans) ? $grouped_loans : $grouped_loans->toArray();
+
+// Sort the groups based on the numeric part of the key
+        uksort($grouped_loans, function ($a, $b) {
+            // Extract the numeric portion of the group names
+            preg_match('/\d+/', $a, $matchesA);
+            preg_match('/\d+/', $b, $matchesB);
+
+            $numA = isset($matchesA[0]) ? (int)$matchesA[0] : 0;
+            $numB = isset($matchesB[0]) ? (int)$matchesB[0] : 0;
+
+            return $numA <=> $numB; // Ascending order
+        });
+
+
+
+        return view('pages.DailyRepayment', compact('center','group', 'grouped_loans','center_details','group_details'));
     }
 
 
