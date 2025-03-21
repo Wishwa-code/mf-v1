@@ -78,11 +78,14 @@
                                                                     data-bs-target="#standard-modal" onclick="view_log({{$item->Idbank}}, '{{$item->Bank_Name}}', '{{$item->Account_Name}}', '{{$item->Account_No}}')">
                                                                 <i class="bi bi-eye fs-4"></i>
                                                             </button>
-                                                            <button type="button" class="btn btn-success" data-bs-toggle="modal"
-                                                                    style="background-color: white; color: #5691FF; border:none"
-                                                                    data-bs-target="#standard-modal-2" onclick="openTransferModal({{$item->Idbank}}, {{$item->Account_Balance}})">
-                                                                <i class="bi bi-rewind-circle fs-4"></i>
-                                                            </button>
+                                                            @if($collector!="1")
+                                                                <button type="button" class="btn btn-success" data-bs-toggle="modal"
+                                                                        style="background-color: white; color: #5691FF; border:none"
+                                                                        data-bs-target="#standard-modal-2" onclick="openTransferModal({{$item->Idbank}}, {{$item->Account_Balance}})">
+                                                                    <i class="bi bi-rewind-circle fs-4"></i>
+                                                                </button>
+                                                            @endif
+
                                                         </td>
                                                     </tr>
                                                 @endforeach

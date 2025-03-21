@@ -48,8 +48,13 @@ class BankController extends Controller
         $company_banks = tableWithBranch('company_bank_accounts')
             ->where('company_bank_accounts.Bank_Type','=','Bank')
             ->get();
+        $user = DB::table('user')->where('id', session('userid'))->first();
+        $collector=0;
+        if($user){
+            $collector=$user->collector;
+        }
 
-        return view('pages.CollectorAccount',compact('banks','company_banks'));
+        return view('pages.CollectorAccount',compact('banks','company_banks','collector'));
     }
 
     /**
