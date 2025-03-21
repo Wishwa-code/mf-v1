@@ -7,30 +7,31 @@
 
 
 @section('content')
-    <div class="container-fluid">
+    @if($dashboard==1)
+        <div class="container-fluid">
 
-        <!-- start page title -->
-        <div class="row">
-            <div class="col-12">
-                <div class="page-title-box">
-                    <div class="page-title-right">
-                        <ol class="breadcrumb m-0">
-                            <li class="breadcrumb-item"><a href="javascript: void(0);">Dashboards</a></li>
-                            <li class="breadcrumb-item active">Welcome!</li>
-                        </ol>
+            <!-- start page title -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="page-title-box">
+                        <div class="page-title-right">
+                            <ol class="breadcrumb m-0">
+                                <li class="breadcrumb-item"><a href="javascript: void(0);">Dashboards</a></li>
+                                <li class="breadcrumb-item active">Welcome!</li>
+                            </ol>
+                        </div>
+                        <h4 class="page-title">Welcome!</h4>
+                        {{--                    <form action="{{route('loan_settlement.capitalbalance')}}" method="post">--}}
+                        {{--                        @csrf--}}
+                        {{--                        <input type="submit" value="test capital">--}}
+                        {{--                    </form>--}}
+                        <br>
                     </div>
-                    <h4 class="page-title">Welcome!</h4>
-{{--                    <form action="{{route('loan_settlement.capitalbalance')}}" method="post">--}}
-{{--                        @csrf--}}
-{{--                        <input type="submit" value="test capital">--}}
-{{--                    </form>--}}
-                    <br>
                 </div>
             </div>
-        </div>
-        <!-- end page title -->
+            <!-- end page title -->
 
-{{--        @if($dashboard==1)--}}
+            {{--        @if($dashboard==1)--}}
             <div class="row">
                 <div class="col-xxl-3 col-sm-6">
                     <a href="/pendingloan">
@@ -163,105 +164,106 @@
             </div>
 
 
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <h4 class="header-title mb-4">Monthly Revenue</h4>
-                        <div id="monthly-revenue-chart"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        @if($shortcut_count>0)
             <div class="row">
                 <div class="col-12">
-                    <div class="page-title-box">
-                        <h4 class="page-title">Shortcuts</h4>
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="header-title mb-4">Monthly Revenue</h4>
+                            <div id="monthly-revenue-chart"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-        @endif
-        @php
-            // New set of vibrant colors
-            $colors = ['#FF5733', '#3498DB', '#9B59B6', '#E74C3C', '#1ABC9C', '#F39C12', '#2ECC71', '#D35400'];
-        @endphp
 
-        <style>
-            .shortcut-card {
-                transition: transform 0.2s ease-in-out, background-color 0.3s ease-in-out;
-                padding: 8px; /* Reduced padding */
-                border-radius: 8px; /* Slightly smaller rounded corners */
-            }
-            .shortcut-card:hover {
-                filter: brightness(85%);
-                transform: scale(1.03); /* Smaller zoom effect */
-            }
-            .shortcut-card i {
-                font-size: 1.5rem !important; /* Reduce icon size */
-            }
-            .shortcut-card small {
-                font-size: 0.8rem !important; /* Reduce text size */
-            }
-        </style>
-
-        <div class="row g-1"> {{-- Reduced spacing --}}
-            @foreach($shortcut as $index => $item)
-                @php
-                    $url = "/";
-                    $name = "";
-                    $icon = "";
-                    $bgColor = $colors[$index % count($colors)];
-                @endphp
-
-                @if($item->name === "Add_Customer")
-                    @php $url = "/customers"; $name = "Add Customer"; $icon = "fas fa-user-plus"; @endphp
-                @elseif($item->name === "View_Customer")
-                    @php $url = "/showcustomers"; $name = "View Customer"; $icon = "fas fa-users"; @endphp
-                @elseif($item->name === "Assign_Customers_to_group")
-                    @php $url = "/customergroupassign"; $name = "Add to Group"; $icon = "fas fa-user-friends"; @endphp
-                @elseif($item->name === "View_Products")
-                    @php $url = "/viewproduct"; $name = "View Product"; $icon = "fas fa-box-open"; @endphp
-                @elseif($item->name === "Pending_Loans")
-                    @php $url = "/pendingloan"; $name = "Pending Loans"; $icon = "fas fa-hourglass-half"; @endphp
-                @elseif($item->name === "Current_Loans")
-                    @php $url = "/payment_step_1"; $name = "Current Loans"; $icon = "fas fa-hand-holding-usd"; @endphp
-                @elseif($item->name === "Loan_In_arrears")
-                    @php $url = "/latePayment"; $name = "Loan In Arrears"; $icon = "fas fa-exclamation-triangle"; @endphp
-                @elseif($item->name === "Add_Repayment")
-                    @php $url = "/payment"; $name = "Add Repayment"; $icon = "fas fa-money-check-alt"; @endphp
-                @elseif($item->name === "Repayment_details")
-                    @php $url = "/viewpayment"; $name = "View Repayment"; $icon = "fas fa-file-invoice-dollar"; @endphp
-                @elseif($item->name === "Collector_wise_collections")
-                    @php $url = "/collection"; $name = "Agent Collection"; $icon = "fas fa-user-tie"; @endphp
-                @elseif($item->name === "Loan_Calculator")
-                    @php $url = "/calculator"; $name = "Loan Calculator"; $icon = "fas fa-calculator"; @endphp
-                @elseif($item->name === "Add_Expenses")
-                    @php $url = "/expenses"; $name = "Add Expenses"; $icon = "fas fa-receipt"; @endphp
-                @elseif($item->name === "Add_Income")
-                    @php $url = "/income"; $name = "Add Income"; $icon = "fas fa-hand-holding-usd"; @endphp
-                @endif
-
-                <div class="col-lg-2 col-md-3 col-sm-4 col-6"> {{-- Compact grid --}}
-                    <a href="{{ $url }}" class="text-decoration-none">
-                        <div class="card shadow-sm text-center border-0 shortcut-card"
-                             style="background-color: {{ $bgColor }};">
-                            <div class="card-body p-2 d-flex flex-column align-items-center">
-                                <i class="{{ $icon }} text-white"></i> {{-- Smaller icon --}}
-                                <small class="text-white mt-1 fw-bold">{{ $name }}</small> {{-- Smaller text --}}
-                            </div>
+            @if($shortcut_count>0)
+                <div class="row">
+                    <div class="col-12">
+                        <div class="page-title-box">
+                            <h4 class="page-title">Shortcuts</h4>
                         </div>
-                    </a>
+                    </div>
                 </div>
-            @endforeach
+            @endif
+            @php
+                // New set of vibrant colors
+                $colors = ['#FF5733', '#3498DB', '#9B59B6', '#E74C3C', '#1ABC9C', '#F39C12', '#2ECC71', '#D35400'];
+            @endphp
+
+            <style>
+                .shortcut-card {
+                    transition: transform 0.2s ease-in-out, background-color 0.3s ease-in-out;
+                    padding: 8px; /* Reduced padding */
+                    border-radius: 8px; /* Slightly smaller rounded corners */
+                }
+                .shortcut-card:hover {
+                    filter: brightness(85%);
+                    transform: scale(1.03); /* Smaller zoom effect */
+                }
+                .shortcut-card i {
+                    font-size: 1.5rem !important; /* Reduce icon size */
+                }
+                .shortcut-card small {
+                    font-size: 0.8rem !important; /* Reduce text size */
+                }
+            </style>
+
+            <div class="row g-1"> {{-- Reduced spacing --}}
+                @foreach($shortcut as $index => $item)
+                    @php
+                        $url = "/";
+                        $name = "";
+                        $icon = "";
+                        $bgColor = $colors[$index % count($colors)];
+                    @endphp
+
+                    @if($item->name === "Add_Customer")
+                        @php $url = "/customers"; $name = "Add Customer"; $icon = "fas fa-user-plus"; @endphp
+                    @elseif($item->name === "View_Customer")
+                        @php $url = "/showcustomers"; $name = "View Customer"; $icon = "fas fa-users"; @endphp
+                    @elseif($item->name === "Assign_Customers_to_group")
+                        @php $url = "/customergroupassign"; $name = "Add to Group"; $icon = "fas fa-user-friends"; @endphp
+                    @elseif($item->name === "View_Products")
+                        @php $url = "/viewproduct"; $name = "View Product"; $icon = "fas fa-box-open"; @endphp
+                    @elseif($item->name === "Pending_Loans")
+                        @php $url = "/pendingloan"; $name = "Pending Loans"; $icon = "fas fa-hourglass-half"; @endphp
+                    @elseif($item->name === "Current_Loans")
+                        @php $url = "/payment_step_1"; $name = "Current Loans"; $icon = "fas fa-hand-holding-usd"; @endphp
+                    @elseif($item->name === "Loan_In_arrears")
+                        @php $url = "/latePayment"; $name = "Loan In Arrears"; $icon = "fas fa-exclamation-triangle"; @endphp
+                    @elseif($item->name === "Add_Repayment")
+                        @php $url = "/payment"; $name = "Add Repayment"; $icon = "fas fa-money-check-alt"; @endphp
+                    @elseif($item->name === "Repayment_details")
+                        @php $url = "/viewpayment"; $name = "View Repayment"; $icon = "fas fa-file-invoice-dollar"; @endphp
+                    @elseif($item->name === "Collector_wise_collections")
+                        @php $url = "/collection"; $name = "Agent Collection"; $icon = "fas fa-user-tie"; @endphp
+                    @elseif($item->name === "Loan_Calculator")
+                        @php $url = "/calculator"; $name = "Loan Calculator"; $icon = "fas fa-calculator"; @endphp
+                    @elseif($item->name === "Add_Expenses")
+                        @php $url = "/expenses"; $name = "Add Expenses"; $icon = "fas fa-receipt"; @endphp
+                    @elseif($item->name === "Add_Income")
+                        @php $url = "/income"; $name = "Add Income"; $icon = "fas fa-hand-holding-usd"; @endphp
+                    @endif
+
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6"> {{-- Compact grid --}}
+                        <a href="{{ $url }}" class="text-decoration-none">
+                            <div class="card shadow-sm text-center border-0 shortcut-card"
+                                 style="background-color: {{ $bgColor }};">
+                                <div class="card-body p-2 d-flex flex-column align-items-center">
+                                    <i class="{{ $icon }} text-white"></i> {{-- Smaller icon --}}
+                                    <small class="text-white mt-1 fw-bold">{{ $name }}</small> {{-- Smaller text --}}
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                @endforeach
+            </div>
+
+
+
         </div>
 
-
-
-    </div>
-
-    </div>
+        </div>
+    @endif
 @endsection
 
 @section('script')
