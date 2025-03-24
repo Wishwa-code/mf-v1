@@ -263,7 +263,97 @@
         </div>
 
         </div>
+    @else
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+            body {
+                font-family: 'Poppins', sans-serif;
+            }
+
+            .centered-container {
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: #f4f6f9;
+                padding: 30px;
+            }
+
+            .white-card {
+                background: #ffffff;
+                border-radius: 15px;
+                padding: 40px 30px;
+                text-align: center;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                animation: fadeIn 0.8s ease-in-out;
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .white-card img {
+                max-width: 180px;
+                height: auto;
+                border-radius: 8px;
+                margin-bottom: 20px;
+            }
+
+            .company-title {
+                font-size: 1.8rem;
+                font-weight: 600;
+                color: #333;
+            }
+
+            .admin-subtitle {
+                font-size: 1rem;
+                color: #555;
+            }
+
+            .tagline {
+                margin-top: 10px;
+                color: #888;
+                font-style: italic;
+            }
+        </style>
+
+        <div class="centered-container">
+            <div class="white-card">
+                @php
+                    $query = "SELECT * FROM company WHERE branch_id='" . session('branch_id') . "'";
+                    $company = DB::select($query);
+                @endphp
+
+                @foreach($company as $item)
+                    @php
+                        $logoPath = 'storage/' . $item->logo;
+                    @endphp
+                    @if ($item->logo && file_exists(public_path($logoPath)))
+                        <img src="{{ asset($logoPath) }}" alt="Company Logo">
+                    @else
+                        <img src="{{ asset('assets/images/users/avatar-1.jpg') }}" alt="Default Logo">
+                    @endif
+
+                    @if(!empty($item->name))
+                        <div class="company-title">{{ $item->name }}</div>
+                        <div class="admin-subtitle">Admin Portal</div>
+                    @endif
+                @endforeach
+
+                <div class="tagline">Empowering your financial decisions 💼</div>
+            </div>
+        </div>
     @endif
+
+
 @endsection
 
 @section('script')

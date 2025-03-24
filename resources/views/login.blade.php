@@ -62,7 +62,6 @@
                                         </div>
                                     </div>
                                 @endif
-
                                 @if (session()->has('error'))
                                     <div class="mt-5">
                                         <div class="alert alert-danger">{{ session('error') }}</div>
