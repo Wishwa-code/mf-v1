@@ -201,12 +201,17 @@
                                     <td>DATE</td>
                                     <td>ATTENDANCE</td>
                                 </tr>
+                                @php
+                                    $grouped_loans = $grouped_loans->sortKeysUsing('strnatcmp');
+                                @endphp
+
+
 
                                 @foreach ($grouped_loans as $group_name => $group)
                                     @foreach ($group as $index => $item)
                                         <tr>
                                             @if ($index === 0) <!-- Only show the group name for the first item in the group -->
-                                            <td rowspan="{{ count($group) }}" style="vertical-align: middle; text-align: center;">
+                                            <td rowspan="{{ count($group) + 5 }}" style="vertical-align: middle; text-align: center;">
                                                 <div style="transform: rotate(-90deg); white-space: nowrap; height: auto;">{{ $group_name }}</div>
                                             </td>
                                             @endif
@@ -231,7 +236,15 @@
                                             @endfor
                                         </tr>
                                     @endforeach
+
+                                    {{-- Add 5 empty rows after each group --}}
+                                    @for ($j = 0; $j < 5; $j++)
+                                        <tr>
+                                            <td colspan="15">&nbsp;</td>
+                                        </tr>
+                                    @endfor
                                 @endforeach
+
 
                                 </tbody>
                             </table>
