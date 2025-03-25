@@ -605,10 +605,8 @@ class TodayPaymentController extends Controller
     {
         $user_id = (int)session('userid');
         $loan_id = $request->loan_id;
-        $cus_id = $request->cus_id;
         $payment_amount = $request->payment_amount;
         $type_saving_amount = $request->saving_amount;
-        $new_payment_amount = $request->payment_amount;
         $payment_date = $request->payment_date;
         $time = date('H:i:s');
         $payment_type = $request->payment_type;

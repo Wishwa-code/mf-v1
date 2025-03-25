@@ -631,6 +631,8 @@ class PendingLoanController extends Controller
             ->groupBy('Loan_ID');
 
 
+
+
         $loan_other_charges_subquery = DB::table('loan_other_charges')
             ->select('Customer_Loan_idCustomer_Loan',
                 DB::raw('SUM(Amount) as processing_fee_received'))
@@ -676,21 +678,21 @@ class PendingLoanController extends Controller
                 'customer_loan.Customer_idCustomer', '=', 'loan_count_table.Customer_idCustomer');
 
 //        // 📌 Apply Filters to Center Summary Query
-//        if (!empty($date_from)) {
-//            $centerSummaryQuery->whereDate('customer_loan.Date_Time', '>=', $date_from);
-//        }
-//        if (!empty($date_to)) {
-//            $centerSummaryQuery->whereDate('customer_loan.Date_Time', '<=', $date_to);
-//        }
-//        if ($branch != "0") {
-//            $centerSummaryQuery->where('customer_loan.branch_id', $branch);
-//        }
-//        if ($route != "0") {
-//            $centerSummaryQuery->where('customer.route_id', $route);
-//        }
-//        if ($center_details != "0") {
-//            $centerSummaryQuery->where('subquery.center_id', $center_details);
-//        }
+        if (!empty($date_from)) {
+            $centerSummaryQuery->whereDate('customer_loan.Date_Time', '>=', $date_from);
+        }
+        if (!empty($date_to)) {
+            $centerSummaryQuery->whereDate('customer_loan.Date_Time', '<=', $date_to);
+        }
+        if ($branch != "0") {
+            $centerSummaryQuery->where('customer_loan.branch_id', $branch);
+        }
+        if ($route != "0") {
+            $centerSummaryQuery->where('customer.route_id', $route);
+        }
+        if ($center_details != "0") {
+            $centerSummaryQuery->where('subquery.center_id', $center_details);
+        }
 
         $centerSummaryQuery = $centerSummaryQuery->groupBy('branch.Name', 'route.name', 'center.Name')->get();
 
@@ -729,24 +731,23 @@ class PendingLoanController extends Controller
             )->where('customer_loan.Status', '=','0');
 
         // 📌 Apply Filters to Loan Details Query
-//        if (!empty($date_from)) {
-//            $loanDetailsQuery->whereDate('customer_loan.Date_Time', '>=', $date_from);
-//        }
-//        if (!empty($date_to)) {
-//            $loanDetailsQuery->whereDate('customer_loan.Date_Time', '<=', $date_to);
-//        }
-//        if ($branch != "0") {
-//            $loanDetailsQuery->where('customer_loan.branch_id', $branch);
-//        }
-//        if ($route != "0") {
-//            $loanDetailsQuery->where('customer.route_id', $route);
-//        }
-//        if ($center_details != "0") {
-//            $loanDetailsQuery->where('subquery.center_id', $center_details);
-//        }
+        if (!empty($date_from)) {
+            $loanDetailsQuery->whereDate('customer_loan.Date_Time', '>=', $date_from);
+        }
+        if (!empty($date_to)) {
+            $loanDetailsQuery->whereDate('customer_loan.Date_Time', '<=', $date_to);
+        }
+        if ($branch != "0") {
+            $loanDetailsQuery->where('customer_loan.branch_id', $branch);
+        }
+        if ($route != "0") {
+            $loanDetailsQuery->where('customer.route_id', $route);
+        }
+        if ($center_details != "0") {
+            $loanDetailsQuery->where('subquery.center_id', $center_details);
+        }
 
         $loanDetailsQuery = $loanDetailsQuery->get();
-
         // 📌 3️⃣ Combine Data: Center Summary + Loan Details
         $finalData = [];
 
@@ -762,6 +763,9 @@ class PendingLoanController extends Controller
 
             $finalData[] = $centerData;
         }
+
+        Log::info($centerSummaryQuery);
+        Log::info($loanDetailsQuery);
 
         return response()->json(['data' => $finalData]);
     }
