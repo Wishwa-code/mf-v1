@@ -597,8 +597,7 @@ class PendingLoanController extends Controller
         // Subqueries for aggregated data
         $installment_subquery = DB::table('installments')
             ->select('Customer_Loan_idCustomer_Loan',
-                DB::raw('SUM(Installment_Amount) as schedule_repayments'),
-                DB::raw('SUM(Paid_Amount) as collected_repayments'))
+                DB::raw('SUM(Installment_Amount) as schedule_repayments'))
             ->groupBy('Customer_Loan_idCustomer_Loan');
 
         $loan_log_subquery = DB::table('Loan_Log')
@@ -606,27 +605,34 @@ class PendingLoanController extends Controller
                 'Loan_ID',
                 DB::raw('SUM(
             CASE 
-                WHEN Description = "Customer Payment" THEN Capital_Payment 
-                WHEN Description = "Payment Undo" THEN -Capital_Payment 
+                WHEN Type = "Customer Payment" THEN Capital_Payment 
+                WHEN Type = "Payment Undo" THEN -Capital_Payment 
                 ELSE 0 
             END
         ) as capital_received'),
 
                 DB::raw('SUM(
             CASE 
-                WHEN Description = "Customer Payment" THEN Interest_Payment 
-                WHEN Description = "Payment Undo" THEN -Interest_Payment 
+                WHEN Type = "Customer Payment" THEN Interest_Payment 
+                WHEN Type = "Payment Undo" THEN -Interest_Payment 
                 ELSE 0 
             END
         ) as interest_received'),
 
                 DB::raw('SUM(
             CASE 
-                WHEN Description = "Customer Payment" THEN Panelty_Payment 
-                WHEN Description = "Payment Undo" THEN -Panelty_Payment 
+                WHEN Type = "Customer Payment" THEN Panelty_Payment 
+                WHEN Type = "Payment Undo" THEN -Panelty_Payment 
                 ELSE 0 
             END
-        ) as penalty_received')
+        ) as penalty_received'),
+                DB::raw('SUM(
+            CASE 
+                WHEN Type = "Customer Payment" THEN Amount 
+                WHEN Type = "Payment Undo" THEN -Amount 
+                ELSE 0 
+            END
+        ) as collected_repayments')
             )
             ->groupBy('Loan_ID');
 
@@ -663,12 +669,14 @@ class PendingLoanController extends Controller
                 'route.name as route_name',
                 'center.Name as center_name',
                 DB::raw('SUM(customer_loan.Amount) as total_disbursement'),
+                DB::raw('SUM(customer_loan.capital_balance) as capital_balance'),
+                DB::raw('SUM(customer_loan.installment_balance) as installment_balance'),
                 DB::raw('SUM(customer_loan.Total_Loan_Amount) as total_loan_amount'),
                 DB::raw('COUNT(customer_loan.idCustomer_Loan) as issued_loan_count'),
                 DB::raw('COUNT(DISTINCT CASE WHEN loan_count_table.loan_count = 1 THEN customer_loan.Customer_idCustomer END) as new_clients'),
                 DB::raw('COUNT(DISTINCT CASE WHEN loan_count_table.loan_count > 1 THEN customer_loan.Customer_idCustomer END) as repeat_clients'),
                 DB::raw('COALESCE(SUM(installments.schedule_repayments), 0) as schedule_repayments'),
-                DB::raw('COALESCE(SUM(installments.collected_repayments), 0) as collected_repayments'),
+                DB::raw('COALESCE(SUM(Loan_Log.collected_repayments), 0) as collected_repayments'),
                 DB::raw('COALESCE(SUM(Loan_Log.capital_received), 0) as capital_received'),
                 DB::raw('COALESCE(SUM(Loan_Log.interest_received), 0) as interest_received'),
                 DB::raw('COALESCE(SUM(Loan_Log.penalty_received), 0) as penalty_received'),
@@ -719,11 +727,13 @@ class PendingLoanController extends Controller
                 'center.Name as center_name',
                 'customer_loan.idCustomer_Loan as loan_id',
                 'customer_loan.Loan_No as Loan_No',
+                'customer_loan.capital_balance as capital_balance',
+                'customer_loan.installment_balance as installment_balance',
                 'customer.First_Name as customer_name',
                 'customer_loan.Amount as loan_disbursement',
                 'customer_loan.Total_Loan_Amount as loan_amount',
                 'installments.schedule_repayments',
-                'installments.collected_repayments',
+                'Loan_Log.collected_repayments',
                 'Loan_Log.capital_received',
                 'Loan_Log.interest_received',
                 'Loan_Log.penalty_received',

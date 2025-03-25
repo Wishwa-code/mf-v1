@@ -145,7 +145,10 @@
                                     <th>Capital Received</th>
                                     <th>Interest Received</th>
                                     <th>Penalty Received</th>
-                                    <th>Balance</th>
+{{--                                    <th>Balance</th>--}}
+{{--                                    <th>Capital Balance</th>--}}
+{{--                                    <th>Interest Balance</th>--}}
+{{--                                    <th>New Balance</th>--}}
                                     <th>Processing Fee Received</th>
                                 </tr>
                                 </thead>
@@ -336,13 +339,6 @@
 <td>${parseFloat(row.capital_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 <td>${parseFloat(row.interest_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 <td>${parseFloat(row.penalty_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-<td>${
-                    (
-                        parseFloat(row.collected_repayments)
-                        - (parseFloat(row.capital_received) + parseFloat(row.interest_received) + parseFloat(row.penalty_received))
-                    ).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                }</td>
-
 <td>${parseFloat(row.processing_fee_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
         </tr>`;
 
@@ -363,13 +359,6 @@
 <td>${parseFloat(loan.capital_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 <td>${parseFloat(loan.interest_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 <td>${parseFloat(loan.penalty_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-<td>${
-                            (
-                                parseFloat(loan.collected_repayments)
-                                - (parseFloat(loan.capital_received) + parseFloat(loan.interest_received) + parseFloat(loan.penalty_received))
-                            ).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                        }</td>
-
                     <td>${loan.processing_fee_received ? parseFloat(loan.processing_fee_received).toFixed(2) : "0.00"}</td>
                 </tr>`;
 
@@ -391,13 +380,6 @@
 <td>${total_capital_received.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 <td>${total_interest_received.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 <td>${total_penalty_received.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-<td>${
-                (
-                    parseFloat(total_collected_repayments)
-                    - (parseFloat(total_capital_received) + parseFloat(total_interest_received) + parseFloat(total_penalty_received))
-                ).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-            }</td>
-
 <td>${total_processing_fee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
     </tr>`;
 
