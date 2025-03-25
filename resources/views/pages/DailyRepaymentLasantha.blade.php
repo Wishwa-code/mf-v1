@@ -163,7 +163,9 @@
                         <hr>
                         <div class="row mb-3">
                             <div class="col-12">
-                                <button id="printButton" class="btn btn-primary btn-custom"><i class="bi bi-printer"></i> Print</button>
+                                <button id="portraitPrint" class="btn btn-primary btn-custom"><i class="bi bi-printer"></i> Portrait Print</button>
+                                <button id="landscapePrint" class="btn btn-secondary btn-custom"><i class="bi bi-printer"></i> Landscape Print</button>
+
                                 <button id="downloadExcel" class="btn btn-success btn-custom"><i class="bi bi-file-earmark-excel"></i> Download Excel</button>
                                 <button id="downloadPDF" class="btn btn-secondary btn-custom"><i class="bi bi-file-earmark-pdf"></i> Download PDF</button>
                             </div>
@@ -272,5 +274,32 @@
                 XLSX.writeFile(wb, 'repayment_sheet.xlsx');
             });
         });
+        function customPrint(orientation = 'portrait') {
+            const centerDetails = $('#route').find('option:selected').text();
+            const table = document.getElementById('repaymentTable').cloneNode(true);
+
+            const printWindow = window.open('', '', 'height=1000,width=1200');
+            printWindow.document.write('<html><head><title>Repayment Sheet</title>');
+
+            printWindow.document.write('<style>');
+            printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 10px; margin: 10px; padding: 0; }');
+            printWindow.document.write('table { width: 100%; border-collapse: collapse; table-layout: auto; font-size: 9px; }');
+            printWindow.document.write('th, td { border: 1px solid #000; padding: 6px; text-align: center; word-wrap: break-word; }');
+            printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
+            printWindow.document.write('</style>');
+
+            printWindow.document.write('</head><body>');
+            printWindow.document.write('<h2 style="text-align:center;">Repayment Sheet</h2>');
+            printWindow.document.write('<h4 style="text-align:center;">Route: ' + centerDetails + '</h4>');
+            printWindow.document.write(table.outerHTML);
+            printWindow.document.write('</body></html>');
+
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+        }
+        $('#portraitPrint').click(() => customPrint('portrait'));
+        $('#landscapePrint').click(() => customPrint('landscape'));
+
     </script>
 @endsection

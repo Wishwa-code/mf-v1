@@ -764,9 +764,6 @@ class PendingLoanController extends Controller
             $finalData[] = $centerData;
         }
 
-        Log::info($centerSummaryQuery);
-        Log::info($loanDetailsQuery);
-
         return response()->json(['data' => $finalData]);
     }
 
