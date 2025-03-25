@@ -145,6 +145,10 @@
                                     <th>Capital Received</th>
                                     <th>Interest Received</th>
                                     <th>Penalty Received</th>
+{{--                                    <th>Balance</th>--}}
+{{--                                    <th>Capital Balance</th>--}}
+{{--                                    <th>Interest Balance</th>--}}
+{{--                                    <th>New Balance</th>--}}
                                     <th>Processing Fee Received</th>
                                 </tr>
                                 </thead>

@@ -118,6 +118,20 @@
                 margin: 0.5in; /* Adjust margins as needed */
             }
         }
+        @media print {
+            body {
+                font-size: 9px !important;
+            }
+
+            table, th, td {
+                font-size: 8px !important;
+                padding: 3px !important;
+            }
+
+            th, td {
+                word-break: break-word;
+            }
+        }
 
     </style>
 
@@ -185,7 +199,8 @@
                         <hr>
                         <div class="row mb-3">
                             <div class="col-12">
-                                <button id="printButton" class="btn btn-primary"><i class="bi bi-printer"></i> Print</button>
+                                <button id="portraitPrint" class="btn btn-primary"><i class="bi bi-printer"></i> Portrait Print</button>
+                                <button id="landscapePrint" class="btn btn-secondary"><i class="bi bi-printer"></i> Landscape Print</button>
                                 <button id="downloadExcel" class="btn btn-success"><i class="bi bi-file-earmark-excel"></i> Download Excel</button>
                             </div>
                         </div>
@@ -208,14 +223,14 @@
                                     <th colspan="2"></th>
                                 </tr>
                                 <tr>
-                                    <th>Collection</th>
-                                    <th>Other</th>
-                                    <th>Collection</th>
-                                    <th>Other</th>
-                                    <th>Collection</th>
-                                    <th>Other</th>
-                                    <th>Collection</th>
-                                    <th>Other</th>
+                                    <th class="portrait-hide">Collection</th>
+                                    <th class="portrait-hide">Other</th>
+                                    <th class="portrait-hide">Collection</th>
+                                    <th class="portrait-hide">Other</th>
+                                    <th class="portrait-hide">Collection</th>
+                                    <th class="portrait-hide">Other</th>
+                                    <th class="portrait-hide">Collection</th>
+                                    <th class="portrait-hide">Other</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -416,6 +431,42 @@
             printWindow.focus();
             printWindow.print();
         });
+
+        function customPrint(orientation = 'portrait') {
+            const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+            const centerDetails = $('#center_details').find('option:selected').text();
+            const table = document.getElementById('repaymentTable').cloneNode(true);
+
+            // Hide extra columns in portrait mode
+            if (orientation === 'portrait') {
+                table.querySelectorAll('.portrait-hide').forEach(col => col.style.display = 'none');
+            }
+
+            const printWindow = window.open('', '', 'height=1000,width=1200');
+            printWindow.document.write('<html><head><title>Repayment Sheet</title>');
+
+            printWindow.document.write('<style>');
+            printWindow.document.write('body { font-family: Arial, sans-serif; margin: 10px; font-size: 9px; }');
+            printWindow.document.write('table { width: 100%; border-collapse: collapse; font-size: 8px; table-layout: auto; }');
+            printWindow.document.write('th, td { border: 1px solid #000; padding: 4px; text-align: center; word-wrap: break-word; }');
+            printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
+            printWindow.document.write('</style>');
+
+            printWindow.document.write('</head><body>');
+            printWindow.document.write('<h2>Repayment Sheet for ' + currentMonth + ' (' + centerDetails + ')</h2>');
+            printWindow.document.write(table.outerHTML);
+            printWindow.document.write('</body></html>');
+
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+        }
+
+
+        $('#portraitPrint').click(() => customPrint('portrait'));
+        $('#landscapePrint').click(() => customPrint('landscape'));
+
+
 
 
     </script>

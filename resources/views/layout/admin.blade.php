@@ -20,6 +20,47 @@
         .required-asterisk {
             color: red;
         }
+        @media print {
+            body {
+                font-family: Arial, sans-serif;
+                font-size: 11px;
+                color: #000;
+            }
+
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+            }
+
+            table th,
+            table td {
+                border: 2px solid #000 !important;
+                padding: 6px !important;
+                text-align: center;
+                vertical-align: middle;
+            }
+
+            thead {
+                background-color: #f0f0f0 !important;
+            }
+
+            tr {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            /* Hide unnecessary UI elements */
+            .btn,
+            .no-print,
+            .dataTables_length,
+            .dataTables_filter,
+            .dataTables_info,
+            .dataTables_paginate,
+            .dt-buttons {
+                display: none !important;
+            }
+        }
+
     </style>
 
     @yield('head')

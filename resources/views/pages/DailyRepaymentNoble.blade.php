@@ -195,7 +195,9 @@
                         <hr>
                         <div class="row mb-3">
                             <div class="col-12">
-                                <button id="printButton" class="btn btn-primary"><i class="bi bi-printer"></i> Print</button>
+                                <button id="portraitPrint" class="btn btn-primary"><i class="bi bi-printer"></i> Portrait Print</button>
+                                <button id="landscapePrint" class="btn btn-secondary"><i class="bi bi-printer"></i> Landscape Print</button>
+
                                 <button id="downloadExcel" class="btn btn-success"><i class="bi bi-file-earmark-excel"></i> Download Excel</button>
                             </div>
                         </div>
@@ -423,6 +425,41 @@
             printWindow.focus();
             printWindow.print();
         });
+        function customPrint(orientation = 'portrait') {
+            const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+            const centerDetails = $('#center_details').find('option:selected').text();
+            const selectedDate = $('#from_date').val();
+            const formattedDate = selectedDate ? new Date(selectedDate).toLocaleDateString() : "Not Selected";
+
+            const table = document.getElementById('repaymentTable').cloneNode(true);
+
+            const printWindow = window.open('', '', 'height=1000,width=1200');
+            printWindow.document.write('<html><head><title>Repayment Sheet</title>');
+
+            // Styles
+            printWindow.document.write('<style>');
+            printWindow.document.write('body { font-family: Arial, sans-serif; margin: 0; padding: 10px; font-size: 9px; }');
+            printWindow.document.write('table { width: 100%; border-collapse: collapse; font-size: 8px; table-layout: auto; }');
+            printWindow.document.write('th, td { padding: 6px; border: 1px solid #000; text-align: center; word-wrap: break-word; }');
+            printWindow.document.write('.payment-column { min-width: 150px; }');
+            printWindow.document.write('.additional-column { min-width: 140px; }');
+            printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
+            printWindow.document.write('</style>');
+
+            // Content
+            printWindow.document.write('</head><body>');
+            printWindow.document.write('<h2 style="text-align:center;">Repayment Sheet for ' + centerDetails + '</h2>');
+            printWindow.document.write('<h4 style="text-align:center;">Selected Date: ' + formattedDate + '</h4>');
+            printWindow.document.write(table.outerHTML);
+            printWindow.document.write('</body></html>');
+
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+        }
+
+        $('#portraitPrint').click(() => customPrint('portrait'));
+        $('#landscapePrint').click(() => customPrint('landscape'));
 
 
 
