@@ -201,24 +201,27 @@ class GuardianController extends Controller
             Storage::disk('public')->makeDirectory($directory);
         }
 
-        foreach ($request->file('documents') as $index => $file) {
+        if ($request->hasFile('documents')) {
+            foreach ($request->file('documents') as $index => $file) {
 
-            // Store the file on the public disk
-            $storedFile = Storage::disk('public')->putFile($directory, $file);
+                // Store the file
+                $storedFile = Storage::disk('public')->putFile($directory, $file);
 
-            // Retrieve document name from the array sent via AJAX
-            $documentName = $request->documentNames[$index];
+                // Get corresponding name
+                $documentName = $request->documentNames[$index] ?? 'Unnamed Document';
 
-            $documentData = [
-                'Description' => $documentName, // Store the unique file name
-                'Path' => $storedFile, // Path relative to the storage directory
-                'Guardian_idGuardian' => $request->id, // Adjust this according to your needs
-            ];
+                // Build the data array
+                $documentData = [
+                    'Description' => $documentName,
+                    'Path' => $storedFile,
+                    'Guardian_idGuardian' => $request->id,
+                ];
 
-// Insert the document data with branch-specific logic
-            insertWithBranch('guardian_has_documents', $documentData);
-
+                // Insert into the DB
+                insertWithBranch('guardian_has_documents', $documentData);
+            }
         }
+
 
 
         return response()->json(['success' => true]);

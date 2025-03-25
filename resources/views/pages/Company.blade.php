@@ -260,6 +260,11 @@
                             <button type="button" class="btn btn-primary" onclick="addToField('@Group_No@','Group_No')">Group Number</button>
                             <button type="button" class="btn btn-primary" onclick="addToField('@Customize_No@','Customize_No')">Customize Number</button>
                             <button type="button" class="btn btn-primary" onclick="addToField('@Auto_Id@','Auto_Id')">Auto Create Number</button>
+                            <button type="button" class="btn btn-primary" onclick="addToField('@Day@','Day')">Day</button>
+                            <button type="button" class="btn btn-primary" onclick="addToField('@Month@','Month_Number')">Month</button>
+                            <button type="button" class="btn btn-primary" onclick="addToField('@Year@','Year')">Year</button>
+                            <button type="button" class="btn btn-primary" onclick="addToField('@CountMonthly@','MonthlyCount')">Monthly Count</button>
+
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -288,9 +293,9 @@
             const field = document.getElementById('field_output_customer');
             const field_output_customer_2 = document.getElementById('field_output_customer_2');
             const fieldValue_check = field.value;
+            const fieldValue_check_2 = field_output_customer_2.value;
 
-
-            // Check if the value is already in the field
+            // Check if the value is already in the first field
             if (!fieldValue_check.includes(value)) {
                 if (field.value) {
                     field.value += separateFrom + value;
@@ -299,8 +304,8 @@
                 }
             }
 
-            // Check if the new_value is already in the field_output_customer_2
-            if (!fieldValue_check.includes(new_value)) {
+            // Check if the new_value is already in the second field
+            if (!fieldValue_check_2.includes(new_value)) {
                 if (field_output_customer_2.value) {
                     field_output_customer_2.value += separateFrom + new_value;
                 } else {
@@ -308,6 +313,7 @@
                 }
             }
         }
+
 
         function clear_feild(value){
             if(value==="Customer"){

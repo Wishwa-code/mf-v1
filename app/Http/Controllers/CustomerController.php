@@ -126,59 +126,95 @@ class CustomerController extends Controller
                 $show_branch='';
             }
 
-            if (strpos($cus_number, '@Auto_Id@') !== false) {
+//            if (strpos($cus_number, '@Auto_Id@') !== false) {
+//
+//
+//
+//            } else {
+//                // If @Auto_ID@ placeholder is not present, just set the customer number with the prefix
+//                $customer->cus_number = $show_branch . $cus_number;
+//                $sms_cus_number = $show_branch . $cus_number;
+//            }
 
+            $cus_number_template = $cus_number; // Store original template
+            $customer_max = $company->customer_num_start_from ?? 1;
 
-                $customer_max = $company->customer_num_start_from ?? 1;
+// Count current customers
+            $cus_count = tableWithBranch('customer')->count('idCustomer') ?? 0;
+            $customer_max += $cus_count;
 
-                // Get the current customer count
-                $cus_count = tableWithBranch('customer')->count('idCustomer') ?? 1;
+// Format the ID
+            $formatted_customer_id = str_pad($customer_max, 3, '0', STR_PAD_LEFT);
 
-                // Increment the maximum ID by 1
-                $customer_max += $cus_count;
+// Initialize final string
+            $new_type = $cus_number_template;
 
-                // Format the ID with leading zeros (e.g., 001, 010, 100, etc.)
-                $formatted_customer_id = str_pad($customer_max, 3, '0', STR_PAD_LEFT);
-
-                // Fetch route details
-                $root_code = tableWithBranch('route')
-                    ->where('id_route', '=', $request->root)
-                    ->first();
-
-                // Replace placeholders
-                $new_type = str_replace('@Auto_Id@', $formatted_customer_id, $cus_number);
-                if ($root_code) {
-                    $new_type = str_replace('@Root@', $root_code->root_code, $new_type);
-                }
-                $new_type = str_replace('@Branch_No@', $branch_name ?? '', $new_type);
-
-                // Update company table with new max ID
-                $data = ['customer_num_start_from' => $customer_max];
-                updateWithBranch('company', 'id', '1', $data);
-
-                // Split the new customer number by the separator
-                if (!empty($company->customer_seperate_from)) {
-                    $parts = explode($company->customer_seperate_from, $new_type);
-                    foreach ($parts as &$part) {
-                        if (is_numeric($part)) {
-                            $part = $formatted_customer_id;
-                            break;
-                        }
-                    }
-                    unset($part); // Unset reference variable
-                    $new_cus_number = implode($company->customer_seperate_from, $parts);
-                } else {
-                    $new_cus_number = $new_type;
-                }
-
-                // Set the customer number with the prefix
-                $customer->cus_number = $show_branch . $new_cus_number;
-                $sms_cus_number = $show_branch . $new_cus_number;
-            } else {
-                // If @Auto_ID@ placeholder is not present, just set the customer number with the prefix
-                $customer->cus_number = $show_branch . $cus_number;
-                $sms_cus_number = $show_branch . $cus_number;
+// Handle placeholders dynamically
+            if (str_contains($new_type, '@Auto_Id@')) {
+                $new_type = str_replace('@Auto_Id@', $formatted_customer_id, $new_type);
             }
+
+            if (str_contains($new_type, '@Root@') && $request->root) {
+                $root_code = tableWithBranch('route')
+                    ->where('id_route', $request->root)
+                    ->value('root_code'); // only get root_code directly
+
+                $new_type = str_replace('@Root@', $root_code ?? '', $new_type);
+            }
+
+            if (str_contains($new_type, '@Branch_No@')) {
+                $new_type = str_replace('@Branch_No@', $branch_name ?? '', $new_type);
+            }
+
+            if (str_contains($new_type, '@Day@')) {
+                $new_type = str_replace('@Day@', date('d'), $new_type);
+            }
+
+            if (str_contains($new_type, '@Month@')) {
+                $new_type = str_replace('@Month@', date('m'), $new_type);
+            }
+
+            if (str_contains($new_type, '@Year@')) {
+                $new_type = str_replace('@Year@', date('Y'), $new_type);
+            }
+
+            if (str_contains($new_type, '@CountMonthly@')) {
+                $monthly_count = tableWithBranch('customer')
+                    ->whereYear('created_at', date('Y'))    // Current year
+                    ->whereMonth('created_at', date('m'))   // Current month
+                    ->count() ?: 0;
+
+                $monthly_count++;
+                $new_type = str_replace('@CountMonthly@', $monthly_count, $new_type);
+            }
+
+// Update company with new max ID
+            updateWithBranch('company', 'id', '1', [
+                'customer_num_start_from' => $customer_max
+            ]);
+
+// Split using separator (if defined)
+            if (!empty($company->customer_seperate_from) && !str_contains($cus_number, '@CountMonthly@')) {
+                $parts = explode($company->customer_seperate_from, $new_type);
+
+                foreach ($parts as &$part) {
+                    if (is_numeric($part)) {
+                        $part = $formatted_customer_id;
+                        break;
+                    }
+                }
+                unset($part);
+
+                $new_cus_number = implode($company->customer_seperate_from, $parts);
+            } else {
+                $new_cus_number = $new_type;
+            }
+
+
+// Set final customer number with branch prefix
+            $customer->cus_number = $show_branch . $new_cus_number;
+
+            $sms_cus_number = $show_branch . $new_cus_number;
 
 
 
