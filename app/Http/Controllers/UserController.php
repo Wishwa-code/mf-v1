@@ -340,6 +340,28 @@ class UserController extends Controller
             }
         }
 
+        $loan=DB::table('customer_loan')->where('Status','=','1')->get();
+        foreach ($loan as $loans){
+            $loanId=$loans->idCustomer_Loan;
+            // Update the status of the loan in the customer_loan table to 0 (settled)
+            DB::table('customer_loan')->where('idCustomer_Loan', $loanId)->update([
+                'Balance_Amount' => '0.00',
+                'capital_balance' => '0.00',
+                'installment_balance' => '0.00',
+            ]);
+
+            // Update the status in the installments table to 1 (completed)
+            DB::table('installments')->where('Customer_Loan_idCustomer_Loan', $loanId)->update([
+                'status' => 1,
+                'Panalty_Balance' => '0.00',
+                'Interest_Balance' => '0.00',
+                'capital_balance' => '0.00',
+                'Saving_balance' => '0.00',
+                'Total_Balance' => '0.00',
+                'Paid_Amount' => DB::raw('Total_Amount'),
+            ]);
+        }
+
 
         return view('home',compact('dashboard','checqueamount','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
     }

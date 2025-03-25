@@ -646,13 +646,23 @@ class PaymentLoanController extends Controller
 
         // Update the status of the loan in the customer_loan table to 0 (settled)
         DB::table('customer_loan')->where('idCustomer_Loan', $loanId)->where('branch_id', session('branch_id'))->update([
-            'Status' => 1
+            'Status' => 1,
+            'Balance_Amount' => '0.00',
+            'capital_balance' => '0.00',
+            'installment_balance' => '0.00',
         ]);
 
         // Update the status in the installments table to 1 (completed)
         DB::table('installments')->where('Customer_Loan_idCustomer_Loan', $loanId)->where('branch_id', session('branch_id'))->update([
-            'status' => 1
+            'status' => 1,
+            'Panalty_Balance' => '0.00',
+            'Interest_Balance' => '0.00',
+            'capital_balance' => '0.00',
+            'Saving_balance' => '0.00',
+            'Total_Balance' => '0.00',
+            'Paid_Amount' => DB::raw('Total_Amount'),
         ]);
+
         $this->loanLogController->index(
             $loanId, 'Loan Settlement', $savedId,
             'Loan Settlement', $net_balance,
