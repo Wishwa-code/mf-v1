@@ -247,6 +247,35 @@ class UserController extends Controller
 
     public function showdashboard(Store $session){
 
+
+//        $customers = DB::table('customer as c')
+//            ->join('group_has_customer as ghc', 'c.idCustomer', '=', 'ghc.cus_id')
+//            ->join('customer_group as cg', 'ghc.group_id', '=', 'cg.idCustomer_Group')
+//            ->join('center as cn', 'cg.center_id', '=', 'cn.idCenter')
+//            ->where('c.branch_id', '=', '1')
+//            ->select('c.idCustomer', 'cn.No as center_no')
+//            ->orderBy('c.idCustomer') // ensure consistent ordering
+//            ->get();
+//
+//
+//        $branch_code = 'AM';
+//        $customer_max = 0;
+//
+//        foreach ($customers as $customer) {
+//            $customer_max++;
+//
+//            $auto_id = str_pad($customer_max, 3, '0', STR_PAD_LEFT);
+//            $new_cus_number = "{$branch_code}/{$customer->center_no}/{$auto_id}";
+//
+//            DB::table('customer')
+//                ->where('idCustomer', $customer->idCustomer)
+//                ->update(['cus_number' => $new_cus_number]);
+//        }
+
+
+
+
+
         $customerCount = tableWithBranch('customer')->count();
         $customer_loan_pending_Count = tableWithBranch('customer_loan')->where('Status','=','-1')->count();
         $customer_loan_pending_Amount = tableWithBranch('customer_loan')->where('Status','=','-1')->sum('Amount');
@@ -340,27 +369,27 @@ class UserController extends Controller
             }
         }
 
-        $loan=DB::table('customer_loan')->where('Status','=','1')->get();
-        foreach ($loan as $loans){
-            $loanId=$loans->idCustomer_Loan;
-            // Update the status of the loan in the customer_loan table to 0 (settled)
-            DB::table('customer_loan')->where('idCustomer_Loan', $loanId)->update([
-                'Balance_Amount' => '0.00',
-                'capital_balance' => '0.00',
-                'installment_balance' => '0.00',
-            ]);
-
-            // Update the status in the installments table to 1 (completed)
-            DB::table('installments')->where('Customer_Loan_idCustomer_Loan', $loanId)->update([
-                'status' => 1,
-                'Panalty_Balance' => '0.00',
-                'Interest_Balance' => '0.00',
-                'capital_balance' => '0.00',
-                'Saving_balance' => '0.00',
-                'Total_Balance' => '0.00',
-                'Paid_Amount' => DB::raw('Total_Amount'),
-            ]);
-        }
+//        $loan=DB::table('customer_loan')->where('Status','=','1')->get();
+//        foreach ($loan as $loans){
+//            $loanId=$loans->idCustomer_Loan;
+//            // Update the status of the loan in the customer_loan table to 0 (settled)
+//            DB::table('customer_loan')->where('idCustomer_Loan', $loanId)->update([
+//                'Balance_Amount' => '0.00',
+//                'capital_balance' => '0.00',
+//                'installment_balance' => '0.00',
+//            ]);
+//
+//            // Update the status in the installments table to 1 (completed)
+//            DB::table('installments')->where('Customer_Loan_idCustomer_Loan', $loanId)->update([
+//                'status' => 1,
+//                'Panalty_Balance' => '0.00',
+//                'Interest_Balance' => '0.00',
+//                'capital_balance' => '0.00',
+//                'Saving_balance' => '0.00',
+//                'Total_Balance' => '0.00',
+//                'Paid_Amount' => DB::raw('Total_Amount'),
+//            ]);
+//        }
 
 
         return view('home',compact('dashboard','checqueamount','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));

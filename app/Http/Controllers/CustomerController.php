@@ -139,17 +139,17 @@ class CustomerController extends Controller
             $cus_number_template = $cus_number; // Store original template
             $customer_max = $company->customer_num_start_from ?? 1;
 
-// Count current customers
+            // Count current customers
             $cus_count = tableWithBranch('customer')->count('idCustomer') ?? 0;
             $customer_max += $cus_count;
 
-// Format the ID
+            // Format the ID
             $formatted_customer_id = str_pad($customer_max, 3, '0', STR_PAD_LEFT);
 
-// Initialize final string
+            // Initialize final string
             $new_type = $cus_number_template;
 
-// Handle placeholders dynamically
+            // Handle placeholders dynamically
             if (str_contains($new_type, '@Auto_Id@')) {
                 $new_type = str_replace('@Auto_Id@', $formatted_customer_id, $new_type);
             }

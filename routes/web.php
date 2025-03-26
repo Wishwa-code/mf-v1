@@ -7,6 +7,7 @@ use App\Http\Controllers\CashierController;
 use App\Http\Controllers\LoanCategoryController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\PDFController;
+use App\Http\Controllers\PendingLoanController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\TodayPaymentController;
 use App\Http\Controllers\TransactionController;
@@ -649,3 +650,8 @@ Route::get('/RightWayDailyRepayment', [TransactionController::class, 'rightway']
 
 
 Route::get('/PaymentFullDetailsReport','\App\Http\Controllers\ReportController@payment_report')->name('payment-detail.index');
+
+
+Route::get('/loan-report', [PendingLoanController::class, 'report_disbursement'])->name('loan.report');
+Route::post('/loan-report/data', [PendingLoanController::class, 'get_report_disbursement'])->name('loan.report.data');
+Route::get('/loan-report/filters', [PendingLoanController::class, 'getFilters_disbursement'])->name('loan.report.filters');
