@@ -225,24 +225,6 @@
                                     <tr>
                                         <th colspan="9">Group No :- {{ $group_name }}</th>
                                     </tr>
-                                    @php
-                                        function formatName($firstName, $lastName) {
-                                            // Get the first initial
-                                            $firstInitial = strtoupper(substr(explode(' ', trim($firstName))[0], 0, 1)) . '.';
-
-                                            // Split last name into parts
-                                            $lastNameParts = explode(' ', trim($lastName));
-
-                                            // Get last name initial (if there are multiple parts)
-                                            $lastInitial = count($lastNameParts) > 1 ? strtoupper(substr($lastNameParts[0], 0, 1)) . '.' : '';
-
-                                            // Get the last part of the last name
-                                            $formattedLastName = end($lastNameParts);
-
-                                            // Construct the formatted name
-                                            return trim(($lastInitial ? $firstInitial . $lastInitial : $firstInitial) . ' ' . $formattedLastName);
-                                        }
-                                    @endphp
 
                                     @foreach ($group as $item)
                                         <tr>
@@ -267,6 +249,7 @@
                                         <td class="payment-column"></td>
                                     </tr>
                                 @endforeach
+
                                 </tbody>
                                 <tfoot>
                                 <tr>

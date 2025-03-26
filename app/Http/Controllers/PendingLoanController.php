@@ -778,6 +778,126 @@ class PendingLoanController extends Controller
     }
 
 
+    public function report_disbursement()
+    {
+        return view('pages.DisbursmentPerformanceReport'); // assuming this is your blade file
+    }
+
+    public function getFilters_disbursement()
+    {
+        $branches = DB::table('branch')->where('status', 1)->get(['branch_id', 'Name']);
+        $centers = DB::table('center')->get(['idCenter', 'Name', 'branch_id']);
+        $products = DB::table('loan_category')->get(['idLoan_Category', 'Name', 'branch_id']);
+
+        return response()->json([
+            'branches' => $branches,
+            'centers' => $centers,
+            'products' => $products
+        ]);
+    }
+
+    public function get_report_disbursement(Request $request)
+    {
+        $query = DB::table('customer_loan as cl')
+            ->leftJoin('loan_category as lc', 'lc.idLoan_Category', '=', 'cl.Loan_Category_idLoan_Category')
+            ->leftJoin('Loan_Log as ll', function ($join) {
+                $join->on('ll.Loan_ID', '=', 'cl.idCustomer_Loan')
+                    ->where('ll.Type', '=', 'Issue Loan');
+            });
+
+        if ($request->date_from) {
+            $query->whereDate('cl.Date_Time', '>=', $request->date_from);
+        }
+
+        if ($request->date_to) {
+            $query->whereDate('cl.Date_Time', '<=', $request->date_to);
+        }
+
+        if ($request->branch_id) {
+            $query->where('cl.branch_id', $request->branch_id);
+        }
+
+        if ($request->center_id) {
+            $query->where('cl.center_id', $request->center_id); // assuming this column exists
+        }
+
+        if ($request->product_id) {
+            $query->where('cl.Loan_Category_idLoan_Category', $request->product_id);
+        }
+
+        $loans = $query->select(
+            'cl.idCustomer_Loan',
+            'cl.Loan_No',
+            'cl.Date_Time as create_date',
+            'll.Date_Time as disburse_date',
+            'lc.Name as product_name',
+            'cl.Amount',
+            'cl.Interest_Amount',
+            'cl.Total_Loan_Amount',
+            'cl.Total_Other_Amount',
+            'cl.capital_balance',
+            'cl.installment_balance',
+            'cl.Balance_Amount'
+        )->get();
+
+        $data = $loans->map(function ($loan) {
+
+            $customer_log = tableWithBranch('customer_log')
+                ->where('type', '=', 'Create Loan')
+                ->where('description_id', '=', $loan->idCustomer_Loan)
+                ->first();
+
+            $days = 'days'; // Default
+            if ($loan->disburse_date && $customer_log) {
+                $create = \Carbon\Carbon::parse($customer_log->date . ' ' . $customer_log->time);
+                $disburse = \Carbon\Carbon::parse($loan->disburse_date);
+
+                $diff = $create->diff($disburse);
+
+                // Always start with days (even 0)
+                $days = $diff->days . ' days';
+
+                $timeParts = [];
+
+                if ($diff->h > 0) {
+                    $timeParts[] = $diff->h . ' hrs';
+                }
+                if ($diff->i > 0) {
+                    $timeParts[] = $diff->i . ' min';
+                }
+                if ($diff->s > 0) {
+                    $timeParts[] = $diff->s . ' sec';
+                }
+
+                if (!empty($timeParts)) {
+                    $days .= ' ' . implode(' ', $timeParts);
+                }
+            }
+
+
+
+
+
+            return [
+                'idCustomer_Loan' => $loan->idCustomer_Loan,
+                'Loan_No' => $loan->Loan_No,
+                'create_date' => $customer_log->date.' '.$customer_log->time,
+                'disburse_date' => $loan->disburse_date ?? '-',
+                'time' => $days,
+                'product_name' => $loan->product_name,
+                'Amount' => number_format($loan->Amount, 2),
+                'Interest_Amount' => number_format($loan->Interest_Amount, 2),
+                'Total_Loan_Amount' => number_format($loan->Total_Loan_Amount, 2),
+                'Total_Other_Amount' => number_format($loan->Total_Other_Amount, 2),
+                'capital_balance' => number_format($loan->capital_balance, 2),
+                'Other_Amount_Balance' => number_format($loan->Interest_Amount-$loan->installment_balance, 2),
+                'Balance_Amount' => number_format($loan->Balance_Amount, 2),
+            ];
+        });
+
+        return response()->json($data);
+    }
+
 
 
 }
