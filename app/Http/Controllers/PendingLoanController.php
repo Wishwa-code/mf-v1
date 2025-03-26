@@ -847,14 +847,22 @@ class PendingLoanController extends Controller
                 ->where('description_id', '=', $loan->idCustomer_Loan)
                 ->first();
 
-            $days = 'days'; // Default
-            if ($loan->disburse_date && $customer_log) {
+            if ($customer_log) {
                 $create = \Carbon\Carbon::parse($customer_log->date . ' ' . $customer_log->time);
-                $disburse = \Carbon\Carbon::parse($loan->disburse_date);
+                $create_display = $customer_log->date . ' ' . $customer_log->time;
+            } else {
+                // Fallback to loan Date_Time (set to 00:00 if no time part)
+                $create = \Carbon\Carbon::parse($loan->Date_Time)->startOfDay();
+                $create_display = \Carbon\Carbon::parse($loan->Date_Time)->format('Y-m-d 00:00:00');
+            }
 
+
+            $days = '0 days';
+
+            if ($loan->disburse_date) {
+                $disburse = \Carbon\Carbon::parse($loan->disburse_date);
                 $diff = $create->diff($disburse);
 
-                // Always start with days (even 0)
                 $days = $diff->days . ' days';
 
                 $timeParts = [];
@@ -881,7 +889,7 @@ class PendingLoanController extends Controller
             return [
                 'idCustomer_Loan' => $loan->idCustomer_Loan,
                 'Loan_No' => $loan->Loan_No,
-                'create_date' => $customer_log->date.' '.$customer_log->time,
+                'create_date' => $create_display,
                 'disburse_date' => $loan->disburse_date ?? '-',
                 'time' => $days,
                 'product_name' => $loan->product_name,
