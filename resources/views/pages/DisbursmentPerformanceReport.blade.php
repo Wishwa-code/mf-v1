@@ -183,7 +183,7 @@
                     $('#center_id').append(`<option value="${c.idCenter}">${c.Name}</option>`);
                 });
                 res.products.forEach(p => {
-                    $('#product_id').append(`<option value="${p.idLoan_Category}">${p.Name}</option>`);
+                    $('#product_id').append(`<option value="${p.idLoan_Category}">${p.Name}-${p.Product_code}</option>`);
                 });
             });
         }
@@ -213,7 +213,7 @@
             <td>${row.create_date}</td>
             <td>${row.disburse_date}</td>
             <td>${row.time}</td>
-            <td>${row.product_name}</td>
+            <td>${row.product_name}-${row.Product_code}</td>
             <td>${row.Amount}</td>
             <td>${row.Interest_Amount}</td>
             <td>${row.Total_Loan_Amount}</td>
@@ -259,6 +259,21 @@
 
             });
         }
+
+        document.getElementById('exportExcel').addEventListener('click', function () {
+            const table = document.getElementById('loanTable');
+
+            // Clone table and remove the Action column for export
+            const clone = table.cloneNode(true);
+            const rows = clone.querySelectorAll('tr');
+            rows.forEach(row => {
+                row.removeChild(row.lastElementChild); // Remove the "Action" column
+            });
+
+            const wb = XLSX.utils.table_to_book(clone, { sheet: "Loan Report" });
+            XLSX.writeFile(wb, "Loan_Disbursement_Report.xlsx");
+        });
+
     </script>
 
 

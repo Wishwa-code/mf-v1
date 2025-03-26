@@ -787,7 +787,7 @@ class PendingLoanController extends Controller
     {
         $branches = DB::table('branch')->where('status', 1)->get(['branch_id', 'Name']);
         $centers = DB::table('center')->get(['idCenter', 'Name', 'branch_id']);
-        $products = DB::table('loan_category')->get(['idLoan_Category', 'Name', 'branch_id']);
+        $products = DB::table('loan_category')->get(['idLoan_Category', 'Name', 'branch_id', 'Product_code']);
 
         return response()->json([
             'branches' => $branches,
@@ -799,6 +799,12 @@ class PendingLoanController extends Controller
     public function get_report_disbursement(Request $request)
     {
         $query = DB::table('customer_loan as cl')
+            ->join('customer', 'cl.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
+            FROM group_has_customer 
+            LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
+                'customer.idCustomer', '=', 'subquery.cus_id')
+            ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
             ->leftJoin('loan_category as lc', 'lc.idLoan_Category', '=', 'cl.Loan_Category_idLoan_Category')
             ->leftJoin('Loan_Log as ll', function ($join) {
                 $join->on('ll.Loan_ID', '=', 'cl.idCustomer_Loan')
@@ -806,11 +812,11 @@ class PendingLoanController extends Controller
             });
 
         if ($request->date_from) {
-            $query->whereDate('cl.Date_Time', '>=', $request->date_from);
+            $query->whereDate('ll.Date_Time', '>=', $request->date_from);
         }
 
         if ($request->date_to) {
-            $query->whereDate('cl.Date_Time', '<=', $request->date_to);
+            $query->whereDate('ll.Date_Time', '<=', $request->date_to);
         }
 
         if ($request->branch_id) {
@@ -818,7 +824,7 @@ class PendingLoanController extends Controller
         }
 
         if ($request->center_id) {
-            $query->where('cl.center_id', $request->center_id); // assuming this column exists
+            $query->where('center.idCenter', $request->center_id); // assuming this column exists
         }
 
         if ($request->product_id) {
@@ -831,6 +837,7 @@ class PendingLoanController extends Controller
             'cl.Date_Time as create_date',
             'll.Date_Time as disburse_date',
             'lc.Name as product_name',
+            'lc.Product_code as Product_code',
             'cl.Amount',
             'cl.Interest_Amount',
             'cl.Total_Loan_Amount',
@@ -852,8 +859,8 @@ class PendingLoanController extends Controller
                 $create_display = $customer_log->date . ' ' . $customer_log->time;
             } else {
                 // Fallback to loan Date_Time (set to 00:00 if no time part)
-                $create = \Carbon\Carbon::parse($loan->Date_Time)->startOfDay();
-                $create_display = \Carbon\Carbon::parse($loan->Date_Time)->format('Y-m-d 00:00:00');
+                $create = \Carbon\Carbon::parse($loan->create_date)->startOfDay();
+                $create_display = \Carbon\Carbon::parse($loan->create_date)->format('Y-m-d 00:00:00');
             }
 
 
@@ -893,6 +900,7 @@ class PendingLoanController extends Controller
                 'disburse_date' => $loan->disburse_date ?? '-',
                 'time' => $days,
                 'product_name' => $loan->product_name,
+                'Product_code' => $loan->Product_code,
                 'Amount' => number_format($loan->Amount, 2),
                 'Interest_Amount' => number_format($loan->Interest_Amount, 2),
                 'Total_Loan_Amount' => number_format($loan->Total_Loan_Amount, 2),
