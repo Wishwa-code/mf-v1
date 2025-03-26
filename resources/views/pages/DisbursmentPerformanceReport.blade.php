@@ -89,7 +89,7 @@
                                     <th>Loan No</th>
                                     <th>Loan Create Date</th>
                                     <th>Loan Disbursement Date</th>
-                                    <th>Time</th>
+                                    <th>Approval Time</th>
                                     <th>Product Name</th>
                                     <th>Loan Amount</th>
                                     <th>Interest Amount</th>
