@@ -567,7 +567,6 @@ class ChartOfAccountController extends Controller
         $system_expenses = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
             ->join('company_bank_has_log AS log1', 'company_bank_accounts.Idbank', '=', 'log1.Bank_Account_Id')
             ->where('log1.Date_Time', '<=', $date_to)
-            ->where('log1.Balance', '!=', 0)
             ->where('company_bank_accounts.Bank_Type', '!=', 'Collector')
             ->whereIn('company_bank_accounts.acc_type_group', ['Assets', 'Liabilities', 'Equity'])
             ->whereRaw('log1.Date_Time = (SELECT MAX(log2.Date_Time) FROM company_bank_has_log AS log2 WHERE log2.Bank_Account_Id = log1.Bank_Account_Id)')
