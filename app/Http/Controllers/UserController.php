@@ -390,9 +390,22 @@ class UserController extends Controller
 //                'Paid_Amount' => DB::raw('Total_Amount'),
 //            ]);
 //        }
+        $monthlyRevenue = DB::table('customer_payments')
+            ->select(
+                DB::raw('MONTH(Date) as month'),
+                DB::raw('SUM(Amount) as total')
+            )
+            ->groupBy(DB::raw('MONTH(Date)'))
+            ->orderBy(DB::raw('MONTH(Date)'))
+            ->get();
 
+        $monthlyData = array_fill(0, 12, 0); // Initialize with 12 zeros
 
-        return view('home',compact('dashboard','checqueamount','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
+        foreach ($monthlyRevenue as $item) {
+            $monthlyData[$item->month - 1] = (float) $item->total;
+        }
+
+        return view('home',compact('monthlyData','dashboard','checqueamount','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
     }
 
     public function logout()

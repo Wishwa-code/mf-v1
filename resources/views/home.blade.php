@@ -168,7 +168,7 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-body">
-                            <h4 class="header-title mb-4">Monthly Revenue</h4>
+                            <h4 class="header-title mb-4">Monthly Payments</h4>
                             <div id="monthly-revenue-chart"></div>
                         </div>
                     </div>
@@ -422,10 +422,10 @@
 
 
 {{--    </script>--}}
-
     <script>
         $(document).ready(function () {
-            // Options for Monthly Revenue Chart
+            var monthlyData = @json($monthlyData); // Inject PHP data into JS
+
             var monthlyRevenueOptions = {
                 chart: {
                     type: 'line',
@@ -434,22 +434,22 @@
                 },
                 series: [
                     {
-                        name: 'Revenue',
-                        data: [30000, 40000, 35000, 50000, 60000, 75000, 85000, 90000, 100000, 95000, 110000, 120000], // Example data
+                        name: 'Payments',
+                        data: monthlyData,
                     },
                 ],
                 xaxis: {
                     categories: [
                         'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-                    ], // Months of the year
+                    ],
                 },
                 colors: ['#3bc0c3'],
                 stroke: {
                     curve: 'smooth',
                 },
                 title: {
-                    text: 'Monthly Revenue',
+                    text: 'Monthly Payments',
                     align: 'center',
                     style: {
                         fontSize: '16px',
@@ -458,7 +458,6 @@
                 },
             };
 
-            // Render the Monthly Revenue Chart
             var monthlyRevenueChart = new ApexCharts(
                 document.querySelector('#monthly-revenue-chart'),
                 monthlyRevenueOptions
@@ -466,6 +465,7 @@
             monthlyRevenueChart.render();
         });
     </script>
+
 
 
 

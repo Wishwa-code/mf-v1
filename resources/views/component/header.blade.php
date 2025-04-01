@@ -1018,37 +1018,37 @@ $banner = DB::select($query);
                     @endif
 
 
-                    @if($item->income == 1)
+{{--                    @if($item->income == 1)--}}
 {{--                        <li class="side-nav-title">Income Section</li>--}}
-                        <li class="side-nav-item">
-                            <a data-bs-toggle="collapse" href="#income" aria-expanded="false" aria-controls="income"
-                               class="side-nav-link">
-                                <i class="ri-briefcase-line"></i>
-                                <span> Other Income </span>
-                                <span class="menu-arrow"></span>
-                            </a>
-                            <div class="collapse" id="income">
-                                <ul class="side-nav-second-level">
-                                    @if($item->add_income == 1)
-                                        <li>
-                                            <a href="/income">Add Income</a>
-                                        </li>
-                                    @else
-                                    @endif
+{{--                        <li class="side-nav-item">--}}
+{{--                            <a data-bs-toggle="collapse" href="#income" aria-expanded="false" aria-controls="income"--}}
+{{--                               class="side-nav-link">--}}
+{{--                                <i class="ri-briefcase-line"></i>--}}
+{{--                                <span> Other Income </span>--}}
+{{--                                <span class="menu-arrow"></span>--}}
+{{--                            </a>--}}
+{{--                            <div class="collapse" id="income">--}}
+{{--                                <ul class="side-nav-second-level">--}}
+{{--                                    @if($item->add_income == 1)--}}
+{{--                                        <li>--}}
+{{--                                            <a href="/income">Add Income</a>--}}
+{{--                                        </li>--}}
+{{--                                    @else--}}
+{{--                                    @endif--}}
 
-                                    @if($item->view_income == 1)
-                                        <li>
-                                            <a href="/view_income">View Income</a>
-                                        </li>
-                                    @else
-                                    @endif
+{{--                                    @if($item->view_income == 1)--}}
+{{--                                        <li>--}}
+{{--                                            <a href="/view_income">View Income</a>--}}
+{{--                                        </li>--}}
+{{--                                    @else--}}
+{{--                                    @endif--}}
 
 
-                                </ul>
-                            </div>
-                        </li>
-                    @else
-                    @endif
+{{--                                </ul>--}}
+{{--                            </div>--}}
+{{--                        </li>--}}
+{{--                    @else--}}
+{{--                    @endif--}}
 
 
                     @if($item->user == 1)
