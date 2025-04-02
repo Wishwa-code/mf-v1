@@ -21,10 +21,10 @@
                             </ol>
                         </div>
                         <h4 class="page-title">Welcome!</h4>
-                        {{--                    <form action="{{route('loan_settlement.capitalbalance')}}" method="post">--}}
-                        {{--                        @csrf--}}
-                        {{--                        <input type="submit" value="test capital">--}}
-                        {{--                    </form>--}}
+                                            <form action="{{route('loan_settlement.capitalbalance')}}" method="post">
+                                                @csrf
+                                                <input type="submit" value="test capital">
+                                            </form>
                         <br>
                     </div>
                 </div>

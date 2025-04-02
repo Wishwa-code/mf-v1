@@ -3191,7 +3191,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             "Payment of $undo_payment undone ($currentDateTime - $currentUser)", $undo_payment,
             $lastLoanLog->Panelty_Payment, $lastLoanLog->Interest_Payment,
             $lastLoanLog->Capital_Payment, $lastLoanLog->Savings_Payment, $lastLoanLog->Panelty_Balance,
-            $lastLoanLog->Interest_Balance, $lastLoanLog->Capital_Balance, $lastLoanLog->Total_Pending_Balance, $lastLoanLog->Saving_Account_Balance
+            $lastLoanLog->Interest_Balance, $lastLoanLog->Capital_Balance, $lastLoanLog->Total_Pending_Balance+$undo_payment, $lastLoanLog->Saving_Account_Balance
         );
 
         //customer points
@@ -3248,12 +3248,112 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
 
     public function check_all_capital()
     {
-        $loan = DB::table('customer_loan')->get();
-        foreach ($loan as $loans) {
-            $loan_id = $loans->idCustomer_Loan;
-            Log::info($loan_id);
-            $this->capitalBalanceController->index($loan_id);
-        }
+//        $loan = DB::table('customer_loan')->get();
+//        foreach ($loan as $loans) {
+//            $loan_id = $loans->idCustomer_Loan;
+//            Log::info($loan_id);
+//            $this->capitalBalanceController->index($loan_id);
+//        }
+
+
+//        $customer_payment=DB::table('customer_payments')->where('Description','=','Payment')->get();
+//        foreach ($customer_payment as $payment) {
+//            $payment_id = $payment->idCustomer_Payments;
+//             $Loan_Log=DB::table('Loan_Log')->where('Type','=','Customer Payment')->where('Type_ID','=',$payment_id)->first();
+//             if ($Loan_Log){
+//                 Log::info($payment_id);
+//                 $loan=DB::table('customer_loan')->where('Status','=','0')->where('idCustomer_Loan','=',$payment->Customer_Loan_idCustomer_Loan)->first();
+//                 if ($loan){
+//                     $balane=$loan->Balance_Amount;
+//                     $capital_balance=$loan->capital_balance;
+//                     $interest_balance=$loan->installment_balance;
+//
+//                     $loan_id=$loan->idCustomer_Loan;
+//                     $last_log = DB::table('Loan_Log')
+//                         ->where('Loan_ID', '=', $loan_id)
+//                         ->orderBy('Loan_Log_ID', 'desc')
+//                         ->first();
+//                     if ($last_log){
+//                         $branch_id=$loan->branch_id;
+//                         $user_id = (int)session('userid');
+//
+//
+//                         $payment_amount=$payment->Amount;
+//
+//                         $log_total_balance=$last_log->Total_Pending_Balance;
+//                         $log_capital_balance=$last_log->Capital_Balance;
+//                         $log_interest_balance=$last_log->Interest_Balance;
+//
+////                         if ($balane==$log_total_balance-$payment_amount){
+//                             $panelty_balance=$last_log->Panelty_Balance;
+//
+//                             $paid_capital=$log_capital_balance-$capital_balance;
+//                             $paid_interest=$log_interest_balance-$interest_balance;
+////                             Log::info($loan_id.'-'.$payment_amount);
+////                             DB::table('Loan_Log')->insert([
+////                                 'Loan_ID' => $loan_id,
+////                                 'Date_Time' => $payment->Date.' '.$payment->time,
+////                                 'Type' => 'Customer Payment',
+////                                 'Type_ID' => $payment_id,
+////                                 'Description' => 'Customer Payment-Adjustment',
+////                                 'Amount' => $payment_amount,
+////                                 'Panelty_Payment' => '0',
+////                                 'Interest_Payment' => $paid_interest,
+////                                 'Capital_Payment' => $paid_capital,
+////                                 'Savings_Payment' => '0',
+////                                 'Panelty_Balance' => $panelty_balance,
+////                                 'Interest_Balance' => $log_interest_balance-$paid_interest,
+////                                 'Capital_Balance' => $log_capital_balance-$paid_capital,
+////                                 'Total_Pending_Balance' => $log_total_balance-$payment_amount,
+////                                 'Saving_Account_Balance' => '0',
+////                                 'User_idUser' => $user_id,
+////                                 'branch_id' =>$branch_id
+////                             ]);
+////                         }
+//                     }
+//                 }
+//             }
+//        }
+
+//
+
+
+//        $loan=DB::table('customer_loan')->get();
+//        foreach ($loan as $loans) {
+//            $branch_id=$loans->branch_id;
+//            $loan_id = $loans->idCustomer_Loan;
+//            $payment_sum=DB::table('customer_payments')->where('Customer_Loan_idCustomer_Loan','=',$loans->idCustomer_Loan)->sum('Amount');
+//            $log_payment_sum=DB::table('Loan_Log')->where('Type','=','Customer Payment')->where('Loan_ID','=',$loans->idCustomer_Loan)->sum('Amount');
+//            $log_payment_undo_sum=DB::table('Loan_Log')->where('Type','=','Payment Undo')->where('Loan_ID','=',$loans->idCustomer_Loan)->sum('Amount');
+//
+//            $log_payment_sum=$log_payment_sum-$log_payment_undo_sum;
+//            $new_payment_amount=$payment_sum-$log_payment_sum;
+//
+//
+//            $log=DB::table('Loan_Log')->where('Loan_ID','=',$loan_id)->orderBy('Loan_Log_ID', 'desc')->first();
+//            if($payment_sum!=$log_payment_sum){
+//                DB::table('Loan_Log')->insert([
+//                    'Loan_ID' => $loan_id,
+//                    'Date_Time' => date('Y-m-d H:i:s'),
+//                    'Type' => 'Customer Payment',
+//                    'Type_ID' => '0',
+//                    'Description' => 'Customer Payment-Adjustment',
+//                    'Amount' => $new_payment_amount,
+//                    'Panelty_Payment' => '0',
+//                    'Interest_Payment' => '0',
+//                    'Capital_Payment' => '0',
+//                    'Savings_Payment' => '0',
+//                    'Panelty_Balance' => '0',
+//                    'Interest_Balance' => '0',
+//                    'Capital_Balance' => '0',
+//                    'Total_Pending_Balance' => $log->Total_Pending_Balance-$new_payment_amount,
+//                    'Saving_Account_Balance' => '0',
+//                    'User_idUser' => $user_id,
+//                    'branch_id' => $branch_id
+//                ]);
+//                Log::info($loan_id.'/'.$new_payment_amount);
+//            }
+//        }
         return redirect()->intended(route('home'));
     }
 
