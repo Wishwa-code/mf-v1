@@ -511,7 +511,7 @@ class ChartOfAccountController extends Controller
         $data = tableWithBranch('company_bank_has_log','company_bank_has_log')
             ->leftjoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
             ->where('Bank_Account_Id', '=',$account_id) // Match records starting with accountCode
-            ->where('Date_Time','<=',$date_to) // Filter by date range
+            ->whereDate('Date_Time','<=',$date_to) // Filter by date range
             ->orderBy('id')
             ->get();
 
@@ -562,115 +562,115 @@ class ChartOfAccountController extends Controller
 
     public function BalanceSheet(Request $request)
     {
-        $date_to = $request->date_to ?? now()->toDateString(); // Default to today
-        $date_from = '2024-08-20'; // Hard-coded date
+        $date_to = $request->date_to ?? now()->toDateString();
 
-        // Call the profit function to get profit-related data
+        // Call the profit function
         $profitData = $this->profit($request);
 
+        // Subquery to get the latest log entry for each bank account
+        $latestLogs = tableWithBranch('company_bank_has_log')
+            ->select('Bank_Account_Id', \DB::raw('MAX(Date_Time) as LatestDate'))
+            ->whereDate('Date_Time', '<=', $date_to)
+            ->groupBy('Bank_Account_Id');
+
+
+        // Main query joining only latest logs per bank account
         $system_expenses = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
-            ->join('company_bank_has_log AS log1', 'company_bank_accounts.Idbank', '=', 'log1.Bank_Account_Id')
-            ->where('log1.Date_Time', '<=', $date_to)
+            ->leftJoin('company_bank_has_log AS log1', function ($join) use ($latestLogs) {
+                $join->on('company_bank_accounts.Idbank', '=', 'log1.Bank_Account_Id')
+                    ->joinSub($latestLogs, 'latest', function ($joinSub) {
+                        $joinSub->on('log1.Bank_Account_Id', '=', 'latest.Bank_Account_Id')
+                            ->on('log1.Date_Time', '=', 'latest.LatestDate');
+                    });
+            })
             ->where('company_bank_accounts.Bank_Type', '!=', 'Collector')
             ->whereIn('company_bank_accounts.acc_type_group', ['Assets', 'Liabilities', 'Equity'])
-            ->whereRaw('log1.Date_Time = (SELECT MAX(log2.Date_Time) FROM company_bank_has_log AS log2 WHERE log2.Bank_Account_Id = log1.Bank_Account_Id)')
             ->select(
                 'company_bank_accounts.Idbank',
                 'company_bank_accounts.acc_type_group',
                 'company_bank_accounts.Bank_Name',
-                \DB::raw('MAX(log1.Balance) as Balance'), // Get the latest balance
-                \DB::raw('MAX(log1.type) as type') // Get the latest type
+                \DB::raw('log1.Balance as Balance'),
+                \DB::raw('IFNULL(log1.type, 0) as type')
             )
-            ->groupBy('company_bank_accounts.Idbank', 'company_bank_accounts.acc_type_group', 'company_bank_accounts.Bank_Name')
-            ->get()
-            ->groupBy('acc_type_group');
+            ->get();
 
-        // ✅ Ensure variables are always defined
+        // Initialize variables
         $total_assets = 0;
         $total_liabilities = 0;
         $total_equity = 0;
-
-        // ✅ Define empty arrays for each category (Prevents Undefined Variable error)
         $assets = [];
         $liabilities = [];
         $equity = [];
 
-        // Perform the calculation using profitData
+        // Net Profit / Loss logic
         $final_result = ($profitData['interest'] + $profitData['panelty'] + $profitData['other_chargers'] - $profitData['total_difference']);
+        $final_result = str_replace(',', '', $final_result);
+        $final_result_float = floatval($final_result);
 
-        // Remove commas from the final result (if any) and ensure it's a float
-        $final_result = str_replace(',', '', $final_result); // Remove commas
-        $final_result_float = floatval($final_result); // Convert to float
-
-        // If final_result is positive, add it to Assets; if negative, add it to Liabilities
         if ($final_result_float > 0) {
-            // Add to Assets
-            $assets[] = [
-                'idbank' => 'Net Profit', // You can add a placeholder name like 'Net Profit'
+            $liabilities[] = [
+                'idbank' => 'Net Profit',
                 'name' => 'Net Profit',
+                'balance' => abs($final_result_float)
+            ];
+            $total_liabilities += abs($final_result_float);
+        } elseif ($final_result_float < 0) {
+
+            $assets[] = [
+                'idbank' => 'Net Loss',
+                'name' => 'Net Loss',
                 'balance' => $final_result_float
             ];
             $total_assets += $final_result_float;
-        } elseif ($final_result_float < 0) {
-            // Add to Liabilities
-            $liabilities[] = [
-                'idbank' => 'Net Loss', // You can add a placeholder name like 'Net Loss'
-                'name' => 'Net Loss',
-                'balance' => $final_result_float // Use absolute value to show it as a positive number in liabilities
-            ];
-            $total_liabilities += $final_result_float;
         }
 
-        // ✅ Process data and categorize it with Idbank
-        foreach ($system_expenses as $category => $items) {
-            foreach ($items as $item) {
-                switch ($category) {
-                    case 'Assets':
-                        $assets[] = [
-                            'idbank' => $item->Idbank,
-                            'name' => $item->Bank_Name,
-                            'balance' => $item->Balance
-                        ];
-                        $total_assets += $item->Balance;
-                        break;
-                    case 'Liabilities':
-                        $liabilities[] = [
-                            'idbank' => $item->Idbank,
-                            'name' => $item->Bank_Name,
-                            'balance' => $item->Balance
-                        ];
-                        $total_liabilities += $item->Balance;
-                        break;
-                    case 'Equity':
-                        $equity[] = [
-                            'idbank' => $item->Idbank,
-                            'name' => $item->Bank_Name,
-                            'balance' => $item->Balance
-                        ];
-                        $total_equity += $item->Balance;
-                        break;
-                }
+        // Loop through results and categorize
+        foreach ($system_expenses as $item) {
+            switch ($item->acc_type_group) {
+                case 'Assets':
+                    $assets[] = [
+                        'idbank' => $item->Idbank,
+                        'name' => $item->Bank_Name,
+                        'balance' => $item->Balance
+                    ];
+                    $total_assets += $item->Balance;
+                    break;
+                case 'Liabilities':
+                    $liabilities[] = [
+                        'idbank' => $item->Idbank,
+                        'name' => $item->Bank_Name,
+                        'balance' => $item->Balance
+                    ];
+                    $total_liabilities += $item->Balance;
+                    break;
+                case 'Equity':
+                    $equity[] = [
+                        'idbank' => $item->Idbank,
+                        'name' => $item->Bank_Name,
+                        'balance' => $item->Balance
+                    ];
+                    $total_equity += $item->Balance;
+                    break;
             }
         }
 
-
-
         $total_liabilities_and_equity = $total_liabilities + $total_equity;
 
-
-        // ✅ Now these variables are always defined and passed to the view
         return view('pages.Accounting.BalanceSheet', compact(
             'date_to', 'assets', 'liabilities', 'equity',
-            'total_assets', 'total_liabilities', 'total_equity', 'total_liabilities_and_equity','final_result'
+            'total_assets', 'total_liabilities', 'total_equity',
+            'total_liabilities_and_equity', 'final_result'
         ));
     }
 
 
 
 
+
+
     public function profit(Request $request)
     {
-        $date_from = $request->date_from;
+        $date_from = '2024-08-20';
         $date_to = $request->date_to;
         $interest = 0.00;
         $panelty = 0.00;
