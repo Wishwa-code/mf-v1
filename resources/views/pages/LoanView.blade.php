@@ -823,6 +823,7 @@
                                         <thead>
                                         <tr>
                                             <th>Date/Time</th>
+                                            <th>ID</th>
                                             <th>Description</th>
                                             <th>Amount</th>
                                             <th>Penalty Payment</th>
@@ -1334,7 +1335,9 @@
                                         // Loop through response and add rows dynamically
                                         $.each(response, function(index, log) {
                                             table.row.add([
+
                                                 log.Date_Time,
+                                                log.Type_ID,
                                                 log.Description,
                                                 parseFloat(log.Amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                                                 parseFloat(log.Panelty_Payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),

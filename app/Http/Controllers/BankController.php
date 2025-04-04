@@ -284,13 +284,13 @@ class BankController extends Controller
 
 
 
-        $loanQuery = tableWithBranch('loan_other_charges', 'loan_other_charges')
-            ->join('customer_loan', 'customer_loan.idCustomer_Loan', '=', 'loan_other_charges.Customer_Loan_idCustomer_Loan')
+        $loanQuery = tableWithBranch('customer_loan')
             ->whereBetween('customer_loan.Date_Time', [$date_from, $date_to])
-            ->where('customer_loan.Status', '=', '0');
+            ->where('customer_loan.Status', '!=', '-1')
+            ->where('customer_loan.Status', '!=', '-2');
 
         // Get the sum of Amount
-        $other_chargers = $loanQuery->sum('loan_other_charges.Amount');
+        $other_chargers = $loanQuery->sum('loan_other_charges.Total_Other_Amount');
 
         $total_income = tableWithBranch('expences')
             ->whereBetween('date', [$date_from_2, $date_to_2])

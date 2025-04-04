@@ -511,7 +511,7 @@ class ChartOfAccountController extends Controller
         $data = tableWithBranch('company_bank_has_log','company_bank_has_log')
             ->leftjoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
             ->where('Bank_Account_Id', '=',$account_id) // Match records starting with accountCode
-            ->where('Date_Time','<=',$date_to) // Filter by date range
+            ->whereDate('Date_Time','<=',$date_to) // Filter by date range
             ->orderBy('id')
             ->get();
 
@@ -562,77 +562,180 @@ class ChartOfAccountController extends Controller
 
     public function BalanceSheet(Request $request)
     {
-        $date_to = $request->date_to ?? now()->toDateString(); // Default to today
+        $date_to = $request->date_to ?? now()->toDateString();
 
+        // Call the profit function
+        $profitData = $this->profit($request);
+
+        // Subquery to get the latest log entry for each bank account
+        $latestLogs = tableWithBranch('company_bank_has_log')
+            ->select('Bank_Account_Id', \DB::raw('MAX(Date_Time) as LatestDate'))
+            ->whereDate('Date_Time', '<=', $date_to)
+            ->groupBy('Bank_Account_Id');
+
+
+        // Main query joining only latest logs per bank account
         $system_expenses = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
-            ->join('company_bank_has_log AS log1', 'company_bank_accounts.Idbank', '=', 'log1.Bank_Account_Id')
-            ->where('log1.Date_Time', '<=', $date_to)
+            ->leftJoin('company_bank_has_log AS log1', function ($join) use ($latestLogs) {
+                $join->on('company_bank_accounts.Idbank', '=', 'log1.Bank_Account_Id')
+                    ->joinSub($latestLogs, 'latest', function ($joinSub) {
+                        $joinSub->on('log1.Bank_Account_Id', '=', 'latest.Bank_Account_Id')
+                            ->on('log1.Date_Time', '=', 'latest.LatestDate');
+                    });
+            })
             ->where('company_bank_accounts.Bank_Type', '!=', 'Collector')
             ->whereIn('company_bank_accounts.acc_type_group', ['Assets', 'Liabilities', 'Equity'])
-            ->whereRaw('log1.Date_Time = (SELECT MAX(log2.Date_Time) FROM company_bank_has_log AS log2 WHERE log2.Bank_Account_Id = log1.Bank_Account_Id)')
             ->select(
                 'company_bank_accounts.Idbank',
                 'company_bank_accounts.acc_type_group',
                 'company_bank_accounts.Bank_Name',
-                \DB::raw('MAX(log1.Balance) as Balance'), // Get the latest balance
-                \DB::raw('MAX(log1.type) as type') // Get the latest type
+                \DB::raw('log1.Balance as Balance'),
+                \DB::raw('IFNULL(log1.type, 0) as type')
             )
-            ->groupBy('company_bank_accounts.Idbank', 'company_bank_accounts.acc_type_group', 'company_bank_accounts.Bank_Name')
-            ->get()
-            ->groupBy('acc_type_group');
+            ->get();
 
-        // ✅ Ensure variables are always defined
+        // Initialize variables
         $total_assets = 0;
         $total_liabilities = 0;
         $total_equity = 0;
-
-        // ✅ Define empty arrays for each category (Prevents Undefined Variable error)
         $assets = [];
         $liabilities = [];
         $equity = [];
 
-        // ✅ Process data and categorize it with Idbank
-        foreach ($system_expenses as $category => $items) {
-            foreach ($items as $item) {
-                switch ($category) {
-                    case 'Assets':
-                        $assets[] = [
-                            'idbank' => $item->Idbank,
-                            'name' => $item->Bank_Name,
-                            'balance' => $item->Balance
-                        ];
-                        $total_assets += $item->Balance;
-                        break;
-                    case 'Liabilities':
-                        $liabilities[] = [
-                            'idbank' => $item->Idbank,
-                            'name' => $item->Bank_Name,
-                            'balance' => $item->Balance
-                        ];
-                        $total_liabilities += $item->Balance;
-                        break;
-                    case 'Equity':
-                        $equity[] = [
-                            'idbank' => $item->Idbank,
-                            'name' => $item->Bank_Name,
-                            'balance' => $item->Balance
-                        ];
-                        $total_equity += $item->Balance;
-                        break;
-                }
+        // Net Profit / Loss logic
+        $final_result = ($profitData['interest'] + $profitData['panelty'] + $profitData['other_chargers'] - $profitData['total_difference']);
+        $final_result = str_replace(',', '', $final_result);
+        $final_result_float = floatval($final_result);
+
+        if ($final_result_float > 0) {
+            $liabilities[] = [
+                'idbank' => 'Net Profit',
+                'name' => 'Net Profit',
+                'balance' => abs($final_result_float)
+            ];
+            $total_liabilities += abs($final_result_float);
+        } elseif ($final_result_float < 0) {
+
+            $assets[] = [
+                'idbank' => 'Net Loss',
+                'name' => 'Net Loss',
+                'balance' => $final_result_float
+            ];
+            $total_assets += $final_result_float;
+        }
+
+        // Loop through results and categorize
+        foreach ($system_expenses as $item) {
+            switch ($item->acc_type_group) {
+                case 'Assets':
+                    $assets[] = [
+                        'idbank' => $item->Idbank,
+                        'name' => $item->Bank_Name,
+                        'balance' => $item->Balance
+                    ];
+                    $total_assets += $item->Balance;
+                    break;
+                case 'Liabilities':
+                    $liabilities[] = [
+                        'idbank' => $item->Idbank,
+                        'name' => $item->Bank_Name,
+                        'balance' => $item->Balance
+                    ];
+                    $total_liabilities += $item->Balance;
+                    break;
+                case 'Equity':
+                    $equity[] = [
+                        'idbank' => $item->Idbank,
+                        'name' => $item->Bank_Name,
+                        'balance' => $item->Balance
+                    ];
+                    $total_equity += $item->Balance;
+                    break;
             }
         }
 
-
-
         $total_liabilities_and_equity = $total_liabilities + $total_equity;
 
-        // ✅ Now these variables are always defined and passed to the view
         return view('pages.Accounting.BalanceSheet', compact(
             'date_to', 'assets', 'liabilities', 'equity',
-            'total_assets', 'total_liabilities', 'total_equity', 'total_liabilities_and_equity'
+            'total_assets', 'total_liabilities', 'total_equity',
+            'total_liabilities_and_equity', 'final_result'
         ));
     }
+
+
+
+
+
+
+    public function profit(Request $request)
+    {
+        $date_from = '2024-08-20';
+        $date_to = $request->date_to;
+        $interest = 0.00;
+        $panelty = 0.00;
+        $other_chargers = 0.00;
+        $total_income = 0.00;
+        $total_expenses = 0.00;
+
+        $date_to_2 = Carbon::parse($date_to)->endOfDay();
+        $date_from_2 = Carbon::parse($date_from)->startOfDay();
+
+        // Calculate various values
+        $interest = tableWithBranch('Loan_Log')
+            ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
+            ->sum('Interest_Payment');
+
+        $panelty = tableWithBranch('Loan_Log')
+            ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
+            ->sum('Panelty_Payment');
+
+        $loanQuery = tableWithBranch('loan_other_charges', 'loan_other_charges')
+            ->join('customer_loan', 'customer_loan.idCustomer_Loan', '=', 'loan_other_charges.Customer_Loan_idCustomer_Loan')
+            ->whereBetween('customer_loan.Date_Time', [$date_from, $date_to])
+            ->where('customer_loan.Status', '=', '0');
+
+        // Get the sum of Amount
+        $other_chargers = $loanQuery->sum('loan_other_charges.Amount');
+
+        $total_income = tableWithBranch('expences')
+            ->whereBetween('date', [$date_from_2, $date_to_2])
+            ->where('reason', 'not like', '%Other loan charges for loan number:%')
+            ->where('type', '=', 'Income')
+            ->sum('amount');
+
+        $system_expenses = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
+            ->join('company_bank_has_log', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.Bank_Account_Id')
+            ->where('company_bank_accounts.Bank_Type', '=', 'ChartOfAccount')
+            ->where('acc_type_group', '=', 'Expenses')
+            ->whereBetween('company_bank_has_log.Date_Time', [$date_from_2, $date_to_2])
+            ->select(
+                'company_bank_accounts.Bank_Name',
+                DB::raw("SUM(COALESCE(company_bank_has_log.Credit, 0)) as total_credit"),
+                DB::raw("SUM(COALESCE(company_bank_has_log.Debit, 0)) as total_debit"),
+                DB::raw("(SUM(COALESCE(company_bank_has_log.Debit, 0)) - SUM(COALESCE(company_bank_has_log.Credit, 0))) as balance_difference")
+            )
+            ->groupBy('company_bank_accounts.Bank_Name')
+            ->havingRaw("balance_difference != 0") // Exclude zero balance difference
+            ->orderByDesc('balance_difference') // Order by highest difference
+            ->get();
+
+        // Calculate the total balance difference from system_expenses
+        $total_difference = $system_expenses->sum('balance_difference');
+
+        // Return all the data to the BalanceSheet function
+        return [
+            'interest' => $interest,
+            'panelty' => $panelty,
+            'other_chargers' => $other_chargers,
+            'total_income' => $total_income,
+            'total_expenses' => $total_expenses,
+            'total_difference' => $total_difference, // Add total_difference to the result
+        ];
+    }
+
+
+
 
 
 
