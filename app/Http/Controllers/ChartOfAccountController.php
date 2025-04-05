@@ -611,6 +611,7 @@ class ChartOfAccountController extends Controller
                 $join->on('company_bank_has_log.Id', '=', 'latest_logs.latest_log_id');
             })
             ->whereIn('company_bank_accounts.acc_type_group', ['Assets', 'Equity', 'Liabilities'])
+            ->where('Bank_Type','!=','System_default_2')
             ->select(
                 'company_bank_accounts.acc_type_group',
                 'company_bank_accounts.Idbank',
