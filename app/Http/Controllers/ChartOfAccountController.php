@@ -333,14 +333,25 @@ class ChartOfAccountController extends Controller
 
     public function viewDetails($id)
     {
-        // Fetch data from manual_journal_has_amount based on id_manual_journal
-        $data = tableWithBranch('manual_journal_has_amount')
-            ->where('id_manual_journal', $id)
+        $data = tableWithBranch('manual_journal', 'manual_journal')
+            ->join('manual_journal_has_amount', 'manual_journal.id_manual_journal', '=', 'manual_journal_has_amount.id_manual_journal')
+            ->join('company_bank_accounts', function ($join) {
+                $join->on(DB::raw("SUBSTRING_INDEX(manual_journal_has_amount.account, '-', 1)"), '=', 'company_bank_accounts.Idbank');
+            })
+            ->where('manual_journal.id_manual_journal', $id)
+            ->select(
+                'manual_journal_has_amount.description',
+                'manual_journal_has_amount.debit_amount',
+                'manual_journal_has_amount.credit_amount',
+                'manual_journal_has_amount.account',
+                'company_bank_accounts.acc_type_group'
+            )
             ->get();
 
-        // Return the data as JSON response
         return response()->json($data);
     }
+
+
 
 
     public function fetchLedger($account)
