@@ -567,32 +567,6 @@ class ChartOfAccountController extends Controller
         // Call the profit function
         $profitData = $this->profit($request);
 
-        // Subquery to get the latest log entry for each bank account
-        $latestLogs = tableWithBranch('company_bank_has_log')
-            ->select('Bank_Account_Id', \DB::raw('MAX(Date_Time) as LatestDate'))
-            ->whereDate('Date_Time', '<=', $date_to)
-            ->groupBy('Bank_Account_Id');
-
-
-        // Main query joining only latest logs per bank account
-        $system_expenses = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
-            ->leftJoin('company_bank_has_log AS log1', function ($join) use ($latestLogs) {
-                $join->on('company_bank_accounts.Idbank', '=', 'log1.Bank_Account_Id')
-                    ->joinSub($latestLogs, 'latest', function ($joinSub) {
-                        $joinSub->on('log1.Bank_Account_Id', '=', 'latest.Bank_Account_Id')
-                            ->on('log1.Date_Time', '=', 'latest.LatestDate');
-                    });
-            })
-            ->where('company_bank_accounts.Bank_Type', '!=', 'Collector')
-            ->whereIn('company_bank_accounts.acc_type_group', ['Assets', 'Liabilities', 'Equity'])
-            ->select(
-                'company_bank_accounts.Idbank',
-                'company_bank_accounts.acc_type_group',
-                'company_bank_accounts.Bank_Name',
-                \DB::raw('log1.Balance as Balance'),
-                \DB::raw('IFNULL(log1.type, 0) as type')
-            )
-            ->get();
 
         // Initialize variables
         $total_assets = 0;
@@ -624,35 +598,51 @@ class ChartOfAccountController extends Controller
             $total_assets += $final_result_float;
         }
 
-        // Loop through results and categorize
-        foreach ($system_expenses as $item) {
-            switch ($item->acc_type_group) {
-                case 'Assets':
-                    $assets[] = [
-                        'idbank' => $item->Idbank,
-                        'name' => $item->Bank_Name,
-                        'balance' => $item->Balance
-                    ];
-                    $total_assets += $item->Balance;
-                    break;
-                case 'Liabilities':
-                    $liabilities[] = [
-                        'idbank' => $item->Idbank,
-                        'name' => $item->Bank_Name,
-                        'balance' => $item->Balance
-                    ];
-                    $total_liabilities += $item->Balance;
-                    break;
-                case 'Equity':
-                    $equity[] = [
-                        'idbank' => $item->Idbank,
-                        'name' => $item->Bank_Name,
-                        'balance' => $item->Balance
-                    ];
-                    $total_equity += $item->Balance;
-                    break;
+        // Subquery to get the ID of the latest log per bank account before or on $date_to
+        $latestLogs = tableWithBranch('company_bank_has_log as log1')
+            ->select(DB::raw('MAX(log1.Id) as latest_log_id'))
+            ->whereDate('log1.Date_Time', '<=', $date_to)
+            ->groupBy('log1.Bank_Account_Id');
+
+// Join with main tables and get required info
+        $asset_query = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
+            ->join('company_bank_has_log', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.Bank_Account_Id')
+            ->joinSub($latestLogs, 'latest_logs', function ($join) {
+                $join->on('company_bank_has_log.Id', '=', 'latest_logs.latest_log_id');
+            })
+            ->whereIn('company_bank_accounts.acc_type_group', ['Assets', 'Equity', 'Liabilities'])
+            ->select(
+                'company_bank_accounts.acc_type_group',
+                'company_bank_accounts.Idbank',
+                'company_bank_accounts.Bank_Name',
+                'company_bank_has_log.Balance'
+            )
+            ->get();
+
+
+// Log the results
+        foreach ($asset_query as $item) {
+
+            $formatted = [
+                'idbank' => $item->Idbank,
+                'name' => $item->Bank_Name,
+                'balance' => floatval($item->Balance),
+            ];
+
+            if ($item->acc_type_group === 'Assets') {
+                $assets[] = $formatted;
+                $total_assets += $formatted['balance'];
+            } elseif ($item->acc_type_group === 'Liabilities') {
+                $liabilities[] = $formatted;
+                $total_liabilities += $formatted['balance'];
+            } elseif ($item->acc_type_group === 'Equity') {
+                $equity[] = $formatted;
+                $total_equity += $formatted['balance'];
             }
         }
+
+
+
 
         $total_liabilities_and_equity = $total_liabilities + $total_equity;
 

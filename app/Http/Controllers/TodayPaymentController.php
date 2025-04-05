@@ -61,6 +61,8 @@ class TodayPaymentController extends Controller
             $loanQuery->join('collector_has_route', 'customer.route_id', '=', 'collector_has_route.route_id')
                 ->where('collector_has_route.collector_id', '=', $user_id);
         }
+        $loanQuery->orderBy('customer_loan.Loan_No', 'asc'); // Add this line to order by loan number
+
         $loan = $loanQuery->get();
         $route = tableWithBranch('route', 'route')
             ->join('user', 'route.id_officer', '=', 'user.id')
