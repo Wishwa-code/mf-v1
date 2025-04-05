@@ -385,8 +385,8 @@
                     <thead>
                     <tr>
                         <th>Description</th>
+                        <th>Account Type</th>
                         <th>Account</th>
-
                         <th>Debit Amount</th>
                         <th>Credit Amount</th>
                     </tr>
@@ -604,6 +604,7 @@
                             const row = `
                     <tr>
                         <td>${item.description}</td>
+                        <td>${item.acc_type_group}</td>
                         <td>${item.account}</td>
 
                         <td>${parseFloat(item.debit_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
