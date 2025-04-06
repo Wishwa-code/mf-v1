@@ -655,3 +655,8 @@ Route::get('/PaymentFullDetailsReport','\App\Http\Controllers\ReportController@p
 Route::get('/loan-report', [PendingLoanController::class, 'report_disbursement'])->name('loan.report');
 Route::post('/loan-report/data', [PendingLoanController::class, 'get_report_disbursement'])->name('loan.report.data');
 Route::get('/loan-report/filters', [PendingLoanController::class, 'getFilters_disbursement'])->name('loan.report.filters');
+
+//KYC
+Route::get('/kyc', function () {
+    return view('pages.Insurance.KYC');
+});

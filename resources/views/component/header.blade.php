@@ -650,6 +650,9 @@ $banner = DB::select($query);
                                        <li>
                                            <a href="/showcustomerssaving">Customer Saving Acc.</a>
                                        </li>
+                                            <li>
+                                                <a href="/kyc">KYC</a>
+                                            </li>
                                     @else
                                     @endif
 
