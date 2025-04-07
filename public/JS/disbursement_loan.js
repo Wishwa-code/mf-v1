@@ -82,7 +82,7 @@ function load_table() {
                             '' +
                             '<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#issue-loan-modal" onclick="issue_request(' + item.idCustomer_Loan + ')"><i class="ri ri-send-plane-line"></i></button>' +
                             '<button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#view-modal" onclick="delete_request(' + item.idCustomer_Loan + ')"><i class="bi bi-trash"></i></button>' +
-                            '<a href="/loanview/' + item.idCustomer_Loan + '" target="_blank" class="btn btn-warning"><i class="bi bi-eye"></i></a>' +
+                            '<a href="/loanview/' + item.idCustomer_Loan + '/438217" target="_blank" class="btn btn-warning"><i class="bi bi-eye"></i></a>' +
                             '<a href="#" target="_blank" data-bs-toggle="modal" onclick="agreement(' + item.idCustomer_Loan + ')" data-bs-target="#agreement" class="btn btn-dark"><i class="bi bi-receipt"></i></a>' +
                             '<a href="#' + item.idCustomer_Loan + '" data-bs-toggle="modal" data-bs-target="#loan_edit" onclick="change_installment(' + item.idCustomer_Loan + ')"  class="btn btn-info"><i class="bi bi-pen"></i></a>' +
                             '<button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#standard-modal_2" onclick="set_cus(' + item.idCustomer_Loan + ')">' +
