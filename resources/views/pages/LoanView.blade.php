@@ -292,7 +292,7 @@
         <div class="row justify-content-center">
             <!-- Highlighted Loan Details Card -->
             <div class="col-lg-12 mb-4">
-
+                @if($type!=438217)
                     <div class="card shadow mb-3">
                         <div class="card-header">
                             Approval Section
@@ -319,7 +319,7 @@
                             </div>
                         </div>
                     </div>
-
+                @endif
                 <div class="modal fade" id="checklist-modal" tabindex="-1" aria-labelledby="checklistModalLabel" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-scrollable">
                         <div class="modal-content">
