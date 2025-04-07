@@ -290,7 +290,7 @@ class BankController extends Controller
             ->where('customer_loan.Status', '!=', '-2');
 
         // Get the sum of Amount
-        $other_chargers = $loanQuery->sum('loan_other_charges.Total_Other_Amount');
+        $other_chargers = $loanQuery->sum('customer_loan.Total_Other_Amount');
 
         $total_income = tableWithBranch('expences')
             ->whereBetween('date', [$date_from_2, $date_to_2])
