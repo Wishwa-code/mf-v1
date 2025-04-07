@@ -163,11 +163,12 @@ class PaymentLoanController extends Controller
         $totalCapitalBalance = $totals->sum('customer_loan.capital_balance');
         $totalPendingAmount = $totals->sum('customer_loan.Balance_Amount');
         $totalLoanAmount = $totals->sum('customer_loan.Amount');
-
+        $designation=session('designation');
 
         // Combine results with pagination and totals
         return response()->json([
             'item' => $loans,
+            'designation' => $designation,
             'totals' => [
                 'totalLoanCount' => $totalLoanCount,
                 'totalCapitalBalance' => $totalCapitalBalance,

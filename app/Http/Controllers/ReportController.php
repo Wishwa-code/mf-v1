@@ -188,7 +188,8 @@ class ReportController extends Controller
                 'branch.Name as branch_name',
                 'user.Full_Name as LendingOfficer',
                 'loan_category.Name as Name')
-            ->where('customer_loan.Status', '!=', '-1');
+            ->where('customer_loan.Status', '!=', '-1')
+            ->where('customer_loan.Status', '!=', '-2');
 
         // Apply center filter if center_id is provided
         if ($request->has('center_id') && $request->center_id != '') {
