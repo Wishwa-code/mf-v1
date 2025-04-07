@@ -724,7 +724,7 @@ class LoanController extends Controller
     }
 
 
-    public function loan_view_Np(string $id)
+    public function loan_view_Np(string $id,int $type=0)
     {
         $company = DB::table('company')->first();
         // Fetch the loan
@@ -826,6 +826,8 @@ class LoanController extends Controller
 
         // Pass the data to the view with compact and handle potential nulls
         return view('pages.LoanView', compact(
+            'type',
+            'id',
             'customers',
             'loan',
             'installments',

@@ -263,22 +263,88 @@
 
     </style>
 
+
+    <style>
+        .preview-box {
+            width: 200px;
+            height: 150px;
+            overflow: hidden;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+        }
+
+        .preview-box img,
+        .preview-box iframe,
+        .preview-box video {
+            max-width: 100%;
+            max-height: 100%;
+        }
+    </style>
+
 @endsection
 
 @section('content')
-
     <div class="custom-container py-4">
-
         <div class="row justify-content-center">
-
-
-
             <!-- Highlighted Loan Details Card -->
             <div class="col-lg-12 mb-4">
+
+                    <div class="card shadow mb-3">
+                        <div class="card-header">
+                            Approval Section
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive custom-scrollbar">
+                                <table class="table table-bordered table-sm table-striped" id="approval_table">
+                                    <thead class="sticky-top bg-white">
+                                    <tr>
+                                        <th hidden>#</th>
+                                        <th scope="col">Level</th>
+                                        <th scope="col">Permissions</th>
+                                        <th scope="col">Description</th>
+                                        <th scope="col">Comment</th>
+                                        <th scope="col">Approve</th>
+                                        <th scope="col">Approved User</th>
+                                        <th scope="col">Date Time</th>
+                                        <th scope="col">Check List</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody class="custom-scrollbar" style="max-height: 400px;">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                <div class="modal fade" id="checklist-modal" tabindex="-1" aria-labelledby="checklistModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="checklistModalLabel">Checklist</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div id="checklist-container"></div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
                 <div class="card shadow highlight-card">
                     <div class="card-header">
                         Loan Summary
                     </div>
+
                     <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-bordered table-sm">
@@ -657,19 +723,42 @@
                             <table class="table table-bordered table-sm table-striped">
                                 <thead class="sticky-top bg-white">
                                 <tr>
-
                                     <th scope="col">Name</th>
                                     <th scope="col">File</th>
+                                    <th scope="col">Preview</th>
                                 </tr>
                                 </thead>
                                 <tbody class="custom-scrollbar" style="max-height: 400px;">
                                 @foreach ($documents as $document)
                                     <tr>
-
                                         <td>{{ $document->Name }}</td>
                                         <td>
-                                            <a href="{{ asset('storage/' . $document->Path) }}" target="_blank">View
-                                                File</a>
+                                            @if (!empty($document->Path) && file_exists(storage_path('app/public/' . $document->Path)))
+                                                <a href="{{ asset('storage/' . $document->Path) }}" target="_blank">View File</a>
+                                            @else
+                                                <span class="text-muted">No File</span>
+                                            @endif
+                                        </td>
+
+                                        <td>
+                                            <div class="preview-box">
+                                                @php
+                                                    $ext = strtolower(pathinfo($document->Path, PATHINFO_EXTENSION));
+                                                @endphp
+
+                                                @if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif']))
+                                                    <img src="{{ asset('storage/' . $document->Path) }}" alt="Image Preview">
+                                                @elseif ($ext === 'pdf')
+                                                    <iframe src="{{ asset('storage/' . $document->Path) }}"></iframe>
+                                                @elseif (in_array($ext, ['mp4', 'webm']))
+                                                    <video muted autoplay loop>
+                                                        <source src="{{ asset('storage/' . $document->Path) }}" type="video/{{ $ext }}">
+                                                        Your browser does not support the video tag.
+                                                    </video>
+                                                @else
+                                                    <span>No Preview</span>
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -678,87 +767,90 @@
                         </div>
                     </div>
                 </div>
+
 
                 <br>
-                <div class="card shadow" id="np">
-                    <div class="card-header" style="position: relative;">
-                        Payment History
-                        <button onclick="printTable()" class="btn btn-primary"
-                                style="position: absolute; right: 0; top: 50%; transform: translateY(-50%);">Download
-                            Payment History PDF
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive custom-scrollbar">
-                            <table class="table table-bordered table-sm table-striped">
-                                <thead class="sticky-top bg-white">
-                                <tr>
-                                    <th scope="col">Date</th>
-                                    <th scope="col">Description</th>
-                                    <th scope="col">Amount</th>
-                                    <th scope="col" style="width: 40%">Comment</th>
-                                    <th scope="col">Slip</th>
-                                    <th scope="col">Payment Type</th>
-                                    <th scope="col">User</th>
-                                    <th scope="col">Slip</th>
-                                    <th scope="col">Payment Slip</th>
-                                </tr>
-                                </thead>
-                                <tbody class="custom-scrollbar" style="max-height: 400px;">
-                                @foreach ($customer_payments as $customer_payment)
+                @if($type!=438217)
+                    <div class="card shadow" id="np">
+                        <div class="card-header" style="position: relative;">
+                            Payment History
+                            <button onclick="printTable()" class="btn btn-primary"
+                                    style="position: absolute; right: 0; top: 50%; transform: translateY(-50%);">Download
+                                Payment History PDF
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive custom-scrollbar">
+                                <table class="table table-bordered table-sm table-striped">
+                                    <thead class="sticky-top bg-white">
                                     <tr>
-                                        <td>{{ $customer_payment->Date }} - {{ $customer_payment->time }}</td>
-                                        <td>{{ $customer_payment->Description }}</td>
-                                        <td>{{ number_format($customer_payment->Amount, 2, '.', ',') }}</td>
-                                        <td>{{ $customer_payment->comment }}</td>
-                                        <td>
-                                            @if (!empty($customer_payment->Slip))
-                                                <a href="javascript:void(0);"
-                                                   onclick="openSlip('{{ asset('storage/' . $customer_payment->Slip) }}')">View
-                                                    Slip</a>
-                                            @else
-                                                No Slip Available
-                                            @endif
-                                        </td>
-                                        <td>{{ $customer_payment->Payment_type }}   </td>
-                                        <td>{{ $customer_payment->Full_Name }} ( {{ $customer_payment->Designation }}
-                                            - {{ $customer_payment->email }} )
-                                        </td>
-                                        <td>
-                                            @if (!empty($customer_payment->Slip))
-                                                <button type="button" class="btn btn-success btn-sm" onclick="openSlip('{{ asset('storage/' . $customer_payment->Slip) }}')">
-                                                    <i class="bi bi-eye"></i>
-                                                </button>
-                                            @else
-                                                <button type="button" class="btn btn-success btn-sm disabled">
-                                                    <i class="bi bi-eye"></i>
-                                                </button>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <button type="button" class="btn btn-info btn-sm" onclick="payment_slip({{$customer_payment->idCustomer_Payments}})">
-                                                <i class="bi bi-printer"></i>
-                                            </button>
-                                        </td>
-                                    @if($payment_delete_status===1)
+                                        <th scope="col">Date</th>
+                                        <th scope="col">Description</th>
+                                        <th scope="col">Amount</th>
+                                        <th scope="col" style="width: 40%">Comment</th>
+                                        <th scope="col">Slip</th>
+                                        <th scope="col">Payment Type</th>
+                                        <th scope="col">User</th>
+                                        <th scope="col">Slip</th>
+                                        <th scope="col">Payment Slip</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody class="custom-scrollbar" style="max-height: 400px;">
+                                    @foreach ($customer_payments as $customer_payment)
+                                        <tr>
+                                            <td>{{ $customer_payment->Date }} - {{ $customer_payment->time }}</td>
+                                            <td>{{ $customer_payment->Description }}</td>
+                                            <td>{{ number_format($customer_payment->Amount, 2, '.', ',') }}</td>
+                                            <td>{{ $customer_payment->comment }}</td>
                                             <td>
-                                                <button class="reverse-payment-btn btn btn-outline-danger"
-                                                        onclick="undo_payment({{ $customer_payment->idCustomer_Payments }})">
-                                                    <i class="bi bi-trash"></i>
+                                                @if (!empty($customer_payment->Slip))
+                                                    <a href="javascript:void(0);"
+                                                       onclick="openSlip('{{ asset('storage/' . $customer_payment->Slip) }}')">View
+                                                        Slip</a>
+                                                @else
+                                                    No Slip Available
+                                                @endif
+                                            </td>
+                                            <td>{{ $customer_payment->Payment_type }}   </td>
+                                            <td>{{ $customer_payment->Full_Name }} ( {{ $customer_payment->Designation }}
+                                                - {{ $customer_payment->email }} )
+                                            </td>
+                                            <td>
+                                                @if (!empty($customer_payment->Slip))
+                                                    <button type="button" class="btn btn-success btn-sm" onclick="openSlip('{{ asset('storage/' . $customer_payment->Slip) }}')">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                @else
+                                                    <button type="button" class="btn btn-success btn-sm disabled">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-info btn-sm" onclick="payment_slip({{$customer_payment->idCustomer_Payments}})">
+                                                    <i class="bi bi-printer"></i>
                                                 </button>
                                             </td>
-                                        @else
-                                            <td></td>
-                                        @endif
+                                            @if($payment_delete_status===1)
+                                                <td>
+                                                    <button class="reverse-payment-btn btn btn-outline-danger"
+                                                            onclick="undo_payment({{ $customer_payment->idCustomer_Payments }})">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </td>
+                                            @else
+                                                <td></td>
+                                            @endif
 
 
-                                    </tr>
-                                @endforeach
-                                </tbody>
-                            </table>
+                                        </tr>
+                                    @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                </div>
+                @endif
 
 
                 <div class="modal fade" id="otherChargesModal" tabindex="-1" role="dialog"
@@ -1054,7 +1146,283 @@
 
 @endsection
 @section('script')
+    <script>
+        $(document).ready(function () {
+            load_approval_check({{$id}});
+        })
 
+        function load_approval_check(id) {
+            $.ajax({
+                type: "GET",
+                url: "/load_loan_approval/" + id,
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                },
+                success: function (data, textStatus, xhr) {
+
+                    console.log(data);
+
+                    if (xhr.status === 200) {
+                        let login_designation = data.login_designation;
+
+                        // Clear the existing rows
+                        $('#approval_table tbody').empty();
+
+                        let allUsersHaveIds = true; // Flag for "Issue Loan" button
+
+                        // Iterate over approval items
+                        data.item.forEach(function (document, index) {
+                            let levelDesignations = data.designation
+                                .filter(designationObj => designationObj.level_id == document.level_id) // Match correct level
+                                .map(designationObj => designationObj.designation_id) // Use correct designation field
+                                .join(", ");
+
+                            let approveButton;
+                            if (login_designation === "Admin") {
+                                approveButton = document.user_id === 0
+                                    ? `<input type="button" class="btn btn-primary" id="approve_btn_${document.level_id}" value="Approve" onclick="approve(${document.id}, '${index}')">`
+                                    : `<input type="button" class="btn btn-primary" value="Approve" disabled>`;
+                            } else {
+                                let userDesignation = $("#designation_user").val().trim(); // Get logged-in user's designation and remove spaces
+
+// Get designations for the current level only
+                                let levelDesignationArray = data.designation
+                                    .filter(designationObj => designationObj.level_id == document.level_id) // Only for this level
+                                    .map(designationObj => designationObj.designation_id.trim()); // Remove extra spaces
+
+// Check if logged-in user's designation matches this level's designation(s)
+                                if (levelDesignationArray.includes(userDesignation) && document.user_id === 0) {
+                                    approveButton = `<input type="button" class="btn btn-primary" id="approve_btn_${document.level_id}" value="Approve" onclick="approve(${document.id}, '${index}')">`;
+                                } else {
+                                    approveButton = `<input type="button" class="btn btn-primary" value="Approve" disabled>`;
+                                }
+
+                            }
+
+                            let newRow = `<tr>
+        <td hidden>${document.id}</td>
+        <td>${document.level}</td>
+        <td>${levelDesignations}</td>
+        <td>${document.description}</td>
+        <td><input type="text" class="form-control" value="${document.comment}" id="des_${index}"></td>
+        <td>${approveButton}</td>
+        <td>${document.user_id === 0 ? '-' : document.Full_Name}</td>
+        <td>${document.date}</td>
+        <td>
+            <button class="btn btn-info btn-sm" onclick="toggleChecklist(${document.level_id},${id})">
+                View Checklist (<span id="checklist_progress_${document.level_id}">0/0</span>)
+            </button>
+        </td>
+    </tr>
+    <tr id="checklist_row_${document.level_id}" style="display: none;">
+        <td colspan="9">
+            <div id="checklist_container_${document.level_id}" class="p-3 bg-light"></div>
+        </td>
+    </tr>`;
+
+                            $('#approval_table tbody').append(newRow);
+                            loadChecklistProgress(document.level_id, id);
+                        });
+
+                        // Enable or disable "Issue Loan" button
+                        $('#issue_loan_btn').prop('disabled', !allUsersHaveIds);
+                    } else {
+                        Swal.fire("Error!", "Failed to load data!", "error");
+                    }
+                },
+                error: function (xhr) {
+                    console.log("Error:", xhr.responseText);
+                },
+            });
+        }
+
+
+
+        function approve(id,index){
+            let comment = $("#des_" + index).val();
+
+            if (comment===" "){
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: 'Please Enter Comment !',
+                })
+            }else{
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "Do you want to approve this Loan ?",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, Approve it!",
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            type: "POST",
+                            url: "/approve_loan",
+                            headers: {
+                                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                            },
+                            data: {
+                                id:id,
+                                comment:comment
+                            },
+                            success: function (data, textStatus, xhr) {
+                                if (xhr.status === 200) {
+                                    Swal.fire({
+                                        position: "center",
+                                        icon: "success",
+                                        title: "Successfully Updated !",
+                                    }).then(function () {
+                                        window.location.reload();
+                                    });
+                                } else {
+                                    Swal.fire("Error!", "Failed to load data!", "error");
+                                }
+                            },
+                            error: function(xhr, textStatus, errorThrown) {
+                                console.log("Error:", errorThrown);
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        function loadChecklistProgress(levelId,loan_id) {
+            $.ajax({
+                type: "GET",
+                url: `/load_checklist/${levelId}/${loan_id}`,
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                },
+                success: function (data) {
+
+                    if (data.success) {
+                        const total = data.checklist.length;
+                        const completed = data.checklist.filter(item => parseInt(item.status) === 1).length;
+
+                        // Handle cases with no checklist items
+                        const progressText = total > 0 ? `${completed}/${total}` : `0/0`;
+
+                        // Update progress as a fraction (e.g., 1/3)
+                        $(`#checklist_progress_${levelId}`).text(progressText);
+
+                    } else {
+                        Swal.fire("Error!", "Failed to load checklist progress!", "error");
+                    }
+                },
+                error: function (xhr) {
+                    console.log("Error:", xhr.responseText);
+                },
+            });
+        }
+
+
+        function toggleChecklist(levelId,loan_id) {
+            const row = $(`#checklist_row_${levelId}`);
+            if (row.is(':visible')) {
+                row.hide();
+            } else {
+                loadChecklist(levelId,loan_id);
+                row.show();
+            }
+        }
+
+        function loadChecklist(levelId, loan_id) {
+            $.ajax({
+                type: "GET",
+                url: `/load_checklist/${levelId}/${loan_id}`,
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                },
+                success: function (data) {
+                    if (data.success) {
+                        let checklistHtml = `<ul class="list-group">`;
+                        data.checklist.forEach(item => {
+                            const isMarked = parseInt(item.status) === 1;
+                            const rowStyle = isMarked
+                                ? "background-color:#b3e5af; color: Green; height: 40px;" // Green background, white text, reduced height
+                                : "background-color:white; color: Gray; height: 40px;"; // Red background, white text, reduced height
+                            const buttonLabel = isMarked ? "Remove Checked" : "Checked";
+                            const buttonStyle = isMarked
+                                ? "background-color: #f8f9fa; color:red;" // Light background with green text
+                                : "background-color: #f8f9fa; color: green;"; // Light background with red text
+
+                            checklistHtml += `
+                        <li class="list-group-item d-flex justify-content-between align-items-center" style="${rowStyle}">
+                            ${item.description}
+                            <button class="btn btn-sm" style="${buttonStyle}" onclick="markChecklistItem(${item.id}, ${levelId}, ${item.status}, ${loan_id})">
+                                ${buttonLabel}
+                            </button>
+                        </li>`;
+                        });
+                        checklistHtml += `</ul>`;
+                        $(`#checklist_container_${levelId}`).html(checklistHtml);
+                    } else {
+                        Swal.fire("Error!", "Failed to load checklist!", "error");
+                    }
+                },
+                error: function (xhr) {
+                    console.log("Error:", xhr.responseText);
+                },
+            });
+        }
+
+
+
+
+        function markChecklistItem(itemId, levelId, currentStatus,loan_id) {
+            const newStatus = currentStatus === 1 ? 0 : 1; // Toggle status (1 -> 0, 0 -> 1)
+            const action = newStatus === 1 ? "mark this item as completed" : "remove the mark";
+
+            Swal.fire({
+                title: "Are you sure?",
+                text: `Do you want to ${action}?`,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, proceed!",
+                cancelButtonText: "Cancel",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Proceed to toggle the checklist item status
+                    $.ajax({
+                        type: "POST",
+                        url: `/update_checklist/${itemId}`,
+                        headers: {
+                            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                        },
+                        data: { status: newStatus },
+                        success: function (data) {
+                            if (data.success) {
+                                // Reload the checklist to reflect changes
+                                loadChecklist(levelId,loan_id);
+                                // Refresh checklist progress after updating the database
+                                loadChecklistProgress(levelId,loan_id);
+
+                                // Show success notification
+                                Swal.fire(
+                                    newStatus === 1 ? "Marked!" : "Unmarked!",
+                                    `The checklist item has been ${newStatus === 1 ? "marked as completed" : "unmarked"}.`,
+                                    "success"
+                                );
+                            } else {
+                                Swal.fire("Error!", "Failed to update checklist item!", "error");
+                            }
+                        },
+                        error: function (xhr) {
+                            console.log("Error:", xhr.responseText);
+                            Swal.fire("Error!", "An unexpected error occurred!", "error");
+                        },
+                    });
+                }
+            });
+        }
+
+    </script>
 
                     <script>
                         function printTable() {
