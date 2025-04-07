@@ -26,6 +26,7 @@ function load_table(page = 1) {
         success: function(response) {
             let data = response.item.data; // paginated data
             let total = response.totals;
+            let designation = response.designation;
             let currentPage = response.item.current_page;
             let lastPage = response.item.last_page;
 
@@ -44,6 +45,14 @@ function load_table(page = 1) {
 
             // Loop through each item in the response data
             data.forEach(function(item) {
+                let agreementButton = '';
+
+                if (designation === "Admin") {
+                    agreementButton = `
+            <a href="#" data-bs-toggle="modal" onclick="agreement(${item.idCustomer_Loan})" data-bs-target="#agreement" class="btn btn-dark">
+                <i class="bi bi-receipt"></i>
+            </a>`;
+                }
 
                 // Add row data to the table
                 $("#loan_table tbody").append(`
@@ -64,7 +73,7 @@ function load_table(page = 1) {
                         <td>
                             <a href="/loanview/${item.idCustomer_Loan}" target="_blank" class="btn btn-warning me-2"><i class="bi bi-eye"></i></a>
                             <a href="/invoice/${item.idCustomer_Loan}" target="_blank" class="btn btn-danger"><i class="bi bi-file-earmark-text"></i></a>
-                            <a href="#" data-bs-toggle="modal" onclick="agreement(${item.idCustomer_Loan})" data-bs-target="#agreement" class="btn btn-dark"><i class="bi bi-receipt"></i></a>
+                             ${agreementButton}
                         </td>
                     </tr>
                 `);
