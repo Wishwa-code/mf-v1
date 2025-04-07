@@ -121,6 +121,7 @@ Route::get('/load_product_details/{id}', '\App\Http\Controllers\LoanCategoryCont
 //loan
 Route::get('/loan','\App\Http\Controllers\LoanController@index')->name('loan.index');
 Route::get('/loanview/{id}','\App\Http\Controllers\LoanController@loan_view_Np')->name('loan.loan_view_Np');
+Route::get('/loanview/{id}/{type}','\App\Http\Controllers\LoanController@loan_view_Np')->name('loan.loan_view_Np');
 Route::get('/loan_step_2/{id}','\App\Http\Controllers\LoanController@show')->name('loan.show');
 Route::get('/loancategory/cost/{id}','\App\Http\Controllers\LoanCategoryController@load_charger')->name('loancategory.load_charger');
 Route::post('/loan','\App\Http\Controllers\LoanController@store')->name('loan.store');
