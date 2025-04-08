@@ -596,17 +596,17 @@ class ChartOfAccountController extends Controller
             $liabilities[] = [
                 'idbank' => 'Net Profit',
                 'name' => 'Net Profit',
-                'balance' => abs($final_result_float)
+                'balance' => $final_result_float
             ];
-            $total_liabilities += abs($final_result_float);
+            $total_liabilities += $final_result_float;
         } elseif ($final_result_float < 0) {
 
             $assets[] = [
                 'idbank' => 'Net Loss',
                 'name' => 'Net Loss',
-                'balance' => $final_result_float
+                'balance' => abs($final_result_float)
             ];
-            $total_assets += $final_result_float;
+            $total_assets += abs($final_result_float);
         }
 
         // Subquery to get the ID of the latest log per bank account before or on $date_to

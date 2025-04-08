@@ -293,6 +293,7 @@
             <!-- Highlighted Loan Details Card -->
             <div class="col-lg-12 mb-4">
                 @if($type==438217)
+                    <input type="hidden" id="designation_user" value="{{session('designation')}}">
                     <div class="card shadow mb-3">
                         <div class="card-header">
                             Approval Section
