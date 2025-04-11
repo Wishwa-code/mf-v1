@@ -806,10 +806,13 @@ class PendingLoanController extends Controller
                 'customer.idCustomer', '=', 'subquery.cus_id')
             ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
             ->leftJoin('loan_category as lc', 'lc.idLoan_Category', '=', 'cl.Loan_Category_idLoan_Category')
-            ->leftJoin('Loan_Log as ll', function ($join) {
-                $join->on('ll.Loan_ID', '=', 'cl.idCustomer_Loan')
-                    ->where('ll.Type', '=', 'Issue Loan');
-            });
+            ->leftJoin(DB::raw("(
+    SELECT Loan_ID, MIN(Date_Time) as Date_Time
+    FROM Loan_Log
+    WHERE Type = 'Issue Loan'
+    GROUP BY Loan_ID
+) as ll"), 'll.Loan_ID', '=', 'cl.idCustomer_Loan')->where('cl.Status', 0);;
+
 
         if ($request->date_from) {
             $query->whereDate('ll.Date_Time', '>=', $request->date_from);

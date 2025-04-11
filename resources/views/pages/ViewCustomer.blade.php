@@ -733,79 +733,79 @@
 
         });
 
-        function upload_excel() {
-            var fileInput = document.getElementById('uploadExcel');  // Get the file input element
-            var file = fileInput.files[0];  // Get the selected file
-
-            if (file) {
-                var reader = new FileReader();
-                reader.onload = function(e) {
-                    var data = new Uint8Array(e.target.result);
-                    var workbook = XLSX.read(data, { type: 'array' });
-
-                    // Assuming the first sheet in the Excel file
-                    var firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-
-                    // Convert sheet to JSON, starting from the 5th row (index 5 in zero-indexed array)
-                    var jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-
-                    // Start reading data from the 5th index (skip the first 5 rows)
-                    var dataFrom5thRow = jsonData.slice(5);
-
-                    console.log(dataFrom5thRow);  // Debugging: see the data in console
-
-                    // SweetAlert2 confirmation prompt
-                    Swal.fire({
-                        title: 'Are you sure?',
-                        text: "Do you want to upload the Excel data?",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'Yes, upload it!',
-                        cancelButtonText: 'No, cancel!',
-                        reverseButtons: true
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            // Send data to backend using AJAX
-                            $.ajax({
-                                // url: '/upload-excel-customer',  // Your route URL
-                                url: '/upload-excel-guardian',  // Your route URL
-                                type: 'POST',
-                                data: {
-                                    excelData: dataFrom5thRow,  // Send the Excel data
-                                },
-                                headers: {
-                                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-                                },
-                                success: function(response) {
-                                    Swal.fire({
-                                        position: "center",
-                                        icon: "success",
-                                        title: "Your Excel data has been uploaded.",
-                                    }).then(function () {
-                                        window.location.reload();
-                                    });
-                                },
-                                error: function(xhr, status, error) {
-                                    Swal.fire(
-                                        'Error!',
-                                        'There was an issue uploading the file.',
-                                        'error'
-                                    );
-                                    console.error(error);  // Handle errors
-                                }
-                            });
-                        } else if (result.dismiss === Swal.DismissReason.cancel) {
-                            Swal.fire(
-                                'Cancelled',
-                                'Your Excel data upload was cancelled.',
-                                'error'
-                            );
-                        }
-                    });
-                };
-                reader.readAsArrayBuffer(file);
-            }
-        }
+        // function upload_excel() {
+        //     var fileInput = document.getElementById('uploadExcel');  // Get the file input element
+        //     var file = fileInput.files[0];  // Get the selected file
+        //
+        //     if (file) {
+        //         var reader = new FileReader();
+        //         reader.onload = function(e) {
+        //             var data = new Uint8Array(e.target.result);
+        //             var workbook = XLSX.read(data, { type: 'array' });
+        //
+        //             // Assuming the first sheet in the Excel file
+        //             var firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        //
+        //             // Convert sheet to JSON, starting from the 5th row (index 5 in zero-indexed array)
+        //             var jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+        //
+        //             // Start reading data from the 5th index (skip the first 5 rows)
+        //             var dataFrom5thRow = jsonData.slice(5);
+        //
+        //             console.log(dataFrom5thRow);  // Debugging: see the data in console
+        //
+        //             // SweetAlert2 confirmation prompt
+        //             Swal.fire({
+        //                 title: 'Are you sure?',
+        //                 text: "Do you want to upload the Excel data?",
+        //                 icon: 'warning',
+        //                 showCancelButton: true,
+        //                 confirmButtonText: 'Yes, upload it!',
+        //                 cancelButtonText: 'No, cancel!',
+        //                 reverseButtons: true
+        //             }).then((result) => {
+        //                 if (result.isConfirmed) {
+        //                     // Send data to backend using AJAX
+        //                     $.ajax({
+        //                         // url: '/upload-excel-customer',  // Your route URL
+        //                         url: '/upload-excel-guardian',  // Your route URL
+        //                         type: 'POST',
+        //                         data: {
+        //                             excelData: dataFrom5thRow,  // Send the Excel data
+        //                         },
+        //                         headers: {
+        //                             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+        //                         },
+        //                         success: function(response) {
+        //                             Swal.fire({
+        //                                 position: "center",
+        //                                 icon: "success",
+        //                                 title: "Your Excel data has been uploaded.",
+        //                             }).then(function () {
+        //                                 window.location.reload();
+        //                             });
+        //                         },
+        //                         error: function(xhr, status, error) {
+        //                             Swal.fire(
+        //                                 'Error!',
+        //                                 'There was an issue uploading the file.',
+        //                                 'error'
+        //                             );
+        //                             console.error(error);  // Handle errors
+        //                         }
+        //                     });
+        //                 } else if (result.dismiss === Swal.DismissReason.cancel) {
+        //                     Swal.fire(
+        //                         'Cancelled',
+        //                         'Your Excel data upload was cancelled.',
+        //                         'error'
+        //                     );
+        //                 }
+        //             });
+        //         };
+        //         reader.readAsArrayBuffer(file);
+        //     }
+        // }
 
 
 
@@ -1406,4 +1406,78 @@
         }
 
     </script>
+
+
+    <script>
+        async function upload_excel() {
+            const fileInput = document.getElementById('uploadExcel');
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+
+            reader.onload = async function (e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+                // Filter out only data rows
+                const dataFrom5thRow = jsonData.filter((row, index) => index >= 5 && row[3]);
+
+                console.log("Parsed Excel Data:", dataFrom5thRow);  // Debug
+
+                const confirm = await Swal.fire({
+                    title: 'Are you sure?',
+                    text: "Do you want to upload the Excel data?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, upload it!',
+                    cancelButtonText: 'No, cancel!',
+                    reverseButtons: true
+                });
+
+                if (!confirm.isConfirmed) {
+                    Swal.fire('Cancelled', 'Your Excel data upload was cancelled.', 'error');
+                    return;
+                }
+
+                Swal.fire({
+                    title: 'Uploading...',
+                    text: 'Please wait while we upload the data.',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading(),
+                });
+
+                try {
+                    const response = await fetch('/upload-excel-customer', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({ excelData: dataFrom5thRow })
+                    });
+
+                    const result = await response.json();
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Upload complete!',
+                        text: result.message || 'Your Excel data has been uploaded.'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+
+                } catch (error) {
+                    console.error("Upload error:", error);
+                    Swal.fire('Error!', 'There was an issue uploading the file.', 'error');
+                }
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+    </script>
+
 @endsection

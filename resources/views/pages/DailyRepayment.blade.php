@@ -125,7 +125,7 @@
 
             table, th, td {
                 font-size: 8px !important;
-                padding: 3px !important;
+                padding: 1px !important;
             }
 
             th, td {
@@ -279,6 +279,15 @@
                                         <td class="group-arrears"></td>
                                         <td colspan="11"></td>
                                     </tr>
+                                    <!-- Free empty rows after group -->
+                                    @php
+                                        $emptyRowCount = $group_rules[$group_name] ?? 5;
+                                    @endphp
+                                    @for ($i = 0; $i < $emptyRowCount; $i++)
+                                        <tr class="group-empty-rule">
+                                            <td colspan="16">&nbsp;</td>
+                                        </tr>
+                                    @endfor
                                 @endforeach
                                 </tbody>
                                 <tfoot>
