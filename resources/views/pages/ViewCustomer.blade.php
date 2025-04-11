@@ -58,12 +58,12 @@
                         <div class="d-flex flex-column align-items-start mb-3">
                             <h4 class="page-title mb-3">Customer Details</h4>
 
-                            <!-- File input -->
-                            <label style="color: red">Upload Excel</label>
-                            <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="form-control mb-2 w-50">
+{{--                            <!-- File input -->--}}
+{{--                            <label style="color: red">Upload Excel</label>--}}
+{{--                            <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="form-control mb-2 w-50">--}}
 
-                            <!-- Upload button, aligned below the file input -->
-                            <input type="button" onclick="upload_excel()" class="btn btn-success mt-2" value="Upload">
+{{--                            <!-- Upload button, aligned below the file input -->--}}
+{{--                            <input type="button" onclick="upload_excel()" class="btn btn-success mt-2" value="Upload">--}}
                         </div>
 
 
@@ -1412,7 +1412,6 @@
         async function upload_excel() {
             const fileInput = document.getElementById('uploadExcel');
             const file = fileInput.files[0];
-
             if (!file) return;
 
             const reader = new FileReader();
@@ -1422,7 +1421,9 @@
                 const workbook = XLSX.read(data, { type: 'array' });
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-                const dataFrom5thRow = jsonData.slice(5); // start from 6th row
+
+                // Filter out only data rows
+                const dataFrom5thRow = jsonData.filter((row, index) => index >= 5 && row[3]);
 
                 console.log("Parsed Excel Data:", dataFrom5thRow);  // Debug
 
@@ -1441,7 +1442,6 @@
                     return;
                 }
 
-                // Show loader
                 Swal.fire({
                     title: 'Uploading...',
                     text: 'Please wait while we upload the data.',
@@ -1450,7 +1450,7 @@
                 });
 
                 try {
-                    const response = await fetch('/upload-excel-guardian', {
+                    const response = await fetch('/upload-excel-customer', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -1477,6 +1477,7 @@
 
             reader.readAsArrayBuffer(file);
         }
+
     </script>
 
 @endsection

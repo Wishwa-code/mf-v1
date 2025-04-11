@@ -748,6 +748,7 @@ class ReportController extends Controller
             ->leftJoin('user as u', 'l.collector_id', '=', 'u.id') // Ensure loans appear even without payments
             ->select([
                 'branch.name as Branch',
+                'l.branch_id',
                 'route.name as Route',
                 'center.name as Center',
                 'l.loan_no as LoanNo',
@@ -792,13 +793,16 @@ class ReportController extends Controller
 
                 DB::raw('IFNULL(u.Full_Name, "-") as Collector') // Ensures empty collectors don't cause issues
             ])
-            ->whereDate('i.Installment_Date', '>=', $startDate)
-            ->whereDate('i.Installment_Date', '<=', $endDate)
-            ->orWhereNull('i.Installment_Date'); // Ensure loans appear even if no installments exist
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereDate('i.Installment_Date', '>=', $startDate)
+                    ->whereDate('i.Installment_Date', '<=', $endDate)
+                    ->orWhereNull('i.Installment_Date');
+            });
+
 
 // Apply filters only when values are not '0'
         if ($branchId != '0') {
-            $payments->where('branch.branch_id', '=', $branchId);
+            $payments->where('l.branch_id', '=', $branchId);
         }
         if ($routeId != '0') {
             $payments->where('route.id_route', '=', $routeId);
@@ -815,7 +819,7 @@ class ReportController extends Controller
 
 // Group by necessary fields
         $payments->groupBy(
-            'l.idCustomer_Loan',
+            'l.idCustomer_Loan','l.branch_id',
             'l.Amount', 'l.installment_amount',
             'branch.name', 'route.name', 'center.name',
             'l.loan_no', 'subquery.group_name',

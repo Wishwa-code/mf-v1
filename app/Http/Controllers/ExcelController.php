@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Expenses;
 use App\Models\Guardian;
 use App\Models\Loan;
+use App\Models\LoanCategory;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Http\Request;
@@ -91,15 +92,17 @@ class ExcelController extends Controller
         $data = $request->excelData;
 
         // Loop through each row of Excel data, starting from the 6th row (index 5)
+        $skipped = [];
         foreach ($data as $key => $row) {
-            // Skip row if the customer already exists
             if (DB::table('customer')
-                ->where('cus_number', '=', $row[3]) // Assuming cus_number is in the 4th column
-                ->where('branch_id', '=', session('branch_id')) // Check within the same branch
+                ->where('cus_number', '=', $row[3])
+                ->where('branch_id', '=', session('branch_id'))
                 ->exists()) {
-                // Log the existence of customer and continue to the next row
+                $skipped[] = $row[3];  // Log skipped customer numbers
                 continue;
             }
+
+
 
             // Instantiate a new Customer object
             $customer = new Customer();
@@ -205,18 +208,21 @@ class ExcelController extends Controller
                 'group_id' => $group_id
             ]);
         }
-
+        Log::info("Skipped Customers: ", $skipped);
         return response()->json(['message' => 'Data processed successfully.'], 200);
     }
 
-    public function uploadExcelProduct(Request $request){
+    public function uploadExcelProduct(Request $request)
+    {
         $data = $request->excelData;
 
-        // Loop through each row of Excel data, starting from the 6th row (index 5)
-        foreach ($data as $key => $row) {
-            Log::info($row);
+        foreach ($data as $row) {
+
         }
+
+        return response()->json(['message' => 'Excel products imported successfully.']);
     }
+
 
 
     public function uploadExcelLoan(Request $request){

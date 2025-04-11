@@ -33,11 +33,11 @@
                     <div class="page-title-right">
                     </div>
                     <h4 class="page-title">Pending Loans</h4>
-{{--                    <label style="color: red">Upload Excel</label>--}}
-{{--                    <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="form-control mb-2 w-50">--}}
+                    <label style="color: red">Upload Excel</label>
+                    <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="form-control mb-2 w-50">
 
-{{--                    <!-- Upload button, aligned below the file input -->--}}
-{{--                    <input type="button" onclick="upload_excel()" class="btn btn-success mt-2" value="Upload">--}}
+                    <!-- Upload button, aligned below the file input -->
+                    <input type="button" onclick="upload_excel()" class="btn btn-success mt-2" value="Upload">
                 </div>
 
             </div>
