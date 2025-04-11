@@ -1210,9 +1210,9 @@ $banner = DB::select($query);
                                                         <li><a href="/ViewDateWiseCashFlow">Date Wise Cash Flow Details</a></li>
                                                     @endif
 
-                                                    @if($item->report_17 == 1)
-                                                        <li><a href="/MonthlyCollectionSummary">Monthly Collection Summary Details</a></li>
-                                                    @endif
+{{--                                                    @if($item->report_17 == 1)--}}
+{{--                                                        <li><a href="/MonthlyCollectionSummary">Monthly Collection Summary Details</a></li>--}}
+{{--                                                    @endif--}}
 
 
 
@@ -1253,7 +1253,7 @@ $banner = DB::select($query);
                                                         @if($item->report_4 == 1)
                                                             <li><a href="/borrowerreport">Guardian Details</a></li>
                                                         @endif
-                                                        <li><a href="#">User Logs</a></li>
+{{--                                                        <li><a href="#">User Logs</a></li>--}}
                                                 </ul>
 
                                             </div>

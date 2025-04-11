@@ -161,7 +161,7 @@
                             </table>
                         </div>
 
-                        <div class="row mt-1 mb-1 p-2">
+                        <div class="row mt-1 mb-1 p-2" hidden>
                             <div
                                 class="col-lg-12 d-flex align-items-center justify-content-between total-pending-container">
                                 <div class="d-flex align-items-center">
