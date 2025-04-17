@@ -363,8 +363,8 @@ class LoanController extends Controller
             }
         }
 
-        $HolidayController=new HolidayController();
-        $HolidayController->store($id);
+//        $HolidayController=new HolidayController();
+//        $HolidayController->store($id);
 
         if (isset($request->witnessesArray) && count($request->witnessesArray) > 0) {
             foreach ($request->witnessesArray as $item) {
