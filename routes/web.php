@@ -581,8 +581,10 @@ Route::get('/holidays','\App\Http\Controllers\UserController@holidays')->name('h
 Route::post('/poya-days/save','\App\Http\Controllers\UserController@poya_days_save')->name('poya_days_save.index');
 Route::post('/holidays','\App\Http\Controllers\UserController@holidays_save')->name('holidays.store');
 Route::delete('/holidays/delete/{id}','\App\Http\Controllers\UserController@deleteHoliday')->name('holidays.delete');
-
 Route::get('/get-holidays','\App\Http\Controllers\UserController@getHolidays')->name('get.holidays');
+Route::post('/generate-due-skip','\App\Http\Controllers\UserController@generateDueSkip')->name('save.holidays');
+Route::get('/poya-days','\App\Http\Controllers\HolidayController@fetchPoya')->name('get.fetchPoya');
+
 
 
 

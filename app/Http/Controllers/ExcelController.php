@@ -21,10 +21,13 @@ class ExcelController extends Controller
 
     protected $customerLogController;
     protected $LoanLogController;
-    public function __construct(CustomerLogController $customerLogController,LoanLogController $LoanLogController)
+
+    protected $bankLogController;
+    public function __construct(CustomerLogController $customerLogController,LoanLogController $LoanLogController,BankLogController $bankLogController)
     {
         $this->customerLogController = $customerLogController;
         $this->LoanLogController = $LoanLogController;
+        $this->bankLogController = $bankLogController;
     }
 
 
@@ -226,29 +229,28 @@ class ExcelController extends Controller
 
 
     public function uploadExcelLoan(Request $request){
-        $data = $request->excelData;
+        $row = $request->row;
         $user_id = (int)session('userid');
-        $maxRows = 12; // Limit to first 30 rows
-        // Loop through each row of Excel data, starting from the 6th row (index 5)
-        foreach ($data as $key => $row) {
-            if ($key >= $maxRows) {
-                break; // Stop processing after 30 rows
-            }
+
+        // Do basic validation
+        if (!$row || count($row) < 16) {
+            return response()->json(['error' => 'Invalid row data.'], 400);
+        }
+
+        if ($row[1]!=''){
             $loan_no = $row[1];
             $product_name = $row[2];
             $member_no = $row[3];
             $issue_date = $row[4];
             $loan_amount = $row[5];
-            $interest_rate = $row[6];
-            $panelty_rate = $row[7];
+            $interest_rate = isset($row[6]) ? str_replace('%', '', $row[6]) : 0;
+            $interest_rate = floatval(trim($interest_rate*100));
             $installment_count = $row[8];
-            $interest_amount = $row[9];
-            $other_charge = $row[10];
-            $tot_loan_amount = $row[11];
-            $installment_amount = $row[12];
-            $collection_type = $row[13];
-            $panelty_start_day = $row[14];
-            $maturity_date = $row[15];
+            $interest_amount = $row[10];
+            $other_charge = $row[13];
+            $tot_loan_amount = $row[14];
+            $installment_amount = $row[15];
+            $collection_type = $row[16];
 
             if ($collection_type=="WEEKLY"){
                 $collection_type="Weekly";
@@ -264,204 +266,334 @@ class ExcelController extends Controller
             $interest_rate = str_replace("%", "", $interest_rate);
 
             $product=tableWithBranch('loan_category')->where('Name','=',$product_name)->first();
-            $customer=tableWithBranch('customer')->where('cus_number','=',$member_no)->first();
+            if ($product){
+                $panelty_rate = $product->Panelty_pecentage;
+                $panelty_start_day = $product->Panelty_date;
+
+                $customer=tableWithBranch('customer')->where('cus_number','=',$member_no)->first();
+                if ($customer){
 
 
-            if ($customer){
+                    $Collection_Date = new DateTime($issue_date);  // Create a DateTime object
 
-
-                $Collection_Date = new DateTime($issue_date);  // Create a DateTime object
-
-                if ($collection_type == "Weekly") {
-                    // Add 7 days for WEEKLY collection type
-                    $Collection_Date->modify('+7 days');
-                } else if($collection_type=="Twice A Month"){
-                    $Collection_Date->modify('+14 days');
-                }else if($collection_type=="Daily"){
-                    $Collection_Date->modify('+1 days');
-                }else{
-                    // Add 1 month for other collection types
-                    $Collection_Date->modify('+1 month');
-                }
-                Log::info($collection_type);
-// Format the updated date if needed
-                $Collection_Date = $Collection_Date->format('Y-m-d');
-
-
-                $loan = new Loan();
-                $date = Carbon::now()->toDateString();
-
-                $customer_id=$customer->idCustomer;
-
-
-                $loan->Loan_No = $loan_no;
-                $loan->Loan_Category_idLoan_Category = $product->idLoan_Category;
-                $loan->Customer_idCustomer = $customer_id;
-                $loan->Leasing_type = "Cash";
-                $loan->Vehicle_No = null;
-                $loan->Date_Time = $issue_date;
-                $loan->Amount = $loan_amount;
-                $loan->Interest_Rate = $interest_rate;
-                $loan->Panalty_Rate = $panelty_rate;
-                $loan->Installment_Count = $installment_count;
-                $loan->Interest_Amount = $interest_amount;
-                $loan->Total_Other_Amount = $other_charge;
-                $loan->Other_Amount_Balance = '-1';
-                $loan->Total_Loan_Amount = $tot_loan_amount;
-                $loan->Installment_Amount = $installment_amount;
-                $loan->Collection_Type = 'Daily';
-                $loan->Collection_Date = $Collection_Date;
-                $loan->Panalty_Date = $panelty_start_day;
-                $loan->Balance_Amount = $tot_loan_amount;
-                $loan->Status = "0";
-                $loan->User_idUser = $user_id;
-                $loan->capital_balance = $loan_amount;
-                $loan->installment_balance = $interest_amount;
-                $loan->type = "Flat Rate";
-                $loan->Interest_period = $collection_type;
-                $loan->lending_officer_id = $user_id;
-                $loan->collector_id = $user_id;
-                $loan->repayment_duration = 'Days';
-                $loan->cus_bank_account = null;
-                $loan->branch_id = session('branch_id');
-
-                $loan->save();
-
-                $id = $loan->id;
-
-
-                // Initialize starting variables for the loop
-                $paidAmount = "0.00";  // Initial paid amount
-                $status = '0'; // Default status for new installments
-                $paneltyStatus = '0'; // Default penalty status for new installments
-
-                // Loop to generate installments based on the installment count
-                for ($i = 0; $i < $installment_count; $i++) {
                     if ($collection_type == "Weekly") {
-                        // Calculate installment dates in weekly intervals
-                        $installmentDate = date('Y-m-d', strtotime("+$i week", strtotime($Collection_Date)));
-                    } else if ($collection_type == "Per Month") {
-                        // Calculate installment dates in monthly intervals
-                        $installmentDate = date('Y-m-d', strtotime("+$i month", strtotime($Collection_Date)));
-                    } else if ($collection_type == "Daily") {
-                        // Calculate installment dates in monthly intervals
-                        $installmentDate = date('Y-m-d', strtotime("+$i day", strtotime($Collection_Date)));
+                        // Add 7 days for WEEKLY collection type
+                        $Collection_Date->modify('+7 days');
+                    } else if($collection_type=="Twice A Month"){
+                        $Collection_Date->modify('+14 days');
+                    }else if($collection_type=="Daily"){
+                        $Collection_Date->modify('+1 days');
                     }else{
-                        $installmentDate = date('Y-m-d', strtotime("+$i month", strtotime($Collection_Date)));
+                        // Add 1 month for other collection types
+                        $Collection_Date->modify('+1 month');
                     }
-                    Log::info($collection_type);
-                    // Calculate the amounts and other details for each installment
-                    $capitalAmount = $loan_amount / $installment_count; // Capital per installment
-                    $interestForInstallment = $interest_amount / $installment_count; // Interest per installment
-                    $totalInstallmentAmount = $installment_amount; // Total installment amount (capital + interest)
-                    // Check if $panelty_start_day has a valid value
-                    if (!is_numeric($panelty_start_day) || $panelty_start_day < 0) {
-                        $panelty_start_day = 0; // Default value, adjust based on your requirement
+
+// Format the updated date if needed
+                    $Collection_Date = $Collection_Date->format('Y-m-d');
+
+
+                    $loan = new Loan();
+
+                    $customer_id=$customer->idCustomer;
+
+
+                    $loan->Loan_No = $loan_no;
+                    $loan->Loan_Category_idLoan_Category = $product->idLoan_Category;
+                    $loan->Customer_idCustomer = $customer_id;
+                    $loan->Leasing_type = "Cash";
+                    $loan->Vehicle_No = null;
+                    $loan->Date_Time = $issue_date;
+                    $loan->Amount = $loan_amount;
+                    $loan->Interest_Rate = $interest_rate;
+                    $loan->Panalty_Rate = $panelty_rate;
+                    $loan->Installment_Count = $installment_count;
+                    $loan->Interest_Amount = $interest_amount;
+                    $loan->Total_Other_Amount = $other_charge;
+                    $loan->Other_Amount_Balance = '0';
+                    $loan->Total_Loan_Amount = $tot_loan_amount;
+                    $loan->Installment_Amount = $installment_amount;
+                    $loan->Collection_Type = 'Daily';
+                    $loan->Collection_Date = $Collection_Date;
+                    $loan->Panalty_Date = $panelty_start_day;
+                    $loan->Balance_Amount = $tot_loan_amount;
+                    $loan->Status = "0";
+                    $loan->User_idUser = $user_id;
+                    $loan->capital_balance = $loan_amount;
+                    $loan->installment_balance = $interest_amount;
+                    $loan->type = "Flat Rate";
+                    $loan->Interest_period = $collection_type;
+                    $loan->lending_officer_id = $user_id;
+                    $loan->collector_id = $user_id;
+                    $loan->repayment_duration = 'Days';
+                    $loan->cus_bank_account = null;
+                    $loan->branch_id = session('branch_id');
+
+                    $loan->save();
+
+                    $id = $loan->id;
+
+                    $company = tableWithBranch('company')->first();
+                    $loan_format = $company->loan_format;
+
+                    $enable_saving_process=$product->enable_saving_process;
+                    if ($enable_saving_process=="Yes"){
+                        $saving_number_txt=$customer_id;
+
+
+                        // Prepare data for Customer_Saving_Accounts
+                        $savingData = [
+                            'Customer_Id' => $customer_id,
+                            'Loan_Id' => $id,
+                            'Loan_No' => $loan_no,
+                            'Created_Date' => date('Y-m-d H:i:s'),
+                            'Account_No' => $saving_number_txt,
+                            'Account_Type' => "Saving",
+                            'Balance' => "0.00",
+                            'Status' => "1",
+                        ];
+
+// Insert and get the ID of the saving account
+                        $saving = insertWithBranch('Customer_Saving_Accounts', $savingData);
+
+// Prepare data for Savings_Account_Log
+                        $logData = [
+                            'Saving_Acount_Id' => $saving,
+                            'Date_Time' => date('Y-m-d H:i:s'),
+                            'Type' => "Saving Account",
+                            'Description' => "Account Creation",
+                            'Credit' => 0.00,
+                            'Debit' => 0.00,
+                            'Balance' => 0.00,
+                            'User' => $user_id,
+                        ];
+
+// Insert log entry
+                        insertWithBranch('Savings_Account_Log', $logData);
                     }
+
+                    $saving_check=$product->enable_saving_process;
+                    $savingBalance=0.0;
+                    if ($saving_check=="Yes"){
+                        $savingBalance = $product->saving_amount;
+                    }
+
+                    // Initialize starting variables for the loop
+                    $paidAmount = "0.00";  // Initial paid amount
+                    $status = '0'; // Default status for new installments
+                    $paneltyStatus = '0'; // Default penalty status for new installments
+
+                    // Loop to generate installments based on the installment count
+                    for ($i = 0; $i < $installment_count; $i++) {
+                        if ($collection_type == "Weekly") {
+                            // Calculate installment dates in weekly intervals
+                            $installmentDate = date('Y-m-d', strtotime("+$i week", strtotime($Collection_Date)));
+                        } else if ($collection_type == "Per Month") {
+                            // Calculate installment dates in monthly intervals
+                            $installmentDate = date('Y-m-d', strtotime("+$i month", strtotime($Collection_Date)));
+                        } else if ($collection_type == "Daily") {
+                            // Calculate installment dates in monthly intervals
+                            $installmentDate = date('Y-m-d', strtotime("+$i day", strtotime($Collection_Date)));
+                        }else{
+                            $installmentDate = date('Y-m-d', strtotime("+$i month", strtotime($Collection_Date)));
+                        }
+                        // Calculate the amounts and other details for each installment
+                        $capitalAmount = $loan_amount / $installment_count; // Capital per installment
+                        $interestForInstallment = $interest_amount / $installment_count; // Interest per installment
+                        $totalInstallmentAmount = $installment_amount+$savingBalance; // Total installment amount (capital + interest)
+                        // Check if $panelty_start_day has a valid value
+                        if (!is_numeric($panelty_start_day) || $panelty_start_day < 0) {
+                            $panelty_start_day = 0; // Default value, adjust based on your requirement
+                        }
 
 // Calculate penalty date using a valid $panelty_start_day
-                    $penaltyDate = date('Y-m-d', strtotime("+$panelty_start_day days", strtotime($installmentDate)));
+                        $penaltyDate = date('Y-m-d', strtotime("+$panelty_start_day days", strtotime($installmentDate)));
 
 
-                    // Save each installment to the database
-                    DB::table('installments')->insert([
-                        'Customer_Loan_idCustomer_Loan' => $id, // Assuming loan_no is the customer loan reference
-                        'No' => $i + 1, // Installment number (1, 2, 3, ...)
-                        'Installment_Date' => $installmentDate,
-                        'Installment_Amount' => $totalInstallmentAmount,
-                        'capital_amount' => $capitalAmount,
-                        'interest_amount' => $interestForInstallment,
-                        'Panalty_Amount' => 0, // Penalty amount (initially 0)
-                        'Total_Amount' => $totalInstallmentAmount, // Total amount to be paid
-                        'Paid_Amount' => $paidAmount, // Paid amount (initially 0)
-                        'Panalty_Balance' => 0, // Penalty balance starts at 0
-                        'Interest_Balance' => $interestForInstallment, // Remaining interest balance
-                        'capital_balance' => $capitalAmount, // Remaining capital balance
-                        'Total_Balance' => $totalInstallmentAmount, // Total balance
-                        'Status' => $status, // Unpaid status
-                        'Panelty_date' => $penaltyDate, // Penalty starts after certain days
-                        'Panelty_status' => $paneltyStatus, // No penalty initially
-                        'branch_id' => session('branch_id')
-                    ]);
+                        // Save each installment to the database
+                        DB::table('installments')->insert([
+                            'Customer_Loan_idCustomer_Loan' => $id, // Assuming loan_no is the customer loan reference
+                            'No' => $i + 1, // Installment number (1, 2, 3, ...)
+                            'Installment_Date' => $installmentDate,
+                            'Installment_Amount' => $installment_amount,
+                            'capital_amount' => $capitalAmount,
+                            'interest_amount' => $interestForInstallment,
+                            'Panalty_Amount' => 0, // Penalty amount (initially 0)
+                            'Total_Amount' => $totalInstallmentAmount, // Total amount to be paid
+                            'Paid_Amount' => $paidAmount, // Paid amount (initially 0)
+                            'Panalty_Balance' => 0, // Penalty balance starts at 0
+                            'Interest_Balance' => $interestForInstallment, // Remaining interest balance
+                            'capital_balance' => $capitalAmount, // Remaining capital balance
+                            'Total_Balance' => $totalInstallmentAmount, // Total balance
+                            'Status' => $status, // Unpaid status
+                            'Panelty_date' => $penaltyDate, // Penalty starts after certain days
+                            'Panelty_status' => $paneltyStatus, // No penalty initially
+                            'Saving_balance' => $savingBalance, // No penalty initially
+                            'branch_id' => session('branch_id')
+                        ]);
+                    }
+
+
+                    $company_bank=tableWithBranch('company_bank_accounts')->where('Account_No','=','Cash')->value('Idbank');
+
+                    $customer_loan=tableWithBranch('customer_loan')
+                        ->where('idCustomer_Loan','=',$id)
+                        ->first();
+
+                    $bank = tableWithBranch('company_bank_accounts')->where('Idbank','=',$company_bank)->first();
+
+                    if (!is_null($bank)) {
+
+
+                        DB::table('customer_loan')
+                            ->where('idCustomer_Loan', $id)
+                            ->where('branch_id', session('branch_id'))
+                            ->update(
+                                [
+                                    'Status' => '0',
+                                    'cus_bank_account' => $request->bank_acc,
+                                    'company_bank_account' => $company_bank
+                                ]);
+
+
+                        $bank_log_comment="Loan Number : {$customer_loan->Loan_No}\nLoan Amount : {$customer_loan->Amount}\n";
+
+
+                        $bank_id=tableWithBranch('company_bank_accounts')
+                            ->where('Bank_Type','=','System_default_1')
+                            ->first();
+
+
+                        $this->bankLogController->index($company_bank,"Issue Loan",$bank_log_comment,"-","credit",$customer_loan->Amount,$bank_id->Idbank);
+
+
+
+
+                        $this->bankLogController->index($bank_id->Idbank,"Issue Loan",$bank_log_comment,"-","debit",$customer_loan->Amount,$company_bank);
+
+
+
+
+                        $customer=tableWithBranch('customer')
+                            ->where('idCustomer','=',$customer_loan->Customer_idCustomer)
+                            ->first();
+                        $sumAmount = DB::table('loan_other_charges')
+                            ->where('Customer_Loan_idCustomer_Loan', '=', $id)
+                            ->where('branch_id', session('branch_id'))
+                            ->sum('Amount');
+
+
+
+                        // Check if the sumAmount is greater than zero
+                        if ($sumAmount > 0) {
+                            $bank_log_doc_comment="Loan Number : {$customer_loan->Loan_No}\nLoan Amount : {$customer_loan->Amount}\n";
+
+                            $bank_id=tableWithBranch('company_bank_accounts')
+                                ->where('Bank_Type','=','System_default_9')
+                                ->first();
+
+
+                            $this->bankLogController->index($company_bank,"Loan Document Chargers",$bank_log_doc_comment,"-","debit",$sumAmount,$bank_id->Idbank);
+
+                            $this->bankLogController->index($bank_id->Idbank,"Loan Document Chargers",$bank_log_doc_comment,"-","credit",$sumAmount,$company_bank);
+
+                            $cate=tableWithBranch('income_category')
+                                ->where('description','=','Other')
+                                ->first();
+                            $user_id = (int)session('userid');
+                            if ($cate){
+
+                                // Create a new Expenses instance
+                                $expenses = new Expenses();
+
+                                // Set the values for the Expenses instance
+                                $expenses->type = "Income";
+                                $expenses->reason = "Other loan charges for loan number: ({$customer_loan->Loan_No}), Customer name: ({$customer->First_Name} {$customer->Last_Name})";
+                                $expenses->date = date('Y-m-d');
+                                $expenses->amount = $sumAmount;
+                                $expenses->category_id = $cate->id;
+                                $expenses->bank_id = 1;
+                                $expenses->user_id = $user_id;
+                                $expenses->branch_id = session('branch_id');
+
+                                $expenses->save();
+                            }else{
+                                $cate_id=DB::table('income_category')->insertGetId([
+                                    'description'=>"Other",
+                                    'branch_id'=>session('branch_id')
+                                ]);
+
+                                // Create a new Expenses instance
+                                $expenses = new Expenses();
+
+                                // Set the values for the Expenses instance
+                                $expenses->type = "Income";
+                                $expenses->reason = "Other loan charges for loan number: ({$customer_loan->Loan_No}), Customer name: ({$customer->First_Name} {$customer->Last_Name})";
+                                $expenses->date = date('Y-m-d');
+                                $expenses->amount = $sumAmount;
+                                $expenses->category_id = $cate_id;
+                                $expenses->bank_id = 1;
+                                $expenses->user_id = $user_id;
+                                $expenses->branch_id = session('branch_id');
+
+                                $expenses->save();
+                            }
+
+
+
+
+                        }
+
+
+                        $request = new Request([
+                            'customer_id' => $customer_loan->Customer_idCustomer,
+                            'description' => "Approve Loan ({$customer_loan->Loan_No})\nLoan Amount : ({$customer_loan->Amount})",
+                            'description_id' => $id,
+                            'comment' => ' ',
+                            'type' => 'Approve Loan',
+                        ]);
+
+                        // Call the store method of CustomerLogController
+                        $this->customerLogController->store($request);
+
+
+                        $panelty_balance=tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan','=',$id)->sum('Panalty_Balance');
+
+                        // Call the store method of LoanLogController
+                        $this->LoanLogController->index(
+                            $id,
+                            'Issue Loan',
+                            $id,
+                            'Loan Issue',
+                            $customer_loan->Amount,
+                            '0',
+                            '0',
+                            '0',
+                            '0',
+                            $panelty_balance,
+                            $customer_loan->Interest_Amount,
+                            $customer_loan->capital_balance,
+                            $customer_loan->Balance_Amount+$panelty_balance,
+                            '0');
+                    }
+
+
+                }else{
+                    Log::info($member_no);
                 }
-
-
-
-
-                if ($other_charge>0){
-                    // Prepare data for the loan other charges
-                    $loanOtherChargesData = [
-                        'Description' => "Other Charge Total",
-                        'Type' => "Amount",
-                        'Amount' => number_format($other_charge,2,'.',''),
-                        'Customer_Loan_idCustomer_Loan' => $id,
-                    ];
-
-// Insert the loan other charges data with branch scoping
-                    insertWithBranch('loan_other_charges', $loanOtherChargesData);
-
-
-                    // Create a new Expenses instance
-                    $expenses = new Expenses();
-
-                    // Set the values for the Expenses instance
-                    $expenses->type = "Income";
-                    $expenses->reason = "Other loan charges for loan number: ({$loan_no}), Customer name: ({$customer->First_Name} {$customer->Last_Name})";
-                    $expenses->date = date('Y-m-d');
-                    $expenses->amount = number_format($other_charge,2,'.','');
-                    $expenses->category_id = 1;
-                    $expenses->bank_id = 1;
-                    $expenses->branch_id = session('branch_id');
-
-                    $expenses->save();
-
-
-
-                }
-
-                $request = new Request([
-                    'customer_id' => $customer_id,
-                    'description' => "Created new loan ({$loan_no})\nLoan Amount : {$loan_amount}\nProduct name : {$product_name}",
-                    'description_id' => $id,
-                    'comment' => ' ',
-                    'type' => 'Create Loan',
-                ]);
-
-// Call the store method of CustomerLogController
-                $this->customerLogController->store($request);
-
-
-                $loanApprovalData = [
-                    'loan_id' => $id,
-                    'level' => "01",
-                    'description' => "Approved",
-                    'comment' => 'Approved',
-                    'user_id' => $user_id,
-                    'date' => $date,
-                ];
-
-// Insert the loan approval data with branch scoping
-                insertWithBranch('loan_has_approval', $loanApprovalData);
-                $this->LoanLogController->index(
-                    $id,
-                    'Issue Loan',
-                    $id,
-                    'Loan Issue',
-                    $loan_amount,
-                    '0',
-                    '0',
-                    '0',
-                    '0',
-                    '0',
-                    $interest_amount,
-                    $loan_amount,
-                    $tot_loan_amount,
-                    '0');
+            }else{
+                Log::info($product_name.'-'.$loan_no);
             }
 
+
+
+
+
+            return response()->json(['message' => 'Row processed.']);
         }
-        return response()->json(['message' => 'Data processed successfully.'], 200);
     }
+
+
+
 
     public function uploadExcelPayment(Request $request){
         $data = $request->excelData;

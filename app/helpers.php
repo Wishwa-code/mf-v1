@@ -1,5 +1,6 @@
 <?php
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 function numberToWords($number) {
@@ -183,6 +184,106 @@ if (!function_exists('formatName')) {
         $formattedLastName = end($lastNameParts);
         return trim(($lastInitial ? $firstInitial . $lastInitial : $firstInitial) . ' ' . $formattedLastName);
     }
+}
+
+
+function getTargetLoans($skipFor, $targetId)
+{
+    if ($skipFor === 'all') {
+        return tableWithBranch('customer_loan')->where('Status', '0')->get();
+    }
+
+    if ($skipFor === 'loan') {
+        return tableWithBranch('customer_loan')->where('idCustomer_Loan', $targetId)->get();
+    }
+
+    if ($skipFor === 'branch') {
+        return DB::table('customer_loan')->where('branch_id', $targetId)->where('Status', '0')->get();
+    }
+
+    if ($skipFor === 'center') {
+        return tableWithBranch('customer_loan')->where('Center_Id', $targetId)->where('Status', '0')->get();
+    }
+
+    if ($skipFor === 'product') {
+        return tableWithBranch('customer_loan')->where('Loan_Category_idLoan_Category', $targetId)->where('Status', '0')->get();
+    }
+
+    return collect(); // empty if none match
+}
+
+function processInstallmentSkip($loan, $installment, $companySetting)
+{
+    $product = DB::table('loan_category')->where('idLoan_Category', $loan->Loan_Category_idLoan_Category)->first();
+    $Repayment_type = $product->Repayment_type;
+    $max_date = tableWithBranch('installments')
+        ->where('Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
+        ->max('Installment_Date');
+
+    $newDate = Carbon::parse($max_date);
+
+    switch ($Repayment_type) {
+        case 'Daily':
+            $newDate->addDay();
+            break;
+        case 'Weekly':
+            $newDate->addDays(7);
+            break;
+        case 'Twice A Month':
+            $newDate->addDays(14);
+            break;
+        case 'First Of The Month':
+            $newDate = $newDate->addMonthNoOverflow()->startOfMonth();
+            break;
+        case 'End Of The Month':
+            $newDate = $newDate->addMonthNoOverflow()->endOfMonth();
+            break;
+        case 'On A Selected Date':
+            $newDate = $newDate->addMonthNoOverflow(); // same date next month
+            break;
+    }
+
+    // Adjust if invalid date
+    while (
+        tableWithBranch('holidays')->where('date', $newDate->toDateString())->exists() ||
+        ($companySetting == "1" && ($newDate->isSaturday() || $newDate->isSunday()))
+    ) {
+        if ($Repayment_type == "End Of The Month") {
+            $newDate->subDay();
+        } else {
+            $newDate->addDay();
+        }
+    }
+
+    $newPaneltyDate = $newDate->copy()->addDays((int) $product->Panelty_date)->toDateString();
+
+    tableWithBranch('installments')->where('idInstallments', $installment->idInstallments)->update([
+        'Installment_Date' => $newDate->toDateString(),
+        'Panelty_date' => $newPaneltyDate,
+    ]);
+}
+
+
+function processDaySkip($loan, $installment, $holidayDate, $companySetting)
+{
+    $newDate = Carbon::parse($holidayDate)->addDay();
+    $loan_id = $installment->Customer_Loan_idCustomer_Loan;
+
+    while (
+        tableWithBranch('holidays')->where('date', $newDate->toDateString())->exists() ||
+        ($companySetting == "1" && ($newDate->isSaturday() || $newDate->isSunday())) ||
+        tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', $loan_id)->where('Installment_Date', $newDate->toDateString())->exists()
+    ) {
+        $newDate->addDay();
+    }
+
+    $product = DB::table('loan_category')->where('idLoan_Category', $loan->Loan_Category_idLoan_Category)->first();
+    $newPaneltyDate = $newDate->copy()->addDays((int) $product->Panelty_date)->toDateString();
+
+    tableWithBranch('installments')->where('idInstallments', $installment->idInstallments)->update([
+        'Installment_Date' => $newDate->toDateString(),
+        'Panelty_date' => $newPaneltyDate,
+    ]);
 }
 
 

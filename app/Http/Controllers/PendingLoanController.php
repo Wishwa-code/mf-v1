@@ -811,7 +811,8 @@ class PendingLoanController extends Controller
     FROM Loan_Log
     WHERE Type = 'Issue Loan'
     GROUP BY Loan_ID
-) as ll"), 'll.Loan_ID', '=', 'cl.idCustomer_Loan')->where('cl.Status', 0);;
+) as ll"), 'll.Loan_ID', '=', 'cl.idCustomer_Loan')
+            ->where('cl.Status','1=', '-1')->where('cl.Status','=', '1');
 
 
         if ($request->date_from) {

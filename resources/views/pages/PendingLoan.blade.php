@@ -543,77 +543,84 @@
 
 
         function upload_excel() {
-            var fileInput = document.getElementById('uploadExcel');  // Get the file input element
-            var file = fileInput.files[0];  // Get the selected file
+            const fileInput = document.getElementById('uploadExcel');
+            const file = fileInput.files[0];
 
-            if (file) {
-                var reader = new FileReader();
-                reader.onload = function(e) {
-                    var data = new Uint8Array(e.target.result);
-                    var workbook = XLSX.read(data, { type: 'array' });
+            if (!file) return Swal.fire('Please select a file.');
 
-                    // Assuming the first sheet in the Excel file
-                    var firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const reader = new FileReader();
+            reader.onload = async function (e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                const rows = jsonData.slice(5); // Skip first 5 rows
 
-                    // Convert sheet to JSON, starting from the 5th row (index 5 in zero-indexed array)
-                    var jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                if (rows.length === 0) return Swal.fire('No data found in Excel.');
 
-                    // Start reading data from the 5th index (skip the first 5 rows)
-                    var dataFrom5thRow = jsonData.slice(5);
+                // Filter out empty loan numbers
+                const filteredRows = rows.filter(row => row[1] && row[1].toString().trim() !== '');
 
-                    console.log(dataFrom5thRow);  // Debugging: see the data in console
+                // Confirm upload
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: `You're about to upload ${filteredRows.length} loan entries.`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, upload it',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Show progress modal
+                        Swal.fire({
+                            title: 'Uploading...',
+                            html: `<div style="width: 100%; background: #eee; border-radius: 5px;">
+                          <div id="upload-progress" style="width: 0%; height: 20px; background: #28a745; border-radius: 5px;"></div>
+                       </div>
+                       <div id="progress-text" style="margin-top: 10px;">0 / ${filteredRows.length}</div>`,
+                            allowOutsideClick: false,
+                            showConfirmButton: false,
+                            didOpen: async () => {
+                                const progressBar = document.getElementById('upload-progress');
+                                const progressText = document.getElementById('progress-text');
 
-                    // SweetAlert2 confirmation prompt
-                    Swal.fire({
-                        title: 'Are you sure?',
-                        text: "Do you want to upload the Excel data?",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'Yes, upload it!',
-                        cancelButtonText: 'No, cancel!',
-                        reverseButtons: true
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            // Send data to backend using AJAX
-                            $.ajax({
-                                url: '/upload-excel-loan',  // Your route URL
-                                type: 'POST',
-                                data: {
-                                    excelData: dataFrom5thRow,  // Send the Excel data
-                                },
-                                headers: {
-                                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-                                },
-                                success: function(response) {
-                                    Swal.fire({
-                                        position: "center",
-                                        icon: "success",
-                                        title: "Your Excel data has been uploaded.",
-                                    }).then(function () {
-                                        window.location.reload();
+                                for (let i = 0; i < filteredRows.length; i++) {
+                                    await $.ajax({
+                                        url: '/upload-excel-loan',
+                                        method: 'POST',
+                                        data: {
+                                            row: filteredRows[i]
+                                        },
+                                        headers: {
+                                            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content")
+                                        }
                                     });
-                                },
-                                error: function(xhr, status, error) {
-                                    Swal.fire(
-                                        'Error!',
-                                        'There was an issue uploading the file.',
-                                        'error'
-                                    );
-                                    console.error(error);  // Handle errors
+
+                                    const percentage = Math.round(((i + 1) / filteredRows.length) * 100);
+                                    progressBar.style.width = `${percentage}%`;
+                                    progressText.innerHTML = `${i + 1} / ${filteredRows.length}`;
                                 }
-                            });
-                        } else if (result.dismiss === Swal.DismissReason.cancel) {
-                            Swal.fire(
-                                'Cancelled',
-                                'Your Excel data upload was cancelled.',
-                                'error'
-                            );
-                        }
-                    });
-                };
-                reader.readAsArrayBuffer(file);
-            }
+
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Upload complete!',
+                                    text: `${filteredRows.length} rows uploaded successfully.`,
+                                    confirmButtonText: 'Reload'
+                                }).then(() => {
+                                    window.location.reload();
+                                });
+                            }
+                        });
+                    } else {
+                        Swal.fire('Cancelled', 'Excel upload has been cancelled.', 'info');
+                    }
+                });
+            };
+
+            reader.readAsArrayBuffer(file);
         }
+
+
     </script>
 {{--    <script>--}}
 {{--        const exampleModal = document.getElementById('standard-modal')--}}
