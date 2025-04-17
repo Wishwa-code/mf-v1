@@ -488,7 +488,7 @@
                                 timer: 2000,
                                 showConfirmButton: false
                             }).then(() => {
-                                // window.location.reload();
+                                window.location.reload();
                             });
                         },
                         error: function (xhr) {
