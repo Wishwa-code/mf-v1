@@ -889,7 +889,7 @@ function upload_excel() {
         var jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
 
         // Adjust this slice if you want to skip more rows (currently skips only the first row)
-        var dataFrom5thRow = jsonData.slice(1);
+        var dataFrom5thRow = jsonData.slice(2);
 
         if (dataFrom5thRow.length === 0) {
             Swal.fire('No data', 'No valid data found in Excel.', 'warning');
