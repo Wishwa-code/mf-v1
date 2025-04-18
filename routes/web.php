@@ -4,6 +4,7 @@ use App\Http\Controllers\AssetManagementController;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\CashFlowController;
 use App\Http\Controllers\CashierController;
+use App\Http\Controllers\KYCController;
 use App\Http\Controllers\LoanCategoryController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\PDFController;
@@ -660,6 +661,8 @@ Route::post('/loan-report/data', [PendingLoanController::class, 'get_report_disb
 Route::get('/loan-report/filters', [PendingLoanController::class, 'getFilters_disbursement'])->name('loan.report.filters');
 
 //KYC
-Route::get('/kyc', function () {
-    return view('pages.Insurance.KYC');
-});
+Route::get('/kyc', [App\Http\Controllers\KYCController::class, 'index'])->name('kyc.index');
+Route::get('/kyc/{section}/{id}', [App\Http\Controllers\KYCController::class, 'loadSection']);
+
+
+

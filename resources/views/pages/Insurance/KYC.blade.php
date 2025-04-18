@@ -2,6 +2,10 @@
 
 @section('head')
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
     <style>
         body {
             background: #f4f6f9;
@@ -42,6 +46,19 @@
             font-size: 14px;
         }
     </style>
+    <style>
+        .select2-container .select2-selection--single {
+            height: 38px;
+            padding: 6px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 24px;
+        }
+    </style>
+
 @endsection
 
 @section('content')
@@ -50,6 +67,15 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between mb-3">
                     <h4 class="page-title"></h4>
+                </div>
+                <div class="mb-4">
+                    <label for="customerSelect" class="form-label">Select Customer</label>
+                    <select id="customerSelect" class="form-select">
+                        <option value="0" selected>-- Choose Customer --</option>
+                        @foreach($customers as $customer)
+                            <option value="{{ $customer->idCustomer }}">{{ $customer->cus_number }}-{{ $customer->First_Name }} {{ $customer->Last_Name }}</option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <div class="modal-body">
@@ -90,28 +116,15 @@
                                 </ul>
 
                                 <div class="tab-content" id="kycTabContent">
-                                    <div class="tab-pane fade show active" id="basic" role="tabpanel">
-                                        @include('pages.Insurance.kyc.basic')
-                                    </div>
-                                    <div class="tab-pane fade" id="guardian" role="tabpanel">
-                                        @include('pages.Insurance.kyc.guardian')
-                                    </div>
-                                    <div class="tab-pane fade" id="documents" role="tabpanel">
-                                        @include('pages.Insurance.kyc.documents')
-                                    </div>
-                                    <div class="tab-pane fade" id="loans" role="tabpanel">
-                                        @include('pages.Insurance.kyc.loans')
-                                    </div>
-                                    <div class="tab-pane fade" id="loanSummary" role="tabpanel">
-                                        @include('pages.Insurance.kyc.guranteed_loan')
-                                    </div>
-                                    <div class="tab-pane fade" id="insurance" role="tabpanel">
-                                        @include('pages.Insurance.kyc.insurance')
-                                    </div>
-                                    <div class="tab-pane fade" id="history" role="tabpanel">
-                                        @include('pages.Insurance.kyc.history')
-                                    </div>
+                                    <div class="tab-pane fade show active" id="basic" role="tabpanel"></div>
+                                    <div class="tab-pane fade" id="guardian" role="tabpanel"></div>
+                                    <div class="tab-pane fade" id="documents" role="tabpanel"></div>
+                                    <div class="tab-pane fade" id="loans" role="tabpanel"></div>
+                                    <div class="tab-pane fade" id="loanSummary" role="tabpanel"></div>
+                                    <div class="tab-pane fade" id="insurance" role="tabpanel"></div>
+                                    <div class="tab-pane fade" id="history" role="tabpanel"></div>
                                 </div>
+
                             </div>
                         </div>
                     </div>
@@ -122,5 +135,106 @@
         </div>
     </div>
 
+@endsection
+@section('script')
+    <!-- jQuery (required by Select2) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        let selectedCustomerId = 0;
+
+        $(document).ready(function () {
+            // Initialize Select2
+            $('#customerSelect').select2({
+                placeholder: "-- Choose Customer --",
+                allowClear: true,
+                width: '100%'
+            });
+
+            // Store selected customer ID
+            $('#customerSelect').on('change', function () {
+                selectedCustomerId = $(this).val();
+
+                if (selectedCustomerId && selectedCustomerId !== '0') {
+                    const activeTab = $('#kycTabs .nav-link.active').attr('href').replace('#', '');
+                    loadTabContent(activeTab, selectedCustomerId);
+                } else {
+                    clearTabs();
+                }
+            });
+
+            // Load content when tab is clicked
+            $('#kycTabs a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+                const tabId = $(e.target).attr('href').replace('#', '');
+                if (selectedCustomerId && selectedCustomerId !== '0') {
+                    loadTabContent(tabId, selectedCustomerId);
+                } else {
+                    $('#kycTabContent .tab-pane').html('<p class="text-muted">Please select a customer to view details.</p>');
+                    $('#customerSelect').focus();
+                }
+            });
+
+            // Initial placeholder in each tab
+            function clearTabs() {
+                $('#kycTabContent .tab-pane').html('<p class="text-muted">Please select a customer to view details.</p>');
+            }
+
+            // Load tab via AJAX
+            function loadTabContent(tabId, customerId) {
+                $('#' + tabId).html('<p>Loading...</p>');
+
+                $.ajax({
+                    url: `/kyc/${tabId}/${customerId}`,
+                    type: 'GET',
+                    success: function (data) {
+                        $('#' + tabId).html(data);
+
+                        if (tabId === 'basic') {
+                            setTimeout(load_map, 300); // Delay to ensure map container is ready
+                        }
+                    },
+                    error: function () {
+                        $('#' + tabId).html('<p class="text-danger">Error loading tab data.</p>');
+                    }
+                });
+            }
+
+            // Leaflet Map Logic
+            function load_map() {
+                const mapContainer = document.getElementById('map');
+                if (!mapContainer) return;
+
+                const lat = parseFloat(mapContainer.dataset.lat || 0);
+                const lng = parseFloat(mapContainer.dataset.lng || 0);
+
+                if (lat && lng) {
+                    const map = L.map('map').setView([lat, lng], 13);
+
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
+                        attribution: '© OpenStreetMap'
+                    }).addTo(map);
+
+                    L.marker([lat, lng]).addTo(map)
+                        .bindPopup("Customer Location")
+                        .openPopup();
+                } else {
+                    mapContainer.innerHTML = '<p class="text-muted">Location not available.</p>';
+                }
+            }
+
+            // Optional: Load default tab on page load if customer already selected
+            selectedCustomerId = $('#customerSelect').val();
+            if (selectedCustomerId && selectedCustomerId !== '0') {
+                loadTabContent('basic', selectedCustomerId);
+            } else {
+                clearTabs();
+            }
+        });
+    </script>
 @endsection
 

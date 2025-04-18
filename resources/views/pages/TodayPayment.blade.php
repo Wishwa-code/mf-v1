@@ -212,6 +212,13 @@
                     <!-- Upload button, aligned below the file input -->
                     <input type="button" onclick="upload_excel()" class="btn btn-success mt-2" value="Upload">
                 </div>
+                <div id="progressWrapper" style="display:none; margin-top:20px;">
+                    <label>Uploading Excel...</label>
+                    <div style="background-color: #e0e0e0; border-radius: 10px; overflow: hidden;">
+                        <div id="uploadProgress" style="height: 20px; width: 0%; background-color: #4caf50;"></div>
+                    </div>
+                </div>
+
             </div>
         </div>
         <!-- end page title -->

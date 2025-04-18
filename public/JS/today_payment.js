@@ -875,77 +875,91 @@ function load_installment_log_model(id) {
 
 
 function upload_excel() {
+    var fileInput = document.getElementById('uploadExcel');
+    var file = fileInput.files[0];
 
-    var fileInput = document.getElementById('uploadExcel');  // Get the file input element
-    var file = fileInput.files[0];  // Get the selected file
+    if (!file) return;
 
-    if (file) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            var data = new Uint8Array(e.target.result);
-            var workbook = XLSX.read(data, { type: 'array' });
+    var reader = new FileReader();
 
-            // Assuming the first sheet in the Excel file
-            var firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+    reader.onload = function(e) {
+        var data = new Uint8Array(e.target.result);
+        var workbook = XLSX.read(data, { type: 'array' });
+        var firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        var jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
 
-            // Convert sheet to JSON, starting from the 5th row (index 5 in zero-indexed array)
-            var jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+        // Adjust this slice if you want to skip more rows (currently skips only the first row)
+        var dataFrom5thRow = jsonData.slice(1);
 
-            // Start reading data from the 5th index (skip the first 5 rows)
-            var dataFrom5thRow = jsonData.slice(1);
+        if (dataFrom5thRow.length === 0) {
+            Swal.fire('No data', 'No valid data found in Excel.', 'warning');
+            return;
+        }
 
-            console.log(dataFrom5thRow);  // Debugging: see the data in console
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "Do you want to upload the Excel data?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, upload it!',
+            cancelButtonText: 'No, cancel!',
+            reverseButtons: true
+        }).then((result) => {
+            if (!result.isConfirmed) {
+                Swal.fire('Cancelled', 'Your Excel data upload was cancelled.', 'error');
+                return;
+            }
 
-            // SweetAlert2 confirmation prompt
+            // Show progress modal
             Swal.fire({
-                title: 'Are you sure?',
-                text: "Do you want to upload the Excel data?",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Yes, upload it!',
-                cancelButtonText: 'No, cancel!',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Send data to backend using AJAX
-                    $.ajax({
-                        url: '/upload-excel-payment',  // Your route URL
-                        type: 'POST',
-                        data: {
-                            excelData: dataFrom5thRow,  // Send the Excel data
-                        },
-                        headers: {
-                            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-                        },
-                        success: function(response) {
-                            Swal.fire({
-                                position: "center",
-                                icon: "success",
-                                title: "Your Excel data has been uploaded.",
-                            }).then(function () {
-                                window.location.reload();
+                title: 'Uploading...',
+                html: `<div style="width: 100%; background: #eee; border-radius: 5px;">
+                          <div id="upload-progress" style="width: 0%; height: 20px; background: #28a745; border-radius: 5px;"></div>
+                       </div>
+                       <div id="progress-text" style="margin-top: 10px;">0 / ${dataFrom5thRow.length}</div>`,
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: async () => {
+                    const progressBar = document.getElementById('upload-progress');
+                    const progressText = document.getElementById('progress-text');
+
+                    for (let i = 0; i < dataFrom5thRow.length; i++) {
+                        try {
+                            await $.ajax({
+                                url: '/upload-excel-payment',
+                                method: 'POST',
+                                data: {
+                                    row: dataFrom5thRow[i]
+                                },
+                                headers: {
+                                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content")
+                                }
                             });
-                        },
-                        error: function(xhr, status, error) {
-                            Swal.fire(
-                                'Error!',
-                                'There was an issue uploading the file.',
-                                'error'
-                            );
-                            console.error(error);  // Handle errors
+
+                            const percentage = Math.round(((i + 1) / dataFrom5thRow.length) * 100);
+                            progressBar.style.width = `${percentage}%`;
+                            progressText.innerHTML = `${i + 1} / ${dataFrom5thRow.length}`;
+                        } catch (err) {
+                            console.error(`Upload failed on row ${i + 1}`, err);
+                            // Optional: skip failed row and continue
                         }
+                    }
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Upload complete!',
+                        text: `${dataFrom5thRow.length} rows uploaded successfully.`,
+                        confirmButtonText: 'Reload'
+                    }).then(() => {
+                        window.location.reload();
                     });
-                } else if (result.dismiss === Swal.DismissReason.cancel) {
-                    Swal.fire(
-                        'Cancelled',
-                        'Your Excel data upload was cancelled.',
-                        'error'
-                    );
                 }
             });
-        };
-        reader.readAsArrayBuffer(file);
-    }
+        });
+    };
+
+    reader.readAsArrayBuffer(file);
 }
+
 
 

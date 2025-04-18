@@ -198,7 +198,7 @@ function getTargetLoans($skipFor, $targetId)
     }
 
     if ($skipFor === 'branch') {
-        return DB::table('customer_loan')->where('branch_id', $targetId)->where('Status', '0')->get();
+        return DB::table('customer_loan')->where('branch_id', $targetId)->get();
     }
 
     if ($skipFor === 'center') {
@@ -212,12 +212,13 @@ function getTargetLoans($skipFor, $targetId)
     return collect(); // empty if none match
 }
 
-function processInstallmentSkip($loan, $installment, $companySetting)
+function processInstallmentSkip($loan, $installment, $companySetting,$branch_id)
 {
-    $product = DB::table('loan_category')->where('idLoan_Category', $loan->Loan_Category_idLoan_Category)->first();
+    $product = DB::table('loan_category')->where('branch_id','=',$branch_id)->where('idLoan_Category', $loan->Loan_Category_idLoan_Category)->first();
     $Repayment_type = $product->Repayment_type;
-    $max_date = tableWithBranch('installments')
+    $max_date = DB::table('installments')
         ->where('Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
+        ->where('branch_id','=',$branch_id)
         ->max('Installment_Date');
 
     $newDate = Carbon::parse($max_date);
@@ -245,7 +246,7 @@ function processInstallmentSkip($loan, $installment, $companySetting)
 
     // Adjust if invalid date
     while (
-        tableWithBranch('holidays')->where('date', $newDate->toDateString())->exists() ||
+        DB::table('holidays')->where('branch_id','=',$branch_id)->where('date', $newDate->toDateString())->exists() ||
         ($companySetting == "1" && ($newDate->isSaturday() || $newDate->isSunday()))
     ) {
         if ($Repayment_type == "End Of The Month") {
@@ -257,30 +258,30 @@ function processInstallmentSkip($loan, $installment, $companySetting)
 
     $newPaneltyDate = $newDate->copy()->addDays((int) $product->Panelty_date)->toDateString();
 
-    tableWithBranch('installments')->where('idInstallments', $installment->idInstallments)->update([
+    DB::table('installments')->where('branch_id','=',$branch_id)->where('idInstallments', $installment->idInstallments)->update([
         'Installment_Date' => $newDate->toDateString(),
         'Panelty_date' => $newPaneltyDate,
     ]);
 }
 
 
-function processDaySkip($loan, $installment, $holidayDate, $companySetting)
+function processDaySkip($loan, $installment, $holidayDate, $companySetting,$branch_id)
 {
     $newDate = Carbon::parse($holidayDate)->addDay();
     $loan_id = $installment->Customer_Loan_idCustomer_Loan;
 
     while (
-        tableWithBranch('holidays')->where('date', $newDate->toDateString())->exists() ||
+        DB::table('holidays')->where('branch_id','=',$branch_id)->where('date', $newDate->toDateString())->exists() ||
         ($companySetting == "1" && ($newDate->isSaturday() || $newDate->isSunday())) ||
-        tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', $loan_id)->where('Installment_Date', $newDate->toDateString())->exists()
+        DB::table('installments')->where('branch_id','=',$branch_id)->where('Customer_Loan_idCustomer_Loan', $loan_id)->where('Installment_Date', $newDate->toDateString())->exists()
     ) {
         $newDate->addDay();
     }
 
-    $product = DB::table('loan_category')->where('idLoan_Category', $loan->Loan_Category_idLoan_Category)->first();
+    $product = DB::table('loan_category')->where('branch_id','=',$branch_id)->where('idLoan_Category', $loan->Loan_Category_idLoan_Category)->first();
     $newPaneltyDate = $newDate->copy()->addDays((int) $product->Panelty_date)->toDateString();
 
-    tableWithBranch('installments')->where('idInstallments', $installment->idInstallments)->update([
+    DB::table('installments')->where('branch_id','=',$branch_id)->where('idInstallments', $installment->idInstallments)->update([
         'Installment_Date' => $newDate->toDateString(),
         'Panelty_date' => $newPaneltyDate,
     ]);

@@ -7,6 +7,8 @@
         <table class="table table-hover align-middle">
             <thead class="table-light">
             <tr>
+                <th>Customer No</th>
+                <th>Customer Name</th>
                 <th>Loan No</th>
                 <th>Date</th>
                 <th>Amount</th>
@@ -17,37 +19,51 @@
                 <th>Action</th>
             </tr>
             </thead>
+
             <tbody>
-            {{-- Sample Data --}}
-            <tr>
-                <td>GL-00982</td>
-                <td>2024-11-02</td>
-                <td>Rs. 300,000</td>
-                <td>14%</td>
-                <td>36</td>
-                <td>Rs. 150,000</td>
-                <td><span class="badge bg-success">Active</span></td>
-                <td>
-                    <button class="btn btn-sm btn-primary">
-                        <i class="fas fa-eye me-1"></i> View
-                    </button>
-                </td>
-            </tr>
-            <tr>
-                <td>GL-00983</td>
-                <td>2023-08-15</td>
-                <td>Rs. 150,000</td>
-                <td>10%</td>
-                <td>24</td>
-                <td>Rs. 40,000</td>
-                <td><span class="badge bg-secondary">Closed</span></td>
-                <td>
-                    <button class="btn btn-sm btn-primary">
-                        <i class="fas fa-eye me-1"></i> View
-                    </button>
-                </td>
-            </tr>
-            {{-- Loop actual guaranteed loan data here --}}
+            @forelse ($guaranteedLoans as $loan)
+                <tr>
+                    <td>{{ $loan->cus_number }}</td>
+                    <td>{{ $loan->First_Name }} {{ $loan->Last_Name }}</td>
+                    <td>{{ $loan->Loan_No }}</td>
+                    <td>{{ \Carbon\Carbon::parse($loan->Date_Time)->format('Y-m-d') }}</td>
+                    <td>Rs. {{ number_format($loan->Amount, 2) }}</td>
+                    <td>{{ $loan->Interest_Rate }}%</td>
+                    <td>{{ $loan->Installment_Count }}</td>
+                    <td>Rs. {{ number_format($loan->Balance_Amount, 2) }}</td>
+                    <td>
+                        @php
+                            $badgeClass = match((string) $loan->Status) {
+                                '0' => 'bg-success',
+                                '-1' => 'bg-warning text-dark',
+                                '1', '2', 'completed' => 'bg-secondary',
+                                '-2' => 'bg-danger',
+                                default => 'bg-info',
+                            };
+
+                            $statusText = match((string) $loan->Status) {
+                                '0' => 'On going',
+                                '-1' => 'Pending',
+                                '1', '2', 'completed' => 'Settled',
+                                '-2' => 'Deleted',
+                                default => ucfirst($loan->Status),
+                            };
+                        @endphp
+
+                        <span class="badge {{ $badgeClass }}">{{ $statusText }}</span>
+                    </td>
+                    <td>
+                        <a href="{{ url('loanview/' . $loan->idCustomer_Loan) }}" target="_blank" class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye me-1"></i> View
+                        </a>
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="10" class="text-center text-muted">No guaranteed loans found.</td>
+                </tr>
+            @endforelse
+
             </tbody>
         </table>
     </div>
