@@ -610,8 +610,12 @@ class ExcelController extends Controller
         }
 
         $loan_number = $row[1];
-        $date = $row[0];
-        Log::info($date);
+        $excelDate = $row[0];
+        if (is_numeric($excelDate)) {
+            $date = date('Y-m-d', ($excelDate - 25569) * 86400);
+        } else {
+            $date = date('Y-m-d', strtotime($excelDate));
+        }
         $amount = $row[4];
         $saving_amount = $row[5];
 
@@ -623,28 +627,37 @@ class ExcelController extends Controller
 
         if (!$loan) {
             Log::info($loan_number);
+        }else{
+            $paymentData = [
+                'cus_id' => $loan->Customer_idCustomer,
+                'payment_amount' => $amount,
+                'saving_amount' => $saving_amount,
+                'file' => '-',
+                'loan_id' => $loan->idCustomer_Loan,
+                'payment_date' => $date,
+                'payment_type' => 'Cash',
+                'bank_account_company' => '1',
+                'cheque_issue_bank' => '1',
+                'name_on_cheque' => '',
+                'chq_number' => '',
+                'chq_date' => '',
+                'chq_type' => 'Crossed',
+            ];
+
+            $paymentController = app(TodayPaymentController::class);
+            $paymentController->store(new Request($paymentData));
+
+            return response()->json(['message' => 'Payment stored for loan: ' . $loan_number]);
         }
+        return response()->json(['message' => 'Not Saved: ' . $loan_number]);
 
-        $paymentData = [
-            'cus_id' => $loan->Customer_idCustomer,
-            'payment_amount' => $amount,
-            'saving_amount' => $saving_amount,
-            'file' => '-',
-            'loan_id' => $loan->idCustomer_Loan,
-            'payment_date' => $date,
-            'payment_type' => 'Cash',
-            'bank_account_company' => '1',
-            'cheque_issue_bank' => '1',
-            'name_on_cheque' => '',
-            'chq_number' => '',
-            'chq_date' => '',
-            'chq_type' => 'Crossed',
-        ];
+    }
 
-        $paymentController = app(TodayPaymentController::class);
-        $paymentController->store(new Request($paymentData));
-
-        return response()->json(['message' => 'Payment stored for loan: ' . $loan_number]);
+    function convertExcelDate($excelDate)
+    {
+        // Excel starts from 1900-01-01, but has a known bug so we offset by 1 more day
+        $unixTimestamp = ($excelDate - 25569) * 86400;
+        return date('Y-m-d', $unixTimestamp);
     }
 
 
