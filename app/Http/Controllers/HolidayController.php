@@ -17,11 +17,15 @@ class HolidayController extends Controller
     {
         $companySetting = tableWithBranch('company')->value('saturday_sunday');
         $holidays = tableWithBranch('holidays')->get();
-
+        $branch_id=session('branch_id');
         foreach ($holidays as $holiday) {
             $holidayDate = $holiday->date;
 
             $loans = getTargetLoans($skipFor, $targetId);
+
+            if ($skipFor=="branch"){
+                $branch_id=$targetId;
+            }
 
             foreach ($loans as $loan) {
                 $installments = tableWithBranch('installments')
@@ -31,15 +35,15 @@ class HolidayController extends Controller
 
                 foreach ($installments as $installment) {
                     if ($skipType === 'installment') {
-                        processInstallmentSkip($loan, $installment, $companySetting);
+                        processInstallmentSkip($loan, $installment, $companySetting,$branch_id);
                     } else {
-                        processDaySkip($loan, $installment, $holidayDate, $companySetting);
+                        processDaySkip($loan, $installment, $holidayDate, $companySetting,$branch_id);
                     }
                 }
             }
         }
 
-        $this->create(); // whatever this method does
+        $this->create($branch_id); // whatever this method does
 
     }
 
@@ -48,11 +52,11 @@ class HolidayController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create($branch_id)
     {
-        $loan=tableWithBranch('customer_loan')->get();
+        $loan=DB::table('customer_loan')->where('branch_id','=',$branch_id)->get();
         foreach ($loan as $loans) {
-            $insallment=tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan','=',$loans->idCustomer_Loan)->get();
+            $insallment=DB::table('installments')->where('branch_id','=',$branch_id)->where('Customer_Loan_idCustomer_Loan','=',$loans->idCustomer_Loan)->get();
             $date=[];
             $panelty_date=[];
             foreach ($insallment as $installments) {
@@ -63,7 +67,7 @@ class HolidayController extends Controller
             sort($panelty_date);
             $count=0;
             foreach ($insallment as $new_installments) {
-                tableWithBranch('installments')->where('idInstallments', $new_installments->idInstallments)->update([
+                DB::table('installments')->where('branch_id','=',$branch_id)->where('idInstallments', $new_installments->idInstallments)->update([
                     'Installment_Date' => $date[$count],
                     'Panelty_date' => $panelty_date[$count],
                 ]);

@@ -4,42 +4,49 @@
     </h5>
 
     <div class="table-responsive">
-        <table class="table table-striped align-middle">
+        <table class="table table-hover align-middle">
             <thead class="table-light">
             <tr>
                 <th>Description</th>
-                <th>File Path</th>
-                <th>Branch</th>
-                <th>Action</th>
+                <th>Preview</th>
+                <th style="width: 100px;">Action</th>
             </tr>
             </thead>
             <tbody>
-            {{-- Example row --}}
-            <tr>
-                <td>NIC Front</td>
-                <td>/documents/customer/nic_front.jpg</td>
-                <td>Branch 001</td>
-                <td>
-                    <button class="btn btn-sm btn-primary">
-                        <i class="fas fa-eye me-1"></i> View
-                    </button>
-                </td>
-            </tr>
-            <tr>
-                <td>Utility Bill</td>
-                <td>/documents/customer/bill.pdf</td>
-                <td>Branch 002</td>
-                <td>
-                    <button class="btn btn-sm btn-primary">
-                        <i class="fas fa-eye me-1"></i> View
-                    </button>
-                </td>
-            </tr>
-            {{-- You can loop actual data here --}}
+            @forelse ($documents as $doc)
+                <tr>
+                    <td>{{ $doc->Description }}</td>
+                    <td>
+                        @php
+                            $ext = pathinfo($doc->Path, PATHINFO_EXTENSION);
+                            $fullPath = asset('storage/' .$doc->Path);
+                        @endphp
+
+                        @if(in_array(strtolower($ext), ['jpg', 'jpeg', 'png', 'gif']))
+                            <img src="{{$fullPath }}" alt="preview" style="height: 50px; border-radius: 4px;">
+                        @elseif(strtolower($ext) === 'pdf')
+                            <i class="fas fa-file-pdf fa-2x text-danger"></i>
+                        @else
+                            <i class="fas fa-file fa-2x text-secondary"></i>
+                        @endif
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-primary preview-btn" data-path="{{ $fullPath }}">
+                            <i class="fas fa-eye me-1"></i> View
+                        </button>
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="3" class="text-center text-muted">No documents found.</td>
+                </tr>
+            @endforelse
             </tbody>
         </table>
     </div>
 </div>
+
+
 
 <!-- Modal -->
 <div class="modal fade" id="docPreviewModal" tabindex="-1" aria-hidden="true">
@@ -58,12 +65,10 @@
 
 
 <script>
-    document.querySelectorAll('.btn-primary').forEach(btn => {
-        btn.addEventListener('click', function () {
-            const filePath = this.closest('tr').children[1].innerText;
-            document.getElementById('docPreviewFrame').src = filePath;
-            new bootstrap.Modal(document.getElementById('docPreviewModal')).show();
-        });
+    $(document).on('click', '.preview-btn', function () {
+        const filePath = $(this).data('path');
+        $('#docPreviewFrame').attr('src', filePath);
+        new bootstrap.Modal(document.getElementById('docPreviewModal')).show();
     });
 </script>
 

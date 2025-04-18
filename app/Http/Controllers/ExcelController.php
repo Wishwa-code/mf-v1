@@ -595,44 +595,52 @@ class ExcelController extends Controller
 
 
 
-    public function uploadExcelPayment(Request $request){
-        $data = $request->excelData;
-        // Loop through each row of Excel data, starting from the 6th row (index 5)
-        foreach ($data as $key => $row) {
-            $loan_number=$row[0];
+    public function uploadExcelPayment(Request $request)
+    {
+        $row = $request->input('row'); // Each row sent as 'row' from frontend
 
-            $loan=tableWithBranch('customer_loan')->where('Loan_No','=',$loan_number)->first();
-
-            $amount=$row[1];
-            if ($amount>0){
-                $data = [
-                    'cus_id' => $loan->Customer_idCustomer,
-                    'payment_amount' => $amount,
-                    'file' => '-',
-                    'loan_id' => $loan->idCustomer_Loan,
-                    'payment_date' => date('Y-m-d'),
-                    'payment_type' => 'Cash',
-                    'bank_account_company' => '1',
-                    'cheque_issue_bank' => '1',
-                    'name_on_cheque' => '',
-                    'chq_number' => '',
-                    'chq_date' => '',
-                    'chq_type' => 'Crossed',
-                ];
-
-                $request = new Request($data);
-
-                $paymentController = app(TodayPaymentController::class);
-
-                $paymentController->store($request);
-
-
-
-            }
+        if (!isset($row[0], $row[1], $row[4])) {
+            return response()->json(['message' => 'Invalid data'], 400);
         }
 
-        return response()->json(['message' => 'Payment processed successfully']);
+        $loan_number = $row[1];
+        $date = $row[0];
+        Log::info($date);
+        $amount = $row[4];
+        $saving_amount = $row[5];
+
+        if ($amount <= 0) {
+            return response()->json(['message' => 'Amount is zero or negative, skipped.']);
+        }
+
+        $loan = tableWithBranch('customer_loan')->where('Loan_No', $loan_number)->first();
+
+        if (!$loan) {
+            Log::info($loan_number);
+        }
+
+        $paymentData = [
+            'cus_id' => $loan->Customer_idCustomer,
+            'payment_amount' => $amount,
+            'saving_amount' => $saving_amount,
+            'file' => '-',
+            'loan_id' => $loan->idCustomer_Loan,
+            'payment_date' => $date,
+            'payment_type' => 'Cash',
+            'bank_account_company' => '1',
+            'cheque_issue_bank' => '1',
+            'name_on_cheque' => '',
+            'chq_number' => '',
+            'chq_date' => '',
+            'chq_type' => 'Crossed',
+        ];
+
+        $paymentController = app(TodayPaymentController::class);
+        $paymentController->store(new Request($paymentData));
+
+        return response()->json(['message' => 'Payment stored for loan: ' . $loan_number]);
     }
+
 
     public function uploadExcelCate(Request $request){
         $data = $request->excelData;

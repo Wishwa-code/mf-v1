@@ -18,36 +18,52 @@
             </tr>
             </thead>
             <tbody>
-            {{-- Sample Rows --}}
-            <tr>
-                <td>L-000123</td>
-                <td>2024-05-20</td>
-                <td>Rs. 100,000</td>
-                <td>12%</td>
-                <td>24</td>
-                <td>Rs. 42,000</td>
-                <td><span class="badge bg-success">Active</span></td>
-                <td>
-                    <button class="btn btn-sm btn-primary">
-                        <i class="fas fa-eye me-1"></i> View
-                    </button>
-                </td>
-            </tr>
-            <tr>
-                <td>L-000124</td>
-                <td>2023-12-12</td>
-                <td>Rs. 250,000</td>
-                <td>10%</td>
-                <td>36</td>
-                <td>Rs. 90,000</td>
-                <td><span class="badge bg-warning text-dark">Pending</span></td>
-                <td>
-                    <button class="btn btn-sm btn-primary">
-                        <i class="fas fa-eye me-1"></i> View
-                    </button>
-                </td>
-            </tr>
-            {{-- Loop real data in production --}}
+            @forelse ($loans as $loan)
+                <tr>
+                    <td>{{ $loan->Loan_No }}</td>
+                    <td>{{ \Carbon\Carbon::parse($loan->Date_Time)->format('Y-m-d') }}</td>
+                    <td>Rs. {{ number_format($loan->Amount, 2) }}</td>
+                    <td>{{ $loan->Interest_Rate }}%</td>
+                    <td>{{ $loan->Installment_Count }}</td>
+                    <td>Rs. {{ number_format($loan->Balance_Amount, 2) }}</td>
+                    <td>
+                        @php
+                            $badgeClass = match((string) $loan->Status) {
+                                '0' => 'bg-success', // On going
+                                '-1' => 'bg-warning text-dark', // Pending
+                                '1', '2', 'completed' => 'bg-secondary', // Settled
+                                '-2' => 'bg-danger', // Deleted
+                                default => 'bg-info',
+                            };
+
+                            $statusText = match((string) $loan->Status) {
+                                '0' => 'On going',
+                                '-1' => 'Pending',
+                                '1', '2', 'completed' => 'Settled',
+                                '-2' => 'Deleted',
+                                default => ucfirst($loan->Status),
+                            };
+
+                            $loanUrl = ($loan->Status == -1)
+                                ? url('loanview/' . $loan->idCustomer_Loan . '/438217')
+                                : url('loanview/' . $loan->idCustomer_Loan);
+                        @endphp
+
+                        <span class="badge {{ $badgeClass }}">{{ $statusText }}</span>
+                    </td>
+                    <td>
+                        <a href="{{ $loanUrl }}" target="_blank" class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye me-1"></i> View
+                        </a>
+                    </td>
+
+
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="8" class="text-center text-muted">No loans found.</td>
+                </tr>
+            @endforelse
             </tbody>
         </table>
     </div>
