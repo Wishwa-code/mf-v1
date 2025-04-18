@@ -372,9 +372,12 @@ class ExcelController extends Controller
                     }
 
                     $saving_check=$product->enable_saving_process;
+                    $saving_payment=$product->saving_payment;
                     $savingBalance=0.0;
                     if ($saving_check=="Yes"){
-                        $savingBalance = $product->saving_amount;
+                        if ($saving_payment!="1"){
+                            $savingBalance = $product->saving_amount;
+                        }
                     }
 
                     // Initialize starting variables for the loop
@@ -400,6 +403,8 @@ class ExcelController extends Controller
                         $capitalAmount = $loan_amount / $installment_count; // Capital per installment
                         $interestForInstallment = $interest_amount / $installment_count; // Interest per installment
                         $totalInstallmentAmount = $installment_amount+$savingBalance; // Total installment amount (capital + interest)
+
+
                         // Check if $panelty_start_day has a valid value
                         if (!is_numeric($panelty_start_day) || $panelty_start_day < 0) {
                             $panelty_start_day = 0; // Default value, adjust based on your requirement
@@ -419,6 +424,7 @@ class ExcelController extends Controller
                             'interest_amount' => $interestForInstallment,
                             'Panalty_Amount' => 0, // Penalty amount (initially 0)
                             'Total_Amount' => $totalInstallmentAmount, // Total amount to be paid
+                            'Saving_amount' => $savingBalance, // Total amount to be paid
                             'Paid_Amount' => $paidAmount, // Paid amount (initially 0)
                             'Panalty_Balance' => 0, // Penalty balance starts at 0
                             'Interest_Balance' => $interestForInstallment, // Remaining interest balance
