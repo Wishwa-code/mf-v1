@@ -315,10 +315,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
     <script>
-        $(document).ready(function() {
-            $('.select2').select2(); // Initialize Select2 elements
+        $(document).ready(function () {
+            $('.select2').select2();
 
             function calculateTotals() {
                 let totalLoanAmount = 0;
@@ -327,17 +326,15 @@
                 let totalArrears = 0;
                 let totalSaving = 0;
 
-                let rows = $('#repaymentTable tbody tr');
+                const rows = $('#repaymentTable tbody tr');
                 let currentGroupRows = [];
 
                 rows.each(function () {
                     const row = $(this);
 
                     if (row.find('th').first().text().startsWith('Group No')) {
-                        // Reset group collection
                         currentGroupRows = [];
                     } else if (row.hasClass('group-total')) {
-                        // Process current group rows
                         let groupLoanAmount = 0;
                         let groupLoanBalance = 0;
                         let groupDueAmount = 0;
@@ -352,14 +349,12 @@
                             groupSaving += parseFloat(r.find('.saving-balance').text().replace(/,/g, '') || 0);
                         });
 
-                        // Update this group total row
                         row.find('.group-loan-amount').text(groupLoanAmount.toFixed(2));
                         row.find('.group-loan-balance').text(groupLoanBalance.toFixed(2));
                         row.find('.group-due-amount').text(groupDueAmount.toFixed(2));
                         row.find('.group-arrears').text(groupArrears.toFixed(2));
                         row.find('.group-saving').text(groupSaving.toFixed(2));
 
-                        // Add to center total
                         totalLoanAmount += groupLoanAmount;
                         totalLoanBalance += groupLoanBalance;
                         totalDueAmount += groupDueAmount;
@@ -367,14 +362,12 @@
                         totalSaving += groupSaving;
 
                     } else {
-                        // Push data rows to group
                         if (row.find('td').length && !row.hasClass('group-total')) {
                             currentGroupRows.push(row);
                         }
                     }
                 });
 
-                // Set final center totals
                 $('#total-loan-amount').text(totalLoanAmount.toFixed(2));
                 $('#total-loan-balance').text(totalLoanBalance.toFixed(2));
                 $('#total-due-amount').text(totalDueAmount.toFixed(2));
@@ -382,70 +375,72 @@
                 $('#total-saving').text(totalSaving.toFixed(2));
             }
 
-
-
-
-
-            // Calculate totals when the document is ready
             calculateTotals();
 
+            $('#downloadExcel').click(function () {
+                const table = document.getElementById('repaymentTable');
+                const ws = XLSX.utils.table_to_sheet(table, { raw: true });
 
+                // Auto width for each column
+                const columnWidths = [];
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    let maxWidth = 10;
+                    for (let R = range.s.r; R <= range.e.r; ++R) {
+                        const cell_address = { c: C, r: R };
+                        const cell_ref = XLSX.utils.encode_cell(cell_address);
+                        const cell = ws[cell_ref];
+                        if (cell && cell.v) {
+                            const cellValue = cell.v.toString();
+                            if (cellValue.length > maxWidth) maxWidth = cellValue.length;
+                        }
+                    }
+                    columnWidths.push({ wch: maxWidth + 2 });
+                }
+                ws['!cols'] = columnWidths;
 
-            // Download Excel functionality
-            $('#downloadExcel').click(function() {
-                // Convert HTML table to a workbook object
-                var wb = XLSX.utils.table_to_book(document.getElementById('repaymentTable'), { sheet: "Repayment Data" });
-
-                // Generate and download the Excel file
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Repayment Data");
                 XLSX.writeFile(wb, `Repayment_Report_${new Date().toLocaleString('default', { month: 'long' })}.xlsx`);
             });
 
-            $('#pdfButton').click(function() {
+            $('#pdfButton').click(function () {
                 const element = document.getElementById('repaymentTable');
                 const opt = {
-                    margin: [0.5, 0.5, 0.5, 0.5], // Margins: top, right, bottom, left
-                    filename: `Repayment_Report_${new Date().toLocaleString('default', { month: 'long' })}.pdf`,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true },
-                    jsPDF: { unit: 'in', format: [11, 8.5], orientation: 'landscape' } // Landscape orientation with A4 dimensions
+                    margin: [0.5, 0.5, 0.5, 0.5],
+                    filename: `Repayment_Report_${new Date().toLocaleString('default', {month: 'long'})}.pdf`,
+                    image: {type: 'jpeg', quality: 0.98},
+                    html2canvas: {scale: 2, useCORS: true},
+                    jsPDF: {unit: 'in', format: [11, 8.5], orientation: 'landscape'}
                 };
                 html2pdf().from(element).set(opt).save();
             });
 
+            $('#printButton').click(function () {
+                const currentMonth = new Date().toLocaleString('default', {month: 'long'});
+                const center_details = $('#center_details').find('option:selected').text();
+                const orientation = $('#pageOrientation').val();
 
+                const printWindow = window.open('', '', 'height=800,width=1200');
+                const printContent = document.getElementById('repaymentTable').outerHTML;
+
+                printWindow.document.write('<html><head><title>Repayment Sheet</title>');
+                printWindow.document.write('<style>');
+                printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 9px; zoom: 80%; margin: 0.5in; }');
+                printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8px; }');
+                printWindow.document.write('#repaymentTable th, #repaymentTable td { border: 1px solid black; padding: 4px; text-align: center; word-break: break-word; }');
+                printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
+                printWindow.document.write('</style></head><body>');
+                printWindow.document.write('<h2 style="text-align:center;">Repayment Sheet for ' + currentMonth + ' (' + center_details + ')</h2>');
+                printWindow.document.write(printContent);
+                printWindow.document.write('</body></html>');
+
+                printWindow.document.close();
+                printWindow.focus();
+                printWindow.print();
+            });
         });
-
-
-        $('#printButton').click(function () {
-            const currentMonth = new Date().toLocaleString('default', { month: 'long' });
-            const center_details = $('#center_details').find('option:selected').text();
-            const orientation = $('#pageOrientation').val(); // Get selected orientation
-
-            const printWindow = window.open('', '', 'height=800,width=600');
-            const printContent = document.getElementById('repaymentTable').outerHTML;
-            printWindow.document.write('<style>body { font-family: Arial, sans-serif; margin: 0; padding: 0; font-size: 9px; }');
-            printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; table-layout: fixed; }');
-            printWindow.document.write('#repaymentTable th, #repaymentTable td { border: 1px solid #000; padding: 4px; word-wrap: break-word; }');
-            printWindow.document.write('body { zoom: 80%; }'); // 👈 this line
-
-            printWindow.document.write('<html><head><title>Repayment Sheet</title>');
-            printWindow.document.write('<style>');
-            printWindow.document.write('body { font-family: Arial, sans-serif; margin: 0; padding: 0; font-size: 10px; }');
-            printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; }');
-            printWindow.document.write('#repaymentTable th, #repaymentTable td { padding: 5px; border: 1px solid #000; text-align: center; }');
-            printWindow.document.write('@media print {@page { size: ' + orientation + '; margin: 0.5in; }}');
-            printWindow.document.write('</style></head><body>');
-            printWindow.document.write('<h1 style="text-align: center;">Repayment Sheet for ' + currentMonth + ' (' + center_details + ')</h1>');
-            printWindow.document.write(printContent);
-            printWindow.document.write('</body></html>');
-
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
-        });
-
-
-
     </script>
+
 @endsection
 

@@ -256,7 +256,7 @@ class TodayPaymentController extends Controller
 
         if ($status == '-1') {
             $today = Carbon::now()->toDateString();
-            $loanQuery = DB::table('installments')
+            $loanQuery = tableWithBranch('installments','installments')
                 ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
                 ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
                 ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
@@ -308,7 +308,7 @@ class TodayPaymentController extends Controller
                     'subquery.group_name'
                 );
         }else{
-            $loanQuery = DB::table('installments')
+            $loanQuery = tableWithBranch('installments','installments')
                 ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
                 ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
                 ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
