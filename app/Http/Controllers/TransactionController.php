@@ -416,7 +416,7 @@ class TransactionController extends Controller
             // Handle the case when the center table has no values
             $center_details = null; // Or any default value you want to assign
             $grouped_loans = array(); // Or any default value you want to assign
-            return view('pages.DailyRepayment', compact('center', 'grouped_loans','center_details'));
+            return view('pages.RightWayDailyRepayment', compact('center', 'grouped_loans','center_details'));
         } else {
             // If $center is not empty, set the default center value
             $center_details = $request->center_details ?? $center[0]->idCenter;

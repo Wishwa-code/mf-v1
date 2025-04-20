@@ -1169,6 +1169,9 @@ $banner = DB::select($query);
                                                         <a href="/daily_repayment_sheet">Monthly Repayment Sheet</a>
                                                     </li>
                                                     <li>
+                                                        <a href="/RightWayDailyRepayment">Repayment Sheet</a>
+                                                    </li>
+                                                    <li>
                                                         <a href="/daily_repayment_sheet_hm">Daily Repayment Sheet</a>
                                                     </li>
                                                     <li>
