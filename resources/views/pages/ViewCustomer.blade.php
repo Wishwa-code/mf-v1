@@ -58,12 +58,12 @@
                         <div class="d-flex flex-column align-items-start mb-3">
                             <h4 class="page-title mb-3">Customer Details</h4>
 
-{{--                            <!-- File input -->--}}
-{{--                            <label style="color: red">Upload Excel</label>--}}
-{{--                            <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="form-control mb-2 w-50">--}}
+                            <!-- File input -->
+                            <label style="color: red">Upload Excel</label>
+                            <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="form-control mb-2 w-50">
 
-{{--                            <!-- Upload button, aligned below the file input -->--}}
-{{--                            <input type="button" onclick="upload_excel()" class="btn btn-success mt-2" value="Upload">--}}
+                            <!-- Upload button, aligned below the file input -->
+                            <input type="button" onclick="upload_excel()" class="btn btn-success mt-2" value="Upload">
                         </div>
 
 

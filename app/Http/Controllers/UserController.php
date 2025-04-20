@@ -320,7 +320,7 @@ class UserController extends Controller
         $totalBalanceUntil = $loanQuery_2->Total_Balance_until;
         $totalBalanceUntil=$totalBalanceUntil+$checqueamount;
         $userid=session('userid');
-        $getuser = tableWithBranch('user')->where('id', $userid)->first();
+        $getuser = DB::table('user')->where('id', $userid)->first();
         $dashboard=0;
         if ($getuser){
             $dashboard=$getuser->dashboard;
