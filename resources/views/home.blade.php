@@ -129,6 +129,18 @@
 
             {{-- Charts --}}
             <div class="row">
+                <div class="col-lg-12 mb-4">
+                    <div class="glass-card card shadow animated-card">
+                        <div class="card-body p-0">
+                            <h5 class="card-title p-3">📈 Live Currency Exchange (USD to LKR)</h5>
+                            <div class="tradingview-widget-container">
+                                <div id="tradingview_advanced"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
                 <div class="col-lg-6 mb-4">
                     <div class="glass-card card shadow animated-card">
                         <div class="card-body">
@@ -156,7 +168,7 @@
                     </div>
                 </div>
 
-                <div class="col-lg-6 mb-4">
+                <div class="col-lg-3 mb-4">
                     <div class="glass-card card shadow animated-card">
                         <div class="card-body">
                             <h5 class="card-title mb-3">✅ Loan Completion</h5>
@@ -164,6 +176,19 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="col-lg-3 mb-4">
+                    <div class="glass-card card shadow animated-card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title mb-3">📟 Profit Gauge</h5>
+                            <div id="profit-gauge" style="height: 200px;"></div>
+                            <h4 class="mt-3 text-success fw-bold" id="profit-display">Rs. 0</h4>
+                        </div>
+                    </div>
+                </div>
+
+
+
             </div>
 
 
@@ -356,6 +381,104 @@
                 }
             }).render();
 
+
+
         });
     </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const profit = {{ $profit }};
+            const target = {{ $profitTarget }};
+            const percent = Math.min((profit / target) * 100, 100);
+
+            new ApexCharts(document.querySelector("#profit-gauge"), {
+                chart: {
+                    type: 'radialBar',
+                    height: 300,
+                    offsetY: -20
+                },
+                series: [percent],
+                labels: [''],
+                plotOptions: {
+                    radialBar: {
+                        startAngle: -120,
+                        endAngle: 120,
+                        hollow: {
+                            margin: 0,
+                            size: '65%',
+                            background: 'transparent',
+                        },
+                        track: {
+                            background: '#eee',
+                            strokeWidth: '100%',
+                            margin: 0
+                        },
+                        dataLabels: {
+                            show: true,
+                            name: {
+                                show: false
+                            },
+                            value: {
+                                offsetY: 10,
+                                fontSize: '22px',
+                                color: '#2d3436',
+                                formatter: function () {
+                                    return percent.toFixed(1) + '%';
+                                }
+                            }
+                        }
+                    }
+                },
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shade: 'dark',
+                        type: 'horizontal',
+                        gradientToColors: ['#00b894'],
+                        stops: [0, 50, 100]
+                    }
+                },
+                colors: [
+                    percent < 50 ? '#e74c3c' : (percent < 80 ? '#f39c12' : '#00b894')
+                ]
+            }).render();
+
+            // CountUp actual Rs. value
+            const animatedRs = new countUp.CountUp('profit-display', profit, {
+                prefix: 'Rs. ',
+                separator: ',',
+                duration: 2.5
+            });
+            if (!animatedRs.error) animatedRs.start();
+        });
+    </script>
+
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script type="text/javascript">
+        new TradingView.widget({
+            "container_id": "tradingview_advanced",
+            "width": "100%",
+            "height": 600,
+            "symbol": "FX_IDC:USDLKR",
+            "interval": "15",
+            "timezone": "Asia/Colombo",
+            "theme": "light",
+            "style": "3", // Beautiful hollow candles
+            "locale": "en",
+            "toolbar_bg": "#f1f3f6",
+            "enable_publishing": false,
+            "withdateranges": true,
+            "hide_side_toolbar": false,
+            "save_image": false,
+            "studies": [
+                "MACD@tv-basicstudies",
+                "RSI@tv-basicstudies",
+                "Volume@tv-basicstudies"
+            ],
+            "show_popup_button": true,
+            "popup_width": "1000",
+            "popup_height": "650"
+        });
+    </script>
+
 @endsection
