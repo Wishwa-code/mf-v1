@@ -143,6 +143,34 @@
     .enhanced-select option {
         padding: 10px; /* Add spacing for options */
     }
+    /* Sidebar Background */
+    .leftside-menu {
+        background-color: #525be8 !important; /* Dark navy or change to your desired color */
+        color: #ffffff;
+    }
+
+    /* Sidebar Text Color */
+    .leftside-menu .side-nav a,
+    .leftside-menu .side-nav-title {
+        color: #ffffff !important;
+    }
+
+    /* Sidebar Hover and Active Links */
+    .leftside-menu .side-nav a:hover,
+    .leftside-menu .side-nav .side-nav-link.active {
+        background-color: #34344a !important;
+        color: #ffffff !important; /* Accent color */
+    }
+
+    /* Sidebar Menu Arrow */
+    .leftside-menu .side-nav .menu-arrow {
+        color: #ffffff;
+    }
+
+    /* Optional: Icon Colors */
+    .leftside-menu .side-nav i {
+        color: #ff9800 !important; /* Match your branding */
+    }
 
 </style>
 
