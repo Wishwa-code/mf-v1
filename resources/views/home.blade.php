@@ -316,9 +316,11 @@
 
 
             // Weekly Comparison
-            // Weekly Comparison Chart
             new ApexCharts(document.querySelector("#bar-comparison-chart"), {
-                chart: { type: 'bar', height: 300 },
+                chart: {
+                    type: 'bar',
+                    height: 300
+                },
                 series: [
                     {
                         name: 'This Week',
@@ -330,33 +332,17 @@
                     }
                 ],
                 xaxis: {
-                    categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                    categories: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
                 },
                 colors: ['#1abc9c', '#e74c3c'],
                 plotOptions: {
                     bar: {
-                        horizontal: false,
-                        columnWidth: '50%'
+                        columnWidth: '55%',
+                        borderRadius: 4
                     }
                 }
             }).render();
 
-
-            // Radial Chart
-            new ApexCharts(document.querySelector("#radial-progress-chart"), {
-                chart: { type: 'radialBar', height: 300 },
-                series: [{{ $loan_completion_percentage }}],
-                labels: ['Completion'],
-                colors: ['#f39c12'],
-                plotOptions: {
-                    radialBar: {
-                        dataLabels: {
-                            name: { fontSize: '18px' },
-                            value: { fontSize: '32px', fontWeight: 'bold' }
-                        }
-                    }
-                }
-            }).render();
 
         });
     </script>
