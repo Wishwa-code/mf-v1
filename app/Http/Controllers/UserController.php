@@ -443,11 +443,13 @@ class UserController extends Controller
 
 
 
-        \Log::info('Weekly Current', $weeklyComparison['current']);
-        \Log::info('Weekly Last', $weeklyComparison['last']);
+        $profit = 907195;
+        $profitTarget = 1000000; // 1 million
 
 
-        return view('home',compact('weeklyComparison','deleted_loan_Count','all_loan','monthlyData','dashboard','checqueamount','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
+
+
+        return view('home',compact( 'profit', 'profitTarget','weeklyComparison','deleted_loan_Count','all_loan','monthlyData','dashboard','checqueamount','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
     }
 
     public function logout()
