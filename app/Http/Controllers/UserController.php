@@ -411,38 +411,41 @@ class UserController extends Controller
             $monthlyData[$item->month - 1] = (float) $item->total;
         }
 
-        $today = Carbon::today();
-// Start of this week (Monday)
-        $startOfWeek = $today->copy()->startOfWeek();
+
+        $startOfWeek = Carbon::now()->startOfWeek(); // Mon 2025-04-21 00:00:00
+        $endOfWeek = Carbon::now()->endOfWeek();     // Sun 2025-04-27 23:59:59
         $startOfLastWeek = $startOfWeek->copy()->subWeek();
-        $endOfLastWeek = $startOfWeek->copy()->subDay();
+        $endOfLastWeek = $endOfWeek->copy()->subWeek();
 
-        // Helper to return amount by weekday
-        function getPaymentsByWeekRange($start, $end) {
-            return DB::table('customer_payments')
-                ->selectRaw('DAYOFWEEK(Date) as weekday, SUM(Amount) as total')
-                ->whereBetween('Date', [$start, $end])
-                ->groupBy(DB::raw('DAYOFWEEK(Date)'))
-                ->pluck('total', 'weekday')
-                ->toArray();
-        }
 
-        $currentWeekRaw = getPaymentsByWeekRange($startOfWeek, $today);
-        $lastWeekRaw = getPaymentsByWeekRange($startOfLastWeek, $endOfLastWeek);
+        $getPaymentsPerDay = function ($start, $end) {
+            $results = DB::table('customer_payments')
+                ->select('Date', DB::raw('SUM(Amount) as total'))
+                ->whereBetween('Date', [$start->toDateString(), $end->toDateString()])
+                ->groupBy('Date')
+                ->get();
 
-        // Fill 7-day array (Sun=1 to Sat=7)
-        $fillWeek = function($data) {
-            $full = [];
-            for ($i = 1; $i <= 7; $i++) {
-                $full[] = isset($data[$i]) ? (float) $data[$i] : 0;
+            $week = array_fill(0, 7, 0);
+            foreach ($results as $row) {
+                $dayIndex = Carbon::parse($row->Date)->dayOfWeek; // 0 = Sun, ..., 6 = Sat
+                $week[$dayIndex] += (float) $row->total;
             }
-            return $full;
+
+            return $week;
         };
 
+
+
         $weeklyComparison = [
-            'current' => $fillWeek($currentWeekRaw),
-            'last' => $fillWeek($lastWeekRaw)
+            'current' => $getPaymentsPerDay($startOfWeek, $endOfWeek),
+            'last' => $getPaymentsPerDay($startOfLastWeek, $endOfLastWeek),
         ];
+
+
+
+        \Log::info('Weekly Current', $weeklyComparison['current']);
+        \Log::info('Weekly Last', $weeklyComparison['last']);
+
 
         return view('home',compact('weeklyComparison','deleted_loan_Count','all_loan','monthlyData','dashboard','checqueamount','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
     }
