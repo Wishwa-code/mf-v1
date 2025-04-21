@@ -681,7 +681,7 @@ class PendingLoanController extends Controller
                 DB::raw('COALESCE(SUM(Loan_Log.interest_received), 0) as interest_received'),
                 DB::raw('COALESCE(SUM(Loan_Log.penalty_received), 0) as penalty_received'),
                 DB::raw('COALESCE(SUM(loan_other_charges.processing_fee_received), 0) as processing_fee_received')
-            )->where('customer_loan.Status', '=','0')
+            )->whereIn('customer_loan.Status', [0, 1])
             ->leftJoin(DB::raw('(SELECT Customer_idCustomer, COUNT(*) as loan_count FROM customer_loan GROUP BY Customer_idCustomer) as loan_count_table'),
                 'customer_loan.Customer_idCustomer', '=', 'loan_count_table.Customer_idCustomer');
 
@@ -738,7 +738,8 @@ class PendingLoanController extends Controller
                 'Loan_Log.interest_received',
                 'Loan_Log.penalty_received',
                 'loan_other_charges.processing_fee_received'
-            )->where('customer_loan.Status', '=','0');
+            )->whereIn('customer_loan.Status', [0, 1]);
+        ;
 
         // 📌 Apply Filters to Loan Details Query
         if (!empty($date_from)) {
@@ -812,7 +813,7 @@ class PendingLoanController extends Controller
     WHERE Type = 'Issue Loan'
     GROUP BY Loan_ID
 ) as ll"), 'll.Loan_ID', '=', 'cl.idCustomer_Loan')
-            ->where('cl.Status','1=', '-1')->where('cl.Status','=', '1');
+            ->where('cl.Status', [0, 1]);
 
 
         if ($request->date_from) {
