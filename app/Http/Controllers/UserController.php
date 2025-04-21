@@ -282,11 +282,14 @@ class UserController extends Controller
         $customer_loan_current_Count = tableWithBranch('customer_loan')->where('Status','=','0')->count();
         $customer_loan_current_Amount = tableWithBranch('customer_loan')->where('Status','=','0')->sum('Amount');
         $setteled_loan_Count = tableWithBranch('customer_loan')->where('Status','=','1')->count();
+        $deleted_loan_Count = tableWithBranch('customer_loan')->where('Status','=','-2')->count();
         $setteled_loan_current_Amount = tableWithBranch('customer_loan')->where('Status','=','1')->sum('Amount');
         $todayinstallment = tableWithBranch('installments')->where('Installment_Date',date('Y-m-d'))->where('Status','=','0')->sum('Total_Balance');
         $checqueamount = tableWithBranch('Cheque_payment')->where('payment_date',date('Y-m-d'))->where('chq_status','=','0')->sum('payment_amount');
         $shortcut=tableWithBranch('shortcut')->get();
         $shortcut_count=tableWithBranch('shortcut')->count();
+
+        $all_loan=$customer_loan_current_Count+$setteled_loan_Count;
 
 
 
@@ -408,8 +411,40 @@ class UserController extends Controller
             $monthlyData[$item->month - 1] = (float) $item->total;
         }
 
+        $today = Carbon::today();
+// Start of this week (Monday)
+        $startOfWeek = $today->copy()->startOfWeek();
+        $startOfLastWeek = $startOfWeek->copy()->subWeek();
+        $endOfLastWeek = $startOfWeek->copy()->subDay();
 
-        return view('home',compact('monthlyData','dashboard','checqueamount','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
+        // Helper to return amount by weekday
+        function getPaymentsByWeekRange($start, $end) {
+            return DB::table('customer_payments')
+                ->selectRaw('DAYOFWEEK(Date) as weekday, SUM(Amount) as total')
+                ->whereBetween('Date', [$start, $end])
+                ->groupBy(DB::raw('DAYOFWEEK(Date)'))
+                ->pluck('total', 'weekday')
+                ->toArray();
+        }
+
+        $currentWeekRaw = getPaymentsByWeekRange($startOfWeek, $today);
+        $lastWeekRaw = getPaymentsByWeekRange($startOfLastWeek, $endOfLastWeek);
+
+        // Fill 7-day array (Sun=1 to Sat=7)
+        $fillWeek = function($data) {
+            $full = [];
+            for ($i = 1; $i <= 7; $i++) {
+                $full[] = isset($data[$i]) ? (float) $data[$i] : 0;
+            }
+            return $full;
+        };
+
+        $weeklyComparison = [
+            'current' => $fillWeek($currentWeekRaw),
+            'last' => $fillWeek($lastWeekRaw)
+        ];
+
+        return view('home',compact('weeklyComparison','deleted_loan_Count','all_loan','monthlyData','dashboard','checqueamount','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
     }
 
     public function logout()

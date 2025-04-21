@@ -437,6 +437,8 @@ Route::get('/AddManualJournal', function () {
 Route::post('/transaction', [TransactionController::class, 'store'])->name('transaction.handle');
 Route::get('/daily_repayment_sheet', [TransactionController::class, 'create'])->name('transaction.handle');
 Route::post('/daily_repayment_sheet_filter', [TransactionController::class, 'create'])->name('transaction.daily_repayment_sheet_filter');
+Route::get('/get-groups-by-center/{center_id}', [TransactionController::class, 'getGroupsByCenter']);
+
 
 
 Route::get('/daily_repayment_sheet_lasantha', [TransactionController::class, 'create_lasantha'])->name('transaction.handle_lasantha');

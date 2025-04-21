@@ -130,6 +130,14 @@ class TransactionController extends Controller
         return view('pages.DailyRepayment', compact('center','group', 'grouped_loans','center_details','group_details'));
     }
 
+    public function getGroupsByCenter($centerId)
+    {
+        $groups = tableWithBranch('customer_group')->where('center_id', $centerId)->get();
+
+        return response()->json($groups);
+    }
+
+
 
     public function create_lasantha(Request $request){
         $center = tableWithBranch('route')->get();

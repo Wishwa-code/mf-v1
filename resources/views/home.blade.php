@@ -1,257 +1,240 @@
 @extends('layout.admin')
 
 @section('head')
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f6f9ff;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+            transition: all 0.3s ease-in-out;
+        }
+        .glass-card:hover {
+            transform: scale(1.02);
+        }
+        .animated-card {
+            animation: fadeInUp 0.8s ease forwards;
+        }
+        @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+    <style>
+        body {
+            background: linear-gradient(120deg, #f6f9ff, #e9f3ff);
+            background-size: 400% 400%;
+            animation: gradientBackground 20s ease infinite;
+        }
+
+        @keyframes gradientBackground {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .animated-dashboard {
+            animation: fadeInDashboard 1s ease-in-out both;
+        }
+        @keyframes fadeInDashboard {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
 
 @endsection
 
-
 @section('content')
-    @if($dashboard==1)
-        <div class="container-fluid">
+    @if($dashboard == 1)
+        <div class="container-fluid py-4 animated-dashboard">
+            @php
+                $all_loan = $customer_loan_current_Count + $setteled_loan_Count;
+                $loan_completion_percentage = $all_loan > 0 ? round(($setteled_loan_Count / $all_loan) * 100, 2) : 0;
+            @endphp
 
-            <!-- start page title -->
-            <div class="row">
+        <div class="container-fluid py-4">
+
+            {{-- Welcome Banner --}}
+            <div class="row mb-4">
                 <div class="col-12">
-                    <div class="page-title-box">
-                        <div class="page-title-right">
-                            <ol class="breadcrumb m-0">
-                                <li class="breadcrumb-item"><a href="javascript: void(0);">Dashboards</a></li>
-                                <li class="breadcrumb-item active">Welcome!</li>
-                            </ol>
+                    <div class="glass-card card text-white shadow-lg animated-card" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                        <div class="card-body d-flex justify-content-between align-items-center flex-wrap">
+                            <div>
+                                <h2 class="mb-1">Welcome Back 👋</h2>
+                                <p class="mb-0" id="live-datetime"></p>
+                            </div>
+                            <i class="ri-user-smile-line display-4"></i>
                         </div>
-                        <h4 class="page-title">Welcome!</h4>
-{{--                                            <form action="{{route('loan_settlement.capitalbalance')}}" method="post">--}}
-{{--                                                @csrf--}}
-{{--                                                <input type="submit" value="test capital">--}}
-{{--                                            </form>--}}
-                        <br>
                     </div>
                 </div>
             </div>
-            <!-- end page title -->
 
-            {{--        @if($dashboard==1)--}}
+            {{-- Statistic Cards --}}
             <div class="row">
-                <div class="col-xxl-3 col-sm-6">
-                    <a href="/pendingloan">
-                        <div class="card widget-flat text-bg-pink">
-                            <div class="card-body">
-                                <div class="float-end">
-                                    <i class="ri-eye-line widget-icon"></i>
+                @php
+                    $cards = [
+                        ['title' => 'Pending Loans', 'icon' => 'ri-eye-line', 'value' => $customer_loan_pending_Amount, 'count' => $customer_loan_pending_Count, 'link' => '/pendingloan', 'bg' => '#ff758c', 'prefix' => 'Rs.'],
+                        ['title' => 'Current Loans', 'icon' => 'ri-wallet-2-line', 'value' => $customer_loan_current_Amount, 'count' => $customer_loan_current_Count, 'link' => '/payment_step_1', 'bg' => '#43cea2', 'prefix' => 'Rs.'],
+                        ['title' => 'Settled Loans', 'icon' => 'ri-file-paper-2-fill', 'value' => $setteled_loan_current_Amount, 'count' => $setteled_loan_Count, 'link' => '/showsettleloan', 'bg' => '#f7971e', 'prefix' => 'Rs.'],
+                        ['title' => 'Customers', 'icon' => 'ri-group-2-line', 'value' => $customerCount, 'count' => '', 'link' => '/showcustomers', 'bg' => '#667eea', 'prefix' => ''],
+                    ];
+                @endphp
+
+                @foreach($cards as $index => $card)
+                    <div class="col-md-3 mb-4">
+                        <a href="{{ $card['link'] }}" class="text-decoration-none">
+                            <div class="glass-card card text-white shadow animated-card" style="background-color: {{ $card['bg'] }};">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="text-uppercase">{{ $card['title'] }} {!! $card['count'] !== '' ? '('.$card['count'].')' : '' !!}</h6>
+                                            <h3><span id="stat-card-{{ $index }}"></span></h3>
+                                        </div>
+                                        <i class="{{ $card['icon'] }} fs-2"></i>
+                                    </div>
                                 </div>
-                                <h6 class="text-uppercase mt-0" title="Customers">Pending Loans ({{$customer_loan_pending_Count}})</h6>
-                                <h3 class="my-2">Rs.{{number_format($customer_loan_pending_Amount,2,'.',',')}}</h3>
+                            </div>
+                        </a>
+                    </div>
+                @endforeach
+
+                {{-- Summary Cards --}}
+                @php
+                    $extra = [
+                        ['title' => 'Today Collection', 'value' => $todayinstallment, 'color' => '#1e3c72'],
+                        ['title' => 'Total Arrears', 'value' => $arrease, 'color' => '#ef473a'],
+                        ['title' => 'Cheque Payments', 'value' => $checqueamount, 'color' => '#3498db'],
+                        ['title' => 'Total Outstanding', 'value' => ($todayinstallment + $checqueamount + $arrease), 'color' => '#0072ff'],
+                    ];
+                @endphp
+
+                @foreach($extra as $i => $item)
+                    <div class="col-md-3 mb-4">
+                        <div class="glass-card card text-white shadow animated-card" style="background-color: {{ $item['color'] }};">
+                            <div class="card-body">
+                                <h6 class="text-uppercase">{{ $item['title'] }}</h6>
+                                <h3>LKR <span id="extra-card-{{ $i }}"></span></h3>
                             </div>
                         </div>
-                    </a>
-
-                </div> <!-- end col-->
-
-                <div class="col-xxl-3 col-sm-6">
-                    <a href="/payment_step_1">
-                        <div class="card widget-flat text-bg-info">
-                            <div class="card-body">
-                                <div class="float-end">
-                                    <i class="ri-wallet-2-line widget-icon"></i>
-                                </div>
-                                <h6 class="text-uppercase mt-0" title="Customers">Current Loans ({{$customer_loan_current_Count}})</h6>
-                                <h3 class="my-2">Rs.{{number_format($customer_loan_current_Amount,2,'.',',')}}</h3>
-
-                            </div>
-                        </div>
-                    </a>
-                </div> <!-- end col-->
-
-                <div class="col-xxl-3 col-sm-6">
-                    <a href="/showsettleloan">
-                        <div class="card widget-flat text-bg-warning">
-                            <div class="card-body">
-                                <div class="float-end">
-                                    <i class="ri-file-paper-2-fill widget-icon"></i>
-                                </div>
-                                <h6 class="text-uppercase mt-0" title="Customers">Settled Loans ({{$setteled_loan_Count}})</h6>
-                                <h3 class="my-2">Rs.{{number_format($setteled_loan_current_Amount,2,'.',',')}}</h3>
-
-                            </div>
-                        </div>
-                    </a>
-                </div> <!-- end col-->
-
-
-                <div class="col-xxl-3 col-sm-6">
-                    <a href="/showcustomers">
-                        <div class="card widget-flat text-bg-primary">
-                            <div class="card-body">
-                                <div class="float-end">
-                                    <i class="ri-group-2-line widget-icon"></i>
-                                </div>
-                                <h6 class="text-uppercase mt-0" title="Customers">Customer Count</h6>
-                                <h3 class="my-2">{{$customerCount}}</h3>
-
-                            </div>
-                        </div>
-                    </a>
-                </div> <!-- end col-->
-
-                <hr>
-
-                <div class="col-xxl-3 col-sm-6">
-                    <a href="/payment">
-                        <div class="card widget-flat text-bg-success">
-                            <div class="card-body">
-                                <div class="float-end">
-                                    <i class="ri-shopping-basket-line widget-icon"></i>
-                                </div>
-                                <h6 class="text-uppercase mt-0" title="Customers">Today Collection</h6>
-                                <h6 class="text-uppercase mt-0" title="Customers">&nbsp;</h6>
-                                <h3 class="my-2">LKR {{number_format($todayinstallment,'2','.',',')}}</h3>
-
-                            </div>
-                        </div>
-                    </a>
-                </div> <!-- end col-->
-
-                <div class="col-xxl-3 col-sm-6">
-                    <a href="/payment">
-                        <div class="card widget-flat text-bg-danger">
-                            <div class="card-body">
-                                <div class="float-end">
-                                    <i class="ri-shopping-basket-line widget-icon"></i>
-                                </div>
-                                <h6 class="text-uppercase mt-0" title="Customers">Total Arease</h6>
-                                <h6 class="text-uppercase mt-0" title="Customers">&nbsp;</h6>
-                                <h3 class="my-2">LKR {{number_format($arrease,'2','.',',')}}</h3>
-
-                            </div>
-                        </div>
-                    </a>
-                </div> <!-- end col-->
-
-                <div class="col-xxl-3 col-sm-6">
-                    <a href="/payment">
-                        <div class="card widget-flat text-bg-purple">
-                            <div class="card-body">
-                                <div class="float-end">
-                                    <i class="ri-shopping-basket-line widget-icon"></i>
-                                </div>
-                                <h6 class="text-uppercase mt-0" title="Customers">Chq Payments</h6>
-                                <h6 class="text-uppercase mt-0" title="Customers">&nbsp;</h6>
-
-                                <h3 class="my-2">LKR {{number_format($checqueamount,'2','.',',')}}</h3>
-
-                            </div>
-                        </div>
-                    </a>
-                </div> <!-- end col-->
-
-                <div class="col-xxl-3 col-sm-6">
-                    <a href="/payment">
-                        <div class="card widget-flat text-bg-secondary">
-                            <div class="card-body">
-                                <div class="float-end">
-                                    <i class="ri-shopping-basket-line widget-icon"></i>
-                                </div>
-                                <h6 class="text-uppercase mt-0" title="Customers">Total Outstanding</h6>
-                                <h6 class="text-uppercase mt-0" title="Customers">(Today Collection+Arease+Chques)</h6>
-                                <h3 class="my-2">LKR {{number_format($todayinstallment+$checqueamount+$arrease,'2','.',',')}}</h3>
-
-                            </div>
-                        </div>
-                    </a>
-                </div> <!-- end col-->
-
+                    </div>
+                @endforeach
             </div>
 
-
+            {{-- Charts --}}
             <div class="row">
-                <div class="col-12">
-                    <div class="card">
+                <div class="col-lg-6 mb-4">
+                    <div class="glass-card card shadow animated-card">
                         <div class="card-body">
-                            <h4 class="header-title mb-4">Monthly Payments</h4>
-                            <div id="monthly-revenue-chart"></div>
+                            <h5 class="card-title mb-3">📈 Monthly Payments</h5>
+                            <div id="monthly-revenue-chart" style="height: 300px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 mb-4">
+                    <div class="glass-card card shadow animated-card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">💼 Loan Status</h5>
+                            <div id="loan-type-chart" style="height: 300px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 mb-4">
+                    <div class="glass-card card shadow animated-card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">📊 Weekly Comparison</h5>
+                            <div id="bar-comparison-chart" style="height: 300px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 mb-4">
+                    <div class="glass-card card shadow animated-card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">✅ Loan Completion</h5>
+                            <div id="radial-progress-chart" style="height: 300px;"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            @if($shortcut_count>0)
-                <div class="row">
-                    <div class="col-12">
-                        <div class="page-title-box">
-                            <h4 class="page-title">Shortcuts</h4>
+
+            @if($shortcut_count > 0)
+                <div class="row mt-5">
+                    <div class="col-12 mb-3">
+                        <div class="glass-card card border-0 shadow-sm animated-card"
+                             style="background: rgba(255,255,255,0.15); backdrop-filter: blur(6px);">
+                            <div class="card-body d-flex justify-content-between align-items-center">
+                                <h4 class="mb-0 text-dark fw-bold">Quick Access Shortcuts</h4>
+{{--                                <i class="ri-apps-line fs-4 text-muted"></i>--}}
+                            </div>
                         </div>
                     </div>
                 </div>
             @endif
+
             @php
-                // New set of vibrant colors
-                $colors = ['#FF5733', '#3498DB', '#9B59B6', '#E74C3C', '#1ABC9C', '#F39C12', '#2ECC71', '#D35400'];
+                $colors = ['#f1c40f', '#2ecc71', '#e67e22', '#3498db', '#9b59b6', '#1abc9c', '#34495e', '#e74c3c'];
             @endphp
 
             <style>
-                .shortcut-card {
-                    transition: transform 0.2s ease-in-out, background-color 0.3s ease-in-out;
-                    padding: 8px; /* Reduced padding */
-                    border-radius: 8px; /* Slightly smaller rounded corners */
+                .shortcut-tile {
+                    border-radius: 12px;
+                    transition: all 0.25s ease-in-out;
+                    color: white;
                 }
-                .shortcut-card:hover {
-                    filter: brightness(85%);
-                    transform: scale(1.03); /* Smaller zoom effect */
+                .shortcut-tile:hover {
+                    transform: translateY(-4px);
+                    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
                 }
-                .shortcut-card i {
-                    font-size: 1.5rem !important; /* Reduce icon size */
+                .shortcut-icon {
+                    font-size: 1.8rem;
                 }
-                .shortcut-card small {
-                    font-size: 0.8rem !important; /* Reduce text size */
+                .shortcut-label {
+                    font-size: 0.9rem;
+                    font-weight: 500;
+                    margin-top: 6px;
                 }
             </style>
 
-            <div class="row g-1"> {{-- Reduced spacing --}}
+            <div class="row g-3">
                 @foreach($shortcut as $index => $item)
                     @php
                         $url = "/";
                         $name = "";
                         $icon = "";
                         $bgColor = $colors[$index % count($colors)];
+
+                        switch($item->name) {
+                            case "Add_Customer": $url = "/customers"; $name = "Add Customer"; $icon = "fas fa-user-plus"; break;
+                            case "View_Customer": $url = "/showcustomers"; $name = "View Customers"; $icon = "fas fa-users"; break;
+                            case "Assign_Customers_to_group": $url = "/customergroupassign"; $name = "Assign to Group"; $icon = "fas fa-user-friends"; break;
+                            case "View_Products": $url = "/viewproduct"; $name = "View Products"; $icon = "fas fa-box-open"; break;
+                            case "Pending_Loans": $url = "/pendingloan"; $name = "Pending Loans"; $icon = "fas fa-hourglass-half"; break;
+                            case "Current_Loans": $url = "/payment_step_1"; $name = "Current Loans"; $icon = "fas fa-hand-holding-usd"; break;
+                            case "Loan_In_arrears": $url = "/latePayment"; $name = "Loan Arrears"; $icon = "fas fa-exclamation-triangle"; break;
+                            case "Add_Repayment": $url = "/payment"; $name = "Add Repayment"; $icon = "fas fa-money-check-alt"; break;
+                            case "Repayment_details": $url = "/viewpayment"; $name = "View Repayment"; $icon = "fas fa-file-invoice-dollar"; break;
+                            case "Collector_wise_collections": $url = "/collection"; $name = "Agent Collections"; $icon = "fas fa-user-tie"; break;
+                            case "Loan_Calculator": $url = "/calculator"; $name = "Loan Calculator"; $icon = "fas fa-calculator"; break;
+                            case "Add_Expenses": $url = "/expenses"; $name = "Add Expenses"; $icon = "fas fa-receipt"; break;
+                            case "Add_Income": $url = "/income"; $name = "Add Income"; $icon = "fas fa-hand-holding-usd"; break;
+                        }
                     @endphp
 
-                    @if($item->name === "Add_Customer")
-                        @php $url = "/customers"; $name = "Add Customer"; $icon = "fas fa-user-plus"; @endphp
-                    @elseif($item->name === "View_Customer")
-                        @php $url = "/showcustomers"; $name = "View Customer"; $icon = "fas fa-users"; @endphp
-                    @elseif($item->name === "Assign_Customers_to_group")
-                        @php $url = "/customergroupassign"; $name = "Add to Group"; $icon = "fas fa-user-friends"; @endphp
-                    @elseif($item->name === "View_Products")
-                        @php $url = "/viewproduct"; $name = "View Product"; $icon = "fas fa-box-open"; @endphp
-                    @elseif($item->name === "Pending_Loans")
-                        @php $url = "/pendingloan"; $name = "Pending Loans"; $icon = "fas fa-hourglass-half"; @endphp
-                    @elseif($item->name === "Current_Loans")
-                        @php $url = "/payment_step_1"; $name = "Current Loans"; $icon = "fas fa-hand-holding-usd"; @endphp
-                    @elseif($item->name === "Loan_In_arrears")
-                        @php $url = "/latePayment"; $name = "Loan In Arrears"; $icon = "fas fa-exclamation-triangle"; @endphp
-                    @elseif($item->name === "Add_Repayment")
-                        @php $url = "/payment"; $name = "Add Repayment"; $icon = "fas fa-money-check-alt"; @endphp
-                    @elseif($item->name === "Repayment_details")
-                        @php $url = "/viewpayment"; $name = "View Repayment"; $icon = "fas fa-file-invoice-dollar"; @endphp
-                    @elseif($item->name === "Collector_wise_collections")
-                        @php $url = "/collection"; $name = "Agent Collection"; $icon = "fas fa-user-tie"; @endphp
-                    @elseif($item->name === "Loan_Calculator")
-                        @php $url = "/calculator"; $name = "Loan Calculator"; $icon = "fas fa-calculator"; @endphp
-                    @elseif($item->name === "Add_Expenses")
-                        @php $url = "/expenses"; $name = "Add Expenses"; $icon = "fas fa-receipt"; @endphp
-                    @elseif($item->name === "Add_Income")
-                        @php $url = "/income"; $name = "Add Income"; $icon = "fas fa-hand-holding-usd"; @endphp
-                    @endif
-
-                    <div class="col-lg-2 col-md-3 col-sm-4 col-6"> {{-- Compact grid --}}
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
                         <a href="{{ $url }}" class="text-decoration-none">
-                            <div class="card shadow-sm text-center border-0 shortcut-card"
-                                 style="background-color: {{ $bgColor }};">
-                                <div class="card-body p-2 d-flex flex-column align-items-center">
-                                    <i class="{{ $icon }} text-white"></i> {{-- Smaller icon --}}
-                                    <small class="text-white mt-1 fw-bold">{{ $name }}</small> {{-- Smaller text --}}
-                                </div>
+                            <div class="shortcut-tile text-center p-3 shadow-sm animated-card" style="background-color: {{ $bgColor }};">
+                                <i class="{{ $icon }} shortcut-icon"></i>
+                                <div class="shortcut-label">{{ $name }}</div>
                             </div>
                         </a>
                     </div>
@@ -259,216 +242,122 @@
             </div>
 
 
-
         </div>
-
-        </div>
-    @else
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
-
-            body {
-                font-family: 'Poppins', sans-serif;
-            }
-
-            .centered-container {
-                min-height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background-color: #f4f6f9;
-                padding: 30px;
-            }
-
-            .white-card {
-                background: #ffffff;
-                border-radius: 15px;
-                padding: 40px 30px;
-                text-align: center;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-                animation: fadeIn 0.8s ease-in-out;
-            }
-
-            @keyframes fadeIn {
-                from {
-                    opacity: 0;
-                    transform: translateY(20px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-
-            .white-card img {
-                max-width: 180px;
-                height: auto;
-                border-radius: 8px;
-                margin-bottom: 20px;
-            }
-
-            .company-title {
-                font-size: 1.8rem;
-                font-weight: 600;
-                color: #333;
-            }
-
-            .admin-subtitle {
-                font-size: 1rem;
-                color: #555;
-            }
-
-            .tagline {
-                margin-top: 10px;
-                color: #888;
-                font-style: italic;
-            }
-        </style>
-
-        <div class="centered-container">
-            <div class="white-card">
-                @php
-                    $query = "SELECT * FROM company WHERE branch_id='" . session('branch_id') . "'";
-                    $company = DB::select($query);
-                @endphp
-
-                @foreach($company as $item)
-                    @php
-                        $logoPath = 'storage/' . $item->logo;
-                    @endphp
-                    @if ($item->logo && file_exists(public_path($logoPath)))
-                        <img src="{{ asset($logoPath) }}" alt="Company Logo">
-                    @else
-                        <img src="{{ asset('assets/images/users/avatar-1.jpg') }}" alt="Default Logo">
-                    @endif
-
-                    @if(!empty($item->name))
-                        <div class="company-title">{{ $item->name }}</div>
-                        <div class="admin-subtitle">Admin Portal</div>
-                    @endif
-                @endforeach
-
-                <div class="tagline">Empowering your financial decisions 💼</div>
-            </div>
         </div>
     @endif
-
-
 @endsection
 
 @section('script')
-    <!-- Daterangepicker js -->
-    <script src="assets/vendor/daterangepicker/moment.min.js"></script>
-    <script src="assets/vendor/daterangepicker/daterangepicker.js"></script>
-
-    <!-- Apex Charts js -->
-    <script src="assets/vendor/apexcharts/apexcharts.min.js"></script>
-
-    <!-- Vector Map js -->
-    <script src="assets/vendor/admin-resources/jquery.vectormap/jquery-jvectormap-1.2.2.min.js"></script>
-    <script src="assets/vendor/admin-resources/jquery.vectormap/maps/jquery-jvectormap-world-mill-en.js"></script>
-
-    <!-- Dashboard App js -->
-    <script src="assets/js/pages/dashboard.js"></script>
-
-
-{{--    <script>--}}
-{{--        $(document).ready(function() {--}}
-
-{{--            var options = {--}}
-{{--                chart: {--}}
-{{--                    type: 'bar',--}}
-{{--                    height: 350,--}}
-{{--                    width: '100%',--}}
-{{--                },--}}
-{{--                series: [{--}}
-{{--                    name: 'Current Week',--}}
-{{--                    data: [30, 40, 35, 50, 49, 60, 70, 91, 125]--}}
-{{--                }, {--}}
-{{--                    name: 'Previous Week',--}}
-{{--                    data: [10, 20, 15, 30, 25, 35, 40, 50, 65]--}}
-{{--                }],--}}
-{{--                xaxis: {--}}
-{{--                    categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']--}}
-{{--                },--}}
-{{--                colors: ['#3bc0c3', '#1a2942']--}}
-{{--            };--}}
-
-{{--            var chart = new ApexCharts(document.querySelector("#revenue-charts"), options);--}}
-{{--            chart.render();--}}
-{{--        });--}}
-
-{{--        var options = {--}}
-{{--            chart: {--}}
-{{--                type: 'area',--}}
-{{--                height: 350,--}}
-{{--                width: '100%',--}}
-{{--            },--}}
-{{--            series: [{--}}
-{{--                name: 'Quarter 1',--}}
-{{--                data: [56200, 42500] // Replace with your actual sales data for Quarter 1 and Quarter 2--}}
-{{--            }, {--}}
-{{--                name: 'Quarter 2',--}}
-{{--                data: [42500, 65000] // Replace with your actual sales data for Quarter 2 and Quarter 3--}}
-{{--            }],--}}
-{{--            xaxis: {--}}
-{{--                categories: ['Quarter 1', 'Quarter 2'] // Replace with your quarter labels--}}
-{{--            },--}}
-{{--            colors: ['#3bc0c3', '#1a2942']--}}
-{{--        };--}}
-
-{{--        var chart = new ApexCharts(document.querySelector("#yearly-sales-charts"), options);--}}
-{{--        chart.render();--}}
-
-
-{{--    </script>--}}
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/countup.js/2.0.7/countUp.umd.js"></script>
     <script>
-        $(document).ready(function () {
-            var monthlyData = @json($monthlyData); // Inject PHP data into JS
+        // Live DateTime (Updated Every Second)
+        function updateDateTime() {
+            const dt = new Date();
+            document.getElementById('live-datetime').innerText = dt.toLocaleString();
+        }
+        updateDateTime(); // initial call
+        setInterval(updateDateTime, 1000); // update every second
 
-            var monthlyRevenueOptions = {
-                chart: {
-                    type: 'line',
-                    height: 350,
-                    width: '100%',
-                },
+        document.addEventListener("DOMContentLoaded", function () {
+            // Live DateTime
+            const dt = new Date();
+            document.getElementById('live-datetime').innerText = dt.toLocaleString();
+
+            // Animate Stat Cards
+            const statValues = [
+                {{ $customer_loan_pending_Amount }},
+                {{ $customer_loan_current_Amount }},
+                {{ $setteled_loan_current_Amount }},
+                {{ $customerCount }}
+            ];
+            const prefixes = ['Rs. ', 'Rs. ', 'Rs. ', ''];
+
+            statValues.forEach((val, i) => {
+                const numAnim = new countUp.CountUp('stat-card-' + i, val, {
+                    prefix: prefixes[i],
+                    separator: ',',
+                    decimalPlaces: 0
+                });
+                if (!numAnim.error) numAnim.start();
+            });
+
+            const extraValues = [
+                {{ $todayinstallment }},
+                {{ $arrease }},
+                {{ $checqueamount }},
+                {{ $todayinstallment + $arrease + $checqueamount }}
+            ];
+            extraValues.forEach((val, i) => {
+                const extraAnim = new countUp.CountUp('extra-card-' + i, val, {
+                    separator: ',',
+                    decimalPlaces: 2
+                });
+                if (!extraAnim.error) extraAnim.start();
+            });
+
+            // Monthly Area Chart
+            new ApexCharts(document.querySelector("#monthly-revenue-chart"), {
+                chart: { type: 'area', height: 300 },
+                series: [{ name: 'Payments', data: @json($monthlyData) }],
+                colors: ['#8e44ad'],
+                stroke: { curve: 'smooth', width: 3 },
+                xaxis: { categories: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] }
+            }).render();
+
+            // Donut Chart
+            // Loan Type - Pie Chart (Fixed with 4 values)
+            new ApexCharts(document.querySelector("#loan-type-chart"), {
+                chart: { type: 'pie', height: 300 },
+                series: [{{ $customer_loan_current_Count }}, {{ $customer_loan_pending_Count }}, {{ $setteled_loan_Count }}, {{ $deleted_loan_Count }}],
+                labels: ['Ongoing Loans', 'Pending Loans', 'Settle Loans', 'Delete Loans'],
+                colors: ['#1abc9c', '#3498db', '#e67e22', '#e74c3c'] // 4 colors
+            }).render();
+
+
+            // Weekly Comparison
+            // Weekly Comparison Chart
+            new ApexCharts(document.querySelector("#bar-comparison-chart"), {
+                chart: { type: 'bar', height: 300 },
                 series: [
                     {
-                        name: 'Payments',
-                        data: monthlyData,
+                        name: 'This Week',
+                        data: @json($weeklyComparison['current'])
                     },
+                    {
+                        name: 'Last Week',
+                        data: @json($weeklyComparison['last'])
+                    }
                 ],
                 xaxis: {
-                    categories: [
-                        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-                    ],
+                    categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
                 },
-                colors: ['#3bc0c3'],
-                stroke: {
-                    curve: 'smooth',
-                },
-                title: {
-                    text: 'Monthly Payments',
-                    align: 'center',
-                    style: {
-                        fontSize: '16px',
-                        fontWeight: 'bold',
-                    },
-                },
-            };
+                colors: ['#1abc9c', '#e74c3c'],
+                plotOptions: {
+                    bar: {
+                        horizontal: false,
+                        columnWidth: '50%'
+                    }
+                }
+            }).render();
 
-            var monthlyRevenueChart = new ApexCharts(
-                document.querySelector('#monthly-revenue-chart'),
-                monthlyRevenueOptions
-            );
-            monthlyRevenueChart.render();
+
+            // Radial Chart
+            new ApexCharts(document.querySelector("#radial-progress-chart"), {
+                chart: { type: 'radialBar', height: 300 },
+                series: [{{ $loan_completion_percentage }}],
+                labels: ['Completion'],
+                colors: ['#f39c12'],
+                plotOptions: {
+                    radialBar: {
+                        dataLabels: {
+                            name: { fontSize: '18px' },
+                            value: { fontSize: '32px', fontWeight: 'bold' }
+                        }
+                    }
+                }
+            }).render();
+
         });
     </script>
-
-
-
-
-
 @endsection
-

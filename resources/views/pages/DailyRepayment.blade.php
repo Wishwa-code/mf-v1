@@ -176,13 +176,12 @@
 
                                 <div class="col-lg-3">
                                     <div class="mb-3">
-                                        <label for="center_details" class="form-label">Group</label>
+                                        <label for="group_details" class="form-label">Group</label>
                                         <select class="form-control select2" id="group_details" name="group_details">
                                             <option value="0">All</option>
                                             @foreach ($group as $item)
-                                                <option value="{{ $item->idCustomer_Group }}"
-                                                        {{ $item->idCustomer_Group == $group_details ? 'selected' : '' }}>
-                                                    {{ $item->Group_No }}-{{ $item->Name }}
+                                                <option value="{{ $item->idCustomer_Group }}" {{ $item->idCustomer_Group == $group_details ? 'selected' : '' }}>
+                                                    {{ $item->Group_No }} - {{ $item->Name }}
                                                 </option>
                                             @endforeach
                                         </select>
@@ -329,6 +328,30 @@
     <script>
         $(document).ready(function() {
             $('.select2').select2(); // Initialize Select2 elements
+
+            $(document).ready(function () {
+                $('#center_details').on('change', function () {
+                    var centerId = $(this).val();
+
+                    if (centerId) {
+                        $.ajax({
+                            url: '/get-groups-by-center/' + centerId,
+                            type: 'GET',
+                            success: function (groups) {
+                                let $groupSelect = $('#group_details');
+                                $groupSelect.empty();
+                                $groupSelect.append('<option value="0">All</option>');
+
+                                $.each(groups, function (key, group) {
+                                    $groupSelect.append(`<option value="${group.idCustomer_Group}">${group.Group_No} - ${group.Name}</option>`);
+                                });
+
+                                $groupSelect.trigger('change'); // If using Select2
+                            }
+                        });
+                    }
+                });
+            });
 
             function calculateTotals() {
                 let totalLoanAmount = 0;
