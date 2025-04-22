@@ -106,6 +106,10 @@
                                                     class="fas fa-chart-bar me-1"></i>Guaranteed Loans</a>
                                     </li>
                                     <li class="nav-item">
+                                        <a class="nav-link" data-bs-toggle="tab" href="#RoadMap" role="tab"><i
+                                                    class="fas fa-chart-bar me-1"></i>Road Map</a>
+                                    </li>
+                                    <li class="nav-item">
                                         <a class="nav-link" data-bs-toggle="tab" href="#insurance" role="tab"><i
                                                     class="fas fa-shield-alt me-1"></i>Insurance</a>
                                     </li>
@@ -121,6 +125,7 @@
                                     <div class="tab-pane fade" id="documents" role="tabpanel"></div>
                                     <div class="tab-pane fade" id="loans" role="tabpanel"></div>
                                     <div class="tab-pane fade" id="loanSummary" role="tabpanel"></div>
+                                    <div class="tab-pane fade" id="RoadMap" role="tabpanel"></div>
                                     <div class="tab-pane fade" id="insurance" role="tabpanel"></div>
                                     <div class="tab-pane fade" id="history" role="tabpanel"></div>
                                 </div>

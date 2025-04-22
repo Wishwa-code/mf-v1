@@ -178,7 +178,7 @@
 
                                     <!-- Right Side Options -->
                                     <div class="col-md-6">
-                                        <div class="mb-3">
+                                        <div class="mb-3" hidden>
                                             <label class="form-label fw-bold">Installment Count in holidays:</label>
                                             <div id="installment-count" class="fs-5">{{$holidayWithInstallmentsCount}}</div>
                                         </div>
