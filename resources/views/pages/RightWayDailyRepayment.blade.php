@@ -95,21 +95,26 @@
             body {
                 margin: 0;
                 padding: 0;
-                font-size: 9px;
+                font-size: 10px;
             }
 
             #repaymentTable {
                 width: 100%;
                 table-layout: fixed;
                 border-collapse: collapse;
-                font-size: 8px;
+                font-size: 9px;
+
+            }
+            td, th {
+                word-break: break-word;
             }
 
             #repaymentTable th,
             #repaymentTable td {
                 border: 1px solid #000;
-                padding: 4px;
+                padding: 5px;
                 word-wrap: break-word;
+
             }
 
             .attendance-cell {
@@ -202,16 +207,16 @@
                             <table id="repaymentTable">
                                 <thead>
                                 <tr>
-                                    <th rowspan="2">Customer Code</th>
+{{--                                    <th rowspan="2">Customer Code</th>--}}
                                     <th rowspan="2">Customer Name</th>
                                     <th rowspan="2">Phone No</th>
-                                    <th rowspan="2">Loan Product</th>
+{{--                                    <th rowspan="2">Loan Product</th>--}}
                                     <th rowspan="2">Loan No</th>
                                     <th rowspan="2">Loan Amount</th>
                                     <th rowspan="2">Loan Balance</th>
                                     <th rowspan="2">Loan Rental</th>
                                     <th rowspan="2">Loan Arrears</th>
-                                    <th rowspan="2">Savings Balance</th>
+                                    <th rowspan="2">R.R.P Balance</th>
                                     <th colspan="2">Rs</th>
                                     <th colspan="2">Rs</th>
                                     <th colspan="2">Rs</th>
@@ -237,7 +242,7 @@
                                 <tbody>
                                 @foreach ($grouped_loans as $group_name => $group)
                                     <tr>
-                                        <th colspan="22">Group No: {{ $group_name }}</th>
+                                        <th colspan="20">Group No: {{ $group_name }}</th>
                                     </tr>
                                     @foreach ($group as $item)
                                         @php
@@ -250,10 +255,10 @@
                                             }
                                         @endphp
                                         <tr>
-                                            <td>{{ $item->cus_number }}</td>
+{{--                                            <td>{{ $item->cus_number }}</td>--}}
                                             <td>{{ $shortName }}</td>
                                             <td>{{ $item->Contact_No }}</td>
-                                            <td>{{ $item->Product_code }}</td>
+{{--                                            <td>{{ $item->Product_code }}</td>--}}
                                             <td>{{ $item->Loan_No }}</td>
                                             <td class="loan-amount">{{ number_format($item->Loan_Amount, 2) }}</td>
                                             <td class="loan-balance">{{ number_format($item->Total_Balance, 2) }}</td>
@@ -276,7 +281,7 @@
                                     @endforeach
                                     <tr class="group-total">
                                         <td><strong>Group Total</strong></td>
-                                        <td colspan="4"></td>
+                                        <td colspan="2"></td>
                                         <td class="group-loan-amount"></td>
                                         <td class="group-loan-balance"></td>
                                         <td class="group-due-amount"></td>
@@ -289,7 +294,7 @@
                                 <tfoot>
                                 <tr>
                                     <td><strong>Center Total</strong></td>
-                                    <td colspan="4"></td>
+                                    <td colspan="2"></td>
                                     <td id="total-loan-amount"></td>
                                     <td id="total-loan-balance"></td>
                                     <td id="total-due-amount"></td>
@@ -433,6 +438,33 @@
                 printWindow.document.write('</style></head><body>');
                 printWindow.document.write('<h2 style="text-align:center;">Repayment Sheet for ' + currentMonth + ' (' + center_details + ')</h2>');
                 printWindow.document.write(printContent);
+
+// Append signature section
+                printWindow.document.write(`
+    <br><br><br>
+    <table style="width: 100%; font-size: 10px; border: none;">
+        <tr>
+            <td style="width: 25%; vertical-align: top; padding-right: 10px;">
+                <strong>EXECUTIVE SIGNATURE</strong><br><br><br><br>
+                ..................................................................................................................<br><br><br>
+            </td>
+            <td style="width: 25%; vertical-align: top; padding-right: 10px;">
+                <strong>SLIP NUMBER</strong><br><br><br><br>
+                ..................................................................................................................<br><br><br>
+            </td>
+            <td style="width: 25%; vertical-align: top; padding-right: 10px;">
+                <strong>CASHIER SIGNATURE</strong><br><br><br><br>
+                ..................................................................................................................<br><br><br>
+            </td>
+            <td style="width: 25%; vertical-align: top;">
+                <strong>MANAGER SIGNATURE</strong><br><br><br><br>
+                ..................................................................................................................<br><br><br>
+            </td>
+        </tr>
+    </table>
+`);
+
+
                 printWindow.document.write('</body></html>');
 
                 printWindow.document.close();
