@@ -115,8 +115,10 @@ Route::get('/othercharge/remove/{id}','\App\Http\Controllers\LoanCategoryControl
 Route::get('/remove_doc/remove/{id}','\App\Http\Controllers\LoanCategoryController@remove_doc')->name('loancategory.remove_doc');
 Route::get('/loancategory/{id}','\App\Http\Controllers\LoanCategoryController@edit')->name('loancategory.edit');
 Route::get('/open-file/{filename}', '\App\Http\Controllers\LoanCategoryController@openFile')->name('open.file');
-Route::post('/product/update', '\App\Http\Controllers\LoanCategoryController@update')->name('open.update');
 Route::get('/load_product_details/{id}', '\App\Http\Controllers\LoanCategoryController@load_product_details')->name('open.load_product_details');
+
+Route::get('/loan-products/{id}/edit','\App\Http\Controllers\LoanCategoryController@editProduct')->name('loan-products.edit');
+Route::put('/loan-products/{id}', '\App\Http\Controllers\LoanCategoryController@update')->name('loan-products.update');
 
 
 //loan

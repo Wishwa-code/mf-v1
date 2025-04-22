@@ -479,154 +479,6 @@ function remove_doc(id){
     });
 }
 
-function update_center(){
-
-    const product_id = $("#product_id").val();
-    const product_name = $("#product_name").val();
-    const product_code = $("#product_code").val();
-    const loan_amount = $("#loan_amount").val().trim();
-    const loan_amount_to = $("#loan_amount_to").val().trim();
-    const interest_method = $("#interest_method").val();
-    const interest_period = $("#interest_period").val();
-    const interest = $("#interest").val().trim();
-    const interest_to = $("#interest_to").val().trim();
-    const duration_period = $("#duration_period").val();
-    const loan_duration = $("#loan_duration").val();
-    const collection_type = $("#collection_type").val();
-    const penalty_period = $("#penalty_period").val();
-    const panelty_rate = $("#panelty_rate").val();
-    const panelty_rate_date = $("#panelty_rate_date").val();
-    const witnessCount = $("#witnessCount").val();
-
-
-
-    // Check if fields are empty
-    if (!loan_amount || !loan_amount_to) {
-        Swal.fire("Error!", "Both Minimum and Maximum Loan Amount fields are required !", "error");
-        return false; // Stop the save operation
-    }
-
-    // Check if values are numeric
-    if (isNaN(loan_amount) || isNaN(loan_amount_to)) {
-        Swal.fire("Error!", "Please enter valid numeric values for Loan Amounts !", "error");
-        return false; // Stop the save operation
-    }
-
-    // Check if minimum is less than or equal to maximum
-    if (parseFloat(loan_amount) > parseFloat(loan_amount_to)) {
-        Swal.fire("Error!", "Minimum Loan Amount must be less than or equal to Maximum Loan Amount !", "error");
-        return false; // Stop the save operation
-    }
-
-
-
-    if (!interest || !interest_to) {
-        Swal.fire("Error!", "Both Minimum and Maximum Interest fields are required !", "error");
-        return false; // Stop the save operation
-    }
-
-    // Check if values are numeric
-    if (isNaN(interest) || isNaN(interest_to)) {
-        Swal.fire("Error!", "Please enter valid numeric values for Loan Interest !", "error");
-        return false; // Stop the save operation
-    }
-
-    // Check if minimum is less than or equal to maximum
-    if (parseFloat(interest) > parseFloat(interest_to)) {
-        Swal.fire("Error!", "Minimum Interest must be less than or equal to Maximum Interest !", "error");
-        return false; // Stop the save operation
-    }
-
-
-
-    var othercharges = [];
-
-    // Iterate over table rows
-    $('#otherchargetable_2 tbody tr').each(function() {
-        var rowData = [];
-
-        var $columns = $(this).find('td:nth-child(1), td:nth-child(2), td:nth-child(3)');
-
-        // Iterate over selected columns
-        $columns.each(function() {
-            rowData.push($(this).text()); // Add cell value to row data
-        });
-
-        // Add row data to main array
-        othercharges.push(rowData);
-    });
-
-
-    var document = [];
-
-    // Iterate over table rows
-    $('#documenttable_2 tbody tr').each(function() {
-        var rowData = [];
-
-        var $columns = $(this).find('td:nth-child(1)');
-
-        // Iterate over selected columns
-        $columns.each(function() {
-            rowData.push($(this).text()); // Add cell value to row data
-        });
-
-        // Add row data to main array
-        document.push(rowData);
-    });
-
-    Swal.fire({
-        title: "Are you sure?",
-        text: "Do you want to update this Product ?",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, Update it!",
-    }).then((result) => {
-        if (result.isConfirmed) {
-            $.ajax({
-                type: "POST",
-                url: "/product/update",
-                headers: {
-                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-                },
-                data: {
-                    product_id: product_id,
-                    product_code: product_code,
-                    product_name: product_name,
-                    loan_amount: loan_amount,
-                    loan_amount_to: loan_amount_to,
-                    interest_method: interest_method,
-                    interest_period: interest_period,
-                    interest: interest,
-                    interest_to: interest_to,
-                    duration_period:duration_period,
-                    loan_duration:loan_duration,
-                    collection_type:collection_type,
-                    penalty_period:penalty_period,
-                    panelty_rate:panelty_rate,
-                    panelty_rate_date:panelty_rate_date,
-                    witnessCount:witnessCount,
-                    document:document,
-                    othercharges:othercharges
-                },
-                success: function (data, textStatus, xhr) {
-                    if (xhr.status === 200) {
-                        Swal.fire({
-                            position: "center",
-                            icon: "success",
-                            title: "Successfully updated!",
-                        }).then(function () {
-                            window.location.reload();
-                        });
-                    } else {
-                        Swal.fire("Error!", "Failed to update data!", "error");
-                    }
-                },
-            });
-        }
-    });
-}
 
 
 function repayment_type(id) {
@@ -665,4 +517,156 @@ function repayment_type(id) {
         });
     }
 }
+
+
+
+const updateLoanCategory = (e) => {
+    e.preventDefault();
+
+    const product_id = $("#product_id").val(); // Get the ID
+    const loan_amount_from = $("#loan_amount_from").val().trim();
+    const loan_amount_to = $("#loan_amount_to").val().trim();
+    const interest_from = $("#interest_from").val().trim();
+    const interest_to = $("#interest_to").val().trim();
+    const product_name = $("#product_name").val();
+    const product_code = $("#product_code").val();
+    const interest_method = $("#interest_method").val();
+    const interest_period = $("#interest_period").val();
+    const loan_duration = $("#loan_duration").val();
+    const collection_type = $("#collection_type").val();
+    const penalty_period = $("#penalty_period").val();
+    const panelty_rate = $("#panelty_rate").val();
+    const panelty_rate_date = $("#panelty_rate_date").val();
+    const witnessCount = $("#witnessCount").val();
+    const duration_period = $("#duration_period").val();
+    const period_count = $("#period_count").val();
+    const default_loan_duration_period = $("#default_loan_duration_period").val();
+    const enable_saving = $("#enable_saving").val();
+    const saving_account_amount_type = $("#saving_account_amount_type").val();
+    let saving_amount = $("#saving_amount").val();
+    let saving_payment = $("#saving_payment").val();
+
+    if (enable_saving === "No") {
+        saving_amount = 0.00;
+    }
+
+    let error_count = 0;
+    if (enable_saving === "Yes" && saving_amount === "") {
+        error_count = 1;
+    }
+
+    // Validations
+    if (!loan_amount_from || !loan_amount_to || isNaN(loan_amount_from) || isNaN(loan_amount_to)) {
+        return Swal.fire("Error!", "Please enter valid Loan Amount range!", "error");
+    }
+
+    if (parseFloat(loan_amount_from) > parseFloat(loan_amount_to)) {
+        return Swal.fire("Error!", "Minimum Loan Amount must be <= Maximum!", "error");
+    }
+
+    if (!interest_from || !interest_to || isNaN(interest_from) || isNaN(interest_to)) {
+        return Swal.fire("Error!", "Please enter valid Interest range!", "error");
+    }
+
+    if (parseFloat(interest_from) > parseFloat(interest_to)) {
+        return Swal.fire("Error!", "Minimum Interest must be <= Maximum!", "error");
+    }
+
+    if (error_count === 1) {
+        return Swal.fire("Error!", "Please enter saving amount!", "error");
+    }
+
+    let level_data = readLevelsData();
+    if (level_data.length === 0) {
+        return Swal.fire("Error!", "Please add at least one level!", "error");
+    }
+
+    let designationError = level_data.some(l => l.designations.length === 0);
+    if (designationError) {
+        return Swal.fire("Error!", "Please add at least one designation to all levels!", "error");
+    }
+
+    // Other Charges
+    let othercharges = [];
+    $('#otherchargetable tbody tr').each(function () {
+        const cols = $(this).find('td');
+        othercharges.push([
+            $(cols[0]).text(),
+            $(cols[1]).text(),
+            $(cols[2]).text(),
+        ]);
+    });
+
+    // Required Documents
+    let document = [];
+    $('#documenttable tbody tr').each(function () {
+        document.push([$(this).find('td:first').text()]);
+    });
+
+    // === Ajax Update ===
+    Swal.fire({
+        title: "Are you sure?",
+        text: "Do you want to update this Product?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, update it!",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                type: "PUT", // PUT for update
+                url: `/loan-products/${product_id}`, // make sure this route exists!
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                },
+                data: {
+                    product_name,
+                    product_code,
+                    loan_amount_from,
+                    loan_amount_to,
+                    interest_method,
+                    interest_period,
+                    interest_from,
+                    interest_to,
+                    duration_period,
+                    loan_duration,
+                    collection_type,
+                    penalty_period,
+                    panelty_rate,
+                    panelty_rate_date,
+                    witnessCount,
+                    period_count,
+                    default_loan_duration_period,
+                    level_data,
+                    othercharges,
+                    document,
+                    enable_saving,
+                    saving_account_amount_type,
+                    saving_amount,
+                    saving_payment,
+                },
+                success: function (res, status, xhr) {
+                    if (xhr.status === 200) {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Updated!",
+                            text: "Product updated successfully.",
+                            timer: 1500,
+                            showConfirmButton: false,
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire("Error!", "Update failed!", "error");
+                    }
+                },
+                error: function () {
+                    Swal.fire("Error!", "Something went wrong on the server!", "error");
+                }
+            });
+        }
+    });
+};
+
 
