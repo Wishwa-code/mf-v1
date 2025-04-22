@@ -368,7 +368,7 @@
             // Radial Chart
             new ApexCharts(document.querySelector("#radial-progress-chart"), {
                 chart: { type: 'radialBar', height: 300 },
-                series: [{{ $loan_completion_percentage }}],
+                series: [{{ $loan_completion_percentage ?? 0 }}],
                 labels: ['Completion'],
                 colors: ['#f39c12'],
                 plotOptions: {
