@@ -187,90 +187,7 @@ class LoanCategoryController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request)
-    {
 
-        $product_id=$request->product_id;
-        $product_code=$request->product_code;
-        $product_name=$request->product_name;
-        $loan_amount=$request->loan_amount;
-        $Loan_amount_to=$request->loan_amount_to;
-        $interest_method=$request->interest_method;
-        $interest_period=$request->interest_period;
-        $interest=$request->interest;
-        $Loan_interest_to=$request->interest_to;
-        $duration_period=$request->duration_period;
-        $loan_duration=$request->loan_duration;
-        $collection_type=$request->collection_type;
-        $penalty_period=$request->penalty_period;
-        $panelty_rate=$request->panelty_rate;
-        $panelty_rate_date=$request->panelty_rate_date;
-        $witnessCount=$request->witnessCount;
-
-
-        $data = [
-            'Name' => $product_name,
-            'Product_code' => $product_code,
-            'Loan_amount' => $loan_amount,
-            'Loan_amount_to' => $Loan_amount_to,
-            'Interest_method' => $interest_method,
-            'Interest_period' => $interest_period,
-            'Loan_interest' => $interest,
-            'Loan_interest_to' => $Loan_interest_to,
-            'Duration_period' => $duration_period,
-            'Loan_period' => $loan_duration,
-            'Repayment_type' => $collection_type,
-            'Panelty_period' => $penalty_period,
-            'Panelty_pecentage' => $panelty_rate,
-            'Panelty_date' => $panelty_rate_date,
-            'Guarantee_count' => $witnessCount,
-        ];
-
-// Use the updateWithBranch helper function to update the data
-        updateWithBranch('loan_category', 'idLoan_Category', $product_id, $data);
-
-
-        deleteWithBranch('other_charges','Loan_Category_idLoan_Category', $product_id);
-        deleteWithBranch('required_documents','Loan_Category_idLoan_Category', $product_id);
-
-
-        // Save other charges
-        $otherchargesArray = $request->input('othercharges');
-
-        if (!empty($otherchargesArray)) {
-            foreach ($otherchargesArray as $row) {
-                $data = [
-                    'Description' => $row[0],
-                    'Amount' => $row[2],
-                    'charge_type' => $row[1],
-                    'Loan_Category_idLoan_Category' => $product_id,
-                ];
-
-// Use the insertWithBranch helper function to insert the data with branch_id
-                insertWithBranch('other_charges', $data);
-
-            }
-        }
-
-// Save required documents
-        $documentArray = $request->input('document');
-
-        if (!empty($documentArray)) {
-            foreach ($documentArray as $row) {
-                $data = [
-                    'Name' => $row[0],
-                    'Loan_Category_idLoan_Category' => $product_id,
-                ];
-
-// Use the insertWithBranch helper function to insert the data with branch_id
-                insertWithBranch('required_documents', $data);
-
-            }
-        }
-
-
-        return response()->json(['message' => 'Center updated successfully'], 200);
-    }
 
     /**
      * Remove the specified resource from storage.
@@ -363,6 +280,115 @@ class LoanCategoryController extends Controller
             ->update(['status' => $request->status,'user_id'=>$user_id]);
 
         return response()->json(['success' => true]);
+    }
+
+    public function editProduct($id){
+        $loanCategory = DB::table('loan_category')->where('idLoan_Category', $id)->first();
+
+        $otherCharges = DB::table('other_charges')->where('Loan_Category_idLoan_Category', $id)->get();
+        $requiredDocuments = DB::table('required_documents')->where('Loan_Category_idLoan_Category', $id)->get();
+        $levels = DB::table('level')->where('product_id', $id)->get();
+
+        $levelsData = [];
+
+        foreach ($levels as $level) {
+            $designations = DB::table('level_has_designation')->where('level_id', $level->id)->get();
+            $checklist = DB::table('approval_checklist')->where('level_id', $level->id)->get();
+
+            $levelsData[] = [
+                'level' => $level->type,
+                'description' => $level->description,
+                'designations' => $designations,
+                'checklist' => $checklist
+            ];
+        }
+
+        $designation = DB::table('designation')->get();
+        return view('pages.EditProduct', compact('loanCategory', 'otherCharges', 'requiredDocuments', 'levelsData', 'designation','id'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        // Update LoanCategory
+        DB::table('loan_category')->where('idLoan_Category', $id)->update([
+            'Name' => $request->product_name,
+            'Product_code' => $request->product_code,
+            'Loan_amount' => $request->loan_amount_from,
+            'Loan_amount_to' => $request->loan_amount_to,
+            'Interest_method' => $request->interest_method,
+            'Interest_period' => $request->interest_period,
+            'Loan_interest' => $request->interest_from,
+            'Loan_interest_to' => $request->interest_to,
+            'Duration_period' => $request->duration_period,
+            'Loan_period' => $request->loan_duration,
+            'Repayment_type' => $request->collection_type,
+            'Panelty_period' => $request->penalty_period,
+            'Panelty_pecentage' => $request->panelty_rate,
+            'Panelty_date' => $request->panelty_rate_date,
+            'Guarantee_count' => $request->witnessCount,
+            'Interest_Period_Count' => $request->period_count,
+            'enable_saving_process' => $request->enable_saving,
+            'saving_amount_type' => $request->saving_account_amount_type,
+            'saving_amount' => $request->saving_amount,
+            'saving_payment' => $request->saving_payment,
+            'default_loan_duration_period' => $request->default_loan_duration_period,
+        ]);
+
+        // Delete existing related data
+        DB::table('other_charges')->where('Loan_Category_idLoan_Category', $id)->delete();
+        DB::table('required_documents')->where('Loan_Category_idLoan_Category', $id)->delete();
+        $levels = DB::table('level')->where('product_id', $id)->get();
+
+        foreach ($levels as $level) {
+            DB::table('level_has_designation')->where('level_id', $level->id)->delete();
+            DB::table('approval_checklist')->where('level_id', $level->id)->delete();
+        }
+
+        DB::table('level')->where('product_id', $id)->delete();
+
+        // Reinsert charges
+        foreach ($request->input('othercharges', []) as $row) {
+            DB::table('other_charges')->insert([
+                'Description' => $row[0],
+                'charge_type' => $row[1],
+                'Amount' => $row[2],
+                'Loan_Category_idLoan_Category' => $id,
+            ]);
+        }
+
+        // Reinsert documents
+        foreach ($request->input('document', []) as $row) {
+            DB::table('required_documents')->insert([
+                'Name' => $row[0],
+                'Loan_Category_idLoan_Category' => $id,
+            ]);
+        }
+
+        // Reinsert levels
+        $levelsData = $request->input('level_data');
+        foreach ($levelsData as $level) {
+            $levelId = DB::table('level')->insertGetId([
+                'product_id' => $id,
+                'type' => $level['level'],
+                'description' => $level['description'] ?? '-',
+            ]);
+
+            foreach ($level['designations'] as $desi) {
+                DB::table('level_has_designation')->insert([
+                    'level_id' => $levelId,
+                    'designation_id' => $desi['name'],
+                ]);
+            }
+
+            foreach ($level['checklist'] as $item) {
+                DB::table('approval_checklist')->insert([
+                    'level_id' => $levelId,
+                    'description' => $item,
+                ]);
+            }
+        }
+
+        return response()->json(['message' => 'Updated successfully'], 200);
     }
 
 
