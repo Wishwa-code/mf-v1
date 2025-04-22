@@ -91,7 +91,6 @@ class KYCController extends Controller
                     ->get();
 
                 return view('pages.Insurance.kyc.loans', compact('loans'));
-
             case 'loanSummary':
                 $guaranteedLoans = DB::table('witness as w')
                     ->join('customer_loan as cl', 'w.Customer_Loan_idCustomer_Loan', '=', 'cl.idCustomer_Loan')
@@ -112,10 +111,13 @@ class KYCController extends Controller
                     )
                     ->orderByDesc('cl.Date_Time')
                     ->get();
-
                 return view('pages.Insurance.kyc.guranteed_loan', compact('guaranteedLoans'));
-
-
+            case 'RoadMap':
+                $customer_log=tableWithBranch('customer_log','customer_log')
+                    ->join('user','customer_log.user', '=', 'user.id')
+                    ->where('customer_id','=',$id)
+                    ->get();
+                return view('pages.Insurance.kyc.RoadMap', compact('customer_log'));
             case 'insurance':
                 return view('pages.Insurance.kyc.insurance', compact('customer'));
             case 'history':

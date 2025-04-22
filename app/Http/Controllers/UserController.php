@@ -395,7 +395,7 @@ class UserController extends Controller
 //        }
         $currentYear = date('Y');
 
-        $monthlyRevenue = DB::table('customer_payments')
+        $monthlyRevenue = tableWithBranch('customer_payments')
             ->select(
                 DB::raw('MONTH(Date) as month'),
                 DB::raw('SUM(Amount) as total')
@@ -419,7 +419,7 @@ class UserController extends Controller
 
 
         $getPaymentsPerDay = function ($start, $end) {
-            $results = DB::table('customer_payments')
+            $results = tableWithBranch('customer_payments')
                 ->select('Date', DB::raw('SUM(Amount) as total'))
                 ->whereBetween('Date', [$start->toDateString(), $end->toDateString()])
                 ->groupBy('Date')

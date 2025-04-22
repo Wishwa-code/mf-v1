@@ -626,13 +626,14 @@ class PendingLoanController extends Controller
                 ELSE 0 
             END
         ) as penalty_received'),
+
                 DB::raw('SUM(
-            CASE 
-                WHEN Type = "Customer Payment" THEN Amount 
-                WHEN Type = "Payment Undo" THEN -Amount 
-                ELSE 0 
-            END
-        ) as collected_repayments')
+    CASE 
+        WHEN Type IN ("Customer Payment", "Loan Settlement") THEN Amount 
+        WHEN Type = "Payment Undo" THEN -Amount 
+        ELSE 0 
+    END
+) as collected_repayments')
             )
             ->groupBy('Loan_ID');
 
