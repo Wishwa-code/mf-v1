@@ -1166,22 +1166,32 @@ $banner = DB::select($query);
                                                         <a href="/daily">Daily Collection Sheet</a>
                                                     </li>
                                                     <li>
-                                                        <a href="/daily_repayment_sheet">Monthly Repayment Sheet</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="/RightWayDailyRepayment">Repayment Sheet</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="/daily_repayment_sheet_hm">Daily Repayment Sheet</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="/daily_repayment_sheet_lasantha">Monthly Repayment Sheet Format</a>
-                                                    </li>
-                                                    <li>
                                                         <a href="/center_collection">Center Wise collection Detail</a>
                                                     </li>
                                                     <li>
                                                         <a href="/center_collection_summary">Center Wise collection Summary</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </li>
+                                        <li class="side-nav-item">
+                                            <a data-bs-toggle="collapse" href="#repayment_report" aria-expanded="false" class="side-nav-link">
+                                                <span> Re Payment Reports </span>
+                                                <span class="menu-arrow"></span>
+                                            </a>
+                                            <div class="collapse" id="repayment_report">
+                                                <ul class="side-nav-third-level">
+                                                    <li>
+                                                        <a href="/daily_repayment_sheet">Repayment Sheet 01</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="/RightWayDailyRepayment">Repayment Sheet 02</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="/daily_repayment_sheet_hm">Repayment Sheet 03</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="/daily_repayment_sheet_lasantha">Repayment Sheet 04</a>
                                                     </li>
                                                 </ul>
                                             </div>
