@@ -788,6 +788,11 @@ class LoanController extends Controller
         ])->get();
 
 
+        $customer_documents = tableWithBranch('customer_documents')->where([
+            ['Customer_idCustomer', $loan->Customer_idCustomer]
+        ])->get();
+
+
 
 
         // Fetch the witnesses
@@ -838,6 +843,7 @@ class LoanController extends Controller
             'Loan_Category',
             'Other_Charges',
             'documents',
+            'customer_documents',
             'installment_logs',
             'customer_payments',
             'total_paid_amount',

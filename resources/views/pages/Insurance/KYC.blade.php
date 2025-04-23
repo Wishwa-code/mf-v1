@@ -148,6 +148,20 @@
 
     <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const selectedId = "{{ $id }}";
+            const customerSelect = document.getElementById("customerSelect");
+
+            if (selectedId && selectedId !== "0") {
+                customerSelect.value = selectedId;
+
+                // Trigger change event if needed
+                const event = new Event('change');
+                customerSelect.dispatchEvent(event);
+            }
+        });
+    </script>
 
     <script>
         let selectedCustomerId = 0;
@@ -159,6 +173,8 @@
                 allowClear: true,
                 width: '100%'
             });
+
+
 
             // Store selected customer ID
             $('#customerSelect').on('change', function () {
