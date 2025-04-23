@@ -188,8 +188,8 @@
                                             <select id="skipFor" class="form-select">
                                                 <option value="all">All Loans</option>
                                                 <option value="loan">Specific Loan</option>
-                                                <option value="branch">Specific Branch</option>
-                                                <option value="center">Specific Center</option>
+{{--                                                <option value="branch">Specific Branch</option>--}}
+{{--                                                <option value="center">Specific Center</option>--}}
                                                 <option value="product">Specific Product</option>
                                             </select>
                                         </div>

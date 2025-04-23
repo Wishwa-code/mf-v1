@@ -552,6 +552,8 @@
         })
 
         var authorizedName = "{{ session('Full_Name') }}";
+        var companyName = {!! json_encode(session('company_name')) !!};
+
 
         function exportFundRequestPDF() {
             var rows = document.getElementById('loan_table').getElementsByTagName('tr');
@@ -573,33 +575,40 @@
             }
 
             data.push(['', '', '', 'Total Amount', totalAmount.toFixed(2)]);
-            data.push(['', '', '', '', '']);  // Add a blank row for spacing
-
-            // Use the authorizedName variable from Laravel
+            data.push(['', '', '', '', '']);
             var authorizedText = "Authorized 01: " + authorizedName;
-
-            data.push([authorizedText, '', '', '', 'Authorized 02:']);  // Signature row
-            data.push(['', '', '', '', '']);  // Add another blank row to create more space
+            data.push([authorizedText, '', '', '', 'Authorized 02:']);
 
             var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+
+            // Center company name
+            pdf.setFontSize(14);
+            var textWidth = pdf.getTextWidth(companyName);
+            var pageWidth = pdf.internal.pageSize.getWidth();
+            pdf.text(companyName, (pageWidth - textWidth) / 2, 16);
+
+            // Center report title
             pdf.setFontSize(12);
-            pdf.text('Fund Request', 14, 16);
+            var reportTitle = "Fund Request";
+            var titleWidth = pdf.getTextWidth(reportTitle);
+            pdf.text(reportTitle, (pageWidth - titleWidth) / 2, 24);
 
             pdf.autoTable({
                 head: [data[0]],
                 body: data.slice(1),
-                startY: 20,
+                startY: 30,
                 theme: 'grid',
                 styles: {
                     halign: 'center',
                     lineWidth: 0.5,
-                    lineColor: [0, 0, 0] // Black table borders
+                    lineColor: [0, 0, 0]
                 },
-                headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] }, // Dark header for better visibility
+                headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
             });
 
             pdf.save('Fund_Request.pdf');
         }
+
 
 
 
@@ -623,6 +632,7 @@
                     data.push([index, customerNumber, nic, customerName, amount.toFixed(2), '']);
                 }
             }
+
             var authorizedText = "Prepared By: " + authorizedName;
             data.push(['', '', '', 'Total Amount', totalAmount.toFixed(2), '']);
             data.push([]);
@@ -631,34 +641,45 @@
             data.push(['', '', '', '', 'All Cheques Received:', '']);
 
             var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+
+            // Centered company name
+            pdf.setFontSize(14);
+            var pageWidth = pdf.internal.pageSize.getWidth();
+            var textWidth = pdf.getTextWidth(companyName);
+            pdf.text(companyName, (pageWidth - textWidth) / 2, 16);
+
+            // Centered report title
             pdf.setFontSize(12);
-            pdf.text('Disbursement Sheet', 14, 16);
+            var reportTitle = "Disbursement Sheet";
+            var titleWidth = pdf.getTextWidth(reportTitle);
+            pdf.text(reportTitle, (pageWidth - titleWidth) / 2, 24);
 
             pdf.autoTable({
                 head: [data[0]],
                 body: data.slice(1),
-                startY: 20,
+                startY: 30,
                 theme: 'grid',
                 styles: {
                     halign: 'center',
                     valign: 'middle',
                     fontSize: 10,
-                    lineColor: [0, 0, 0], // Black table borders
-                    lineWidth: 0.4  // Increase border thickness
+                    lineColor: [0, 0, 0],
+                    lineWidth: 0.4
                 },
-                headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] }, // Dark header for better visibility
+                headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
                 columnStyles: {
-                    0: { cellWidth: 10 },   // #
-                    1: { cellWidth: 35 },  // Customer Number
-                    2: { cellWidth: 35 },  // NIC
-                    3: { cellWidth: 50 },  // Customer Name
-                    4: { cellWidth: 30 },  // Amount
-                    5: { cellWidth: 30 },  // Received By
+                    0: { cellWidth: 10 },
+                    1: { cellWidth: 35 },
+                    2: { cellWidth: 35 },
+                    3: { cellWidth: 50 },
+                    4: { cellWidth: 30 },
+                    5: { cellWidth: 30 },
                 }
             });
 
             pdf.save('Disbursement_Sheet.pdf');
         }
+
 
 
 
@@ -689,33 +710,44 @@
             data.push(['', 'CRO:', '', 'Branch Manager:', '']);
 
             var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+
+            // Centered company name
+            pdf.setFontSize(14);
+            var pageWidth = pdf.internal.pageSize.getWidth();
+            var textWidth = pdf.getTextWidth(companyName);
+            pdf.text(companyName, (pageWidth - textWidth) / 2, 16);
+
+            // Centered report title
             pdf.setFontSize(12);
-            pdf.text('Document Charges Register', 14, 16);
+            var reportTitle = "Document Charges Register";
+            var titleWidth = pdf.getTextWidth(reportTitle);
+            pdf.text(reportTitle, (pageWidth - titleWidth) / 2, 24);
 
             pdf.autoTable({
                 head: [data[0]],
                 body: data.slice(1),
-                startY: 20,
+                startY: 30,
                 theme: 'grid',
                 styles: {
                     halign: 'center',
                     valign: 'middle',
                     fontSize: 10,
-                    lineColor: [0, 0, 0],  // Fully black borders
-                    lineWidth: 0.4  // Increase border thickness
+                    lineColor: [0, 0, 0],
+                    lineWidth: 0.4
                 },
-                headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] }, // Dark header for better visibility
+                headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
                 columnStyles: {
-                    0: { cellWidth: 10 },   // #
-                    1: { cellWidth: 35 },  // Customer Number
-                    2: { cellWidth: 35 },  // NIC
-                    3: { cellWidth: 50 },  // Customer Name
-                    4: { cellWidth: 30 },  // Doc Charges
+                    0: { cellWidth: 10 },
+                    1: { cellWidth: 35 },
+                    2: { cellWidth: 35 },
+                    3: { cellWidth: 50 },
+                    4: { cellWidth: 30 },
                 }
             });
 
             pdf.save('Document_Charges_Register.pdf');
         }
+
 
 
 
