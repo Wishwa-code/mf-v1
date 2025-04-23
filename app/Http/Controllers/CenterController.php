@@ -267,7 +267,7 @@ class CenterController extends Controller
         $collector = tableWithBranch('user')->where('collector', '=', '1')->get();
 
         // --- Expenses Query ---
-        $expensesQuery = DB::table('expences')
+        $expensesQuery = tableWithBranch('expences','expences')
             ->selectRaw("
             center.idCenter as center_id,
             center.No as center_No,
@@ -303,7 +303,7 @@ class CenterController extends Controller
 
 
         // --- Payments Query ---
-        $paymentQuery = DB::table('customer_payments')
+        $paymentQuery = tableWithBranch('customer_payments','customer_payments')
             ->selectRaw("
             center.idCenter as center_id,
             center.No as center_No,

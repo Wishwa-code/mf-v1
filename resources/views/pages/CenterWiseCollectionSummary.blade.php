@@ -173,6 +173,7 @@
 
     <script>
         $(document).ready(function() {
+
             // Initialize Select2
             $('.select2').select2();
 

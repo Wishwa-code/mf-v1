@@ -388,6 +388,11 @@ class BranchController extends Controller
         // Update the session with the new branch ID
         session(['branch_id' => $request->branch_id]);
 
+        $branch=DB::table('branch')->where('branch_id','=',$request->branch_id)->first();
+
+
+        session(['branch_name' => $branch->Name]);
+
         $userController = new UserController();
 
         // Call the create_panelty function
