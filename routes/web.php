@@ -668,6 +668,10 @@ Route::get('/loan-report/filters', [PendingLoanController::class, 'getFilters_di
 Route::get('/kyc', [App\Http\Controllers\KYCController::class, 'index'])->name('kyc.index');
 Route::get('/kyc/{id}', [App\Http\Controllers\KYCController::class, 'show'])->name('kyc.show');
 Route::get('/kyc/{section}/{id}', [App\Http\Controllers\KYCController::class, 'loadSection']);
+Route::post('/insurance/category/save', [App\Http\Controllers\KYCController::class, 'insurance_category'])->name('insurance.category.save');
+Route::post('/insurance/request', [App\Http\Controllers\KYCController::class, 'store'])->name('insurance.request');
+Route::get('/insurance/history', [App\Http\Controllers\KYCController::class, 'getHistory'])->name('insurance.history');
+
 
 
 

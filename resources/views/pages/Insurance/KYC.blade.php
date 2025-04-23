@@ -113,10 +113,7 @@
                                         <a class="nav-link" data-bs-toggle="tab" href="#insurance" role="tab"><i
                                                     class="fas fa-shield-alt me-1"></i>Insurance</a>
                                     </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" data-bs-toggle="tab" href="#history" role="tab"><i
-                                                    class="fas fa-history me-1"></i>History</a>
-                                    </li>
+
                                 </ul>
 
                                 <div class="tab-content" id="kycTabContent">
@@ -127,7 +124,7 @@
                                     <div class="tab-pane fade" id="loanSummary" role="tabpanel"></div>
                                     <div class="tab-pane fade" id="RoadMap" role="tabpanel"></div>
                                     <div class="tab-pane fade" id="insurance" role="tabpanel"></div>
-                                    <div class="tab-pane fade" id="history" role="tabpanel"></div>
+
                                 </div>
 
                             </div>
