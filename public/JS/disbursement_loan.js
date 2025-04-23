@@ -106,11 +106,13 @@ function load_table() {
 }
 
 function formatName(firstName, lastName) {
-    let firstInitial = firstName.split(' ')[0].charAt(0) + '.'; // First initial
-    let lastNameParts = lastName.split(' '); // Split last name into parts
-    let lastInitial = lastNameParts.length > 1 ? lastNameParts[0].charAt(0) + '.' : ''; // Last name initial if it has more than one part
-    let formattedLastName = lastNameParts[lastNameParts.length - 1]; // Last part of last name
-    return (lastInitial ? firstInitial + lastInitial : firstInitial) + ' ' + formattedLastName;
+    let firstNameParts = firstName.trim().split(' ');
+    let initials = firstNameParts.map(name => name.charAt(0).toUpperCase() + '.').join('');
+
+    let lastNameParts = lastName.trim().split(' ');
+    let formattedLastName = lastNameParts[lastNameParts.length - 1];
+
+    return `${initials} ${formattedLastName}`;
 }
 
 
