@@ -38,7 +38,8 @@ class KYCController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $customers=tableWithBranch('customer')->get();
+        return view('pages.Insurance.KYC',compact('customers','id'));
     }
 
     /**

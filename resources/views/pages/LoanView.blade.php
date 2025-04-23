@@ -393,6 +393,9 @@
                                 <a href="#" class="btn btn-warning" id="viewLoanLog">
                                     Loan Comment
                                 </a>
+                                <a href="/kyc/{{$loan->Customer_idCustomer}}" class="btn btn-dark" id="KYC" target="_blank">
+                                    KYC
+                                </a>
                             </div>
 
                         </div>
@@ -713,11 +716,69 @@
                         </div>
                     @endforeach
                 </div>
+                @if($type==438217)
+                    <br>
+                    <div class="card shadow">
+                        <div class="card-header">
+                            Customer Document Details
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive custom-scrollbar">
+                                <table class="table table-bordered table-sm table-striped">
+                                    <thead class="sticky-top bg-white">
+                                    <tr>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">File</th>
+                                        <th scope="col">Preview</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody class="custom-scrollbar" style="max-height: 400px;">
+                                    @foreach ($customer_documents as $document)
+                                        <tr>
+                                            <td>{{ $document->Description }}</td>
+                                            <td>
+                                                @if (!empty($document->Path) && file_exists(storage_path('app/public/' . $document->Path)))
+                                                    <a href="{{ asset('storage/' . $document->Path) }}" target="_blank">View File</a>
+                                                @else
+                                                    <span class="text-muted">No File</span>
+                                                @endif
+                                            </td>
 
+                                            <td>
+                                                <div class="preview-box">
+                                                    @php
+                                                        $ext = strtolower(pathinfo($document->Path, PATHINFO_EXTENSION));
+                                                    @endphp
+
+                                                    @if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif']))
+                                                        <img src="{{ asset('storage/' . $document->Path) }}" alt="Image Preview">
+                                                    @elseif ($ext === 'pdf')
+                                                        <iframe src="{{ asset('storage/' . $document->Path) }}"></iframe>
+                                                    @elseif (in_array($ext, ['mp4', 'webm']))
+                                                        <video muted autoplay loop>
+                                                            <source src="{{ asset('storage/' . $document->Path) }}" type="video/{{ $ext }}">
+                                                            Your browser does not support the video tag.
+                                                        </video>
+                                                    @else
+                                                        <span>No Preview</span>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <br>
+                @endif
                 <br>
                 <div class="card shadow">
                     <div class="card-header">
-                        Uploaded Document Details
+                        Uploaded Loan Document Details
                     </div>
                     <div class="card-body">
                         <div class="table-responsive custom-scrollbar">
@@ -771,6 +832,8 @@
 
 
                 <br>
+
+
                 @if($type!=438217)
                     <div class="card shadow" id="np">
                         <div class="card-header" style="position: relative;">

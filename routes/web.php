@@ -666,6 +666,7 @@ Route::get('/loan-report/filters', [PendingLoanController::class, 'getFilters_di
 
 //KYC
 Route::get('/kyc', [App\Http\Controllers\KYCController::class, 'index'])->name('kyc.index');
+Route::get('/kyc/{id}', [App\Http\Controllers\KYCController::class, 'show'])->name('kyc.show');
 Route::get('/kyc/{section}/{id}', [App\Http\Controllers\KYCController::class, 'loadSection']);
 
 
