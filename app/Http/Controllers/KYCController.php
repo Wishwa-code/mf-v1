@@ -10,6 +10,12 @@ use function Laravel\Prompts\table;
 
 class KYCController extends Controller
 {
+    protected $bankLogController;
+
+    public function __construct(BankLogController $bankLogController)
+    {
+        $this->bankLogController = $bankLogController;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -24,7 +30,9 @@ class KYCController extends Controller
      */
     public function create()
     {
-        //
+        $customers = DB::table('customer')->select('idCustomer', 'First_Name', 'Last_Name')->get();
+        $categories = DB::table('insurance_category')->select('id_insurance_category', 'description')->get();
+        return view('pages.Insurance.insurance',compact('customers','categories'));
     }
 
     /**
@@ -46,6 +54,7 @@ class KYCController extends Controller
         try {
             $insuranceId = DB::table('insurance')->insertGetId([
                 'id_insurance_category' => $request->id_insurance_category,
+                'customer_id' => $request->customer_id,
                 'day_count' => $request->day_count,
                 'amount' => $request->amount,
                 'total_amount' => $request->total_amount,
@@ -56,6 +65,33 @@ class KYCController extends Controller
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
+
+
+
+            $categoryLevels = tableWithBranch('insurance_category_has_level')
+                ->where('category_id', $request->id_insurance_category)
+                ->get();
+
+            foreach ($categoryLevels as $level) {
+                $designations = DB::table('insurance_category_level_has_designations')
+                    ->where('insurance_category_level_id', $level->id_insurance_category_has_level)
+                    ->get();
+
+                foreach ($designations as $designation) {
+                    DB::table('insurance_approval_status')->insert([
+                        'insurance_id'    => $insuranceId,
+                        'level_id'        => $level->id_insurance_category_has_level,
+                        'designation_id'  => $designation->designation_id,
+                        'designation'     => $designation->designation,
+                        'user_id'     => $user_id,
+                        'status'          => 'Pending',
+                        'branch_id'       => $branch_id, // or $designation->branch_id if that's preferred
+                    ]);
+                }
+            }
+
+
+
 // Ensure directory exists before storing files
             $directory = 'insurance_documents';
             if (!Storage::disk('public')->exists($directory)) {
@@ -132,19 +168,19 @@ class KYCController extends Controller
             case 'guardian':
                 return view('pages.Insurance.kyc.guardian', compact('customer'));
             case 'documents':
-                $documents = DB::table('customer_documents')
+                $documents = tableWithBranch('customer_documents')
                     ->where('Customer_idCustomer', $id)
                     ->get();
                 return view('pages.Insurance.kyc.documents', compact('documents'));
             case 'loans':
-                $loans = DB::table('customer_loan')
+                $loans = tableWithBranch('customer_loan')
                     ->where('Customer_idCustomer', $id)
                     ->orderByDesc('Date_Time')
                     ->get();
 
                 return view('pages.Insurance.kyc.loans', compact('loans'));
             case 'loanSummary':
-                $guaranteedLoans = DB::table('witness as w')
+                $guaranteedLoans = tableWithBranch('witness as w','witness as w')
                     ->join('customer_loan as cl', 'w.Customer_Loan_idCustomer_Loan', '=', 'cl.idCustomer_Loan')
                     ->join('customer as c', 'cl.Customer_idCustomer', '=', 'c.idCustomer')
                     ->where('w.cus_id', $id)
@@ -173,7 +209,7 @@ class KYCController extends Controller
             case 'insurance':
                 $designation=tableWithBranch('designation')->get();
                 $insurance_category=tableWithBranch('insurance_category')->get();
-                return view('pages.Insurance.kyc.insurance', compact('designation','insurance_category'));
+                return view('pages.Insurance.kyc.insurance', compact('designation','insurance_category','id'));
             case 'history':
                 return view('pages.Insurance.kyc.history', compact('customer'));
             default:
@@ -241,25 +277,351 @@ class KYCController extends Controller
     }
 
 
-    public function getHistory()
+    public function getHistory($id)
     {
+        $branch_id = session('branch_id');
+
         $history = DB::table('insurance as i')
             ->join('insurance_category as c', 'i.id_insurance_category', '=', 'c.id_insurance_category')
-            ->leftJoin('user as u1', 'i.user_id', '=', 'u1.id') // optional
-            ->leftJoin('user as u2', 'i.user_id', '=', 'u2.id') // optional
+            ->leftJoin('user as created', 'i.user_id', '=', 'created.id')
             ->select(
+                'i.id_insurance',
                 'i.created_at as date',
                 'c.description as category',
                 'i.total_amount',
                 'i.note',
-                DB::raw("COALESCE(u1.Full_Name, 'Admin') as created_by"),
-                DB::raw("COALESCE(u2.Full_Name, 'Manager') as approved_by"),
+                DB::raw("COALESCE(created.Full_Name, 'Admin') as created_by"),
                 'i.status'
             )
+            ->where('i.customer_id', '=', $id)
+            ->where('i.branch_id', '=', $branch_id)
             ->orderByDesc('i.created_at')
             ->get();
 
+        // Get approval info with Designation (User)
+        $approvals = DB::table('insurance_approval_status as a')
+            ->join('user as u', 'a.user_id', '=', 'u.id')
+            ->select(
+                'a.insurance_id',
+                DB::raw("GROUP_CONCAT(CONCAT(a.designation, ' (', u.Full_Name, ')') SEPARATOR ', ') as approved_by")
+            )
+            ->where('a.status', 'Approved')
+            ->groupBy('a.insurance_id')
+            ->get()
+            ->keyBy('insurance_id');
+
+        // Merge approvals into history
+        foreach ($history as $row) {
+            $row->approved_by = $approvals[$row->id_insurance]->approved_by ?? '-';
+        }
+
         return response()->json($history);
+    }
+
+
+
+    public function evidence($id)
+    {
+        $evidence = tableWithBranch('insurance_has_document')
+            ->where('id_insurance', $id)
+            ->get()
+            ->map(function ($doc) {
+                $path = $doc->path;
+                $mime = Storage::exists($path) ? Storage::mimeType($path) : 'application/octet-stream';
+
+                return [
+                    'name' => basename($path),
+                    'url' => Storage::url($path),
+                    'type' => $mime
+                ];
+            });
+
+        return response()->json($evidence);
+    }
+
+
+
+    public function loadInsurances(Request $request)
+    {
+        $subApproved = DB::table('insurance_approval_status as s')
+            ->join('insurance_category_level_has_designations as d', function($join) {
+                $join->on('s.level_id', '=', 'd.insurance_category_level_id')
+                    ->on('s.designation_id', '=', 'd.designation_id');
+            })
+            ->where('s.status', 'Approved')
+            ->select(
+                's.insurance_id',
+                DB::raw('s.level_id'),
+                DB::raw('COUNT(*) as approved_designations'),
+                DB::raw('(SELECT COUNT(*) FROM insurance_category_level_has_designations WHERE insurance_category_level_id = s.level_id) as required_approvals')
+            )
+            ->groupBy('s.insurance_id', 's.level_id')
+            ->havingRaw('approved_designations = required_approvals');
+
+        $approvedLevels = DB::table($subApproved, 'approved_levels')
+            ->select('insurance_id', DB::raw('COUNT(*) as approved_count'))
+            ->groupBy('insurance_id');
+
+        $totalLevels = DB::table('insurance_category_has_level')
+            ->select('category_id', DB::raw('COUNT(*) as total_count'))
+            ->groupBy('category_id');
+
+        $insurances = DB::table('insurance')
+            ->join('insurance_category as c', 'insurance.id_insurance_category', '=', 'c.id_insurance_category')
+            ->join('customer as cust', 'insurance.customer_id', '=', 'cust.idCustomer')
+            ->leftJoinSub($approvedLevels, 'ap', function ($join) {
+                $join->on('ap.insurance_id', '=', 'insurance.id_insurance');
+            })
+            ->leftJoinSub($totalLevels, 'tl', function ($join) {
+                $join->on('tl.category_id', '=', 'insurance.id_insurance_category');
+            })
+            ->select(
+                'insurance.*',
+                'c.description as category',
+                'cust.First_Name',
+                'cust.Last_Name',
+                DB::raw('IFNULL(ap.approved_count, 0) as approved_count'),
+                DB::raw('IFNULL(tl.total_count, 0) as total_count')
+            )
+            ->when($request->status !== null, function ($q) use ($request) {
+                $q->where('insurance.status', $request->status);
+            })
+            ->when($request->start_date, function ($q) use ($request) {
+                $q->whereDate('insurance.created_at', '>=', $request->start_date);
+            })
+            ->when($request->end_date, function ($q) use ($request) {
+                $q->whereDate('insurance.created_at', '<=', $request->end_date);
+            })
+            ->when($request->customer_id, function ($q) use ($request) {
+                $q->where('insurance.customer_id', $request->customer_id);
+            })
+            ->when($request->category_id, function ($q) use ($request) {
+                $q->where('insurance.id_insurance_category', $request->category_id);
+            })
+            ->get();
+
+        return response()->json($insurances);
+    }
+
+
+    public function changeStatus(Request $request)
+    {
+        DB::table('insurance')
+            ->where('id_insurance', $request->id)
+            ->update(['status' => $request->status]);
+
+        return response()->json(['success' => true]);
+    }
+    public function getApprovalLevels($categoryId, $insuranceId)
+    {
+        $levels = DB::table('insurance_category_has_level')
+            ->where('category_id', $categoryId)
+            ->orderBy('level')
+            ->get();
+
+        $results = [];
+
+        foreach ($levels as $level) {
+            // Get all designations under this level
+            $designations = DB::table('insurance_category_level_has_designations')
+                ->where('insurance_category_level_id', $level->id_insurance_category_has_level)
+                ->get();
+
+            $designationStatuses = [];
+
+            foreach ($designations as $designation) {
+                // Check status from insurance_approval_status
+                $statusRow = DB::table('insurance_approval_status')
+                    ->where('insurance_id', $insuranceId)
+                    ->where('level_id', $level->id_insurance_category_has_level)
+                    ->where('designation_id', $designation->designation_id)
+                    ->first();
+
+                $designationStatuses[] = [
+                    'designation' => $designation->designation,
+                    'note' => $statusRow->description,
+                    'designation_id' => $designation->designation_id,
+                    'status' => $statusRow ? $statusRow->status : 'Pending',
+                    'user_id' => $statusRow->user_id ?? null,
+                    'approved_at' => $statusRow->updated_at ?? null
+                ];
+            }
+
+            $isLevelApproved = collect($designationStatuses)->contains('status', 'Approved');
+
+            $results[] = [
+                'id' => $level->id_insurance_category_has_level,
+                'level' => $level->level,
+                'description' => $level->description,
+                'designations' => $designationStatuses,
+                'is_approved' => $isLevelApproved
+            ];
+
+        }
+
+        return response()->json($results);
+    }
+
+    public function approveLevel(Request $request)
+    {
+        $userDesignation = session('designation');
+        $branch_id = session('branch_id');
+        $user_id = session('userid');
+
+        // Get all allowed designation_ids for this level
+        $designationIds = DB::table('insurance_category_level_has_designations')
+            ->where('insurance_category_level_id', $request->level_id)
+            ->pluck('designation_id')
+            ->toArray();
+
+        // Check if user is authorized (unless Admin)
+        if ($userDesignation !== 'Admin') {
+            $userHasDesignation = DB::table('designation')
+                ->whereIn('idDesignation', $designationIds)
+                ->where('name', $userDesignation)
+                ->exists();
+
+            if (!$userHasDesignation) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+        }
+
+        // Update all pending records for this level & insurance
+        $updated = DB::table('insurance_approval_status')
+            ->where('insurance_id', $request->insurance_id)
+            ->where('level_id', $request->level_id)
+            ->whereIn('designation_id', $designationIds)
+            ->where('status', '!=', 'Approved')
+            ->update([
+                'user_id' => $user_id,
+                'description' => $request->note,
+                'status' => 'Approved',
+                'branch_id' => $branch_id,
+                'updated_at' => now(),
+            ]);
+
+        if ($updated > 0) {
+            return response()->json(['success' => true]);
+        } else {
+            return response()->json(['error' => 'No pending approval found to update.'], 404);
+        }
+    }
+
+
+
+    public function rejectInsurance(Request $request)
+    {
+        $insuranceId = $request->insurance_id;
+        $userId = session('userid');
+        $branchId = session('branch_id');
+        $note = $request->note ?? null;
+
+        // 1. Update the insurance status to "Rejected"
+        DB::table('insurance')
+            ->where('id_insurance', $insuranceId)
+            ->update(['status' => '-1']);
+
+        // 2. Fetch all levels for the insurance's category
+        $insurance = DB::table('insurance')->where('id_insurance', $insuranceId)->first();
+
+        if ($insurance) {
+            $levels = DB::table('insurance_category_has_level')
+                ->where('category_id', $insurance->id_insurance_category)
+                ->get();
+
+            foreach ($levels as $level) {
+                // 3. Fetch all designations under this level
+                $designations = DB::table('insurance_category_level_has_designations')
+                    ->where('insurance_category_level_id', $level->id_insurance_category_has_level)
+                    ->get();
+
+                foreach ($designations as $designation) {
+                    // 4. Update status to "Rejected" for each designation in this level
+                    DB::table('insurance_approval_status')
+                        ->where('insurance_id', $insuranceId)
+                        ->where('level_id', $level->id_insurance_category_has_level)
+                        ->where('designation_id', $designation->designation_id)
+                        ->update([
+                            'status' => 'Rejected',
+                            'user_id' => $userId,
+                            'branch_id' => $branchId,
+                            'description' => $note,
+                            'updated_at' => now(),
+                        ]);
+                }
+            }
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+
+// YourController.php
+    public function getBankAccounts()
+    {
+        $accounts = tableWithBranch('company_bank_accounts')->where('Bank_Type','=','Bank')->get();
+        return response()->json($accounts);
+    }
+
+
+    public function issueInsurance(Request $request)
+    {
+        $bankId = $request->bank_id;
+        $insuranceId = $request->insurance_id;
+        $userId = session('userid'); // or auth()->id()
+        $branch_id = session('branch_id'); // or auth()->id()
+        try {
+            DB::beginTransaction();
+
+            $updated = DB::table('insurance')
+                ->where('id_insurance', $insuranceId)
+                ->update([
+                    'status' => '1',
+                ]);
+
+            if (!$updated) {
+                DB::rollBack();
+                return response()->json(['error' => 'Insurance update failed.'], 400);
+            }
+
+            $system_bank=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_11')->first();
+            if ($system_bank){
+                $system_bank_id=$system_bank->Idbank;
+
+            }else{
+                $system_bank_id=DB::table('company_bank_accounts')->insertGetId([
+                    'Bank_Type' => "System_default_11",
+                    'code' => "1121",
+                    'Bank_Name' => "Insurance Payable",
+                    'Account_Name' => "Insurance Payable",
+                    'Account_No' => "Insurance Payable",
+                    'Bank_Branch' => "Insurance Payable",
+                    'Account_Balance' => '0.00',
+                    'type' => "Liability",
+                    'cashflow' => "Financing activities",
+                    'acc_type_group' => "Liabilities",
+                    'User' => $userId,
+                    'branch_id' => $branch_id,
+                ]);
+            }
+
+            $insurance=tableWithBranch('insurance')->where('id_insurance','=',$insuranceId)->first();
+            $fromAmount=$insurance->total_amount;
+
+            $this->bankLogController->index($bankId,"Insurance",'Insurance Claim'.' ('.$insuranceId.')','Insurance Claim',"credit",$fromAmount,$system_bank_id);
+            $this->bankLogController->index($system_bank_id,"Insurance",'Insurance Claim'.' ('.$insuranceId.')','Insurance Claim',"debit",$fromAmount,$bankId);
+
+
+            DB::commit();
+            return response()->json(['success' => true]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'error' => 'An error occurred.',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
 

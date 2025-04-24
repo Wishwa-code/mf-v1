@@ -6,6 +6,7 @@
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.0.1/css/buttons.dataTables.min.css">
 
     <style>
         thead {
@@ -187,8 +188,12 @@
                             </div>
                         </div>
                         <button type="button" class="btn btn-danger" onclick="load_payment_table();"><i class="bi bi-search"></i> </button>
-                        <hr>
 
+
+                        <hr>
+                        <button onclick="downloadExcel()" class="btn btn-success mb-3">
+                            <i class="fas fa-file-excel"></i> Download Excel
+                        </button>
                         <div class="status-container">
                             <div class="status-item">
                                 <i class="fas fa-lightbulb bulb-icon" style="color: #e1cf1e"></i>
@@ -398,7 +403,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/js/all.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
-{{--    <script src="../JS/today_payment.js"></script>--}}
+    <script src="https://cdn.datatables.net/buttons/2.0.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    {{--    <script src="../JS/today_payment.js"></script>--}}
     <script>
         $(function() {
             load_payment_table();
@@ -413,8 +421,17 @@
             })
             $('#loan_table').DataTable({
                 responsive: true,
-                // Other options if needed
+                dom: 'Bfrtip', // Add this line to show buttons
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        title: 'Loan_in_Arrears_Report',
+                        text: '<i class="fas fa-file-excel"></i> Download Excel',
+                        className: 'btn btn-success'
+                    }
+                ]
             });
+
 
         })
 
@@ -531,6 +548,62 @@
         function formatNumber(num) {
             return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
+        function downloadExcel() {
+            $.ajax({
+                type: "POST",
+                url: `/latePayment_load_check`,
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                },
+                data: {
+                    // same filter parameters as current table
+                    center_details: $("#center_details").val(),
+                    route: $("#route").val(),
+                    group: $("#group").val(),
+                    customer: $("#customer_id").val(),
+                    lending: $("#lending").val(),
+                    status: $("#status").val(),
+                    export_all: true // <-- Add this to signal "get all rows"
+                },
+                success: function(data) {
+                    // create table in memory
+                    let tempTable = document.createElement('table');
+                    tempTable.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Loan No</th>
+                        <th>Center No</th>
+                        <th>Group No</th>
+                        <th>Leasing</th>
+                        <th>Member NIC</th>
+                        <th>Member Name</th>
+                        <th>Pending Installments</th>
+                        <th>Penalty Total</th>
+                        <th>Pending Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.item.map(item => `
+                        <tr>
+                            <td>${item.Loan_No}</td>
+                            <td>${item.center_no}</td>
+                            <td>${item.group_name}</td>
+                            <td>${item.Vehicle_No ?? '-'}</td>
+                            <td>${item.NIC}</td>
+                            <td>${item.customer_name} ${item.customer_lastname}</td>
+                            <td>${item.Installment_Count}</td>
+                            <td>${parseFloat(item.Panalty_Balance).toFixed(2)}</td>
+                            <td>${parseFloat(item.Total_Balance).toFixed(2)}</td>
+                        </tr>`).join('')}
+                </tbody>
+            `;
+
+                    let workbook = XLSX.utils.table_to_book(tempTable, { sheet: "Loan Report" });
+                    XLSX.writeFile(workbook, 'Loan_in_Arrears_Report.xlsx');
+                }
+            });
+        }
+
 
     </script>
 

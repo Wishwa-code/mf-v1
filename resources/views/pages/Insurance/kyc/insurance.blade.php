@@ -50,7 +50,7 @@
 
     <div class="mt-3">
         <label class="form-label">Note</label>
-        <textarea class="form-control" rows="3" placeholder="Any notes related to this request..."></textarea>
+        <textarea class="form-control" rows="3" id="insurance_note" placeholder="Any notes related to this request..."></textarea>
     </div>
 
     <div class="mt-4">
@@ -75,8 +75,8 @@
                 <th>Created By</th>
                 <th>Approved By</th>
                 <th>Status</th>
-                <th>View</th>
-                <th>Action</th>
+                <th>Evidence</th>
+{{--                <th>Action</th>--}}
             </tr>
             </thead>
             <tbody>
@@ -158,18 +158,35 @@
     </div>
 </div>
 
+<!-- View Evidence Modal -->
+<div class="modal fade" id="viewEvidenceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Uploaded Evidence</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="evidenceContent" style="display: flex; flex-wrap: wrap; gap: 1rem;"></div>
+        </div>
+    </div>
+</div>
+
+
 <!-- Include SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
     let levelIndex = 1;
     const levelsData = [];
+    $(document).ready(function () {
+        loadInsuranceHistory();
 
-    document.getElementById('addNewLevelBtn').addEventListener('click', () => {
-        const levelId = `level-${levelIndex}`;
-        const optionsHTML = document.getElementById('designationOptions').innerHTML;
 
-        const levelHTML = `
+        document.getElementById('addNewLevelBtn').addEventListener('click', () => {
+            const levelId = `level-${levelIndex}`;
+            const optionsHTML = document.getElementById('designationOptions').innerHTML;
+
+            const levelHTML = `
     <div class="card border mb-4 shadow-sm" id="${levelId}">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <div class="fw-bold">Level ${levelIndex.toString().padStart(2, '0')}</div>
@@ -206,30 +223,301 @@
 `;
 
 
-        document.getElementById('levelsContainer').insertAdjacentHTML('beforeend', levelHTML);
-        levelsData.push({ level: levelIndex, description: '', designations: [] });
-        levelIndex++;
-    });
+            document.getElementById('levelsContainer').insertAdjacentHTML('beforeend', levelHTML);
+            levelsData.push({ level: levelIndex, description: '', designations: [] });
+            levelIndex++;
+        });
 
-    document.getElementById('removeLastLevelBtn').addEventListener('click', () => {
-        if (levelIndex <= 1) {
-            alert("No levels to remove.");
-            return;
+        document.getElementById('removeLastLevelBtn').addEventListener('click', () => {
+            if (levelIndex <= 1) {
+                alert("No levels to remove.");
+                return;
+            }
+
+            const lastLevelId = `level-${levelIndex - 1}`;
+            const lastCard = document.getElementById(lastLevelId);
+            if (lastCard) {
+                lastCard.remove();
+            }
+
+            levelsData.pop();
+            levelIndex--;
+
+            console.log(`Removed Level ${levelIndex}.`, levelsData);
+        });
+
+
+
+
+
+
+
+
+        function loadInsuranceHistory() {
+            let cus_id = {{ $id }}; // Assuming this is passed from Blade
+
+            fetch(`/insurance/history/${cus_id}`)
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.querySelector('#insuranceHistoryTable tbody');
+                    tbody.innerHTML = ''; // Clear old rows
+
+                    if (!data.length) {
+                        tbody.innerHTML = `<tr><td colspan="9" class="text-center">No insurance requests found.</td></tr>`;
+                        return;
+                    }
+
+                    data.forEach(item => {
+                        const row = `
+                    <tr>
+                        <td>${item.date}</td>
+                        <td>${item.category}</td>
+                        <td>Rs. ${parseFloat(item.total_amount).toFixed(2)}</td>
+                        <td>${item.note || '-'}</td>
+                        <td>${item.created_by}</td>
+                        <td>${item.approved_by}</td>
+                        <td><span class="badge ${getStatusBadge(item.status)}">${getStatusText(item.status)}</span></td>
+                        <td><button class="btn btn-sm btn-primary" onclick="viewEvidence(${item.id_insurance})"><i class="fas fa-eye"></i></button></td>
+
+                    </tr>
+                `;
+                        tbody.insertAdjacentHTML('beforeend', row);
+                    });
+
+                })
+                .catch(err => {
+                    console.error("Failed to load insurance history:", err);
+                });
         }
 
-        const lastLevelId = `level-${levelIndex - 1}`;
-        const lastCard = document.getElementById(lastLevelId);
-        if (lastCard) {
-            lastCard.remove();
+
+        function getStatusBadge(status) {
+            switch (String(status)) {
+                case '1': return 'bg-success'; // Approved
+                case '0': return 'bg-warning text-dark'; // Pending
+                case '-1': return 'bg-danger'; // Rejected
+                default: return 'bg-secondary';
+            }
         }
 
-        levelsData.pop();
-        levelIndex--;
+        function getStatusText(status) {
+            switch (String(status)) {
+                case '1': return 'Approved';
+                case '0': return 'Pending';
+                case '-1': return 'Rejected';
+                default: return 'Unknown';
+            }
+        }
 
-        console.log(`Removed Level ${levelIndex}.`, levelsData);
+        const categoryDropdown = document.getElementById('insuranceCategory');
+        const dateCountField = document.getElementById('dateCount');
+        const amountField = document.getElementById('insurance_amount');
+        const totalAmountField = document.getElementById('totalAmount');
+
+        const dateCountWrapper = dateCountField.parentElement;
+        const amountWrapper = amountField.parentElement;
+        const totalAmountWrapper = totalAmountField.parentElement;
+
+        let currentAmount = 0; // This will store the selected amount safely
+
+        // Hide fields initially
+        hideFields();
+
+        categoryDropdown.addEventListener('change', function () {
+            const selectedOption = this.options[this.selectedIndex];
+            const type = selectedOption.getAttribute('data-type');
+            const amount = parseFloat(selectedOption.getAttribute('data-amount')) || 0;
+
+            currentAmount = amount;
+
+            if (selectedOption.value === "0") {
+                hideFields();
+                return;
+            }
+
+            totalAmountWrapper.style.display = '';
+
+            if (type !== 'One Time') {
+                console.log(amount);
+                dateCountWrapper.style.display = '';
+                amountWrapper.style.display = '';
+
+                dateCountField.value = 1;
+
+
+                $('#insurance_amount').val(amount.toFixed(2));
+                updateTotalAmount();
+            } else {
+                dateCountWrapper.style.display = 'none';
+                amountWrapper.style.display = 'none';
+
+                dateCountField.value = 1;
+
+
+                $('#insurance_amount').val(amount.toFixed(2));
+                totalAmountField.value = currentAmount.toFixed(2);
+            }
+
+        });
+
+
+        dateCountField.addEventListener('input', updateTotalAmount);
+        amountField.addEventListener('input', function () {
+            currentAmount = parseFloat(this.value) || 0;
+            updateTotalAmount();
+        });
+
+        function updateTotalAmount() {
+            const count = parseInt(dateCountField.value) || 0;
+            totalAmountField.value = (count * currentAmount).toFixed(2);
+        }
+
+        function hideFields() {
+            dateCountWrapper.style.display = 'none';
+            amountWrapper.style.display = 'none';
+            totalAmountWrapper.style.display = 'none';
+        }
+
+        // Trigger logic on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            categoryDropdown.dispatchEvent(new Event('change'));
+        });
+
+        document.getElementById('evidenceInput').addEventListener('change', function (e) {
+            const previewContainer = document.getElementById('filePreview');
+            previewContainer.innerHTML = ''; // Clear previous previews
+
+            const files = Array.from(this.files);
+
+            files.forEach(file => {
+                const fileReader = new FileReader();
+                const fileType = file.type;
+
+                const previewCard = document.createElement('div');
+                previewCard.classList.add('border', 'rounded', 'p-2');
+                previewCard.style.width = '150px';
+                previewCard.style.textAlign = 'center';
+                previewCard.style.position = 'relative';
+
+                // Show thumbnail for image
+                if (fileType.startsWith('image/')) {
+                    fileReader.onload = function (e) {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.classList.add('img-fluid', 'rounded');
+                        img.style.maxHeight = '100px';
+                        previewCard.appendChild(img);
+                    };
+                    fileReader.readAsDataURL(file);
+                } else {
+                    // Show icon and filename for non-image
+                    const icon = document.createElement('div');
+                    icon.innerHTML = `<i class="fas fa-file-alt fa-2x text-secondary"></i>`;
+                    const name = document.createElement('div');
+                    name.textContent = file.name;
+                    name.style.fontSize = '12px';
+                    name.classList.add('mt-2');
+                    previewCard.appendChild(icon);
+                    previewCard.appendChild(name);
+                }
+
+                // Remove button
+                const removeBtn = document.createElement('button');
+                removeBtn.innerHTML = '&times;';
+                removeBtn.classList.add('btn', 'btn-sm', 'btn-danger');
+                removeBtn.style.position = 'absolute';
+                removeBtn.style.top = '5px';
+                removeBtn.style.right = '5px';
+                removeBtn.style.padding = '2px 6px';
+                removeBtn.onclick = () => {
+                    const index = files.indexOf(file);
+                    files.splice(index, 1);
+                    const dataTransfer = new DataTransfer();
+                    files.forEach(f => dataTransfer.items.add(f));
+                    document.getElementById('evidenceInput').files = dataTransfer.files;
+                    previewCard.remove();
+                };
+
+                previewCard.appendChild(removeBtn);
+                previewContainer.appendChild(previewCard);
+            });
+        });
+
+        document.getElementById('request_insurance').addEventListener('click', function () {
+            const categoryId = document.getElementById('insuranceCategory').value;
+            const customerSelect = {{$id}};
+            const dayCount = document.getElementById('dateCount').value;
+            const amount = document.getElementById('insurance_amount').value;
+            const totalAmount = document.getElementById('totalAmount').value;
+            const note = document.getElementById('insurance_note').value;
+            const files = document.getElementById('evidenceInput').files;
+
+            if (categoryId === "0") {
+                Swal.fire("Validation Error", "Please select an insurance category.", "warning");
+                return;
+            }
+
+            Swal.fire({
+                title: "Are you sure?",
+                text: "You are about to request insurance.",
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonText: "Yes, submit",
+                cancelButtonText: "Cancel"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const formData = new FormData();
+                    formData.append('id_insurance_category', categoryId);
+                    formData.append('day_count', dayCount);
+                    formData.append('amount', amount);
+                    formData.append('total_amount', totalAmount);
+                    formData.append('note', note);
+                    formData.append('customer_id', customerSelect);
+
+                    for (let i = 0; i < files.length; i++) {
+                        formData.append('documents[]', files[i]);
+                    }
+
+                    fetch("{{ route('insurance.request') }}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: formData
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire("Success", data.message, "success");
+
+// Clear form fields
+                                document.getElementById('insuranceCategory').value = "0";
+                                document.getElementById('dateCount').value = "1";
+                                document.getElementById('insurance_amount').value = "0";
+                                document.getElementById('totalAmount').value = "";
+                                document.getElementById('insurance_note').value = "";
+                                document.getElementById('evidenceInput').value = "";
+
+// Clear preview area
+                                document.getElementById('filePreview').innerHTML = "";
+
+// Hide fields (optional: reset UI)
+                                hideFields();
+                                // 🔥 Load latest history
+                                loadInsuranceHistory();
+                            } else {
+                                Swal.fire("Error", data.message, "error");
+                            }
+                        })
+                        .catch(err => {
+                            Swal.fire("Error", "Something went wrong!", "error");
+                            console.error(err);
+                        });
+                }
+            });
+        });
+
     });
-
-
 
     function addDesignation(levelId) {
         const levelNum = parseInt(levelId.split('-')[1]);
@@ -416,261 +704,50 @@
         });
     }
 
-
-
-
-    function loadInsuranceHistory() {
-        fetch("{{ route('insurance.history') }}")
+    function viewEvidence(id) {
+        fetch(`/insurance/evidence/${id}`)
             .then(res => res.json())
             .then(data => {
-                const tbody = document.querySelector('#insuranceHistoryTable tbody');
-                tbody.innerHTML = ''; // Clear old rows
+                const container = document.getElementById('evidenceContent');
+                container.innerHTML = '';
 
                 if (!data.length) {
-                    tbody.innerHTML = `<tr><td colspan="9" class="text-center">No insurance requests found.</td></tr>`;
-                    return;
+                    container.innerHTML = `<p class="text-muted">No evidence uploaded.</p>`;
+                } else {
+                    data.forEach(file => {
+                        const card = document.createElement('div');
+                        card.className = 'border p-2 rounded';
+                        card.style.width = '150px';
+                        card.style.textAlign = 'center';
+
+                        const mime = file.type || '';
+
+                        if (mime.startsWith('image/')) {
+                            card.innerHTML = `<img src="${file.url}" class="img-fluid rounded" style="max-height:100px;">`;
+                        } else {
+                            card.innerHTML = `
+                            <i class="fas fa-file-alt fa-2x text-secondary"></i>
+                            <div style="font-size:12px; word-break: break-all;">${file.name}</div>
+                            <a href="${file.url}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">View</a>
+                        `;
+                        }
+
+                        container.appendChild(card);
+                    });
                 }
 
-                data.forEach(item => {
-                    const row = `
-                    <tr>
-                        <td>${item.date}</td>
-                        <td>${item.category}</td>
-                        <td>Rs. ${parseFloat(item.total_amount).toFixed(2)}</td>
-                        <td>${item.note || '-'}</td>
-                        <td>${item.created_by}</td>
-                        <td>${item.approved_by}</td>
-                        <td><span class="badge ${getStatusBadge(item.status)}">${item.status}</span></td>
-                        <td><button class="btn btn-sm btn-primary"><i class="fas fa-eye"></i></button></td>
-                        <td><button class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></button></td>
-                    </tr>
-                `;
-                    tbody.insertAdjacentHTML('beforeend', row);
-                });
+                const modal = new bootstrap.Modal(document.getElementById('viewEvidenceModal'));
+                modal.show();
             })
             .catch(err => {
-                console.error("Failed to load insurance history:", err);
+                console.error("Error fetching evidence files", err);
+                Swal.fire("Error", "Could not load evidence files.", "error");
             });
     }
 
-    function getStatusBadge(status) {
-        switch (status.toLowerCase()) {
-            case 'approved': return 'bg-success';
-            case 'pending': return 'bg-warning text-dark';
-            case 'rejected': return 'bg-danger';
-            default: return 'bg-secondary';
-        }
-    }
 
 
 
 </script>
-<script>
-    const categoryDropdown = document.getElementById('insuranceCategory');
-    const dateCountField = document.getElementById('dateCount');
-    const amountField = document.getElementById('insurance_amount');
-    const totalAmountField = document.getElementById('totalAmount');
 
-    const dateCountWrapper = dateCountField.parentElement;
-    const amountWrapper = amountField.parentElement;
-    const totalAmountWrapper = totalAmountField.parentElement;
-
-    let currentAmount = 0; // This will store the selected amount safely
-
-    // Hide fields initially
-    hideFields();
-
-    categoryDropdown.addEventListener('change', function () {
-        const selectedOption = this.options[this.selectedIndex];
-        const type = selectedOption.getAttribute('data-type');
-        const amount = parseFloat(selectedOption.getAttribute('data-amount')) || 0;
-
-        currentAmount = amount;
-
-        if (selectedOption.value === "0") {
-            hideFields();
-            return;
-        }
-
-        totalAmountWrapper.style.display = '';
-
-        if (type !== 'One Time') {
-            console.log(amount);
-            dateCountWrapper.style.display = '';
-            amountWrapper.style.display = '';
-
-            dateCountField.value = 1;
-
-
-            $('#insurance_amount').val(amount.toFixed(2));
-            updateTotalAmount();
-        } else {
-            dateCountWrapper.style.display = 'none';
-            amountWrapper.style.display = 'none';
-
-            dateCountField.value = 1;
-
-
-            $('#insurance_amount').val(amount.toFixed(2));
-            totalAmountField.value = currentAmount.toFixed(2);
-        }
-
-    });
-
-
-    dateCountField.addEventListener('input', updateTotalAmount);
-    amountField.addEventListener('input', function () {
-        currentAmount = parseFloat(this.value) || 0;
-        updateTotalAmount();
-    });
-
-    function updateTotalAmount() {
-        const count = parseInt(dateCountField.value) || 0;
-        totalAmountField.value = (count * currentAmount).toFixed(2);
-    }
-
-    function hideFields() {
-        dateCountWrapper.style.display = 'none';
-        amountWrapper.style.display = 'none';
-        totalAmountWrapper.style.display = 'none';
-    }
-
-    // Trigger logic on page load
-    window.addEventListener('DOMContentLoaded', () => {
-        categoryDropdown.dispatchEvent(new Event('change'));
-    });
-
-    document.getElementById('evidenceInput').addEventListener('change', function (e) {
-        const previewContainer = document.getElementById('filePreview');
-        previewContainer.innerHTML = ''; // Clear previous previews
-
-        const files = Array.from(this.files);
-
-        files.forEach(file => {
-            const fileReader = new FileReader();
-            const fileType = file.type;
-
-            const previewCard = document.createElement('div');
-            previewCard.classList.add('border', 'rounded', 'p-2');
-            previewCard.style.width = '150px';
-            previewCard.style.textAlign = 'center';
-            previewCard.style.position = 'relative';
-
-            // Show thumbnail for image
-            if (fileType.startsWith('image/')) {
-                fileReader.onload = function (e) {
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.classList.add('img-fluid', 'rounded');
-                    img.style.maxHeight = '100px';
-                    previewCard.appendChild(img);
-                };
-                fileReader.readAsDataURL(file);
-            } else {
-                // Show icon and filename for non-image
-                const icon = document.createElement('div');
-                icon.innerHTML = `<i class="fas fa-file-alt fa-2x text-secondary"></i>`;
-                const name = document.createElement('div');
-                name.textContent = file.name;
-                name.style.fontSize = '12px';
-                name.classList.add('mt-2');
-                previewCard.appendChild(icon);
-                previewCard.appendChild(name);
-            }
-
-            // Remove button
-            const removeBtn = document.createElement('button');
-            removeBtn.innerHTML = '&times;';
-            removeBtn.classList.add('btn', 'btn-sm', 'btn-danger');
-            removeBtn.style.position = 'absolute';
-            removeBtn.style.top = '5px';
-            removeBtn.style.right = '5px';
-            removeBtn.style.padding = '2px 6px';
-            removeBtn.onclick = () => {
-                const index = files.indexOf(file);
-                files.splice(index, 1);
-                const dataTransfer = new DataTransfer();
-                files.forEach(f => dataTransfer.items.add(f));
-                document.getElementById('evidenceInput').files = dataTransfer.files;
-                previewCard.remove();
-            };
-
-            previewCard.appendChild(removeBtn);
-            previewContainer.appendChild(previewCard);
-        });
-    });
-
-    document.getElementById('request_insurance').addEventListener('click', function () {
-        const categoryId = document.getElementById('insuranceCategory').value;
-        const dayCount = document.getElementById('dateCount').value;
-        const amount = document.getElementById('insurance_amount').value;
-        const totalAmount = document.getElementById('totalAmount').value;
-        const note = document.querySelector('textarea').value;
-        const files = document.getElementById('evidenceInput').files;
-
-        if (categoryId === "0") {
-            Swal.fire("Validation Error", "Please select an insurance category.", "warning");
-            return;
-        }
-
-        Swal.fire({
-            title: "Are you sure?",
-            text: "You are about to request insurance.",
-            icon: "question",
-            showCancelButton: true,
-            confirmButtonText: "Yes, submit",
-            cancelButtonText: "Cancel"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const formData = new FormData();
-                formData.append('id_insurance_category', categoryId);
-                formData.append('day_count', dayCount);
-                formData.append('amount', amount);
-                formData.append('total_amount', totalAmount);
-                formData.append('note', note);
-
-                for (let i = 0; i < files.length; i++) {
-                    formData.append('documents[]', files[i]);
-                }
-
-                fetch("{{ route('insurance.request') }}", {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: formData
-                })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            Swal.fire("Success", data.message, "success");
-
-// Clear form fields
-                            document.getElementById('insuranceCategory').value = "0";
-                            document.getElementById('dateCount').value = "1";
-                            document.getElementById('insurance_amount').value = "0";
-                            document.getElementById('totalAmount').value = "";
-                            document.querySelector('textarea').value = "";
-                            document.getElementById('evidenceInput').value = "";
-
-// Clear preview area
-                            document.getElementById('filePreview').innerHTML = "";
-
-// Hide fields (optional: reset UI)
-                            hideFields();
-                            // 🔥 Load latest history
-                            loadInsuranceHistory();
-                        } else {
-                            Swal.fire("Error", data.message, "error");
-                        }
-                    })
-                    .catch(err => {
-                        Swal.fire("Error", "Something went wrong!", "error");
-                        console.error(err);
-                    });
-            }
-        });
-    });
-
-</script>
 
