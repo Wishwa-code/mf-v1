@@ -2332,7 +2332,7 @@
 
                             for (var i = 0; i < installmentCount;) {
                                 // Add one day to the current date
-                                currentDate.setDate(currentDate.getDate() + 1);
+
 
                                 // Format the current date as YYYY-MM-DD
                                 var formattedDate = new Date(currentDate).toISOString().split('T')[0]; // Ensure consistent format
@@ -2349,6 +2349,7 @@
                                 } else {
                                     console.log('Skipped holiday:', formattedDate); // Log skipped dates
                                 }
+                                currentDate.setDate(currentDate.getDate()+1);
                             }
                             // Usage
 
