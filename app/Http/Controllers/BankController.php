@@ -254,19 +254,15 @@ class BankController extends Controller
         $total_income=0.00;
         $total_expenses=0.00;
         $system_expenses=[];
-        return view('pages.Accounting.ProfitLoss',compact('date_from','system_expenses','date_to','interest','panelty','other_chargers','loan_expenses','total_income','total_expenses'));
+        $system_revenue=[];
+        return view('pages.Accounting.ProfitLoss',compact('date_from','system_expenses','date_to','interest','panelty','other_chargers','loan_expenses','total_income','total_expenses','system_revenue'));
     }
 
 
     public function profit(Request $request){
         $date_from=$request->date_from;
         $date_to=$request->date_to;
-        $interest=0.00;
-        $panelty=0.00;
-        $other_chargers=0.00;
         $loan_expenses=0.00;
-        $system_expenses=0.00;
-        $total_income=0.00;
         $total_expenses=0.00;
 
         $date_to_2 = Carbon::parse($date_to)->endOfDay();
@@ -284,13 +280,11 @@ class BankController extends Controller
 
 
 
-        $loanQuery = tableWithBranch('customer_loan')
-            ->whereBetween('customer_loan.Date_Time', [$date_from, $date_to])
-            ->where('customer_loan.Status', '!=', '-1')
-            ->where('customer_loan.Status', '!=', '-2');
-
         // Get the sum of Amount
-        $other_chargers = $loanQuery->sum('customer_loan.Total_Other_Amount');
+        $other_chargers = tableWithBranch('company_bank_has_log')
+            ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
+            ->where('Type', '=', 'Loan Document Chargers')
+            ->sum('Debit');
 
         $total_income = tableWithBranch('expences')
             ->whereBetween('date', [$date_from_2, $date_to_2])
@@ -314,7 +308,26 @@ class BankController extends Controller
             ->orderByDesc('balance_difference') // Order by highest difference
             ->get();
 
-        return view('pages.Accounting.ProfitLoss',compact('date_from','system_expenses','date_to','interest','panelty','other_chargers','loan_expenses','total_income','total_expenses'));
+
+        $system_revenue = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
+            ->join('company_bank_has_log', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.Bank_Account_Id')
+            ->where('acc_type_group', '=', 'Revenue')
+            ->where('company_bank_accounts.Bank_Type', '=', 'ChartOfAccount')
+            ->whereBetween('company_bank_has_log.Date_Time', [$date_from_2, $date_to_2])
+            ->select(
+                'company_bank_accounts.Bank_Name',
+                DB::raw("SUM(COALESCE(company_bank_has_log.Credit, 0)) as total_credit"),
+                DB::raw("SUM(COALESCE(company_bank_has_log.Debit, 0)) as total_debit"),
+                DB::raw("(SUM(COALESCE(company_bank_has_log.Credit, 0)) - SUM(COALESCE(company_bank_has_log.Debit, 0))) as balance_difference")
+            )
+            ->groupBy('company_bank_accounts.Bank_Name')
+            ->havingRaw("balance_difference != 0") // Exclude zero balance difference
+            ->orderByDesc('balance_difference') // Order by highest difference
+            ->get();
+
+
+
+        return view('pages.Accounting.ProfitLoss',compact('date_from','system_expenses','date_to','interest','panelty','other_chargers','loan_expenses','total_income','total_expenses','system_revenue'));
     }
 
     public function profitLog(Request $request){
