@@ -32,7 +32,7 @@ class KYCController extends Controller
     {
         $customers = tableWithBranch('customer')->select('idCustomer', 'First_Name', 'Last_Name')->get();
         $categories = tableWithBranch('insurance_category')->select('id_insurance_category', 'description')->get();
-        return view('pages.Insurance.insurance',compact('customers','categories'));
+        return view('pages.Insurance.Insurance',compact('customers','categories'));
     }
 
     /**
