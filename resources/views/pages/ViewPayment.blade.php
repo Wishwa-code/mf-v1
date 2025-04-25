@@ -625,97 +625,118 @@
         }
 
         function printReceipt() {
-            // Gather selected values
             const center = document.getElementById('center_details').options[document.getElementById('center_details').selectedIndex].text;
             const group = document.getElementById('group').options[document.getElementById('group').selectedIndex].text;
             const customer = document.getElementById('customer_id').options[document.getElementById('customer_id').selectedIndex].text;
             const agent = document.getElementById('agent').options[document.getElementById('agent').selectedIndex].text;
             const date = document.getElementById('select_date').value;
-
             const totalPendingAmount = document.getElementById('tot_amount').innerText;
 
-            // Gather table data (skip last column)
+            // Extract table rows
             let tableData = '';
             const tableRows = document.querySelectorAll('#loan_table tbody tr');
             tableRows.forEach(row => {
                 const columns = row.querySelectorAll('td');
                 tableData += `<tr>`;
-                columns.forEach((col, index) => {
-                    // Skip the last column (index starts from 0)
-                    if (index < columns.length - 1) {
-                        tableData += `<td>${col.innerHTML}</td>`;
-                    }
+                columns.forEach(col => {
+                    tableData += `<td>${col.innerText}</td>`;
                 });
-                tableData += `<td> </td>`;
-
                 tableData += `</tr>`;
             });
 
-            // Create a print-friendly format
+            // Create full HTML for print
             const printContent = `
-<div style="text-align: center;">
-    <h1>Repayment Collection Report</h1>
-</div>
-<div style="text-align: left;">
-    <table style="width: 100%; border-collapse: collapse;">
-        <tr>
-            <td style="width: 10%;"><strong>Date</strong></td>
-            <td style="width: 90%;">${date}</td>
-        </tr>
-        <tr>
-            <td style="width: 10%;"><strong>Customer</strong></td>
-            <td style="width: 90%;">${customer}</td>
-        </tr>
-        <tr>
-            <td style="width: 10%;"><strong>Center</strong></td>
-            <td style="width: 90%;">${center}</td>
-        </tr>
-        <tr>
-            <td style="width: 10%;"><strong>Group</strong></td>
-            <td style="width: 90%;">${group}</td>
-        </tr>
-        <tr>
-            <td style="width: 10%;"><strong>Agent</strong></td>
-            <td style="width: 90%;">${agent}</td>
-        </tr>
-    </table>
-    <br>
-    <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; text-align: left;">
-        <thead>
-            <tr>
-            <th style="text-align: center;">Center</th>
-            <th style="text-align: center;">Group</th>
-            <th style="text-align: center;">Customer Number</th>
-            <th style="text-align: center;">Loan Number</th>
-            <th style="text-align: center;">Customer Name</th>
-            <th style="text-align: center;">Date</th>
-            <th style="text-align: center;">Payment Method</th>
-            <th style="text-align: center;">Amount</th>
-            <th style="text-align: center;">Agent</th>
-            <th style="text-align: center;">Status</th>
-            <th style="text-align: center;">Comment</th>
-            <th style="width: 10%; text-align: center;">Note</th>
-            </tr>
-        </thead>
-        <tbody>
-            ${tableData}
-        </tbody>
-    </table>
-<div style="text-align: right; font-weight: bold;">
-        <h3>Total Collected Amount: ${totalPendingAmount}</h3>
-    </div>
+        <html>
+        <head>
+            <title>Repayment Collection Report</title>
+            <style>
+                @page {
+                    size: landscape;
+                    margin: 20mm;
+                }
+                body {
+                    font-family: Arial, sans-serif;
+                    font-size: 12px;
+                }
+                h1 {
+                    text-align: center;
+                    margin-bottom: 20px;
+                }
+                table {
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin-bottom: 20px;
+                }
+                th, td {
+                    border: 1px solid #000;
+                    padding: 6px;
+                    text-align: center;
+                }
+                th {
+                    background-color: #f2f2f2;
+                }
+                .section-info td {
+                    border: none;
+                    padding: 4px 8px;
+                    text-align: left;
+                }
+                .total {
+                    text-align: right;
+                    font-weight: bold;
+                    margin-top: 20px;
+                }
+            </style>
+        </head>
+        <body>
+            <h1>Repayment Collection Report</h1>
 
-</div>
-`;
+            <table class="section-info">
+                <tr><td><strong>Date:</strong></td><td>${date}</td></tr>
+                <tr><td><strong>Customer:</strong></td><td>${customer}</td></tr>
+                <tr><td><strong>Center:</strong></td><td>${center}</td></tr>
+                <tr><td><strong>Group:</strong></td><td>${group}</td></tr>
+                <tr><td><strong>Agent:</strong></td><td>${agent}</td></tr>
+            </table>
 
-            const newWindow = window.open('', '', 'height=600,width=800');
-            newWindow.document.write('<html><head><title>Print</title>');
-            newWindow.document.write('</head><body>');
+            <table>
+                <thead>
+                    <tr>
+                        <th>Receipt No</th>
+                        <th>Center No</th>
+                        <th>Center Location</th>
+                        <th>Group No</th>
+                        <th>Customer Number</th>
+                        <th>Loan Number</th>
+                        <th>Customer Name</th>
+                        <th>Date</th>
+                        <th>Payment Method</th>
+                        <th>Amount</th>
+                        <th>Agent</th>
+                        <th>Comment</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableData}
+                </tbody>
+            </table>
+
+            <div class="total">
+                <h3>Total Collected Amount: ${totalPendingAmount}</h3>
+            </div>
+        </body>
+        </html>
+    `;
+
+            // Open print window
+            const newWindow = window.open('', '', 'width=1200,height=800');
             newWindow.document.write(printContent);
-            newWindow.document.write('</body></html>');
             newWindow.document.close();
+            newWindow.focus();
             newWindow.print();
         }
+
+
 
     </script>
 
