@@ -168,6 +168,11 @@ function payment_slip(id) {
 
 
 function load_payment_reciept(id) {
+
+    // 🔽 Show loading spinner
+    document.getElementById('loadingSpinner').style.display = 'flex';
+
+
     $.ajax({
         type: "POST",
         url: "/view_payment_load_reciept/" + id + "/0",
@@ -261,6 +266,15 @@ function load_payment_reciept(id) {
 
                 $("#signature").text(user.Full_Name);
             }
+        },
+        complete: function () {
+            // ✅ Always hide spinner when request is done
+            document.getElementById('loadingSpinner').style.display = 'none';
+        },
+        error: function () {
+            // 🛑 Hide spinner on error too
+            document.getElementById('loadingSpinner').style.display = 'none';
+            alert('Failed to load payment details.');
         }
     });
 }
