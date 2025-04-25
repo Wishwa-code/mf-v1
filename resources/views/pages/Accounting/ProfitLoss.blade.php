@@ -233,7 +233,7 @@
                     <td></td>
                 </tr>
                 <tr>
-                    <td class="ps-3">Revenue from Loans</td>
+                    <td class="ps-3">Revenue From Loans</td>
                 </tr>
                 <tr class="interest-on-loans" style="cursor: pointer;">
                     <td class="ps-5">
@@ -251,9 +251,27 @@
                     <td class="ps-5">Other Charges On Loans</td>
                     <td>{{ number_format($other_chargers,2,'.',',') }}</td>
                 </tr>
+                <tr>
+                    <td class="ps-3">Other Revenue</td>
+                </tr>
+                @php
+                    $total_difference_revenue = 0;
+                @endphp
+
+                @if (!empty($system_revenue) && is_iterable($system_revenue))
+                    @foreach ($system_revenue as $revenue)
+                        @php
+                            $total_difference_revenue += $revenue->balance_difference; // Running total of balance differences
+                        @endphp
+                        <tr>
+                            <td class="ps-5">{{ $revenue->Bank_Name }}</td>
+                            <td>{{ number_format($revenue->balance_difference,2,'.',',') }}</td> {{-- Show only the difference --}}
+                        </tr>
+                    @endforeach
+                @endif
                 <tr class="total-revenue fw-bold border-bottom-light">
                     <td class="ps-3">Total Revenue</td>
-                    <td>{{ number_format($interest + $panelty + $other_chargers,2,'.',',') }}</td>
+                    <td>{{ number_format($total_difference_revenue+$interest+$panelty+$other_chargers,2,'.',',') }}</td>
                 </tr>
 
                 <!-- Expenses Section -->
@@ -291,7 +309,7 @@
                 <tr class="net-income-after border-top-bottom-dark bg-light fw-bold" style="font-size: 17px;">
                     <td>Net Profit/Loss</td>
                     <td>
-                        {{ number_format(($interest + $panelty + $other_chargers - $total_difference), 2, '.', ',') }}
+                        {{ number_format(($total_difference_revenue+$interest + $panelty + $other_chargers - $total_difference), 2, '.', ',') }}
                     </td>
                 </tr>
                 </tbody>

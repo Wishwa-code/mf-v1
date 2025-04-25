@@ -588,7 +588,7 @@ class ChartOfAccountController extends Controller
         $equity = [];
 
         // Net Profit / Loss logic
-        $final_result = ($profitData['interest'] + $profitData['panelty'] + $profitData['other_chargers'] - $profitData['total_difference']);
+        $final_result = ($profitData['total_difference_revenue'] +$profitData['interest'] + $profitData['panelty'] + $profitData['other_chargers'] - $profitData['total_difference']);
         $final_result = str_replace(',', '', $final_result);
         $final_result_float = floatval($final_result);
 
@@ -674,10 +674,6 @@ class ChartOfAccountController extends Controller
     {
         $date_from = '2024-08-20';
         $date_to = $request->date_to;
-        $interest = 0.00;
-        $panelty = 0.00;
-        $other_chargers = 0.00;
-        $total_income = 0.00;
         $total_expenses = 0.00;
 
         $date_to_2 = Carbon::parse($date_to)->endOfDay();
@@ -692,13 +688,11 @@ class ChartOfAccountController extends Controller
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
             ->sum('Panelty_Payment');
 
-        $loanQuery = tableWithBranch('loan_other_charges', 'loan_other_charges')
-            ->join('customer_loan', 'customer_loan.idCustomer_Loan', '=', 'loan_other_charges.Customer_Loan_idCustomer_Loan')
-            ->whereBetween('customer_loan.Date_Time', [$date_from, $date_to])
-            ->where('customer_loan.Status', '=', '0');
-
         // Get the sum of Amount
-        $other_chargers = $loanQuery->sum('loan_other_charges.Amount');
+        $other_chargers = tableWithBranch('company_bank_has_log')
+            ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
+            ->where('Type', '=', 'Loan Document Chargers')
+            ->sum('Debit');
 
         $total_income = tableWithBranch('expences')
             ->whereBetween('date', [$date_from_2, $date_to_2])
@@ -725,6 +719,24 @@ class ChartOfAccountController extends Controller
         // Calculate the total balance difference from system_expenses
         $total_difference = $system_expenses->sum('balance_difference');
 
+        $system_revenue = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
+            ->join('company_bank_has_log', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.Bank_Account_Id')
+            ->where('company_bank_accounts.Bank_Type', '=', 'ChartOfAccount')
+            ->where('acc_type_group', '=', 'Revenue')
+            ->whereBetween('company_bank_has_log.Date_Time', [$date_from_2, $date_to_2])
+            ->select(
+                'company_bank_accounts.Bank_Name',
+                DB::raw("SUM(COALESCE(company_bank_has_log.Credit, 0)) as total_credit"),
+                DB::raw("SUM(COALESCE(company_bank_has_log.Debit, 0)) as total_debit"),
+                DB::raw("(SUM(COALESCE(company_bank_has_log.Credit, 0)) - SUM(COALESCE(company_bank_has_log.Debit, 0))) as balance_difference")
+            )
+            ->groupBy('company_bank_accounts.Bank_Name')
+            ->havingRaw("balance_difference != 0") // Exclude zero balance difference
+            ->orderByDesc('balance_difference') // Order by highest difference
+            ->get();
+
+        $total_difference_revenue = $system_revenue->sum('balance_difference');
+
         // Return all the data to the BalanceSheet function
         return [
             'interest' => $interest,
@@ -733,6 +745,8 @@ class ChartOfAccountController extends Controller
             'total_income' => $total_income,
             'total_expenses' => $total_expenses,
             'total_difference' => $total_difference, // Add total_difference to the result
+            'total_revenue' => $system_revenue, // Add total_difference to the result
+            'total_difference_revenue' => $total_difference_revenue, // Add total_difference to the result
         ];
     }
 
