@@ -30,9 +30,9 @@ class KYCController extends Controller
      */
     public function create()
     {
-        $customers = DB::table('customer')->select('idCustomer', 'First_Name', 'Last_Name')->get();
-        $categories = DB::table('insurance_category')->select('id_insurance_category', 'description')->get();
-        return view('pages.Insurance.insurance',compact('customers','categories'));
+        $customers = tableWithBranch('customer')->select('idCustomer', 'First_Name', 'Last_Name')->get();
+        $categories = tableWithBranch('insurance_category')->select('id_insurance_category', 'description')->get();
+        return view('pages.Insurance.Insurance',compact('customers','categories'));
     }
 
     /**
@@ -73,7 +73,7 @@ class KYCController extends Controller
                 ->get();
 
             foreach ($categoryLevels as $level) {
-                $designations = DB::table('insurance_category_level_has_designations')
+                $designations = tableWithBranch('insurance_category_level_has_designations')
                     ->where('insurance_category_level_id', $level->id_insurance_category_has_level)
                     ->get();
 
@@ -156,7 +156,7 @@ class KYCController extends Controller
     // KYCController.php
     public function loadSection($section, $id)
     {
-        $customer = DB::table('customer')->where('idCustomer', $id)->first();
+        $customer = tableWithBranch('customer')->where('idCustomer', $id)->first();
 
         if (!$customer) {
             return response()->json(['error' => 'Customer not found'], 404);
@@ -306,6 +306,7 @@ class KYCController extends Controller
                 DB::raw("GROUP_CONCAT(CONCAT(a.designation, ' (', u.Full_Name, ')') SEPARATOR ', ') as approved_by")
             )
             ->where('a.status', 'Approved')
+            ->where('a.branch_id', '=', $branch_id)
             ->groupBy('a.insurance_id')
             ->get()
             ->keyBy('insurance_id');
@@ -343,6 +344,7 @@ class KYCController extends Controller
 
     public function loadInsurances(Request $request)
     {
+        $branch_id = session('branch_id');
         $subApproved = DB::table('insurance_approval_status as s')
             ->join('insurance_category_level_has_designations as d', function($join) {
                 $join->on('s.level_id', '=', 'd.insurance_category_level_id')
@@ -383,6 +385,7 @@ class KYCController extends Controller
                 DB::raw('IFNULL(ap.approved_count, 0) as approved_count'),
                 DB::raw('IFNULL(tl.total_count, 0) as total_count')
             )
+            ->where('insurance.branch_id', '=', $branch_id)
             ->when($request->status !== null, function ($q) use ($request) {
                 $q->where('insurance.status', $request->status);
             })
@@ -406,15 +409,17 @@ class KYCController extends Controller
 
     public function changeStatus(Request $request)
     {
+        $branch_id = session('branch_id');
         DB::table('insurance')
             ->where('id_insurance', $request->id)
+            ->where('branch_id', $branch_id)
             ->update(['status' => $request->status]);
 
         return response()->json(['success' => true]);
     }
     public function getApprovalLevels($categoryId, $insuranceId)
     {
-        $levels = DB::table('insurance_category_has_level')
+        $levels = tableWithBranch('insurance_category_has_level')
             ->where('category_id', $categoryId)
             ->orderBy('level')
             ->get();
@@ -423,7 +428,7 @@ class KYCController extends Controller
 
         foreach ($levels as $level) {
             // Get all designations under this level
-            $designations = DB::table('insurance_category_level_has_designations')
+            $designations = tableWithBranch('insurance_category_level_has_designations')
                 ->where('insurance_category_level_id', $level->id_insurance_category_has_level)
                 ->get();
 
@@ -431,7 +436,7 @@ class KYCController extends Controller
 
             foreach ($designations as $designation) {
                 // Check status from insurance_approval_status
-                $statusRow = DB::table('insurance_approval_status')
+                $statusRow = tableWithBranch('insurance_approval_status')
                     ->where('insurance_id', $insuranceId)
                     ->where('level_id', $level->id_insurance_category_has_level)
                     ->where('designation_id', $designation->designation_id)
@@ -469,14 +474,14 @@ class KYCController extends Controller
         $user_id = session('userid');
 
         // Get all allowed designation_ids for this level
-        $designationIds = DB::table('insurance_category_level_has_designations')
+        $designationIds = tableWithBranch('insurance_category_level_has_designations')
             ->where('insurance_category_level_id', $request->level_id)
             ->pluck('designation_id')
             ->toArray();
 
         // Check if user is authorized (unless Admin)
         if ($userDesignation !== 'Admin') {
-            $userHasDesignation = DB::table('designation')
+            $userHasDesignation = tableWithBranch('designation')
                 ->whereIn('idDesignation', $designationIds)
                 ->where('name', $userDesignation)
                 ->exists();
@@ -492,11 +497,11 @@ class KYCController extends Controller
             ->where('level_id', $request->level_id)
             ->whereIn('designation_id', $designationIds)
             ->where('status', '!=', 'Approved')
+            ->where('branch_id', $branch_id)
             ->update([
                 'user_id' => $user_id,
                 'description' => $request->note,
                 'status' => 'Approved',
-                'branch_id' => $branch_id,
                 'updated_at' => now(),
             ]);
 
@@ -519,19 +524,20 @@ class KYCController extends Controller
         // 1. Update the insurance status to "Rejected"
         DB::table('insurance')
             ->where('id_insurance', $insuranceId)
+            ->where('branch_id', '=', $branchId)
             ->update(['status' => '-1']);
 
         // 2. Fetch all levels for the insurance's category
-        $insurance = DB::table('insurance')->where('id_insurance', $insuranceId)->first();
+        $insurance = tableWithBranch('insurance')->where('id_insurance', $insuranceId)->first();
 
         if ($insurance) {
-            $levels = DB::table('insurance_category_has_level')
+            $levels = tableWithBranch('insurance_category_has_level')
                 ->where('category_id', $insurance->id_insurance_category)
                 ->get();
 
             foreach ($levels as $level) {
                 // 3. Fetch all designations under this level
-                $designations = DB::table('insurance_category_level_has_designations')
+                $designations = tableWithBranch('insurance_category_level_has_designations')
                     ->where('insurance_category_level_id', $level->id_insurance_category_has_level)
                     ->get();
 
@@ -541,10 +547,10 @@ class KYCController extends Controller
                         ->where('insurance_id', $insuranceId)
                         ->where('level_id', $level->id_insurance_category_has_level)
                         ->where('designation_id', $designation->designation_id)
+                        ->where('branch_id', $branchId)
                         ->update([
                             'status' => 'Rejected',
                             'user_id' => $userId,
-                            'branch_id' => $branchId,
                             'description' => $note,
                             'updated_at' => now(),
                         ]);
@@ -575,6 +581,7 @@ class KYCController extends Controller
 
             $updated = DB::table('insurance')
                 ->where('id_insurance', $insuranceId)
+                ->where('branch_id', '=', $branch_id)
                 ->update([
                     'status' => '1',
                 ]);

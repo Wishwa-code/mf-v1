@@ -218,12 +218,54 @@ class ExcelController extends Controller
     public function uploadExcelProduct(Request $request)
     {
         $data = $request->excelData;
+        foreach ($data as $key => $row) {
+            $center_name = $row[1] ?? "Default";
+            $center = tableWithBranch('center')->where('Name', '=', $center_name)->first();
+            if (!$center) {
+                $centerData = [
+                    'No' => '-',
+                    'Name' => $center_name,
+                    'Contact_no' => '-',
+                    'Address' => '-',
+                    'Route' => '-',
+                    'Center_incharge' => 1,
+                    'Location' => '-',
+                    'Groups' => "0",
+                    'Members' => "0",
+                    'route_id' => 1,
+                ];
+                $center_id = insertWithBranch('center', $centerData);
+            } else {
+                $center_id = $center->idCenter;
+            }
 
-        foreach ($data as $row) {
+            $group_name = $row[2] ?? "Default";  // Assuming group_name is in the same column
+            $group = tableWithBranch('customer_group')->where('Group_No', '=', $group_name)->where('center_id', '=', $center_id)->first();
+            if (!$group) {
+                $groupData = [
+                    'Group_No' => $group_name,
+                    'Name' => $group_name,
+                    'Leader_name' => '-',
+                    'Contact_no' => '-',
+                    'center_id' => $center_id,
+                ];
+                $group_id = insertWithBranch('customer_group', $groupData);
+            } else {
+                $group_id = $group->idCustomer_Group;
+            }
 
+
+            $cus_number=$row[3];
+            $customer=tableWithBranch('customer')->where('cus_number','=',$cus_number)->first();
+            if ($customer){
+                // Link customer to group
+                insertWithBranch('group_has_customer', [
+                    'cus_id' => $customer->idCustomer,
+                    'group_id' => $group_id
+                ]);
+            }
         }
-
-        return response()->json(['message' => 'Excel products imported successfully.']);
+        return response()->json(['message' => 'Data processed successfully.'], 200);
     }
 
 
