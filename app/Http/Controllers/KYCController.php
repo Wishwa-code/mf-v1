@@ -157,7 +157,7 @@ class KYCController extends Controller
     public function loadSection($section, $id)
     {
         $customer = tableWithBranch('customer')->where('idCustomer', $id)->first();
-
+        $branch_id=session('branch_id');
         if (!$customer) {
             return response()->json(['error' => 'Customer not found'], 404);
         }
@@ -180,10 +180,11 @@ class KYCController extends Controller
 
                 return view('pages.Insurance.kyc.loans', compact('loans'));
             case 'loanSummary':
-                $guaranteedLoans = tableWithBranch('witness as w','witness as w')
+                $guaranteedLoans = DB::table('witness as w')
                     ->join('customer_loan as cl', 'w.Customer_Loan_idCustomer_Loan', '=', 'cl.idCustomer_Loan')
                     ->join('customer as c', 'cl.Customer_idCustomer', '=', 'c.idCustomer')
                     ->where('w.cus_id', $id)
+                    ->where('w.branch_id', $branch_id)
                     ->select(
                         'cl.idCustomer_Loan',
                         'cl.Loan_No',
