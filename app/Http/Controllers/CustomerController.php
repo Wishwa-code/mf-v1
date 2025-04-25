@@ -188,13 +188,22 @@ class CustomerController extends Controller
                 $new_type = str_replace('@CountMonthly@', $monthly_count, $new_type);
             }
 
+            if (str_contains($new_type, '@RootlyCount@')) {
+
+                $root_count = tableWithBranch('customer')
+                    ->where('route_id', $request->root)
+                    ->count() ?: 0;
+                $root_count++;
+                $new_type = str_replace('@RootlyCount@', $root_count, $new_type);
+            }
+
 // Update company with new max ID
             updateWithBranch('company', 'id', '1', [
                 'customer_num_start_from' => $customer_max
             ]);
 
 // Split using separator (if defined)
-            if (!empty($company->customer_seperate_from) && !str_contains($cus_number, '@CountMonthly@')) {
+            if (!empty($company->customer_seperate_from) && !str_contains($cus_number, '@CountMonthly@') && !str_contains($cus_number, '@RootlyCount@')) {
                 $parts = explode($company->customer_seperate_from, $new_type);
 
                 foreach ($parts as &$part) {
@@ -209,6 +218,9 @@ class CustomerController extends Controller
             } else {
                 $new_cus_number = $new_type;
             }
+
+
+
 
 
 // Set final customer number with branch prefix

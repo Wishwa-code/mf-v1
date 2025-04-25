@@ -264,6 +264,7 @@
                             <button type="button" class="btn btn-primary" onclick="addToField('@Month@','Month_Number')">Month</button>
                             <button type="button" class="btn btn-primary" onclick="addToField('@Year@','Year')">Year</button>
                             <button type="button" class="btn btn-primary" onclick="addToField('@CountMonthly@','MonthlyCount')">Monthly Count</button>
+                            <button type="button" class="btn btn-primary" onclick="addToField('@RootlyCount@','RootlyCount')">Root Wise Count</button>
 
                         </div>
                     </div>

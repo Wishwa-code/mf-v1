@@ -272,6 +272,53 @@ class UserController extends Controller
 //                ->update(['cus_number' => $new_cus_number]);
 //        }
 
+//        $customer=tableWithBranch('customer')->get();
+//        foreach ($customer as $customers){
+//            $root=$customers->route_id;
+//            $root_count=tableWithBranch('customer')->where('route_id','=',$root)->count();
+//
+//        }
+
+//        // Get all customers ordered by route and idCustomer
+//        $customers = DB::table('customer')
+//            ->orderBy('route_id')
+//            ->orderBy('idCustomer')
+//            ->get();
+//
+//// Group customers by route_id
+//        $grouped = $customers->groupBy('route_id');
+//
+//        foreach ($grouped as $route_id => $customerList) {
+//            $count = 1; // Start from 1 for each route
+//
+//            foreach ($customerList as $customer) {
+//                $oldCusNumber = $customer->cus_number;
+//
+//                // Explode by '/' assuming format is like 'NHP/1/04/2025'
+//                $parts = explode('/', $oldCusNumber);
+//
+//                if (count($parts) >= 3) {
+//                    // Replace the middle part with the new count
+//                    $parts[1] = $count;
+//
+//                    // Join back together
+//                    $newCusNumber = implode('/', $parts);
+//
+//                    // Update the customer record
+//                    DB::table('customer')
+//                        ->where('idCustomer', $customer->idCustomer)
+//                        ->update(['cus_number' => $newCusNumber]);
+//
+//                    // Debug log
+//                    Log::info("Updated Customer ID {$customer->idCustomer} to {$newCusNumber}");
+//
+//                    $count++; // Increment for next customer in same route
+//                } else {
+//                    Log::warning("Invalid format for Customer ID {$customer->idCustomer}: {$oldCusNumber}");
+//                }
+//            }
+//        }
+
 
 
 
