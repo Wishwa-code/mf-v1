@@ -150,7 +150,6 @@
         background-color: #0056b3;
     }
 
-    /* Print styles */
     @media print {
         body * {
             visibility: hidden;
@@ -162,17 +161,29 @@
             position: absolute;
             left: 0;
             top: 0;
-            width: 80mm; /* 80mm width for thermal printer */
+            width: 80mm; /* Thermal printer width */
+            height: auto;
             background: white;
+            margin: 0;
+            padding: 0;
         }
         .modal-content {
-            width: 80mm; /* Ensures the modal content fits the thermal printer paper */
-            border: none; /* Removes border during print */
+            width: 80mm;
+            border: none;
         }
         .receipt {
             width: 100%;
-            padding: 10px;
+            padding: 5px;
+            font-size: 11px; /* smaller font size to fit */
         }
+        .receipt * {
+            page-break-inside: avoid; /* prevent page break inside */
+        }
+        @page {
+            size: A4 portrait;
+            margin: 10mm;
+        }
+
         .printer-design button {
             display: none;
         }
@@ -196,6 +207,23 @@
 
 
 @section('content')
+    <div id="loadingSpinner" style="
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(2px);
+    justify-content: center;
+    align-items: center;
+">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
 
     <div class="container-fluid">
 
@@ -1226,6 +1254,9 @@
             openModal();
             $('.btn-success').prop('disabled', true);
 
+            // 🔽 Show loading spinner
+            document.getElementById('loadingSpinner').style.display = 'flex';
+
             $.ajax({
                 type: "POST",
                 url: "/view_payment_load_reciept/" + id+"/1",
@@ -1315,6 +1346,15 @@
 
                         $("#signature").text(user.Full_Name);
                     }
+                },
+                complete: function () {
+                    // ✅ Always hide spinner when request is done
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                },
+                error: function () {
+                    // 🛑 Hide spinner on error too
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    alert('Failed to load payment details.');
                 }
             });
         }
@@ -1325,9 +1365,62 @@
             $("#printerModal").fadeIn();
         }
 
-        // Function to print the receipt
+        // Function to print receipt (assuming it's defined elsewhere)
         function printReceipt_view() {
-            window.print();
+            const modal = document.querySelector('#printerModal .printer-design');
+
+            // Create a new window
+            const printWindow = window.open('', '_blank', 'width=600,height=800');
+            printWindow.document.open();
+
+            // Clone styles from your current page
+            let styles = '';
+            Array.from(document.styleSheets).forEach(styleSheet => {
+                try {
+                    if (styleSheet.cssRules) {
+                        Array.from(styleSheet.cssRules).forEach(rule => {
+                            styles += rule.cssText;
+                        });
+                    }
+                } catch (e) {
+                    // Cross-origin stylesheet — skip
+                }
+            });
+
+            // Clone the modal's HTML
+            const receiptHTML = modal.outerHTML;
+
+            // Write to new window
+            printWindow.document.write(`
+        <html>
+        <head>
+            <title>Print Receipt</title>
+            <style>
+                ${styles}
+                @page {
+                    size: 80mm auto;
+                    margin: 0;
+                }
+                body {
+                    margin: 0;
+                    padding: 0;
+                    font-family: Arial, sans-serif;
+                }
+                .printer-design {
+                    width: 80mm;
+                    margin: auto;
+                    padding: 10px;
+                    background: white;
+                }
+            </style>
+        </head>
+        <body onload="window.print(); window.close();">
+            ${receiptHTML}
+        </body>
+        </html>
+    `);
+
+            printWindow.document.close();
         }
 
         // Event listener for the close button within the modal
