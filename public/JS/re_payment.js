@@ -176,7 +176,6 @@ function load_payment_reciept(id) {
         },
         success: function (data, textStatus, xhr) {
 
-            console.log(data);
             let customer = data.customer;
             let payment = data.payment;
             let loan = data.loan;
