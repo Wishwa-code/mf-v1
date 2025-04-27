@@ -152,7 +152,7 @@ class TodayPaymentController extends Controller
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
-            ->leftJoin('route', 'center.route_id', '=', 'route.id_route')
+            ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
             ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
             ->select(
                 'customer.First_Name as customer_name',
