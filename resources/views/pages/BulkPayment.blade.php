@@ -295,7 +295,7 @@
                             </div>
                         </div>
                         <hr>
-                        <div class="container">
+{{--                        <div class="container">--}}
                             <!-- Row for Totals -->
                             <div class="row align-items-center mt-3">
                                 <!-- Total Today Installment -->
@@ -322,17 +322,32 @@
                                     <input type="file" name="file" id="file" hidden>
                                 </div>
                             </div>
-
+                            <br>
                             <!-- Loan Table -->
-                            <div class="row mt-3">
-                                <div class="col-12">
-                                    <div class="table-responsive">
-                                        <table class="table table-striped table-bordered table-hover table-centered mb-0" id="loan_table">
+                            <div class="row m-0 p-0">
+                                <div class="card mb-3">
+                                    <div class="card-body p-2">
+                                        <h5 class="card-title mb-1">Selected Filters</h5>
+                                        <div id="selected_filters_content" class="d-flex flex-wrap gap-2">
+                                            <!-- Filters will be inserted here -->
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div class="col-12 p-0">
+                                    <div class="table-responsive" style="width: 100%;">
+                                        <table class="table table-striped table-bordered table-hover table-centered mb-0" id="loan_table" style="width: 100%;">
                                             <thead class="bg-light">
                                             <tr>
                                                 <th scope="col">Loan No</th>
                                                 <th scope="col">Member NIC</th>
+                                                <th scope="col">Center</th>
+                                                <th scope="col">Group</th>
                                                 <th scope="col">Loan Amount</th>
+                                                <th scope="col">Loan Balance</th>
+                                                <th scope="col">Last Payment Amount</th>
+                                                <th scope="col">Last Payment Date</th>
                                                 <th scope="col">Today Installment</th>
                                                 <th scope="col">Date</th>
                                                 <th scope="col">Amount</th>
@@ -346,13 +361,14 @@
                                 </div>
                             </div>
 
+
                             <!-- Pagination -->
                             <div class="row mt-3">
                                 <div class="col-12 text-end">
                                     <div id="pagination" class="d-flex justify-content-end"></div>
                                 </div>
                             </div>
-                        </div>
+{{--                        </div>--}}
 
 
                     </div> <!-- end card-->

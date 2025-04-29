@@ -1145,7 +1145,7 @@
 @section('script')
 
      <script src="../JS/validate.js"></script>
-    <script src="../JS/today_payment.js?n=21"></script>
+    <script src="../JS/today_payment.js?n=25"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         $(document).ready(function() {
@@ -1423,6 +1423,7 @@
             printWindow.document.close();
         }
 
+
         // Event listener for the close button within the modal
         document.querySelector('.close_2').addEventListener('click', function() {
             closeModal();
@@ -1444,7 +1445,7 @@
 
         function closeModal() {
             // $('.modal').modal('hide');
-            load_payment_table();
+            load_payment_table(currentLoadedPage);
             $("#printerModal").fadeOut();
             $("#issue-loan-modal").fadeOut();
             $("#issue-loan-modal_2").fadeOut();
