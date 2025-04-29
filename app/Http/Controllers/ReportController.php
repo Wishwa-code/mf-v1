@@ -749,6 +749,7 @@ class ReportController extends Controller
             ->select([
                 'branch.name as Branch',
                 'l.branch_id',
+                'l.Status',
                 'route.name as Route',
                 'center.name as Center',
                 'l.loan_no as LoanNo',
@@ -816,7 +817,7 @@ class ReportController extends Controller
         if ($loanProductId != '0') {
             $payments->where('lp.idLoan_Category', '=', $loanProductId);
         }
-
+        $payments->whereIn('l.Status', [0, 1]);
 // Group by necessary fields
         $payments->groupBy(
             'l.idCustomer_Loan','l.branch_id',
@@ -824,7 +825,7 @@ class ReportController extends Controller
             'branch.name', 'route.name', 'center.name',
             'l.loan_no', 'subquery.group_name',
             'cust.First_Name', 'cust.Last_Name',
-            'lp.name', 'u.Full_Name', 'l.Balance_Amount'
+            'lp.name', 'u.Full_Name', 'l.Balance_Amount','l.Status'
         );
 
 // Execute query first

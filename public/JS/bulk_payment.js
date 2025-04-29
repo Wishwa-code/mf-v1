@@ -13,6 +13,26 @@ function load_payment_table(page = 1) {
     let route = $("#route").val();
     let loan_number_search = $("#loan_number_search").val();
 
+
+    var routeText = $('#route option:selected').text();
+    var centerText = $('#center_details option:selected').text();
+    var groupText = $('#group option:selected').text();
+    var customerText = $('#customer_id option:selected').text();
+    var statusText = $('#status option:selected').text();
+    var loanNumberText = $('#loan_number_search option:selected').text();
+
+    var selectedFiltersHtml = `
+        <span class="badge bg-success">Route: ${routeText}</span>
+        <span class="badge bg-success">Center: ${centerText}</span>
+        <span class="badge bg-success">Group: ${groupText}</span>
+        <span class="badge bg-success">Customer: ${customerText}</span>
+        <span class="badge bg-success">Status: ${statusText}</span>
+        <span class="badge bg-success">Loan No: ${loanNumberText}</span>
+    `;
+
+    $('#selected_filters_content').html(selectedFiltersHtml);
+
+
     $.ajax({
         type: "POST",
         url: `/today_payment_load_check_bulk`,
@@ -63,7 +83,12 @@ function load_payment_table(page = 1) {
                         var row = `<tr>
                             <td>${item.Loan_No}</td>
                             <td>${name}</td>
+                            <td>${item.center_no}</td>
+                            <td>${item.group_name}</td>
                             <td>${parseFloat(item.Loan_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td>${parseFloat(item.Balance_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td>${parseFloat(item.Last_Payment_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td>${item.Last_Payment_Date}</td>
                             <td>${parseFloat(item.Today_installment).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             <td><input type="date" name="date_bulk" class="form-control" value="${inputDate || new Date().toISOString().split('T')[0]}" data-loan-id="${item.idCustomer_Loan}" /></td>
                             <td>
@@ -156,7 +181,7 @@ function automatePayments() {
                     for (let i = 0; i < totalRows; i++) {
                         const row = rows[i];
 
-                        let loan_number = $(row).find('td:eq(0)').text();
+
                         // Get the installment amount (first input field)
                         let payment_amount = $(row).find('input.numeric-input.amount-input').val();
                         let saving_amount = $(row).find('input.saving-amount-input').val() || 0;

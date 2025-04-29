@@ -152,7 +152,7 @@ class TodayPaymentController extends Controller
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
-            ->leftJoin('route', 'center.route_id', '=', 'route.id_route')
+            ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
             ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
             ->select(
                 'customer.First_Name as customer_name',
@@ -436,6 +436,12 @@ class TodayPaymentController extends Controller
             ->whereNotIn('Panelty_date', $poyaDates) // Exclude dates in $poya
             ->groupBy('Customer_Loan_idCustomer_Loan');
 
+        $lastPaymentSubquery = DB::table('customer_payments')
+            ->select(
+                'Customer_Loan_idCustomer_Loan',
+                DB::raw('MAX(Date) as last_payment_date')
+            )
+            ->groupBy('Customer_Loan_idCustomer_Loan');
 
         // Main query with joins, using the subquery as 'installment_summary'
         $loanQuery = DB::table('customer_loan')
@@ -444,16 +450,29 @@ class TodayPaymentController extends Controller
             })
             ->join('loan_category','customer_loan.Loan_Category_idLoan_Category','=','loan_category.idLoan_Category')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
+             FROM group_has_customer
+             LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
+                'customer.idCustomer', '=', 'subquery.cus_id')
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
-            ->leftJoin('route', 'center.route_id', '=', 'route.id_route')
+            ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
             ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
+            ->leftJoinSub($lastPaymentSubquery, 'last_payment', function($join) {
+                $join->on('customer_loan.idCustomer_Loan', '=', 'last_payment.Customer_Loan_idCustomer_Loan');
+            })
+            ->leftJoin('customer_payments as cp', function($join) {
+                $join->on('customer_loan.idCustomer_Loan', '=', 'cp.Customer_Loan_idCustomer_Loan')
+                    ->on('cp.Date', '=', 'last_payment.last_payment_date');
+            })
+
             ->select(
                 'customer.First_Name as customer_name',
                 'customer.Last_Name as customer_lastname',
                 'loan_category.saving_payment as saving_payment',
                 'customer.Nic as NIC',
+                'customer.route_id',
                 'customer.idCustomer',
                 'customer_loan.Loan_No as Loan_No',
                 'customer_loan.Amount as Loan_Amount',
@@ -463,13 +482,18 @@ class TodayPaymentController extends Controller
                 'customer_loan.capital_balance as capital_balance',
                 'customer_loan.Installment_Amount as Installment_Amount',
                 'customer_loan.Vehicle_No as Vehicle_No',
+                'customer_loan.Balance_Amount as Balance_Amount',
                 'installment_summary.Calculated_Installment_Count',
                 'installment_summary.Total_Balance',
                 'installment_summary.Total_Paid_Amount',
                 'installment_summary.Total_Balance_until',
                 'installment_summary.Today_installment',
                 'installment_summary.arrease',
-                 DB::raw('COALESCE(center.idCenter, "No Center") as Center_ID') // Handle NULL values
+                 DB::raw('COALESCE(center.idCenter, "No Center") as Center_ID'),
+                 DB::raw('IFNULL(center.Name, "-") as center_no'),
+                 DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
+                DB::raw('IFNULL(last_payment.last_payment_date, "-") as Last_Payment_Date'),
+                DB::raw('IFNULL(cp.Amount, 0) as Last_Payment_Amount'),
             )
             ->where('customer_loan.branch_id','=',session('branch_id'))
             ->where('customer_loan.Status', '=', '0');
@@ -484,7 +508,7 @@ class TodayPaymentController extends Controller
             });
         }
         if ($route != '0') {
-            $loanQuery->where('route.id_route', '=', $route);
+            $loanQuery->where('customer.route_id', '=', $route);
         }
         if ($group != '0') {
             $loanQuery->where('customer_group.idCustomer_Group', '=', $group);
@@ -526,7 +550,7 @@ class TodayPaymentController extends Controller
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
-            ->leftJoin('route', 'center.route_id', '=', 'route.id_route')
+            ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
             ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
             ->select(
                 'Customer_Loan_idCustomer_Loan',
@@ -553,7 +577,7 @@ class TodayPaymentController extends Controller
             });
         }
         if ($route != '0') {
-            $loanQuery_2->where('route.id_route', '=', $route);
+            $loanQuery_2->where('customer.id_route', '=', $route);
         }
         if ($group != '0') {
             $loanQuery_2->where('customer_group.idCustomer_Group', '=', $group);

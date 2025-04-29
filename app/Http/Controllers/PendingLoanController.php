@@ -593,6 +593,7 @@ class PendingLoanController extends Controller
         $branch = $request->input('branch');
         $route = $request->input('route');
         $center_details = $request->input('center_details');
+        $date_filterdate_filter = $request->input('date_filter');
 
         // Subqueries for aggregated data
         $installment_subquery = DB::table('installments')
@@ -603,6 +604,7 @@ class PendingLoanController extends Controller
         $loan_log_subquery = DB::table('Loan_Log')
             ->select(
                 'Loan_ID',
+                'Date_Time',
                 DB::raw('SUM(
             CASE 
                 WHEN Type = "Customer Payment" THEN Capital_Payment 
@@ -635,7 +637,7 @@ class PendingLoanController extends Controller
     END
 ) as collected_repayments')
             )
-            ->groupBy('Loan_ID');
+            ->groupBy('Loan_ID','Date_Time');
 
 
 
@@ -688,10 +690,10 @@ class PendingLoanController extends Controller
 
 //        // 📌 Apply Filters to Center Summary Query
         if (!empty($date_from)) {
-            $centerSummaryQuery->whereDate('customer_loan.Date_Time', '>=', $date_from);
+            $centerSummaryQuery->whereDate('Loan_Log.Date_Time', '>=', $date_from);
         }
         if (!empty($date_to)) {
-            $centerSummaryQuery->whereDate('customer_loan.Date_Time', '<=', $date_to);
+            $centerSummaryQuery->whereDate('Loan_Log.Date_Time', '<=', $date_to);
         }
         if ($branch != "0") {
             $centerSummaryQuery->where('customer_loan.branch_id', $branch);
@@ -744,10 +746,10 @@ class PendingLoanController extends Controller
 
         // 📌 Apply Filters to Loan Details Query
         if (!empty($date_from)) {
-            $loanDetailsQuery->whereDate('customer_loan.Date_Time', '>=', $date_from);
+            $loanDetailsQuery->whereDate('Loan_Log.Date_Time', '>=', $date_from);
         }
         if (!empty($date_to)) {
-            $loanDetailsQuery->whereDate('customer_loan.Date_Time', '<=', $date_to);
+            $loanDetailsQuery->whereDate('Loan_Log.Date_Time', '<=', $date_to);
         }
         if ($branch != "0") {
             $loanDetailsQuery->where('customer_loan.branch_id', $branch);
