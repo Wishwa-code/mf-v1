@@ -181,7 +181,7 @@
                 var branchName = {!! json_encode(session('branch_name')) !!} + ' Branch' || 'All Branches';
                 var executiveName = {!! json_encode(session('username')) !!} || 'All Executives';
                 var selectedDate = $('#date_from').val() || 'All Dates';
-                var companyName = {!! json_encode(session('company_name')) !!}.replace(/[^\w\s]/gi, '');
+                var companyName = {!! json_encode(session('company_name')) !!}.replace(/[^\w\s&]/gi, '');
                 var totalAmount = 0;
 
                 var data = [];

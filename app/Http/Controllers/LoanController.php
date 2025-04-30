@@ -1210,6 +1210,17 @@ class LoanController extends Controller
 // Save the updated loan
         $loan->save();
 
+        if (!empty($request->installment)) {
+            $firstInstallmentDate = $request->installment[0]['installmentDate'];
+            $customerLoanId = $loan->idCustomer_Loan;
+
+            DB::table('installments')
+                ->where('Customer_Loan_idCustomer_Loan', $customerLoanId)
+                ->whereDate('Installment_Date', '>=', $firstInstallmentDate)
+                ->delete();
+
+        }
+
         foreach ($request->installment as $item) {
             $customerLoanId = $loan->idCustomer_Loan;
 
