@@ -852,9 +852,9 @@ $banner = DB::select($query);
                                                 <a href="/loan_settlement">Loan Settlement</a>
                                             </li>
 
-{{--                                            <li>--}}
-{{--                                                <a href="/loan_reschedule">Loan Reschedule</a>--}}
-{{--                                            </li>--}}
+                                            <li>
+                                                <a href="/loan_reschedule">Loan Reschedule</a>
+                                            </li>
                                         @else
                                     @endif
 
