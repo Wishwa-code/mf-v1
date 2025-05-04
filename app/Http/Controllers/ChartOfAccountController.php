@@ -21,35 +21,38 @@ class ChartOfAccountController extends Controller
      */
     public function index(Request $request, $group = null)
     {
-        // Base query
-        $query = tableWithBranch('company_bank_accounts');
+        $query = DB::table('company_bank_accounts as c')
+            ->leftJoin('company_bank_accounts as p', 'c.primary_account', '=', 'p.Idbank')
+            ->select(
+                'c.*',
+                DB::raw("COALESCE(p.Bank_Name, '-') as primary_account_name")
+            );
 
-        // Filter by group (if not 'all')
         if ($group && $group !== 'all') {
-            $query->where('acc_type_group', ucfirst($group)); // Match exact case (e.g., 'Assets')
+            $query->where('c.acc_type_group', ucfirst($group));
         }
 
-        // Filter by code, name, and type (if provided)
         if ($request->has('code') && !empty($request->code)) {
-            $query->where('code', 'LIKE', '%' . $request->code . '%');
+            $query->where('c.code', 'LIKE', '%' . $request->code . '%');
         }
 
         if ($request->has('name') && !empty($request->name)) {
-            $query->where('acc_name', 'LIKE', '%' . $request->name . '%');
+            $query->where('c.acc_name', 'LIKE', '%' . $request->name . '%');
         }
 
         if ($request->has('type') && !empty($request->type)) {
-            $query->where('acc_type', 'LIKE', '%' . $request->type . '%');
+            $query->where('c.acc_type', 'LIKE', '%' . $request->type . '%');
+        }
+        if ($request->boolean('sub_only')) {
+            $query->whereNotNull('c.primary_account')->where('c.primary_account', '!=', 0);
         }
 
-//        $query->where('Bank_Type', '!=', 'Bank');
-//        $query->where('Bank_Type', '!=', 'Collector');
-
-        // Fetch the filtered data
+        $query->where('c.branch_id','=',session('branch_id'));
         $data = $query->get();
 
         return response()->json($data);
     }
+
 
 
     /**
@@ -57,7 +60,10 @@ class ChartOfAccountController extends Controller
      */
     public function create()
     {
-        //
+        $company_banks = tableWithBranch('company_bank_accounts')
+            ->get();
+
+        return view('pages.Accounting.ChartOfAccount',compact('company_banks'));
     }
 
     /**
@@ -75,6 +81,13 @@ class ChartOfAccountController extends Controller
             'description' => 'nullable|string',
         ]);
 
+
+        $isSubAccount=$request->isSubAccount;
+        $primaryAccountSelect="0";
+        if ($isSubAccount=="1"){
+            $primaryAccountSelect=$request->primaryAccountSelect;
+        }
+
         // Insert data into DB
 
         $user_id = (int)session('userid');
@@ -89,6 +102,7 @@ class ChartOfAccountController extends Controller
             'type' => $request->input('acc_type'),
             'cashflow' => $request->input('cash_flow_type'),
             'acc_type_group' => $request->input('acc_type_group'),
+            'primary_account' => $primaryAccountSelect,
             'User' => $user_id,
         ];
         if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('code', '=', $request->input('code'))->exists()) {
@@ -554,6 +568,7 @@ class ChartOfAccountController extends Controller
         $non_current_assets = [];
         $equity = [];
         $liabilities = [];
+        $assets = [];
 
         // Calculate Totals (Ensure total is `0` if dataset is empty)
         $total_revenue =  0;
@@ -562,12 +577,13 @@ class ChartOfAccountController extends Controller
         $total_liabilities =  0;
         $total_equity =  0;
         $total_liabilities_and_equity =  0;
+        $final_result_float =  0;
 
         return view('pages.Accounting.BalanceSheet', compact(
             'revenue', 'expenses', 'current_assets', 'non_current_assets',
             'liabilities', 'equity', 'total_revenue', 'total_expenses',
             'total_assets', 'total_liabilities', 'total_equity',
-            'total_liabilities_and_equity', 'date_from', 'date_to'
+            'total_liabilities_and_equity', 'date_from', 'date_to','assets','final_result_float'
         ));
     }
 
@@ -578,7 +594,6 @@ class ChartOfAccountController extends Controller
         // Call the profit function
         $profitData = $this->profit($request);
 
-
         // Initialize variables
         $total_assets = 0;
         $total_liabilities = 0;
@@ -588,82 +603,93 @@ class ChartOfAccountController extends Controller
         $equity = [];
 
         // Net Profit / Loss logic
-        $final_result = ($profitData['total_difference_revenue'] +$profitData['interest'] + $profitData['panelty'] + $profitData['other_chargers'] - $profitData['total_difference']);
+        $final_result = ($profitData['total_difference_revenue'] + $profitData['interest'] + $profitData['panelty'] + $profitData['other_chargers'] - $profitData['total_difference']);
         $final_result = str_replace(',', '', $final_result);
         $final_result_float = floatval($final_result);
 
-        if ($final_result_float > 0) {
-            $liabilities[] = [
-                'idbank' => 'Net Profit',
-                'name' => 'Net Profit',
-                'balance' => $final_result_float
-            ];
-            $total_liabilities += $final_result_float;
-        } elseif ($final_result_float < 0) {
-
-            $assets[] = [
-                'idbank' => 'Net Loss',
-                'name' => 'Net Loss',
-                'balance' => abs($final_result_float)
-            ];
-            $total_assets += abs($final_result_float);
-        }
-
-        // Subquery to get the ID of the latest log per bank account before or on $date_to
+        // Subquery to get the latest log for each account
         $latestLogs = tableWithBranch('company_bank_has_log as log1')
             ->select(DB::raw('MAX(log1.Id) as latest_log_id'))
             ->whereDate('log1.Date_Time', '<=', $date_to)
             ->groupBy('log1.Bank_Account_Id');
 
-// Join with main tables and get required info
-        $asset_query = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
+        // Fetch account balances with latest logs
+        $accountData = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
             ->join('company_bank_has_log', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.Bank_Account_Id')
             ->joinSub($latestLogs, 'latest_logs', function ($join) {
                 $join->on('company_bank_has_log.Id', '=', 'latest_logs.latest_log_id');
             })
-            ->whereIn('company_bank_accounts.acc_type_group', ['Assets', 'Equity', 'Liabilities'])
-            ->where('Bank_Type','!=','System_default_2')
+            ->whereIn('company_bank_accounts.acc_type_group', ['Assets', 'Liabilities', 'Equity'])
+            ->where('company_bank_accounts.Bank_Type', '!=', 'System_default_2')
             ->select(
-                'company_bank_accounts.acc_type_group',
                 'company_bank_accounts.Idbank',
                 'company_bank_accounts.Bank_Name',
+                'company_bank_accounts.acc_type_group',
+                'company_bank_accounts.primary_account',
                 'company_bank_has_log.Balance'
             )
             ->get();
 
-
-// Log the results
-        foreach ($asset_query as $item) {
-
-            $formatted = [
+        // Process accounts
+        foreach ($accountData as $item) {
+            $entry = [
                 'idbank' => $item->Idbank,
                 'name' => $item->Bank_Name,
                 'balance' => floatval($item->Balance),
+                'primary_account' => $item->primary_account ?? 0
             ];
 
-            if ($item->acc_type_group === 'Assets') {
-                $assets[] = $formatted;
-                $total_assets += $formatted['balance'];
-            } elseif ($item->acc_type_group === 'Liabilities') {
-                $liabilities[] = $formatted;
-                $total_liabilities += $formatted['balance'];
-            } elseif ($item->acc_type_group === 'Equity') {
-                $equity[] = $formatted;
-                $total_equity += $formatted['balance'];
+            switch ($item->acc_type_group) {
+                case 'Assets':
+                    $assets[] = $entry;
+                    $total_assets += $entry['balance'];
+                    break;
+                case 'Liabilities':
+                    $liabilities[] = $entry;
+                    $total_liabilities += $entry['balance'];
+                    break;
+                case 'Equity':
+                    $equity[] = $entry;
+                    $total_equity += $entry['balance'];
+                    break;
             }
         }
 
-
-
+        // Add Net Profit or Net Loss
+        if ($final_result_float > 0) {
+            $liabilities[] = [
+                'idbank' => 'Net Profit',
+                'name' => 'Net Profit',
+                'balance' => $final_result_float,
+                'primary_account' => 0
+            ];
+            $total_liabilities += $final_result_float;
+        } elseif ($final_result_float < 0) {
+            $assets[] = [
+                'idbank' => 'Net Loss',
+                'name' => 'Net Loss',
+                'balance' => abs($final_result_float),
+                'primary_account' => 0
+            ];
+            $total_assets += abs($final_result_float);
+        }
 
         $total_liabilities_and_equity = $total_liabilities + $total_equity;
 
         return view('pages.Accounting.BalanceSheet', compact(
-            'date_to', 'assets', 'liabilities', 'equity',
-            'total_assets', 'total_liabilities', 'total_equity',
-            'total_liabilities_and_equity', 'final_result'
+            'date_to',
+            'assets',
+            'liabilities',
+            'equity',
+            'total_assets',
+            'total_liabilities',
+            'total_equity',
+            'total_liabilities_and_equity',
+            'final_result',
+            'final_result_float'
         ));
     }
+
 
 
 

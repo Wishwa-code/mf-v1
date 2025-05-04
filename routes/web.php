@@ -544,9 +544,8 @@ Route::post('/savings_report_filter','\App\Http\Controllers\ReportController@sav
 
 
 //Accounting
-Route::get('/ChartOfAccount', function () {
-    return view('pages.Accounting.ChartOfAccount');
-});
+
+Route::get('/ChartOfAccount', [ChartOfAccountController::class, 'create'])->name('chart_of_account.create');
 
 Route::post('/chart_of_account/store', [ChartOfAccountController::class, 'store'])->name('chart_of_account.store');
 Route::get('/chart_of_account/list/{group?}', [ChartOfAccountController::class, 'index'])->name('chart_of_account.list');

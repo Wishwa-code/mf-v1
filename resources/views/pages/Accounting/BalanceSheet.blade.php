@@ -174,18 +174,32 @@
                 <tr><th style="text-align: left">Accounts</th><th style="text-align: right">Balance Amount</th></tr>
                 </thead>
                 <tbody>
-
                 <!-- Assets Section -->
                 <tr class="fw-bold"><td>1. Assets</td><td></td></tr>
 
-                @if (!empty($assets))
-                    @foreach($assets as $asset)
-                        <tr onclick="openFinancialReportModal('{{ $asset['idbank'] }}', '{{ $asset['name'] }}')"
-                            class="clickable-row blinking">
-                            <td class="ps-3">{{ $asset['name'] }}</td>
-                            <td>{{ formatNegativeInParentheses($asset['balance']) }}</td>
+                @php
+                    $groupedAssets = collect($assets)->groupBy('primary_account');
+                @endphp
+
+                @foreach ($groupedAssets[0] ?? [] as $parent)
+                    <tr onclick="openFinancialReportModal('{{ $parent['idbank'] }}', '{{ $parent['name'] }}')" class="clickable-row blinking">
+                        <td class="ps-3">{{ $parent['name'] }}</td>
+                        <td>{{ formatNegativeInParentheses($parent['balance']) }}</td>
+                    </tr>
+                    @foreach ($groupedAssets[$parent['idbank']] ?? [] as $child)
+                        <tr onclick="openFinancialReportModal('{{ $child['idbank'] }}', '{{ $child['name'] }}')" class="clickable-row text-muted">
+                            <td class="ps-5">↳ {{ $child['name'] }}</td>
+                            <td>{{ formatNegativeInParentheses($child['balance']) }}</td>
                         </tr>
                     @endforeach
+                @endforeach
+
+                {{-- Net Loss (if applicable) --}}
+                @if ($final_result_float < 0)
+                    <tr class="clickable-row blinking">
+                        <td class="ps-3">Net Loss</td>
+                        <td>{{ formatNegativeInParentheses(abs($final_result_float)) }}</td>
+                    </tr>
                 @endif
 
                 <tr class="fw-bold total-row">
@@ -196,15 +210,30 @@
                 <!-- Liabilities Section -->
                 <tr class="fw-bold"><td>2. Liabilities</td><td></td></tr>
 
-                @if (!empty($liabilities))
-                    @foreach($liabilities as $liability)
-                        <tr onclick="openFinancialReportModal('{{ $liability['idbank'] }}', '{{ $liability['name'] }}')"
-                            class="clickable-row blinking">
-                            <td class="ps-3">{{ $liability['name'] }}</td>
-                            <td>{{ formatNegativeInParentheses($liability['balance']) }}</td>
+                @php
+                    $groupedLiabilities = collect($liabilities)->groupBy('primary_account');
+                @endphp
+
+                {{-- Net Profit (if applicable) --}}
+                @if ($final_result_float > 0)
+                    <tr class="clickable-row blinking">
+                        <td class="ps-3">Net Profit</td>
+                        <td>{{ formatNegativeInParentheses($final_result_float) }}</td>
+                    </tr>
+                @endif
+
+                @foreach ($groupedLiabilities[0] ?? [] as $parent)
+                    <tr onclick="openFinancialReportModal('{{ $parent['idbank'] }}', '{{ $parent['name'] }}')" class="clickable-row blinking">
+                        <td class="ps-3">{{ $parent['name'] }}</td>
+                        <td>{{ formatNegativeInParentheses($parent['balance']) }}</td>
+                    </tr>
+                    @foreach ($groupedLiabilities[$parent['idbank']] ?? [] as $child)
+                        <tr onclick="openFinancialReportModal('{{ $child['idbank'] }}', '{{ $child['name'] }}')" class="clickable-row text-muted">
+                            <td class="ps-5">↳ {{ $child['name'] }}</td>
+                            <td>{{ formatNegativeInParentheses($child['balance']) }}</td>
                         </tr>
                     @endforeach
-                @endif
+                @endforeach
 
                 <tr class="fw-bold total-row">
                     <td>Total Liabilities</td>
@@ -214,15 +243,22 @@
                 <!-- Equity Section -->
                 <tr class="fw-bold"><td>3. Equity</td><td></td></tr>
 
-                @if (!empty($equity))
-                    @foreach($equity as $equityItem)
-                        <tr onclick="openFinancialReportModal('{{ $equityItem['idbank'] }}', '{{ $equityItem['name'] }}')"
-                            class="clickable-row blinking">
-                            <td class="ps-3">{{ $equityItem['name'] }}</td>
-                            <td>{{ formatNegativeInParentheses($equityItem['balance']) }}</td>
+                @php
+                    $groupedEquity = collect($equity)->groupBy('primary_account');
+                @endphp
+
+                @foreach ($groupedEquity[0] ?? [] as $parent)
+                    <tr onclick="openFinancialReportModal('{{ $parent['idbank'] }}', '{{ $parent['name'] }}')" class="clickable-row blinking">
+                        <td class="ps-3">{{ $parent['name'] }}</td>
+                        <td>{{ formatNegativeInParentheses($parent['balance']) }}</td>
+                    </tr>
+                    @foreach ($groupedEquity[$parent['idbank']] ?? [] as $child)
+                        <tr onclick="openFinancialReportModal('{{ $child['idbank'] }}', '{{ $child['name'] }}')" class="clickable-row text-muted">
+                            <td class="ps-5">↳ {{ $child['name'] }} </td>
+                            <td>{{ formatNegativeInParentheses($child['balance']) }}</td>
                         </tr>
                     @endforeach
-                @endif
+                @endforeach
 
                 <tr class="fw-bold total-row">
                     <td>Total Equity</td>
@@ -232,15 +268,11 @@
                 <!-- Final Check -->
                 <tr class="fw-bold total-row">
                     <td>Total Liabilities & Equity</td>
-                    <td >{{ formatNegativeInParentheses($total_liabilities_and_equity) }}</td>
+                    <td>{{ formatNegativeInParentheses($total_liabilities_and_equity) }}</td>
                 </tr>
-
-{{--                <tr class="fw-bold highlight">--}}
-{{--                    <td>(Must Equal Total Assets)</td>--}}
-{{--                    <td>{{ formatNegativeInParentheses($total_assets+$total_liabilities_and_equity) }}</td>--}}
-{{--                </tr>--}}
-
                 </tbody>
+
+
             </table>
         </div>
 

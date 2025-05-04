@@ -207,7 +207,7 @@ class AgreementController extends Controller
             '@Total_Loan_Amount@' => $loan->Total_Loan_Amount, // Assuming 'Total_Amount' is a column in the customer_loan table
             '@Installment_Amount@' => $loan->Installment_Amount,
             '@Collection_Type@' => $loan->Collection_Type, // Assuming 'Collection_Type' is a column in the customer_loan table
-            '@Created_User@' => $User->Full_Name, // Assuming 'Created_User' is a column in the customer_loan table
+            '@Created_User@' => $User->Full_Name ?? 'Admin', // Assuming 'Created_User' is a column in the customer_loan table
             '@Lending_Officer@' => $Lending_Officer->Full_Name, // Assuming 'Lending_Officer' is a column in the customer_loan table
             '@Customer_No@' => $customers->cus_number,
             '@Customer_Title@' => $customers->Title, // Assuming 'Title' is a column in the customer table

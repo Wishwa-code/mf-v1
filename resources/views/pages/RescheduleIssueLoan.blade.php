@@ -206,7 +206,7 @@
                                                         <div class="col-md-6">
                                                             <div class="mb-3">
                                                                 <label for="loan_amount" class="form-label">Loan Amount<span class="required-asterisk">*</span></label>
-                                                                <input type="text" id="loan_amount" class="form-control" onkeyup="calculateInterest()" disabled>
+                                                                <input type="text" id="loan_amount" class="form-control" disabled>
                                                                 <input type="hidden" id="loan_amount_from" class="form-control">
                                                                 <input type="hidden" id="loan_amount_to" class="form-control">
                                                                 <p id="loan_display" style="color: blue; margin-top: 5px;"></p>
@@ -437,7 +437,7 @@
                                                         <div class="col-md-6">
                                                             <div class="mb-3">
                                                                 <label for="loan_amount" class="form-label">Loan Amount<span class="required-asterisk">*</span></label>
-                                                                <input type="text" id="loan_amount" class="form-control" onkeyup="calculateInterest()" disabled>
+                                                                <input type="text" id="loan_amount" class="form-control"  disabled>
                                                                 <input type="hidden" id="loan_amount_from" class="form-control" >
                                                                 <input type="hidden" id="loan_amount_to" class="form-control">
                                                                 <p id="loan_display" style="color: blue; margin-top: 5px;"></p>
@@ -1028,7 +1028,7 @@
                                 <br><br><br><br><br><br>
                                 <!-- HTML -->
                                 <div class="mt-4" id="button_feild">
-                                    <a href="#" class="btn btn-success" id="createLoanButton" style="float: right" onclick="save_loan()">Reschedule Loan
+                                    <a href="#" class="btn btn-success" id="createLoanButton" style="float: right" onclick="reshedule()">Reschedule Loan
                                         <i class="bi bi-arrow-right"></i></a>
                                 </div>
                                 <div class="mb-4" hidden>
@@ -1137,13 +1137,228 @@
             $("#leasing_feild").slideUp();
             $("#leasing_feild_vehicle").slideUp();
             $("#lending_officer_feild").slideUp();
+
             load_individual_customer().then(function () {
                 const selectedCustomerId = "{{ $customer->idCustomer }}";
                 $('#customer_details').val(selectedCustomerId).trigger('change');
             });
             $('#package_details').val({{$product_id}}).trigger('change');
             load_package_details({{$product_id}});
+
         });
+
+
+        function reshedule(){
+            let loan_id = @json($loan_id);
+            let loan_amount = $("#loan_amount").val();
+            let interest = $("#loan_interest").val();
+            let panelty_amount = $("#penalty_percentage").val();
+            let ins_count = $("#loan_period").val();
+            let interest_amount = $("#interest_amount").val();
+            let total_loan_charge = $("#total_loan_charge").text();
+            let saving_amount = $("#saving_amount").text();
+            let total_loan_amount = $("#total_loan_amount").text();
+            let new_interest_amount = $("#new_interest_amount").text();
+            let collection_type = $("#repayment_type").val();
+            let installment_date_txt = $("#installment_date_txt").val();
+            let panelty_date = $("#panelty_date_2").text();
+            let total_capital_amount = $("#total_capital_amount").text();
+            let total_interest_amount = $("#total_interest_amount").text();
+            let interest_method = $("#interest_method").val();
+            let reschedule_type = $("#reschedule_type").val();
+            let saving=$("#enable_saving").text();
+            let Interest_period = $("#interest_period").val();
+
+// Initialize an empty array to store table data
+            installment=[];
+
+// Iterate over each row of the table
+            $('#installment_table tbody tr').each(function() {
+                // Initialize an empty object to store row data
+                var rowData = {};
+
+                // Iterate over each cell of the row
+                $(this).find('td').each(function(index) {
+                    // Get the text content of the cell
+                    var cellData = $(this).text();
+
+                    // Assign the cell data to the corresponding property of the row data object
+                    // Assuming the order of cells matches the order of headers in the table
+                    switch(index) {
+                        case 0:
+                            rowData.No = cellData; // Add No column data
+                            break;
+                        case 1:
+                            rowData.installmentDate = cellData;
+                            break;
+                        case 2:
+                            rowData.installmentAmount = cellData;
+                            break;
+                        case 3:
+                            rowData.capitalAmount = cellData;
+                            break;
+                        case 4:
+                            rowData.interestAmount = cellData;
+                            break;
+                        case 5:
+                            rowData.panaltyDate = cellData;
+                            break;
+                        case 6:
+                            rowData.panaltyAmount = cellData;
+                            break;
+                        case 7:
+                            rowData.savingAmount = cellData;
+                            break;
+                        case 8:
+                            rowData.totalAmount = cellData;
+                            break;
+                        case 9:
+                            rowData.paidAmount = cellData;
+                            break;
+                        case 10:
+                            rowData.panaltyBalance = cellData;
+                            break;
+                        case 11:
+                            rowData.installmentBalance = cellData;
+                            break;
+                        case 12:
+                            rowData.savingBalance = cellData;
+                            break;
+                        case 13:
+                            rowData.totalBalance = cellData;
+                            break;
+                        case 14:
+                            rowData.status = cellData;
+                            break;
+                        default:
+                            break;
+                    }
+
+                });
+
+                // Push the row data object to the table data array
+                installment.push(rowData);
+            });
+
+
+            // Initialize an empty array to store table data
+            loan_charge_table=[];
+
+// Iterate over each row of the table
+            $('#loan_charge_table tbody tr').each(function() {
+                // Initialize an empty object to store row data
+                var rowData = {};
+
+                // Iterate over each cell of the row
+                $(this).find('td').each(function(index) {
+                    // Get the text content of the cell
+                    var cellData = $(this).text();
+
+                    // Assign the cell data to the corresponding property of the row data object
+                    // Assuming the order of cells matches the order of headers in the table
+                    switch(index) {
+                        case 0:
+                            rowData.Description = cellData; // Add No column data
+                            break;
+                        case 1:
+                            rowData.Type = cellData;
+                            break;
+                        case 2:
+                            rowData.Amount = cellData;
+                            break;
+                        default:
+                            break;
+                    }
+
+                });
+
+                // Push the row data object to the table data array
+                loan_charge_table.push(rowData);
+            });
+
+            if (installment==""){
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: 'No Installment Found!',
+                })
+
+            }else{
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "Do you want to Reschedule this Loan ?",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, Reschedule it!",
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            type: "POST",
+                            url: "/loan_reschedule",
+                            headers: {
+                                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                            },
+                            data: {
+                                installment:installment,
+                                loan_id:loan_id,
+                                reschedule_type:reschedule_type,
+                                saving_amount:saving_amount,
+                                saving:saving,
+                                loan_charge_table:loan_charge_table,
+                                loan_amount: loan_amount,
+                                interest: interest,
+                                panelty_amount: panelty_amount,
+                                ins_count: ins_count,
+                                interest_amount:interest_amount,
+                                total_loan_charge:total_loan_charge,
+                                total_loan_amount:total_loan_amount,
+                                new_interest_amount:new_interest_amount,
+                                collection_type:collection_type,
+                                installment_date_txt:installment_date_txt,
+                                panelty_date:panelty_date,
+                                total_capital_amount:total_capital_amount,
+                                total_interest_amount:total_interest_amount,
+                                interest_method:interest_method,
+                                Interest_period:Interest_period,
+                            },
+                            xhr: function() {
+                                var xhr = new window.XMLHttpRequest();
+                                // Upload progress
+                                xhr.upload.addEventListener("progress", function(evt) {
+                                    if (evt.lengthComputable) {
+                                        var percentComplete = evt.loaded / evt.total;
+                                        var percentValue = Math.round(percentComplete * 100);
+
+                                        // Update progress bar
+                                        $('#progress-bar').css('width', percentValue + '%');
+                                    }
+                                }, false);
+                                return xhr;
+                            },
+                            success: function(response) {
+                                // Close the loading message
+                                Swal.close();
+
+                                Swal.fire({
+                                    position: "center",
+                                    icon: "success",
+                                    title: "Success!",
+                                    html: '<p style="color:#1A2942;">The saving process is completed successfully.<br>You will now be redirected to the loan approval page automatically.</p>',
+                                    showConfirmButton: false,
+                                    timer: 3000
+                                }).then(function () {
+                                    window.location.href = "/payment_step_1";
+                                });
+                            },
+                        });
+                    }
+                });
+            }
+
+
+        }
 
 
         function repayment_type(id) {
@@ -1424,11 +1639,11 @@
 
                     if (data && data.product_details && data.product_details.length > 0) {
                         var product = data.product_details[0];
-
-                        $('#loan_amount').val(product.Loan_amount);
-                        $('#loan_amount_from').val(product.Loan_amount);
+                        let amount={{number_format($balance,2,'.','')}};
+                        $('#loan_amount').val(amount);
+                        $('#loan_amount_from').val(amount);
                         $('#loan_amount_to').val(product.Loan_amount_to);
-                        $("#loan_display").text("Minimum Amount "+parseFloat(product.Loan_amount).toFixed(2) +" - Maximum Amount "+parseFloat(product.Loan_amount_to).toFixed(2)).css("color", "red");
+                        $("#loan_display").text("Minimum Amount "+parseFloat(amount).toFixed(2) +" - Maximum Amount "+parseFloat(product.Loan_amount_to).toFixed(2)).css("color", "red");
                         $('#interest_method').val(product.Interest_method);
                         $('#interest_period').val(product.Interest_period);
                         $('#loan_interest').val(product.Loan_interest);
