@@ -593,62 +593,34 @@ class PendingLoanController extends Controller
         $branch = $request->input('branch');
         $route = $request->input('route');
         $center_details = $request->input('center_details');
-        $date_filterdate_filter = $request->input('date_filter');
 
-        // Subqueries for aggregated data
+        // Subquery: Installments
         $installment_subquery = DB::table('installments')
-            ->select('Customer_Loan_idCustomer_Loan',
-                DB::raw('SUM(Installment_Amount) as schedule_repayments'))
+            ->select('Customer_Loan_idCustomer_Loan', DB::raw('SUM(Installment_Amount) as schedule_repayments'))
             ->groupBy('Customer_Loan_idCustomer_Loan');
 
-        $loan_log_subquery = DB::table('Loan_Log')
+        // Subquery: Loan Other Charges
+        $loan_other_charges_subquery = DB::table('loan_other_charges')
+            ->select('Customer_Loan_idCustomer_Loan', DB::raw('SUM(Amount) as processing_fee_received'))
+            ->groupBy('Customer_Loan_idCustomer_Loan');
+
+        // 🔹 Run Loan_Log separately
+        $loanLogData = DB::table('Loan_Log')
             ->select(
                 'Loan_ID',
-                'Date_Time',
-                DB::raw('SUM(
-            CASE 
-                WHEN Type = "Customer Payment" THEN Capital_Payment 
-                WHEN Type = "Payment Undo" THEN -Capital_Payment 
-                ELSE 0 
-            END
-        ) as capital_received'),
-
-                DB::raw('SUM(
-            CASE 
-                WHEN Type = "Customer Payment" THEN Interest_Payment 
-                WHEN Type = "Payment Undo" THEN -Interest_Payment 
-                ELSE 0 
-            END
-        ) as interest_received'),
-
-                DB::raw('SUM(
-            CASE 
-                WHEN Type = "Customer Payment" THEN Panelty_Payment 
-                WHEN Type = "Payment Undo" THEN -Panelty_Payment 
-                ELSE 0 
-            END
-        ) as penalty_received'),
-
-                DB::raw('SUM(
-    CASE 
-        WHEN Type IN ("Customer Payment", "Loan Settlement") THEN Amount 
-        WHEN Type = "Payment Undo" THEN -Amount 
-        ELSE 0 
-    END
-) as collected_repayments')
+                DB::raw('SUM(CASE WHEN Type = "Customer Payment" THEN Capital_Payment WHEN Type = "Payment Undo" THEN -Capital_Payment ELSE 0 END) as capital_received'),
+                DB::raw('SUM(CASE WHEN Type = "Customer Payment" THEN Interest_Payment WHEN Type = "Payment Undo" THEN -Interest_Payment ELSE 0 END) as interest_received'),
+                DB::raw('SUM(CASE WHEN Type = "Customer Payment" THEN Panelty_Payment WHEN Type = "Payment Undo" THEN -Panelty_Payment ELSE 0 END) as penalty_received'),
+                DB::raw('SUM(CASE WHEN Type IN ("Customer Payment", "Loan Settlement") THEN Amount WHEN Type = "Payment Undo" THEN -Amount ELSE 0 END) as collected_repayments')
             )
-            ->groupBy('Loan_ID','Date_Time');
+            ->when(!empty($date_from) && !empty($date_to), function ($query) use ($date_from, $date_to) {
+                return $query->whereBetween('Date_Time', [$date_from, $date_to]);
+            })
+            ->groupBy('Loan_ID')
+            ->get()
+            ->keyBy('Loan_ID'); // 🔑 So we can match it later easily
 
-
-
-
-        $loan_other_charges_subquery = DB::table('loan_other_charges')
-            ->select('Customer_Loan_idCustomer_Loan',
-                DB::raw('SUM(Amount) as processing_fee_received'))
-            ->groupBy('Customer_Loan_idCustomer_Loan');
-
-
-        // 📌 1️⃣ Center-wise Summary Query
+        // 📌 1️⃣ Center-wise Summary Query (without Loan_Log)
         $centerSummaryQuery = DB::table('customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
@@ -661,16 +633,16 @@ class PendingLoanController extends Controller
             ->leftJoinSub($installment_subquery, 'installments', function ($join) {
                 $join->on('customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan');
             })
-            ->leftJoinSub($loan_log_subquery, 'Loan_Log', function ($join) {
-                $join->on('customer_loan.idCustomer_Loan', '=', 'Loan_Log.Loan_ID');
-            })
             ->leftJoinSub($loan_other_charges_subquery, 'loan_other_charges', function ($join) {
                 $join->on('customer_loan.idCustomer_Loan', '=', 'loan_other_charges.Customer_Loan_idCustomer_Loan');
             })
+            ->leftJoin(DB::raw('(SELECT Customer_idCustomer, COUNT(*) as loan_count FROM customer_loan GROUP BY Customer_idCustomer) as loan_count_table'),
+                'customer_loan.Customer_idCustomer', '=', 'loan_count_table.Customer_idCustomer')
             ->select(
+                'center.Name as center_name',
                 'branch.Name as branch_name',
                 'route.name as route_name',
-                'center.Name as center_name',
+                'customer_loan.idCustomer_Loan',
                 DB::raw('SUM(customer_loan.Amount) as total_disbursement'),
                 DB::raw('SUM(customer_loan.capital_balance) as capital_balance'),
                 DB::raw('SUM(customer_loan.installment_balance) as installment_balance'),
@@ -679,21 +651,15 @@ class PendingLoanController extends Controller
                 DB::raw('COUNT(DISTINCT CASE WHEN loan_count_table.loan_count = 1 THEN customer_loan.Customer_idCustomer END) as new_clients'),
                 DB::raw('COUNT(DISTINCT CASE WHEN loan_count_table.loan_count > 1 THEN customer_loan.Customer_idCustomer END) as repeat_clients'),
                 DB::raw('COALESCE(SUM(installments.schedule_repayments), 0) as schedule_repayments'),
-                DB::raw('COALESCE(SUM(Loan_Log.collected_repayments), 0) as collected_repayments'),
-                DB::raw('COALESCE(SUM(Loan_Log.capital_received), 0) as capital_received'),
-                DB::raw('COALESCE(SUM(Loan_Log.interest_received), 0) as interest_received'),
-                DB::raw('COALESCE(SUM(Loan_Log.penalty_received), 0) as penalty_received'),
                 DB::raw('COALESCE(SUM(loan_other_charges.processing_fee_received), 0) as processing_fee_received')
-            )->whereIn('customer_loan.Status', [0, 1])
-            ->leftJoin(DB::raw('(SELECT Customer_idCustomer, COUNT(*) as loan_count FROM customer_loan GROUP BY Customer_idCustomer) as loan_count_table'),
-                'customer_loan.Customer_idCustomer', '=', 'loan_count_table.Customer_idCustomer');
+            )
+            ->whereIn('customer_loan.Status', [0, 1]);
 
-//        // 📌 Apply Filters to Center Summary Query
         if (!empty($date_from)) {
-            $centerSummaryQuery->whereDate('Loan_Log.Date_Time', '>=', $date_from);
+            $centerSummaryQuery->whereDate('customer_loan.Date_Time', '>=', $date_from);
         }
         if (!empty($date_to)) {
-            $centerSummaryQuery->whereDate('Loan_Log.Date_Time', '<=', $date_to);
+            $centerSummaryQuery->whereDate('customer_loan.Date_Time', '<=', $date_to);
         }
         if ($branch != "0") {
             $centerSummaryQuery->where('customer_loan.branch_id', $branch);
@@ -705,9 +671,11 @@ class PendingLoanController extends Controller
             $centerSummaryQuery->where('subquery.center_id', $center_details);
         }
 
-        $centerSummaryQuery = $centerSummaryQuery->groupBy('branch.Name', 'route.name', 'center.Name')->get();
+        $centerSummaryData = $centerSummaryQuery
+            ->groupBy('branch.Name', 'route.name', 'center.Name', 'customer_loan.idCustomer_Loan')
+            ->get();
 
-        // 📌 2️⃣ Loan-wise Details Query
+        // 📌 2️⃣ Loan-wise Details Query (also without Loan_Log)
         $loanDetailsQuery = DB::table('customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
@@ -719,9 +687,6 @@ class PendingLoanController extends Controller
             ->join('branch', 'customer_loan.branch_id', '=', 'branch.branch_id')
             ->leftJoinSub($installment_subquery, 'installments', function ($join) {
                 $join->on('customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan');
-            })
-            ->leftJoinSub($loan_log_subquery, 'Loan_Log', function ($join) {
-                $join->on('customer_loan.idCustomer_Loan', '=', 'Loan_Log.Loan_ID');
             })
             ->leftJoinSub($loan_other_charges_subquery, 'loan_other_charges', function ($join) {
                 $join->on('customer_loan.idCustomer_Loan', '=', 'loan_other_charges.Customer_Loan_idCustomer_Loan');
@@ -736,20 +701,15 @@ class PendingLoanController extends Controller
                 'customer_loan.Amount as loan_disbursement',
                 'customer_loan.Total_Loan_Amount as loan_amount',
                 'installments.schedule_repayments',
-                'Loan_Log.collected_repayments',
-                'Loan_Log.capital_received',
-                'Loan_Log.interest_received',
-                'Loan_Log.penalty_received',
                 'loan_other_charges.processing_fee_received'
-            )->whereIn('customer_loan.Status', [0, 1]);
-        ;
+            )
+            ->whereIn('customer_loan.Status', [0, 1]);
 
-        // 📌 Apply Filters to Loan Details Query
         if (!empty($date_from)) {
-            $loanDetailsQuery->whereDate('Loan_Log.Date_Time', '>=', $date_from);
+            $loanDetailsQuery->whereDate('customer_loan.Date_Time', '>=', $date_from);
         }
         if (!empty($date_to)) {
-            $loanDetailsQuery->whereDate('Loan_Log.Date_Time', '<=', $date_to);
+            $loanDetailsQuery->whereDate('customer_loan.Date_Time', '<=', $date_to);
         }
         if ($branch != "0") {
             $loanDetailsQuery->where('customer_loan.branch_id', $branch);
@@ -761,17 +721,43 @@ class PendingLoanController extends Controller
             $loanDetailsQuery->where('subquery.center_id', $center_details);
         }
 
-        $loanDetailsQuery = $loanDetailsQuery->get();
-        // 📌 3️⃣ Combine Data: Center Summary + Loan Details
+        $loanDetailsData = $loanDetailsQuery->get();
+
+        // 📌 3️⃣ Merge Loan_Log values into loanDetailsData
+        foreach ($loanDetailsData as $loan) {
+            $log = $loanLogData->get($loan->loan_id, (object)[
+                'capital_received' => 0,
+                'interest_received' => 0,
+                'penalty_received' => 0,
+                'collected_repayments' => 0,
+            ]);
+
+            $loan->capital_received = $log->capital_received;
+            $loan->interest_received = $log->interest_received;
+            $loan->penalty_received = $log->penalty_received;
+            $loan->collected_repayments = $log->collected_repayments;
+        }
+
+        // 📌 4️⃣ Combine Center Summary + Loan Details
         $finalData = [];
 
-        foreach ($centerSummaryQuery as $center) {
-            $centerData = (array) $center;
+        foreach ($centerSummaryData as $center) {
+            $centerData = (array)$center;
+            $centerData['capital_received'] = 0;
+            $centerData['interest_received'] = 0;
+            $centerData['penalty_received'] = 0;
+            $centerData['collected_repayments'] = 0;
             $centerData['loan_details'] = [];
 
-            foreach ($loanDetailsQuery as $loan) {
+            foreach ($loanDetailsData as $loan) {
                 if ($loan->center_name === $center->center_name) {
-                    $centerData['loan_details'][] = (array) $loan;
+                    // Add loan values to center totals
+                    $centerData['capital_received'] += $loan->capital_received;
+                    $centerData['interest_received'] += $loan->interest_received;
+                    $centerData['penalty_received'] += $loan->penalty_received;
+                    $centerData['collected_repayments'] += $loan->collected_repayments;
+
+                    $centerData['loan_details'][] = (array)$loan;
                 }
             }
 
@@ -780,6 +766,7 @@ class PendingLoanController extends Controller
 
         return response()->json(['data' => $finalData]);
     }
+
 
 
     public function report_disbursement()

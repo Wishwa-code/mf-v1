@@ -441,27 +441,27 @@
 
 // Append signature section
                 printWindow.document.write(`
-    <br><br><br>
-    <table style="width: 100%; font-size: 10px; border: none;">
-        <tr>
-            <td style="width: 25%; vertical-align: top; padding-right: 10px;">
-                <strong>EXECUTIVE SIGNATURE</strong><br><br><br><br>
-                ..................................................................................................................<br><br><br>
-            </td>
-            <td style="width: 25%; vertical-align: top; padding-right: 10px;">
-                <strong>SLIP NUMBER</strong><br><br><br><br>
-                ..................................................................................................................<br><br><br>
-            </td>
-            <td style="width: 25%; vertical-align: top; padding-right: 10px;">
-                <strong>CASHIER SIGNATURE</strong><br><br><br><br>
-                ..................................................................................................................<br><br><br>
-            </td>
-            <td style="width: 25%; vertical-align: top;">
-                <strong>MANAGER SIGNATURE</strong><br><br><br><br>
-                ..................................................................................................................<br><br><br>
-            </td>
-        </tr>
-    </table>
+   <br><br>
+<table style="width: 100%; font-size: 12px; border: none; line-height: 2;">
+    <tr>
+        <td style="width: 35%;"><strong>EXECUTIVE SIGNATURE</strong></td>
+        <td style="width: 65%;"><div style="border-bottom: 2px solid black; width: 100%;"></div></td>
+    </tr>
+    <tr>
+        <td><strong>SLIP NUMBER</strong></td>
+        <td><div style="border-bottom: 2px solid black; width: 100%;"></div></td>
+    </tr>
+    <tr>
+        <td><strong>CASHIER SIGNATURE</strong></td>
+        <td><div style="border-bottom: 2px solid black; width: 100%;"></div></td>
+    </tr>
+    <tr>
+        <td><strong>MANAGER SIGNATURE</strong></td>
+        <td><div style="border-bottom: 2px solid black; width: 100%;"></div></td>
+    </tr>
+</table>
+
+
 `);
 
 

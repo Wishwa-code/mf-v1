@@ -1174,80 +1174,153 @@ class LoanController extends Controller
     public function save_reschedule(Request $request)
     {
         $loan_id=$request->loan_id;
+        $reschedule_type=$request->reschedule_type;
         $date = Carbon::now()->toDateString();
         $user_id = (int)session('userid');
 
 
-        $tot_loan_amount=$request->total_loan_amount;
 
-        $loan = Loan::find($loan_id);  // Find the loan by its ID
+        if ($reschedule_type=='1'){
+            $loan = Loan::find($loan_id);  // Find the loan by its ID
 // Step 2: Prepare the data to insert into the `reschedule` table
-        $rescheduleData = $loan->toArray(); // Convert the loan model to an array
+            $rescheduleData = $loan->toArray(); // Convert the loan model to an array
 
-        Reschedule::create($rescheduleData);  // Assuming the `reschedule` table allows mass assignment
+            Reschedule::create($rescheduleData);  // Assuming the `reschedule` table allows mass assignment
 
 
-        $loan->Date_Time = $date;
-        $loan->Amount = $request->loan_amount;
-        $loan->Interest_Rate = $request->interest;
-        $loan->Panalty_Rate = $request->panelty_amount;
-        $loan->Installment_Count = $request->ins_count;
-        $loan->Interest_Amount = $request->interest_amount;
-        $loan->Total_Other_Amount = $request->total_loan_charge;
-        $loan->Other_Amount_Balance = $request->loan_charge_balance;
-        $loan->Total_Loan_Amount = $tot_loan_amount;
-        $loan->Installment_Amount = $request->new_interest_amount;
-        $loan->Collection_Type = $request->collection_type;
-        $loan->Collection_Date = $request->installment_date_txt;
-        $loan->Panalty_Date = $request->panelty_date;
-        $loan->Balance_Amount = $tot_loan_amount;
-        $loan->User_idUser = $user_id;
-        $loan->capital_balance = $request->total_capital_amount;
-        $loan->installment_balance = $request->total_interest_amount;
-        $loan->type = $request->interest_method;
-        $loan->Interest_period = $request->Interest_period;
+            $loan->Loan_Category_idLoan_Category = $request->loan_cate_id;
+            $loan->Customer_idCustomer = $request->customer_id;
+            $loan->Leasing_type = $request->lease_type;
+            $loan->Vehicle_No = $request->vehicle_num;
+            $loan->Date_Time = $date;
+            $loan->Amount = $request->loan_amount;
+            $loan->Interest_Rate = $request->interest;
+            $loan->Panalty_Rate = $request->panelty_amount;
+            $loan->Interest_Amount = $request->interest_amount;
+            $loan->Total_Other_Amount = $request->total_loan_charge;
+            $loan->Other_Amount_Balance = $request->loan_charge_balance;
+            $loan->Total_Loan_Amount = $request->total_loan_amount;
+            $loan->Installment_Amount = $request->new_interest_amount;
+            $loan->Collection_Type = $request->collection_type;
+            $loan->Collection_Date = $request->installment_date_txt;
+            $loan->Panalty_Date = $request->panelty_date;
+            $loan->Balance_Amount = $request->total_loan_amount;
+            $loan->User_idUser = $user_id;
+            $loan->capital_balance = $request->total_capital_amount;
+            $loan->installment_balance = $request->total_interest_amount;
+            $loan->type = $request->interest_method;
+            $loan->Interest_period = $request->Interest_period;
+            $loan->repayment_duration = $request->repayment_duration_period;
+
+            $loan->saving_amount = $request->saving_amount ?? '0.00';
 
 // Save the updated loan
-        $loan->save();
+            $loan->save();
 
-        foreach ($request->installment as $item) {
-            $customerLoanId = $loan->idCustomer_Loan;
+            if (!empty($request->installment)) {
+                $firstInstallmentDate = $request->installment[0]['installmentDate'];
+                $customerLoanId = $loan->idCustomer_Loan;
+
+                DB::table('installments')
+                    ->where('Customer_Loan_idCustomer_Loan', $customerLoanId)
+                    ->whereDate('Installment_Date', '>=', $firstInstallmentDate)
+                    ->delete();
+
+            }
+
+            foreach ($request->installment as $item) {
+                $customerLoanId = $loan->idCustomer_Loan;
 
 
-            // Fetch the last installment and increment the 'No'
-            $lastInstallment = DB::table('installments')
-                ->where('Customer_Loan_idCustomer_Loan', $customerLoanId)
-                ->orderByRaw('CAST(No AS UNSIGNED) DESC') // Ensure the 'No' field is ordered numerically
-                ->first();
+                // Fetch the last installment and increment the 'No'
+                $lastInstallment = DB::table('installments')
+                    ->where('Customer_Loan_idCustomer_Loan', $customerLoanId)
+                    ->orderByRaw('CAST(No AS UNSIGNED) DESC') // Ensure the 'No' field is ordered numerically
+                    ->first();
 
-            // Check if the 'lastInstallment' exists and calculate the 'No' correctly
-            $no = $lastInstallment ? (int)$lastInstallment->No + 1 : 1;
+                // Check if the 'lastInstallment' exists and calculate the 'No' correctly
+                $no = $lastInstallment ? (int)$lastInstallment->No + 1 : 1;
+                $saving_check=$request->saving;
 
-            // Log the next 'No' for debugging purposes
-            Log::info("Next Installment No for Customer Loan ID $customerLoanId: $no");
+                if ($saving_check=="Yes"){
+                    $customerLoanId = $loan_id;
 
-            // Insert the new installment record
-//            DB::table('installments')->insert([
-//                'Customer_Loan_idCustomer_Loan' => $customerLoanId,
-//                'No' => $no,
-//                'Installment_Date' => $item['installmentDate'],
-//                'Installment_Amount' => $item['installmentAmount'],
-//                'capital_amount' => $item['capitalAmount'],
-//                'interest_amount' => $item['interestAmount'],
-//                'Panalty_Amount' => $item['panaltyAmount'],
-//                'Total_Amount' => $item['totalAmount'],
-//                'Paid_Amount' => "0.00", // Assuming the initial paid amount is 0
-//                'Panalty_Balance' => $item['panaltyBalance'],
-//                'Installment_Balance' => $item['installmentBalance'],
-//                'Total_Balance' => $item['totalBalance'],
-//                'Status' => '0', // Assuming status is '0' for the new installment
-//                'Panelty_date' => $item['panaltyDate'],
-//                'Panelty_status' => '0' // Assuming penalty status is '0'
-//            ]);
+                    $installmentDate = $item['installmentDate'];
+                    $installmentAmount = $item['installmentAmount'];
+                    $capitalAmount = $item['capitalAmount'];
+                    $interestAmount = $item['interestAmount'];
+                    $panaltyDate = $item['panaltyDate'];
+                    $panaltyAmount = $item['panaltyAmount'];
+                    $savingAmount = $item['savingAmount'];
+                    $totalAmount = $item['totalAmount'];
+
+                    $paidAmount = "0.00";
+                    $panaltyBalance = $item['panaltyBalance'];
+                    $savingBalance = $item['savingBalance'];
+                    $totalBalance = $item['totalBalance'];
+
+
+                    DB::table('installments')->insert([
+                        'Customer_Loan_idCustomer_Loan' => $customerLoanId,
+                        'No' => $no,
+                        'Installment_Date' => $installmentDate,
+                        'Installment_Amount' => $installmentAmount,
+                        'capital_amount' => $capitalAmount,
+                        'interest_amount' => $interestAmount,
+                        'Panalty_Amount' => $panaltyAmount,
+                        'Saving_amount' => $savingAmount,
+                        'Total_Amount' => $totalAmount,
+                        'Paid_Amount' => $paidAmount,
+                        'Panalty_Balance' => $panaltyBalance,
+                        'Interest_Balance' => $interestAmount,
+                        'capital_balance' => $capitalAmount,
+                        'Total_Balance' => $totalBalance,
+                        'Saving_balance' => $savingBalance,
+                        'Status' => '0',
+                        'Panelty_date' => $panaltyDate,
+                        'Panelty_status' => '0',
+                        'branch_id' => session('branch_id')
+                    ]);
+                }else{
+                    $customerLoanId = $loan_id;
+
+                    $installmentDate = $item['installmentDate'];
+                    $installmentAmount = $item['installmentAmount'];
+                    $capitalAmount = $item['capitalAmount'];
+                    $interestAmount = $item['interestAmount'];
+                    $panaltyDate = $item['panaltyDate'];
+                    $panaltyAmount = $item['panaltyAmount'];
+                    $totalAmount = $item['totalAmount'];
+                    $paidAmount = "0.00";
+                    $panaltyBalance = $item['panaltyBalance'];
+                    $totalBalance = $item['totalBalance'];
+
+
+                    DB::table('installments')->insert([
+                        'Customer_Loan_idCustomer_Loan' => $customerLoanId,
+                        'No' => $no,
+                        'Installment_Date' => $installmentDate,
+                        'Installment_Amount' => $installmentAmount,
+                        'capital_amount' => $capitalAmount,
+                        'interest_amount' => $interestAmount,
+                        'Panalty_Amount' => $panaltyAmount,
+                        'Total_Amount' => $totalAmount,
+                        'Paid_Amount' => $paidAmount,
+                        'Panalty_Balance' => $panaltyBalance,
+                        'Interest_Balance' => $interestAmount,
+                        'capital_balance' => $capitalAmount,
+                        'Total_Balance' => $totalBalance,
+                        'Status' => '0',
+                        'Panelty_date' => $panaltyDate,
+                        'Panelty_status' => '0',
+                        'branch_id' => session('branch_id')
+                    ]);
+                }
+            }
+
+        }else{
+
         }
-
-
-
 
         return response()->json([ 'installment' => $request->installment], 200);
 

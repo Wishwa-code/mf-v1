@@ -309,86 +309,96 @@ class LoanCategoryController extends Controller
 
     public function update(Request $request, $id)
     {
-        // Update LoanCategory
-        DB::table('loan_category')->where('idLoan_Category', $id)->update([
-            'Name' => $request->product_name,
-            'Product_code' => $request->product_code,
-            'Loan_amount' => $request->loan_amount_from,
-            'Loan_amount_to' => $request->loan_amount_to,
-            'Interest_method' => $request->interest_method,
-            'Interest_period' => $request->interest_period,
-            'Loan_interest' => $request->interest_from,
-            'Loan_interest_to' => $request->interest_to,
-            'Duration_period' => $request->duration_period,
-            'Loan_period' => $request->loan_duration,
-            'Repayment_type' => $request->collection_type,
-            'Panelty_period' => $request->penalty_period,
-            'Panelty_pecentage' => $request->panelty_rate,
-            'Panelty_date' => $request->panelty_rate_date,
-            'Guarantee_count' => $request->witnessCount,
-            'Interest_Period_Count' => $request->period_count,
-            'enable_saving_process' => $request->enable_saving,
-            'saving_amount_type' => $request->saving_account_amount_type,
-            'saving_amount' => $request->saving_amount,
-            'saving_payment' => $request->saving_payment,
-            'default_loan_duration_period' => $request->default_loan_duration_period,
-        ]);
-
-        // Delete existing related data
-        DB::table('other_charges')->where('Loan_Category_idLoan_Category', $id)->delete();
-        DB::table('required_documents')->where('Loan_Category_idLoan_Category', $id)->delete();
-        $levels = DB::table('level')->where('product_id', $id)->get();
-
-        foreach ($levels as $level) {
-            DB::table('level_has_designation')->where('level_id', $level->id)->delete();
-            DB::table('approval_checklist')->where('level_id', $level->id)->delete();
-        }
-
-        DB::table('level')->where('product_id', $id)->delete();
-
-        // Reinsert charges
-        foreach ($request->input('othercharges', []) as $row) {
-            DB::table('other_charges')->insert([
-                'Description' => $row[0],
-                'charge_type' => $row[1],
-                'Amount' => $row[2],
-                'Loan_Category_idLoan_Category' => $id,
-            ]);
-        }
-
-        // Reinsert documents
-        foreach ($request->input('document', []) as $row) {
-            DB::table('required_documents')->insert([
-                'Name' => $row[0],
-                'Loan_Category_idLoan_Category' => $id,
-            ]);
-        }
-
-        // Reinsert levels
-        $levelsData = $request->input('level_data');
-        foreach ($levelsData as $level) {
-            $levelId = DB::table('level')->insertGetId([
-                'product_id' => $id,
-                'type' => $level['level'],
-                'description' => $level['description'] ?? '-',
+        DB::beginTransaction();
+        try {
+// Update LoanCategory
+            DB::table('loan_category')->where('idLoan_Category', $id)->update([
+                'Name' => $request->product_name,
+                'Product_code' => $request->product_code,
+                'Loan_amount' => $request->loan_amount_from,
+                'Loan_amount_to' => $request->loan_amount_to,
+                'Interest_method' => $request->interest_method,
+                'Interest_period' => $request->interest_period,
+                'Loan_interest' => $request->interest_from,
+                'Loan_interest_to' => $request->interest_to,
+                'Duration_period' => $request->duration_period,
+                'Loan_period' => $request->loan_duration,
+                'Repayment_type' => $request->collection_type,
+                'Panelty_period' => $request->penalty_period,
+                'Panelty_pecentage' => $request->panelty_rate,
+                'Panelty_date' => $request->panelty_rate_date,
+                'Guarantee_count' => $request->witnessCount,
+                'Interest_Period_Count' => $request->period_count,
+                'enable_saving_process' => $request->enable_saving,
+                'saving_amount_type' => $request->saving_account_amount_type,
+                'saving_amount' => $request->saving_amount,
+                'saving_payment' => $request->saving_payment,
+                'default_loan_duration_period' => $request->default_loan_duration_period,
             ]);
 
-            foreach ($level['designations'] as $desi) {
-                DB::table('level_has_designation')->insert([
-                    'level_id' => $levelId,
-                    'designation_id' => $desi['name'],
+            // Delete existing related data
+            DB::table('other_charges')->where('Loan_Category_idLoan_Category', $id)->delete();
+            DB::table('required_documents')->where('Loan_Category_idLoan_Category', $id)->delete();
+            $levels = DB::table('level')->where('product_id', $id)->get();
+
+            foreach ($levels as $level) {
+                DB::table('level_has_designation')->where('level_id', $level->id)->delete();
+                DB::table('approval_checklist')->where('level_id', $level->id)->delete();
+            }
+
+            DB::table('level')->where('product_id', $id)->delete();
+
+            // Reinsert charges
+            foreach ($request->input('othercharges', []) as $row) {
+                DB::table('other_charges')->insert([
+                    'Description' => $row[0],
+                    'charge_type' => $row[1],
+                    'Amount' => $row[2],
+                    'Loan_Category_idLoan_Category' => $id,
                 ]);
             }
 
-            foreach ($level['checklist'] as $item) {
-                DB::table('approval_checklist')->insert([
-                    'level_id' => $levelId,
-                    'description' => $item,
+            // Reinsert documents
+            foreach ($request->input('document', []) as $row) {
+                DB::table('required_documents')->insert([
+                    'Name' => $row[0],
+                    'Loan_Category_idLoan_Category' => $id,
                 ]);
             }
-        }
 
-        return response()->json(['message' => 'Updated successfully'], 200);
+            // Reinsert levels
+            $levelsData = $request->input('level_data');
+            foreach ($levelsData as $level) {
+                $levelId = DB::table('level')->insertGetId([
+                    'product_id' => $id,
+                    'type' => $level['level'],
+                    'description' => $level['description'] ?? '-',
+                ]);
+
+                foreach ($level['designations'] as $desi) {
+                    DB::table('level_has_designation')->insert([
+                        'level_id' => $levelId,
+                        'designation_id' => $desi['name'],
+                    ]);
+                }
+
+                foreach ($level['checklist'] as $item) {
+                    DB::table('approval_checklist')->insert([
+                        'level_id' => $levelId,
+                        'description' => $item,
+                    ]);
+                }
+            }
+            DB::commit();
+            return response()->json(['message' => 'Updated successfully'], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Update failed',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
 

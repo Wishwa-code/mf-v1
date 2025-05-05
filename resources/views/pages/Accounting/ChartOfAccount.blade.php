@@ -386,6 +386,7 @@
                 <th>Cash Flow Type</th>
                 <th>Acc Balance</th>
                 <th>Created As</th>
+                <th>Primary Account</th>
                 <th>Ledger</th>
             </tr>
             </thead>
@@ -404,6 +405,7 @@
                 <th>Cash Flow Type</th>
                 <th>Acc Balance</th>
                 <th>Created As</th>
+                <th>Primary Account</th>
                 <th>Ledger</th>
             </tr>
             </thead>
@@ -422,6 +424,7 @@
                 <th>Cash Flow Type</th>
                 <th>Acc Balance</th>
                 <th>Created As</th>
+                <th>Primary Account</th>
                 <th>Ledger</th>
             </tr>
             </thead>
@@ -440,6 +443,7 @@
                 <th>Cash Flow Type</th>
                 <th>Acc Balance</th>
                 <th>Created As</th>
+                <th>Primary Account</th>
                 <th>Ledger</th>
             </tr>
             </thead>
@@ -458,6 +462,7 @@
                 <th>Cash Flow Type</th>
                 <th>Acc Balance</th>
                 <th>Created As</th>
+                <th>Primary Account</th>
                 <th>Ledger</th>
             </tr>
             </thead>
@@ -476,6 +481,7 @@
                 <th>Cash Flow Type</th>
                 <th>Acc Balance</th>
                 <th>Created As</th>
+                <th>Primary Account</th>
                 <th>Ledger</th>
             </tr>
             </thead>
@@ -569,6 +575,23 @@
                     <label for="description">Description</label>
                     <input type="text" id="description" placeholder="Enter description">
                 </div>
+                <div class="form-group">
+                    <label class="mb-0 d-inline-flex align-items-center" for="isSubAccount">
+                        Mark this as a sub-account
+                        <input type="checkbox" id="isSubAccount" class="ms-2" style="width: 16px; height: 16px;">
+                    </label>
+                </div>
+
+
+                <div class="form-group" id="primaryAccountGroup" style="display: none;">
+                    <label for="primaryAccountSelect">Primary Account</label>
+                    <select id="primaryAccountSelect" class="form-control">
+                       @foreach($company_banks as $item)
+                           <option value="{{$item->Idbank}}">{{$item->code}}-{{$item->Bank_Name}}</option>
+                       @endforeach
+                    </select>
+                </div>
+
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelModal">Cancel</button>
@@ -624,8 +647,20 @@
     <!-- JS for Excel export (from xlsx library) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.2.3/js/buttons.html5.min.js"></script>
+    <!-- PDFMake for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
+
     <script>
         $(document).ready(function() {
+
+            document.getElementById('isSubAccount').addEventListener('change', function () {
+                const group = document.getElementById('primaryAccountGroup');
+                group.style.display = this.checked ? 'block' : 'none';
+            });
+
+
+
             $('#financialReportTable').DataTable({
                 dom: 'Bfrtip',  // Adds the button container to the top of the table
                 buttons: [
@@ -664,6 +699,9 @@
                     var accName = $('#accountName').val();
                     var cashFlowType = $('#inputCashFlowType').val();
                     var description = $('#description').val();
+                    var primaryAccountSelect = $('#primaryAccountSelect').val();
+                    var isSubAccount = $('#isSubAccount').is(':checked') ? 1 : 0;
+
 
                     var $selectedOption = $('#inputAccountGroupId option:selected');
                     var accType = $selectedOption.text();
@@ -687,6 +725,8 @@
                         acc_type_group: accTypeGroup,
                         acc_type: accType,
                         cash_flow_type: cashFlowType,
+                        primaryAccountSelect: primaryAccountSelect,
+                        isSubAccount: isSubAccount,
                         description: description
                     };
 
@@ -781,7 +821,8 @@
         data-account="${item.Idbank}"
         data-account-name="${item.Account_Name}"
         data-account-type="${item.type}"
-        data-acc-type-group="${item.acc_type_group}">View</a>`;
+        data-acc-type-group="${item.acc_type_group}"
+        data-primary_account_name="${item.primary_account_name}">View</a>`;
 
                         const row = `
         <tr>
@@ -792,6 +833,7 @@
             <td>${item.cashflow ? item.cashflow : '-'}</td>
             <td style="text-align: right">${balance}</td> <!-- Updated -->
             <td>${bankType}</td> <!-- Updated -->
+            <td>${item.primary_account_name}</td> <!-- Updated -->
             <td>${ledger}</td>
         </tr>`;
 
@@ -989,14 +1031,20 @@
 
 
         $(document).on('click', '.view-btn', function () {
+
             const account = $(this).data('account'); // Get the account value from the button
 
             const accountName = $(this).data('account-name');
             const accountType = $(this).data('account-type');
             const accTypeGroup = $(this).data('acc-type-group');
+            const primary_account_name = $(this).data('primary_account_name');
 
             // ✅ Set the modal header dynamically
-            $("#ledgerAccountTitle").html(`<b>${accountName} - ${accountType} - ${accTypeGroup}</b>`);
+            if(primary_account_name==='-'){
+                $("#ledgerAccountTitle").html(`<b>${accountName} - ${accountType} - ${accTypeGroup}</b>`);
+            }else{
+                $("#ledgerAccountTitle").html(`<b>${accountName} - ${accountType} - ${accTypeGroup} / Sub Account Of ${primary_account_name}</b>`);
+            }
 
             // Fetch ledger data via AJAX
             $.ajax({
@@ -1034,15 +1082,32 @@
                             $modalTableBody.append(row);
                         });
 
-                        // ✅ Reinitialize DataTable after adding rows
+                        // ✅ Reinitialize DataTable with buttons
                         $modalTable.DataTable({
-                            "responsive": true,
-                            "paging": true,          // Enable pagination
-                            "ordering": true,        // Enable sorting
-                            "info": true,            // Show table info
-                            "searching": true,       // Enable search bar
-                            "pageLength": 10,        // Default number of rows per page
-                            "lengthMenu": [10, 25, 50, 100] // Dropdown to select number of rows
+                            responsive: true,
+                            paging: true,
+                            ordering: true,
+                            info: true,
+                            searching: true,
+                            pageLength: 10,
+                            lengthMenu: [10, 25, 50, 100],
+                            dom: 'Bfrtip',
+                            buttons: [
+                                {
+                                    extend: 'excelHtml5',
+                                    title: 'Ledger Details',
+                                    text: 'Export to Excel',
+                                    className: 'btn btn-success'
+                                },
+                                {
+                                    extend: 'pdfHtml5',
+                                    title: 'Ledger Details',
+                                    text: 'Export to PDF',
+                                    orientation: 'landscape',
+                                    pageSize: 'A4',
+                                    className: 'btn btn-danger'
+                                }
+                            ]
                         });
                     }
 

@@ -166,6 +166,29 @@ const saveCustomer = (e) => {
             formData.append("cus_phto", $("#cus_phto")[0].files[0]); // File input
             formData.append("note", $("#note").val());
 
+            formData.append("longitude", $("#longitude").val());
+            formData.append("latitude", $("#latitude").val());
+            formData.append("occu_job_position", $("#occu_job_position").val());
+            formData.append("occu_monthly_salary", $("#occu_monthly_salary").val());
+            formData.append("occu_address_01", $("#occu_address_01").val());
+            formData.append("occu_address_02", $("#occu_address_02").val());
+            formData.append("occu_address_03", $("#occu_address_03").val());
+            formData.append("occu_contact_no", $("#occu_contact_no").val());
+            formData.append("occu_longitude", $("#occu_longitude").val());
+            formData.append("occu_latitude", $("#occu_latitude").val());
+
+
+            formData.append("gua_title", $("#gua_title").val());
+            formData.append("gua_name", $("#gua_name").val());
+            formData.append("gua_nic", $("#gua_nic").val());
+            formData.append("guardian_gender", $("#guardian_gender").val());
+            formData.append("gua_relation", $("#gua_relation").val());
+            formData.append("gua_occu", $("#gua_occu").val());
+            formData.append("gua_contact", $("#gua_contact").val());
+            formData.append("gua_address_01", $("#gua_address_01").val());
+            formData.append("gua_address_02", $("#gua_address_02").val());
+            formData.append("gua_address_03", $("#gua_address_03").val());
+
             // AJAX call with progress tracking
             $.ajax({
                 type: "POST",
