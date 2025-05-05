@@ -195,12 +195,12 @@
                 @endforeach
 
                 {{-- Net Loss (if applicable) --}}
-                @if ($final_result_float < 0)
-                    <tr class="clickable-row blinking">
-                        <td class="ps-3">Net Loss</td>
-                        <td>{{ formatNegativeInParentheses(abs($final_result_float)) }}</td>
-                    </tr>
-                @endif
+{{--                @if ($final_result_float < 0)--}}
+{{--                    <tr class="clickable-row blinking">--}}
+{{--                        <td class="ps-3">Net Loss</td>--}}
+{{--                        <td>{{ formatNegativeInParentheses(abs($final_result_float)) }}</td>--}}
+{{--                    </tr>--}}
+{{--                @endif--}}
 
                 <tr class="fw-bold total-row">
                     <td>Total Assets</td>
@@ -215,12 +215,12 @@
                 @endphp
 
                 {{-- Net Profit (if applicable) --}}
-                @if ($final_result_float > 0)
-                    <tr class="clickable-row blinking">
-                        <td class="ps-3">Net Profit</td>
-                        <td>{{ formatNegativeInParentheses($final_result_float) }}</td>
-                    </tr>
-                @endif
+{{--                @if ($final_result_float > 0)--}}
+{{--                    <tr class="clickable-row blinking">--}}
+{{--                        <td class="ps-3">Net Profit</td>--}}
+{{--                        <td>{{ formatNegativeInParentheses($final_result_float) }}</td>--}}
+{{--                    </tr>--}}
+{{--                @endif--}}
 
                 @foreach ($groupedLiabilities[0] ?? [] as $parent)
                     <tr onclick="openFinancialReportModal('{{ $parent['idbank'] }}', '{{ $parent['name'] }}')" class="clickable-row blinking">
