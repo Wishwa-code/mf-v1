@@ -157,7 +157,20 @@
                 <form id="cashierForm">
                     <div class="mb-3">
                         <label for="amount" class="form-label">Amount</label>
-                        <input type="number" class="form-control" id="amount" required>
+                        <select class="form-control enhanced-select" id="amount" required>
+                            <option value="">Select Amount</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="500">500</option>
+                            <option value="1000">1000</option>
+                            <option value="5000">5000</option>
+                        </select>
+
                     </div>
                     <div class="mb-3">
                         <label for="quantity" class="form-label">Quantity</label>
@@ -216,17 +229,6 @@
                     <hr> <!-- Horizontal Line for Separation -->
 
                     <!-- Incomes Section -->
-                    <u><h5 class="mt-3"><strong>Incomes</strong></h5></u>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label class="form-label">Payment Amounts</label>
-                            <input type="number" class="form-control" id="paymentAmounts" readonly>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Deposit</label>
-                            <input type="number" class="form-control" id="deposit" readonly>
-                        </div>
-                    </div>
                     <h5 class="mt-3"><strong>Other Incomes</strong></h5>
                     <!-- Incomes Table -->
                     <table class="table table-bordered mt-3">
@@ -245,18 +247,6 @@
 
                     <hr> <!-- Horizontal Line for Separation -->
 
-                    <!-- Expenses (Pawning) Section -->
-                    <u><h5 class="mt-3"><strong>Expenses</strong></h5></u>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label class="form-label">Pawning Amount</label>
-                            <input type="number" class="form-control" id="pawningAmount" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Withdrawal</label>
-                            <input type="number" class="form-control" id="withdrawal" readonly>
-                        </div>
-                    </div>
 
                     <h5 class="mt-3"><strong>Other Expenses</strong></h5>
                     <!-- Expenses Table -->
@@ -288,18 +278,31 @@
 
                     <hr> <!-- Horizontal Line for Separation -->
                     <!-- Cash Drawer Balance Section -->
-                    <h5 class="mt-3"><strong>Cash Drawer Balance</strong></h5>
+                    <u><h5 class="mt-3"><strong>Cash Drawer Balance</strong></h5></u>
                     <form id="cashDrawerForm">
                         <div class="row">
                             <div class="col-md-6">
-                                <label class="form-label">Denomination</label>
-                                <input type="number" class="form-control" id="cashAmount" required>
+                                <label class="form-label">Select Denomination</label>
+                                <select id="cashAmount" class="form-control enhanced-select" required>
+                                    <option value="">Select Denomination</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="5">5</option>
+                                    <option value="10">10</option>
+                                    <option value="20">20</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                    <option value="500">500</option>
+                                    <option value="1000">1000</option>
+                                    <option value="5000">5000</option>
+                                </select>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Quantity</label>
                                 <input type="number" class="form-control" id="cashQuantity" required>
                             </div>
                         </div>
+
                         <button type="button" class="btn btn-secondary mt-3" id="addCashToTable">Add to Table</button>
                     </form>
 
@@ -1295,107 +1298,517 @@ $banner = DB::select($query);
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="{{ asset('assets/libs/jquery/jquery.min.js') }}"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
 <script>
-    $(document).ready(function () {
-        // Function to update the Grand Total
-        function updateGrandTotal() {
-            let grandTotal = 0;
-            $("#modalTableBody tr").each(function () {
-                let total = parseFloat($(this).find(".total-amount").text()) || 0;
-                grandTotal += total;
+    // Function to update the Grand Total
+    function updateGrandTotal() {
+        let grandTotal = 0;
+        $("#modalTableBody tr").each(function () {
+            let total = parseFloat($(this).find(".total-amount").text()) || 0;
+            grandTotal += total;
+        });
+        $("#grandTotal").text(grandTotal.toFixed(2));
+    }
+
+    // Add to Table Button Click
+    $("#addToTable").click(function () {
+        let amount = parseFloat($("#amount").val());
+        let quantity = parseInt($("#quantity").val());
+
+        if (!amount || !quantity || amount <= 0 || quantity <= 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Invalid Input',
+                text: 'Please select a valid amount and quantity.',
             });
-            $("#grandTotal").text(grandTotal.toFixed(2));
+            return;
         }
-        // Load today's saved data when modal opens
+
+        let totalAmount = amount * quantity;
+        let existingRow = $("#modalTableBody").find(`tr[data-amount='${amount}']`);
+
+        if (existingRow.length > 0) {
+            // Update existing row
+            let existingQuantity = parseInt(existingRow.find(".quantity").text());
+            let newQuantity = existingQuantity + quantity;
+            let newTotal = amount * newQuantity;
+
+            existingRow.find(".quantity").text(newQuantity);
+            existingRow.find(".total-amount").text(newTotal.toFixed(2));
+
+            Swal.fire({
+                icon: 'info',
+                title: 'Entry Updated',
+                text: `Updated quantity for amount ${amount}`,
+            });
+        } else {
+            // Add new row
+            let rowCount = $("#modalTableBody tr").length + 1;
+
+            $("#modalTableBody").append(`
+            <tr data-amount="${amount}">
+                <td>${rowCount}</td>
+                <td class="amount">${amount}</td>
+                <td class="quantity">${quantity}</td>
+                <td class="total-amount">${totalAmount.toFixed(2)}</td>
+                <td><button class="btn btn-danger btn-sm remove-entry">Remove</button></td>
+            </tr>
+        `);
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Entry Added',
+                text: `Amount: ${amount}, Quantity: ${quantity}`,
+            });
+        }
+
+        updateGrandTotal();
+        $("#amount").val('');
+        $("#quantity").val('');
+    });
+
+    // Handle Remove Entry button
+    $(document).on('click', '.remove-entry', function () {
+        $(this).closest('tr').remove();
+        updateGrandTotal();
+    });
+    $(document).ready(function () {
         $("#cashierStartModal").on('show.bs.modal', function () {
-            {{--$.ajax({--}}
-            {{--    url: "{{ route('cashier.getTodayData') }}",--}}
-            {{--    method: "GET",--}}
-            {{--    success: function (response) {--}}
-            {{--        if (response.status === 'success') {--}}
-            {{--            let tableBody = $("#modalTableBody");--}}
-            {{--            tableBody.empty(); // Clear existing entries--}}
-
-            {{--            response.entries.forEach((entry, index) => {--}}
-            {{--                tableBody.append(`--}}
-            {{--                <tr data-amount="${entry.money}">--}}
-            {{--                    <td>${index + 1}</td>--}}
-            {{--                    <td class="amount">${entry.money}</td>--}}
-            {{--                    <td class="quantity">${entry.qty}</td>--}}
-            {{--                    <td class="total-amount">${entry.amount}</td>--}}
-            {{--                    <td><button class="btn btn-danger btn-sm remove-entry">Remove</button></td>--}}
-            {{--                </tr>--}}
-            {{--            `);--}}
-            {{--            });--}}
-
-            {{--            $("#grandTotal").text(response.grandTotal);--}}
-            {{--        }--}}
-            {{--    },--}}
-            {{--    error: function () {--}}
-            {{--        Swal.fire({--}}
-            {{--            icon: 'error',--}}
-            {{--            title: 'Error',--}}
-            {{--            text: 'Failed to load saved data.',--}}
-            {{--        });--}}
-            {{--    }--}}
-            {{--});--}}
+            loadSavedPlotEntries();
         });
 
-        // Add to table with validation
-        $("#addToTable").click(function () {
-            let amount = parseFloat($("#amount").val());
-            let quantity = parseInt($("#quantity").val());
+        $("#dayEndModal").on('show.bs.modal', function () {
+            $.ajax({
+                url: '/cashier/day-end-data',
+                method: 'GET',
+                success: function (response) {
+                    $("#plotAmount").val(response.startingCash.toFixed(2));
+                    $("#balanceAmount").val(response.balanceAmount.toFixed(2));
 
-            if (!amount || !quantity || amount <= 0 || quantity <= 0) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Invalid Input',
-                    text: 'Please enter valid amount and quantity!',
+                    // Income table
+                    let incomeBody = $("#incomeTableBody").empty();
+                    response.incomes.forEach((item, i) => {
+                        incomeBody.append(`
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td>${item.reason}</td>
+                        <td>${parseFloat(item.amount).toFixed(2)}</td>
+                    </tr>
+                `);
+                    });
+                    $("#totalIncome").text(response.totalIncome.toFixed(2));
+
+                    // Expenses table
+                    let expenseBody = $("#expensesTableBody").empty();
+                    response.expenses.forEach((item, i) => {
+                        expenseBody.append(`
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td>${item.reason}</td>
+                        <td>${parseFloat(item.amount).toFixed(2)}</td>
+                    </tr>
+                `);
+                    });
+                    $("#totalExpenses").text(response.totalExpenses.toFixed(2));
+
+                    updateCashDrawerTotals(); // Reset drawer totals if needed
+                },
+                error: function () {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error loading data',
+                        text: 'Could not fetch day end data.'
+                    });
+                }
+            });
+        });
+        $("#dayEndModal").on('show.bs.modal', function () {
+            $.ajax({
+                url: '/cashier/get-saved-day-end',
+                method: 'GET',
+                success: function (res) {
+
+                    // Set summary fields
+                    $("#plotAmount").val(parseFloat(res.startingCash).toFixed(2));
+                    $("#totalIncome").text(parseFloat(res.totalIncome).toFixed(2));
+                    $("#totalExpenses").text(parseFloat(res.totalExpenses).toFixed(2));
+                    $("#balanceAmount").val(parseFloat(res.balanceAmount).toFixed(2));
+
+                    // Load income table
+                    let incomeBody = $("#incomeTableBody").empty();
+                    res.incomes.forEach((item, i) => {
+                        incomeBody.append(`
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td>${item.reason}</td>
+                        <td>${parseFloat(item.amount).toFixed(2)}</td>
+                    </tr>
+                `);
+                    });
+
+                    // Load expense table
+                    let expenseBody = $("#expensesTableBody").empty();
+                    res.expenses.forEach((item, i) => {
+                        expenseBody.append(`
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td>${item.reason}</td>
+                        <td>${parseFloat(item.amount).toFixed(2)}</td>
+                    </tr>
+                `);
+                    });
+
+                    // Cash drawer entries
+                    $("#cashDrawerTableBody").empty();
+                    res.cashDrawerEntries.forEach((entry, index) => {
+                        $("#cashDrawerTableBody").append(`
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td class="cash-amt">${parseFloat(entry.denomination)}</td>
+                        <td class="cash-qty">${parseInt(entry.quantity)}</td>
+                        <td class="cash-total">${parseFloat(entry.total_amount).toFixed(2)}</td>
+                        <td></td> <!-- Empty cell (no Remove button) -->
+                    </tr>
+                `);
+                    });
+
+                    // Totals
+                    $("#totalCashDrawer").text(parseFloat(res.savedData.cash_drawer_total).toFixed(2));
+                    $("#balanceDifference").text(parseFloat(res.savedData.balance_difference).toFixed(2));
+
+                    // Disable inputs if already saved
+                    if (res.dayEndExists) {
+                        $("#cashDrawerForm :input").prop("disabled", true);
+                        $("#saveDayEnd").prop("disabled", true);
+                        $("#addCashToTable").prop("disabled", true);
+                    } else {
+                        $("#cashDrawerForm :input").prop("disabled", false);
+                        $("#saveDayEnd").prop("disabled", false);
+                        $("#addCashToTable").prop("disabled", false);
+                    }
+                },
+                error: function () {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to load Day End data.'
+                    });
+                }
+            });
+        });
+
+    });
+
+
+
+    $("#saveEntries").click(function () {
+        let entries = [];
+
+        $("#modalTableBody tr").each(function () {
+            let amount = parseFloat($(this).find(".amount").text());
+            let quantity = parseInt($(this).find(".quantity").text());
+            let total = parseFloat($(this).find(".total-amount").text());
+
+            entries.push({
+                amount: amount,         // backend expects this as the denomination
+                quantity: quantity,     // qty
+                totalAmount: total      // calculated amount = denomination * quantity
+            });
+        });
+
+        if (entries.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'No Data',
+                text: 'Please add at least one entry before saving.',
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You are about to save the entries.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, save it!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/save-cashier-data',
+                    method: 'POST',
+                    data: {
+                        entries: entries,
+                        grandTotal: parseFloat($("#grandTotal").text()),
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function (response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: response.message
+                        });
+                        loadSavedPlotEntries();
+
+
+                    },
+                    error: function (xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: xhr.responseJSON?.message || 'An error occurred while saving.'
+                        });
+                    }
                 });
-                return;
             }
-
-            let totalAmount = amount * quantity;
-            let existingRow = $("#modalTableBody").find(`tr[data-amount='${amount}']`);
-
-            if (existingRow.length > 0) {
-                let existingQuantity = parseInt(existingRow.find(".quantity").text());
-                let newQuantity = existingQuantity + quantity;
-                let newTotal = amount * newQuantity;
-
-                existingRow.find(".quantity").text(newQuantity);
-                existingRow.find(".total-amount").text(newTotal.toFixed(2));
-
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Updated Entry',
-                    text: `Quantity updated for Amount: ${amount}`,
-                });
-
-            } else {
-                let rowCount = $("#modalTableBody tr").length + 1;
-                $("#modalTableBody").append(`
-                <tr data-amount="${amount}">
-                    <td>${rowCount}</td>
-                    <td class="amount">${amount}</td>
-                    <td class="quantity">${quantity}</td>
-                    <td class="total-amount">${totalAmount.toFixed(2)}</td>
-                    <td><button class="btn btn-danger btn-sm remove-entry">Remove</button></td>
-                </tr>
-            `);
-
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Added Successfully',
-                    text: `Amount: ${amount}, Quantity: ${quantity}, Total: ${totalAmount.toFixed(2)}`,
-                });
-            }
-
-            updateGrandTotal();
-            $("#amount").val('');
-            $("#quantity").val('');
         });
     });
+    function loadSavedPlotEntries() {
+        $.ajax({
+            url: '/get-today-cashier-data',
+            method: 'GET',
+            success: function (response) {
+                let tableBody = $("#modalTableBody");
+                tableBody.empty();
+
+                let grandTotal = 0;
+
+                response.entries.forEach((entry, index) => {
+                    let amount = parseFloat(entry.money);
+                    let qty = parseInt(entry.qty);
+                    let total = parseFloat(entry.amount);
+
+                    grandTotal += total;
+
+                    tableBody.append(`
+                    <tr data-amount="${amount}">
+                        <td>${index + 1}</td>
+                        <td class="amount">${amount}</td>
+                        <td class="quantity">${qty}</td>
+                        <td class="total-amount">${total.toFixed(2)}</td>
+                        <td><button class="btn btn-danger btn-sm remove-entry">Remove</button></td>
+                    </tr>
+                `);
+                });
+
+                $("#grandTotal").text(grandTotal.toFixed(2));
+            },
+            error: function () {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Could not load saved entries.'
+                });
+            }
+        });
+    }
+
+
+    $("#printDayStartReport").click(function () {
+        let tableClone = $("#modalTableBody").closest("table").clone();
+
+        // Remove the last column (Action) in both header and body
+        tableClone.find("thead tr th:last-child").remove();
+        tableClone.find("tbody tr").each(function () {
+            $(this).find("td:last-child").remove();
+        });
+
+        let printWindow = window.open('', '', 'height=600,width=800');
+        printWindow.document.write('<html><head><title>Day Start Report</title>');
+        printWindow.document.write('<style>table { width: 100%; border-collapse: collapse; } th, td { padding: 8px; border: 1px solid #ccc; }</style>');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write('<h3>Day Start Report</h3>');
+        printWindow.document.write(tableClone.prop('outerHTML'));
+        printWindow.document.write('<h4>Total: ' + $("#grandTotal").text() + '</h4>');
+        printWindow.document.write('</body></html>');
+
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+    });
+    $("#addCashToTable").click(function () {
+        let amount = parseFloat($("#cashAmount").val());
+        let quantity = parseInt($("#cashQuantity").val());
+
+        if (!amount || !quantity || amount <= 0 || quantity <= 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Invalid Input',
+                text: 'Please enter valid denomination and quantity.',
+            });
+            return;
+        }
+
+        let total = amount * quantity;
+        let existingRow = $("#cashDrawerTableBody").find(`tr[data-amount='${amount}']`);
+
+        if (existingRow.length > 0) {
+            let existingQty = parseInt(existingRow.find(".cash-qty").text());
+            let newQty = existingQty + quantity;
+            let newTotal = amount * newQty;
+
+            existingRow.find(".cash-qty").text(newQty);
+            existingRow.find(".cash-total").text(newTotal.toFixed(2));
+        } else {
+            let rowCount = $("#cashDrawerTableBody tr").length + 1;
+
+            $("#cashDrawerTableBody").append(`
+            <tr data-amount="${amount}">
+                <td>${rowCount}</td>
+                <td class="cash-amt">${amount}</td>
+                <td class="cash-qty">${quantity}</td>
+                <td class="cash-total">${total.toFixed(2)}</td>
+                <td><button class="btn btn-danger btn-sm remove-cash-row">Remove</button></td>
+            </tr>
+        `);
+        }
+
+        updateCashDrawerTotals();
+
+        $("#cashAmount").val('');
+        $("#cashQuantity").val('');
+    });
+
+    function updateCashDrawerTotals() {
+        let total = 0;
+        $("#cashDrawerTableBody tr").each(function () {
+            let rowTotal = parseFloat($(this).find(".cash-total").text()) || 0;
+            total += rowTotal;
+        });
+        $("#totalCashDrawer").text(total.toFixed(2));
+
+        let balanceAmount = parseFloat($("#balanceAmount").val()) || 0;
+        let difference = balanceAmount - total;
+        $("#balanceDifference").text(difference.toFixed(2));
+    }
+
+
+    $(document).on('click', '.remove-cash-row', function () {
+        $(this).closest('tr').remove();
+        updateCashDrawerTotals();
+    });
+
+    $("#saveDayEnd").click(function () {
+        let startingCash = parseFloat($("#plotAmount").val());
+        let totalIncome = parseFloat($("#totalIncome").text());
+        let totalExpense = parseFloat($("#totalExpenses").text());
+        let balanceAmount = parseFloat($("#balanceAmount").val());
+        let cashDrawerTotal = parseFloat($("#totalCashDrawer").text());
+        let balanceDifference = parseFloat($("#balanceDifference").text());
+
+
+        let drawerEntries = [];
+
+        $("#cashDrawerTableBody tr").each(function () {
+            drawerEntries.push({
+                denomination: parseFloat($(this).find(".cash-amt").text()),
+                quantity: parseInt($(this).find(".cash-qty").text()),
+                total_amount: parseFloat($(this).find(".cash-total").text())
+            });
+        });
+
+
+        Swal.fire({
+            title: 'Confirm Day End',
+            text: 'This action is final. Proceed?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, save it',
+        }).then(result => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/cashier/save-day-end',
+                    method: 'POST',
+                    data: {
+                        starting_cash: startingCash,
+                        total_income: totalIncome,
+                        total_expense: totalExpense,
+                        balance_amount: balanceAmount,
+                        cash_drawer_total: cashDrawerTotal,
+                        balance_difference: balanceDifference,
+                        cash_drawer_entries: drawerEntries,
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function (res) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Saved',
+                            text: res.message
+                        });
+
+                        $("#saveDayEnd").prop('disabled', true);
+                    },
+                    error: function (xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: xhr.responseJSON?.message || 'Failed to save day end.'
+                        });
+                    }
+                });
+            }
+        });
+    });
+
+
+    $("#printDayEndReport").click(function () {
+        const printWindow = window.open('', '', 'height=700,width=900');
+        const incomeRows = $("#incomeTableBody").html();
+        const expenseRows = $("#expensesTableBody").html();
+        const drawerRows = $("#cashDrawerTableBody").html();
+
+        const html = `
+        <html>
+        <head>
+            <title>Day End Summary</title>
+            <style>
+                body { font-family: Arial; margin: 20px; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th, td { border: 1px solid #000; padding: 6px; text-align: left; }
+                h2, h4 { margin: 10px 0; }
+            </style>
+        </head>
+        <body>
+            <h2>📋 Day End Summary - ${new Date().toLocaleDateString()}</h2>
+            <h4>Branch: {{ session('branch_name') }}</h4>
+
+            <h4>Starting Cash: ${$("#plotAmount").val()}</h4>
+            <h4>Total Income: ${$("#totalIncome").text()}</h4>
+            <h4>Total Expenses: ${$("#totalExpenses").text()}</h4>
+            <h4>Balance Amount: ${$("#balanceAmount").val()}</h4>
+
+            <h3>Other Incomes</h3>
+            <table>
+                <thead><tr><th>#</th><th>Source</th><th>Amount</th></tr></thead>
+                <tbody>${incomeRows}</tbody>
+            </table>
+
+            <h3>Other Expenses</h3>
+            <table>
+                <thead><tr><th>#</th><th>Description</th><th>Amount</th></tr></thead>
+                <tbody>${expenseRows}</tbody>
+            </table>
+
+            <h3>Cash Drawer</h3>
+            <table>
+                <thead><tr><th>#</th><th>Denomination</th><th>Qty</th><th>Total</th></tr></thead>
+                <tbody>${drawerRows.replace(/<td>.*Remove.*<\/td>/g, '')}</tbody>
+            </table>
+
+            <h4>Total Cash Drawer Balance: ${$("#totalCashDrawer").text()}</h4>
+            <h4 style="color: red;">Balance Difference: ${$("#balanceDifference").text()}</h4>
+        </body>
+        </html>
+    `;
+
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+    });
+
+
+
 </script>
 

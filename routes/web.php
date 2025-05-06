@@ -687,3 +687,4 @@ Route::get('/company/bank-accounts', [App\Http\Controllers\KYCController::class,
 
 
 
+Route::post('/save-cashier-entries', [CashierController::class, 'saveCashierEntries']);

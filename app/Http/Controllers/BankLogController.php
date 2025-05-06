@@ -32,7 +32,7 @@ class BankLogController extends Controller
         $bank = tableWithBranch('company_bank_accounts')->where('Idbank', '=', $bank_id)->first();
         $acc_type=$bank->acc_type_group;
         if ($type == "Account Creation") {
-            $BankLog->Credit = $amount;
+            $BankLog->Credit = '0.00';
             $BankLog->Debit = '0.00';
             $BankLog->Balance = $amount;
         } else {
