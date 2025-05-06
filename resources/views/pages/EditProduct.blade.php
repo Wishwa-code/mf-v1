@@ -846,6 +846,18 @@
             return levelsData;
         }
 
+        var deleteButtons = document.querySelectorAll('.delete-row');
+        deleteButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                var row = this.closest('tr');
+                row.remove();
+            });
+        });
+        // For both tables (delegated event handler)
+        $(document).on('click', '#documenttable .delete-row, #otherchargetable .delete-row', function () {
+            $(this).closest('tr').remove();
+        });
+
 
         const updateLoanCategory = (e) => {
             e.preventDefault();

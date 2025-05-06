@@ -379,6 +379,7 @@
         <table class="table tab-table active" id="table-all">
             <thead>
             <tr>
+                <th>Tracking No</th>
                 <th>Code</th>
                 <th>Name</th>
                 <th>Type</th>
@@ -398,6 +399,7 @@
         <table class="table tab-table" id="table-assets">
             <thead>
             <tr>
+                <th>Tracking No</th>
                 <th>Code</th>
                 <th>Name</th>
                 <th>Type</th>
@@ -417,6 +419,7 @@
         <table class="table tab-table" id="table-liabilities">
             <thead>
             <tr>
+                <th>Tracking No</th>
                 <th>Code</th>
                 <th>Name</th>
                 <th>Type</th>
@@ -436,6 +439,7 @@
         <table class="table tab-table" id="table-equity">
             <thead>
             <tr>
+                <th>Tracking No</th>
                 <th>Code</th>
                 <th>Name</th>
                 <th>Type</th>
@@ -455,6 +459,7 @@
         <table class="table tab-table" id="table-expenses">
             <thead>
             <tr>
+                <th>Tracking No</th>
                 <th>Code</th>
                 <th>Name</th>
                 <th>Type</th>
@@ -474,6 +479,7 @@
         <table class="table tab-table" id="table-revenue">
             <thead>
             <tr>
+                <th>Tracking No</th>
                 <th>Code</th>
                 <th>Name</th>
                 <th>Type</th>
@@ -576,6 +582,10 @@
                     <input type="text" id="description" placeholder="Enter description">
                 </div>
                 <div class="form-group">
+                    <label for="description">Opening Balance</label>
+                    <input type="text" id="opening_balance" placeholder="Enter Opening Balance" value="0.00">
+                </div>
+                <div class="form-group">
                     <label class="mb-0 d-inline-flex align-items-center" for="isSubAccount">
                         Mark this as a sub-account
                         <input type="checkbox" id="isSubAccount" class="ms-2" style="width: 16px; height: 16px;">
@@ -653,7 +663,8 @@
 
     <script>
         $(document).ready(function() {
-
+            let x = ["#opening_balance"];
+            decimalFormat(x);
             document.getElementById('isSubAccount').addEventListener('change', function () {
                 const group = document.getElementById('primaryAccountGroup');
                 group.style.display = this.checked ? 'block' : 'none';
@@ -700,6 +711,7 @@
                     var cashFlowType = $('#inputCashFlowType').val();
                     var description = $('#description').val();
                     var primaryAccountSelect = $('#primaryAccountSelect').val();
+                    var opening_balance = $('#opening_balance').val();
                     var isSubAccount = $('#isSubAccount').is(':checked') ? 1 : 0;
 
 
@@ -709,7 +721,7 @@
 
                     // Validation checks for required fields
                     // Adjust these conditions based on which fields are mandatory
-                    if (!code || !accName || !accTypeGroup || !accType || !cashFlowType) {
+                    if (!code || !accName || !accTypeGroup || !accType || !cashFlowType || !opening_balance) {
                         Swal.fire({
                             icon: 'warning',
                             title: 'Incomplete Fields',
@@ -724,6 +736,7 @@
                         acc_name: accName,
                         acc_type_group: accTypeGroup,
                         acc_type: accType,
+                        opening_balance: opening_balance,
                         cash_flow_type: cashFlowType,
                         primaryAccountSelect: primaryAccountSelect,
                         isSubAccount: isSubAccount,
@@ -826,6 +839,7 @@
 
                         const row = `
         <tr>
+            <td>${item.tracking_no}</td>
             <td>${item.code ? item.code : '-'}</td>
             <td>${item.Account_Name}</td>
             <td>${item.type}</td>

@@ -283,17 +283,17 @@ class LoanCategoryController extends Controller
     }
 
     public function editProduct($id){
-        $loanCategory = DB::table('loan_category')->where('idLoan_Category', $id)->first();
+        $loanCategory = tableWithBranch('loan_category')->where('idLoan_Category', $id)->first();
 
-        $otherCharges = DB::table('other_charges')->where('Loan_Category_idLoan_Category', $id)->get();
-        $requiredDocuments = DB::table('required_documents')->where('Loan_Category_idLoan_Category', $id)->get();
-        $levels = DB::table('level')->where('product_id', $id)->get();
+        $otherCharges = tableWithBranch('other_charges')->where('Loan_Category_idLoan_Category', $id)->get();
+        $requiredDocuments = tableWithBranch('required_documents')->where('Loan_Category_idLoan_Category', $id)->get();
+        $levels = tableWithBranch('level')->where('product_id', $id)->get();
 
         $levelsData = [];
 
         foreach ($levels as $level) {
-            $designations = DB::table('level_has_designation')->where('level_id', $level->id)->get();
-            $checklist = DB::table('approval_checklist')->where('level_id', $level->id)->get();
+            $designations = tableWithBranch('level_has_designation')->where('level_id', $level->id)->get();
+            $checklist = tableWithBranch('approval_checklist')->where('level_id', $level->id)->get();
 
             $levelsData[] = [
                 'level' => $level->type,
@@ -303,7 +303,7 @@ class LoanCategoryController extends Controller
             ];
         }
 
-        $designation = DB::table('designation')->get();
+        $designation = tableWithBranch('designation')->get();
         return view('pages.EditProduct', compact('loanCategory', 'otherCharges', 'requiredDocuments', 'levelsData', 'designation','id'));
     }
 

@@ -88,7 +88,22 @@ class ChartOfAccountController extends Controller
             $primaryAccountSelect=$request->primaryAccountSelect;
         }
 
-        // Insert data into DB
+        // Step 1: Get first letter of acc_type_group in uppercase
+        $prefix = strtoupper(substr($request->acc_type_group, 0, 1));
+
+// Step 2: Query max tracking_no for this prefix
+        $latestTracking = DB::table('company_bank_accounts')
+            ->where('tracking_no', 'like', $prefix . '%')
+            ->select(DB::raw("MAX(CAST(SUBSTRING(tracking_no, 2) AS UNSIGNED)) as max_number"))
+            ->first();
+
+        $nextNumber = $latestTracking && $latestTracking->max_number ? $latestTracking->max_number + 1 : 1;
+
+// Step 3: Format to 4 digits with leading zeros
+        $tracking_no = $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+
+
+
 
         $user_id = (int)session('userid');
         $Bank = [
@@ -98,11 +113,12 @@ class ChartOfAccountController extends Controller
             'Account_Name' => $request->input('acc_name'),
             'Account_No' => $request->input('code'),
             'Bank_Branch' => '-',
-            'Account_Balance' => '0.00',
+            'Account_Balance' => $request->input('opening_balance'),
             'type' => $request->input('acc_type'),
             'cashflow' => $request->input('cash_flow_type'),
             'acc_type_group' => $request->input('acc_type_group'),
             'primary_account' => $primaryAccountSelect,
+            'tracking_no' => $tracking_no,
             'User' => $user_id,
         ];
         if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('code', '=', $request->input('code'))->exists()) {
@@ -115,13 +131,13 @@ class ChartOfAccountController extends Controller
                 'acc_type' => $request->input('acc_type'),
                 'cash_flow_type' => $request->input('cash_flow_type'),
                 'description' => $request->input('description'),
-                'opening_balance' => 0, // set default if needed
-                'current_balance' => 0, // set default if needed
+                'opening_balance' => $request->input('opening_balance'),
+                'current_balance' => $request->input('opening_balance'),
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ]);
             $insertedId = insertWithBranch('company_bank_accounts', $Bank);
-            $this->bankLogController->index($insertedId,"Account Creation","-","-","credit","0.00",'-');
+            $this->bankLogController->index($insertedId,"Account Creation","-","-","credit",$request->input('opening_balance'),'-');
             return response()->json(['status' => 'success']);
         }
     }
