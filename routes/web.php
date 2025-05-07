@@ -494,12 +494,11 @@ Route::post('/changeCollector_filter','\App\Http\Controllers\TodayPaymentControl
 
 Route::post('/upload-excel-customer', [\App\Http\Controllers\ExcelController::class, 'uploadExcelCustomer']);
 Route::post('/upload-excel-product', [\App\Http\Controllers\ExcelController::class, 'uploadExcelProduct']);
-
 Route::post('/upload-excel-loan', [\App\Http\Controllers\ExcelController::class, 'uploadExcelLoan']);
 Route::post('/upload-excel-payment', [\App\Http\Controllers\ExcelController::class, 'uploadExcelPayment']);
+
+
 Route::post('/upload-excel-category', [\App\Http\Controllers\ExcelController::class, 'uploadExcelCate']);
-
-
 Route::post('/upload-excel-guardian', [\App\Http\Controllers\ExcelController::class, 'uploadExcelWitness']);
 
 
