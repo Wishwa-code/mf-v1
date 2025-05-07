@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\AssetManagementController;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\CashFlowController;
@@ -688,3 +689,14 @@ Route::get('/company/bank-accounts', [App\Http\Controllers\KYCController::class,
 
 
 Route::post('/save-cashier-entries', [CashierController::class, 'saveCashierEntries']);
+
+
+
+
+
+
+
+
+// API
+
+Route::post('api/login', [AuthController::class, 'apiLogin']);

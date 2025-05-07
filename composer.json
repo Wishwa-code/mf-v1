@@ -9,6 +9,7 @@
         "barryvdh/laravel-dompdf": "^2.2",
         "guzzlehttp/guzzle": "^7.8",
         "laravel/framework": "^11.0",
+        "laravel/sanctum": "^4.1",
         "laravel/tinker": "^2.9",
         "spatie/laravel-backup": "^8.8"
     },

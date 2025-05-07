@@ -277,6 +277,25 @@
             align-items: center;
             justify-content: center;
         }
+        /* Enhanced Ledger Modal Styling */
+        .ledger-modal {
+            width: 95vw;             /* Almost full viewport width */
+            max-width: 1400px;       /* Large screen max cap */
+            height: auto;            /* Take most of the vertical height */
+            overflow-y: auto;
+        }
+
+        #financialReportTable {
+            width: 100% !important;
+            table-layout: auto !important;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        #financialReportTable th,
+        #financialReportTable td {
+            padding: 8px 10px;
+        }
 
     </style>
 @endsection
@@ -379,7 +398,6 @@
         <table class="table tab-table active" id="table-all">
             <thead>
             <tr>
-                <th>Tracking No</th>
                 <th>Code</th>
                 <th>Name</th>
                 <th>Type</th>
@@ -399,7 +417,6 @@
         <table class="table tab-table" id="table-assets">
             <thead>
             <tr>
-                <th>Tracking No</th>
                 <th>Code</th>
                 <th>Name</th>
                 <th>Type</th>
@@ -419,7 +436,6 @@
         <table class="table tab-table" id="table-liabilities">
             <thead>
             <tr>
-                <th>Tracking No</th>
                 <th>Code</th>
                 <th>Name</th>
                 <th>Type</th>
@@ -439,7 +455,6 @@
         <table class="table tab-table" id="table-equity">
             <thead>
             <tr>
-                <th>Tracking No</th>
                 <th>Code</th>
                 <th>Name</th>
                 <th>Type</th>
@@ -459,7 +474,6 @@
         <table class="table tab-table" id="table-expenses">
             <thead>
             <tr>
-                <th>Tracking No</th>
                 <th>Code</th>
                 <th>Name</th>
                 <th>Type</th>
@@ -479,7 +493,6 @@
         <table class="table tab-table" id="table-revenue">
             <thead>
             <tr>
-                <th>Tracking No</th>
                 <th>Code</th>
                 <th>Name</th>
                 <th>Type</th>
@@ -612,8 +625,8 @@
 
     <!-- Large Modal for Account History -->
     <div class="modal" id="accountHistoryModal">
-        <div class="modal-content large-modal-content">
-            <div class="modal-header">
+        <div class="modal-content large-modal-content ledger-modal">
+        <div class="modal-header">
                 <h5 id="ledgerAccountTitle">Ledger Details</h5> <!-- Add dynamic title here -->
                 <button class="close" id="closeHistoryModal">&times;</button>
             </div>
@@ -839,7 +852,6 @@
 
                         const row = `
         <tr>
-            <td>${item.tracking_no}</td>
             <td>${item.code ? item.code : '-'}</td>
             <td>${item.Account_Name}</td>
             <td>${item.type}</td>
