@@ -49,11 +49,11 @@ class CashierController extends Controller
             $existingPlot = tableWithBranch('plot')
                 ->whereDate('Date_Time', $today)
                 ->first();
-            $total = (float) $existingPlot->total_amount;
-            $newTotal = (float) $request->grandTotal;
+
             if ($existingPlot) {
 
-
+                $total = (float) $existingPlot->total_amount;
+                $newTotal = (float) $request->grandTotal;
 
                 // Update total_amount and last updated fields
                 DB::table('plot')
@@ -105,7 +105,7 @@ class CashierController extends Controller
             } else {
                 // Insert new plot record
                 $plotId = DB::table('plot')->insertGetId([
-                    'total_amount'      => $newTotal,
+                    'total_amount'      => $request->grandTotal,
                     'Date_Time'         => Carbon::now(),
                     'user'              => $user_id,
                     'last_updated_time' => Carbon::now(),
