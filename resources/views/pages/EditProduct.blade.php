@@ -916,6 +916,8 @@
             }
 
             let level_data = readLevelsData();
+            console.log(level_data);
+
             if (level_data.length === 0) {
                 return Swal.fire("Error!", "Please add at least one level!", "error");
             }
