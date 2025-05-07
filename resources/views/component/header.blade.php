@@ -1614,11 +1614,23 @@ $banner = DB::select($query);
             $(this).find("td:last-child").remove();
         });
 
+        // Get current date and time
+        const now = new Date();
+        const dateStr = now.toLocaleDateString();
+        const timeStr = now.toLocaleTimeString();
+
+        // Get user name from Laravel session
+        const userName = `{{ session('Full_Name') }}`;
+        const branchName = `{{ session('branch_name') }}`;
+
         let printWindow = window.open('', '', 'height=600,width=800');
         printWindow.document.write('<html><head><title>Day Start Report</title>');
         printWindow.document.write('<style>table { width: 100%; border-collapse: collapse; } th, td { padding: 8px; border: 1px solid #ccc; }</style>');
         printWindow.document.write('</head><body>');
         printWindow.document.write('<h3>Day Start Report</h3>');
+        printWindow.document.write(`<p><strong>User:</strong> ${userName}</p>`);
+        printWindow.document.write(`<p><strong>Branch:</strong> ${branchName}</p>`);
+        printWindow.document.write(`<p><strong>Date:</strong> ${dateStr} <strong>Time:</strong> ${timeStr}</p>`);
         printWindow.document.write(tableClone.prop('outerHTML'));
         printWindow.document.write('<h4>Total: ' + $("#grandTotal").text() + '</h4>');
         printWindow.document.write('</body></html>');
@@ -1627,6 +1639,9 @@ $banner = DB::select($query);
         printWindow.focus();
         printWindow.print();
     });
+
+
+
     $("#addCashToTable").click(function () {
         let amount = parseFloat($("#cashAmount").val());
         let quantity = parseInt($("#cashQuantity").val());
