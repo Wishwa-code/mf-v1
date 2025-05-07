@@ -697,9 +697,3 @@ Route::post('/save-cashier-entries', [CashierController::class, 'saveCashierEntr
 
 
 
-// API
-
-Route::middleware('api')->prefix('api')->group(function () {
-    Route::post('/login', [AuthController::class, 'apiLogin']);
-});
-
