@@ -348,21 +348,25 @@ class LoanCategoryController extends Controller
 
             DB::table('level')->where('product_id', $id)->delete();
 
+            Log::info($request->input('othercharges'));
             // Reinsert charges
             foreach ($request->input('othercharges', []) as $row) {
+
                 DB::table('other_charges')->insert([
                     'Description' => $row[0],
                     'charge_type' => $row[1],
                     'Amount' => $row[2],
                     'Loan_Category_idLoan_Category' => $id,
+                    'branch_id'=>session('branch_id')
                 ]);
             }
-
+            Log::info($request->input('document'));
             // Reinsert documents
             foreach ($request->input('document', []) as $row) {
                 DB::table('required_documents')->insert([
                     'Name' => $row[0],
                     'Loan_Category_idLoan_Category' => $id,
+                    'branch_id'=>session('branch_id')
                 ]);
             }
 
@@ -373,12 +377,13 @@ class LoanCategoryController extends Controller
                     'product_id' => $id,
                     'type' => $level['level'],
                     'description' => $level['description'] ?? '-',
+                    'branch_id'=>session('branch_id')
                 ]);
-
                 foreach ($level['designations'] as $desi) {
                     DB::table('level_has_designation')->insert([
                         'level_id' => $levelId,
-                        'designation_id' => $desi['name'],
+                        'designation_id' => $desi['id'],
+                        'branch_id'=>session('branch_id')
                     ]);
                 }
 
@@ -386,9 +391,11 @@ class LoanCategoryController extends Controller
                     DB::table('approval_checklist')->insert([
                         'level_id' => $levelId,
                         'description' => $item,
+                        'branch_id'=>session('branch_id')
                     ]);
                 }
             }
+
             DB::commit();
             return response()->json(['message' => 'Updated successfully'], 200);
         } catch (\Exception $e) {

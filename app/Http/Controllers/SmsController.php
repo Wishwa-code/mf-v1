@@ -6,7 +6,9 @@ use App\Models\Sms;
 use Illuminate\Http\Request;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
 
 class SmsController extends Controller
 {
@@ -29,9 +31,10 @@ class SmsController extends Controller
         ]);
         $customer=tableWithBranch('customer')->where('idCustomer',$customer_id)->first();
         try {
-
-            $newTransactionId = random_int(1, 999999999999999999);
-
+            $company=tableWithBranch('company')->where('branch_id',\session('branch_id'))->first();
+            $branch_code=$company->id ?? 0;
+            $newTransactionId = intval($branch_code . time() . rand(10, 99));
+            Log::info($newTransactionId);
             $company=DB::table('company')->first();
 
             $response = $client->post('sms', [
@@ -53,7 +56,7 @@ class SmsController extends Controller
                 ],
             ]);
             $responseData = json_decode($response->getBody()->getContents(), true);
-
+            Log::info($responseData);
             if ($responseData['status']==="success") {
                 DB::table('sms')->insert([
                     'cus_id' => $customer_id,
