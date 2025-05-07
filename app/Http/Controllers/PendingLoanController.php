@@ -414,15 +414,6 @@ class PendingLoanController extends Controller
 
     public function check_the_approval(string $id)
     {
-        $customer_loan_doc = tableWithBranch('loan_has_approval', 'loan_has_approval')
-            ->leftJoin('user', 'loan_has_approval.user_id', '=', 'user.id')
-            ->where('loan_id', '=', $id)
-            ->select(
-                'loan_has_approval.*',
-                DB::raw('IF(user.id IS NULL, 0, user.id) as user_id'),
-                DB::raw('IF(user.id IS NULL, "-", user.Full_Name) as Full_Name')
-            )
-            ->get();
 
         $login_designation = session('designation');
 
@@ -438,6 +429,48 @@ class PendingLoanController extends Controller
             ->select(
                 'level.id as level_id', // Keep level ID
                 'level_has_designation.designation_id' // Keep designation as it was
+            )
+            ->get();
+
+        if ($customer_loan->Status=="-1"){
+            DB::table('loan_has_approval')->where('loan_id', $id)->delete();
+            $get_level=tableWithBranch('level')->where('product_id','=',$customer_loan->Loan_Category_idLoan_Category)->get();
+            foreach ($get_level as $item){
+                // Prepare data for the loan approval
+                $loanApprovalData = [
+                    'loan_id' => $id,
+                    'level' => $item->type,
+                    'level_id' => $item->id,
+                    'description' => $item->description,
+                    'comment' => '',
+                    'user_id' => 0,
+                    'date' => '-',
+                ];
+
+// Insert the loan approval data with branch scoping
+                insertWithBranch('loan_has_approval', $loanApprovalData);
+
+                $checklist=tableWithBranch('approval_checklist')->where('level_id','=',$item->id)->get();
+                foreach ($checklist as $check_item){
+                    $loanChecklistData = [
+                        'loan_id' => $id,
+                        'level' => $item->id,
+                        'description' => $check_item->description,
+                        'status' => '0',
+                    ];
+                    insertWithBranch('loan_has_approval_checklist', $loanChecklistData);
+                }
+            }
+        }
+
+
+        $customer_loan_doc = tableWithBranch('loan_has_approval', 'loan_has_approval')
+            ->leftJoin('user', 'loan_has_approval.user_id', '=', 'user.id')
+            ->where('loan_id', '=', $id)
+            ->select(
+                'loan_has_approval.*',
+                DB::raw('IF(user.id IS NULL, 0, user.id) as user_id'),
+                DB::raw('IF(user.id IS NULL, "-", user.Full_Name) as Full_Name')
             )
             ->get();
 

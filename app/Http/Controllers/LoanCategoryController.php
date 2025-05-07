@@ -348,7 +348,6 @@ class LoanCategoryController extends Controller
 
             DB::table('level')->where('product_id', $id)->delete();
 
-            Log::info($request->input('othercharges'));
             // Reinsert charges
             foreach ($request->input('othercharges', []) as $row) {
 
@@ -360,7 +359,6 @@ class LoanCategoryController extends Controller
                     'branch_id'=>session('branch_id')
                 ]);
             }
-            Log::info($request->input('document'));
             // Reinsert documents
             foreach ($request->input('document', []) as $row) {
                 DB::table('required_documents')->insert([
@@ -382,7 +380,7 @@ class LoanCategoryController extends Controller
                 foreach ($level['designations'] as $desi) {
                     DB::table('level_has_designation')->insert([
                         'level_id' => $levelId,
-                        'designation_id' => $desi['id'],
+                        'designation_id' => $desi['name'],
                         'branch_id'=>session('branch_id')
                     ]);
                 }
