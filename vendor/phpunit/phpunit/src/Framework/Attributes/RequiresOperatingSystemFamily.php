@@ -12,7 +12,7 @@ namespace PHPUnit\Framework\Attributes;
 use Attribute;
 
 /**
- * @immutable
+ * @psalm-immutable
  *
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  */
@@ -20,12 +20,12 @@ use Attribute;
 final readonly class RequiresOperatingSystemFamily
 {
     /**
-     * @var non-empty-string
+     * @psalm-var non-empty-string
      */
     private string $operatingSystemFamily;
 
     /**
-     * @param non-empty-string $operatingSystemFamily
+     * @psalm-param non-empty-string $operatingSystemFamily
      */
     public function __construct(string $operatingSystemFamily)
     {
@@ -33,7 +33,7 @@ final readonly class RequiresOperatingSystemFamily
     }
 
     /**
-     * @return non-empty-string
+     * @psalm-return non-empty-string
      */
     public function operatingSystemFamily(): string
     {

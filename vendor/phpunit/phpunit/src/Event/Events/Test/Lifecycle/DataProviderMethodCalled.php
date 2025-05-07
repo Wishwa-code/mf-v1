@@ -15,7 +15,7 @@ use PHPUnit\Event\Event;
 use PHPUnit\Event\Telemetry\Info;
 
 /**
- * @immutable
+ * @psalm-immutable
  *
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  */

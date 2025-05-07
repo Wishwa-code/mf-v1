@@ -9,7 +9,6 @@
  */
 namespace PHPUnit\TextUI\Configuration;
 
-use const PHP_EOL;
 use function assert;
 use function count;
 use function is_dir;
@@ -27,8 +26,6 @@ use PHPUnit\TextUI\XmlConfiguration\TestSuiteMapper;
 use SebastianBergmann\FileIterator\Facade as FileIteratorFacade;
 
 /**
- * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
- *
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
 final readonly class TestSuiteBuilder
@@ -86,8 +83,9 @@ final readonly class TestSuiteBuilder
     }
 
     /**
-     * @param non-empty-string       $path
-     * @param list<non-empty-string> $suffixes
+     * @psalm-param non-empty-string $path
+     * @psalm-param list<non-empty-string> $suffixes
+     * @psalm-param ?TestSuite $suite
      *
      * @throws \PHPUnit\Framework\Exception
      */
@@ -127,8 +125,8 @@ final readonly class TestSuiteBuilder
     }
 
     /**
-     * @param list<non-empty-string> $paths
-     * @param list<non-empty-string> $suffixes
+     * @psalm-param list<non-empty-string> $paths
+     * @psalm-param list<non-empty-string> $suffixes
      *
      * @throws \PHPUnit\Framework\Exception
      */

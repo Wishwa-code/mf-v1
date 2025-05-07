@@ -30,8 +30,6 @@ use SebastianBergmann\Invoker\TimeoutException;
 use Throwable;
 
 /**
- * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
- *
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
 final class TestRunner
@@ -228,8 +226,8 @@ final class TestRunner
     }
 
     /**
-     * @param class-string     $className
-     * @param non-empty-string $methodName
+     * @psalm-param class-string $className
+     * @psalm-param non-empty-string $methodName
      */
     private function hasCoverageMetadata(string $className, string $methodName): bool
     {

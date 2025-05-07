@@ -14,7 +14,7 @@ use PHPUnit\Event\Event;
 use PHPUnit\Event\Telemetry;
 
 /**
- * @immutable
+ * @psalm-immutable
  *
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  */
@@ -23,18 +23,18 @@ final readonly class ExtensionBootstrapped implements Event
     private Telemetry\Info $telemetryInfo;
 
     /**
-     * @var class-string
+     * @psalm-var class-string
      */
     private string $className;
 
     /**
-     * @var array<string, string>
+     * @psalm-var array<string, string>
      */
     private array $parameters;
 
     /**
-     * @param class-string          $className
-     * @param array<string, string> $parameters
+     * @psalm-param class-string $className
+     * @psalm-param array<string, string> $parameters
      */
     public function __construct(Telemetry\Info $telemetryInfo, string $className, array $parameters)
     {
@@ -49,7 +49,7 @@ final readonly class ExtensionBootstrapped implements Event
     }
 
     /**
-     * @return class-string
+     * @psalm-return class-string
      */
     public function className(): string
     {
@@ -57,7 +57,7 @@ final readonly class ExtensionBootstrapped implements Event
     }
 
     /**
-     * @return array<string, string>
+     * @psalm-return array<string, string>
      */
     public function parameters(): array
     {

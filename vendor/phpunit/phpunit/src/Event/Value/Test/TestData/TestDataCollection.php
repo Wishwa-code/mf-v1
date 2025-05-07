@@ -21,13 +21,13 @@ use IteratorAggregate;
 final readonly class TestDataCollection implements Countable, IteratorAggregate
 {
     /**
-     * @var list<TestData>
+     * @psalm-var list<TestData>
      */
     private array $data;
     private ?DataFromDataProvider $fromDataProvider;
 
     /**
-     * @param list<TestData> $data
+     * @psalm-param list<TestData> $data
      */
     public static function fromArray(array $data): self
     {
@@ -49,7 +49,7 @@ final readonly class TestDataCollection implements Countable, IteratorAggregate
     }
 
     /**
-     * @return list<TestData>
+     * @psalm-return list<TestData>
      */
     public function asArray(): array
     {
@@ -62,7 +62,7 @@ final readonly class TestDataCollection implements Countable, IteratorAggregate
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->fromDataProvider
+     * @psalm-assert-if-true !null $this->fromDataProvider
      */
     public function hasDataFromDataProvider(): bool
     {

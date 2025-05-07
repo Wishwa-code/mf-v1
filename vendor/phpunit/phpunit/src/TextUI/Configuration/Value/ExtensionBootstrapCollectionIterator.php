@@ -20,7 +20,7 @@ use Iterator;
 final class ExtensionBootstrapCollectionIterator implements Iterator
 {
     /**
-     * @var list<ExtensionBootstrap>
+     * @psalm-var list<ExtensionBootstrap>
      */
     private readonly array $extensionBootstraps;
     private int $position = 0;

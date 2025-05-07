@@ -14,7 +14,7 @@ use PHPUnit\Event\Event;
 use PHPUnit\Event\Telemetry;
 
 /**
- * @immutable
+ * @psalm-immutable
  *
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  */
@@ -23,12 +23,12 @@ final readonly class MockObjectForAbstractClassCreated implements Event
     private Telemetry\Info $telemetryInfo;
 
     /**
-     * @var class-string
+     * @psalm-var class-string
      */
     private string $className;
 
     /**
-     * @param class-string $className
+     * @psalm-param class-string $className
      */
     public function __construct(Telemetry\Info $telemetryInfo, string $className)
     {
@@ -42,7 +42,7 @@ final readonly class MockObjectForAbstractClassCreated implements Event
     }
 
     /**
-     * @return class-string
+     * @psalm-return class-string
      */
     public function className(): string
     {

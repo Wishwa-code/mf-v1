@@ -10,16 +10,14 @@
 namespace PHPUnit\TextUI\CliArguments;
 
 /**
- * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
- *
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  *
- * @immutable
+ * @psalm-immutable
  */
 final readonly class Configuration
 {
     /**
-     * @var list<non-empty-string>
+     * @psalm-var list<non-empty-string>
      */
     private array $arguments;
     private ?string $atLeastVersion;
@@ -33,10 +31,6 @@ final readonly class Configuration
     private ?string $colors;
     private null|int|string $columns;
     private ?string $configurationFile;
-
-    /**
-     * @var ?non-empty-list<non-empty-string>
-     */
     private ?array $coverageFilter;
     private ?string $coverageClover;
     private ?string $coverageCobertura;
@@ -53,10 +47,6 @@ final readonly class Configuration
     private ?bool $disableCodeCoverageIgnore;
     private ?bool $disallowTestOutput;
     private ?bool $enforceTimeLimit;
-
-    /**
-     * @var ?non-empty-list<non-empty-string>
-     */
     private ?array $excludeGroups;
     private ?int $executionOrder;
     private ?int $executionOrderDefects;
@@ -83,27 +73,11 @@ final readonly class Configuration
     private bool $ignoreBaseline;
     private bool $generateConfiguration;
     private bool $migrateConfiguration;
-
-    /**
-     * @var ?non-empty-list<non-empty-string>
-     */
     private ?array $groups;
-
-    /**
-     * @var ?non-empty-list<non-empty-string>
-     */
     private ?array $testsCovering;
-
-    /**
-     * @var ?non-empty-list<non-empty-string>
-     */
     private ?array $testsUsing;
     private bool $help;
     private ?string $includePath;
-
-    /**
-     * @var ?non-empty-array<non-empty-string, non-empty-string>
-     */
     private ?array $iniSettings;
     private ?string $junitLogfile;
     private bool $listGroups;
@@ -129,10 +103,9 @@ final readonly class Configuration
     private ?string $testdoxHtmlFile;
     private ?string $testdoxTextFile;
     private ?bool $testdoxPrinter;
-    private ?bool $testdoxPrinterSummary;
 
     /**
-     * @var ?non-empty-list<non-empty-string>
+     * @psalm-var ?non-empty-list<non-empty-string>
      */
     private ?array $testSuffixes;
     private ?string $testSuite;
@@ -150,22 +123,10 @@ final readonly class Configuration
     private bool $debug;
 
     /**
-     * @var ?non-empty-list<non-empty-string>
+     * @psalm-param list<non-empty-string> $arguments
+     * @psalm-param ?non-empty-list<non-empty-string> $testSuffixes
      */
-    private ?array $extensions;
-
-    /**
-     * @param list<non-empty-string>                               $arguments
-     * @param ?non-empty-list<non-empty-string>                    $excludeGroups
-     * @param ?non-empty-list<non-empty-string>                    $groups
-     * @param ?non-empty-list<non-empty-string>                    $testsCovering
-     * @param ?non-empty-list<non-empty-string>                    $testsUsing
-     * @param ?non-empty-array<non-empty-string, non-empty-string> $iniSettings
-     * @param ?non-empty-list<non-empty-string>                    $testSuffixes
-     * @param ?non-empty-list<non-empty-string>                    $coverageFilter
-     * @param ?non-empty-list<non-empty-string>                    $extensions
-     */
-    public function __construct(array $arguments, ?string $atLeastVersion, ?bool $backupGlobals, ?bool $backupStaticProperties, ?bool $beStrictAboutChangesToGlobalState, ?string $bootstrap, ?string $cacheDirectory, ?bool $cacheResult, bool $checkVersion, ?string $colors, null|int|string $columns, ?string $configurationFile, ?string $coverageClover, ?string $coverageCobertura, ?string $coverageCrap4J, ?string $coverageHtml, ?string $coveragePhp, ?string $coverageText, ?bool $coverageTextShowUncoveredFiles, ?bool $coverageTextShowOnlySummary, ?string $coverageXml, ?bool $pathCoverage, bool $warmCoverageCache, ?int $defaultTimeLimit, ?bool $disableCodeCoverageIgnore, ?bool $disallowTestOutput, ?bool $enforceTimeLimit, ?array $excludeGroups, ?int $executionOrder, ?int $executionOrderDefects, ?bool $failOnDeprecation, ?bool $failOnEmptyTestSuite, ?bool $failOnIncomplete, ?bool $failOnNotice, ?bool $failOnRisky, ?bool $failOnSkipped, ?bool $failOnWarning, ?bool $stopOnDefect, ?bool $stopOnDeprecation, ?bool $stopOnError, ?bool $stopOnFailure, ?bool $stopOnIncomplete, ?bool $stopOnNotice, ?bool $stopOnRisky, ?bool $stopOnSkipped, ?bool $stopOnWarning, ?string $filter, ?string $excludeFilter, ?string $generateBaseline, ?string $useBaseline, bool $ignoreBaseline, bool $generateConfiguration, bool $migrateConfiguration, ?array $groups, ?array $testsCovering, ?array $testsUsing, bool $help, ?string $includePath, ?array $iniSettings, ?string $junitLogfile, bool $listGroups, bool $listSuites, bool $listTestFiles, bool $listTests, ?string $listTestsXml, ?bool $noCoverage, ?bool $noExtensions, ?bool $noOutput, ?bool $noProgress, ?bool $noResults, ?bool $noLogging, ?bool $processIsolation, ?int $randomOrderSeed, ?bool $reportUselessTests, ?bool $resolveDependencies, ?bool $reverseList, ?bool $stderr, ?bool $strictCoverage, ?string $teamcityLogfile, ?string $testdoxHtmlFile, ?string $testdoxTextFile, ?array $testSuffixes, ?string $testSuite, ?string $excludeTestSuite, bool $useDefaultConfiguration, ?bool $displayDetailsOnIncompleteTests, ?bool $displayDetailsOnSkippedTests, ?bool $displayDetailsOnTestsThatTriggerDeprecations, ?bool $displayDetailsOnTestsThatTriggerErrors, ?bool $displayDetailsOnTestsThatTriggerNotices, ?bool $displayDetailsOnTestsThatTriggerWarnings, bool $version, ?array $coverageFilter, ?string $logEventsText, ?string $logEventsVerboseText, ?bool $printerTeamCity, ?bool $testdoxPrinter, ?bool $testdoxPrinterSummary, bool $debug, ?array $extensions)
+    public function __construct(array $arguments, ?string $atLeastVersion, ?bool $backupGlobals, ?bool $backupStaticProperties, ?bool $beStrictAboutChangesToGlobalState, ?string $bootstrap, ?string $cacheDirectory, ?bool $cacheResult, bool $checkVersion, ?string $colors, null|int|string $columns, ?string $configurationFile, ?string $coverageClover, ?string $coverageCobertura, ?string $coverageCrap4J, ?string $coverageHtml, ?string $coveragePhp, ?string $coverageText, ?bool $coverageTextShowUncoveredFiles, ?bool $coverageTextShowOnlySummary, ?string $coverageXml, ?bool $pathCoverage, bool $warmCoverageCache, ?int $defaultTimeLimit, ?bool $disableCodeCoverageIgnore, ?bool $disallowTestOutput, ?bool $enforceTimeLimit, ?array $excludeGroups, ?int $executionOrder, ?int $executionOrderDefects, ?bool $failOnDeprecation, ?bool $failOnEmptyTestSuite, ?bool $failOnIncomplete, ?bool $failOnNotice, ?bool $failOnRisky, ?bool $failOnSkipped, ?bool $failOnWarning, ?bool $stopOnDefect, ?bool $stopOnDeprecation, ?bool $stopOnError, ?bool $stopOnFailure, ?bool $stopOnIncomplete, ?bool $stopOnNotice, ?bool $stopOnRisky, ?bool $stopOnSkipped, ?bool $stopOnWarning, ?string $filter, ?string $excludeFilter, ?string $generateBaseline, ?string $useBaseline, bool $ignoreBaseline, bool $generateConfiguration, bool $migrateConfiguration, ?array $groups, ?array $testsCovering, ?array $testsUsing, bool $help, ?string $includePath, ?array $iniSettings, ?string $junitLogfile, bool $listGroups, bool $listSuites, bool $listTestFiles, bool $listTests, ?string $listTestsXml, ?bool $noCoverage, ?bool $noExtensions, ?bool $noOutput, ?bool $noProgress, ?bool $noResults, ?bool $noLogging, ?bool $processIsolation, ?int $randomOrderSeed, ?bool $reportUselessTests, ?bool $resolveDependencies, ?bool $reverseList, ?bool $stderr, ?bool $strictCoverage, ?string $teamcityLogfile, ?string $testdoxHtmlFile, ?string $testdoxTextFile, ?array $testSuffixes, ?string $testSuite, ?string $excludeTestSuite, bool $useDefaultConfiguration, ?bool $displayDetailsOnIncompleteTests, ?bool $displayDetailsOnSkippedTests, ?bool $displayDetailsOnTestsThatTriggerDeprecations, ?bool $displayDetailsOnTestsThatTriggerErrors, ?bool $displayDetailsOnTestsThatTriggerNotices, ?bool $displayDetailsOnTestsThatTriggerWarnings, bool $version, ?array $coverageFilter, ?string $logEventsText, ?string $logEventsVerboseText, ?bool $printerTeamCity, ?bool $printerTestDox, bool $debug)
     {
         $this->arguments                                    = $arguments;
         $this->atLeastVersion                               = $atLeastVersion;
@@ -263,14 +224,12 @@ final readonly class Configuration
         $this->logEventsText                                = $logEventsText;
         $this->logEventsVerboseText                         = $logEventsVerboseText;
         $this->teamCityPrinter                              = $printerTeamCity;
-        $this->testdoxPrinter                               = $testdoxPrinter;
-        $this->testdoxPrinterSummary                        = $testdoxPrinterSummary;
+        $this->testdoxPrinter                               = $printerTestDox;
         $this->debug                                        = $debug;
-        $this->extensions                                   = $extensions;
     }
 
     /**
-     * @return list<non-empty-string>
+     * @psalm-return list<non-empty-string>
      */
     public function arguments(): array
     {
@@ -278,7 +237,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->atLeastVersion
+     * @psalm-assert-if-true !null $this->atLeastVersion
      */
     public function hasAtLeastVersion(): bool
     {
@@ -298,7 +257,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->backupGlobals
+     * @psalm-assert-if-true !null $this->backupGlobals
      */
     public function hasBackupGlobals(): bool
     {
@@ -318,7 +277,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->backupStaticProperties
+     * @psalm-assert-if-true !null $this->backupStaticProperties
      */
     public function hasBackupStaticProperties(): bool
     {
@@ -338,7 +297,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->beStrictAboutChangesToGlobalState
+     * @psalm-assert-if-true !null $this->beStrictAboutChangesToGlobalState
      */
     public function hasBeStrictAboutChangesToGlobalState(): bool
     {
@@ -358,7 +317,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->bootstrap
+     * @psalm-assert-if-true !null $this->bootstrap
      */
     public function hasBootstrap(): bool
     {
@@ -378,7 +337,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->cacheDirectory
+     * @psalm-assert-if-true !null $this->cacheDirectory
      */
     public function hasCacheDirectory(): bool
     {
@@ -398,7 +357,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->cacheResult
+     * @psalm-assert-if-true !null $this->cacheResult
      */
     public function hasCacheResult(): bool
     {
@@ -423,7 +382,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->colors
+     * @psalm-assert-if-true !null $this->colors
      */
     public function hasColors(): bool
     {
@@ -443,7 +402,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->columns
+     * @psalm-assert-if-true !null $this->columns
      */
     public function hasColumns(): bool
     {
@@ -463,7 +422,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->configurationFile
+     * @psalm-assert-if-true !null $this->configurationFile
      */
     public function hasConfigurationFile(): bool
     {
@@ -483,7 +442,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->coverageFilter
+     * @psalm-assert-if-true !null $this->coverageFilter
      */
     public function hasCoverageFilter(): bool
     {
@@ -492,8 +451,6 @@ final readonly class Configuration
 
     /**
      * @throws Exception
-     *
-     * @return non-empty-list<non-empty-string>
      */
     public function coverageFilter(): array
     {
@@ -505,7 +462,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->coverageClover
+     * @psalm-assert-if-true !null $this->coverageClover
      */
     public function hasCoverageClover(): bool
     {
@@ -525,7 +482,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->coverageCobertura
+     * @psalm-assert-if-true !null $this->coverageCobertura
      */
     public function hasCoverageCobertura(): bool
     {
@@ -545,7 +502,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->coverageCrap4J
+     * @psalm-assert-if-true !null $this->coverageCrap4J
      */
     public function hasCoverageCrap4J(): bool
     {
@@ -565,7 +522,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->coverageHtml
+     * @psalm-assert-if-true !null $this->coverageHtml
      */
     public function hasCoverageHtml(): bool
     {
@@ -585,7 +542,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->coveragePhp
+     * @psalm-assert-if-true !null $this->coveragePhp
      */
     public function hasCoveragePhp(): bool
     {
@@ -605,7 +562,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->coverageText
+     * @psalm-assert-if-true !null $this->coverageText
      */
     public function hasCoverageText(): bool
     {
@@ -625,7 +582,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->coverageTextShowUncoveredFiles
+     * @psalm-assert-if-true !null $this->coverageTextShowUncoveredFiles
      */
     public function hasCoverageTextShowUncoveredFiles(): bool
     {
@@ -645,7 +602,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->coverageTextShowOnlySummary
+     * @psalm-assert-if-true !null $this->coverageTextShowOnlySummary
      */
     public function hasCoverageTextShowOnlySummary(): bool
     {
@@ -665,7 +622,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->coverageXml
+     * @psalm-assert-if-true !null $this->coverageXml
      */
     public function hasCoverageXml(): bool
     {
@@ -685,7 +642,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->pathCoverage
+     * @psalm-assert-if-true !null $this->pathCoverage
      */
     public function hasPathCoverage(): bool
     {
@@ -710,7 +667,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->defaultTimeLimit
+     * @psalm-assert-if-true !null $this->defaultTimeLimit
      */
     public function hasDefaultTimeLimit(): bool
     {
@@ -730,7 +687,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->disableCodeCoverageIgnore
+     * @psalm-assert-if-true !null $this->disableCodeCoverageIgnore
      */
     public function hasDisableCodeCoverageIgnore(): bool
     {
@@ -750,7 +707,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->disallowTestOutput
+     * @psalm-assert-if-true !null $this->disallowTestOutput
      */
     public function hasDisallowTestOutput(): bool
     {
@@ -770,7 +727,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->enforceTimeLimit
+     * @psalm-assert-if-true !null $this->enforceTimeLimit
      */
     public function hasEnforceTimeLimit(): bool
     {
@@ -790,7 +747,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->excludeGroups
+     * @psalm-assert-if-true !null $this->excludeGroups
      */
     public function hasExcludeGroups(): bool
     {
@@ -799,8 +756,6 @@ final readonly class Configuration
 
     /**
      * @throws Exception
-     *
-     * @return non-empty-list<non-empty-string>
      */
     public function excludeGroups(): array
     {
@@ -812,7 +767,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->executionOrder
+     * @psalm-assert-if-true !null $this->executionOrder
      */
     public function hasExecutionOrder(): bool
     {
@@ -832,7 +787,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->executionOrderDefects
+     * @psalm-assert-if-true !null $this->executionOrderDefects
      */
     public function hasExecutionOrderDefects(): bool
     {
@@ -852,7 +807,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->failOnDeprecation
+     * @psalm-assert-if-true !null $this->failOnDeprecation
      */
     public function hasFailOnDeprecation(): bool
     {
@@ -872,7 +827,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->failOnEmptyTestSuite
+     * @psalm-assert-if-true !null $this->failOnEmptyTestSuite
      */
     public function hasFailOnEmptyTestSuite(): bool
     {
@@ -892,7 +847,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->failOnIncomplete
+     * @psalm-assert-if-true !null $this->failOnIncomplete
      */
     public function hasFailOnIncomplete(): bool
     {
@@ -912,7 +867,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->failOnNotice
+     * @psalm-assert-if-true !null $this->failOnNotice
      */
     public function hasFailOnNotice(): bool
     {
@@ -932,7 +887,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->failOnRisky
+     * @psalm-assert-if-true !null $this->failOnRisky
      */
     public function hasFailOnRisky(): bool
     {
@@ -952,7 +907,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->failOnSkipped
+     * @psalm-assert-if-true !null $this->failOnSkipped
      */
     public function hasFailOnSkipped(): bool
     {
@@ -972,7 +927,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->failOnWarning
+     * @psalm-assert-if-true !null $this->failOnWarning
      */
     public function hasFailOnWarning(): bool
     {
@@ -992,7 +947,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->stopOnDefect
+     * @psalm-assert-if-true !null $this->stopOnDefect
      */
     public function hasStopOnDefect(): bool
     {
@@ -1012,7 +967,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->stopOnDeprecation
+     * @psalm-assert-if-true !null $this->stopOnDeprecation
      */
     public function hasStopOnDeprecation(): bool
     {
@@ -1032,7 +987,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->stopOnError
+     * @psalm-assert-if-true !null $this->stopOnError
      */
     public function hasStopOnError(): bool
     {
@@ -1052,7 +1007,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->stopOnFailure
+     * @psalm-assert-if-true !null $this->stopOnFailure
      */
     public function hasStopOnFailure(): bool
     {
@@ -1072,7 +1027,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->stopOnIncomplete
+     * @psalm-assert-if-true !null $this->stopOnIncomplete
      */
     public function hasStopOnIncomplete(): bool
     {
@@ -1092,7 +1047,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->stopOnNotice
+     * @psalm-assert-if-true !null $this->stopOnNotice
      */
     public function hasStopOnNotice(): bool
     {
@@ -1112,7 +1067,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->stopOnRisky
+     * @psalm-assert-if-true !null $this->stopOnRisky
      */
     public function hasStopOnRisky(): bool
     {
@@ -1132,7 +1087,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->stopOnSkipped
+     * @psalm-assert-if-true !null $this->stopOnSkipped
      */
     public function hasStopOnSkipped(): bool
     {
@@ -1152,7 +1107,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->stopOnWarning
+     * @psalm-assert-if-true !null $this->stopOnWarning
      */
     public function hasStopOnWarning(): bool
     {
@@ -1172,7 +1127,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->excludeFilter
+     * @psalm-assert-if-true !null $this->excludeFilter
      */
     public function hasExcludeFilter(): bool
     {
@@ -1192,7 +1147,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->filter
+     * @psalm-assert-if-true !null $this->filter
      */
     public function hasFilter(): bool
     {
@@ -1212,7 +1167,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->generateBaseline
+     * @psalm-assert-if-true !null $this->generateBaseline
      */
     public function hasGenerateBaseline(): bool
     {
@@ -1232,7 +1187,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->useBaseline
+     * @psalm-assert-if-true !null $this->useBaseline
      */
     public function hasUseBaseline(): bool
     {
@@ -1267,7 +1222,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->groups
+     * @psalm-assert-if-true !null $this->groups
      */
     public function hasGroups(): bool
     {
@@ -1276,8 +1231,6 @@ final readonly class Configuration
 
     /**
      * @throws Exception
-     *
-     * @return non-empty-list<non-empty-string>
      */
     public function groups(): array
     {
@@ -1289,7 +1242,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->testsCovering
+     * @psalm-assert-if-true !null $this->testsCovering
      */
     public function hasTestsCovering(): bool
     {
@@ -1298,8 +1251,6 @@ final readonly class Configuration
 
     /**
      * @throws Exception
-     *
-     * @return non-empty-list<non-empty-string>
      */
     public function testsCovering(): array
     {
@@ -1311,7 +1262,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->testsUsing
+     * @psalm-assert-if-true !null $this->testsUsing
      */
     public function hasTestsUsing(): bool
     {
@@ -1320,8 +1271,6 @@ final readonly class Configuration
 
     /**
      * @throws Exception
-     *
-     * @return non-empty-list<non-empty-string>
      */
     public function testsUsing(): array
     {
@@ -1338,7 +1287,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->includePath
+     * @psalm-assert-if-true !null $this->includePath
      */
     public function hasIncludePath(): bool
     {
@@ -1358,7 +1307,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->iniSettings
+     * @psalm-assert-if-true !null $this->iniSettings
      */
     public function hasIniSettings(): bool
     {
@@ -1367,8 +1316,6 @@ final readonly class Configuration
 
     /**
      * @throws Exception
-     *
-     * @return non-empty-array<non-empty-string, non-empty-string>
      */
     public function iniSettings(): array
     {
@@ -1380,7 +1327,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->junitLogfile
+     * @psalm-assert-if-true !null $this->junitLogfile
      */
     public function hasJunitLogfile(): bool
     {
@@ -1420,7 +1367,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->listTestsXml
+     * @psalm-assert-if-true !null $this->listTestsXml
      */
     public function hasListTestsXml(): bool
     {
@@ -1440,7 +1387,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->noCoverage
+     * @psalm-assert-if-true !null $this->noCoverage
      */
     public function hasNoCoverage(): bool
     {
@@ -1460,7 +1407,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->noExtensions
+     * @psalm-assert-if-true !null $this->noExtensions
      */
     public function hasNoExtensions(): bool
     {
@@ -1480,7 +1427,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->noOutput
+     * @psalm-assert-if-true !null $this->noOutput
      */
     public function hasNoOutput(): bool
     {
@@ -1500,7 +1447,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->noProgress
+     * @psalm-assert-if-true !null $this->noProgress
      */
     public function hasNoProgress(): bool
     {
@@ -1520,7 +1467,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->noResults
+     * @psalm-assert-if-true !null $this->noResults
      */
     public function hasNoResults(): bool
     {
@@ -1540,7 +1487,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->noLogging
+     * @psalm-assert-if-true !null $this->noLogging
      */
     public function hasNoLogging(): bool
     {
@@ -1560,7 +1507,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->processIsolation
+     * @psalm-assert-if-true !null $this->processIsolation
      */
     public function hasProcessIsolation(): bool
     {
@@ -1580,7 +1527,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->randomOrderSeed
+     * @psalm-assert-if-true !null $this->randomOrderSeed
      */
     public function hasRandomOrderSeed(): bool
     {
@@ -1600,7 +1547,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->reportUselessTests
+     * @psalm-assert-if-true !null $this->reportUselessTests
      */
     public function hasReportUselessTests(): bool
     {
@@ -1620,7 +1567,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->resolveDependencies
+     * @psalm-assert-if-true !null $this->resolveDependencies
      */
     public function hasResolveDependencies(): bool
     {
@@ -1640,7 +1587,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->reverseList
+     * @psalm-assert-if-true !null $this->reverseList
      */
     public function hasReverseList(): bool
     {
@@ -1660,7 +1607,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->stderr
+     * @psalm-assert-if-true !null $this->stderr
      */
     public function hasStderr(): bool
     {
@@ -1680,7 +1627,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->strictCoverage
+     * @psalm-assert-if-true !null $this->strictCoverage
      */
     public function hasStrictCoverage(): bool
     {
@@ -1700,7 +1647,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->teamcityLogfile
+     * @psalm-assert-if-true !null $this->teamcityLogfile
      */
     public function hasTeamcityLogfile(): bool
     {
@@ -1720,7 +1667,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->teamcityPrinter
+     * @psalm-assert-if-true !null $this->teamcityPrinter
      */
     public function hasTeamCityPrinter(): bool
     {
@@ -1740,7 +1687,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->testdoxHtmlFile
+     * @psalm-assert-if-true !null $this->testdoxHtmlFile
      */
     public function hasTestdoxHtmlFile(): bool
     {
@@ -1760,7 +1707,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->testdoxTextFile
+     * @psalm-assert-if-true !null $this->testdoxTextFile
      */
     public function hasTestdoxTextFile(): bool
     {
@@ -1780,7 +1727,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->testdoxPrinter
+     * @psalm-assert-if-true !null $this->testdoxPrinter
      */
     public function hasTestDoxPrinter(): bool
     {
@@ -1800,27 +1747,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->testdoxPrinterSummary
-     */
-    public function hasTestDoxPrinterSummary(): bool
-    {
-        return $this->testdoxPrinterSummary !== null;
-    }
-
-    /**
-     * @throws Exception
-     */
-    public function testdoxPrinterSummary(): bool
-    {
-        if (!$this->hasTestdoxPrinterSummary()) {
-            throw new Exception;
-        }
-
-        return $this->testdoxPrinterSummary;
-    }
-
-    /**
-     * @phpstan-assert-if-true !null $this->testSuffixes
+     * @psalm-assert-if-true !null $this->testSuffixes
      */
     public function hasTestSuffixes(): bool
     {
@@ -1828,9 +1755,9 @@ final readonly class Configuration
     }
 
     /**
-     * @throws Exception
+     * @psalm-return non-empty-list<non-empty-string>
      *
-     * @return non-empty-list<non-empty-string>
+     * @throws Exception
      */
     public function testSuffixes(): array
     {
@@ -1842,7 +1769,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->testSuite
+     * @psalm-assert-if-true !null $this->testSuite
      */
     public function hasTestSuite(): bool
     {
@@ -1862,7 +1789,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->excludedTestSuite
+     * @psalm-assert-if-true !null $this->excludedTestSuite
      */
     public function hasExcludedTestSuite(): bool
     {
@@ -1887,7 +1814,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->displayDetailsOnIncompleteTests
+     * @psalm-assert-if-true !null $this->displayDetailsOnIncompleteTests
      */
     public function hasDisplayDetailsOnIncompleteTests(): bool
     {
@@ -1907,7 +1834,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->displayDetailsOnSkippedTests
+     * @psalm-assert-if-true !null $this->displayDetailsOnSkippedTests
      */
     public function hasDisplayDetailsOnSkippedTests(): bool
     {
@@ -1927,7 +1854,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->displayDetailsOnTestsThatTriggerDeprecations
+     * @psalm-assert-if-true !null $this->displayDetailsOnTestsThatTriggerDeprecations
      */
     public function hasDisplayDetailsOnTestsThatTriggerDeprecations(): bool
     {
@@ -1947,7 +1874,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->displayDetailsOnTestsThatTriggerErrors
+     * @psalm-assert-if-true !null $this->displayDetailsOnTestsThatTriggerErrors
      */
     public function hasDisplayDetailsOnTestsThatTriggerErrors(): bool
     {
@@ -1967,7 +1894,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->displayDetailsOnTestsThatTriggerNotices
+     * @psalm-assert-if-true !null $this->displayDetailsOnTestsThatTriggerNotices
      */
     public function hasDisplayDetailsOnTestsThatTriggerNotices(): bool
     {
@@ -1987,7 +1914,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->displayDetailsOnTestsThatTriggerWarnings
+     * @psalm-assert-if-true !null $this->displayDetailsOnTestsThatTriggerWarnings
      */
     public function hasDisplayDetailsOnTestsThatTriggerWarnings(): bool
     {
@@ -2012,7 +1939,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->logEventsText
+     * @psalm-assert-if-true !null $this->logEventsText
      */
     public function hasLogEventsText(): bool
     {
@@ -2032,7 +1959,7 @@ final readonly class Configuration
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->logEventsVerboseText
+     * @psalm-assert-if-true !null $this->logEventsVerboseText
      */
     public function hasLogEventsVerboseText(): bool
     {
@@ -2054,27 +1981,5 @@ final readonly class Configuration
     public function debug(): bool
     {
         return $this->debug;
-    }
-
-    /**
-     * @phpstan-assert-if-true !null $this->extensions
-     */
-    public function hasExtensions(): bool
-    {
-        return $this->extensions !== null;
-    }
-
-    /**
-     * @throws Exception
-     *
-     * @return non-empty-list<non-empty-string>
-     */
-    public function extensions(): array
-    {
-        if (!$this->hasExtensions()) {
-            throw new Exception;
-        }
-
-        return $this->extensions;
     }
 }

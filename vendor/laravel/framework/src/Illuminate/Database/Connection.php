@@ -625,18 +625,6 @@ class Connection implements ConnectionInterface
     }
 
     /**
-     * Get the number of open connections for the database.
-     *
-     * @return int|null
-     */
-    public function threadCount()
-    {
-        $query = $this->getQueryGrammar()->compileThreadCount();
-
-        return $query ? $this->scalar($query) : null;
-    }
-
-    /**
      * Execute the given callback in "dry run" mode.
      *
      * @param  \Closure  $callback
@@ -1357,16 +1345,6 @@ class Connection implements ConnectionInterface
     public function getDriverName()
     {
         return $this->getConfig('driver');
-    }
-
-    /**
-     * Get a human-readable name for the given connection driver.
-     *
-     * @return string
-     */
-    public function getDriverTitle()
-    {
-        return $this->getDriverName();
     }
 
     /**

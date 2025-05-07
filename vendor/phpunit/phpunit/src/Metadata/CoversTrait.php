@@ -10,20 +10,20 @@
 namespace PHPUnit\Metadata;
 
 /**
- * @immutable
+ * @psalm-immutable
  *
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  */
 final readonly class CoversTrait extends Metadata
 {
     /**
-     * @var trait-string
+     * @psalm-var trait-string
      */
     private string $traitName;
 
     /**
-     * @param 0|1          $level
-     * @param trait-string $traitName
+     * @psalm-param 0|1 $level
+     * @psalm-param trait-string $traitName
      */
     protected function __construct(int $level, string $traitName)
     {
@@ -32,13 +32,16 @@ final readonly class CoversTrait extends Metadata
         $this->traitName = $traitName;
     }
 
-    public function isCoversTrait(): true
+    /**
+     * @psalm-assert-if-true CoversTrait $this
+     */
+    public function isCoversTrait(): bool
     {
         return true;
     }
 
     /**
-     * @return trait-string
+     * @psalm-return trait-string
      */
     public function traitName(): string
     {
@@ -46,7 +49,7 @@ final readonly class CoversTrait extends Metadata
     }
 
     /**
-     * @return trait-string
+     * @psalm-return trait-string
      *
      * @internal This method is not covered by the backward compatibility promise for PHPUnit
      */

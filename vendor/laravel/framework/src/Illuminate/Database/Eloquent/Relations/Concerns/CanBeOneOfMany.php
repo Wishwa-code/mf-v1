@@ -214,7 +214,7 @@ trait CanBeOneOfMany
             }
         }
 
-        $this->addOneOfManySubQueryConstraints($subQuery, column: null, aggregate: $aggregate);
+        $this->addOneOfManySubQueryConstraints($subQuery, $groupBy, $columns, $aggregate);
 
         return $subQuery;
     }
@@ -237,7 +237,7 @@ trait CanBeOneOfMany
                     $join->on($this->qualifySubSelectColumn($onColumn.'_aggregate'), '=', $this->qualifyRelatedColumn($onColumn));
                 }
 
-                $this->addOneOfManyJoinSubQueryConstraints($join);
+                $this->addOneOfManyJoinSubQueryConstraints($join, $on);
             });
         });
     }

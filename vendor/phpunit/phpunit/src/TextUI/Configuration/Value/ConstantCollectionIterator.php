@@ -20,7 +20,7 @@ use Iterator;
 final class ConstantCollectionIterator implements Iterator
 {
     /**
-     * @var list<Constant>
+     * @psalm-var list<Constant>
      */
     private readonly array $constants;
     private int $position = 0;

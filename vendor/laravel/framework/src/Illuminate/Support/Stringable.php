@@ -236,17 +236,6 @@ class Stringable implements JsonSerializable, ArrayAccess, BaseStringable
     }
 
     /**
-     * Replace consecutive instances of a given character with a single character.
-     *
-     * @param  string  $character
-     * @return static
-     */
-    public function deduplicate(string $character = ' ')
-    {
-        return new static(Str::deduplicate($this->value, $character));
-    }
-
-    /**
      * Get the parent directory's path.
      *
      * @param  int  $levels
@@ -296,7 +285,7 @@ class Stringable implements JsonSerializable, ArrayAccess, BaseStringable
     }
 
     /**
-     * Explode the string into a collection.
+     * Explode the string into an array.
      *
      * @param  string  $delimiter
      * @param  int  $limit
@@ -444,12 +433,11 @@ class Stringable implements JsonSerializable, ArrayAccess, BaseStringable
      *
      * @param  int  $limit
      * @param  string  $end
-     * @param  bool  $preserveWords
      * @return static
      */
-    public function limit($limit = 100, $end = '...', $preserveWords = false)
+    public function limit($limit = 100, $end = '...')
     {
-        return new static(Str::limit($this->value, $limit, $end, $preserveWords));
+        return new static(Str::limit($this->value, $limit, $end));
     }
 
     /**

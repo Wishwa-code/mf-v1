@@ -14,9 +14,7 @@ use PHPUnit\Event\Code\Throwable;
 use PHPUnit\Framework\TestStatus\TestStatus;
 
 /**
- * @immutable
- *
- * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
+ * @psalm-immutable
  *
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
@@ -44,7 +42,7 @@ final readonly class TestResult
     }
 
     /**
-     * @phpstan-assert-if-true !null $this->throwable
+     * @psalm-assert-if-true !null $this->throwable
      */
     public function hasThrowable(): bool
     {

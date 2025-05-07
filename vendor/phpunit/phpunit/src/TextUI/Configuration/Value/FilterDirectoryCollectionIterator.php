@@ -20,7 +20,7 @@ use Iterator;
 final class FilterDirectoryCollectionIterator implements Iterator
 {
     /**
-     * @var list<FilterDirectory>
+     * @psalm-var list<FilterDirectory>
      */
     private readonly array $directories;
     private int $position = 0;

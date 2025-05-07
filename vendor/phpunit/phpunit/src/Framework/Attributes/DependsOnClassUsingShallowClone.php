@@ -12,7 +12,7 @@ namespace PHPUnit\Framework\Attributes;
 use Attribute;
 
 /**
- * @immutable
+ * @psalm-immutable
  *
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  */
@@ -20,12 +20,12 @@ use Attribute;
 final readonly class DependsOnClassUsingShallowClone
 {
     /**
-     * @var class-string
+     * @psalm-var class-string
      */
     private string $className;
 
     /**
-     * @param class-string $className
+     * @psalm-param class-string $className
      */
     public function __construct(string $className)
     {
@@ -33,7 +33,7 @@ final readonly class DependsOnClassUsingShallowClone
     }
 
     /**
-     * @return class-string
+     * @psalm-return class-string
      */
     public function className(): string
     {

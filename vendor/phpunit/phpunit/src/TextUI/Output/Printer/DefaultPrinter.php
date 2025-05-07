@@ -25,14 +25,12 @@ use PHPUnit\TextUI\InvalidSocketException;
 use PHPUnit\Util\Filesystem;
 
 /**
- * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
- *
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
 final class DefaultPrinter implements Printer
 {
     /**
-     * @var closed-resource|resource
+     * @psalm-var closed-resource|resource
      */
     private $stream;
     private readonly bool $isPhpStream;
@@ -100,11 +98,7 @@ final class DefaultPrinter implements Printer
             throw new DirectoryDoesNotExistException(dirname($out));
         }
 
-        $stream = fopen($out, 'wb');
-
-        assert($stream !== false);
-
-        $this->stream = $stream;
+        $this->stream = fopen($out, 'wb');
         $this->isOpen = true;
     }
 

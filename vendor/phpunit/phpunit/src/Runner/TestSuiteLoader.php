@@ -10,6 +10,7 @@
 namespace PHPUnit\Runner;
 
 use function array_diff;
+use function array_values;
 use function basename;
 use function get_declared_classes;
 use function realpath;
@@ -21,19 +22,17 @@ use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
 /**
- * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
- *
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
 final class TestSuiteLoader
 {
     /**
-     * @var list<class-string>
+     * @psalm-var list<class-string>
      */
     private static array $declaredClasses = [];
 
     /**
-     * @var array<non-empty-string, list<class-string>>
+     * @psalm-var array<non-empty-string, list<class-string>>
      */
     private static array $fileToClassesMap = [];
 
@@ -101,7 +100,7 @@ final class TestSuiteLoader
     }
 
     /**
-     * @return array<class-string>
+     * @psalm-return list<class-string>
      */
     private function loadSuiteClassFile(string $suiteClassFile): array
     {
@@ -115,9 +114,11 @@ final class TestSuiteLoader
 
         require_once $suiteClassFile;
 
-        $loadedClasses = array_diff(
-            get_declared_classes(),
-            self::$declaredClasses,
+        $loadedClasses = array_values(
+            array_diff(
+                get_declared_classes(),
+                self::$declaredClasses,
+            ),
         );
 
         foreach ($loadedClasses as $loadedClass) {

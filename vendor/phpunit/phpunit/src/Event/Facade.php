@@ -9,17 +9,12 @@
  */
 namespace PHPUnit\Event;
 
-use const PHP_VERSION;
-use function assert;
-use function interface_exists;
-use function version_compare;
+use function gc_status;
 use PHPUnit\Event\Telemetry\HRTime;
 use PHPUnit\Event\Telemetry\Php81GarbageCollectorStatusProvider;
 use PHPUnit\Event\Telemetry\Php83GarbageCollectorStatusProvider;
 
 /**
- * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
- *
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
 final class Facade
@@ -246,22 +241,21 @@ final class Facade
         ];
 
         foreach ($defaultEvents as $eventClass) {
-            $subscriberInterface = $eventClass . 'Subscriber';
-
-            assert(interface_exists($subscriberInterface));
-
-            $typeMap->addMapping($subscriberInterface, $eventClass);
+            $typeMap->addMapping(
+                $eventClass . 'Subscriber',
+                $eventClass,
+            );
         }
     }
 
     private function garbageCollectorStatusProvider(): Telemetry\GarbageCollectorStatusProvider
     {
-        if (version_compare(PHP_VERSION, '8.3.0', '>=')) {
-            return new Php83GarbageCollectorStatusProvider;
+        if (!isset(gc_status()['running'])) {
+            // @codeCoverageIgnoreStart
+            return new Php81GarbageCollectorStatusProvider;
+            // @codeCoverageIgnoreEnd
         }
 
-        // @codeCoverageIgnoreStart
-        return new Php81GarbageCollectorStatusProvider;
-        // @codeCoverageIgnoreEnd
+        return new Php83GarbageCollectorStatusProvider;
     }
 }

@@ -20,12 +20,12 @@ use PHPUnit\Framework\UnknownClassOrInterfaceException;
 final class IsInstanceOf extends Constraint
 {
     /**
-     * @var class-string
+     * @psalm-var class-string
      */
     private readonly string $name;
 
     /**
-     * @var 'class'|'interface'
+     * @psalm-var 'class'|'interface'
      */
     private readonly string $type;
 

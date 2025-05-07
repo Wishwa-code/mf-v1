@@ -188,9 +188,7 @@ class ConnectionFactory
                 }
             }
 
-            if (isset($e)) {
-                throw $e;
-            }
+            throw $e;
         };
     }
 

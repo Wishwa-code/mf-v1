@@ -33,7 +33,9 @@ class ConfigShowCommand extends Command
         $config = $this->argument('config');
 
         if (! config()->has($config)) {
-            $this->fail("Configuration file or key <comment>{$config}</comment> does not exist.");
+            $this->components->error("Configuration file or key <comment>{$config}</comment> does not exist.");
+
+            return Command::FAILURE;
         }
 
         $this->newLine();

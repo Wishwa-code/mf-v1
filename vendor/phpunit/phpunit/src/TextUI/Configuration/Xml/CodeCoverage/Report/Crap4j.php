@@ -12,11 +12,9 @@ namespace PHPUnit\TextUI\XmlConfiguration\CodeCoverage\Report;
 use PHPUnit\TextUI\Configuration\File;
 
 /**
- * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
- *
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  *
- * @immutable
+ * @psalm-immutable
  */
 final readonly class Crap4j
 {

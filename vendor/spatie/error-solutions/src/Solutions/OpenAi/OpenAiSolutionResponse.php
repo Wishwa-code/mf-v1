@@ -37,9 +37,7 @@ class OpenAiSolutionResponse
 
         $links = [];
         foreach ($textLinks as $textLink) {
-            if (isset($textLink['title']) && isset($textLink['url'])) {
-                $links[$textLink['title']] = $textLink['url'];
-            }
+            $links[$textLink['title']] = $textLink['url'];
         }
 
         return $links;

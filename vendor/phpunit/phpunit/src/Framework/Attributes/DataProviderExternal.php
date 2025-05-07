@@ -12,7 +12,7 @@ namespace PHPUnit\Framework\Attributes;
 use Attribute;
 
 /**
- * @immutable
+ * @psalm-immutable
  *
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  */
@@ -20,18 +20,18 @@ use Attribute;
 final readonly class DataProviderExternal
 {
     /**
-     * @var class-string
+     * @psalm-var class-string
      */
     private string $className;
 
     /**
-     * @var non-empty-string
+     * @psalm-var non-empty-string
      */
     private string $methodName;
 
     /**
-     * @param class-string     $className
-     * @param non-empty-string $methodName
+     * @psalm-param class-string $className
+     * @psalm-param non-empty-string $methodName
      */
     public function __construct(string $className, string $methodName)
     {
@@ -40,7 +40,7 @@ final readonly class DataProviderExternal
     }
 
     /**
-     * @return class-string
+     * @psalm-return class-string
      */
     public function className(): string
     {
@@ -48,7 +48,7 @@ final readonly class DataProviderExternal
     }
 
     /**
-     * @return non-empty-string
+     * @psalm-return non-empty-string
      */
     public function methodName(): string
     {

@@ -8,5 +8,6 @@ class DumpingDatabase
 {
     public function __construct(
         public DbDumper $dbDumper
-    ) {}
+    ) {
+    }
 }

@@ -17,7 +17,7 @@ use PHPUnit\Event\Event;
 use PHPUnit\Event\Telemetry;
 
 /**
- * @immutable
+ * @psalm-immutable
  *
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  */
@@ -27,26 +27,26 @@ final readonly class NoticeTriggered implements Event
     private Test $test;
 
     /**
-     * @var non-empty-string
+     * @psalm-var non-empty-string
      */
     private string $message;
 
     /**
-     * @var non-empty-string
+     * @psalm-var non-empty-string
      */
     private string $file;
 
     /**
-     * @var positive-int
+     * @psalm-var positive-int
      */
     private int $line;
     private bool $suppressed;
     private bool $ignoredByBaseline;
 
     /**
-     * @param non-empty-string $message
-     * @param non-empty-string $file
-     * @param positive-int     $line
+     * @psalm-param non-empty-string $message
+     * @psalm-param non-empty-string $file
+     * @psalm-param positive-int $line
      */
     public function __construct(Telemetry\Info $telemetryInfo, Test $test, string $message, string $file, int $line, bool $suppressed, bool $ignoredByBaseline)
     {
@@ -70,7 +70,7 @@ final readonly class NoticeTriggered implements Event
     }
 
     /**
-     * @return non-empty-string
+     * @psalm-return non-empty-string
      */
     public function message(): string
     {
@@ -78,7 +78,7 @@ final readonly class NoticeTriggered implements Event
     }
 
     /**
-     * @return non-empty-string
+     * @psalm-return non-empty-string
      */
     public function file(): string
     {
@@ -86,7 +86,7 @@ final readonly class NoticeTriggered implements Event
     }
 
     /**
-     * @return positive-int
+     * @psalm-return positive-int
      */
     public function line(): int
     {

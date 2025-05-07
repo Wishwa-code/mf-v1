@@ -938,11 +938,9 @@ class PendingRequest
                     }
                 });
             } catch (ConnectException $e) {
-                $exception = new ConnectionException($e->getMessage(), 0, $e);
+                $this->dispatchConnectionFailedEvent(new Request($e->getRequest()));
 
-                $this->dispatchConnectionFailedEvent(new Request($e->getRequest()), $exception);
-
-                throw $exception;
+                throw new ConnectionException($e->getMessage(), 0, $e);
             }
         }, $this->retryDelay ?? 100, function ($exception) use (&$shouldRetry) {
             $result = $shouldRetry ?? ($this->retryWhenCallback ? call_user_func($this->retryWhenCallback, $exception, $this) : true);
@@ -1029,12 +1027,10 @@ class PendingRequest
                 });
             })
             ->otherwise(function (OutOfBoundsException|TransferException $e) {
-                if ($e instanceof ConnectException || ($e instanceof RequestException && ! $e->hasResponse())) {
-                    $exception = new ConnectionException($e->getMessage(), 0, $e);
+                if ($e instanceof ConnectException) {
+                    $this->dispatchConnectionFailedEvent(new Request($e->getRequest()));
 
-                    $this->dispatchConnectionFailedEvent(new Request($e->getRequest()), $exception);
-
-                    return $exception;
+                    return new ConnectionException($e->getMessage(), 0, $e);
                 }
 
                 return $e instanceof RequestException && $e->hasResponse() ? $this->populateResponse($this->newResponse($e->getResponse())) : $e;
@@ -1265,11 +1261,12 @@ class PendingRequest
     public function pushHandlers($handlerStack)
     {
         return tap($handlerStack, function ($stack) {
+            $stack->push($this->buildBeforeSendingHandler());
+
             $this->middleware->each(function ($middleware) use ($stack) {
                 $stack->push($middleware);
             });
 
-            $stack->push($this->buildBeforeSendingHandler());
             $stack->push($this->buildRecorderHandler());
             $stack->push($this->buildStubHandler());
         });
@@ -1499,13 +1496,12 @@ class PendingRequest
      * Dispatch the ConnectionFailed event if a dispatcher is available.
      *
      * @param  \Illuminate\Http\Client\Request  $request
-     * @param  \Illuminate\Http\Client\ConnectionException  $exception
      * @return void
      */
-    protected function dispatchConnectionFailedEvent(Request $request, ConnectionException $exception)
+    protected function dispatchConnectionFailedEvent(Request $request)
     {
         if ($dispatcher = $this->factory?->getDispatcher()) {
-            $dispatcher->dispatch(new ConnectionFailed($request, $exception));
+            $dispatcher->dispatch(new ConnectionFailed($request));
         }
     }
 

@@ -14,8 +14,6 @@ use PHPUnit\Event\Facade as EventFacade;
 use PHPUnit\Event\UnknownSubscriberTypeException;
 
 /**
- * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
- *
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
 final class Facade
@@ -32,10 +30,10 @@ final class Facade
     }
 
     /**
+     * @psalm-return list<non-empty-string>
+     *
      * @throws EventFacadeIsSealedException
      * @throws UnknownSubscriberTypeException
-     *
-     * @return list<non-empty-string>
      */
     public static function deprecations(): array
     {

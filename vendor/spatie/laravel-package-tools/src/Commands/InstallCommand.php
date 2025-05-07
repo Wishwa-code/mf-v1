@@ -168,7 +168,7 @@ class InstallCommand extends Command
             $appConfig = file_get_contents(base_path('bootstrap/providers.php'));
         }
 
-        $class = '\\Providers\\' . Str::replace('/', '\\', $providerName) . '::class';
+        $class = '\\Providers\\' . $providerName . '::class';
 
         if (Str::contains($appConfig, $namespace . $class)) {
             return $this;

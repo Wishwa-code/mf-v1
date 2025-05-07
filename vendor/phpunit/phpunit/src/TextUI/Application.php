@@ -10,7 +10,6 @@
 namespace PHPUnit\TextUI;
 
 use const PHP_EOL;
-use const PHP_VERSION;
 use function class_exists;
 use function explode;
 use function function_exists;
@@ -86,15 +85,10 @@ use SebastianBergmann\Timer\Timer;
 use Throwable;
 
 /**
- * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
- *
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
 final readonly class Application
 {
-    /**
-     * @param list<string> $argv
-     */
     public function run(array $argv): int
     {
         try {
@@ -295,40 +289,15 @@ final readonly class Application
         // @codeCoverageIgnoreEnd
     }
 
-    private function execute(Command\Command $command, bool $requiresResultCollectedFromEvents = false): never
+    private function execute(Command\Command $command): never
     {
-        if ($requiresResultCollectedFromEvents) {
-            try {
-                TestResultFacade::init();
-                EventFacade::instance()->seal();
-
-                $resultCollectedFromEvents = TestResultFacade::result();
-            } catch (EventFacadeIsSealedException|UnknownSubscriberTypeException) {
-            }
-        }
-
         print Version::getVersionString() . PHP_EOL . PHP_EOL;
 
         $result = $command->execute();
 
         print $result->output();
 
-        $shellExitCode = $result->shellExitCode();
-
-        if (isset($resultCollectedFromEvents) &&
-            $resultCollectedFromEvents->hasTestTriggeredPhpunitErrorEvents()) {
-            $shellExitCode = Result::EXCEPTION;
-
-            print PHP_EOL . PHP_EOL . 'There were errors:' . PHP_EOL;
-
-            foreach ($resultCollectedFromEvents->testTriggeredPhpunitErrorEvents() as $events) {
-                foreach ($events as $event) {
-                    print PHP_EOL . trim($event->message()) . PHP_EOL;
-                }
-            }
-        }
-
-        exit($shellExitCode);
+        exit($result->shellExitCode());
     }
 
     private function loadBootstrapScript(string $filename): void
@@ -373,9 +342,6 @@ final readonly class Application
         EventFacade::emitter()->testRunnerBootstrapFinished($filename);
     }
 
-    /**
-     * @param list<string> $argv
-     */
     private function buildCliConfiguration(array $argv): CliConfiguration
     {
         try {
@@ -410,7 +376,7 @@ final readonly class Application
     }
 
     /**
-     * @return array{requiresCodeCoverageCollection: bool, replacesOutput: bool, replacesProgressOutput: bool, replacesResultOutput: bool}
+     * @psalm-return array{requiresCodeCoverageCollection: bool, replacesOutput: bool, replacesProgressOutput: bool, replacesResultOutput: bool}
      */
     private function bootstrapExtensions(Configuration $configuration): array
     {
@@ -488,7 +454,6 @@ final readonly class Application
                         $testSuite,
                     ),
                 ),
-                true,
             );
         }
 
@@ -500,7 +465,6 @@ final readonly class Application
                         $testSuite,
                     ),
                 ),
-                true,
             );
         }
 
@@ -513,7 +477,6 @@ final readonly class Application
                     ),
                     $cliConfiguration->listTestsXml(),
                 ),
-                true,
             );
         }
 
@@ -525,7 +488,6 @@ final readonly class Application
                         $testSuite,
                     ),
                 ),
-                true,
             );
         }
     }
@@ -552,7 +514,7 @@ final readonly class Application
     }
 
     /**
-     * @param ?list<string> $pharExtensions
+     * @psalm-param ?list<string> $pharExtensions
      */
     private function writePharExtensionInformation(Printer $printer, ?array $pharExtensions): void
     {
@@ -706,6 +668,7 @@ final readonly class Application
         }
 
         if ($configuration->source()->useBaseline()) {
+            /** @psalm-suppress MissingThrowsDocblock */
             $baselineFile = $configuration->source()->baseline();
             $baseline     = null;
 
@@ -776,7 +739,7 @@ final readonly class Application
     }
 
     /**
-     * @return list<PhptTestCase|TestCase>
+     * @psalm-return list<TestCase|PhptTestCase>
      */
     private function filteredTests(Configuration $configuration, TestSuite $suite): array
     {

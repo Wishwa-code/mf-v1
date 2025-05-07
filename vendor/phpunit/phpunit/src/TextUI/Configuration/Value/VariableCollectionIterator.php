@@ -20,7 +20,7 @@ use Iterator;
 final class VariableCollectionIterator implements Iterator
 {
     /**
-     * @var list<Variable>
+     * @psalm-var list<Variable>
      */
     private readonly array $variables;
     private int $position = 0;

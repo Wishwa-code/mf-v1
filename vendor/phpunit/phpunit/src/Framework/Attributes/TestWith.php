@@ -12,26 +12,22 @@ namespace PHPUnit\Framework\Attributes;
 use Attribute;
 
 /**
- * @immutable
+ * @psalm-immutable
  *
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  */
 #[Attribute(Attribute::TARGET_METHOD | Attribute::IS_REPEATABLE)]
 final readonly class TestWith
 {
-    /**
-     * @var array<mixed>
-     */
     private array $data;
 
     /**
-     * @var ?non-empty-string
+     * @psalm-var ?non-empty-string
      */
     private ?string $name;
 
     /**
-     * @param array<mixed>      $data
-     * @param ?non-empty-string $name
+     * @psalm-param ?non-empty-string $name
      */
     public function __construct(array $data, ?string $name = null)
     {
@@ -39,16 +35,13 @@ final readonly class TestWith
         $this->name = $name;
     }
 
-    /**
-     * @return array<mixed>
-     */
     public function data(): array
     {
         return $this->data;
     }
 
     /**
-     * @return ?non-empty-string
+     * @psalm-return ?non-empty-string
      */
     public function name(): ?string
     {

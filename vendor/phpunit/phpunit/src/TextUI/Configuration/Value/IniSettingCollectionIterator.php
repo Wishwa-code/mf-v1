@@ -20,7 +20,7 @@ use Iterator;
 final class IniSettingCollectionIterator implements Iterator
 {
     /**
-     * @var list<IniSetting>
+     * @psalm-var list<IniSetting>
      */
     private readonly array $iniSettings;
     private int $position = 0;

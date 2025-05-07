@@ -12,7 +12,7 @@ namespace PHPUnit\Framework\Attributes;
 use Attribute;
 
 /**
- * @immutable
+ * @psalm-immutable
  *
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  */
@@ -20,12 +20,12 @@ use Attribute;
 final readonly class CoversTrait
 {
     /**
-     * @var trait-string
+     * @psalm-var trait-string
      */
     private string $traitName;
 
     /**
-     * @param trait-string $traitName
+     * @psalm-param trait-string $traitName
      */
     public function __construct(string $traitName)
     {
@@ -33,7 +33,7 @@ final readonly class CoversTrait
     }
 
     /**
-     * @return trait-string
+     * @psalm-return trait-string
      */
     public function traitName(): string
     {

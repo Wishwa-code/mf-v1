@@ -10,15 +10,16 @@
 namespace PHPUnit\Metadata;
 
 /**
- * @immutable
- *
- * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
+ * @psalm-immutable
  *
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
 final readonly class IgnorePhpunitDeprecations extends Metadata
 {
-    public function isIgnorePhpunitDeprecations(): true
+    /**
+     * @psalm-assert-if-true IgnorePhpunitDeprecations $this
+     */
+    public function isIgnorePhpunitDeprecations(): bool
     {
         return true;
     }

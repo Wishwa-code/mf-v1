@@ -69,14 +69,12 @@ use SebastianBergmann\Template\Template;
 use Throwable;
 
 /**
- * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
- *
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
 final class PhptTestCase implements Reorderable, SelfDescribing, Test
 {
     /**
-     * @var non-empty-string
+     * @psalm-var non-empty-string
      */
     private readonly string $filename;
     private string $output = '';
@@ -84,7 +82,7 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
     /**
      * Constructs a test case with the given filename.
      *
-     * @param non-empty-string $filename
+     * @psalm-param non-empty-string $filename
      *
      * @throws Exception
      */
@@ -211,8 +209,6 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
             );
         }
 
-        $passed = true;
-
         try {
             $this->assertPhptExpectation($sections, $this->output);
         } catch (AssertionFailedError $e) {
@@ -246,16 +242,8 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
             } else {
                 $emitter->testFailed($this->valueObjectForEvents(), ThrowableBuilder::from($failure), null);
             }
-
-            $passed = false;
         } catch (Throwable $t) {
             $emitter->testErrored($this->valueObjectForEvents(), ThrowableBuilder::from($t));
-
-            $passed = false;
-        }
-
-        if ($passed) {
-            $emitter->testPassed($this->valueObjectForEvents());
         }
 
         $this->runClean($sections, CodeCoverage::instance()->isActive());
@@ -305,7 +293,7 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
     }
 
     /**
-     * @return list<ExecutionOrderDependency>
+     * @psalm-return list<ExecutionOrderDependency>
      */
     public function provides(): array
     {
@@ -313,7 +301,7 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
     }
 
     /**
-     * @return list<ExecutionOrderDependency>
+     * @psalm-return list<ExecutionOrderDependency>
      */
     public function requires(): array
     {
@@ -329,10 +317,7 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
     }
 
     /**
-     * @param array<string>|string                                              $content
-     * @param array<non-empty-string, array<non-empty-string>|non-empty-string> $ini
-     *
-     * @return array<non-empty-string, array<non-empty-string>|non-empty-string>
+     * Parse --INI-- section key value pairs and return as array.
      */
     private function parseIniSection(array|string $content, array $ini = []): array
     {
@@ -365,9 +350,6 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
         return $ini;
     }
 
-    /**
-     * @return array<non-empty-string, non-empty-string>
-     */
     private function parseEnvSection(string $content): array
     {
         $env = [];
@@ -384,8 +366,6 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
     }
 
     /**
-     * @param array<non-empty-string, non-empty-string> $sections
-     *
      * @throws Exception
      * @throws ExpectationFailedException
      */
@@ -413,10 +393,6 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
         throw new InvalidPhptFileException;
     }
 
-    /**
-     * @param array<non-empty-string, non-empty-string>                         $sections
-     * @param array<non-empty-string, array<non-empty-string>|non-empty-string> $settings
-     */
     private function shouldTestBeSkipped(array $sections, array $settings): bool
     {
         if (!isset($sections['SKIPIF'])) {
@@ -450,9 +426,6 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
         return false;
     }
 
-    /**
-     * @param array<non-empty-string, non-empty-string> $sections
-     */
     private function runClean(array $sections, bool $collectCoverage): void
     {
         if (!isset($sections['CLEAN'])) {
@@ -469,8 +442,6 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
 
     /**
      * @throws Exception
-     *
-     * @return array<non-empty-string, non-empty-string>
      */
     private function parse(): array
     {
@@ -535,8 +506,6 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
     }
 
     /**
-     * @param array<non-empty-string, non-empty-string> $sections
-     *
      * @throws Exception
      */
     private function parseExternal(array &$sections): void
@@ -566,9 +535,6 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
         }
     }
 
-    /**
-     * @param array<non-empty-string, non-empty-string> $sections
-     */
     private function validate(array $sections): bool
     {
         $requiredSections = [
@@ -608,9 +574,9 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
     }
 
     /**
-     * @param non-empty-string $code
+     * @psalm-param non-empty-string $code
      *
-     * @return non-empty-string
+     * @psalm-return non-empty-string
      */
     private function render(string $code): string
     {
@@ -627,9 +593,6 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
         );
     }
 
-    /**
-     * @return array{coverage: non-empty-string, job: non-empty-string}
-     */
     private function getCoverageFiles(): array
     {
         $baseDir  = dirname(realpath($this->filename)) . DIRECTORY_SEPARATOR;
@@ -642,9 +605,9 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
     }
 
     /**
-     * @param non-empty-string $job
+     * @psalm-param non-empty-string $job
      *
-     * @param-out non-empty-string $job
+     * @psalm-param-out non-empty-string $job
      *
      * @throws \SebastianBergmann\Template\InvalidArgumentException
      */
@@ -725,11 +688,6 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
         return $coverage;
     }
 
-    /**
-     * @param array<non-empty-string, array<non-empty-string>|non-empty-string> $ini
-     *
-     * @return list<non-empty-string>
-     */
     private function stringifyIni(array $ini): array
     {
         $settings = [];
@@ -749,11 +707,6 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
         return $settings;
     }
 
-    /**
-     * @param array<non-empty-string, non-empty-string> $sections
-     *
-     * @return non-empty-list<array{file: non-empty-string, line: int}>
-     */
     private function getLocationHintFromDiff(string $message, array $sections): array
     {
         $needle       = '';
@@ -802,11 +755,6 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
         return $line;
     }
 
-    /**
-     * @param array<non-empty-string, non-empty-string> $sections
-     *
-     * @return non-empty-list<array{file: non-empty-string, line: int}>
-     */
     private function getLocationHint(string $needle, array $sections): array
     {
         $needle = trim($needle);
@@ -871,7 +819,7 @@ final class PhptTestCase implements Reorderable, SelfDescribing, Test
     }
 
     /**
-     * @return list<string>
+     * @psalm-return list<string>
      */
     private function settings(bool $collectCoverage): array
     {

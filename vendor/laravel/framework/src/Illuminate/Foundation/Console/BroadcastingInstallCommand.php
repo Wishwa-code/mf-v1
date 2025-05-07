@@ -151,7 +151,7 @@ class BroadcastingInstallCommand extends Command
         }
 
         $this->requireComposerPackages($this->option('composer'), [
-            'laravel/reverb:^1.0',
+            'laravel/reverb:@beta',
         ]);
 
         $php = (new PhpExecutableFinder())->find(false) ?: 'php';

@@ -10,26 +10,26 @@
 namespace PHPUnit\Metadata;
 
 /**
- * @immutable
+ * @psalm-immutable
  *
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  */
 final readonly class CoversMethod extends Metadata
 {
     /**
-     * @var class-string
+     * @psalm-var class-string
      */
     private string $className;
 
     /**
-     * @var non-empty-string
+     * @psalm-var non-empty-string
      */
     private string $methodName;
 
     /**
-     * @param 0|1              $level
-     * @param class-string     $className
-     * @param non-empty-string $methodName
+     * @psalm-param 0|1 $level
+     * @psalm-param class-string $className
+     * @psalm-param non-empty-string $methodName
      */
     protected function __construct(int $level, string $className, string $methodName)
     {
@@ -39,13 +39,16 @@ final readonly class CoversMethod extends Metadata
         $this->methodName = $methodName;
     }
 
-    public function isCoversMethod(): true
+    /**
+     * @psalm-assert-if-true CoversMethod $this
+     */
+    public function isCoversMethod(): bool
     {
         return true;
     }
 
     /**
-     * @return class-string
+     * @psalm-return class-string
      */
     public function className(): string
     {
@@ -53,7 +56,7 @@ final readonly class CoversMethod extends Metadata
     }
 
     /**
-     * @return non-empty-string
+     * @psalm-return non-empty-string
      */
     public function methodName(): string
     {
@@ -61,7 +64,7 @@ final readonly class CoversMethod extends Metadata
     }
 
     /**
-     * @return non-empty-string
+     * @psalm-return non-empty-string
      *
      * @internal This method is not covered by the backward compatibility promise for PHPUnit
      */

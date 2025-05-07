@@ -10,13 +10,16 @@
 namespace PHPUnit\Metadata;
 
 /**
- * @immutable
+ * @psalm-immutable
  *
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  */
 final readonly class DisableReturnValueGenerationForTestDoubles extends Metadata
 {
-    public function isDisableReturnValueGenerationForTestDoubles(): true
+    /**
+     * @psalm-assert-if-true DisableReturnValueGenerationForTestDoubles $this
+     */
+    public function isDisableReturnValueGenerationForTestDoubles(): bool
     {
         return true;
     }

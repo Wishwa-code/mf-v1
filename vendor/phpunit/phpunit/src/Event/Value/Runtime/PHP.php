@@ -21,7 +21,7 @@ use function get_loaded_extensions;
 use function sort;
 
 /**
- * @immutable
+ * @psalm-immutable
  *
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  */
@@ -36,7 +36,7 @@ final readonly class PHP
     private string $sapi;
 
     /**
-     * @var list<string>
+     * @psalm-var list<string>
      */
     private array $extensions;
 
@@ -96,7 +96,7 @@ final readonly class PHP
     }
 
     /**
-     * @return list<string>
+     * @psalm-return list<string>
      */
     public function extensions(): array
     {

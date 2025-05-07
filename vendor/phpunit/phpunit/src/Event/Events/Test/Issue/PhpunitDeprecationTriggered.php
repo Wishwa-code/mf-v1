@@ -16,7 +16,7 @@ use PHPUnit\Event\Event;
 use PHPUnit\Event\Telemetry;
 
 /**
- * @immutable
+ * @psalm-immutable
  *
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  */
@@ -26,12 +26,12 @@ final readonly class PhpunitDeprecationTriggered implements Event
     private Test $test;
 
     /**
-     * @var non-empty-string
+     * @psalm-var non-empty-string
      */
     private string $message;
 
     /**
-     * @param non-empty-string $message
+     * @psalm-param non-empty-string $message
      */
     public function __construct(Telemetry\Info $telemetryInfo, Test $test, string $message)
     {
@@ -51,7 +51,7 @@ final readonly class PhpunitDeprecationTriggered implements Event
     }
 
     /**
-     * @return non-empty-string
+     * @psalm-return non-empty-string
      */
     public function message(): string
     {

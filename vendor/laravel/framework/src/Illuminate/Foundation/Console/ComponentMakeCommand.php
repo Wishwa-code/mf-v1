@@ -63,7 +63,7 @@ class ComponentMakeCommand extends GeneratorCommand
     protected function writeView()
     {
         $path = $this->viewPath(
-            str_replace('.', '/', $this->getView()).'.blade.php'
+            str_replace('.', '/', 'components.'.$this->getView()).'.blade.php'
         );
 
         if (! $this->files->isDirectory(dirname($path))) {
@@ -104,33 +104,24 @@ class ComponentMakeCommand extends GeneratorCommand
 
         return str_replace(
             ['DummyView', '{{ view }}'],
-            'view(\''.$this->getView().'\')',
+            'view(\'components.'.$this->getView().'\')',
             parent::buildClass($name)
         );
     }
 
     /**
-     * Get the view name relative to the view path.
+     * Get the view name relative to the components directory.
      *
      * @return string view
      */
     protected function getView()
     {
-        $segments = explode('/', str_replace('\\', '/', $this->argument('name')));
+        $name = str_replace('\\', '/', $this->argument('name'));
 
-        $name = array_pop($segments);
-
-        $path = is_string($this->option('path'))
-            ? explode('/', trim($this->option('path'), '/'))
-            : [
-                'components',
-                ...$segments,
-            ];
-
-        $path[] = $name;
-
-        return collect($path)
-            ->map(fn ($segment) => Str::kebab($segment))
+        return collect(explode('/', $name))
+            ->map(function ($part) {
+                return Str::kebab($part);
+            })
             ->implode('.');
     }
 
@@ -176,10 +167,9 @@ class ComponentMakeCommand extends GeneratorCommand
     protected function getOptions()
     {
         return [
+            ['force', 'f', InputOption::VALUE_NONE, 'Create the class even if the component already exists'],
             ['inline', null, InputOption::VALUE_NONE, 'Create a component that renders an inline view'],
             ['view', null, InputOption::VALUE_NONE, 'Create an anonymous component with only a view'],
-            ['path', null, InputOption::VALUE_REQUIRED, 'The location where the component view should be created'],
-            ['force', 'f', InputOption::VALUE_NONE, 'Create the class even if the component already exists'],
         ];
     }
 }

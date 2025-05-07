@@ -20,10 +20,8 @@ class SQLiteProcessor extends Processor
 
             $type = strtolower($result->type);
 
-            $safeName = preg_quote($result->name, '/');
-
             $collation = preg_match(
-                '/\b'.$safeName.'\b[^,(]+(?:\([^()]+\)[^,]*)?(?:(?:default|check|as)\s*(?:\(.*?\))?[^,]*)*collate\s+["\'`]?(\w+)/i',
+                '/\b'.preg_quote($result->name).'\b[^,(]+(?:\([^()]+\)[^,]*)?(?:(?:default|check|as)\s*(?:\(.*?\))?[^,]*)*collate\s+["\'`]?(\w+)/i',
                 $sql,
                 $matches
             ) === 1 ? strtolower($matches[1]) : null;
@@ -31,7 +29,7 @@ class SQLiteProcessor extends Processor
             $isGenerated = in_array($result->extra, [2, 3]);
 
             $expression = $isGenerated && preg_match(
-                '/\b'.$safeName.'\b[^,]+\s+as\s+\(((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*)\)/i',
+                '/\b'.preg_quote($result->name).'\b[^,]+\s+as\s+\(((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*)\)/i',
                 $sql,
                 $matches
             ) === 1 ? $matches[1] : null;

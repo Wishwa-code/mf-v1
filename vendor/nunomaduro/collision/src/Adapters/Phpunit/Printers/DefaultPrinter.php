@@ -98,15 +98,13 @@ final class DefaultPrinter
     {
         $this->output = new ConsoleOutput(OutputInterface::VERBOSITY_NORMAL, $colors);
 
-        ConfigureIO::of(new ArgvInput, $this->output);
-
-        class_exists(\Pest\Collision\Events::class) && \Pest\Collision\Events::setOutput($this->output);
+        ConfigureIO::of(new ArgvInput(), $this->output);
 
         self::$verbose = $this->output->isVerbose();
 
         $this->style = new Style($this->output);
 
-        $this->state = new State;
+        $this->state = new State();
     }
 
     /**
@@ -167,7 +165,7 @@ final class DefaultPrinter
         $test = $event->test();
 
         if (! $test instanceof TestMethod) {
-            throw new ShouldNotHappen;
+            throw new ShouldNotHappen();
         }
 
         if (! $this->state->existsInTestCase($event->test())) {
@@ -198,7 +196,7 @@ final class DefaultPrinter
         $test = $event->test();
 
         if (! $test instanceof TestMethod) {
-            throw new ShouldNotHappen;
+            throw new ShouldNotHappen();
         }
 
         if ($this->state->testCaseHasChanged($test)) {

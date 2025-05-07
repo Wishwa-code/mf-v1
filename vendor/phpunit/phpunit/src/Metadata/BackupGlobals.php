@@ -10,7 +10,7 @@
 namespace PHPUnit\Metadata;
 
 /**
- * @immutable
+ * @psalm-immutable
  *
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  */
@@ -19,7 +19,7 @@ final readonly class BackupGlobals extends Metadata
     private bool $enabled;
 
     /**
-     * @param 0|1 $level
+     * @psalm-param 0|1 $level
      */
     protected function __construct(int $level, bool $enabled)
     {
@@ -28,7 +28,10 @@ final readonly class BackupGlobals extends Metadata
         $this->enabled = $enabled;
     }
 
-    public function isBackupGlobals(): true
+    /**
+     * @psalm-assert-if-true BackupGlobals $this
+     */
+    public function isBackupGlobals(): bool
     {
         return true;
     }

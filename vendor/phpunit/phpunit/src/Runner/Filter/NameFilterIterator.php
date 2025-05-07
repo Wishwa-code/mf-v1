@@ -20,22 +20,20 @@ use RecursiveFilterIterator;
 use RecursiveIterator;
 
 /**
- * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
- *
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
 abstract class NameFilterIterator extends RecursiveFilterIterator
 {
     /**
-     * @var non-empty-string
+     * @psalm-var non-empty-string
      */
     private readonly string $regularExpression;
     private readonly ?int $dataSetMinimum;
     private readonly ?int $dataSetMaximum;
 
     /**
-     * @param RecursiveIterator<int, Test> $iterator
-     * @param non-empty-string             $filter
+     * @psalm-param RecursiveIterator<int, Test> $iterator
+     * @psalm-param non-empty-string $filter
      */
     public function __construct(RecursiveIterator $iterator, string $filter)
     {
@@ -75,9 +73,9 @@ abstract class NameFilterIterator extends RecursiveFilterIterator
     abstract protected function doAccept(bool $result): bool;
 
     /**
-     * @param non-empty-string $filter
+     * @psalm-param non-empty-string $filter
      *
-     * @return array{regularExpression: non-empty-string, dataSetMinimum: ?int, dataSetMaximum: ?int}
+     * @psalm-return array{regularExpression: non-empty-string, dataSetMinimum: ?int, dataSetMaximum: ?int}
      */
     private function prepareFilter(string $filter): array
     {

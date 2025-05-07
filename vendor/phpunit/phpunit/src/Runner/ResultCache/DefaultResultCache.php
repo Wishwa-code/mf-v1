@@ -10,7 +10,6 @@
 namespace PHPUnit\Runner\ResultCache;
 
 use const DIRECTORY_SEPARATOR;
-use const LOCK_EX;
 use function array_keys;
 use function assert;
 use function dirname;
@@ -27,8 +26,6 @@ use PHPUnit\Runner\Exception;
 use PHPUnit\Util\Filesystem;
 
 /**
- * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
- *
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
 final class DefaultResultCache implements ResultCache
@@ -45,12 +42,12 @@ final class DefaultResultCache implements ResultCache
     private readonly string $cacheFilename;
 
     /**
-     * @var array<string, TestStatus>
+     * @psalm-var array<string, TestStatus>
      */
     private array $defects = [];
 
     /**
-     * @var array<string, float>
+     * @psalm-var array<string, float>
      */
     private array $times = [];
 

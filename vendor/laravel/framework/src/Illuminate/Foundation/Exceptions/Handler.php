@@ -13,7 +13,6 @@ use Illuminate\Console\View\Components\BulletList;
 use Illuminate\Console\View\Components\Error;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Debug\ExceptionHandler as ExceptionHandlerContract;
-use Illuminate\Contracts\Debug\ShouldntReport;
 use Illuminate\Contracts\Foundation\ExceptionRenderer;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -399,10 +398,6 @@ class Handler implements ExceptionHandlerContract
     protected function shouldntReport(Throwable $e)
     {
         if ($this->withoutDuplicates && ($this->reportedExceptionMap[$e] ?? false)) {
-            return true;
-        }
-
-        if ($e instanceof ShouldntReport) {
             return true;
         }
 

@@ -263,7 +263,7 @@ class MorphTo extends BelongsTo
      */
     public function touch()
     {
-        if (! is_null($this->getParentKey())) {
+        if (! is_null($this->child->{$this->foreignKey})) {
             parent::touch();
         }
     }

@@ -112,23 +112,6 @@ trait InteractsWithQueue
     }
 
     /**
-     * Assert that the job was not deleted from the queue.
-     *
-     * @return $this
-     */
-    public function assertNotDeleted()
-    {
-        $this->ensureQueueInteractionsHaveBeenFaked();
-
-        PHPUnit::assertTrue(
-            ! $this->job->isDeleted(),
-            'Job was unexpectedly deleted.'
-        );
-
-        return $this;
-    }
-
-    /**
      * Assert that the job was manually failed.
      *
      * @return $this
@@ -140,23 +123,6 @@ trait InteractsWithQueue
         PHPUnit::assertTrue(
             $this->job->hasFailed(),
             'Job was expected to be manually failed, but was not.'
-        );
-
-        return $this;
-    }
-
-    /**
-     * Assert that the job was not manually failed.
-     *
-     * @return $this
-     */
-    public function assertNotFailed()
-    {
-        $this->ensureQueueInteractionsHaveBeenFaked();
-
-        PHPUnit::assertTrue(
-            ! $this->job->hasFailed(),
-            'Job was unexpectedly failed manually.'
         );
 
         return $this;
@@ -188,23 +154,6 @@ trait InteractsWithQueue
                 "Expected job to be released with delay of [{$delay}] seconds, but was released with delay of [{$this->job->releaseDelay}] seconds."
             );
         }
-
-        return $this;
-    }
-
-    /**
-     * Assert that the job was not released back onto the queue.
-     *
-     * @return $this
-     */
-    public function assertNotReleased()
-    {
-        $this->ensureQueueInteractionsHaveBeenFaked();
-
-        PHPUnit::assertTrue(
-            ! $this->job->isReleased(),
-            'Job was unexpectedly released.'
-        );
 
         return $this;
     }

@@ -12,19 +12,14 @@ namespace PHPUnit\Framework\MockObject;
 use function assert;
 
 /**
- * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
- *
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
 final class TestDoubleState
 {
-    /**
-     * @var array<non-empty-string, true>
-     */
     private static array $deprecationEmittedForTest = [];
 
     /**
-     * @var list<ConfigurableMethod>
+     * @psalm-var list<ConfigurableMethod>
      */
     private readonly array $configurableMethods;
     private readonly bool $generateReturnValues;
@@ -32,7 +27,7 @@ final class TestDoubleState
     private ?object $proxyTarget                  = null;
 
     /**
-     * @param list<ConfigurableMethod> $configurableMethods
+     * @psalm-param list<ConfigurableMethod> $configurableMethods
      */
     public function __construct(array $configurableMethods, bool $generateReturnValues)
     {
@@ -80,17 +75,11 @@ final class TestDoubleState
         return $this->proxyTarget;
     }
 
-    /**
-     * @param non-empty-string $testId
-     */
     public function deprecationWasEmittedFor(string $testId): void
     {
         self::$deprecationEmittedForTest[$testId] = true;
     }
 
-    /**
-     * @param non-empty-string $testId
-     */
     public function wasDeprecationAlreadyEmittedFor(string $testId): bool
     {
         return isset(self::$deprecationEmittedForTest[$testId]);

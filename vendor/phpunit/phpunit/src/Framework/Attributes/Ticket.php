@@ -12,7 +12,7 @@ namespace PHPUnit\Framework\Attributes;
 use Attribute;
 
 /**
- * @immutable
+ * @psalm-immutable
  *
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  */
@@ -20,12 +20,12 @@ use Attribute;
 final readonly class Ticket
 {
     /**
-     * @var non-empty-string
+     * @psalm-var non-empty-string
      */
     private string $text;
 
     /**
-     * @param non-empty-string $text
+     * @psalm-param non-empty-string $text
      */
     public function __construct(string $text)
     {
@@ -33,7 +33,7 @@ final readonly class Ticket
     }
 
     /**
-     * @return non-empty-string
+     * @psalm-return non-empty-string
      */
     public function text(): string
     {

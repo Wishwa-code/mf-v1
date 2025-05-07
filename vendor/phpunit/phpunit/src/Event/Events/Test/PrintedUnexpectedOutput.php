@@ -9,13 +9,12 @@
  */
 namespace PHPUnit\Event\Test;
 
-use const PHP_EOL;
 use function sprintf;
 use PHPUnit\Event\Event;
 use PHPUnit\Event\Telemetry;
 
 /**
- * @immutable
+ * @psalm-immutable
  *
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  */
@@ -24,12 +23,12 @@ final readonly class PrintedUnexpectedOutput implements Event
     private Telemetry\Info $telemetryInfo;
 
     /**
-     * @var non-empty-string
+     * @psalm-var non-empty-string
      */
     private string $output;
 
     /**
-     * @param non-empty-string $output
+     * @psalm-param non-empty-string $output
      */
     public function __construct(Telemetry\Info $telemetryInfo, string $output)
     {
@@ -43,7 +42,7 @@ final readonly class PrintedUnexpectedOutput implements Event
     }
 
     /**
-     * @return non-empty-string
+     * @psalm-return non-empty-string
      */
     public function output(): string
     {

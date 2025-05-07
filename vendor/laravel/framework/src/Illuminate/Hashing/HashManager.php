@@ -108,17 +108,4 @@ class HashManager extends Manager implements Hasher
     {
         return $this->config->get('hashing.driver', 'bcrypt');
     }
-
-    /**
-     * Verifies that the configuration is less than or equal to what is configured.
-     *
-     * @param  array  $value
-     * @return bool
-     *
-     * @internal
-     */
-    public function verifyConfiguration($value)
-    {
-        return $this->driver()->verifyConfiguration($value);
-    }
 }

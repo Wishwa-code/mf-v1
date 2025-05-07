@@ -55,6 +55,7 @@ class ErrorHandler
         \E_USER_DEPRECATED => 'User Deprecated',
         \E_NOTICE => 'Notice',
         \E_USER_NOTICE => 'User Notice',
+        \E_STRICT => 'Runtime Notice',
         \E_WARNING => 'Warning',
         \E_USER_WARNING => 'User Warning',
         \E_COMPILE_WARNING => 'Compile Warning',
@@ -72,6 +73,7 @@ class ErrorHandler
         \E_USER_DEPRECATED => [null, LogLevel::INFO],
         \E_NOTICE => [null, LogLevel::ERROR],
         \E_USER_NOTICE => [null, LogLevel::ERROR],
+        \E_STRICT => [null, LogLevel::ERROR],
         \E_WARNING => [null, LogLevel::ERROR],
         \E_USER_WARNING => [null, LogLevel::ERROR],
         \E_COMPILE_WARNING => [null, LogLevel::ERROR],
@@ -179,11 +181,6 @@ class ErrorHandler
 
     public function __construct(?BufferingLogger $bootstrappingLogger = null, bool $debug = false)
     {
-        if (\PHP_VERSION_ID < 80400) {
-            $this->levels[\E_STRICT] = 'Runtime Notice';
-            $this->loggers[\E_STRICT] = [null, LogLevel::ERROR];
-        }
-
         if ($bootstrappingLogger) {
             $this->bootstrappingLogger = $bootstrappingLogger;
             $this->setDefaultLogger($bootstrappingLogger);

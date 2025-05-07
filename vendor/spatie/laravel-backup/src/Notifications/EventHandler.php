@@ -17,7 +17,8 @@ class EventHandler
 {
     public function __construct(
         protected Repository $config
-    ) {}
+    ) {
+    }
 
     public function subscribe(Dispatcher $events): void
     {
@@ -39,7 +40,7 @@ class EventHandler
 
     protected function determineNotification($event): Notification
     {
-        $lookingForNotificationClass = class_basename($event).'Notification';
+        $lookingForNotificationClass = class_basename($event) . "Notification";
 
         $notificationClass = collect($this->config->get('backup.notifications.notifications'))
             ->keys()

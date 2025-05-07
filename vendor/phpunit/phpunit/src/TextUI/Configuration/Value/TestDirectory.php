@@ -14,12 +14,12 @@ use PHPUnit\Util\VersionComparisonOperator;
 /**
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
  *
- * @immutable
+ * @psalm-immutable
  */
 final readonly class TestDirectory
 {
     /**
-     * @var non-empty-string
+     * @psalm-var non-empty-string
      */
     private string $path;
     private string $prefix;
@@ -28,13 +28,13 @@ final readonly class TestDirectory
     private VersionComparisonOperator $phpVersionOperator;
 
     /**
-     * @var list<non-empty-string>
+     * @psalm-var list<non-empty-string>
      */
     private array $groups;
 
     /**
-     * @param non-empty-string       $path
-     * @param list<non-empty-string> $groups
+     * @psalm-param non-empty-string $path
+     * @psalm-param list<non-empty-string> $groups
      */
     public function __construct(string $path, string $prefix, string $suffix, string $phpVersion, VersionComparisonOperator $phpVersionOperator, array $groups)
     {
@@ -47,7 +47,7 @@ final readonly class TestDirectory
     }
 
     /**
-     * @return non-empty-string
+     * @psalm-return non-empty-string
      */
     public function path(): string
     {
@@ -75,7 +75,7 @@ final readonly class TestDirectory
     }
 
     /**
-     * @return list<non-empty-string>
+     * @psalm-return list<non-empty-string>
      */
     public function groups(): array
     {
