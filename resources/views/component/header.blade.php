@@ -1593,6 +1593,17 @@ $banner = DB::select($query);
                 });
 
                 $("#grandTotal").text(grandTotal.toFixed(2));
+                // Disable save/add buttons if finalized
+                if (response.isFinalized) {
+                    $("#saveEntries").prop("disabled", true);
+                    $("#addToTable").prop("disabled", true);
+                    $("#amount, #quantity").prop("disabled", true);
+                    $("#modalTableBody .remove-entry").prop("disabled", true); // ✅ Disable buttons instead of removing
+                } else {
+                    $("#saveEntries").prop("disabled", false);
+                    $("#addToTable").prop("disabled", false);
+                    $("#amount, #quantity").prop("disabled", false);
+                }
             },
             error: function () {
                 Swal.fire({
