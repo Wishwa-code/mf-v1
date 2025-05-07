@@ -49,11 +49,11 @@ class CashierController extends Controller
             $existingPlot = tableWithBranch('plot')
                 ->whereDate('Date_Time', $today)
                 ->first();
-
+            $total = (float) $existingPlot->total_amount;
+            $newTotal = (float) $request->grandTotal;
             if ($existingPlot) {
 
-                $total = (float) $existingPlot->total_amount;
-                $newTotal = (float) $request->grandTotal;
+
 
                 // Update total_amount and last updated fields
                 DB::table('plot')
@@ -65,19 +65,37 @@ class CashierController extends Controller
                         'last_updated_user' => $user_id
                     ]);
 
-//                $balance_amount=$total-$newTotal;
-//                $bank=DB::table('company_bank_accounts')->where('Account_No','=',session('userid'))->first();
-//                if ($bank){
-//                    if ($balance_amount < 0) {
-//                        $this->bankLogController->index($bank->Idbank, "Deposit", "Update Morning Plot", 'Update Morning Plot', "credit", abs($balance_amount),'1');
-//                        $this->bankLogController->index("1", "Withdraw", "Update Morning Plot", 'Update Morning Plot', "debit", abs($balance_amount),$bank->Idbank);
-//                    } else {
-//                        $this->bankLogController->index($bank->Idbank, "Deposit", "Update Morning Plot", 'Update Morning Plot', "debit", $balance_amount,'1');
-//                        $this->bankLogController->index("1", "Withdraw", "Update Morning Plot", 'Update Morning Plot', "credit", $balance_amount,$bank->Idbank);
+
+//                $user=DB::table('user')->where('id','=',$user_id)->first();
+//                if ($user){
+//                    $cashier=$user->cashier;
+//                    if ($cashier=="1"){
+//                        $balance_amount=$total-$newTotal;
+//                        $bank=DB::table('company_bank_accounts')->where('Account_No','=',session('userid'))->first();
+//                        if ($bank){
+//                            $cash=DB::table('company_bank_accounts')->where('Account_No','=',"Cash")->first();
+//                            if ($balance_amount < 0) {
+//                                $this->bankLogController->index($bank->Idbank,"Deposit","Update Morning Plot","Update Morning Plot","credit",$newTotal,$cash->Idbank);
+//                                $this->bankLogController->index($cash->Idbank,"Withdraw","Update Morning Plot","Update Morning Plot","debit",$newTotal,$cash->Idbank);
+//                            } else {
+//                                $this->bankLogController->index($bank->Idbank,"Deposit","Update Morning Plot","Update Morning Plot","debit",$newTotal,$cash->Idbank);
+//                                $this->bankLogController->index($cash->Idbank,"Withdraw","Update Morning Plot","Update Morning Plot","credit",$newTotal,$cash->Idbank);
+//                            }
+//                        }else{
+//                            DB::rollBack();
+//                            return response()->json(['status' => 'error', 'message' => "Bank log not updated"], 500);
+//                        }
+//                    }else{
+//                        DB::rollBack();
+//                        return response()->json(['status' => 'error', 'message' => "This account has no access to cashier"], 500);
 //                    }
 //                }else{
 //                    DB::rollBack();
+//                    return response()->json(['status' => 'error', 'message' => "This account has no access to cashier"], 500);
 //                }
+
+
+
 
 
                 $plotId = $existingPlot->id_plot;
@@ -87,21 +105,35 @@ class CashierController extends Controller
             } else {
                 // Insert new plot record
                 $plotId = DB::table('plot')->insertGetId([
-                    'total_amount'      => $request->grandTotal,
+                    'total_amount'      => $newTotal,
                     'Date_Time'         => Carbon::now(),
                     'user'              => $user_id,
                     'last_updated_time' => Carbon::now(),
                     'last_updated_user' => $user_id,
                     'branch_id' => $branch_id
                 ]);
-//                Log::info($plotId);
-//                $bank=DB::table('company_bank_accounts')->where('Account_No','=',session('userid'))->first();
-//                if ($bank){
-//                    $this->bankLogController->index($bank->Idbank,"Deposit","Morning Plot",'Morning Plot',"credit",$request->grandTotal,'1');
-//                    $this->bankLogController->index("1","Withdraw","Morning Plot",'Morning Plot',"debit",$request->grandTotal,$bank->Idbank);
+//                $user=DB::table('user')->where('id','=',$user_id)->first();
+//                if ($user){
+//                    $cashier=$user->cashier;
+//                    if ($cashier=="1"){
+//                        $bank=DB::table('company_bank_accounts')->where('Account_No','=',session('userid'))->first();
+//                        if ($bank){
+//                            $cash=DB::table('company_bank_accounts')->where('Account_No','=',"Cash")->first();
+//                            $this->bankLogController->index($bank->Idbank,"Deposit","Morning Plot","Morning Plot","credit",$newTotal,$cash->Idbank);
+//                            $this->bankLogController->index($cash->Idbank,"Withdraw","Morning Plot","Morning Plot","debit",$newTotal,$bank->Idbank);
+//                        }else{
+//                            DB::rollBack();
+//                            return response()->json(['status' => 'error', 'message' => "Bank log not updated"], 500);
+//                        }
+//                    }else{
+//                        DB::rollBack();
+//                        return response()->json(['status' => 'error', 'message' => "This account has no access to cashier"], 500);
+//                    }
 //                }else{
 //                    DB::rollBack();
+//                    return response()->json(['status' => 'error', 'message' => "This account has no access to cashier"], 500);
 //                }
+
             }
 
 
