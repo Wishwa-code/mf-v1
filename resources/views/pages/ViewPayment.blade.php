@@ -318,28 +318,31 @@
                         <hr>
 
                         <div class="table-responsive">
-                            <table class="table table-centered mb-0" id="loan_table">
-                                <thead  class="bg-purple">
-                                <tr>
-                                    <th>Receipt No</th>
-                                    <th>Center No</th>
-                                    <th>Center Location</th>
-                                    <th>Group No</th>
-                                    <th>Customer Number</th>
-                                    <th>Loan Number</th>
-                                    <th>Customer Name</th>
-                                    <th>Date</th>
-                                    <th>Payment Method</th>
-                                    <th>Amount</th>
-                                    <th>Agent</th>
-                                    <th>Comment</th>
-                                    <th>Action</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <!-- Rows will be populated here by JavaScript -->
-                                </tbody>
-                            </table>
+                            <div style="max-height: 1000px; overflow-y: auto;">
+                                <table class="table table-centered mb-0" id="loan_table">
+                                    <thead  class="bg-purple">
+                                    <tr>
+                                        <th>Receipt No</th>
+                                        <th>Center No</th>
+                                        <th>Center Location</th>
+                                        <th>Group No</th>
+                                        <th>Customer Number</th>
+                                        <th>Loan Number</th>
+                                        <th>Customer Name</th>
+                                        <th>Date</th>
+                                        <th>Payment Method</th>
+                                        <th>Amount</th>
+                                        <th>Agent</th>
+                                        <th>Comment</th>
+                                        <th>Action</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <!-- Rows will be populated here by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+
 
                         </div> <!-- end table-responsive-->
 
@@ -351,7 +354,7 @@
                                             <span class="fw-bold">Total Collected Amount</span>
                                         </div>
                                     </div>
-                                    <div class="col-lg-4">
+                                    <div class="col-lg-6">
                                         <div>
                                             <span id="tot_amount"  class="fw-bold">0.00</span>
                                         </div>
