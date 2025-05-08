@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Expenses;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -432,8 +433,26 @@ class PendingLoanController extends Controller
             )
             ->get();
 
-        if ($customer_loan->Status=="-1"){
+        $loanCategory = DB::table('loan_category')
+            ->where('idLoan_Category', '=', $customer_loan->Loan_Category_idLoan_Category)
+            ->first();
+
+        $categoryUpdatedAt = Carbon::parse($loanCategory->updated_at);
+        $now = Carbon::now();
+
+        // Set your threshold (e.g., 1 minute ago)
+        $thresholdInSeconds = 60;
+
+        $shouldUpdate = $categoryUpdatedAt->diffInSeconds($now) <= $thresholdInSeconds;
+
+        Log::info('updated_at: ' . $categoryUpdatedAt);
+        Log::info('now: ' . $now);
+        Log::info('diff: ' . $now->diffInSeconds($categoryUpdatedAt));
+
+
+        if ($customer_loan->Status=="-1" && $shouldUpdate) {
             DB::table('loan_has_approval')->where('loan_id', $id)->delete();
+            DB::table('loan_has_approval_checklist')->where('loan_id', $id)->delete();
             $get_level=tableWithBranch('level')->where('product_id','=',$customer_loan->Loan_Category_idLoan_Category)->get();
             foreach ($get_level as $item){
                 // Prepare data for the loan approval
@@ -630,6 +649,9 @@ class PendingLoanController extends Controller
         // Subquery: Installments
         $installment_subquery = DB::table('installments')
             ->select('Customer_Loan_idCustomer_Loan', DB::raw('SUM(Installment_Amount) as schedule_repayments'))
+            ->when(!empty($date_from) && !empty($date_to), function ($query) use ($date_from, $date_to) {
+                return $query->whereBetween('Installment_Date', [$date_from, $date_to]);
+            })
             ->groupBy('Customer_Loan_idCustomer_Loan');
 
         // Subquery: Loan Other Charges
@@ -641,9 +663,9 @@ class PendingLoanController extends Controller
         $loanLogData = DB::table('Loan_Log')
             ->select(
                 'Loan_ID',
-                DB::raw('SUM(CASE WHEN Type = "Customer Payment" THEN Capital_Payment WHEN Type = "Payment Undo" THEN -Capital_Payment ELSE 0 END) as capital_received'),
-                DB::raw('SUM(CASE WHEN Type = "Customer Payment" THEN Interest_Payment WHEN Type = "Payment Undo" THEN -Interest_Payment ELSE 0 END) as interest_received'),
-                DB::raw('SUM(CASE WHEN Type = "Customer Payment" THEN Panelty_Payment WHEN Type = "Payment Undo" THEN -Panelty_Payment ELSE 0 END) as penalty_received'),
+                DB::raw('SUM(CASE WHEN Type IN ("Customer Payment", "Loan Settlement") THEN Capital_Payment WHEN Type = "Payment Undo" THEN -Capital_Payment ELSE 0 END) as capital_received'),
+                DB::raw('SUM(CASE WHEN Type IN ("Customer Payment", "Loan Settlement") THEN Interest_Payment WHEN Type = "Payment Undo" THEN -Interest_Payment ELSE 0 END) as interest_received'),
+                DB::raw('SUM(CASE WHEN Type IN ("Customer Payment", "Loan Settlement") THEN Panelty_Payment WHEN Type = "Payment Undo" THEN -Panelty_Payment ELSE 0 END) as penalty_received'),
                 DB::raw('SUM(CASE WHEN Type IN ("Customer Payment", "Loan Settlement") THEN Amount WHEN Type = "Payment Undo" THEN -Amount ELSE 0 END) as collected_repayments')
             )
             ->when(!empty($date_from) && !empty($date_to), function ($query) use ($date_from, $date_to) {
@@ -675,7 +697,6 @@ class PendingLoanController extends Controller
                 'center.Name as center_name',
                 'branch.Name as branch_name',
                 'route.name as route_name',
-                'customer_loan.idCustomer_Loan',
                 DB::raw('SUM(customer_loan.Amount) as total_disbursement'),
                 DB::raw('SUM(customer_loan.capital_balance) as capital_balance'),
                 DB::raw('SUM(customer_loan.installment_balance) as installment_balance'),
@@ -688,12 +709,7 @@ class PendingLoanController extends Controller
             )
             ->whereIn('customer_loan.Status', [0, 1]);
 
-        if (!empty($date_from)) {
-            $centerSummaryQuery->whereDate('customer_loan.Date_Time', '>=', $date_from);
-        }
-        if (!empty($date_to)) {
-            $centerSummaryQuery->whereDate('customer_loan.Date_Time', '<=', $date_to);
-        }
+
         if ($branch != "0") {
             $centerSummaryQuery->where('customer_loan.branch_id', $branch);
         }
@@ -705,7 +721,7 @@ class PendingLoanController extends Controller
         }
 
         $centerSummaryData = $centerSummaryQuery
-            ->groupBy('branch.Name', 'route.name', 'center.Name', 'customer_loan.idCustomer_Loan')
+            ->groupBy('branch.Name', 'route.name', 'center.Name')
             ->get();
 
         // 📌 2️⃣ Loan-wise Details Query (also without Loan_Log)
@@ -738,12 +754,7 @@ class PendingLoanController extends Controller
             )
             ->whereIn('customer_loan.Status', [0, 1]);
 
-        if (!empty($date_from)) {
-            $loanDetailsQuery->whereDate('customer_loan.Date_Time', '>=', $date_from);
-        }
-        if (!empty($date_to)) {
-            $loanDetailsQuery->whereDate('customer_loan.Date_Time', '<=', $date_to);
-        }
+
         if ($branch != "0") {
             $loanDetailsQuery->where('customer_loan.branch_id', $branch);
         }

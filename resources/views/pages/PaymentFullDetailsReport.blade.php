@@ -152,23 +152,23 @@
                 </div>
 
                 <div class="col-md-3 mt-3">
-                    <label>Paid Type</label>
+                    <label>Installment Type</label>
                     <select name="paid_type" class="form-control">
                         <option value="All" {{ request('paid_type') == 'All' ? 'selected' : '' }}>All</option>
                         <option value="Not Paid" {{ request('paid_type') == 'Not Paid' ? 'selected' : '' }}>Not Paid</option>
-                        <option value="Over Paid" {{ request('paid_type') == 'Over Paid' ? 'selected' : '' }}>Over Paid</option>
+{{--                        <option value="Over Paid" {{ request('paid_type') == 'Over Paid' ? 'selected' : '' }}>Over Paid</option>--}}
                         <option value="Under Paid" {{ request('paid_type') == 'Under Paid' ? 'selected' : '' }}>Under Paid</option>
                         <option value="Normal" {{ request('paid_type') == 'Normal' ? 'selected' : '' }}>Normal</option>
                     </select>
                 </div>
 
                 <div class="col-md-3 mt-3">
-                    <label>Start Date</label>
+                    <label>Installment Start Date</label>
                     <input type="date" name="start_date" class="form-control" value="{{ request('start_date') ?? date('Y-m-d') }}">
                 </div>
 
                 <div class="col-md-3 mt-3">
-                    <label>End Date</label>
+                    <label>Installment End Date</label>
                     <input type="date" name="end_date" class="form-control" value="{{ request('end_date') ?? date('Y-m-d') }}">
                 </div>
 
@@ -189,108 +189,142 @@
         <!-- Report Table -->
         <!-- Report Table -->
         <div class="table-responsive">
-            <table id="repaymentTable" class="table table-centered mt-4">
-                <thead class="sticky-top bg-purple">
-                <tr>
-                    <th>Branch</th>
-                    <th>Route</th>
-                    <th>Center</th>
-                    <th>Group</th>
-                    <th>Loan No</th>
-                    <th>Customer Name</th>
-                    <th>Loan Product</th>
-                    <th>Loan Amount</th>
-                    <th>Installment Amount</th>
-                    <th>Total Installment</th>
-                    <th>Penalty Amount</th>
-                    <th>Total Payable</th>
-                    <th>Paid Amount</th>
-                    <th>Balance Amount</th>
-                    <th>Paid Type</th>
-                    <th>Loan Balance</th>
-                    <th>Collector</th>
-                    <th>Action</th>
-                </tr>
-                </thead>
-                <tbody>
-                @php
-                    $totalLoanAmount = 0;
-                    $totalInstallmentAmount = 0;
-                    $totalInstallmentTotal = 0;
-                    $totalPenaltyAmount = 0;
-                    $totalPayableAmount = 0;
-                    $totalPaidAmount = 0;
-                    $totalBalanceAmount = 0;
-                    $totalLoanBalance = 0;
-                @endphp
-
-                @foreach($payments as $payment)
-                    @php
-                        $totalLoanAmount += $payment->LoanAmount;
-                        $totalInstallmentAmount += $payment->InstallmentAmount;
-                        $totalInstallmentTotal += $payment->TotalInstallmentAmount;
-                        $totalPenaltyAmount += $payment->TotalPenaltyAmount;
-                        $totalPayableAmount += $payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount;
-                        $totalPaidAmount += $payment->TotalPaidAmount;
-                        $totalBalanceAmount += max(($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) - $payment->TotalPaidAmount, 0);
-                        $totalLoanBalance += $payment->Balance_Amount;
-                    @endphp
+            <div style="max-height: 1000px; overflow-y: auto;">
+                <table id="repaymentTable" class="table table-centered mt-4">
+                    <thead class="sticky-top bg-purple">
                     <tr>
-                        <td>{{ $payment->Branch }}</td>
-                        <td>{{ $payment->Route }}</td>
-                        <td>{{ $payment->Center }}</td>
-                        <td>{{ $payment->GroupName }}</td>
-                        <td>{{ $payment->LoanNo }}</td>
-                        <td>{{ $payment->CustomerName }}</td>
-                        <td>{{ $payment->LoanProduct }}</td>
-                        <td>{{ number_format($payment->LoanAmount, 2) }}</td>
-                        <td>{{ number_format($payment->InstallmentAmount, 2) }}</td>
-                        <td>{{ number_format($payment->TotalInstallmentAmount, 2) }}</td>
-                        <td>{{ number_format($payment->TotalPenaltyAmount, 2) }}</td>
-                        <td>{{ number_format($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount, 2) }}</td>
-                        <td>{{ number_format($payment->TotalPaidAmount, 2) }}</td>
-                        <td>{{ number_format(max(($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) - $payment->TotalPaidAmount, 0), 2) }}</td>
-                        <td>
-                            @if ($payment->TotalPaidAmount < 1)
-                                <span class="text-danger font-weight-bold">Not Paid</span>
-                            @elseif (($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) > $payment->TotalPaidAmount)
-                                <span class="text-warning font-weight-bold">Under Paid</span>
-                            @elseif (($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) < $payment->TotalPaidAmount)
-                                <span class="text-success font-weight-bold">Over Paid</span>
-                            @else
-                                <span class="text-primary font-weight-bold">Normal</span>
-                            @endif
-                        </td>
-                        <td>{{ number_format($payment->Balance_Amount, 2) }}</td>
-                        <td>{{ $payment->Collector }}</td>
-                        <td>
-                            <a href="{{ url('loanview/' . $payment->idCustomer_Loan) }}" target="_blank" class="btn btn-warning">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                        </td>
+                        <th>Branch</th>
+                        <th>Route</th>
+                        <th>Center</th>
+                        <th>Group</th>
+                        <th>Loan No</th>
+                        <th>Customer Name</th>
+                        <th>Loan Product</th>
+                        <th>Loan Amount</th>
+                        <th>Installment Amount</th>
+                        <th>Total Installment</th>
+                        <th>Penalty Amount</th>
+                        <th>Total Payable</th>
+                        <th>Paid Ins. Amount</th>
+                        <th>Paid Amount</th>
+                        <th>Paid Arrears</th>
+                        <th>Over Paid</th>
+                        <th>Balance Amount</th>
+                        <th>Installment Type</th>
+                        <th>Loan Balance</th>
+                        <th>Collector</th>
+                        <th>Action</th>
                     </tr>
-                @endforeach
-                </tbody>
-                <tfoot>
-                <tr class="font-weight-bold bg-light">
-                    <td colspan="7" class="text-right">Total:</td>
-                    <td class="text-right" style="text-align: right"><strong>{{ number_format($totalLoanAmount, 2) }}</strong></td>
-                    <td class="text-right" style="text-align: right"><strong>{{ number_format($totalInstallmentAmount, 2) }}</strong></td>
-                    <td class="text-right" style="text-align: right"><strong>{{ number_format($totalInstallmentTotal, 2) }}</strong></td>
-                    <td class="text-right" style="text-align: right"><strong>{{ number_format($totalPenaltyAmount, 2) }}</strong></td>
-                    <td class="text-right" style="text-align: right"><strong>{{ number_format($totalPayableAmount, 2) }}</strong></td>
-                    <td class="text-right" style="text-align: right"><strong>{{ number_format($totalPaidAmount, 2) }}</strong></td>
-                    <td class="text-right" style="text-align: right"><strong>{{ number_format($totalBalanceAmount, 2) }}</strong></td>
-                    <td></td> <!-- Empty for Paid Type -->
-                    <td class="text-right" style="text-align: right"><strong>{{ number_format($totalLoanBalance, 2) }}</strong></td>
-                    <td></td> <!-- Empty for Collector -->
-                    <td></td> <!-- Empty for Action -->
-                </tr>
-                </tfoot>
+                    </thead>
+                    <tbody>
+                    @php
+                        $totalLoanAmount = 0;
+                        $totalInstallmentAmount = 0;
+                        $totalInstallmentTotal = 0;
+                        $totalPenaltyAmount = 0;
+                        $totalPayableAmount = 0;
+                        $totalPaidAmount = 0;
+                        $totalBalanceAmount = 0;
+                        $totalLoanBalance = 0;
+                        $totalRealPaidAmount = 0;
+                        $totalArrease = 0;
+                        $totalOverPay = 0;
+                    @endphp
+
+                    @foreach($payments as $payment)
+                        @php
+                            $totalLoanAmount += $payment->LoanAmount;
+                            $totalInstallmentAmount += $payment->InstallmentAmount;
+                            $totalInstallmentTotal += $payment->TotalInstallmentAmount;
+                            $totalPenaltyAmount += $payment->TotalPenaltyAmount;
+                            $totalPayableAmount += $payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount;
+                            $totalPaidAmount += $payment->TotalPaidAmount;
+                            $totalRealPaidAmount += $payment->TotalRealPaidAmount;
+                            $totalBalanceAmount += max(($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) - $payment->TotalPaidAmount, 0);
+                            $totalLoanBalance += $payment->Balance_Amount;
+
+                            $payable_amount=$payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount;
+                            $ins_paid=$payment->TotalPaidAmount;
+                            $orginal_paid=$payment->TotalRealPaidAmount;
+                            $arrears=0;
+                            $over_pay=0;
+                            if ($orginal_paid>$ins_paid){
+                                $additional_paid=$orginal_paid-$ins_paid;
+                                if($payable_amount>$ins_paid){
+                                    $arrears=$additional_paid;
+                                }else if($payable_amount=$ins_paid){
+                                    $over_pay=$additional_paid;
+                                }
+                            }
+                            $totalArrease+=$arrears;
+                            $totalOverPay+=$over_pay;
+
+
+                        @endphp
+                        <tr>
+                            <td>{{ $payment->Branch }}</td>
+                            <td>{{ $payment->Route }}</td>
+                            <td>{{ $payment->Center }}</td>
+                            <td>{{ $payment->GroupName }}</td>
+                            <td>{{ $payment->LoanNo }}</td>
+                            <td style="text-align: left">{{ $payment->CustomerName }}</td>
+                            <td>{{ $payment->LoanProduct }}</td>
+                            <td>{{ number_format($payment->LoanAmount, 2) }}</td>
+                            <td>{{ number_format($payment->InstallmentAmount, 2) }}</td>
+                            <td>{{ number_format($payment->TotalInstallmentAmount, 2) }}</td>
+                            <td>{{ number_format($payment->TotalPenaltyAmount, 2) }}</td>
+                            <td>{{ number_format($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount, 2) }}</td>
+                            <td>{{ number_format($payment->TotalPaidAmount, 2) }}</td>
+                            <td>{{ number_format($payment->TotalRealPaidAmount, 2) }}</td>
+                            <td>{{ number_format($arrears, 2) }}</td>
+                            <td>{{ number_format($over_pay, 2) }}</td>
+                            <td>{{ number_format(max(($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) - $payment->TotalPaidAmount, 0), 2) }}</td>
+                            <td>
+                                @if ($payment->TotalPaidAmount < 1)
+                                    <span class="text-danger font-weight-bold">Not Paid</span>
+                                @elseif (($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) > $payment->TotalPaidAmount)
+                                    <span class="text-warning font-weight-bold">Under Paid</span>
+                                @elseif (($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) < $payment->TotalPaidAmount)
+                                    <span class="text-success font-weight-bold">Over Paid</span>
+                                @else
+                                    <span class="text-primary font-weight-bold">Normal</span>
+                                @endif
+                            </td>
+                            <td>{{ number_format($payment->Balance_Amount, 2) }}</td>
+                            <td>{{ $payment->Collector }}</td>
+                            <td>
+                                <a href="{{ url('loanview/' . $payment->idCustomer_Loan) }}" target="_blank" class="btn btn-warning">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                    <tfoot>
+                    <tr class="font-weight-bold bg-light">
+                        <td colspan="7" class="text-right">Total:</td>
+                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalLoanAmount, 2) }}</strong></td>
+                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalInstallmentAmount, 2) }}</strong></td>
+                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalInstallmentTotal, 2) }}</strong></td>
+                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalPenaltyAmount, 2) }}</strong></td>
+                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalPayableAmount, 2) }}</strong></td>
+                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalPaidAmount, 2) }}</strong></td>
+                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalRealPaidAmount, 2) }}</strong></td>
+                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalArrease, 2) }}</strong></td>
+                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalOverPay, 2) }}</strong></td>
+                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalBalanceAmount, 2) }}</strong></td>
+                        <td></td> <!-- Empty for Paid Type -->
+                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalLoanBalance, 2) }}</strong></td>
+                        <td></td> <!-- Empty for Collector -->
+                        <td></td> <!-- Empty for Action -->
+                    </tr>
+                    </tfoot>
 
 
 
-            </table>
+                </table>
+            </div>
+
 
         </div>
 

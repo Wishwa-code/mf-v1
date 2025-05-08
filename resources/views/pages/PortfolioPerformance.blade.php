@@ -50,14 +50,14 @@
                                 <!-- Date From -->
                                 <div class="col-lg-3">
                                     <div class="mb-2">
-                                        <label for="date_from" class="form-label">Date From</label>
+                                        <label for="date_from" class="form-label">Payment Date From</label>
                                         <input type="date" class="form-control" id="date_from" name="date_from">
                                     </div>
                                 </div>
                                 <!-- Date To -->
                                 <div class="col-lg-3">
                                     <div class="mb-2">
-                                        <label for="date_to" class="form-label">Date To</label>
+                                        <label for="date_to" class="form-label">Payment Date To</label>
                                         <input type="date" class="form-control" id="date_to" name="date_to">
                                     </div>
                                 </div>
@@ -129,33 +129,35 @@
 
 
                         <div class="table-responsive">
-                            <table class="table table-centered mb-0" id="loan_table">
-                                <thead class="sticky-top bg-purple">
-                                <tr>
-                                    <th>Branch</th>
-                                    <th>Route</th>
-                                    <th>Center</th>
-                                    <th>Total Disbursement</th>
-                                    <th>Total Loan Amount</th>
-                                    <th>Issued Loan Count</th>
-                                    <th>New Clients</th>
-                                    <th>Repeat Clients</th>
-                                    <th>Schedule Repayments</th>
-                                    <th>Collected Repayments</th>
-                                    <th>Capital Received</th>
-                                    <th>Interest Received</th>
-                                    <th>Penalty Received</th>
-{{--                                    <th>Balance</th>--}}
-{{--                                    <th>Capital Balance</th>--}}
-{{--                                    <th>Interest Balance</th>--}}
-{{--                                    <th>New Balance</th>--}}
-                                    <th>Processing Fee Received</th>
-                                </tr>
-                                </thead>
-                                <tbody>
+                            <div style="max-height: 1000px; overflow-y: auto;">
+                                <table class="table table-centered mb-0" id="loan_table">
+                                    <thead class="sticky-top bg-purple">
+                                    <tr>
+                                        <th>Branch</th>
+                                        <th>Route</th>
+                                        <th>Center</th>
+                                        <th>Total Disbursement</th>
+                                        <th>Total Loan Amount</th>
+                                        <th>Issued Loan Count</th>
+                                        <th>New Clients</th>
+                                        <th>Repeat Clients</th>
+                                        <th>Schedule Repayments</th>
+                                        <th>Collected Repayments</th>
+                                        <th>Capital Received</th>
+                                        <th>Interest Received</th>
+                                        <th>Penalty Received</th>
+                                        {{--                                    <th>Balance</th>--}}
+                                        {{--                                    <th>Capital Balance</th>--}}
+                                        {{--                                    <th>Interest Balance</th>--}}
+                                        {{--                                    <th>New Balance</th>--}}
+                                        <th>Processing Fee Received</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
 
-                                </tbody>
-                            </table>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div> <!-- end table-responsive-->
 
 

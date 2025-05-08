@@ -334,6 +334,7 @@ class LoanCategoryController extends Controller
                 'saving_amount' => $request->saving_amount,
                 'saving_payment' => $request->saving_payment,
                 'default_loan_duration_period' => $request->default_loan_duration_period,
+                'updated_at' => now(),
             ]);
 
             // Delete existing related data

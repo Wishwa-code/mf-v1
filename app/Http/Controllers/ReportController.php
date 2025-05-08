@@ -786,11 +786,20 @@ class ReportController extends Controller
           WHERE i2.Customer_Loan_idCustomer_Loan = l.idCustomer_Loan 
             AND DATE(i2.Installment_Date) BETWEEN "'.$startDate.'" AND "'.$endDate.'"), 0) AS TotalPenaltyAmount'),
 
-                // Sum Paid Amount Within Date Range
+//                // Sum Paid Amount Within Date Range
                 DB::raw('(SELECT SUM(i2.Amount)
           FROM customer_payments i2
             WHERE i2.Customer_Loan_idCustomer_Loan = l.idCustomer_Loan AND  DATE(i2.Date) >= "'.$startDate.'"
-            AND DATE(i2.Date) <= "'.$endDate.'") AS TotalPaidAmount'),
+            AND DATE(i2.Date) <= "'.$endDate.'") AS TotalRealPaidAmount'),
+
+
+
+
+
+                DB::raw('IFNULL((SELECT SUM(i2.Paid_Amount) 
+          FROM installments i2 
+          WHERE i2.Customer_Loan_idCustomer_Loan = l.idCustomer_Loan 
+            AND DATE(i2.Installment_Date) BETWEEN "'.$startDate.'" AND "'.$endDate.'"), 0) AS TotalPaidAmount'),
 
                 DB::raw('IFNULL(u.Full_Name, "-") as Collector') // Ensures empty collectors don't cause issues
             ])

@@ -895,16 +895,18 @@
                                                     <i class="bi bi-printer"></i>
                                                 </button>
                                             </td>
-                                            @if($payment_delete_status===1)
+                                            @if($payment_delete_status === 1)
                                                 <td>
                                                     <button class="reverse-payment-btn btn btn-outline-danger"
-                                                            onclick="undo_payment({{ $customer_payment->idCustomer_Payments }})">
+                                                            onclick="undo_payment({{ $customer_payment->idCustomer_Payments }})"
+                                                            @if($customer_payment->status != 0) disabled title="Cannot reverse this payment" @endif>
                                                         <i class="bi bi-trash"></i>
                                                     </button>
                                                 </td>
                                             @else
                                                 <td></td>
                                             @endif
+
 
 
                                         </tr>

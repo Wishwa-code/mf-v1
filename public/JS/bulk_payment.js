@@ -72,11 +72,11 @@ function load_payment_table(page = 1) {
                         let installmentPlaceholder = item.saving_payment === "1" ? "Installment Amount" : "Enter amount";
 
                         // Define payment field
-                        let paymentField = `<input type="text" class="form-control numeric-input amount-input" placeholder="${installmentPlaceholder}" value="${inputAmount}" data-loan-id="${item.idCustomer_Loan}" />`;
+                        let paymentField = `<input type="text" class="form-control numeric-input amount-input" placeholder="${installmentPlaceholder}" value="${inputAmount}" data-loan-id="${item.idCustomer_Loan}" data-balance="${item.Balance_Amount}" />`;
 
                         // Add extra input if saving_payment is "1"
                         if (item.saving_payment === "1") {
-                            paymentField += `<br><input type="text" class="form-control numeric-input saving-amount-input" placeholder="Enter Saving Amount" value="${savingAmount}" data-loan-id="${item.idCustomer_Loan}" />`;
+                            paymentField += `<br><input type="text" class="form-control numeric-input saving-amount-input" placeholder="Enter Saving Amount" value="${savingAmount}" data-loan-id="${item.idCustomer_Loan}" data-balance="${item.Balance_Amount}" />`;
                         }
 
                         // Construct row HTML
@@ -95,6 +95,7 @@ function load_payment_table(page = 1) {
                                 ${paymentField}
                                 <input type="hidden" name="loan_id" value="${item.idCustomer_Loan}" />
                                 <input type="hidden" name="cus_id" value="${item.idCustomer}" />
+                                
                             </td>
                             <td>${item.NIC}</td>
                             <td>${item.type}</td>
@@ -112,10 +113,22 @@ function load_payment_table(page = 1) {
                 // Update total today installment amount
                 $('#tot_amount').text(tot.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
-                // Attach event listeners to input fields
-                $(".amount-input, .saving-amount-input").on("input", function () {
+                $(".amount-input").on("input", function () {
+                    let entered = parseFloat($(this).val()) || 0;
+                    let max = parseFloat($(this).data("balance")) || 0;
+
+                    if (entered > max) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Invalid Payment Amount",
+                            text: `Entered amount (${entered.toFixed(2)}) exceeds balance (${max.toFixed(2)}).`,
+                        });
+                        $(this).val(""); // Clear invalid input
+                    }
+
                     updateTotalEnteredAmount();
                 });
+
 
                 // Initial calculation in case prefilled values exist
                 updateTotalEnteredAmount();
