@@ -445,10 +445,6 @@ class PendingLoanController extends Controller
 
         $shouldUpdate = $categoryUpdatedAt->diffInSeconds($now) <= $thresholdInSeconds;
 
-        Log::info('updated_at: ' . $categoryUpdatedAt);
-        Log::info('now: ' . $now);
-        Log::info('diff: ' . $now->diffInSeconds($categoryUpdatedAt));
-
 
         if ($customer_loan->Status=="-1" && $shouldUpdate) {
             DB::table('loan_has_approval')->where('loan_id', $id)->delete();
