@@ -380,6 +380,41 @@ function payment_model_3(cus_id, pending_amount, loan_id, topic, loan_capital_ba
         },
     });
 }
+let extraAmount = 0;
+$('#payment_amount').on('blur', function () {
+    let total_loan_balance = parseFloat($('#total_loan_balance').val()) || 0;
+    let payment_amount = parseFloat($('#payment_amount').val()) || 0;
+
+    // Round up to nearest 10
+    let maxAllowed = Math.ceil(total_loan_balance / 10) * 10;
+
+    if (payment_amount > maxAllowed) {
+        Swal.fire("Error!", `Payment cannot exceed ${maxAllowed}. Please check the amount!`, "error");
+        $('#payment_amount').val('');
+        extraAmount = 0;
+        return false;
+    }
+
+    if (payment_amount > total_loan_balance) {
+        extraAmount = +(payment_amount - total_loan_balance).toFixed(2);  // store it
+        Swal.fire({
+            icon: 'info',
+            title: 'Extra Amount Detected',
+            html: `
+                <p><strong>Loan Balance:</strong> ${total_loan_balance}</p>
+                <p><strong>You Tried to Pay:</strong> ${payment_amount}</p>
+                <p><strong>Extra:</strong> ${extraAmount} will go to <u>Installment Part Payment Entry</u></p>
+            `,
+            confirmButtonText: 'OK'
+        });
+    } else {
+        extraAmount = 0;
+    }
+});
+
+
+
+
 function payment() {
     let cus_id = $('#cus_id').val();
     let payment_amount = $('#payment_amount').val();
@@ -394,12 +429,7 @@ function payment() {
     let chq_number = $('#chq_number').val();
     let chq_date = $('#chq_date').val();
     let chq_type = $('#chq_type').val();
-    let loan_balance = $('#loan_balance').val();
-
-    if (parseFloat(payment_amount) > parseFloat(loan_balance)) {
-        Swal.fire("Error!", "Please check the amount!", "error");
-        return false;
-    }
+    let total_loan_balance = $('#total_loan_balance').val();
 
     if (payment_type === "Cheque") {
         if (chq_number === "") {
@@ -447,6 +477,8 @@ function payment() {
                         formData.append('chq_number', chq_number);
                         formData.append('chq_date', chq_date);
                         formData.append('chq_type', chq_type);
+                        formData.append('extraAmount', extraAmount);
+                        formData.append('total_loan_balance', total_loan_balance);
 
                         $.ajax({
                             type: "POST",
@@ -531,8 +563,8 @@ function payment() {
                     formData.append('chq_number', chq_number);
                     formData.append('chq_date', chq_date);
                     formData.append('chq_type', chq_type);
-
-                    console.log(cus_id, payment_amount, file, reduce_balance_loan_id, payment_date, payment_type, bank_account_company, cheque_issue_bank, name_on_cheque, chq_number, chq_date, chq_type);
+                    formData.append('extraAmount', extraAmount);
+                    formData.append('total_loan_balance', total_loan_balance);
 
                     $.ajax({
                         type: "POST",

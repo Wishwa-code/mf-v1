@@ -646,6 +646,33 @@ class TodayPaymentController extends Controller
         $chq_date= $request->chq_date ?? '0';
 
 
+        if ($request->extraAmount > 0){
+
+            $payment_amount = $request->total_loan_balance;
+            $extraAmount = $request->extraAmount;
+
+            $bank_account_company = $request->bank_account_company;
+            $ins_part_payment=tableWithBranch('company_bank_accounts')
+                ->where('Bank_Type','=','System_default_12')
+                ->first();
+            if ($payment_type === "Cash") {
+                $bank_account_company = DB::table('company_bank_accounts')
+                    ->where('branch_id', session('branch_id'))
+                    ->whereRaw('LOWER(Account_No) = ?', ['cash'])  // Case-insensitive comparison
+                    ->value('Idbank');
+
+                $this->bankLogController->index($bank_account_company, "Installment Part Payment", "Installment Part Payment", "Installment Part Payment", "debit", $extraAmount,$ins_part_payment->Idbank);
+                $this->bankLogController->index($ins_part_payment->Idbank, "Installment Part Payment", "Installment Part Payment", "Installment Part Payment", "credit", $extraAmount,$bank_account_company);
+            }else{
+                $this->bankLogController->index($bank_account_company, "Installment Part Payment", "Installment Part Payment", "Installment Part Payment", "debit", $extraAmount,$ins_part_payment->Idbank);
+                $this->bankLogController->index($ins_part_payment->Idbank, "Installment Part Payment", "Installment Part Payment", "Installment Part Payment", "credit", $extraAmount,$bank_account_company);
+            }
+
+
+
+        }
+
+
         $loan = tableWithBranch('customer_loan')
             ->where('idCustomer_Loan', '=', $loan_id)
             ->first();
@@ -682,7 +709,7 @@ class TodayPaymentController extends Controller
                     'branch_id' => session('branch_id')
                 ]);
 
-                $chq_comment='Cheque Received ! Cheque No : '.$request->chq_number.' Cheque Date : '.$request->chq_date.' Cheque Type : '.$request->chq_type.' Amount : '.$request->payment_amount;
+                $chq_comment='Cheque Received ! Cheque No : '.$request->chq_number.' Cheque Date : '.$request->chq_date.' Cheque Type : '.$request->chq_type.' Amount : '.$payment_amount;
                 $comment_id=DB::table('loan_comment')->insertGetId([
                     'comment' => $chq_comment,
                     'loan_id' => $loan_id,
@@ -707,7 +734,7 @@ class TodayPaymentController extends Controller
                     ->update([
                         'chq_status' => '1'
                     ]);
-                $chq_comment='Cheque Accepted ! Cheque No : '.$request->chq_number.' Cheque Date : '.$request->chq_date.' Cheque Type : '.$request->chq_type.' Amount : '.$request->payment_amount;
+                $chq_comment='Cheque Accepted ! Cheque No : '.$request->chq_number.' Cheque Date : '.$request->chq_date.' Cheque Type : '.$request->chq_type.' Amount : '.$payment_amount;
                 $comment_id=DB::table('loan_comment')->insertGetId([
                     'comment' => $chq_comment,
                     'loan_id' => $loan_id,
@@ -731,13 +758,16 @@ class TodayPaymentController extends Controller
 
 
 
+
+
+
         $company = DB::table('company')->first();
 
 
         $points_to_add = 0;
         if ($company->points === "1") {
             $points_percentage = $company->points_percentage;
-            $payment_amount_for_points = $request->payment_amount;
+            $payment_amount_for_points = $payment_amount;
 
             // Calculate the points to be added
             $points_to_add = ($payment_amount_for_points * $points_percentage) / 100;
