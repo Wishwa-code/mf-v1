@@ -108,15 +108,17 @@
                 {{-- Summary Cards --}}
                 @php
                     $extra = [
-                        ['title' => 'Today Collection', 'value' => $todayinstallment, 'color' => '#1e3c72'],
+                        ['title' => 'Today Installment', 'value' => $todayinstallment, 'color' => '#1e3c72'],
                         ['title' => 'Total Arrears', 'value' => $arrease, 'color' => '#ef473a'],
                         ['title' => 'Cheque Payments', 'value' => $checqueamount, 'color' => '#3498db'],
                         ['title' => 'Total Outstanding', 'value' => ($todayinstallment + $checqueamount + $arrease), 'color' => '#0072ff'],
+                        ['title' => 'Today Collected Amount', 'value' => $todaycollected, 'color' => '#ef803a'],
+                        ['title' => 'Total Outstanding', 'value' => ($todayinstallment + $checqueamount + $arrease), 'color' => '#01503c'],
                     ];
                 @endphp
 
                 @foreach($extra as $i => $item)
-                    <div class="col-md-3 mb-4">
+                    <div class="col-md-2 mb-4">
                         <div class="glass-card card text-white shadow animated-card" style="background-color: {{ $item['color'] }};">
                             <div class="card-body">
                                 <h6 class="text-uppercase">{{ $item['title'] }}</h6>
@@ -311,6 +313,8 @@
                 {{ $todayinstallment }},
                 {{ $arrease }},
                 {{ $checqueamount }},
+                {{ $todayinstallment + $arrease + $checqueamount }},
+                {{ $todaycollected }},
                 {{ $todayinstallment + $arrease + $checqueamount }}
             ];
             extraValues.forEach((val, i) => {
