@@ -1177,6 +1177,10 @@ $banner = DB::select($query);
                                                     <li>
                                                         <a href="/center_collection_summary">Center Wise collection Summary</a>
                                                     </li>
+
+                                                    <li>
+                                                        <a href="/root_wise_collection">Root Wise Daily Collection</a>
+                                                    </li>
                                                 </ul>
                                             </div>
                                         </li>

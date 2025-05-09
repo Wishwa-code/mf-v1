@@ -642,6 +642,8 @@ Route::get('/cashier/get-saved-day-end', [CashierController::class, 'getSavedDay
 Route::get('/center_collection','\App\Http\Controllers\CenterController@center_collection')->name('center_collection.index');
 Route::get('/center_collection_summary','\App\Http\Controllers\CenterController@CenterWiseCollectionSummary')->name('center_collection_summary.index');
 
+Route::get('/root_wise_collection','\App\Http\Controllers\CenterController@root_wise')->name('root_wise.index');
+
 
 
 Route::get('/portfolio_performance','\App\Http\Controllers\PendingLoanController@portfolio_performance')->name('portfolio_performance');

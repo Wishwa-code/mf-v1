@@ -361,5 +361,44 @@ class CenterController extends Controller
 
 
 
+    public function root_wise(Request $request) {
+        $date = $request->input('date_from');
+        $route_id = $request->input('route_id');
+
+        $route = tableWithBranch('route')->get();
+
+        $collection = DB::table('customer_payments')
+            ->join('customer_loan', 'customer_payments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin('route', 'customer.route_id', '=', 'route.id_route') // Join to get route name
+            ->select(
+                'route.name as route_name',
+                'customer.cus_number as customer_number',
+                DB::raw("CONCAT(customer.First_Name, ' ', customer.Last_Name) as customer_name"),
+                'customer_loan.Loan_No as loan_number',
+                'customer_loan.Installment_Amount as installment_amount',
+                DB::raw('SUM(customer_payments.Amount) as paid_amount')
+            )
+            ->when($date, fn($q) => $q->whereDate('customer_payments.Date', $date))
+            ->when($route_id && $route_id != '0', fn($q) => $q->where('customer.route_id', $route_id))
+            ->groupBy(
+                'route.name',
+                'customer.cus_number',
+                'customer.First_Name',
+                'customer.Last_Name',
+                'customer_loan.Loan_No',
+                'customer_loan.Installment_Amount'
+            )
+            ->orderBy('route.name')
+            ->orderBy('customer.cus_number')
+            ->get();
+
+
+
+        return view('pages.RouteWiseCollection', compact('date', 'route', 'route_id', 'collection'));
+    }
+
+
+
 
 }
