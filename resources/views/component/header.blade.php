@@ -1179,7 +1179,7 @@ $banner = DB::select($query);
                                                     </li>
 
                                                     <li>
-                                                        <a href="/root_wise_collection">Root Wise Daily Collection</a>
+                                                        <a href="/root_wise_collection">Route Wise Daily Collection</a>
                                                     </li>
                                                 </ul>
                                             </div>

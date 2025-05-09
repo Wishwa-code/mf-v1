@@ -104,12 +104,12 @@
                 <div class="row">
                     <div class="col-md-3">
                         <label for="date_from">Select Date</label>
-                        <input type="date" class="form-control" name="date_from" id="date_from" value="{{ $date }}">
+                        <input type="date" class="form-control" name="date_from" id="date_from" value="{{ $date ?? date('Y-m-d') }}">
                     </div>
                     <div class="col-md-3">
                         <label for="simpleinput" class="form-label">Route</label>
                         <select class="form-control select2" id="route_id" name="route_id">
-                            <option value="0" {{ $route_id == 0 ? 'selected' : '' }}>All</option>
+{{--                            <option value="0" {{ $route_id == 0 ? 'selected' : '' }}>All</option>--}}
                             @foreach($route as $item)
                                 <option value="{{ $item->id_route }}" {{ $route_id == $item->id_route ? 'selected' : '' }}>
                                     {{ $item->name }}
@@ -125,7 +125,8 @@
                 </div>
                 <br><br>
             </form>
-            <button id="customPDF" class="btn btn-danger">Generate PDF</button>
+            <button id="customPDF" class="btn btn-danger">Generate PDF With Paid Amounts</button>
+            <button id="customPDF_2" class="btn btn-danger">Generate PDF Without Paid Amounts</button>
         </div>
     </div>
 
@@ -160,13 +161,18 @@
                                 @php $subTotal = 0; @endphp
 
                                 @foreach($items as $item)
-                                    @php $subTotal += $item->paid_amount; @endphp
-                                    <tr>
+                                    @php
+                                        $paidAmount = $item->paid_amount ?? 0;
+                                        $subTotal += $paidAmount;
+                                    @endphp
+                                    <tr @if($item->paid_amount === null) style="background-color: #fff5f5;" @endif>
                                         <td>{{ $item->customer_number }}</td>
                                         <td>{{ $item->customer_name }}</td>
                                         <td>{{ $item->loan_number }}</td>
                                         <td class="text-end">{{ number_format($item->installment_amount, 2) }}</td>
-                                        <td class="text-end">{{ number_format($item->paid_amount, 2) }}</td>
+                                        <td class="text-end">
+                                            {{ $item->paid_amount !== null ? number_format($item->paid_amount, 2) : '' }}
+                                        </td>
                                     </tr>
                                 @endforeach
 
@@ -186,14 +192,8 @@
                             </tr>
                             </tfoot>
                         </table>
-
-
-
-
-
-
-
                     </div>
+
                 </div> <!-- end card-body-->
             </div> <!-- end card-->
         </div> <!-- end col -->
@@ -213,176 +213,114 @@
 
 
     <script>
-        $(document).ready(function () {
-            $('#customPDF').on('click', function () {
-                const companyName = {!! json_encode(session('company_name')) !!};
-                const selectedDate = $('#date_from').val() || 'All Dates';
+        function generatePDF(includePaid) {
+            const companyName = {!! json_encode(session('company_name')) !!};
+            const selectedDate = $('#date_from').val() || 'All Dates';
+            let currentRoute = '';
+            let routeTable = [];
+            let subTotal = 0;
 
-                let contentBody = [];
-                let currentRoute = '';
-                let subTotal = 0;
-                let grandTotal = 0;
-                let routeTable = [];
+            const fullTableLayout = {
+                hLineWidth: () => 0.5,
+                vLineWidth: () => 0.5,
+                hLineColor: () => '#aaa',
+                vLineColor: () => '#aaa',
+                paddingLeft: () => 5,
+                paddingRight: () => 5,
+                paddingTop: () => 3,
+                paddingBottom: () => 3,
+                fillColor: (rowIndex) => rowIndex === 0 ? '#1A2942' : null
+            };
 
-                // ✅ Shared table layout for all tables
-                const fullTableLayout = {
-                    hLineWidth: function () { return 0.5; },
-                    vLineWidth: function () { return 0.5; },
-                    hLineColor: function () { return '#000000'; },
-                    vLineColor: function () { return '#000000'; },
-                    paddingLeft: function () { return 6; },
-                    paddingRight: function () { return 6; },
-                    paddingTop: function () { return 4; },
-                    paddingBottom: function () { return 4; },
-                    fillColor: function (rowIndex) {
-                        return rowIndex === 0 ? '#4d4c4c' : null;
-                    }
-                };
+            $('#customerTable tbody tr').each(function () {
+                const tds = $(this).find('td');
 
-                $('#customerTable tbody tr').each(function () {
-                    const tds = $(this).find('td');
+                if (tds.length === 1) {
+                    // Header row - route
+                    currentRoute = tds.eq(0).text().trim();
+                } else if (tds.length === 5) {
+                    const values = tds.map(function () {
+                        return $(this).text().trim();
+                    }).get();
 
-                    if (tds.length === 1) {
-                        if (routeTable.length > 1) {
-                            contentBody.push({
-                                table: {
-                                    widths: ['*', '*', '*', 'auto', 'auto', '*'],
-                                    body: routeTable
-                                },
-                                layout: fullTableLayout,
-                                margin: [0, 0, 0, 10]
-                            });
+                    const paidValue = includePaid ? values[4] : ''; // leave blank if false
+                    const paidAmount = parseFloat(values[4].replace(/,/g, '')) || 0;
+                    if (includePaid) subTotal += paidAmount;
 
-                            contentBody.push({
-                                table: {
-                                    widths: ['*', '*', '*', 'auto', 'auto', '*'],
-                                    body: [
-                                        [
-                                            { text: `Total for ${currentRoute}`, colSpan: 5, alignment: 'right', bold: true },
-                                            {}, {}, {}, {},
-                                            { text: subTotal.toFixed(2), alignment: 'right', bold: true }
-                                        ]
-                                    ]
-                                },
-                                layout: fullTableLayout,
-                                margin: [0, 0, 0, 10]
-                            });
-
-                            grandTotal += subTotal;
-                            routeTable = [];
-                            subTotal = 0;
-                        }
-
-                        currentRoute = $(this).text().trim();
-                        contentBody.push({ text: currentRoute, bold: true, fontSize: 12, margin: [0, 10, 0, 5] });
-
-                        routeTable.push([
-                            { text: 'Customer No', bold: true, color: 'white' },
-                            { text: 'Customer Name', bold: true, color: 'white' },
-                            { text: 'Loan No', bold: true, color: 'white' },
-                            { text: 'Installment', bold: true, alignment: 'right', color: 'white' },
-                            { text: 'Paid', bold: true, alignment: 'right', color: 'white' },
-                            { text: 'Remark', bold: true, color: 'white' }
-                        ]);
-                    } else if (tds.length === 5) {
-                        const values = tds.map(function () {
-                            return $(this).text().trim();
-                        }).get();
-
-                        const paid = parseFloat(values[4].replace(/,/g, '')) || 0;
-                        subTotal += paid;
-
-                        routeTable.push([
-                            { text: values[0] },
-                            { text: values[1] },
-                            { text: values[2] },
-                            { text: values[3], alignment: 'right' },
-                            { text: values[4], alignment: 'right' },
-                            { text: '' }
-                        ]);
-                    }
-                });
-
-                if (routeTable.length > 1) {
-                    contentBody.push({
-                        table: {
-                            widths: ['*', '*', '*', 'auto', 'auto', '*'],
-                            body: routeTable
-                        },
-                        layout: fullTableLayout,
-                        margin: [0, 0, 0, 10]
-                    });
-
-                    contentBody.push({
-                        table: {
-                            widths: ['*', '*', '*', 'auto', 'auto', '*'],
-                            body: [
-                                [
-                                    { text: `Total for ${currentRoute}`, colSpan: 5, alignment: 'right', bold: true },
-                                    {}, {}, {}, {},
-                                    { text: subTotal.toFixed(2), alignment: 'right', bold: true }
-                                ]
-                            ]
-                        },
-                        layout: fullTableLayout,
-                        margin: [0, 0, 0, 10]
-                    });
-
-                    grandTotal += subTotal;
+                    routeTable.push([
+                        { text: values[0], fontSize: 9 },
+                        { text: values[1], fontSize: 9 },
+                        { text: values[2], fontSize: 9 },
+                        { text: values[3], alignment: 'right', fontSize: 9 },
+                        { text: paidValue, alignment: 'right', fontSize: 9 },
+                        { text: '', fontSize: 9 } // remark left blank
+                    ]);
                 }
+            });
 
-                // ✅ Final Grand Total
-                contentBody.push({
+            // Table header
+            routeTable.unshift([
+                { text: 'Customer No', bold: true, color: 'white', fontSize: 9 },
+                { text: 'Customer Name', bold: true, color: 'white', fontSize: 9 },
+                { text: 'Loan No', bold: true, color: 'white', fontSize: 9 },
+                { text: 'Installment', bold: true, color: 'white', alignment: 'right', fontSize: 9 },
+                { text: 'Paid Amount', bold: true, color: 'white', alignment: 'right', fontSize: 9 },
+                { text: 'Remark', bold: true, color: 'white', fontSize: 9 }
+            ]);
+
+            const content = [
+                {
+                    columns: [
+                        { text: `${companyName}`, style: 'header', width: '*' },
+                        { text: `Route: ${currentRoute}`, alignment: 'center', style: 'header', width: '*' },
+                        { text: `Date: ${selectedDate}`, alignment: 'right', style: 'subheader', width: '*' }
+                    ],
+                    margin: [0, 0, 0, 10]
+                },
+                {
                     table: {
-                        widths: ['*', '*', '*', 'auto', 'auto', '*'],
-                        body: [
-                            [
-                                { text: 'Grand Total', colSpan: 5, alignment: 'right', bold: true },
-                                {}, {}, {}, {},
-                                { text: grandTotal.toFixed(2), alignment: 'right', bold: true }
-                            ]
-                        ]
+                        widths: ['12%', '24%', '18%', '13%', '13%', '20%'],
+                        body: routeTable
                     },
                     layout: fullTableLayout,
-                    margin: [0, 10, 0, 0]
+                    margin: [0, 0, 0, 10]
+                }
+            ];
+
+            if (includePaid) {
+                content.push({
+                    text: `Total Paid: ${subTotal.toFixed(2)}`,
+                    alignment: 'right',
+                    bold: true,
+                    margin: [0, 5, 0, 0],
+                    fontSize: 10
                 });
+            }
 
-                const docDefinition = {
-                    pageSize: 'A4',
-                    pageMargins: [30, 30, 30, 30],
-                    content: [
-                        {
-                            columns: [
-                                { text: '', width: '*' },
-                                {
-                                    text: `${companyName} - Route Collection Report`,
-                                    alignment: 'center',
-                                    bold: true,
-                                    fontSize: 14,
-                                    width: 'auto'
-                                },
-                                {
-                                    text: `Date: ${selectedDate}`,
-                                    alignment: 'right',
-                                    fontSize: 10,
-                                    width: '*'
-                                }
-                            ],
-                            margin: [0, 0, 0, 20]
-                        },
-                        ...contentBody
-                    ]
-                };
+            const docDefinition = {
+                pageSize: 'A4',
+                pageMargins: [30, 30, 30, 30],
+                content: content,
+                styles: {
+                    header: { fontSize: 12, bold: true },
+                    subheader: { fontSize: 10 }
+                }
+            };
 
-                pdfMake.createPdf(docDefinition).download('RouteWiseCollection.pdf');
+            const fileName = includePaid ? 'RouteWiseCollection_WithPaid.pdf' : 'RouteWiseCollection_WithoutPaid.pdf';
+            pdfMake.createPdf(docDefinition).download(fileName);
+        }
+
+        $(document).ready(function () {
+            $('#customPDF').on('click', function () {
+                generatePDF(true);
+            });
+
+            $('#customPDF_2').on('click', function () {
+                generatePDF(false);
             });
         });
     </script>
-
-
-
-
-
 
 @endsection
 
