@@ -228,6 +228,7 @@ class AgreementController extends Controller
             '@Customer_State@' => $customers->State, // Assuming 'State' is a column in the customer table
             '@Customer_Civil_Status@' => $customers->civil_status, // Assuming 'Civil_Status' is a column in the customer table
             '@Customer_Occupation@' => $customers->occu_job_position, // Assuming 'Occupation' is a column in the customer table
+            '@Guardian_First_Name@' => $customers->Gua_name, // Assuming 'Occupation' is a column in the customer table
             '@Guardian_Title@' => $customers->Gua_title, // Assuming 'Guardian_Title' is a column in the customer table
             '@Guardian_Relation@' => $customers->Gua_relation, // Assuming 'Guardian_Relation' is a column in the customer table
             '@Guardian_NIC@' => $customers->Gua_nic, // Assuming 'Guardian_NIC' is a column in the customer table
