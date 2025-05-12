@@ -5,82 +5,65 @@ on:
     branches:
       - main
 
-env:
-  FTP_DEPLOY_TIMEOUT: 300000  # Increase FTP timeout to 5 minutes
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up PHP 8.2
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.2
 
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install dependencies
+      - name: Install Dependencies
         run: |
           composer install --no-dev --optimize-autoloader
           npm install
           npm run prod
           php artisan storage:link
 
-      - name: Debug local files
-        run: ls -lR
-
-      # 🔴 First FTP Deployment (Server 1)
-      - name: Deploy to First FTP Server
+      - name: FTP Deploy to Server 1
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftp  # Use ftps if required
-          ftp-passive: true
           local-dir: ./
           server-dir: /
           exclude: |
-            .DS_Store
-            .git/**
+            .git**
             node_modules/**
             storage/**
-            .github/**
-            *.env
-            .htaccess
-            *.log
+            .env*
             vendor/bin/*
+            .github/**
           dry-run: false
-          concurrent-transfers: 3  # Reduce transfers to prevent overload
-          transfer-speed: 50000  # Throttle transfer speed to avoid timeout issues
+          cleanup: true
+          ftp-passive: true
+          protocol: ftp
 
-      # 🕒 Wait before Second Deployment
-      - name: Wait for 30 seconds before second deployment
+      - name: Wait between FTP Deployments
         run: sleep 30
 
-      # 🟢 Second FTP Deployment (Server 2)
-      - name: Deploy to Second FTP Server
+      - name: FTP Deploy to Server 2
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME_2 }}
           password: ${{ secrets.FTP_PASSWORD_2 }}
-          protocol: ftp  # Use ftps if required
-          ftp-passive: true
           local-dir: ./
           server-dir: /
           exclude: |
-            .DS_Store
-            .git/**
+            .git**
             node_modules/**
             storage/**
-            .github/**
-            *.env
-            .htaccess
-            *.log
+            .env*
             vendor/bin/*
+            .github/**
           dry-run: false
-          concurrent-transfers: 3
-          transfer-speed: 50000
+          cleanup: true
+          ftp-passive: true
+          protocol: ftp
