@@ -4,11 +4,12 @@ on:
   push:
     branches:
       - main
+      - client2
 
 jobs:
-  deploy:
+  deploy-client1:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
@@ -25,7 +26,7 @@ jobs:
           npm run prod
           php artisan storage:link
 
-      - name: FTP Deploy to Server 1
+      - name: FTP Deploy to Server 1 (Client1)
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
           server: ${{ secrets.FTP_HOST }}
@@ -45,10 +46,26 @@ jobs:
           ftp-passive: true
           protocol: ftp
 
-      - name: Wait between FTP Deployments
-        run: sleep 30
+  deploy-client2:
+    if: github.ref == 'refs/heads/rightwaycredit50'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
 
-      - name: FTP Deploy to Server 2
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+
+      - name: Install Dependencies
+        run: |
+          composer install --no-dev --optimize-autoloader
+          npm install
+          npm run prod
+          php artisan storage:link
+
+      - name: FTP Deploy to Server 2 (Client2)
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
           server: ${{ secrets.FTP_HOST }}
