@@ -32,8 +32,10 @@ jobs:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
           local-dir: ./
           server-dir: /
+          dry-run: false
           exclude: |
             .git**
             node_modules/**
@@ -41,10 +43,6 @@ jobs:
             .env*
             vendor/bin/*
             .github/**
-          dry-run: false
-          cleanup: true
-          ftp-passive: true
-          protocol: ftp
 
   deploy-client2:
     if: github.ref == 'refs/heads/rightwaycredit50'
@@ -71,8 +69,10 @@ jobs:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME_2 }}
           password: ${{ secrets.FTP_PASSWORD_2 }}
+          protocol: ftp
           local-dir: ./
           server-dir: /
+          dry-run: false
           exclude: |
             .git**
             node_modules/**
@@ -80,7 +80,3 @@ jobs:
             .env*
             vendor/bin/*
             .github/**
-          dry-run: false
-          cleanup: true
-          ftp-passive: true
-          protocol: ftp
