@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - client2
+      - rightwaycredit50
 
 jobs:
   deploy-client1:
