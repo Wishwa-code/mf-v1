@@ -189,6 +189,20 @@ class BranchController extends Controller
                 'acc_type_group' => "Liabilities",
                 'User' => '1',
                 'branch_id' => $id,
+            ],
+            [
+                'Bank_Type' => "System_default_12",
+                'code' => "1111",
+                'Bank_Name' => "Installment Part Payment",
+                'Account_Name' => "Installment Part Payment",
+                'Account_No' => "Installment Part Payment",
+                'Bank_Branch' => "Installment Part Payment",
+                'Account_Balance' => '0.00',
+                'type' => "Liability",
+                'cashflow' => "Financing activities",
+                'acc_type_group' => "Liabilities",
+                'User' => '1',
+                'branch_id' => $id,
             ]
         ];
 
