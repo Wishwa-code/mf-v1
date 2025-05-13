@@ -63,6 +63,14 @@ jobs:
           npm run prod
           php artisan storage:link
 
+      - name: Debug Environment and Files
+        run: |
+          echo "🔍 Debug Info:"
+          echo "HOST: ${{ secrets.FTP_HOST_2 }}"
+          echo "USERNAME: ${{ secrets.FTP_USERNAME_2 }}"
+          echo "Files in deployment directory:"
+          ls -lah
+
       - name: FTP Deploy to Server 2 (Client2)
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
@@ -80,3 +88,5 @@ jobs:
             .env*
             vendor/bin/*
             .github/**
+          # Optional: uncomment below if you want to force overwrite files
+          # dangerous-clean-slate: true
