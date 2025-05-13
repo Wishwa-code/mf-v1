@@ -82,5 +82,6 @@ jobs:
               vendor/**              # ⛔️ Exclude vendor folder
               vendor/bin/*
               .github/**
+              public/**     
               tests/**
 
