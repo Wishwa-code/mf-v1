@@ -1245,7 +1245,7 @@
 
                             let approveButton;
                             if (login_designation === "Admin") {
-                                approveButton = document.user_id === 0
+                                approveButton = document.user_id === '0'
                                     ? `<input type="button" class="btn btn-primary" id="approve_btn_${document.level_id}" value="Approve" onclick="approve(${document.id}, '${index}')">`
                                     : `<input type="button" class="btn btn-primary" value="Approve" disabled>`;
                             } else {
@@ -1257,7 +1257,7 @@
                                     .map(designationObj => designationObj.designation_id.trim()); // Remove extra spaces
 
 // Check if logged-in user's designation matches this level's designation(s)
-                                if (levelDesignationArray.includes(userDesignation) && document.user_id === 0) {
+                                if (levelDesignationArray.includes(userDesignation) && document.user_id === '0') {
                                     approveButton = `<input type="button" class="btn btn-primary" id="approve_btn_${document.level_id}" value="Approve" onclick="approve(${document.id}, '${index}')">`;
                                 } else {
                                     approveButton = `<input type="button" class="btn btn-primary" value="Approve" disabled>`;
