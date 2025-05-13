@@ -4,83 +4,83 @@ on:
   push:
     branches:
       - main
-
-env:
-  FTP_DEPLOY_TIMEOUT: 300000  # Increase FTP timeout to 5 minutes
+      - rightwaycredit50
 
 jobs:
-  deploy:
+  deploy-client1:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-
     steps:
-      - name: Set up PHP 8.2
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.2
 
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install dependencies
+      - name: Install Dependencies
         run: |
           composer install --no-dev --optimize-autoloader
           npm install
           npm run prod
           php artisan storage:link
 
-      - name: Debug local files
-        run: ls -lR
-
-      # 🔴 First FTP Deployment (Server 1)
-      - name: Deploy to First FTP Server
+      - name: FTP Deploy to Server 1 (Client1)
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftp  # Use ftps if required
-          ftp-passive: true
+          protocol: ftp
           local-dir: ./
           server-dir: /
+          dry-run: false
           exclude: |
-            .DS_Store
-            .git/**
+            .git**
             node_modules/**
             storage/**
-            .github/**
-            *.env
-            .htaccess
-            *.log
+            .env*
             vendor/bin/*
-          dry-run: false
-          concurrent-transfers: 3  # Reduce transfers to prevent overload
-          transfer-speed: 50000  # Throttle transfer speed to avoid timeout issues
+            .github/**
 
-      # 🕒 Wait before Second Deployment
-      - name: Wait for 30 seconds before second deployment
-        run: sleep 30
+  deploy-client2:
+    if: github.ref == 'refs/heads/rightwaycredit50'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
 
-      # 🟢 Second FTP Deployment (Server 2)
-      - name: Deploy to Second FTP Server
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+
+      - name: Install Dependencies
+        run: |
+          composer install --no-dev --optimize-autoloader
+          npm install
+          npm run prod
+          php artisan storage:link
+
+      - name: FTP Deploy to Server 2 (Client2)
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
-          server: ${{ secrets.FTP_HOST }}
+          server: ${{ secrets.FTP_HOST_2 }}
           username: ${{ secrets.FTP_USERNAME_2 }}
           password: ${{ secrets.FTP_PASSWORD_2 }}
-          protocol: ftp  # Use ftps if required
-          ftp-passive: true
+          protocol: ftps  # Or ftp if that's what's working for you
           local-dir: ./
           server-dir: /
+          dry-run: false
+          timeout: 900000
           exclude: |
-            .DS_Store
-            .git/**
+            .git**
             node_modules/**
             storage/**
-            .github/**
-            *.env
-            .htaccess
-            *.log
+            .env*
+            vendor/**              # ⛔️ Exclude vendor folder
             vendor/bin/*
-          dry-run: false
-          concurrent-transfers: 3
-          transfer-speed: 50000
+            .github/**
+            public/**     
+            tests/**
