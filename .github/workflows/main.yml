@@ -88,5 +88,4 @@ jobs:
             .env*
             vendor/bin/*
             .github/**
-          # Optional: uncomment below if you want to force overwrite files
-          # dangerous-clean-slate: true
+          timeout: 600000  # 10 minutes in milliseconds 
