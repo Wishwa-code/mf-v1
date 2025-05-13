@@ -44,7 +44,7 @@ jobs:
             vendor/bin/*
             .github/**
 
-  deploy-client2:
+    deploy-client2:
     if: github.ref == 'refs/heads/rightwaycredit50'
     runs-on: ubuntu-latest
     steps:
@@ -62,6 +62,13 @@ jobs:
           npm install
           npm run prod
           php artisan storage:link
+
+      - name: Debug Secrets and Path
+        run: |
+          echo "HOST: ${{ secrets.FTP_HOST_2 }}"
+          echo "USERNAME: ${{ secrets.FTP_USERNAME_2 }}"
+          echo "Checking contents of current directory:"
+          ls -lah
 
       - name: FTP Deploy to Server 2 (Client2)
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
