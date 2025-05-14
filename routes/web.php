@@ -146,7 +146,7 @@ Route::get('/pendingloan','\App\Http\Controllers\PendingLoanController@index')->
 Route::get('/pendingloanload','\App\Http\Controllers\PendingLoanController@create')->name('pendingloan.create');
 Route::post('/pendingloanissue','\App\Http\Controllers\PendingLoanController@show')->name('pendingloan.show');
 Route::get('/pendingloandelete/{id}','\App\Http\Controllers\PendingLoanController@destroy')->name('pendingloan.destroy');
-Route::get('/show_loan/{id}/{loan}','\App\Http\Controllers\PendingLoanController@edit')->name('loan.edit');
+Route::get('/show_loan/{id}/{loan}','\App\Http\Controllers\PendingLoanController@edit')->name('loan.show_loan');
 
 
 //payment
@@ -524,6 +524,11 @@ Route::get('/get-trialBalance-data', [CashFlowController::class, 'trialBalance']
 
 
 Route::get('/loansummaryreport','\App\Http\Controllers\ReportController@loansummary')->name('report.loansummary');
+Route::get('/get-centers-groups', [\App\Http\Controllers\ReportController::class, 'getCentersGroups'])->name('ajax.centers.groups');
+
+
+
+
 Route::get('/dandlreport','\App\Http\Controllers\ReportController@dandlreport')->name('dandlreport');
 Route::get('/monthlyprofit','\App\Http\Controllers\ReportController@monthlyprofit')->name('monthlyprofit');
 
@@ -540,6 +545,7 @@ Route::post('/topup','\App\Http\Controllers\BankController@topup')->name('bank.t
 Route::get('/gl_report','\App\Http\Controllers\ReportController@gl_report')->name('report.gl_report');
 
 Route::get('/savings_report','\App\Http\Controllers\ReportController@savings_report')->name('report.savings_report');
+Route::post('/get_branch_data', [\App\Http\Controllers\ReportController::class, 'getBranchRelatedData']);
 Route::post('/savings_report_filter','\App\Http\Controllers\ReportController@savings_report_filter')->name('report.savings_report');
 
 
