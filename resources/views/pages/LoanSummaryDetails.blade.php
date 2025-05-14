@@ -67,38 +67,57 @@
                     <!-- Center Filter Dropdown -->
                     <div class="row mb-4">
                         <div class="col-lg-3 col-md-5 col-sm-6">
-                            <form action="{{ route('loan.edit') }}" method="get">
+                            <!-- Filter Form -->
+                            <form action="{{ route('report.loansummary') }}" method="get">
                                 @csrf
-                                <!-- Center Filter -->
-                                <div class="mb-3">
-                                    <label for="centerFilter" class="form-label">Filter by Center</label>
-                                    <select id="centerFilter" name="center_id" class="form-select">
-                                        <option value="">All</option>
-                                        @foreach($centers as $center)
-                                            <option value="{{ $center->idCenter }}"
-                                                    {{ request('center_id') == $center->idCenter ? 'selected' : '' }}>
-                                                {{ $center->No }} - {{ $center->Name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                                <div class="row mb-4">
 
-                                <!-- Group Filter -->
-                                <div class="mb-3">
-                                    <label for="groupFilter" class="form-label">Filter by Group</label>
-                                    <select id="groupFilter" name="group_name" class="form-select">
-                                        <option value="">All Groups</option>
-                                        @foreach($groups as $group)
-                                            <option value="{{ $group->group_name }}"
-                                                    {{ request('group_name') == $group->group_name ? 'selected' : '' }}>
-                                                {{ $group->group_name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                                    <!-- Branch Filter -->
+                                    <div class="col-lg-3 col-md-4 col-sm-6 mb-2">
+                                        <label for="branch" class="form-label">Filter by Branch</label>
+                                        <select class="form-control select2" id="branch" name="branch">
+                                            <option value="">All</option>
+                                            @foreach($branch as $item)
+                                                <option value="{{ $item->branch_id }}" {{ request('branch') == $item->branch_id ? 'selected' : '' }}>
+                                                    {{ $item->Name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
 
-                                <button type="submit" class="btn btn-danger">Search</button>
+                                    <!-- Center Filter -->
+                                    <div class="col-lg-3 col-md-4 col-sm-6 mb-2">
+                                        <label for="centerFilter" class="form-label">Filter by Center</label>
+                                        <select id="centerFilter" name="center_id" class="form-control select2">
+                                            <option value="">All</option>
+                                            @foreach($centers as $center)
+                                                <option value="{{ $center->idCenter }}" {{ request('center_id') == $center->idCenter ? 'selected' : '' }}>
+                                                    {{ $center->No }} - {{ $center->Name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <!-- Group Filter -->
+                                    <div class="col-lg-3 col-md-4 col-sm-6 mb-2">
+                                        <label for="groupFilter" class="form-label">Filter by Group</label>
+                                        <select id="groupFilter" name="group_name" class="form-control select2">
+                                            <option value="">All Groups</option>
+                                            @foreach($groups as $group)
+                                                <option value="{{ $group->group_name }}" {{ request('group_name') == $group->group_name ? 'selected' : '' }}>
+                                                    {{ $group->group_name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <!-- Search Button -->
+                                    <div class="col-lg-2 col-md-3 col-sm-4 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-danger w-100">Search</button>
+                                    </div>
+                                </div>
                             </form>
+
                         </div>
                     </div>
 
@@ -147,7 +166,7 @@
                                 <td>{{ $index + 1 }}</td>
                                 <td>{{ $item->branch_name }}</td>
                                 <td>{{ $item->LendingOfficer }}</td>
-                                <td>{{ $item->center_no }}</td>
+                                <td>{{ $item->center_name }}</td>
                                 <td>{{ $item->group_name }}</td>
                                 <td>{{ $item->First_Name }} {{ $item->Last_Name }}</td>
                                 <td>{{ $item->cus_number }}</td>
@@ -329,4 +348,45 @@
 
 
     </script>
+    <script>
+        $(document).ready(function () {
+            $('.select2').select2();
+
+            $('#branch').on('change', function () {
+                let branchId = $(this).val();
+
+                if (branchId !== '') {
+                    $.ajax({
+                        url: '{{ route("ajax.centers.groups") }}',
+                        type: 'GET',
+                        data: { branch_id: branchId },
+                        success: function (response) {
+                            // Clear and update centers
+                            let centerDropdown = $('#centerFilter');
+                            centerDropdown.empty().append('<option value="">All</option>');
+                            $.each(response.centers, function (index, center) {
+                                centerDropdown.append(`<option value="${center.idCenter}">${center.No} - ${center.Name}</option>`);
+                            });
+
+                            // Clear and update groups
+                            let groupDropdown = $('#groupFilter');
+                            groupDropdown.empty().append('<option value="">All Groups</option>');
+                            $.each(response.groups, function (index, group) {
+                                groupDropdown.append(`<option value="${group.group_name}">${group.group_name}</option>`);
+                            });
+
+                            // Refresh select2
+                            centerDropdown.trigger('change.select2');
+                            groupDropdown.trigger('change.select2');
+                        }
+                    });
+                } else {
+                    // If "All" is selected, you might want to clear the dependent dropdowns
+                    $('#centerFilter').empty().append('<option value="">All</option>').trigger('change.select2');
+                    $('#groupFilter').empty().append('<option value="">All Groups</option>').trigger('change.select2');
+                }
+            });
+        });
+    </script>
+
 @endsection
