@@ -825,7 +825,7 @@ class LoanController extends Controller
         $payment_delete=DB::table('user')->where('id','=',$user_id)->first();
         $payment_delete_status=0;
         if ($payment_delete){
-            $payment_delete_status=$payment_delete->payment_delete;
+            $payment_delete_status=(int)$payment_delete->payment_delete;
         }
 
 
