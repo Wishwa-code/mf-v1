@@ -2538,7 +2538,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
         $payment_delete=tableWithBranch('user')->where('id','=',$user_id)->first();
         $payment_delete_status=0;
         if ($payment_delete){
-            $payment_delete_status=$payment_delete->payment_delete;
+            $payment_delete_status=(int) $payment_delete->payment_delete;
         }
 
         return response()->json(['item' => $loan, 'test' => $date,'payment_delete_status'=>$payment_delete_status], 200);
