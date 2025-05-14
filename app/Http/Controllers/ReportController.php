@@ -158,13 +158,15 @@ class ReportController extends Controller
     public function loansummary(Request $request)
     {
         // Fetch the list of centers
+        $branch = DB::table('branch')->where('status','=','1')->get();
+
         $centers = DB::table('center')->where('branch_id', session('branch_id'))->get();
 
         // Fetch the list of groups
         $groups = DB::table('customer_group')->where('branch_id', session('branch_id'))->select('Group_No as group_name')->distinct()->get();
 
         // Initialize the query for fetching loans
-        $query = tableWithBranch('customer_loan', 'customer_loan')
+        $query = DB::table('customer_loan')
             ->join('branch', 'customer_loan.branch_id', '=', 'branch.branch_id')
             ->join('user', 'customer_loan.lending_officer_id', '=', 'user.id')
             ->join('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category')
@@ -179,6 +181,7 @@ class ReportController extends Controller
             ->select('customer_loan.*',
                 'loan_category.Name as loan_name',
                 DB::raw('IFNULL(center.No, "-") as center_no'),
+                DB::raw('IFNULL(center.Name, "-") as center_name'),
                 DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
                 'customer.First_Name as First_Name',
                 'customer.cus_number as cus_number',
@@ -201,11 +204,16 @@ class ReportController extends Controller
             $query->where('subquery.group_name', $request->group_name);
         }
 
+        // Apply group filter if group_name is provided
+        if ($request->has('branch') && $request->branch != '') {
+            $query->where('customer_loan.branch_id', $request->branch);
+        }
+
         // Execute the query and get the loan data
         $loan = $query->get();
 
         // Pass loan, centers, and groups data to the view
-        return view('pages.LoanSummaryDetails', compact('loan', 'centers', 'groups'));
+        return view('pages.LoanSummaryDetails', compact('loan', 'centers', 'groups','branch'));
     }
 
     /**
@@ -650,8 +658,32 @@ class ReportController extends Controller
         $route = tableWithBranch('route', 'route')
             ->join('user', 'route.id_officer', '=', 'user.id')
             ->get();
-        return view('pages.SavingReport', compact('group', 'lending_officer', 'recovery_officer', 'center', 'customers', 'route'));
+        $branch = DB::table('branch')->where('status','=','1')->get(); // Add this line
+        return view('pages.SavingReport', compact('group', 'lending_officer', 'recovery_officer', 'center', 'customers', 'route','branch'));
     }
+
+    public function getBranchRelatedData(Request $request)
+    {
+        $branch_id = $request->branch_id;
+
+        $center = DB::table('center')->where('branch_id', $branch_id)->get();
+        $group = DB::table('customer_group')->where('branch_id', $branch_id)->get();
+        $customers = DB::table('customer')->where('branch_id', $branch_id)->get();
+        $lending_officer = DB::table('user')->where('branch_id', $branch_id)->where('lending_officer', '=', '1')->get();
+        $route = DB::table('route')
+            ->where('route.branch_id', $branch_id)
+            ->join('user', 'route.id_officer', '=', 'user.id')
+            ->get();
+
+        return response()->json([
+            'center' => $center,
+            'group' => $group,
+            'customers' => $customers,
+            'lending_officer' => $lending_officer,
+            'route' => $route
+        ]);
+    }
+
 
 
     public function savings_report_filter(Request $request){
@@ -661,6 +693,7 @@ class ReportController extends Controller
         $customer = $request->customer;
         $date_from = $request->date_from;
         $date_to = $request->date_to;
+        $branch = $request->branch ?? '0';
         $lending_officer = $request->has('lending') && !empty($request->lending) ? $request->lending : '0';
 
         $loanQuery = DB::table('customer_loan')
@@ -701,6 +734,10 @@ class ReportController extends Controller
         }
         if ($lending_officer != '0') {
             $loanQuery->where('customer_loan.lending_officer_id', '=', $lending_officer);
+        }
+
+        if ($branch != '0') {
+            $loanQuery->where('customer_loan.branch_id', '=', $branch);
         }
 
         // Filter by date range if both dates are provided
@@ -870,6 +907,27 @@ class ReportController extends Controller
 
     }
 
+
+    public function getCentersGroups(Request $request)
+    {
+        $branchId = $request->branch_id;
+
+        $centers = DB::table('center')
+            ->where('branch_id', $branchId)
+            ->select('idCenter', 'No', 'Name')
+            ->get();
+
+        $groups = DB::table('customer_group')
+            ->where('branch_id', $branchId)
+            ->select('Group_No as group_name')
+            ->distinct()
+            ->get();
+
+        return response()->json([
+            'centers' => $centers,
+            'groups' => $groups,
+        ]);
+    }
 
 
 }
