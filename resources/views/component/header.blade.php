@@ -414,7 +414,7 @@ $banner = DB::select($query);
             $branch = DB::select($query);
         ?>
         <div class="date-time">
-            @if(session('branch_access')==='1')
+            @if(session('branch_access')===1)
                 <select class="form-control branch-select enhanced-select">
                     @foreach($branch as $item)
                         <option value="{{$item->branch_id}}" {{ session('branch_id') == $item->branch_id ? 'selected' : '' }}>
@@ -422,6 +422,7 @@ $banner = DB::select($query);
                         </option>
                     @endforeach
                 </select>
+
             @else
                 <h2 id="date">{{ session('branch_name').' Branch' }}</h2>
             @endif
