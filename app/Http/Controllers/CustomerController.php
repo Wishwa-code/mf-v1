@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CustomerController extends Controller
 {
@@ -115,106 +116,94 @@ class CustomerController extends Controller
             $customer->Title = $request->title;
             $customer->Customer_Group_idCustomer_Group = 1;
 
-            $company= tableWithBranch('company')->first();
+            // Step 1: Fetch company and related branch info
+            $company = tableWithBranch('company')->first();
+            $branch_name = (string) ($company->branch ?? '');
 
-            // Get the customer number from the request
-            $cus_number = $request->cus_number;
-            Log::info($cus_number);
-            $branch_name=$company->branch;
-            $show_branch="";
-            if ($branch_name!="") {
-                $show_branch='';
-            }
 
-//            if (strpos($cus_number, '@Auto_Id@') !== false) {
-//
-//
-//
-//            } else {
-//                // If @Auto_ID@ placeholder is not present, just set the customer number with the prefix
-//                $customer->cus_number = $show_branch . $cus_number;
-//                $sms_cus_number = $show_branch . $cus_number;
-//            }
 
-            $cus_number_template = $cus_number; // Store original template
-            $customer_max = $company->customer_num_start_from ?? 1;
+// Step 2: Get customer number template from request
+            $cus_number_template = $request->cus_number;
 
-            // Count current customers
-            $cus_count = tableWithBranch('customer')->count('idCustomer') ?? 0;
-            $customer_max += $cus_count;
 
-            // Format the ID
-            $formatted_customer_id = str_pad($customer_max, 3, '0', STR_PAD_LEFT);
+// Step 3: Generate next customer ID
+            $last_customer_id = tableWithBranch('customer')->max('idCustomer') ?? 0;
+            $next_customer_id = $last_customer_id + 1;
+            $formatted_customer_id = str_pad($next_customer_id, 3, '0', STR_PAD_LEFT);
 
-            // Initialize final string
+// Step 4: Start building new customer number from template
             $new_type = $cus_number_template;
 
-            // Handle placeholders dynamically
-            if (str_contains($new_type, '@Auto_Id@')) {
-                $new_type = str_replace('@Auto_Id@', $formatted_customer_id, $new_type);
+// Step 5: Define static replacements
+            $replacements = [
+                '@Auto_Id@' => $formatted_customer_id,
+                '@Branch_No@' => $branch_name,
+                '@Day@' => date('d'),
+                '@Month@' => date('m'),
+                '@Year@' => date('Y'),
+            ];
+
+// Replace simple placeholders
+            foreach ($replacements as $placeholder => $value) {
+                if (Str::contains($new_type, $placeholder)) {
+                    $new_type = str_replace($placeholder, $value, $new_type);
+                }
             }
 
-            if (str_contains($new_type, '@Root@') && $request->root) {
+
+
+// Step 6: Handle dynamic placeholder: @Root@
+            if (Str::contains($new_type, '@Root@') && $request->root) {
                 $root_code = tableWithBranch('route')
                     ->where('id_route', $request->root)
-                    ->value('root_code'); // only get root_code directly
+                    ->value('root_code');
 
                 $new_type = str_replace('@Root@', $root_code ?? '', $new_type);
             }
 
-            if (str_contains($new_type, '@Branch_No@')) {
-                $new_type = str_replace('@Branch_No@', $branch_name ?? '', $new_type);
-            }
-
-            if (str_contains($new_type, '@Day@')) {
-                $new_type = str_replace('@Day@', date('d'), $new_type);
-            }
-
-            if (str_contains($new_type, '@Month@')) {
-                $new_type = str_replace('@Month@', date('m'), $new_type);
-            }
-
-            if (str_contains($new_type, '@Year@')) {
-                $new_type = str_replace('@Year@', date('Y'), $new_type);
-            }
-
-            if (str_contains($new_type, '@CountMonthly@')) {
+// Step 7: Handle @CountMonthly@
+            if (Str::contains($new_type, '@CountMonthly@')) {
                 $monthly_count = tableWithBranch('customer')
-                    ->whereYear('created_at', date('Y'))    // Current year
-                    ->whereMonth('created_at', date('m'))   // Current month
-                    ->count() ?: 0;
+                    ->whereYear('created_at', now()->year)
+                    ->whereMonth('created_at', now()->month)
+                    ->count();
 
                 $monthly_count++;
                 $new_type = str_replace('@CountMonthly@', $monthly_count, $new_type);
             }
 
-            if (str_contains($new_type, '@RootlyCount@')) {
-
-                $root_count = tableWithBranch('customer')
+// Step 8: Handle @RootlyCount@
+            if (Str::contains($new_type, '@RootlyCount@') && $request->root) {
+                $rootly_count = tableWithBranch('customer')
                     ->where('route_id', $request->root)
-                    ->count() ?: 0;
-                $root_count++;
-                $new_type = str_replace('@RootlyCount@', $root_count, $new_type);
+                    ->count();
+
+                $rootly_count++;
+                $new_type = str_replace('@RootlyCount@', $rootly_count, $new_type);
             }
 
-// Update company with new max ID
-            updateWithBranch('company', 'id', '1', [
-                'customer_num_start_from' => $customer_max
+// Step 9: Update company with latest customer number (for future use)
+            updateWithBranch('company', 'id', $company->id, [
+                'customer_num_start_from' => $next_customer_id,
             ]);
 
-// Split using separator (if defined)
-            if (!empty($company->customer_seperate_from) && !str_contains($cus_number, '@CountMonthly@') && !str_contains($cus_number, '@RootlyCount@')) {
-                $parts = explode($company->customer_seperate_from, $new_type);
+// ❌ Step 10: BUG — this block replaces the first numeric part (e.g. '1') with the customer ID
+            $separator = $company->customer_seperate_from;
 
-                foreach ($parts as &$part) {
-                    if (is_numeric($part)) {
-                        $part = $formatted_customer_id;
-                        break;
-                    }
+            if (!empty($separator) &&
+                !Str::contains($cus_number_template, '@CountMonthly@') &&
+                !Str::contains($cus_number_template, '@RootlyCount@')) {
+
+                $parts = explode($separator, $new_type); // ['1', 'C000', '279']
+
+                // Replace ONLY the last numeric part
+                $lastIndex = count($parts) - 1;
+
+                if (is_numeric($parts[$lastIndex])) {
+                    $parts[$lastIndex] = $formatted_customer_id;
                 }
-                unset($part);
 
-                $new_cus_number = implode($company->customer_seperate_from, $parts);
+                $new_cus_number = implode($separator, $parts);
             } else {
                 $new_cus_number = $new_type;
             }
@@ -224,9 +213,9 @@ class CustomerController extends Controller
 
 
 // Set final customer number with branch prefix
-            $customer->cus_number = $show_branch . $new_cus_number;
+            $customer->cus_number =  $new_cus_number;
 
-            $sms_cus_number = $show_branch . $new_cus_number;
+            $sms_cus_number =  $new_cus_number;
 
 
 
