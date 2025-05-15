@@ -129,6 +129,14 @@ class LoanController extends Controller
                         ->where('customer.idCustomer', $customer_id)
                         ->select('customer.*','customer_group.*','center.*','route.root_code as root')
                         ->first();
+                    $center_id = $loan_no->idCenter;
+                    $center_customer_count = DB::table('customer')
+                        ->join('group_has_customer', 'group_has_customer.cus_id', '=', 'customer.idCustomer')
+                        ->join('customer_group', 'customer_group.idCustomer_Group', '=', 'group_has_customer.group_id')
+                        ->where('customer_group.center_id', $center_id)
+                        ->distinct('customer.idCustomer') // Optional if customers can be in multiple groups
+                        ->count('customer.idCustomer');
+
 
                     if ($loan_no){
                         // Step 2: Define the mapping
@@ -141,6 +149,7 @@ class LoanController extends Controller
                             '@Customer_No@' => str_pad($loan_no->idCustomer, 3, '0', STR_PAD_LEFT),
                             '@Auto_Id@' => $formatted_loan_id,
                             '@Loan_Count@' => $cus_loan_count+1,
+                            '@Center_Cus_Count@' => $center_customer_count+1,
                         ];
 
                         // Step 3: Replace placeholders in the loan_format
