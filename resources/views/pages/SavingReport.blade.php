@@ -124,6 +124,18 @@
                             </div>
                             <div class="col-lg-3">
                                 <div class="mb-3">
+                                    <label for="branch" class="form-label">Branch</label>
+                                    <select class="form-control select2" id="branch">
+                                        <option value="0">All</option>
+                                        @foreach($branch as $item)
+                                            <option value="{{ $item->branch_id }}">{{ $item->Name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3">
+                                <div class="mb-3">
                                     <label for="simpleinput" class="form-label">Center</label>
                                     <select class="form-control select2" id="center_details">
                                         <option value="0">All</option>
@@ -281,6 +293,7 @@
             let lending = $("#lending").val();
             let date_from = $("#date_from").val();
             let date_to = $("#date_to").val();
+            let branch = $("#branch").val();
 
             $.ajax({
                 type: "POST",
@@ -295,6 +308,7 @@
                     customer: customer,
                     lending: lending,
                     date_from: date_from,
+                    branch: branch,
                     date_to: date_to
                 },
                 success: function(data, textStatus, xhr) {
@@ -358,6 +372,62 @@
             return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
+    </script>
+    <script>
+        $('#branch').change(function () {
+            let branch_id = $(this).val();
+
+            $.ajax({
+                url: '/get_branch_data',
+                type: 'POST',
+                data: {
+                    branch_id: branch_id,
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function (data) {
+                    // Update center dropdown
+                    let centerDropdown = $('#center_details');
+                    centerDropdown.empty().append(`<option value="0">All</option>`);
+                    data.center.forEach(function (item) {
+                        centerDropdown.append(`<option value="${item.idCenter}">${item.Name} - ${item.Route}</option>`);
+                    });
+
+                    // Update group dropdown
+                    let groupDropdown = $('#group');
+                    groupDropdown.empty().append(`<option value="0">All</option>`);
+                    data.group.forEach(function (item) {
+                        groupDropdown.append(`<option value="${item.idCustomer_Group}">${item.Group_No} - ${item.Name}</option>`);
+                    });
+
+                    // Update customer dropdown
+                    let customerDropdown = $('#customer_id');
+                    customerDropdown.empty().append(`<option value="0">All</option>`);
+                    data.customers.forEach(function (item) {
+                        customerDropdown.append(`<option value="${item.idCustomer}">${item.First_Name} ${item.Last_Name} - ${item.Nic} - ${item.Contact_No}</option>`);
+                    });
+
+                    // Update lending officer dropdown
+                    let lendingDropdown = $('#lending');
+                    lendingDropdown.empty().append(`<option value="0">All</option>`);
+                    data.lending_officer.forEach(function (item) {
+                        lendingDropdown.append(`<option value="${item.id}">${item.Full_Name}</option>`);
+                    });
+
+                    // Update route dropdown (if visible)
+                    let routeDropdown = $('#route');
+                    routeDropdown.empty().append(`<option value="0">All</option>`);
+                    data.route.forEach(function (item) {
+                        routeDropdown.append(`<option value="${item.id_route}">${item.Route_Name}</option>`);
+                    });
+
+                    // Reinitialize Select2 after content change
+                    $('.select2').select2();
+                },
+                error: function (xhr) {
+                    console.error('Failed to load branch related data:', xhr);
+                }
+            });
+        });
     </script>
 
 

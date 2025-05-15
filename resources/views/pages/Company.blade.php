@@ -361,6 +361,7 @@
                             <button type="button" class="btn btn-primary" onclick="addToField_Loan('@Branch_No@','Branch_No')">Branch Number</button>
                             <button type="button" class="btn btn-primary" onclick="addToField_Loan('@Root@','Root')">Root Name</button>
                             <button type="button" class="btn btn-primary" onclick="addToField_Loan('@Center_No@','Center_No')">Center Number</button>
+                            <button type="button" class="btn btn-primary" onclick="addToField_Loan('@Center_Cus_Count@','Center_Cus_Count')">Center's Customer Count</button>
                             <button type="button" class="btn btn-primary" onclick="addToField_Loan('@Group_No@','Group_No')">Group Number</button>
                             <button type="button" class="btn btn-primary" onclick="addToField_Loan('@Product_Code@','Product_Code')">Product Code</button>
                             <button type="button" class="btn btn-primary" onclick="addToField_Loan('@Customer_No@','Customer_No')">Customer Number</button>

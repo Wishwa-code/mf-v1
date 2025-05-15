@@ -276,6 +276,34 @@ function save_loan(){
         return; // Stop the function if validation fails
     }
 
+    if (!lending_officer) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: 'Please create or select a Lending Officer.',
+        });
+        return;
+    }
+
+    if (!collector_officer) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: 'Please create or select a Collector Officer.',
+        });
+        return;
+    }
+
+    if (!loan_broker) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: 'Please create or select a Loan Broker.',
+        });
+        return;
+    }
+
+
 
 
     leasing_type="-";
