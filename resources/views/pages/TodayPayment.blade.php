@@ -1000,7 +1000,7 @@
     <div id="overlay" class="overlay"></div>
     <div id="printerModal" class="modal_2">
         <div class="modal_2-content">
-            <span class="close_2">&times;</span>
+
 
             <div class="printer-design">
                 <div class="receipt">
@@ -1097,6 +1097,7 @@
                     <p class="thank-you">Thank you for your payment!</p>
                     <hr>
                 </div>
+                <span class="close_2">&times;</span>
                 <button onclick="printReceipt_view()" class="btn btn-danger">Print Receipt</button>
             </div>
         </div>
