@@ -380,6 +380,9 @@ function payment_model_3(cus_id, pending_amount, loan_id, topic, loan_capital_ba
         },
     });
 }
+
+
+
 let extraAmount = 0;
 $('#payment_amount').on('blur', function () {
     let total_loan_balance = parseFloat($('#total_loan_balance').val()) || 0;
