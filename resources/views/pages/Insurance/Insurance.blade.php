@@ -145,7 +145,7 @@
                 <!-- Tabs -->
                 <ul class="nav nav-tabs" id="insuranceTabs">
                     <li class="nav-item"><a class="nav-link active" data-status="Pending" href="#">Pending</a></li>
-                    <li class="nav-item"><a class="nav-link" data-status="Approved" href="#">Approved</a></li>
+                    <li class="nav-item"><a class="nav-link" data-status="Approved" href="#">Issued</a></li>
                     <li class="nav-item"><a class="nav-link" data-status="Rejected" href="#">Rejected</a></li>
                 </ul>
 
@@ -384,7 +384,7 @@
                         });
 
                         const existingNote = level.designations.find(d => d.note)?.note || '';
-                        const isDisabled = isLevelApproved || currentStatus !== '0' ? 'disabled' : '';
+                        const isDisabled = isLevelApproved || currentStatus != '0' ? 'disabled' : '';
 
                         html += `
 <div class="level-card">
