@@ -49,8 +49,9 @@ Route::post('/recover_password','\App\Http\Controllers\UserController@recover_pa
 Route::get('/privileges', function () {
     return view('pages.Privilages');
 });
-Route::post('/privileges','\App\Http\Controllers\UserController@privileges')->name('privileges.privileges');
-Route::get('/privileges/load/{id}','\App\Http\Controllers\UserController@showprivileges')->name('privileges.privileges');
+Route::post('/privileges', [UserController::class, 'privileges'])->name('privileges.save');
+Route::get('/privileges/load/{id}', [UserController::class, 'showprivileges'])->name('privileges.load');
+
 
 //designation
 Route::post('/user/designation','\App\Http\Controllers\UserController@designation')->name('privileges.designation');

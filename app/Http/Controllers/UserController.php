@@ -604,83 +604,44 @@ class UserController extends Controller
     }
 
 
-    public function showprivileges(string $id){
-        $userData = tableWithBranch('user')->where('id',$id)->first();
-
-        return response()->json(['items' => $userData], 200);
-    }
-
-
-    public function privileges(Request $request)
+    public function privileges(Request $request,Store $session)
     {
-        $user=$request->userId;
-        $checkboxValues = $request->get('checkboxValues', []);
+        $userId = $request->input('userId');
+        $privileges = $request->input('privileges', []);
 
-        DB::table('user')->where('id', $user)->update(array(
-            'customer' => $checkboxValues['customer'],
-            'add_customer' => $checkboxValues['add_customer'],
-            'view_customer' => $checkboxValues['view_customer'],
-            'loan_center' => $checkboxValues['loan_center'],
-            'create_loan_center' => $checkboxValues['create_loan_center'],
-            'view_center' => $checkboxValues['view_center'],
-            'create_group' => $checkboxValues['create_group'],
-            'view_group' => $checkboxValues['view_group'],
-            'assign_customer_to_group' => $checkboxValues['assign_customer_to_group'],
-            'guarantee' => $checkboxValues['guarantee'],
-            'add_guarantee' => $checkboxValues['add_guarantee'],
-            'view_guarantee' => $checkboxValues['view_guarantee'],
-            'product' => $checkboxValues['product'],
-            'add_product' => $checkboxValues['add_product'],
-            'view_product' => $checkboxValues['view_product'],
-            'issue_loan' => $checkboxValues['issue_loan'],
-            'pending_loan' => $checkboxValues['pending_loan'],
-            'current_loan' => $checkboxValues['current_loan'],
-            'loan_in_arrease' => $checkboxValues['loan_in_arrease'],
-            'payment' => $checkboxValues['payment'],
-            'add_re_payment' => $checkboxValues['add_re_payment'],
-            'view_repayment' => $checkboxValues['view_repayment'],
-            'pending_approval_repayment' => $checkboxValues['pending_approval_repayment'],
-            'approval_repayment' => $checkboxValues['approval_repayment'],
-            'agent_collection' => $checkboxValues['agent_collection'],
-            'loan_calculator' => $checkboxValues['loan_calculator'],
-            'calender' => $checkboxValues['calender'],
-            'expenses' => $checkboxValues['expenses'],
-            'add_expenses' => $checkboxValues['add_expenses'],
-            'view_expenses' => $checkboxValues['view_expenses'],
-            'income' => $checkboxValues['income'],
-            'add_income' => $checkboxValues['add_income'],
-            'view_income' => $checkboxValues['view_income'],
-            'user' => $checkboxValues['user'],
-            'create_user' => $checkboxValues['create_user'],
-            'user_privilage' => $checkboxValues['user_privilage'],
-            'report' => $checkboxValues['report'],
-            'report_1' => $checkboxValues['report_1'],
-            'report_2' => $checkboxValues['report_2'],
-            'report_3' => $checkboxValues['report_3'],
-            'report_4' => $checkboxValues['report_4'],
-            'report_5' => $checkboxValues['report_5'],
-            'report_6' => $checkboxValues['report_6'],
-            'report_7' => $checkboxValues['report_7'],
-            'report_8' => $checkboxValues['report_8'],
-            'report_9' => $checkboxValues['report_9'],
-            'report_10' => $checkboxValues['report_10'],
-            'report_11' => $checkboxValues['report_11'],
-            'report_12' => $checkboxValues['report_12'],
-            'report_13' => $checkboxValues['report_13'],
-            'report_14' => $checkboxValues['report_14'],
-            'report_15' => $checkboxValues['report_15'],
-            'report_16' => $checkboxValues['report_16'],
-            'report_17' => $checkboxValues['report_17'],
-            'add_bulk_re_payment' => $checkboxValues['add_bulk_re_payment'],
-            'account' => $checkboxValues['account'],
-            'bank_details' => $checkboxValues['bank_details'],
-            'chq_details' => $checkboxValues['chq_details'],
-            'dashboard' => $checkboxValues['dashboard'],
-        ));
+        foreach ($privileges as $key => $value) {
+            DB::table('user_privileges_has_user')->updateOrInsert(
+                ['user_id' => $userId, 'permission_key' => $key],
+                ['value' => $value]
+            );
+            if ($key=="payment_delete"){
+                DB::table('user')->where('id', $userId)->update([
+                    'payment_delete' => $value
+                ]);
+            }
 
+            if ($key=="branch_access"){
+                DB::table('user')->where('id', $userId)->update([
+                    'branch_access' => $value
+                ]);
+                $session->put('branch_access',(int) $value);
+            }
 
-        return response()->json(['data' => $user]);
+        }
+
+        return response()->json(['status' => 'success']);
     }
+
+    public function showprivileges($id)
+    {
+        $permissions = DB::table('user_privileges_has_user')
+            ->where('user_id', $id)
+            ->select('permission_key', 'value')
+            ->get();
+
+        return response()->json(['privileges' => $permissions]);
+    }
+
 
     public function check_mail(Request $request){
 
