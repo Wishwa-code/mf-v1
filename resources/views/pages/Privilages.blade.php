@@ -3,849 +3,237 @@
 @section('head')
     <style>
         .main-topic {
-            background-color: #ffffff; /* Light gray background for main topics */
+            background-color: #f8f9fa;
+            font-weight: 600;
         }
 
         .sub-topic {
-            padding-left: 20px; /* Indent subtopics */
-            color: #6c757d; /* Gray color for subtopics */
+            background-color: #ffffff;
+            padding-left: 40px;
         }
 
         .sub-topic i {
-            color: #ffc107; /* Star color for subtopic icon */
+            color: #ffc107;
+        }
+
+        .sub-topic td:first-child {
+            display: flex;
+            align-items: center;
+        }
+
+        .permission-table th, .permission-table td {
+            vertical-align: middle;
+        }
+
+        .h6 {
+            margin: 0;
+        }
+
+        .permission-wrapper {
+            background: #ffffff;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+            width: 100%;
+        }
+
+        .permission-container {
+            max-width: 100%;
+            padding: 1rem 2rem;
         }
     </style>
 @endsection
 
-
 @section('content')
-    <div>
-
-        <!-- start page title -->
-        <div class="row mt-3">
-            <div class="col-12">
-                <div class="row">
-                    <div class="container-fluid" style="max-width: 100%; padding-left: 25px; padding-right: 25px; ">
-                        <form id="updatePermissionForm">
-
-                            <div class="mb-3">
-                                <label for="exampleInputEmail1" class="form-label">User</label>
-                                <select class="form-control select2bs4" id="userid" name="userid" onchange="load_to_table(this.value)" style="width: 100%;">
-                                    <option value="0">Select User</option>
-                                    <?php
-                                    $branch = session('branch_id'); // Retrieve the branch_id from the session
-                                    $user_details = DB::select("SELECT * FROM user WHERE Status='1' AND branch_id = ?", [$branch]);
-
-                                    foreach ($user_details as $item) {
-                                        echo '<option value="' . $item->id . '">' . $item->Full_Name . '</option>';
-                                    }
-                                    ?>
-
-                                </select>
-                            </div>
-                            <div class="d-flex align-items-center">
-                                {{--                                <div class="mr-3">--}}
-                                {{--                                    <div class="d-flex align-items-center">--}}
-                                {{--                                        <i class="ti ti-folder h3 text-primary"></i>--}}
-                                {{--                                        <span class="h5 font-weight-bold ml-2">Full Permission</span>--}}
-                                {{--                                    </div>--}}
-                                {{--                                </div>--}}
-                                <div class="form-check form-switch mb-0">
-                                    <label class="form-check-label mr-2" for="full_permission">Full Permission</label>
-                                    <input class="form-check-input access_module main-checkbox" id="full_permission" type="checkbox">
-                                </div>
-
-                            </div>
-
-
-
-
-                            <br>
-
-
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-hover">
-                                    <thead class="table-dark">
-                                    <tr>
-                                        <th class="fw-bolder">Module Permission</th>
-                                        <th class="fw-bolder text-center">Access</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    <tr class="main-topic">
-                                        <td class="align-middle">
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                                <span class="h5 font-weight-bold">Dashboard</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <input class="form-check-input access_module" id="dashboard" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <!-- Customer Main Topic -->
-                                    <tr class="main-topic">
-                                        <td class="align-middle">
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                                <span class="h5 font-weight-bold">Customer</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <input class="form-check-input access_module" id="1" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <!-- Customer Subtopics -->
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Add Customer</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="2" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">View Customer</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="3" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <!-- Center Main Topic -->
-                                    <tr class="main-topic">
-                                        <td class="align-middle">
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                                <span class="h5 font-weight-bold">Loan Center</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <input class="form-check-input access_module" id="4" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <!-- Center Subtopics -->
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Create Center</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="5" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">View Center</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="6" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Create Group</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="7" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">View Group</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="8" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Add Customer To Group</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="9" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <!-- Loan Category Main Topic -->
-                                    <tr class="main-topic">
-                                        <td class="align-middle">
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                                <span class="h5 font-weight-bold">Guarantee</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <input class="form-check-input access_module" id="10" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <!-- Loan Category Subtopics -->
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Add Guarantee</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="11" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">View Guarantee</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="12" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="main-topic">
-                                        <td class="align-middle">
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                                <span class="h5 font-weight-bold">Product/Loan</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <input class="form-check-input access_module" id="13" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <!-- Loan Category Subtopics -->
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Add Product</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="14" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">View Product</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="15" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Issue Loan</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="16" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Pending Loan</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="17" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Current Loan</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="18" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Loan In Arrease</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="19" type="checkbox">
-                                        </td>
-                                    </tr>
-
-
-                                    <tr class="main-topic">
-                                        <td class="align-middle">
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                                <span class="h5 font-weight-bold">Payment Details</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <input class="form-check-input access_module" id="20" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <!-- Loan Category Subtopics -->
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Add Repayment</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="21" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Add Bulk Repayment</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="51" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">View Repayment</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="22" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Pending Approval Repayments</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="23" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Approved Repayments</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="24" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Agent Collection</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="25" type="checkbox">
-                                        </td>
-                                    </tr>
-
-                                    <tr class="main-topic">
-                                        <td class="align-middle">
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                                <span class="h5 font-weight-bold">Account Center</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <input class="form-check-input access_module" id="52" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <!-- Loan Category Subtopics -->
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Bank Account</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="53" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Cheque Details</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="54" type="checkbox">
-                                        </td>
-                                    </tr>
-
-
-
-
-
-                                    <tr class="main-topic">
-                                        <td class="align-middle">
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                                <span class="h5 font-weight-bold">Account Center</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <input class="form-check-input access_module" id="account_department" type="checkbox">
-                                        </td>
-                                    </tr>
-
-
-
-
-
-
-                                    <tr class="main-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Loan Calculator</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="26" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="main-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Calender</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="27" type="checkbox">
-                                        </td>
-                                    </tr>
-
-                                    <tr class="main-topic">
-                                        <td class="align-middle">
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                                <span class="h5 font-weight-bold">Expenses</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <input class="form-check-input access_module" id="28" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <!-- Loan Category Subtopics -->
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Add Expenses</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="29" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">View Expenses</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="30" type="checkbox">
-                                        </td>
-                                    </tr>
-
-                                    <tr class="main-topic">
-                                        <td class="align-middle">
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                                <span class="h5 font-weight-bold">Other Income</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <input class="form-check-input access_module" id="31" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <!-- Loan Category Subtopics -->
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Add Income</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="32" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">View Income</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="33" type="checkbox">
-                                        </td>
-                                    </tr>
-
-                                    <tr class="main-topic">
-                                        <td class="align-middle">
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                                <span class="h5 font-weight-bold">User</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <input class="form-check-input access_module" id="34" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <!-- Loan Category Subtopics -->
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Create User</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="35" type="checkbox">
-                                        </td>
-                                    </tr>
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">User Privilege</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="36" type="checkbox">
-                                        </td>
-                                    </tr>
-
-
-
-                                    <tr class="main-topic">
-                                        <td class="align-middle">
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                                <span class="h5 font-weight-bold">Report</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <input class="form-check-input access_module" id="37" type="checkbox">
-                                        </td>
-                                    </tr>
-
-
-                                    <!-- Loan Category Subtopics -->
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Full Loan Detail Report</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="AllLoanDetailReport" type="checkbox">
-                                        </td>
-                                    </tr>
-
-
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Arrease Details</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="late_payment_report" type="checkbox">
-                                        </td>
-                                    </tr>
-
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Date wise cash flow details</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="ViewDateWiseCashFlow" type="checkbox">
-                                        </td>
-                                    </tr>
-
-
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Monthly Collection Summary details</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="MonthlyCollectionSummary" type="checkbox">
-                                        </td>
-                                    </tr>
-
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">All Customer Details</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="customerreport_details" type="checkbox">
-                                        </td>
-                                    </tr>
-
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Loan Details</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="loanreport" type="checkbox">
-                                        </td>
-                                    </tr>
-
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Guardian Details</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="borrowerreport" type="checkbox">
-                                        </td>
-                                    </tr>
-
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Agent Wise Repayment Collection</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="repaymentreport" type="checkbox">
-                                        </td>
-                                    </tr>
-
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Customer Wise Repayments</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="customerrepaymentreport" type="checkbox">
-                                        </td>
-                                    </tr>
-
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Deduction Report</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="deduct_report" type="checkbox">
-                                        </td>
-                                    </tr>
-
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">CashBook Report</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="cashbook" type="checkbox">
-                                        </td>
-                                    </tr>
-
-
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">PAR (Portfolio at Risk)</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="par" type="checkbox">
-                                        </td>
-                                    </tr>
-
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Profit And Lost</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="profit" type="checkbox">
-                                        </td>
-                                    </tr>
-
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">GL Report</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="gl_report" type="checkbox">
-                                        </td>
-                                    </tr>
-
-
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Cash Flow Statement</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="cash_flow" type="checkbox">
-                                        </td>
-                                    </tr>
-
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">Statement Of Financial Position</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="statement" type="checkbox">
-                                        </td>
-                                    </tr>
-
-                                    <tr class="sub-topic">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="ti ti-star h5 mr-2"></i>
-                                                <span class="h6">SMS History Report</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <input class="form-check-input access_module" id="sms_history" type="checkbox">
-                                        </td>
-                                    </tr>
-
-
-
-
-                                    </tbody>
-                                </table>
-                            </div>
-
-
-
-
-
-                            <div class="text-center mt-4">
-                                <button class="btn btn-primary btn-lg" type="button" onclick="savePrivileges(event)">Update Privileges</button>
-                            </div>
-                        </form>
-                        <br>
-
-
-                    </div>
+    <div class="permission-container">
+        <div class="permission-wrapper">
+            <form id="updatePermissionForm">
+                <div class="mb-4">
+                    <label for="userid" class="form-label">Select User</label>
+                    <select class="form-control select2bs4" id="userid" name="userid" onchange="load_to_table(this.value)">
+                        <option value="0">-- Select User --</option>
+                        @php
+                            $branch = session('branch_id');
+                            $user_details = DB::select("SELECT * FROM user WHERE Status='1' AND branch_id = ?", [$branch]);
+                        @endphp
+                        @foreach ($user_details as $user)
+                            <option value="{{ $user->id }}">{{ $user->Full_Name }}</option>
+                        @endforeach
+                    </select>
                 </div>
-            </div>
+
+                <div class="form-check form-switch mb-4">
+                    <input class="form-check-input main-checkbox" id="full_permission" type="checkbox">
+                    <label class="form-check-label ms-2" for="full_permission">Grant Full Access</label>
+                </div>
+                <label class="form-check-label ms-2" for="full_permission" style="color: red">
+                    Want to update sub-topic access? Just click on the related topic checkbox.
+                </label>
+                <br><br>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover permission-table w-100">
+                        <thead class="table-dark">
+                        <tr>
+                            <th style="width: 90%;">Module Permission</th>
+                            <th class="text-center" style="width: 10%;">Access</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @php
+                            $mainPermissions = [
+                                'Dashboard' => ['dashboard'],
+                                'Customer' => [
+                                    'add_customer', 'view_customer', 'view_blacklist_customer',
+                                    'customer_saving_acc', 'kyc', 'insurance'
+                                ],
+                                'Loan Center' => [
+                                    'create_route', 'create_center', 'view_center',
+                                    'create_group', 'view_group', 'add_customer_to_group'
+                                ],
+                                'Guarantee' => ['add_guarantee', 'view_guarantee'],
+                                'Product' => [
+                                    'add_product', 'view_product', 'create_loan',
+                                    'change_collector', 'pending_loan', 'loan_disbursement',
+                                    'current_loans', 'settled_loans'
+                                ],
+                                'Payment Details' => [
+                                    'add_repayment', 'bulk_repayment', 'loan_settlement',
+                                    'loan_reschedule', 'view_payment', 'collector_wise_collection'
+                                ],
+                                'Account Center' => [
+                                    'bank_cash_account', 'internal_bank_transfer',
+                                    'collector_account', 'cheque_details'
+                                ],
+                                'Account Department' => [
+                                    'add_asset', 'asset_management', 'bank_reconciliation',
+                                    'manual_journal', 'chart_of_account'
+                                ],
+                                'Loan Calculator' => ['loan_calculator'],
+                                'Calender' => ['calendar'],
+                                'Expenses' => ['add_expenses', 'view_expenses'],
+                                'User' => ['create_user', 'user_privileges'],
+                                'Reports' => [
+                                    'main_reports_dashboard', 'loan_disbursement_performance', 'payment_detail_report',
+                                    'full_loan_detail', 'loan_summary', 'par_monthly', 'par_weekly', 'loan_status',
+                                    'cashflow_accumulated', 'cashflow_monthly', 'profit_loss', 'balance_sheet', 'trial_balance',
+                                    'daily_collection_sheet', 'center_collection_detail', 'center_collection_summary', 'route_collections',
+                                    'repayment_sheet_01', 'repayment_sheet_02', 'repayment_sheet_03', 'repayment_sheet_04',
+                                    'other_charges_report', 'center_dashboard', 'repayment_summary', 'savings_report',
+                                    'arrears_report', 'arrears_overview', 'datewise_cashflow', 'loan_detail_report',
+                                    'collector_report', 'sms_history', 'customer_detail_report',
+                                    'officer_customer_detail', 'guardian_detail_report'
+                                ]
+                            ];
+
+                            $settingsPermissions = [
+                                'Settings Privilege' => [
+                                    'my_account', 'settings', 'sms_format', 'document_format',
+                                    'company_holidays', 'branches', 'cashier_start', 'cashier_close'
+                                ]
+                            ];
+
+                            $deletePermissions = [
+                                'Access' => ['payment_delete','branch_access']
+                            ];
+                        @endphp
+
+                        @foreach ($mainPermissions as $main => $subs)
+                            <tr class="main-topic">
+                                <td class="align-middle" colspan="2">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <i class="ti ti-folder h4 text-primary me-2"></i>
+                                            <span class="h6">{{ $main }}</span>
+                                        </div>
+                                        <input type="checkbox" class="form-check-input access_module" data-key="{{ strtolower(str_replace(' ', '_', $main)) }}">
+                                    </div>
+                                </td>
+                            </tr>
+                        <tbody class="sub-topic-wrapper" data-wrapper="{{ strtolower(str_replace(' ', '_', $main)) }}" style="display: none;">
+                        @foreach ($subs as $sub)
+                            <tr class="sub-topic">
+                                <td>
+                                    <i class="ti ti-star me-2"></i>
+                                    <span class="h6">{{ ucwords(str_replace('_', ' ', $sub)) }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <input type="checkbox" class="form-check-input access_module" data-key="{{ $sub }}">
+                                </td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                        @endforeach
+
+                        </tbody>
+                    </table>
+                </div>
+
+                <hr class="my-4">
+                <h4 class="mb-3">Settings Privilege</h4>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <tbody>
+                        @foreach ($settingsPermissions['Settings Privilege'] as $setting)
+                            <tr>
+                                <td class="ps-4">{{ ucwords(str_replace('_', ' ', $setting)) }}</td>
+                                <td class="text-center">
+                                    <input type="checkbox" class="form-check-input access_module" data-key="{{ $setting }}">
+                                </td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <hr class="my-4">
+                <h4 class="mb-3">Access</h4>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <tbody>
+                        @foreach ($deletePermissions['Access'] as $delete)
+                            <tr>
+                                <td class="ps-4">{{ ucwords(str_replace('_', ' ', $delete)) }}</td>
+                                <td class="text-center">
+                                    <input type="checkbox" class="form-check-input access_module" data-key="{{ $delete }}">
+                                </td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button class="btn btn-primary btn-lg px-5" type="button" onclick="savePrivileges(event)">Update Privileges</button>
+                </div>
+            </form>
         </div>
     </div>
 @endsection
 
 @section('script')
-
     <script src="../JS/validate.js"></script>
     <script src="../JS/privilages.js?n=5"></script>
     <script>
-        $(document).ready(function() {
-            // Handle main checkbox change event
-            $('.main-checkbox').change(function() {
+        $(document).ready(function () {
+            // Toggle all when "Full Access" is checked
+            $('.main-checkbox').change(function () {
                 var isChecked = $(this).prop('checked');
-                // Find all checkboxes with class .access_module and toggle their state
                 $('.access_module').prop('checked', isChecked);
+                $('.sub-topic-wrapper').toggle(isChecked);
             });
 
-            // Handle sub checkbox change events (if needed)
-            $('.access_module:not(.main-checkbox)').change(function() {
-                var isChecked = $(this).prop('checked');
-                // Optionally, update main checkbox state based on sub checkbox changes
-                updateMainCheckboxState();
+            // Toggle each sub-topic group when main topic is checked
+            $('.access_module').change(function () {
+                var key = $(this).data('key');
+                var $target = $(`.sub-topic-wrapper[data-wrapper="${key}"]`);
+                if ($target.length) {
+                    if ($(this).is(':checked')) {
+                        $target.slideDown();
+                    } else {
+                        $target.slideUp();
+                    }
+                }
             });
-
-            // Function to update main checkbox state based on sub checkboxes
-            function updateMainCheckboxState() {
-                var allChecked = $('.access_module:not(.main-checkbox)').length === $('.access_module:not(.main-checkbox):checked').length;
-                $('.main-checkbox').prop('checked', allChecked);
-            }
         });
     </script>
-
-
 @endsection
-
-
-
-
-
-

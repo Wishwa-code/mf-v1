@@ -359,6 +359,92 @@ $banner = DB::select($query);
     }
 </script>
 
+@php
+
+    if (!\Illuminate\Support\Facades\Schema::hasTable('user_privileges_has_user')) {
+        \Illuminate\Support\Facades\Schema::create('user_privileges_has_user', function (\Illuminate\Database\Schema\Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->string('permission_key');
+            $table->tinyInteger('value')->default(0);
+        });
+    }
+
+    // ✅ Now whether the table was just created or already exists, check if the user has permissions
+    $userId = (int)session('userid');
+    $hasPermissions = DB::table('user_privileges_has_user')
+        ->where('user_id', $userId)
+        ->exists();
+
+    if (!$hasPermissions) {
+        // Permissions arrays
+        $mainPermissions = [
+            'Dashboard' => ['dashboard'],
+            'Customer' => ['customer','add_customer', 'view_customer', 'view_blacklist_customer', 'customer_saving_acc', 'kyc', 'insurance'],
+            'Loan Center' => ['loan_center','create_route', 'create_center', 'view_center', 'create_group', 'view_group', 'add_customer_to_group'],
+            'Guarantee' => ['guarantee','add_guarantee', 'view_guarantee'],
+            'Product' => ['product','add_product', 'view_product', 'create_loan', 'change_collector', 'pending_loan', 'loan_disbursement', 'current_loans', 'settled_loans'],
+            'Payment Details' => ['payment_details','add_repayment', 'bulk_repayment', 'loan_settlement', 'loan_reschedule', 'view_payment', 'collector_wise_collection'],
+            'Account Center' => ['account_center','bank_cash_account', 'internal_bank_transfer', 'collector_account', 'cheque_details'],
+            'Account Department' => ['account_department','add_asset', 'asset_management', 'bank_reconciliation', 'manual_journal', 'chart_of_account'],
+            'Loan Calculator' => ['loan_calculator'],
+            'Calender' => ['calender','calendar'],
+            'Expenses' => ['expenses','add_expenses', 'view_expenses'],
+            'User' => ['user','create_user', 'user_privileges'],
+            'Reports' => [
+                'reports','main_reports_dashboard', 'loan_disbursement_performance', 'payment_detail_report', 'full_loan_detail', 'loan_summary',
+                'par_monthly', 'par_weekly', 'loan_status', 'cashflow_accumulated', 'cashflow_monthly', 'profit_loss', 'balance_sheet',
+                'trial_balance', 'daily_collection_sheet', 'center_collection_detail', 'center_collection_summary', 'route_collections',
+                'repayment_sheet_01', 'repayment_sheet_02', 'repayment_sheet_03', 'repayment_sheet_04', 'other_charges_report',
+                'center_dashboard', 'repayment_summary', 'savings_report', 'arrears_report', 'arrears_overview', 'datewise_cashflow',
+                'loan_detail_report', 'collector_report', 'sms_history', 'customer_detail_report', 'officer_customer_detail', 'guardian_detail_report'
+            ]
+        ];
+
+        $settingsPermissions = [
+            'Settings Privilege' => ['my_account', 'settings', 'sms_format', 'document_format', 'company_holidays', 'branches', 'cashier_start', 'cashier_close']
+        ];
+
+        $deletePermissions = [
+            'Access' => ['payment_delete', 'branch_access']
+        ];
+
+        $allPermissions = array_merge(
+            ...array_values($mainPermissions),
+            ...array_values($settingsPermissions),
+            ...array_values($deletePermissions)
+        );
+
+        $insertData = [];
+        foreach ($allPermissions as $perm) {
+            $insertData[] = [
+                'user_id' => $userId,
+                'permission_key' => $perm,
+                'value' => 1
+            ];
+        }
+
+        DB::table('user_privileges_has_user')->insert($insertData);
+    }
+
+
+
+        if (!session('userid')) {
+            echo "<script>window.location.href = '".route('login')."'</script>";
+            exit;
+        }
+
+        $user_id = session('userid');
+        $permissions = DB::table('user_privileges_has_user')
+            ->where('user_id', $user_id)
+            ->pluck('value', 'permission_key')
+            ->toArray();
+
+        $privilege = new \stdClass();
+        foreach ($permissions as $key => $value) {
+            $privilege->$key = $value;
+        }
+@endphp
 
 
 <div class="navbar-custom">
@@ -467,84 +553,98 @@ $banner = DB::select($query);
                     <div class=" dropdown-header noti-title">
                         <h6 class="text-overflow m-0">Welcome !</h6>
                     </div>
-
-                    <!-- item-->
-                    <a href="/company" class="dropdown-item">
-                        <i class="ri-account-circle-line fs-18 align-middle me-1"></i>
-                        <span>My Account</span>
-                    </a>
-
-                    <!-- item-->
-                    <a href="/setting" class="dropdown-item">
-                        <i class="ri-settings-4-line fs-18 align-middle me-1"></i>
-                        <span>Settings</span>
-                    </a>
-
-                    <?php
-                        $query = "SELECT * FROM company where branch_id='" . session('branch_id') . "'";
-                        $user_details = DB::select($query);
-                    ?>
-
-
-                    @foreach($user_details as $item)
-                        @if($item->mask != null)
-                            <!-- item-->
-                            <a href="/sms" class="dropdown-item">
-                                <i class="ri-mail-line fs-18 align-middle me-1"></i>
-                                <span>SMS Format</span>
-                            </a>
-                        @else
-                            <a href="#" class="dropdown-item">
-                                <i class="ri-mail-line fs-18 align-middle me-1"></i>
-                                <span>SMS Format</span>
+                    @if($privilege)
+                        @if($privilege->my_account == 1)
+                            <a href="/company" class="dropdown-item">
+                                <i class="ri-account-circle-line fs-18 align-middle me-1"></i>
+                                <span>My Account</span>
                             </a>
                         @endif
-                    @endforeach
+
+                            @if($privilege->settings == 1)
+                                <a href="/setting" class="dropdown-item">
+                                    <i class="ri-settings-4-line fs-18 align-middle me-1"></i>
+                                    <span>Settings</span>
+                                </a>
+                            @endif
+
+                            @if($privilege->sms_format == 1)
 
 
-                    <a href="/agreement" class="dropdown-item">
-                        <i class="ri-file-paper-2-fill fs-18 align-middle me-1"></i>
-                        <span>Document Format</span>
-                    </a>
+                                <?php
+                                $query = "SELECT * FROM company where branch_id='" . session('branch_id') . "'";
+                                $user_details = DB::select($query);
+                                ?>
 
-                    <a href="/holidays" class="dropdown-item">
-                        <i class="ri-moon-clear-line fs-18 align-middle me-1"></i>
-                        <span>Company Holidays</span>
-                    </a>
-                    @if(session('branch_access')===1)
-                        <a href="/branch" class="dropdown-item">
-                            <i class="ri-building-2-fill fs-18 align-middle me-1"></i>
-                            <span>Branches</span>
-                        </a>
+
+                                @foreach($user_details as $item)
+                                    @if($item->mask != null)
+                                        <!-- item-->
+                                        <a href="/sms" class="dropdown-item">
+                                            <i class="ri-mail-line fs-18 align-middle me-1"></i>
+                                            <span>SMS Format</span>
+                                        </a>
+                                    @else
+                                        <a href="#" class="dropdown-item">
+                                            <i class="ri-mail-line fs-18 align-middle me-1"></i>
+                                            <span>SMS Format</span>
+                                        </a>
+                                    @endif
+                                @endforeach
+
+                            @endif
+
+                            @if($privilege->document_format == 1)
+                                <a href="/agreement" class="dropdown-item">
+                                    <i class="ri-file-paper-2-fill fs-18 align-middle me-1"></i>
+                                    <span>Document Format</span>
+                                </a>
+                            @endif
+
+                            @if($privilege->company_holidays == 1)
+                                <a href="/holidays" class="dropdown-item">
+                                    <i class="ri-moon-clear-line fs-18 align-middle me-1"></i>
+                                    <span>Company Holidays</span>
+                                </a>
+                            @endif
+
+                            @if($privilege->branches == 1)
+                                <a href="/branch" class="dropdown-item">
+                                    <i class="ri-building-2-fill fs-18 align-middle me-1"></i>
+                                    <span>Branches</span>
+                                </a>
+                            @endif
+                            <!-- item-->
+                            <a href="#" class="dropdown-item">
+                                <i class="ri-customer-service-2-line fs-18 align-middle me-1"></i>
+                                <span>Support</span>
+                            </a>
+                            <!-- item-->
+                            <a href="/logout" class="dropdown-item">
+                                <i class="ri-logout-box-line fs-18 align-middle me-1"></i>
+                                <span>Logout</span>
+                            </a>
+                            <hr>
+
+                            <div class=" dropdown-header noti-title">
+                                <h6 class="text-overflow m-0">Cashier Section</h6>
+                            </div>
+                            @if($privilege->cashier_start == 1)
+                                <a class="dropdown-item d-flex align-items-center" href="#" data-bs-toggle="modal" data-bs-target="#cashierStartModal">
+                                    <i class="ri-money-dollar-box-line font-size-17 align-middle me-1"></i> Cashier Start
+                                </a>
+                            @endif
+
+                            @if($privilege->cashier_close == 1)
+                                <a class="dropdown-item" href="#"  data-bs-toggle="modal" data-bs-target="#dayEndModal">
+                                    <i class="mdi mdi-lock-open-outline font-size-17 align-middle me-1"></i> Cashier Close
+                                </a>
+                            @endif
+                    @else
+                        <script>
+                            window.location.href = "{{ route('login') }}"
+                        </script>
                     @endif
-
-
-                    <!-- item-->
-                    <a href="#" class="dropdown-item">
-                        <i class="ri-customer-service-2-line fs-18 align-middle me-1"></i>
-                        <span>Support</span>
-                    </a>
-
-
-                    <!-- item-->
-                    <a href="/logout" class="dropdown-item">
-                        <i class="ri-logout-box-line fs-18 align-middle me-1"></i>
-                        <span>Logout</span>
-                    </a>
-
-                    <hr>
-
-                    <div class=" dropdown-header noti-title">
-                        <h6 class="text-overflow m-0">Cashier Section</h6>
-                    </div>
-
-                    <a class="dropdown-item d-flex align-items-center" href="#" data-bs-toggle="modal" data-bs-target="#cashierStartModal">
-                        <i class="ri-money-dollar-box-line font-size-17 align-middle me-1"></i> Cashier Start
-                    </a>
-                    <a class="dropdown-item" href="#"  data-bs-toggle="modal" data-bs-target="#dayEndModal">
-                        <i class="mdi mdi-lock-open-outline font-size-17 align-middle me-1"></i> Cashier Close
-                    </a>
-
                 </div>
 
             </li>
@@ -584,18 +684,12 @@ $banner = DB::select($query);
     </a>
 
 
-    <?php
-    $user_id = session('userid');
-    $query = "SELECT * FROM user WHERE id = '$user_id'";
-    $user_details = DB::select($query);
-    ?>
 
 
 
 
 
-
-        <!-- Sidebar -left -->
+            <!-- Sidebar -left -->
     <div class="h-100" id="leftside-menu-container" data-simplebar>
         <!--- Sidemenu -->
         <ul class="side-nav">
@@ -610,21 +704,16 @@ $banner = DB::select($query);
             @endforeach
 
 
-
-
-            @if(count($user_details) > 0)
-                @foreach($user_details as $item)
-                    @if($item->dashboard == 1)
-                        <li class="side-nav-item">
-                            <a href="/" class="side-nav-link">
-                                <i class="ri-dashboard-3-line"></i>
-                                <span> Dashboard </span>
-                            </a>
-                        </li>
-                    @endif
-
-                    @if($item->customer == 1)
-{{--                        <li class="side-nav-title">Customer Section</li>--}}
+            @if($privilege)
+                @if($privilege->dashboard == 1)
+                    <li class="side-nav-item">
+                        <a href="/" class="side-nav-link">
+                            <i class="ri-dashboard-3-line"></i>
+                            <span> Dashboard </span>
+                        </a>
+                    </li>
+                @endif
+                @if($privilege->customer == 1)
                         <li class="side-nav-item">
                             <a data-bs-toggle="collapse" href="#customer" aria-expanded="false"
                                aria-controls="sidebarPagesAuth" class="side-nav-link">
@@ -634,269 +723,217 @@ $banner = DB::select($query);
                             </a>
                             <div class="collapse" id="customer">
                                 <ul class="side-nav-second-level">
-                                    @if($item->add_customer == 1)
+                                    @if($privilege->add_customer == 1)
                                         <li>
                                             <a href="/customers">Add Customer</a>
                                         </li>
-                                    @else
                                     @endif
-
-                                    @if($item->view_customer == 1)
+                                    @if($privilege->view_customer == 1)
                                         <li>
                                             <a href="/showcustomers">View Customer</a>
                                         </li>
-
-                                            <li>
-                                                <a href="/showblacklistcustomers">View Blacklist Customer</a>
-                                            </li>
-
-                                       <li>
-                                           <a href="/showcustomerssaving">Customer Saving Acc.</a>
-                                       </li>
-                                            <li>
-                                                <a href="/kyc">KYC</a>
-                                            </li>
-                                            <li>
-                                                <a href="/insurance">Insurance</a>
-                                            </li>
-                                    @else
                                     @endif
-
+                                    @if($privilege->view_blacklist_customer == 1)
+                                        <li>
+                                            <a href="/showblacklistcustomers">View Blacklist Customer</a>
+                                        </li>
+                                    @endif
+                                    @if($privilege->customer_saving_acc == 1)
+                                        <li>
+                                            <a href="/showcustomerssaving">Customer Saving Acc.</a>
+                                        </li>
+                                    @endif
+                                    @if($privilege->kyc == 1)
+                                        <li>
+                                            <a href="/kyc">KYC</a>
+                                        </li>
+                                    @endif
+                                    @if($privilege->insurance == 1)
+                                        <li>
+                                            <a href="/insurance">Insurance</a>
+                                        </li>
+                                    @endif
 
                                 </ul>
                             </div>
 
                         </li>
-                    @else
+                @endif
+
+                    @if($privilege->loan_center == 1)
+                            <li class="side-nav-item">
+                                <a data-bs-toggle="collapse" href="#center" aria-expanded="false" aria-controls="center"
+                                   class="side-nav-link">
+                                    <i class="bi bi-building"></i>
+                                    <span> Loan Center </span>
+                                    <span class="menu-arrow"></span>
+                                </a>
+                                <div class="collapse" id="center">
+                                    <ul class="side-nav-second-level">
+                                        @if($privilege->create_route == 1)
+                                            <li>
+                                                <a href="/viewroutes">Create Route</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->create_center == 1)
+                                            <li>
+                                                <a href="/center">Create Center</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->view_center == 1)
+                                            <li>
+                                                <a href="/viewcenter">View Center</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->create_group == 1)
+                                            <li>
+                                                <a href="/customergroup">Create Group</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->view_group == 1)
+                                            <li>
+                                                <a href="/viewgroups">View Group</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->add_customer_to_group == 1)
+                                            <li>
+                                                <a href="/customergroupassign">Add Customers To Group</a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </div>
+                            </li>
                     @endif
 
+                    @if($privilege->guarantee == 1)
+                            <li class="side-nav-item">
+                                <a data-bs-toggle="collapse" href="#Guarantee" aria-expanded="false"
+                                   aria-controls="sidebarPagesAuth" class="side-nav-link">
+                                    <i class="ri-user-2-fill"></i>
+                                    <span> Guarantee </span>
+                                    <span class="menu-arrow"></span>
+                                </a>
+                                <div class="collapse" id="Guarantee">
+                                    <ul class="side-nav-second-level">
+                                        @if($privilege->add_guarantee == 1)
+                                            <li>
+                                                <a href="/guardian">Add Guarantee</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->view_guarantee == 1)
+                                            <li>
+                                                <a href="/showguardian">View Guarantee</a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </div>
 
-
-                    @if($item->loan_center == 1)
-{{--                        <li class="side-nav-title">Center Section</li>--}}
-                        <li class="side-nav-item">
-                            <a data-bs-toggle="collapse" href="#center" aria-expanded="false" aria-controls="center"
-                               class="side-nav-link">
-                                <i class="bi bi-building"></i>
-                                <span> Loan Center </span>
-                                <span class="menu-arrow"></span>
-                            </a>
-                            <div class="collapse" id="center">
-                                <ul class="side-nav-second-level">
-
-                                    @if($item->create_loan_center == 1)
-
-                                        <li>
-                                            <a href="/viewroutes">Create Route</a>
-                                        </li>
-                                        <li>
-                                            <a href="/center">Create Center</a>
-                                        </li>
-                                    @else
-                                    @endif
-
-                                    @if($item->view_center == 1)
-                                        <li>
-                                            <a href="/viewcenter">View Center</a>
-                                        </li>
-                                    @else
-                                    @endif
-
-                                    @if($item->create_group == 1)
-                                        <li>
-                                            <a href="/customergroup">Create Group</a>
-                                        </li>
-                                    @else
-                                    @endif
-
-
-                                    @if($item->view_group == 1)
-                                        <li>
-                                            <a href="/viewgroups">View Group</a>
-                                        </li>
-                                    @else
-                                    @endif
-                                    @if($item->assign_customer_to_group == 1)
-                                        <li>
-                                            <a href="/customergroupassign">Add Customers To Group</a>
-                                        </li>
-                                    @else
-                                    @endif
-
-                                </ul>
-                            </div>
-                        </li>
-                    @else
+                            </li>
                     @endif
 
-
-                    @if($item->guarantee == 1)
-{{--                        <li class="side-nav-title">Guarantee Section</li>--}}
-                        <li class="side-nav-item">
-                            <a data-bs-toggle="collapse" href="#Guarantee" aria-expanded="false"
-                               aria-controls="sidebarPagesAuth" class="side-nav-link">
-                                <i class="ri-user-2-fill"></i>
-                                <span> Guarantee </span>
-                                <span class="menu-arrow"></span>
-                            </a>
-                            <div class="collapse" id="Guarantee">
-                                <ul class="side-nav-second-level">
-                                    @if($item->add_guarantee == 1)
-                                        <li>
-                                            <a href="/guardian">Add Guarantee</a>
-                                        </li>
-                                    @else
-                                    @endif
-
-                                    @if($item->view_guarantee == 1)
-                                        <li>
-                                            <a href="/showguardian">View Guarantee</a>
-                                        </li>
-                                    @else
-                                    @endif
-
-
-                                </ul>
-                            </div>
-
-                        </li>
-                    @else
-                    @endif
-
-
-
-                    @if($item->product == 1)
-{{--                        <li class="side-nav-title">Product Section</li>--}}
-                        <li class="side-nav-item">
-                            <a data-bs-toggle="collapse" href="#sidebarPages" aria-expanded="false"
-                               aria-controls="sidebarPages" class="side-nav-link">
-                                <i class="ri-pages-line"></i>
-                                <span> Product / Loan  </span>
-                                <span class="menu-arrow"></span>
-                            </a>
-                            <div class="collapse" id="sidebarPages">
-                                <ul class="side-nav-second-level">
-                                    @if($item->add_product == 1)
-                                        <li>
-                                            <a href="/product">Add Product</a>
-                                        </li>
-                                    @else
-                                    @endif
-
-                                    @if($item->view_product == 1)
-                                        <li>
-                                            <a href="/viewproduct">View Product</a>
-                                        </li>
-                                    @else
-                                    @endif
-                                    @if($item->issue_loan == 1)
-                                        <li>
-                                            <a href="/loan">Create Loans</a>
-                                        </li>
+                    @if($privilege->product == 1)
+                            <li class="side-nav-item">
+                                <a data-bs-toggle="collapse" href="#sidebarPages" aria-expanded="false"
+                                   aria-controls="sidebarPages" class="side-nav-link">
+                                    <i class="ri-pages-line"></i>
+                                    <span> Product / Loan  </span>
+                                    <span class="menu-arrow"></span>
+                                </a>
+                                <div class="collapse" id="sidebarPages">
+                                    <ul class="side-nav-second-level">
+                                        @if($privilege->add_product == 1)
+                                            <li>
+                                                <a href="/product">Add Product</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->view_product == 1)
+                                            <li>
+                                                <a href="/viewproduct">View Product</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->create_loan == 1)
+                                            <li>
+                                                <a href="/loan">Create Loans</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->change_collector == 1)
                                             <li>
                                                 <a href="/changeCollector">Change Collector In Loan</a>
                                             </li>
-                                    @else
-                                    @endif
-                                    @if($item->pending_loan == 1)
-                                        <li>
-                                            <a href="/pendingloan">Pending Loans</a>
-                                        </li>
+                                        @endif
+                                        @if($privilege->pending_loan == 1)
+                                            <li>
+                                                <a href="/pendingloan">Pending Loans</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->loan_disbursement == 1)
                                             <li>
                                                 <a href="/loan_disbursement">Loans Disbursement</a>
                                             </li>
-                                    @else
-                                    @endif
-                                    @if($item->current_loan == 1)
-                                        <li>
-                                            <a href="/payment_step_1">Current Loans</a>
-                                        </li>
+                                        @endif
+                                        @if($privilege->current_loans == 1)
+                                            <li>
+                                                <a href="/payment_step_1">Current Loans</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->settled_loans == 1)
                                             <li>
                                                 <a href="/showsettleloan">Settled Loans</a>
                                             </li>
-                                    @else
-                                    @endif
-
-
-
-                                </ul>
-                            </div>
-                        </li>
-                    @else
+                                        @endif
+                                    </ul>
+                                </div>
+                            </li>
                     @endif
 
 
-
-                    @if($item->payment == 1)
-{{--                        <li class="side-nav-title">Payment Section</li>--}}
-                        <li class="side-nav-item">
-                            <a data-bs-toggle="collapse" href="#payment" aria-expanded="false" aria-controls="center"
-                               class="side-nav-link">
-                                <i class="bi bi-currency-dollar"></i>
-                                <span> Payment Details </span>
-                                <span class="menu-arrow"></span>
-                            </a>
-                            <div class="collapse" id="payment">
-                                <ul class="side-nav-second-level">
-                                    @if($item->add_re_payment == 1)
-                                        <li>
-                                            <a href="/payment">Add Repayment</a>
-                                        </li>
-                                    @else
-                                    @endif
-                                        @if($item->add_bulk_re_payment == 1)
+                    @if($privilege->payment_details == 1)
+                            <li class="side-nav-item">
+                                <a data-bs-toggle="collapse" href="#payment" aria-expanded="false" aria-controls="center"
+                                   class="side-nav-link">
+                                    <i class="bi bi-currency-dollar"></i>
+                                    <span> Payment Details </span>
+                                    <span class="menu-arrow"></span>
+                                </a>
+                                <div class="collapse" id="payment">
+                                    <ul class="side-nav-second-level">
+                                        @if($privilege->add_repayment == 1)
+                                            <li>
+                                                <a href="/payment">Add Repayment</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->bulk_repayment == 1)
                                             <li>
                                                 <a href="/bulk_repayment">Bulk Repayment</a>
                                             </li>
-                                        @else
                                         @endif
-                                        @if($item->add_re_payment == 1)
+                                        @if($privilege->loan_settlement == 1)
                                             <li>
                                                 <a href="/loan_settlement">Loan Settlement</a>
                                             </li>
-
+                                        @endif
+                                        @if($privilege->loan_reschedule == 1)
                                             <li>
                                                 <a href="/loan_reschedule">Loan Reschedule</a>
                                             </li>
-                                        @else
-                                    @endif
-
-
-
-                                    @if($item->view_repayment == 1)
-                                        <li>
-                                            <a href="/viewpayment">View Repayment</a>
-                                        </li>
-                                    @else
-                                    @endif
-{{--                                    @if($item->approval_repayment == 1)--}}
-{{--                                        <li>--}}
-{{--                                            <a href="/approved_collection">Approved Repayments</a>--}}
-{{--                                        </li>--}}
-{{--                                    @else--}}
-{{--                                    @endif--}}
-                                    @if($item->agent_collection == 1)
-                                        <li>
-                                            <a href="/collection">Collector Wise Collection</a>
-                                        </li>
-                                    @else
-                                    @endif
-{{--                                    @if($item->view_repayment == 1)--}}
-{{--                                        <li>--}}
-{{--                                            <a href="/date_wise_installment">Date Wise Installment</a>--}}
-{{--                                        </li>--}}
-{{--                                    @else--}}
-{{--                                    @endif--}}
-
-
-                                </ul>
-                            </div>
-                        </li>
-                    @else
+                                        @endif
+                                        @if($privilege->view_payment == 1)
+                                            <li>
+                                                <a href="/viewpayment">View Repayment</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->collector_wise_collection == 1)
+                                            <li>
+                                                <a href="/collection">Collector Wise Collection</a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </div>
+                            </li>
                     @endif
 
+                    @if($privilege->account_center == 1)
 
-                        @if($item->account == 1)
                             <li class="side-nav-item">
                                 <a data-bs-toggle="collapse" href="#account" aria-expanded="false" aria-controls="center" class="side-nav-link">
                                     <i class="bi bi-universal-access"></i>
@@ -905,40 +942,33 @@ $banner = DB::select($query);
                                 </a>
                                 <div class="collapse" id="account">
                                     <ul class="side-nav-second-level">
-                                        @if($item->bank_details == 1)
+                                        @if($privilege->bank_cash_account == 1)
                                             <li>
                                                 <a href="/bank_account">Bank/Cash Account</a>
                                             </li>
-
+                                        @endif
+                                        @if($privilege->internal_bank_transfer == 1)
                                             <li>
                                                 <a href="/InnerBankTransfer">Internal Account Transfer</a>
                                             </li>
-                                        @else
                                         @endif
-                                            @if($item->bank_details == 1)
-                                                <li>
-                                                    <a href="/collector_index">Collector Account</a>
-                                                </li>
-                                            @else
-                                            @endif
-                                        @if($item->chq_details == 1)
+                                        @if($privilege->collector_account == 1)
+                                            <li>
+                                                <a href="/collector_index">Collector Account</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->cheque_details == 1)
                                             <li>
                                                 <a href="/chq">Cheque Details</a>
                                             </li>
-                                        @else
                                         @endif
-
                                     </ul>
                                 </div>
                             </li>
-                        @else
-                        @endif
+                    @endif
 
 
-
-
-
-                        @if($item->account == 1)
+                    @if($privilege->account_department == 1)
                             <li class="side-nav-item">
                                 <a data-bs-toggle="collapse" href="#accountmanagement" aria-expanded="false" aria-controls="center" class="side-nav-link">
                                     <i class="bi bi-bank"></i>
@@ -947,152 +977,108 @@ $banner = DB::select($query);
                                 </a>
                                 <div class="collapse" id="accountmanagement">
                                     <ul class="side-nav-second-level">
-                                        <li>
-                                            <a href="/AddAssetManagement">Add Asset Management</a>
-                                        </li>
-                                        <li>
-                                            <a href="/AssetManagement">Asset Management</a>
-                                        </li>
-                                        <li>
-                                            <a href="/BankReconciliation">Bank Reconciliation</a>
-                                        </li>
-                                        <li>
-                                            <a href="/ManualJournal">Manual Journal</a>
-                                        </li>
-                                        <li>
-                                            <a href="/ChartOfAccount">Chart Of Account</a>
-                                        </li>
+                                        @if($privilege->add_asset == 1)
+                                            <li>
+                                                <a href="/AddAssetManagement">Add Asset Management</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->asset_management == 1)
+                                            <li>
+                                                <a href="/AssetManagement">Asset Management</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->bank_reconciliation == 1)
+                                            <li>
+                                                <a href="/BankReconciliation">Bank Reconciliation</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->manual_journal == 1)
+                                            <li>
+                                                <a href="/ManualJournal">Manual Journal</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->chart_of_account == 1)
+                                            <li>
+                                                <a href="/ChartOfAccount">Chart Of Account</a>
+                                            </li>
+                                        @endif
                                     </ul>
                                 </div>
                             </li>
-                        @else
-                        @endif
+                    @endif
 
-
-
-
-
-                    @if($item->loan_calculator == 1)
-{{--                        <li class="side-nav-title">Calculator Section</li>--}}
+                    @if($privilege->loan_calculator == 1)
                         <li class="side-nav-item">
                             <a href="/calculator" class="side-nav-link">
                                 <i class="ri-dashboard-3-line"></i>
                                 <span> Loan Calculator </span>
                             </a>
                         </li>
-                    @else
                     @endif
 
-                    @if($item->calender == 1)
-{{--                        <li class="side-nav-title">Calendar Section</li>--}}
+                    @if($privilege->calendar == 1)
                         <li class="side-nav-item">
                             <a href="/calender" class="side-nav-link">
                                 <i class="ri-dashboard-3-line"></i>
                                 <span> Calender </span>
                             </a>
                         </li>
-                    @else
+                    @endif
+
+                    @if($privilege->expenses == 1)
+
+                            <li class="side-nav-item">
+                                <a data-bs-toggle="collapse" href="#expences" aria-expanded="false" aria-controls="expences"
+                                   class="side-nav-link">
+                                    <i class="ri-briefcase-line"></i>
+                                    <span> Expenses </span>
+                                    <span class="menu-arrow"></span>
+                                </a>
+                                <div class="collapse" id="expences">
+                                    <ul class="side-nav-second-level">
+                                        @if($privilege->add_expenses == 1)
+                                            <li>
+                                                <a href="/expenses">Add Expenses</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->view_expenses == 1)
+                                            <li>
+                                                <a href="/view_expenses">View Expenses</a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </div>
+                            </li>
+                    @endif
+
+                    @if($privilege->user == 1)
+
+                            <li class="side-nav-item">
+                                <a data-bs-toggle="collapse" href="#user" aria-expanded="false" aria-controls="user"
+                                   class="side-nav-link collapsed">
+                                    <i class="ri-user-3-fill"></i>
+                                    <span> User </span>
+                                    <span class="menu-arrow"></span>
+                                </a>
+                                <div class="collapse" id="user" style="">
+                                    <ul class="side-nav-second-level">
+                                        @if($privilege->create_user == 1)
+                                            <li>
+                                                <a href="/user" class="active">Create User</a>
+                                            </li>
+                                        @endif
+                                        @if($privilege->user_privileges == 1)
+                                            <li>
+                                                <a href="/privileges">User Privileges</a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </div>
+                            </li>
                     @endif
 
 
-                    @if($item->expenses == 1)
-{{--                        <li class="side-nav-title">Expenses Section</li>--}}
-                        <li class="side-nav-item">
-                            <a data-bs-toggle="collapse" href="#expences" aria-expanded="false" aria-controls="expences"
-                               class="side-nav-link">
-                                <i class="ri-briefcase-line"></i>
-                                <span> Expenses </span>
-                                <span class="menu-arrow"></span>
-                            </a>
-                            <div class="collapse" id="expences">
-                                <ul class="side-nav-second-level">
-                                    @if($item->add_expenses == 1)
-                                        <li>
-                                            <a href="/expenses">Add Expenses</a>
-                                        </li>
-                                    @else
-                                    @endif
-                                    @if($item->view_expenses == 1)
-                                        <li>
-                                            <a href="/view_expenses">View Expenses</a>
-                                        </li>
-                                    @else
-                                    @endif
-
-
-                                </ul>
-                            </div>
-                        </li>
-                    @else
-                    @endif
-
-
-{{--                    @if($item->income == 1)--}}
-{{--                        <li class="side-nav-title">Income Section</li>--}}
-{{--                        <li class="side-nav-item">--}}
-{{--                            <a data-bs-toggle="collapse" href="#income" aria-expanded="false" aria-controls="income"--}}
-{{--                               class="side-nav-link">--}}
-{{--                                <i class="ri-briefcase-line"></i>--}}
-{{--                                <span> Other Income </span>--}}
-{{--                                <span class="menu-arrow"></span>--}}
-{{--                            </a>--}}
-{{--                            <div class="collapse" id="income">--}}
-{{--                                <ul class="side-nav-second-level">--}}
-{{--                                    @if($item->add_income == 1)--}}
-{{--                                        <li>--}}
-{{--                                            <a href="/income">Add Income</a>--}}
-{{--                                        </li>--}}
-{{--                                    @else--}}
-{{--                                    @endif--}}
-
-{{--                                    @if($item->view_income == 1)--}}
-{{--                                        <li>--}}
-{{--                                            <a href="/view_income">View Income</a>--}}
-{{--                                        </li>--}}
-{{--                                    @else--}}
-{{--                                    @endif--}}
-
-
-{{--                                </ul>--}}
-{{--                            </div>--}}
-{{--                        </li>--}}
-{{--                    @else--}}
-{{--                    @endif--}}
-
-
-                    @if($item->user == 1)
-{{--                        <li class="side-nav-title">User Account Section</li>--}}
-                        <li class="side-nav-item">
-                            <a data-bs-toggle="collapse" href="#user" aria-expanded="false" aria-controls="user"
-                               class="side-nav-link collapsed">
-                                <i class="ri-user-3-fill"></i>
-                                <span> User </span>
-                                <span class="menu-arrow"></span>
-                            </a>
-                            <div class="collapse" id="user" style="">
-                                <ul class="side-nav-second-level">
-                                    @if($item->create_user == 1)
-                                        <li>
-                                            <a href="/user" class="active">Create User</a>
-                                        </li>
-                                    @else
-                                    @endif
-                                    @if($item->user_privilage == 1)
-                                        <li>
-                                            <a href="/privileges">User Privileges</a>
-                                        </li>
-                                    @else
-                                    @endif
-
-
-                                </ul>
-                            </div>
-                        </li>
-                    @else
-                    @endif
-
-
-                        @if($item->report == 1)
+                    @if($privilege->reports == 1)
                             <li class="side-nav-item">
                                 <a data-bs-toggle="collapse" href="#reports_section" aria-expanded="false" class="side-nav-link">
                                     <i class="ri-file-paper-2-fill"></i>
@@ -1101,8 +1087,6 @@ $banner = DB::select($query);
                                 </a>
                                 <div class="collapse" id="reports_section">
                                     <ul class="side-nav-second-level">
-
-                                        {{-- Main Reports --}}
                                         <li class="side-nav-item">
                                             <a data-bs-toggle="collapse" href="#main_report" aria-expanded="false" class="side-nav-link">
                                                 <span> Main Reports </span>
@@ -1110,25 +1094,38 @@ $banner = DB::select($query);
                                             </a>
                                             <div class="collapse" id="main_report">
                                                 <ul class="side-nav-third-level">
-                                                    <li>
-                                                        <a href="/portfolio_performance">Portfolio & Performance - Dashboard</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="/loan-report">Loan Disbursement Performance - Dashboard</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="/PaymentFullDetailsReport">Payment Details Report</a>
-                                                    </li>
-                                                    <li><a href="/AllLoanDetailReport">Full Loan Detail Report</a></li>
-                                                    <li><a href="/loansummaryreport">Loan Summary Report</a></li>
-                                                    @if($item->report_9 == 1)
-                                                        <li><a href="/par">PAR (Monthly)</a></li>
-                                                        <li><a href="/par_weekly">PAR (Weekly)</a></li>
+                                                    @if($privilege->main_reports_dashboard == 1)
+                                                        <li>
+                                                            <a href="/portfolio_performance">Portfolio & Performance - Dashboard</a>
+                                                        </li>
                                                     @endif
-                                                    <li>
-                                                        <a href="/loanStatus">Loan Status</a>
-                                                    </li>
-
+                                                    @if($privilege->loan_disbursement_performance == 1)
+                                                            <li>
+                                                                <a href="/loan-report">Loan Disbursement Performance - Dashboard</a>
+                                                            </li>
+                                                    @endif
+                                                    @if($privilege->payment_detail_report == 1)
+                                                            <li>
+                                                                <a href="/PaymentFullDetailsReport">Payment Details Report</a>
+                                                            </li>
+                                                    @endif
+                                                    @if($privilege->full_loan_detail == 1)
+                                                            <li><a href="/AllLoanDetailReport">Full Loan Detail Report</a></li>
+                                                    @endif
+                                                    @if($privilege->loan_summary == 1)
+                                                            <li><a href="/loansummaryreport">Loan Summary Report</a></li>
+                                                    @endif
+                                                    @if($privilege->par_monthly == 1)
+                                                            <li><a href="/par">PAR (Monthly)</a></li>
+                                                    @endif
+                                                    @if($privilege->par_weekly == 1)
+                                                            <li><a href="/par_weekly">PAR (Weekly)</a></li>
+                                                    @endif
+                                                    @if($privilege->loan_status == 1)
+                                                            <li>
+                                                                <a href="/loanStatus">Loan Status</a>
+                                                            </li>
+                                                    @endif
                                                 </ul>
                                             </div>
                                         </li>
@@ -1140,23 +1137,31 @@ $banner = DB::select($query);
                                             </a>
                                             <div class="collapse" id="acc_report">
                                                 <ul class="side-nav-third-level">
-                                                    <li>
-                                                        <a href="/CashFlow">CashFlow Accumulated</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="/CashFlowMonthly">CashFlow Monthly</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="/ProfitLoss">Profit & Loss (P&L)</a>
-                                                    </li>
-
-
-                                                    <li>
-                                                        <a href="/BalanceSheet">Balance Sheet</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="/trialBalanceAccounting">Trial Balance</a>
-                                                    </li>
+                                                    @if($privilege->cashflow_accumulated == 1)
+                                                        <li>
+                                                            <a href="/CashFlow">CashFlow Accumulated</a>
+                                                        </li>
+                                                    @endif
+                                                    @if($privilege->cashflow_monthly == 1)
+                                                            <li>
+                                                                <a href="/CashFlowMonthly">CashFlow Monthly</a>
+                                                            </li>
+                                                    @endif
+                                                    @if($privilege->profit_loss == 1)
+                                                            <li>
+                                                                <a href="/ProfitLoss">Profit & Loss (P&L)</a>
+                                                            </li>
+                                                    @endif
+                                                    @if($privilege->balance_sheet == 1)
+                                                            <li>
+                                                                <a href="/BalanceSheet">Balance Sheet</a>
+                                                            </li>
+                                                    @endif
+                                                    @if($privilege->trial_balance == 1)
+                                                            <li>
+                                                                <a href="/trialBalanceAccounting">Trial Balance</a>
+                                                            </li>
+                                                    @endif
                                                 </ul>
                                             </div>
                                         </li>
@@ -1168,19 +1173,26 @@ $banner = DB::select($query);
                                             </a>
                                             <div class="collapse" id="payment_report">
                                                 <ul class="side-nav-third-level">
-                                                    <li>
-                                                        <a href="/daily">Daily Collection Sheet</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="/center_collection">Center Wise collection Detail</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="/center_collection_summary">Center Wise collection Summary</a>
-                                                    </li>
-
-                                                    <li>
-                                                        <a href="/root_wise_collection">Route Wise Daily Collection</a>
-                                                    </li>
+                                                    @if($privilege->daily_collection_sheet == 1)
+                                                        <li>
+                                                            <a href="/daily">Daily Collection Sheet</a>
+                                                        </li>
+                                                    @endif
+                                                    @if($privilege->center_collection_detail == 1)
+                                                            <li>
+                                                                <a href="/center_collection">Center Wise collection Detail</a>
+                                                            </li>
+                                                    @endif
+                                                    @if($privilege->center_collection_summary == 1)
+                                                            <li>
+                                                                <a href="/center_collection_summary">Center Wise collection Summary</a>
+                                                            </li>
+                                                    @endif
+                                                    @if($privilege->route_collections == 1)
+                                                            <li>
+                                                                <a href="/root_wise_collection">Route Wise Daily Collection</a>
+                                                            </li>
+                                                    @endif
                                                 </ul>
                                             </div>
                                         </li>
@@ -1191,18 +1203,26 @@ $banner = DB::select($query);
                                             </a>
                                             <div class="collapse" id="repayment_report">
                                                 <ul class="side-nav-third-level">
-                                                    <li>
-                                                        <a href="/daily_repayment_sheet">Repayment Sheet 01</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="/RightWayDailyRepayment">Repayment Sheet 02</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="/daily_repayment_sheet_hm">Repayment Sheet 03</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="/daily_repayment_sheet_lasantha">Repayment Sheet 04</a>
-                                                    </li>
+                                                    @if($privilege->repayment_sheet_01 == 1)
+                                                        <li>
+                                                            <a href="/daily_repayment_sheet">Repayment Sheet 01</a>
+                                                        </li>
+                                                    @endif
+                                                    @if($privilege->repayment_sheet_02 == 1)
+                                                            <li>
+                                                                <a href="/RightWayDailyRepayment">Repayment Sheet 02</a>
+                                                            </li>
+                                                    @endif
+                                                    @if($privilege->repayment_sheet_03 == 1)
+                                                            <li>
+                                                                <a href="/daily_repayment_sheet_hm">Repayment Sheet 03</a>
+                                                            </li>
+                                                    @endif
+                                                    @if($privilege->repayment_sheet_04 == 1)
+                                                            <li>
+                                                                <a href="/daily_repayment_sheet_lasantha">Repayment Sheet 04</a>
+                                                            </li>
+                                                    @endif
                                                 </ul>
                                             </div>
                                         </li>
@@ -1213,50 +1233,35 @@ $banner = DB::select($query);
                                             </a>
                                             <div class="collapse" id="sub_report">
                                                 <ul class="side-nav-third-level">
-                                                    @if($item->report_1 == 1)
+                                                    @if($privilege->other_charges_report == 1)
                                                         <li><a href="/LoanChargers">Loan Chargers Report</a></li>
-                                                        <li><a href="/dandlreport">Center Collection Dashboard</a></li>
-                                                        <li><a href="/monthlyprofit">Loan Repayment Summary Report</a></li>
-                                                        <li><a href="/savings_report">Savings Report</a></li>
-
                                                     @endif
-
-                                                    @if($item->loan_in_arrease == 1)
-                                                        <li><a href="/latePayment">Loan In Areas</a></li>
+                                                    @if($privilege->center_dashboard == 1)
+                                                            <li><a href="/dandlreport">Center Collection Dashboard</a></li>
                                                     @endif
-
-                                                    @if($item->report_15 == 1)
-                                                        <li><a href="/late_payment_report">Arrease Details</a></li>
+                                                    @if($privilege->repayment_summary == 1)
+                                                            <li><a href="/monthlyprofit">Loan Repayment Summary Report</a></li>
                                                     @endif
-
-                                                    @if($item->report_16 == 1)
-                                                        <li><a href="/ViewDateWiseCashFlow">Date Wise Cash Flow Details</a></li>
+                                                    @if($privilege->savings_report == 1)
+                                                            <li><a href="/savings_report">Savings Report</a></li>
                                                     @endif
-
-{{--                                                    @if($item->report_17 == 1)--}}
-{{--                                                        <li><a href="/MonthlyCollectionSummary">Monthly Collection Summary Details</a></li>--}}
-{{--                                                    @endif--}}
-
-
-
-                                                    @if($item->report_3 == 1)
-                                                        <li><a href="/loanreport">Loan Details</a></li>
+                                                    @if($privilege->arrears_report == 1)
+                                                            <li><a href="/latePayment">Loan In Areas</a></li>
                                                     @endif
-
-
-
-                                                    @if($item->report_5 == 1)
-                                                        <li><a href="/repaymentreport">Collector Wise Repayment Collection</a></li>
+                                                    @if($privilege->arrears_overview == 1)
+                                                            <li><a href="/late_payment_report">Arrease Details</a></li>
                                                     @endif
-
-                                                    {{--                                                    @if($item->report_7 == 1)--}}
-                                                    {{--                                                        <li><a href="/deduct_report">Deduction Report</a></li>--}}
-                                                    {{--                                                    @endif--}}
-
-
-
-                                                    @if($item->report_14 == 1)
-                                                        <li><a href="/sms_history">SMS History Report</a></li>
+                                                    @if($privilege->datewise_cashflow == 1)
+                                                            <li><a href="/ViewDateWiseCashFlow">Date Wise Cash Flow Details</a></li>
+                                                    @endif
+                                                    @if($privilege->loan_detail_report == 1)
+                                                            <li><a href="/loanreport">Loan Details</a></li>
+                                                    @endif
+                                                    @if($privilege->collector_report == 1)
+                                                            <li><a href="/repaymentreport">Collector Wise Repayment Collection</a></li>
+                                                    @endif
+                                                    @if($privilege->sms_history == 1)
+                                                            <li><a href="/sms_history">SMS History Report</a></li>
                                                     @endif
                                                 </ul>
                                             </div>
@@ -1269,33 +1274,28 @@ $banner = DB::select($query);
                                             </a>
                                             <div class="collapse" id="people_report">
                                                 <ul class="side-nav-third-level">
-                                                    @if($item->report_2 == 1)
-                                                        <li><a href="/customerreport_details">All Customer Details</a></li>
-                                                        <li><a href="/customerreport_details_recover_officer">Recover Officer Wise Customers</a></li>
-                                                    @endif
-                                                        @if($item->report_4 == 1)
+                                                        @if($privilege->customer_detail_report == 1)
+                                                            <li><a href="/customerreport_details">All Customer Details</a></li>
+                                                        @endif
+                                                        @if($privilege->officer_customer_detail == 1)
+                                                            <li><a href="/customerreport_details_recover_officer">Recover Officer Wise Customers</a></li>
+                                                        @endif
+                                                        @if($privilege->guardian_detail_report == 1)
                                                             <li><a href="/borrowerreport">Guardian Details</a></li>
                                                         @endif
-{{--                                                        <li><a href="#">User Logs</a></li>--}}
                                                 </ul>
 
 
                                             </div>
                                         </li>
 
-                                        {{-- Sub Reports --}}
-
 
                                     </ul>
                                 </div>
                             </li>
-                        @endif
+                    @endif
 
-
-                @endforeach
-            @else
             @endif
-
         </ul>
 
         <div class="clearfix"></div>
