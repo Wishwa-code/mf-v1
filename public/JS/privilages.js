@@ -48,7 +48,7 @@ function load_to_table(userId) {
         success: function (data) {
             const permissions = data.privileges;
             permissions.forEach((p) => {
-                $(`.access_module[data-key='${p.permission_key}']`).prop("checked", p.value === 1);
+                $(`.access_module[data-key='${p.permission_key}']`).prop("checked", p.value == 1);
             });
         },
     });

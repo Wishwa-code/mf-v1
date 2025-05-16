@@ -361,67 +361,72 @@ $banner = DB::select($query);
 
 @php
 
-    // Check if the table exists
-            if (!\Illuminate\Support\Facades\Schema::hasTable('user_privileges_has_user')) {
-                \Illuminate\Support\Facades\Schema::create('user_privileges_has_user', function (\Illuminate\Database\Schema\Blueprint $table) {
-                    $table->id();
-                    $table->unsignedBigInteger('user_id');
-                    $table->string('permission_key');
-                    $table->tinyInteger('value')->default(0);
-                });
+    if (!\Illuminate\Support\Facades\Schema::hasTable('user_privileges_has_user')) {
+        \Illuminate\Support\Facades\Schema::create('user_privileges_has_user', function (\Illuminate\Database\Schema\Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->string('permission_key');
+            $table->tinyInteger('value')->default(0);
+        });
+    }
 
-                // Permissions arrays
-                $mainPermissions = [
-                    'Dashboard' => ['dashboard'],
-                    'Customer' => ['customer','add_customer', 'view_customer', 'view_blacklist_customer', 'customer_saving_acc', 'kyc', 'insurance'],
-                    'Loan Center' => ['loan_center','create_route', 'create_center', 'view_center', 'create_group', 'view_group', 'add_customer_to_group'],
-                    'Guarantee' => ['guarantee','add_guarantee', 'view_guarantee'],
-                    'Product' => ['product','add_product', 'view_product', 'create_loan', 'change_collector', 'pending_loan', 'loan_disbursement', 'current_loans', 'settled_loans'],
-                    'Payment Details' => ['payment_details','add_repayment', 'bulk_repayment', 'loan_settlement', 'loan_reschedule', 'view_payment', 'collector_wise_collection'],
-                    'Account Center' => ['account_center','bank_cash_account', 'internal_bank_transfer', 'collector_account', 'cheque_details'],
-                    'Account Department' => ['account_department','add_asset', 'asset_management', 'bank_reconciliation', 'manual_journal', 'chart_of_account'],
-                    'Loan Calculator' => ['loan_calculator'],
-                    'Calender' => ['calender','calendar'],
-                    'Expenses' => ['expenses','add_expenses', 'view_expenses'],
-                    'User' => ['user','create_user', 'user_privileges'],
-                    'Reports' => [
-                        'reports','main_reports_dashboard', 'loan_disbursement_performance', 'payment_detail_report', 'full_loan_detail', 'loan_summary',
-                        'par_monthly', 'par_weekly', 'loan_status', 'cashflow_accumulated', 'cashflow_monthly', 'profit_loss', 'balance_sheet',
-                        'trial_balance', 'daily_collection_sheet', 'center_collection_detail', 'center_collection_summary', 'route_collections',
-                        'repayment_sheet_01', 'repayment_sheet_02', 'repayment_sheet_03', 'repayment_sheet_04', 'other_charges_report',
-                        'center_dashboard', 'repayment_summary', 'savings_report', 'arrears_report', 'arrears_overview', 'datewise_cashflow',
-                        'loan_detail_report', 'collector_report', 'sms_history', 'customer_detail_report', 'officer_customer_detail', 'guardian_detail_report'
-                    ]
-                ];
+    // ✅ Now whether the table was just created or already exists, check if the user has permissions
+    $userId = (int)session('userid');
+    $hasPermissions = DB::table('user_privileges_has_user')
+        ->where('user_id', $userId)
+        ->exists();
 
-                $settingsPermissions = [
-                    'Settings Privilege' => ['my_account', 'settings', 'sms_format', 'document_format', 'company_holidays', 'branches', 'cashier_start', 'cashier_close']
-                ];
+    if (!$hasPermissions) {
+        // Permissions arrays
+        $mainPermissions = [
+            'Dashboard' => ['dashboard'],
+            'Customer' => ['customer','add_customer', 'view_customer', 'view_blacklist_customer', 'customer_saving_acc', 'kyc', 'insurance'],
+            'Loan Center' => ['loan_center','create_route', 'create_center', 'view_center', 'create_group', 'view_group', 'add_customer_to_group'],
+            'Guarantee' => ['guarantee','add_guarantee', 'view_guarantee'],
+            'Product' => ['product','add_product', 'view_product', 'create_loan', 'change_collector', 'pending_loan', 'loan_disbursement', 'current_loans', 'settled_loans'],
+            'Payment Details' => ['payment_details','add_repayment', 'bulk_repayment', 'loan_settlement', 'loan_reschedule', 'view_payment', 'collector_wise_collection'],
+            'Account Center' => ['account_center','bank_cash_account', 'internal_bank_transfer', 'collector_account', 'cheque_details'],
+            'Account Department' => ['account_department','add_asset', 'asset_management', 'bank_reconciliation', 'manual_journal', 'chart_of_account'],
+            'Loan Calculator' => ['loan_calculator'],
+            'Calender' => ['calender','calendar'],
+            'Expenses' => ['expenses','add_expenses', 'view_expenses'],
+            'User' => ['user','create_user', 'user_privileges'],
+            'Reports' => [
+                'reports','main_reports_dashboard', 'loan_disbursement_performance', 'payment_detail_report', 'full_loan_detail', 'loan_summary',
+                'par_monthly', 'par_weekly', 'loan_status', 'cashflow_accumulated', 'cashflow_monthly', 'profit_loss', 'balance_sheet',
+                'trial_balance', 'daily_collection_sheet', 'center_collection_detail', 'center_collection_summary', 'route_collections',
+                'repayment_sheet_01', 'repayment_sheet_02', 'repayment_sheet_03', 'repayment_sheet_04', 'other_charges_report',
+                'center_dashboard', 'repayment_summary', 'savings_report', 'arrears_report', 'arrears_overview', 'datewise_cashflow',
+                'loan_detail_report', 'collector_report', 'sms_history', 'customer_detail_report', 'officer_customer_detail', 'guardian_detail_report'
+            ]
+        ];
 
-                $deletePermissions = [
-                    'Access' => ['payment_delete', 'branch_access']
-                ];
+        $settingsPermissions = [
+            'Settings Privilege' => ['my_account', 'settings', 'sms_format', 'document_format', 'company_holidays', 'branches', 'cashier_start', 'cashier_close']
+        ];
 
-                // Combine all permission keys into one array
-                $allPermissions = array_merge(
-                    ...array_values($mainPermissions),
-                    ...array_values($settingsPermissions),
-                    ...array_values($deletePermissions)
-                );
+        $deletePermissions = [
+            'Access' => ['payment_delete', 'branch_access']
+        ];
 
-                // Build insert array
-                $insertData = [];
-                foreach ($allPermissions as $perm) {
-                    $insertData[] = [
-                        'user_id' => 1,
-                        'permission_key' => $perm,
-                        'value' => 1
-                    ];
-                }
+        $allPermissions = array_merge(
+            ...array_values($mainPermissions),
+            ...array_values($settingsPermissions),
+            ...array_values($deletePermissions)
+        );
 
-                // Bulk insert
-                DB::table('user_privileges_has_user')->insert($insertData);
-            }
+        $insertData = [];
+        foreach ($allPermissions as $perm) {
+            $insertData[] = [
+                'user_id' => $userId,
+                'permission_key' => $perm,
+                'value' => 1
+            ];
+        }
+
+        DB::table('user_privileges_has_user')->insert($insertData);
+    }
+
 
 
         if (!session('userid')) {
