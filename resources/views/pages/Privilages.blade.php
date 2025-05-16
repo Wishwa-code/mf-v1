@@ -212,7 +212,7 @@
 
 @section('script')
     <script src="../JS/validate.js"></script>
-    <script src="../JS/privilages.js?n=5"></script>
+    <script src="../JS/privilages.js?n=50"></script>
     <script>
         $(document).ready(function () {
             // Toggle all when "Full Access" is checked
