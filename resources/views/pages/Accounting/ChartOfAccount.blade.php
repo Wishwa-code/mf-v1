@@ -845,7 +845,7 @@
                         let balance=parseFloat(item.Account_Balance).toFixed(2);
                         const ledger = `<a href="#" class="view-btn"
         data-account="${item.Idbank}"
-        data-account-name="${item.Account_Name}"
+        data-account-name="${item.Bank_Name}"
         data-account-type="${item.type}"
         data-acc-type-group="${item.acc_type_group}"
         data-primary_account_name="${item.primary_account_name}">View</a>`;
@@ -853,7 +853,7 @@
                         const row = `
         <tr>
             <td>${item.code ? item.code : '-'}</td>
-            <td>${item.Account_Name}</td>
+            <td>${item.Bank_Name}</td>
             <td>${item.type}</td>
             <td>${item.acc_type_group}</td>
             <td>${item.cashflow ? item.cashflow : '-'}</td>
