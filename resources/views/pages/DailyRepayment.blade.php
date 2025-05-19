@@ -179,12 +179,8 @@
                                         <label for="group_details" class="form-label">Group</label>
                                         <select class="form-control select2" id="group_details" name="group_details">
                                             <option value="0">All</option>
-                                            @foreach ($group as $item)
-                                                <option value="{{ $item->idCustomer_Group }}" {{ $item->idCustomer_Group == $group_details ? 'selected' : '' }}>
-                                                    {{ $item->Group_No }} - {{ $item->Name }}
-                                                </option>
-                                            @endforeach
                                         </select>
+                                        <input type="hidden" id="group_details_selected" value="{{ $group_details ?? 0 }}">
                                     </div>
                                 </div>
 
@@ -327,30 +323,41 @@
 
     <script>
         $(document).ready(function() {
-            $('.select2').select2(); // Initialize Select2 elements
+            $('.select2').select2();
 
-            $(document).ready(function () {
-                $('#center_details').on('change', function () {
-                    var centerId = $(this).val();
+            let centerId = $('#center_details').val();
+            let selectedGroupId = $('#group_details_selected').val();
 
-                    if (centerId) {
-                        $.ajax({
-                            url: '/get-groups-by-center/' + centerId,
-                            type: 'GET',
-                            success: function (groups) {
-                                let $groupSelect = $('#group_details');
-                                $groupSelect.empty();
-                                $groupSelect.append('<option value="0">All</option>');
+            // Function to load groups for selected center
+            function loadGroups(centerId, selectedGroupId) {
+                if (centerId) {
+                    $.ajax({
+                        url: '/get-groups-by-center/' + centerId,
+                        type: 'GET',
+                        success: function (groups) {
+                            let $groupSelect = $('#group_details');
+                            $groupSelect.empty();
+                            $groupSelect.append('<option value="0">All</option>');
 
-                                $.each(groups, function (key, group) {
-                                    $groupSelect.append(`<option value="${group.idCustomer_Group}">${group.Group_No} - ${group.Name}</option>`);
-                                });
+                            $.each(groups, function (key, group) {
+                                let isSelected = (group.idCustomer_Group == selectedGroupId) ? 'selected' : '';
+                                $groupSelect.append(`<option value="${group.idCustomer_Group}" ${isSelected}>${group.Group_No} - ${group.Name}</option>`);
+                            });
 
-                                $groupSelect.trigger('change'); // If using Select2
-                            }
-                        });
-                    }
-                });
+                            $groupSelect.trigger('change');
+                        }
+                    });
+                }
+            }
+
+            // Load groups on page load
+            loadGroups(centerId, selectedGroupId);
+
+            // Load groups again when user manually changes center
+            $('#center_details').on('change', function () {
+                let selectedCenter = $(this).val();
+                $('#group_details').html('<option value="0">All</option>'); // reset immediately
+                loadGroups(selectedCenter, 0); // Reset group on manual change
             });
 
             function calculateTotals() {

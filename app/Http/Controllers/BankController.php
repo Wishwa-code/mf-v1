@@ -119,7 +119,7 @@ class BankController extends Controller
     public function show()
     {
         // Fetch banks associated with the current branch
-        $banks = tableWithBranch('company_bank_accounts')->get();
+        $banks = tableWithBranch('company_bank_accounts')->where('Bank_Type','=','Bank')->get();
 
         // Fetch bank logs with a join to company_bank_accounts, scoped by branch
         $banklog = tableWithBranch('company_bank_has_log','company_bank_has_log')
