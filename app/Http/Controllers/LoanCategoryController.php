@@ -408,4 +408,93 @@ class LoanCategoryController extends Controller
     }
 
 
+    public function update_product_for_branch(String $branch)
+    {
+        // Only get products from branch ID 1
+        $products = LoanCategory::where('branch_id', 1)->get();
+
+        foreach ($products as $product) {
+            // Clone LoanCategory
+            $newProduct = $product->replicate();
+            $newProduct->idLoan_Category = null;
+            $newProduct->branch_id = $branch;
+            $newProduct->save();
+
+            $newProductId = $newProduct->getKey();
+
+            // Copy Other Charges
+            $otherCharges = DB::table('other_charges')
+                ->where('Loan_Category_idLoan_Category', $product->idLoan_Category)
+                ->get();
+
+            foreach ($otherCharges as $charge) {
+                $data = [
+                    'Description' => $charge->Description,
+                    'Amount' => $charge->Amount,
+                    'charge_type' => $charge->charge_type,
+                    'Loan_Category_idLoan_Category' => $newProductId,
+                ];
+                insertWithBranch('other_charges', $data, $branch);
+            }
+
+            // Copy Required Documents
+            $documents = DB::table('required_documents')
+                ->where('Loan_Category_idLoan_Category', $product->idLoan_Category)
+                ->get();
+
+            foreach ($documents as $doc) {
+                $data = [
+                    'Name' => $doc->Name,
+                    'Loan_Category_idLoan_Category' => $newProductId,
+                ];
+                insertWithBranch('required_documents', $data, $branch);
+            }
+
+            // Copy Levels, Designations, and Checklist
+            $levels = DB::table('level')
+                ->where('product_id', $product->idLoan_Category)
+                ->get();
+
+            foreach ($levels as $level) {
+                $levelData = [
+                    'product_id' => $newProductId,
+                    'type' => $level->type,
+                    'description' => $level->description ?? '-',
+                ];
+                $newLevelId = insertWithBranch('level', $levelData, $branch);
+
+                // Copy level_has_designation
+                $designations = DB::table('level_has_designation')
+                    ->where('level_id', $level->id)
+                    ->get();
+
+                foreach ($designations as $designation) {
+                    $data = [
+                        'level_id' => $newLevelId,
+                        'designation_id' => $designation->designation_id,
+                    ];
+                    insertWithBranch('level_has_designation', $data, $branch);
+                }
+
+                // Copy approval_checklist
+                $checklists = DB::table('approval_checklist')
+                    ->where('level_id', $level->id)
+                    ->get();
+
+                foreach ($checklists as $item) {
+                    $checklistData = [
+                        'level_id' => $newLevelId,
+                        'description' => $item->description,
+                    ];
+                    insertWithBranch('approval_checklist', $checklistData, $branch);
+                }
+            }
+        }
+
+        return response()->json(['message' => 'Products from branch 1 copied to branch ' . $branch . ' successfully.']);
+    }
+
+
+
+
 }
