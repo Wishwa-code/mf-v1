@@ -122,6 +122,8 @@ Route::get('/load_product_details/{id}', '\App\Http\Controllers\LoanCategoryCont
 Route::get('/loan-products/{id}/edit','\App\Http\Controllers\LoanCategoryController@editProduct')->name('loan-products.edit');
 Route::put('/loan-products/{id}', '\App\Http\Controllers\LoanCategoryController@update')->name('loan-products.update');
 
+Route::get('/update_product_with_branch/{id}','\App\Http\Controllers\LoanCategoryController@update_product_for_branch')->name('loancategory.update_product_for_branch');
+
 
 //loan
 Route::get('/loan','\App\Http\Controllers\LoanController@index')->name('loan.index');
