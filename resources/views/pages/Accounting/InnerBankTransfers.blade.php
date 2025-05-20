@@ -78,7 +78,7 @@
                             <label for="toBank">To Bank Account</label>
                             <select id="toBank" name="toBank" class="form-control select2">
                                 <option value="0">Select Bank Account</option>
-                                @foreach($banks as $bank)
+                                @foreach($banks_2 as $bank)
                                     <option value="{{ $bank->Idbank }}">{{ $bank->Bank_Name }} - {{ $bank->Account_No }}</option>
                                 @endforeach
                             </select>
