@@ -502,43 +502,48 @@ class UserController extends Controller
 
         $user=tableWithBranch('user')->where('id','=',$userid)->first();
 
-        if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $userid)->exists()) {
 
-        }else {
+        if ($user){
+            if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $userid)->exists()) {
 
-            $Bank = [
-                'Bank_Type' => "Collector",
-                'code' => $user->id.'/Collector',
-                'Bank_Name' => "Collector",
-                'Account_Name' => $user->Full_Name,
-                'Account_No' => $user->id,
-                'Bank_Branch' => '-',
-                'Account_Balance' => "0.00",
-                'type' => "Cash and Bank",
-                'cashflow' => "Non Applicable",
-                'User' => $user->id,
-                'branch_id' => session('branch_id'),
-            ];
+            }else {
+
+                $Bank = [
+                    'Bank_Type' => "Collector",
+                    'code' => $user->id.'/Collector',
+                    'Bank_Name' => "Collector",
+                    'Account_Name' => $user->Full_Name,
+                    'Account_No' => $user->id,
+                    'Bank_Branch' => '-',
+                    'Account_Balance' => "0.00",
+                    'type' => "Cash and Bank",
+                    'cashflow' => "Non Applicable",
+                    'User' => $user->id,
+                    'branch_id' => session('branch_id'),
+                ];
 
 
-            $insertedId = insertWithBranch('company_bank_accounts', $Bank);
+                $insertedId = insertWithBranch('company_bank_accounts', $Bank);
 // Convert the BankLog object to an array for insertion
-            $bankLogData = [
-                'Bank_Account_Id' => $insertedId,
-                'Date_Time' => date('Y-m-d H:i:s'),
-                'Type' => "Account Creation",
-                'Description' => "Collector Account",
-                'Note' => "",
-                'Credit' => "0.00",
-                'Debit' => "0.00",
-                'Balance' => "0.00",
-                'User' => $user->id,
-                'branch_id' => session('branch_id'),
-            ];
+                $bankLogData = [
+                    'Bank_Account_Id' => $insertedId,
+                    'Date_Time' => date('Y-m-d H:i:s'),
+                    'Type' => "Account Creation",
+                    'Description' => "Collector Account",
+                    'Note' => "",
+                    'Credit' => "0.00",
+                    'Debit' => "0.00",
+                    'Balance' => "0.00",
+                    'User' => $user->id,
+                    'branch_id' => session('branch_id'),
+                ];
 
 // Insert the BankLog entry using the helper function
-            insertWithBranch('company_bank_has_log', $bankLogData);
+                insertWithBranch('company_bank_has_log', $bankLogData);
+            }
         }
+
+
 
 
         return view('home',compact( 'profit','todaycollected', 'profitTarget','weeklyComparison','deleted_loan_Count','all_loan','monthlyData','dashboard','checqueamount','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
