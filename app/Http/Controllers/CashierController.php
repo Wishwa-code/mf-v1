@@ -43,6 +43,23 @@ class CashierController extends Controller
             DB::beginTransaction();
             $user_id = session('userid');
             $branch_id = session('branch_id');
+
+            $lastDayEnd = DB::table('day_end_summary')
+                ->where('branch_id', $branch_id)
+                ->whereDate('date', '<', Carbon::today()) // last day before today
+                ->orderByDesc('date')
+                ->first();
+
+
+            if ($lastDayEnd && floatval($lastDayEnd->balance_difference) != 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Cannot proceed. Previous Day End has a balance difference of ' . number_format($lastDayEnd->balance_difference, 2) . '. Please resolve it before continuing.'
+                ], 400);
+            }
+
+
+
             $today = Carbon::now()->toDateString();
 
             // Check if today's record exists in `plot`
@@ -117,12 +134,9 @@ class CashierController extends Controller
                 if ($user){
                     $cashier=$user->cashier;
                     if ($cashier=="1"){
-                        Log::info($cashier);
                         $bank=tableWithBranch('company_bank_accounts')->where('Account_No','=',session('userid'))->first();
                         if ($bank){
-                            Log::info($bank->Idbank);
                             $cash=tableWithBranch('company_bank_accounts')->where('Account_No','=',"Cash")->first();
-                            Log::info($cash->Idbank);
                             $this->bankLogController->index($bank->Idbank,"Deposit","Morning Plot","Morning Plot","debit",$newTotal,$cash->Idbank);
                             $this->bankLogController->index($cash->Idbank,"Withdraw","Morning Plot","Morning Plot","credit",$newTotal,$bank->Idbank);
                         }else{
@@ -216,43 +230,52 @@ class CashierController extends Controller
     public function getDayEndData()
     {
         $today = \Carbon\Carbon::today();
-//        $userId = session('userid');
         $branchId = session('branch_id');
+        $userId = session('userid');
 
-        // Get today's plot (starting cash)
-        $plot = tableWithBranch('plot')
-            ->whereDate('Date_Time', $today)
-            ->first();
-
+        $plot = tableWithBranch('plot')->whereDate('Date_Time', $today)->first();
         $startingCash = $plot ? floatval($plot->total_amount) : 0;
 
-        // Income entries
-        $incomeEntries = DB::table('expences')
-            ->whereDate('date', $today)
+        // Fetch account for the logged-in user
+        $bankAccount = DB::table('company_bank_accounts')
+            ->where('Account_No', $userId)
             ->where('branch_id', $branchId)
-            ->where('type', 'Income')
-            ->get();
+            ->first();
 
-        $expenseEntries = DB::table('expences')
-            ->whereDate('date', $today)
-            ->where('branch_id', $branchId)
-            ->where('type', 'Expense')
-            ->get();
+        $cashIn = [];
+        $cashOut = [];
 
-        $totalIncome = $incomeEntries->sum('amount');
-        $totalExpenses = $expenseEntries->sum('amount');
+        if ($bankAccount) {
 
-        $balanceAmount = $startingCash + $totalIncome - $totalExpenses;
+            $cashIn = DB::table('company_bank_has_log')
+                ->where('Bank_Account_Id', $bankAccount->Idbank)
+                ->whereDate('Date_Time', $today)
+                ->whereNotNull('Debit')
+                ->where('Debit', '>', 0)
+                ->get();
+
+            $cashOut = DB::table('company_bank_has_log')
+                ->where('Bank_Account_Id', $bankAccount->Idbank)
+                ->whereDate('Date_Time', $today)
+                ->whereNotNull('Credit')
+                ->where('Credit', '>', 0)
+                ->get();
+        }
+
+        $totalCashIn = collect($cashIn)->sum('Debit');
+        $totalCashOut = collect($cashOut)->sum('Credit');
 
         return response()->json([
             'startingCash' => $startingCash,
-            'incomes' => $incomeEntries,
-            'expenses' => $expenseEntries,
-            'totalIncome' => $totalIncome,
-            'totalExpenses' => $totalExpenses,
-            'balanceAmount' => $balanceAmount,
+            'balanceAmount' => $totalCashIn - $totalCashOut,
+            'cashIn' => $cashIn,
+            'cashOut' => $cashOut,
+            'totalIncome' => $totalCashIn,
+            'totalExpenses' => $totalCashOut,
         ]);
+
     }
+
 
     public function saveDayEnd(Request $request)
     {
@@ -271,11 +294,11 @@ class CashierController extends Controller
                 'created_at' => now(),
                 'branch_id' => $branchId
             ]);
+            $selectedBankId = $request->input('selected_bank_id');
 
-
-//            $bank=DB::table('company_bank_accounts')->where('Account_No','=',session('userid'))->first();
-//            $this->bankLogController->index($bank->Idbank,"Withdraw","Day End",'Day End',"debit",$request->cash_drawer_total,'1');
-//            $this->bankLogController->index("1","Deposit","Day End",'Day End',"credit",$request->cash_drawer_total,$bank->Idbank);
+            $bank=DB::table('company_bank_accounts')->where('Account_No','=',session('userid'))->first();
+            $this->bankLogController->index($bank->Idbank,"Withdraw","Day End",'Day End',"debit",$request->cash_drawer_total,$selectedBankId);
+            $this->bankLogController->index($selectedBankId,"Deposit","Day End",'Day End',"credit",$request->cash_drawer_total,$bank->Idbank);
 
             // Save cash drawer entries
             $cashDrawerEntries = $request->cash_drawer_entries;
@@ -304,29 +327,49 @@ class CashierController extends Controller
     {
         $today = \Carbon\Carbon::today();
         $branchId = session('branch_id');
+        $userId = session('userid');
 
-        // Check for existing day end
+        // Check for existing saved day end
         $dayEnd = DB::table('day_end_summary')
             ->whereDate('date', $today)
             ->where('branch_id', $branchId)
             ->first();
 
+        // Get plot amount
         $startingCash = DB::table('plot')
             ->whereDate('Date_Time', $today)
             ->where('branch_id', $branchId)
             ->value('total_amount') ?? 0;
 
-        $income = DB::table('expences')
-            ->whereDate('date', $today)
+        // Find bank account for the logged-in user
+        $bankAccount = DB::table('company_bank_accounts')
+            ->where('Account_No', $userId)
             ->where('branch_id', $branchId)
-            ->where('type', 'Income')
-            ->get();
+            ->first();
 
-        $expense = DB::table('expences')
-            ->whereDate('date', $today)
-            ->where('branch_id', $branchId)
-            ->where('type', 'Expense')
-            ->get();
+        $cashIn = collect();
+        $cashOut = collect();
+
+        if ($bankAccount) {
+
+            $cashIn = DB::table('company_bank_has_log')
+                ->where('Bank_Account_Id', $bankAccount->Idbank)
+                ->whereDate('Date_Time', $today)
+                ->whereNotNull('Debit')
+                ->where('Debit', '>', 0)
+                ->get();
+
+            $cashOut = DB::table('company_bank_has_log')
+                ->where('Bank_Account_Id', $bankAccount->Idbank)
+                ->whereDate('Date_Time', $today)
+                ->whereNotNull('Credit')
+                ->where('Credit', '>', 0)
+                ->get();
+        }
+
+        $totalIncome = $cashIn->sum('Debit');
+        $totalExpenses = $cashOut->sum('Credit');
+        $balanceAmount = $startingCash + $totalIncome - $totalExpenses;
 
         $cashDrawer = $dayEnd
             ? DB::table('cash_drawer_entries')->where('day_end_id', $dayEnd->id)->get()
@@ -334,16 +377,24 @@ class CashierController extends Controller
 
         return response()->json([
             'startingCash' => $startingCash,
-            'incomes' => $income,
-            'expenses' => $expense,
-            'totalIncome' => $income->sum('amount'),
-            'totalExpenses' => $expense->sum('amount'),
-            'balanceAmount' => $startingCash + $income->sum('amount') - $expense->sum('amount'),
+            'cashIn' => $cashIn,
+            'cashOut' => $cashOut,
+            'totalIncome' => $totalIncome,
+            'totalExpenses' => $totalExpenses,
+            'balanceAmount' => $balanceAmount,
             'dayEndExists' => (bool) $dayEnd,
             'savedData' => $dayEnd,
-            'cashDrawerEntries' => $cashDrawer, // should be array of drawer records
+            'cashDrawerEntries' => $cashDrawer,
         ]);
+    }
 
+    public function getBankList()
+    {
+        $banks = tableWithBranch('company_bank_accounts')
+            ->where('Bank_Type', 'Bank')
+            ->get(['Idbank', 'Bank_Name', 'Account_Name']);
+
+        return response()->json($banks);
     }
 
 

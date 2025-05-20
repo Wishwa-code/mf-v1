@@ -520,12 +520,13 @@ class PendingLoanController extends Controller
         $user_id = (int)session('userid');
         $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
         $collector = $collector_val->collector;
+        $cashier = $collector_val->cashier;
 
         $group = tableWithBranch('customer_group')->get();
         $loan_category = tableWithBranch('loan_category')->get();
         $customers = tableWithBranch('customer')->get();
         $bank = tableWithBranch('company_bank_accounts')->where('Bank_Type','=','Bank')->where('status','=','1')->get();
-        if ($collector == 1) {
+        if ($collector == 1 || $cashier==1) {
             $bank = DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $user_id)->where('status', '=', '1')->get();
         }
         $documents = tableWithBranch('documents')->get();

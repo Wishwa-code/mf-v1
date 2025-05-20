@@ -147,7 +147,7 @@
 </style>
 
 <div class="modal fade" id="cashierStartModal" tabindex="-1" aria-labelledby="cashierStartLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="cashierStartLabel">Cashier Start Details</h5>
@@ -226,43 +226,47 @@
                         <input type="number" class="form-control" id="plotAmount" readonly>
                     </div>
 
-                    <hr> <!-- Horizontal Line for Separation -->
-
-                    <!-- Incomes Section -->
-                    <h5 class="mt-3"><strong>Other Incomes</strong></h5>
-                    <!-- Incomes Table -->
-                    <table class="table table-bordered mt-3">
-                        <thead class="table-dark">
-                        <tr>
-                            <th>#</th>
-                            <th>Source</th>
-                            <th>Amount</th>
-                        </tr>
-                        </thead>
-                        <tbody id="incomeTableBody">
-                        <!-- Income entries will be added dynamically -->
-                        </tbody>
-                    </table>
+                    <hr>
+                    <h5 class="mt-3"><strong>Cash In</strong></h5>
+                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                        <table class="table table-bordered">
+                            <thead class="table-success sticky-top" style="top: 0; z-index: 1;">
+                            <tr>
+                                <th>#</th>
+                                <th>Date Time</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                            </tr>
+                            </thead>
+                            <tbody id="cashInTableBody">
+                            <!-- Cash In entries will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
                     <h5 class="mt-3"><strong>Total Income: <span id="totalIncome">0.00</span></strong></h5>
 
-                    <hr> <!-- Horizontal Line for Separation -->
 
-
-                    <h5 class="mt-3"><strong>Other Expenses</strong></h5>
-                    <!-- Expenses Table -->
-                    <table class="table table-bordered mt-3">
-                        <thead class="table-danger">
-                        <tr>
-                            <th>#</th>
-                            <th>Description</th>
-                            <th>Amount</th>
-                        </tr>
-                        </thead>
-                        <tbody id="expensesTableBody">
-                        <!-- Expenses entries will be added dynamically -->
-                        </tbody>
-                    </table>
+                    <hr>
+                    <h5 class="mt-3"><strong>Cash Out</strong></h5>
+                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                        <table class="table table-bordered">
+                            <thead class="table-danger sticky-top" style="top: 0; z-index: 1;">
+                            <tr>
+                                <th>#</th>
+                                <th>Date Time</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                            </tr>
+                            </thead>
+                            <tbody id="cashOutTableBody">
+                            <!-- Cash Out entries will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
                     <h5 class="mt-3"><strong>Total Expenses: <span id="totalExpenses">0.00</span></strong></h5>
+
 
                     <hr> <!-- Horizontal Line for Separation -->
                     <!-- Balance Calculation Section -->
@@ -624,22 +628,33 @@ $banner = DB::select($query);
                                 <i class="ri-logout-box-line fs-18 align-middle me-1"></i>
                                 <span>Logout</span>
                             </a>
-                            <hr>
 
-                            <div class=" dropdown-header noti-title">
-                                <h6 class="text-overflow m-0">Cashier Section</h6>
-                            </div>
-                            @if($privilege->cashier_start == 1)
-                                <a class="dropdown-item d-flex align-items-center" href="#" data-bs-toggle="modal" data-bs-target="#cashierStartModal">
-                                    <i class="ri-money-dollar-box-line font-size-17 align-middle me-1"></i> Cashier Start
-                                </a>
+                            <?php
+                                $user_id = session('userid');
+                                $cashier = DB::table('user')
+                                    ->where('id', $user_id)
+                                    ->where('cashier','=','1')
+                                    ->first();
+                            ?>
+                            @if($cashier)
+                                <hr>
+                                <div class=" dropdown-header noti-title">
+                                    <h6 class="text-overflow m-0">Cashier Section</h6>
+                                </div>
+                                @if($privilege->cashier_start == 1)
+                                    <a class="dropdown-item d-flex align-items-center" href="#" data-bs-toggle="modal" data-bs-target="#cashierStartModal">
+                                        <i class="ri-money-dollar-box-line font-size-17 align-middle me-1"></i> Cashier Start
+                                    </a>
+                                @endif
+
+                                @if($privilege->cashier_close == 1)
+                                    <a class="dropdown-item" href="#"  data-bs-toggle="modal" data-bs-target="#dayEndModal">
+                                        <i class="mdi mdi-lock-open-outline font-size-17 align-middle me-1"></i> Cashier Close
+                                    </a>
+                                @endif
                             @endif
 
-                            @if($privilege->cashier_close == 1)
-                                <a class="dropdown-item" href="#"  data-bs-toggle="modal" data-bs-target="#dayEndModal">
-                                    <i class="mdi mdi-lock-open-outline font-size-17 align-middle me-1"></i> Cashier Close
-                                </a>
-                            @endif
+
                     @else
                         <script>
                             window.location.href = "{{ route('login') }}"
@@ -1388,33 +1403,44 @@ $banner = DB::select($query);
                 method: 'GET',
                 success: function (response) {
                     $("#plotAmount").val(response.startingCash.toFixed(2));
+
+
+                    // Inside AJAX success of #dayEndModal
+                    let cashInBody = $("#cashInTableBody").empty();
+                    response.cashIn.forEach((item, i) => {
+                        cashInBody.append(`
+        <tr>
+            <td>${i + 1}</td>
+            <td>${item.Date_Time}</td>
+            <td>${item.Type}</td>
+            <td>${item.Description}</td>
+            <td>${parseFloat(item.Debit).toFixed(2)}</td>
+        </tr>
+    `);
+                    });
+
+                    let cashOutBody = $("#cashOutTableBody").empty();
+                    response.cashOut.forEach((item, i) => {
+                        cashOutBody.append(`
+        <tr>
+            <td>${i + 1}</td>
+            <td>${item.Date_Time}</td>
+            <td>${item.Type}</td>
+            <td>${item.Description}</td>
+            <td>${parseFloat(item.Credit).toFixed(2)}</td>
+        </tr>
+    `);
+                    });
+
+
+
+
+
+
+                    $("#totalIncome").text(response.totalIncome.toFixed(2));
+                    $("#totalExpenses").text(response.totalExpenses.toFixed(2));
                     $("#balanceAmount").val(response.balanceAmount.toFixed(2));
 
-                    // Income table
-                    let incomeBody = $("#incomeTableBody").empty();
-                    response.incomes.forEach((item, i) => {
-                        incomeBody.append(`
-                    <tr>
-                        <td>${i + 1}</td>
-                        <td>${item.reason}</td>
-                        <td>${parseFloat(item.amount).toFixed(2)}</td>
-                    </tr>
-                `);
-                    });
-                    $("#totalIncome").text(response.totalIncome.toFixed(2));
-
-                    // Expenses table
-                    let expenseBody = $("#expensesTableBody").empty();
-                    response.expenses.forEach((item, i) => {
-                        expenseBody.append(`
-                    <tr>
-                        <td>${i + 1}</td>
-                        <td>${item.reason}</td>
-                        <td>${parseFloat(item.amount).toFixed(2)}</td>
-                    </tr>
-                `);
-                    });
-                    $("#totalExpenses").text(response.totalExpenses.toFixed(2));
 
                     updateCashDrawerTotals(); // Reset drawer totals if needed
                 },
@@ -1439,29 +1465,33 @@ $banner = DB::select($query);
                     $("#totalExpenses").text(parseFloat(res.totalExpenses).toFixed(2));
                     $("#balanceAmount").val(parseFloat(res.balanceAmount).toFixed(2));
 
-                    // Load income table
-                    let incomeBody = $("#incomeTableBody").empty();
-                    res.incomes.forEach((item, i) => {
-                        incomeBody.append(`
-                    <tr>
-                        <td>${i + 1}</td>
-                        <td>${item.reason}</td>
-                        <td>${parseFloat(item.amount).toFixed(2)}</td>
-                    </tr>
-                `);
+                    // Inside success callback for /cashier/get-saved-day-end
+                    let cashInBody = $("#cashInTableBody").empty();
+                    res.cashIn.forEach((item, i) => {
+                        cashInBody.append(`
+        <tr>
+            <td>${i + 1}</td>
+            <td>${item.Date_Time}</td>
+            <td>${item.Type}</td>
+            <td>${item.Description}</td>
+            <td>${parseFloat(item.Debit).toFixed(2)}</td>
+        </tr>
+    `);
                     });
 
-                    // Load expense table
-                    let expenseBody = $("#expensesTableBody").empty();
-                    res.expenses.forEach((item, i) => {
-                        expenseBody.append(`
-                    <tr>
-                        <td>${i + 1}</td>
-                        <td>${item.reason}</td>
-                        <td>${parseFloat(item.amount).toFixed(2)}</td>
-                    </tr>
-                `);
+                    let cashOutBody = $("#cashOutTableBody").empty();
+                    res.cashOut.forEach((item, i) => {
+                        cashOutBody.append(`
+        <tr>
+            <td>${i + 1}</td>
+            <td>${item.Date_Time}</td>
+            <td>${item.Type}</td>
+            <td>${item.Description}</td>
+            <td>${parseFloat(item.Credit).toFixed(2)}</td>
+        </tr>
+    `);
                     });
+
 
                     // Cash drawer entries
                     $("#cashDrawerTableBody").empty();
@@ -1554,8 +1584,6 @@ $banner = DB::select($query);
                             text: response.message
                         });
                         loadSavedPlotEntries();
-
-
                     },
                     error: function (xhr) {
                         Swal.fire({
@@ -1728,6 +1756,17 @@ $banner = DB::select($query);
         let balanceDifference = parseFloat($("#balanceDifference").text());
 
 
+        if (balanceDifference != 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Unbalanced Cash Drawer',
+                html: `Balance Difference must be <b>0.00</b> to save the Day End.<br><br>
+                   Current Difference: <strong style="color:red;">${balanceDifference.toFixed(2)}</strong>`,
+            });
+            return; // ❌ Stop further execution
+        }
+
+
         let drawerEntries = [];
 
         $("#cashDrawerTableBody tr").each(function () {
@@ -1739,53 +1778,85 @@ $banner = DB::select($query);
         });
 
 
-        Swal.fire({
-            title: 'Confirm Day End',
-            text: 'This action is final. Proceed?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, save it',
-        }).then(result => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: '/cashier/save-day-end',
-                    method: 'POST',
-                    data: {
-                        starting_cash: startingCash,
-                        total_income: totalIncome,
-                        total_expense: totalExpense,
-                        balance_amount: balanceAmount,
-                        cash_drawer_total: cashDrawerTotal,
-                        balance_difference: balanceDifference,
-                        cash_drawer_entries: drawerEntries,
-                        _token: "{{ csrf_token() }}"
-                    },
-                    success: function (res) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Saved',
-                            text: res.message
-                        });
+        $.ajax({
+            url: '/cashier/bank-list',
+            method: 'GET',
+            success: function (banks) {
+                let selectOptions = banks.map(bank =>
+                    `<option value="${bank.Idbank}">${bank.Bank_Name} - ${bank.Account_Name}</option>`
+                ).join('');
 
-                        $("#saveDayEnd").prop('disabled', true);
-                    },
-                    error: function (xhr) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: xhr.responseJSON?.message || 'Failed to save day end.'
+                Swal.fire({
+                    title: 'Select Bank to Deposit',
+                    html: `
+                <label>Select a bank account to deposit:</label>
+                <select id="swal-bank-select" class="form-control mt-2">
+                    <option value="">-- Select Bank --</option>
+                    ${selectOptions}
+                </select>
+            `,
+                    showCancelButton: true,
+                    confirmButtonText: 'Save Day End',
+                    preConfirm: () => {
+                        const selectedBankId = $('#swal-bank-select').val();
+                        if (!selectedBankId) {
+                            Swal.showValidationMessage('Please select a bank account.');
+                        }
+                        return selectedBankId;
+                    }
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        let selectedBankId = result.value;
+
+                        $.ajax({
+                            url: '/cashier/save-day-end',
+                            method: 'POST',
+                            data: {
+                                starting_cash: startingCash,
+                                total_income: totalIncome,
+                                total_expense: totalExpense,
+                                balance_amount: balanceAmount,
+                                cash_drawer_total: cashDrawerTotal,
+                                balance_difference: balanceDifference,
+                                selected_bank_id: selectedBankId,
+                                cash_drawer_entries: drawerEntries,
+                                _token: "{{ csrf_token() }}"
+                            },
+                            success: function (res) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Saved',
+                                    text: res.message
+                                });
+                                $("#saveDayEnd").prop('disabled', true);
+                            },
+                            error: function (xhr) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: xhr.responseJSON?.message || 'Failed to save day end.'
+                                });
+                            }
                         });
                     }
                 });
+            },
+            error: function () {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Could not load bank list.'
+                });
             }
         });
+
     });
 
 
     $("#printDayEndReport").click(function () {
         const printWindow = window.open('', '', 'height=700,width=900');
-        const incomeRows = $("#incomeTableBody").html();
-        const expenseRows = $("#expensesTableBody").html();
+        const incomeRows = $("#cashInTableBody").html();
+        const expenseRows = $("#cashOutTableBody").html();
         const drawerRows = $("#cashDrawerTableBody").html();
 
         const html = `
@@ -1810,19 +1881,19 @@ $banner = DB::select($query);
 
             <h3>Other Incomes</h3>
             <table>
-                <thead><tr><th>#</th><th>Source</th><th>Amount</th></tr></thead>
+                <thead><tr><th>#</th><th>Date</th><th>Type</th><th>Description</th><th>Amount</th></tr></thead>
                 <tbody>${incomeRows}</tbody>
             </table>
 
             <h3>Other Expenses</h3>
             <table>
-                <thead><tr><th>#</th><th>Description</th><th>Amount</th></tr></thead>
+                <thead><tr><th>#</th><th>Date</th><th>Type</th><th>Description</th><th>Amount</th></tr></thead>
                 <tbody>${expenseRows}</tbody>
             </table>
 
             <h3>Cash Drawer</h3>
             <table>
-                <thead><tr><th>#</th><th>Denomination</th><th>Qty</th><th>Total</th></tr></thead>
+                <thead><tr><th>#</th><th>Denomination</th><th>Qty</th><th>Total</th><th></th></tr></thead>
                 <tbody>${drawerRows.replace(/<td>.*Remove.*<\/td>/g, '')}</tbody>
             </table>
 

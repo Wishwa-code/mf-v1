@@ -43,6 +43,7 @@ class BankController extends Controller
         $banks = tableWithBranch('company_bank_accounts','company_bank_accounts')
             ->join('user', 'company_bank_accounts.User', '=', 'user.id')
             ->where('company_bank_accounts.Bank_Type','=','Collector')
+            ->where('user.collector','=','1')
             ->get();
 
         $company_banks = tableWithBranch('company_bank_accounts')
@@ -118,8 +119,43 @@ class BankController extends Controller
      */
     public function show()
     {
-        // Fetch banks associated with the current branch
-        $banks = tableWithBranch('company_bank_accounts')->where('Bank_Type','=','Bank')->get();
+
+        $user_id = (int)session('userid');
+
+        $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
+
+        if ($collector_val) {
+            $collector = $collector_val->collector;
+            $cashier = $collector_val->cashier;
+
+            if ($collector == 1 || $cashier == 1) {
+                // Logged-in user is a collector or cashier
+                $banks = tableWithBranch('company_bank_accounts')
+                    ->where('Account_No', '=', $user_id)
+                    ->get();
+
+                // Exclude this account from $banks_2
+                $banks_2 = tableWithBranch('company_bank_accounts')
+                    ->where(function($query) {
+                        $query->where('Bank_Type', '=', 'Bank')
+                            ->orWhere('Bank_Type', '=', 'Collector');
+                    })
+                    ->where('Account_No', '!=', $user_id)
+                    ->get();
+
+            } else {
+                // Normal access - include everything in both
+                $banks = tableWithBranch('company_bank_accounts')
+                    ->where(function($query) {
+                        $query->where('Bank_Type', '=', 'Bank')
+                            ->orWhere('Bank_Type', '=', 'Collector');
+                    })
+                    ->get();
+
+                $banks_2 = clone $banks;
+            }
+        }
+
 
         // Fetch bank logs with a join to company_bank_accounts, scoped by branch
         $banklog = tableWithBranch('company_bank_has_log','company_bank_has_log')
@@ -127,7 +163,7 @@ class BankController extends Controller
             ->where('company_bank_has_log.Type', '=', 'InterBank Transfer')
             ->get();
 
-        return view('pages.Accounting.InnerBankTransfers',compact('banks','banklog'));
+        return view('pages.Accounting.InnerBankTransfers',compact('banks','banklog','banks_2'));
     }
 
     /**

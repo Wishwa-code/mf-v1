@@ -24,44 +24,42 @@ class CapitalBalanceController extends Controller
             $penaltyBalanceSum = $installment->sum('Panalty_Balance');
             $interestBalanceSum = $installment->sum('Interest_Balance');
             $capitalBalanceSum = $installment->sum('capital_balance');
+            $totalBalance = $capitalBalanceSum + $interestBalanceSum + $penaltyBalanceSum;
 
             updateWithBranch('customer_loan', 'idCustomer_Loan', $loan_id, [
                 'capital_balance' => $capitalBalanceSum,
                 'installment_balance' => $interestBalanceSum,
-                'Balance_Amount' => $capitalBalanceSum+$interestBalanceSum+$penaltyBalanceSum,
+                'Balance_Amount' => $totalBalance,
             ]);
 
-            $loan_2 = tableWithBranch('customer_loan')->where('idCustomer_Loan', $loan_id)->first();
+            // Re-fetch the loan after update
+            $loan_2 = tableWithBranch('customer_loan')->where('idCustomer_Loan', $loan_id)->where('Status','=','0')->first();
 
-            if ($loan_2 ->Balance_Amount<2) {
-                updateWithBranch('customer_loan', 'idCustomer_Loan', $loan_id, [
-                    'Balance_Amount' => '0.00',
-                    'capital_balance' => '0.00',
-                    'installment_balance' => '0.00',
-                    'Status' => '1',
-                ]);
+            if($loan_2){
+                if ($loan_2->Balance_Amount < 1) {
+                    updateWithBranch('customer_loan', 'idCustomer_Loan', $loan_id, [
+                        'Balance_Amount' => '0.00',
+                        'capital_balance' => '0.00',
+                        'installment_balance' => '0.00',
+                        'Status' => '1',
+                    ]);
 
-                updateWithBranch('installments', 'Customer_Loan_idCustomer_Loan', $loan_id, [
-                    'Panalty_Balance' => '0.00',
-                    'Interest_Balance' => '0.00',
-                    'capital_balance' => '0.00',
-                    'Saving_balance' => '0.00',
-                    'Total_Balance' => '0.00',
-                    'Status' => '1',
-                ]);
-                if ($status==0){
-                    $loanLogController=new LoanLogController();
-                    $loanLogController->index(
-                        $loan_id, 'Loan Settlement', '0',
-                        'Automatic Loan Settlement', '0.00',
-                        '0.00', '0.00',
-                        '0.00', '0.00', '0.00',
-                        '0.00', '0.00', '0.00', '0.00'
-                    );
+                    updateWithBranch('installments', 'Customer_Loan_idCustomer_Loan', $loan_id, [
+                        'Panalty_Balance' => '0.00',
+                        'Interest_Balance' => '0.00',
+                        'capital_balance' => '0.00',
+                        'Saving_balance' => '0.00',
+                        'Total_Balance' => '0.00',
+                        'Status' => '1',
+                    ]);
+                } else {
+                    // Balance is greater than or equal to 2
+                    updateWithBranch('customer_loan', 'idCustomer_Loan', $loan_id, [
+                        'Status' => '0'
+                    ]);
                 }
-
-
             }
+
         }
 
 
