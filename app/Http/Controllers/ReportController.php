@@ -74,7 +74,20 @@ class ReportController extends Controller
      */
     public function create()
     {
+        $user_id = (int)session('userid');
+
+        $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
         $bank = tableWithBranch('company_bank_accounts')->where('Bank_Type','=','Bank')->get();
+        if ($collector_val){
+            $collector = $collector_val->collector;
+            $cashier = $collector_val->cashier;
+
+            if($collector==1 || $cashier==1){
+                $bank = tableWithBranch('company_bank_accounts')->where('Account_No','=',$user_id)->get();
+            }
+
+        }
+
         $expences_category = tableWithBranch('company_bank_accounts')->where('acc_type_group','=','Expenses')->where('Bank_Type','=','ChartOfAccount')->get();
         return view('pages.CreateExpenses',compact('bank','expences_category'));
     }

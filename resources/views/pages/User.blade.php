@@ -140,7 +140,7 @@
                                                 <input type="text" class="form-control" id="tp" name="tp" onkeypress="validateContactNumber(event)">
                                             </div>
 
-                                            <div class="col-md-3">
+                                            <div class="col-md-2">
                                                 <br><br>
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox" value="1" id="lending_officer" name="lending_officer">
@@ -150,12 +150,22 @@
                                                 </div>
 
                                             </div>
-                                            <div class="col-md-3">
+                                            <div class="col-md-2">
                                                 <br><br>
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox" value="1" id="collecting_officer" name="collecting_officer">
                                                     <label class="form-check-label" for="collecting_officer">
                                                         Collecting Officer
+                                                    </label>
+                                                </div>
+
+                                            </div>
+                                            <div class="col-md-2">
+                                                <br><br>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="1" id="cashier" name="cashier">
+                                                    <label class="form-check-label" for="cashier">
+                                                        Cashier
                                                     </label>
                                                 </div>
 
@@ -327,14 +337,19 @@
 
                                             <!-- Lending Officer -->
                                             <div class="form-group form-check">
-                                                <input type="checkbox" class="form-check-input" id="editLendingOfficer" name="lending_officer">
+                                                <input type="checkbox" class="form-check-input" id="editLendingOfficer" name="editLendingOfficer">
                                                 <label class="form-check-label" for="editLendingOfficer">Lending Officer</label>
                                             </div>
 
                                             <!-- Collecting Officer -->
                                             <div class="form-group form-check">
-                                                <input type="checkbox" class="form-check-input" id="editCollectingOfficer" name="collecting_officer">
+                                                <input type="checkbox" class="form-check-input" id="editCollectingOfficer" name="editCollectingOfficer">
                                                 <label class="form-check-label" for="editCollectingOfficer">Collecting Officer</label>
+                                            </div>
+
+                                            <div class="form-group form-check">
+                                                <input type="checkbox" class="form-check-input" id="editcashier" name="editcashier">
+                                                <label class="form-check-label" for="editcashier">Cashier</label>
                                             </div>
 
                                             <!-- Branch -->
@@ -671,10 +686,11 @@
                         $('#editFullName').val(response.Full_Name);
                         $('#editEmail').val(response.email);
                         $('#editTP').val(response.TP);
-                        $('#editLendingOfficer').prop('checked', response.lending_officer === 1);
-                        $('#editCollectingOfficer').prop('checked', response.collecting_officer === 1);
+                        $('#editLendingOfficer').prop('checked', response.lending_officer == 1);
+                        $('#editCollectingOfficer').prop('checked', response.collector == 1);
                         $('#editBranch').val(response.branch_id);
-                        $('#editBranchAccess').prop('checked', response.branch_access === 1);
+                        $('#editBranchAccess').prop('checked', response.branch_access == 1);
+                        $('#editcashier').prop('checked', response.cashier == 1);
                     },
                     error: function (err) {
                         console.error('Error fetching user data:', err);
