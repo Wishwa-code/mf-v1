@@ -414,6 +414,18 @@ class LoanCategoryController extends Controller
         $products = LoanCategory::where('branch_id', 1)->get();
 
         foreach ($products as $product) {
+
+            // Check if this product name already exists in the target branch
+            $exists = LoanCategory::where('branch_id', $branch)
+                ->where('Name', $product->Name)
+                ->exists();
+
+            if ($exists) {
+                continue;
+            }
+
+
+
             // Clone LoanCategory
             $newProduct = $product->replicate();
             $newProduct->idLoan_Category = null;
