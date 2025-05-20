@@ -59,7 +59,7 @@ class UserController extends Controller
             // Generate OTP
             $otp = Str::random(6); // Or use a more secure method to generate OTP
 
-            $collector=$request->has('collecting_officer') ? 1 : 0;
+
 
 
             $data['Full_Name']=$request->full_name;
@@ -73,48 +73,49 @@ class UserController extends Controller
             $data['otp']=$otp;
             $data['branch_id']=$request->branch;
             $data['branch_access']=$request->has('branch_access') ? 1 : 0;
+            $data['cashier']=$request->has('cashier') ? 1 : 0;
+            $data['collector']=$request->has('collecting_officer') ? 1 : 0;
             $user=User::create($data);
             if (!$user){
                 return redirect()->intended(route('pages.user'))->with("error","Registration Failed !");
             }
 
-            if ($collector==1){
-                $Bank = [
-                    'Bank_Type' => "Collector",
-                    'code' => $user->id.'/Collector',
-                    'Bank_Name' => "Collector",
-                    'Account_Name' => $request->full_name,
-                    'Account_No' => $user->id,
-                    'Bank_Branch' => '-',
-                    'Account_Balance' => "0.00",
-                    'type' => "Cash and Bank",
-                    'cashflow' => "Non Applicable",
+            $Bank = [
+                'Bank_Type' => "Collector",
+                'code' => $user->id.'/Collector',
+                'Bank_Name' => "Collector",
+                'Account_Name' => $request->full_name,
+                'Account_No' => $user->id,
+                'Bank_Branch' => '-',
+                'Account_Balance' => "0.00",
+                'type' => "Cash and Bank",
+                'cashflow' => "Non Applicable",
+                'User' => $user->id,
+                'branch_id' => $request->has('branch_access'),
+            ];
+
+            if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $request->account_number)->exists()) {
+
+            }else {
+                $insertedId = insertWithBranch('company_bank_accounts', $Bank);
+// Convert the BankLog object to an array for insertion
+                $bankLogData = [
+                    'Bank_Account_Id' => $insertedId,
+                    'Date_Time' => date('Y-m-d H:i:s'),
+                    'Type' => "Account Creation",
+                    'Description' => "Collector Account",
+                    'Note' => "",
+                    'Credit' => "0.00",
+                    'Debit' => "0.00",
+                    'Balance' => "0.00",
                     'User' => $user->id,
                     'branch_id' => $request->has('branch_access'),
                 ];
 
-                if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $request->account_number)->exists()) {
-
-                }else {
-                    $insertedId = insertWithBranch('company_bank_accounts', $Bank);
-// Convert the BankLog object to an array for insertion
-                    $bankLogData = [
-                        'Bank_Account_Id' => $insertedId,
-                        'Date_Time' => date('Y-m-d H:i:s'),
-                        'Type' => "Account Creation",
-                        'Description' => "Collector Account",
-                        'Note' => "",
-                        'Credit' => "0.00",
-                        'Debit' => "0.00",
-                        'Balance' => "0.00",
-                        'User' => $user->id,
-                        'branch_id' => $request->has('branch_access'),
-                    ];
-
 // Insert the BankLog entry using the helper function
-                    insertWithBranch('company_bank_has_log', $bankLogData);
-                }
+                insertWithBranch('company_bank_has_log', $bankLogData);
             }
+
             return redirect()->intended(route('pages.user'))->with("success", "Registration success !");
         }
     }
@@ -499,6 +500,45 @@ class UserController extends Controller
         $profitTarget = 1000000; // 1 million
 
 
+        $user=tableWithBranch('user')->where('id','=',$userid)->first();
+
+        if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $userid)->exists()) {
+
+        }else {
+
+            $Bank = [
+                'Bank_Type' => "Collector",
+                'code' => $user->id.'/Collector',
+                'Bank_Name' => "Collector",
+                'Account_Name' => $user->Full_Name,
+                'Account_No' => $user->id,
+                'Bank_Branch' => '-',
+                'Account_Balance' => "0.00",
+                'type' => "Cash and Bank",
+                'cashflow' => "Non Applicable",
+                'User' => $user->id,
+                'branch_id' => session('branch_id'),
+            ];
+
+
+            $insertedId = insertWithBranch('company_bank_accounts', $Bank);
+// Convert the BankLog object to an array for insertion
+            $bankLogData = [
+                'Bank_Account_Id' => $insertedId,
+                'Date_Time' => date('Y-m-d H:i:s'),
+                'Type' => "Account Creation",
+                'Description' => "Collector Account",
+                'Note' => "",
+                'Credit' => "0.00",
+                'Debit' => "0.00",
+                'Balance' => "0.00",
+                'User' => $user->id,
+                'branch_id' => session('branch_id'),
+            ];
+
+// Insert the BankLog entry using the helper function
+            insertWithBranch('company_bank_has_log', $bankLogData);
+        }
 
 
         return view('home',compact( 'profit','todaycollected', 'profitTarget','weeklyComparison','deleted_loan_Count','all_loan','monthlyData','dashboard','checqueamount','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
@@ -625,6 +665,19 @@ class UserController extends Controller
                     'branch_access' => $value
                 ]);
                 $session->put('branch_access',(int) $value);
+            }
+
+
+            if ($key=="collector_access"){
+                DB::table('user')->where('id', $userId)->update([
+                    'collector' => $value
+                ]);
+            }
+
+            if ($key=="cashier_access"){
+                DB::table('user')->where('id', $userId)->update([
+                    'cashier' => $value
+                ]);
             }
 
         }
@@ -951,33 +1004,12 @@ class UserController extends Controller
                 'Nic' => $request->nic,
                 'Full_Name' => $request->full_name,
                 'TP' => $request->tp,
-                'lending_officer' => $request->lending_officer ? 1 : 0,
-                'collector' => $request->collecting_officer ? 1 : 0,
+                'lending_officer' => $request->editLendingOfficer ? 1 : 0,
+                'collector' => $request->editCollectingOfficer ? 1 : 0,
                 'branch_id' => $request->branch,
                 'branch_access' => $request->branch_access ? 1 : 0,
+                'cashier' => $request->editcashier ? 1 : 0,
             ]);
-
-//        $user = DB::table('user')->where('email', $request->email)->first();
-//        if ($user){
-//            $user_id=$user->id;
-//            Log::info($user_id);
-//            if ($user->collector=="1"){
-//                DB::table('company_bank_accounts')
-//                    ->where('Account_No',(string) $user_id) // Find the user by id
-//                    ->update([
-//                        'branch_id' => $request->branch,
-//                    ]);
-//                $bank = DB::table('company_bank_accounts')->where('Account_No', $user_id)->first();
-//                if ($bank){
-//                    $bank_id=$bank->Idbank;
-//                    DB::table('company_bank_has_log')
-//                        ->where('Bank_Account_Id', $bank_id) // Find the user by id
-//                        ->update([
-//                            'branch_id' => $request->branch,
-//                        ]);
-//                }
-//            }
-//        }
 
         // Check if the update was successful and return response
         if ($updated) {

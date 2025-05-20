@@ -645,6 +645,7 @@ Route::get('/get-today-cashier-data', [CashierController::class, 'getTodayData']
 Route::get('/cashier/day-end-data', [CashierController::class, 'getDayEndData'])->name('cashier.dayEndData');
 Route::post('/cashier/save-day-end', [CashierController::class, 'saveDayEnd'])->name('cashier.saveDayEnd');
 Route::get('/cashier/get-saved-day-end', [CashierController::class, 'getSavedDayEndData'])->name('cashier.getSavedDayEndData');
+Route::get('/cashier/bank-list', [CashierController::class, 'getBankList']);
 
 
 //center_collection

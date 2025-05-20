@@ -46,8 +46,10 @@ class TodayPaymentController extends Controller
 
         $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
         $collector=0;
+        $cashier=0;
         if ($collector_val){
             $collector = $collector_val->collector;
+            $cashier = $collector_val->cashier;
         }
 
         $loanQuery = tableWithBranch('customer_loan','customer_loan')
@@ -68,10 +70,10 @@ class TodayPaymentController extends Controller
             ->join('user', 'route.id_officer', '=', 'user.id')
             ->get();
         $banks = DB::table('company_bank_accounts')->where('branch_id','=',session('branch_id'))->where('status', '=', '1')->get();
-        if ($collector == 1) {
+        if ($collector == 1 || $cashier == 1) {
             $banks = DB::table('company_bank_accounts')->where('branch_id','=',session('branch_id'))->where('Account_No', '=', $user_id)->where('status', '=', '1')->get();
         }
-        return view('pages.TodayPayment', compact('collector', 'group', 'loan', 'route', 'center', 'customers', 'company', 'banks'));
+        return view('pages.TodayPayment', compact('collector','cashier', 'group', 'loan', 'route', 'center', 'customers', 'company', 'banks'));
     }
 
     public function bulk_repayment()
@@ -577,7 +579,7 @@ class TodayPaymentController extends Controller
             });
         }
         if ($route != '0') {
-            $loanQuery_2->where('customer.id_route', '=', $route);
+            $loanQuery_2->where('customer.route_id', '=', $route);
         }
         if ($group != '0') {
             $loanQuery_2->where('customer_group.idCustomer_Group', '=', $group);
@@ -3296,6 +3298,10 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             // Log the SMS message
             $this->smsLogController->index($loan_id, $loan_number_txt, "Undo Payment");
         }
+
+
+
+
 
         return response()->json(['item' => 'success', 'id' => '1'], 200);
     }

@@ -504,7 +504,7 @@
                                 <label for="payment_type" class="form-label fw-bold">Payment Type</label>
                             </div>
                             <div class="col-sm-8">
-                                    @if($collector==1)
+                                    @if($collector==1 || $cashier==1)
                                         <select class="form-control" id="payment_type" onchange="togglePaymentSections(this.value)" disabled>
                                             <option value="Cash">Cash</option>
                                             <option value="Bank Deposit">Bank Deposit</option>
@@ -729,7 +729,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label for="payment_type_2" class="form-label fw-bold">Payment Type:</label>
-                                @if($collector==1)
+                                @if($collector==1 || $cashier==1)
                                     <select class="form-control" id="payment_type_2" onchange="togglePaymentSections_2(this.value)" disabled>
                                         <option value="Cash">Cash</option>
                                         <option value="Bank Deposit">Bank Deposit</option>
@@ -1150,7 +1150,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         $(document).ready(function() {
-            @if($collector==1)
+            @if($collector==1 || $cashier==1)
                 togglePaymentSections("Collector");
                 togglePaymentSections_2("Collector")
             @else

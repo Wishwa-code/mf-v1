@@ -133,7 +133,7 @@
                             ];
 
                             $deletePermissions = [
-                                'Access' => ['payment_delete','branch_access']
+                                'Access' => ['payment_delete','branch_access','collector_access','cashier_access']
                             ];
                         @endphp
 
