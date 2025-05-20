@@ -35,7 +35,7 @@ class CapitalBalanceController extends Controller
             // Re-fetch the loan after update
             $loan_2 = tableWithBranch('customer_loan')->where('idCustomer_Loan', $loan_id)->first();
 
-            if ($loan_2->Balance_Amount < 2) {
+            if ($loan_2->Balance_Amount < 1) {
                 updateWithBranch('customer_loan', 'idCustomer_Loan', $loan_id, [
                     'Balance_Amount' => '0.00',
                     'capital_balance' => '0.00',
