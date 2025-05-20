@@ -147,7 +147,7 @@
 </style>
 
 <div class="modal fade" id="cashierStartModal" tabindex="-1" aria-labelledby="cashierStartLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="cashierStartLabel">Cashier Start Details</h5>
@@ -624,22 +624,33 @@ $banner = DB::select($query);
                                 <i class="ri-logout-box-line fs-18 align-middle me-1"></i>
                                 <span>Logout</span>
                             </a>
-                            <hr>
 
-                            <div class=" dropdown-header noti-title">
-                                <h6 class="text-overflow m-0">Cashier Section</h6>
-                            </div>
-                            @if($privilege->cashier_start == 1)
-                                <a class="dropdown-item d-flex align-items-center" href="#" data-bs-toggle="modal" data-bs-target="#cashierStartModal">
-                                    <i class="ri-money-dollar-box-line font-size-17 align-middle me-1"></i> Cashier Start
-                                </a>
+                            <?php
+                                $user_id = session('userid');
+                                $cashier = DB::table('user')
+                                    ->where('id', $user_id)
+                                    ->where('cashier','=','1')
+                                    ->first();
+                            ?>
+                            @if($cashier)
+                                <hr>
+                                <div class=" dropdown-header noti-title">
+                                    <h6 class="text-overflow m-0">Cashier Section</h6>
+                                </div>
+                                @if($privilege->cashier_start == 1)
+                                    <a class="dropdown-item d-flex align-items-center" href="#" data-bs-toggle="modal" data-bs-target="#cashierStartModal">
+                                        <i class="ri-money-dollar-box-line font-size-17 align-middle me-1"></i> Cashier Start
+                                    </a>
+                                @endif
+
+                                @if($privilege->cashier_close == 1)
+                                    <a class="dropdown-item" href="#"  data-bs-toggle="modal" data-bs-target="#dayEndModal">
+                                        <i class="mdi mdi-lock-open-outline font-size-17 align-middle me-1"></i> Cashier Close
+                                    </a>
+                                @endif
                             @endif
 
-                            @if($privilege->cashier_close == 1)
-                                <a class="dropdown-item" href="#"  data-bs-toggle="modal" data-bs-target="#dayEndModal">
-                                    <i class="mdi mdi-lock-open-outline font-size-17 align-middle me-1"></i> Cashier Close
-                                </a>
-                            @endif
+
                     @else
                         <script>
                             window.location.href = "{{ route('login') }}"

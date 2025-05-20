@@ -43,6 +43,7 @@ class BankController extends Controller
         $banks = tableWithBranch('company_bank_accounts','company_bank_accounts')
             ->join('user', 'company_bank_accounts.User', '=', 'user.id')
             ->where('company_bank_accounts.Bank_Type','=','Collector')
+            ->where('user.collector','=','1')
             ->get();
 
         $company_banks = tableWithBranch('company_bank_accounts')
