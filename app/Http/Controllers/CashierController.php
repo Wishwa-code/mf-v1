@@ -44,18 +44,17 @@ class CashierController extends Controller
             $user_id = session('userid');
             $branch_id = session('branch_id');
 
-            $yesterday = Carbon::yesterday()->toDateString();
-
             $lastDayEnd = DB::table('day_end_summary')
-                ->whereDate('date', $yesterday)
                 ->where('branch_id', $branch_id)
+                ->whereDate('date', '<', Carbon::today()) // last day before today
                 ->orderByDesc('date')
                 ->first();
+
 
             if ($lastDayEnd && floatval($lastDayEnd->balance_difference) != 0) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Cannot proceed. Previous day\'s balance difference is not settled (difference: ' . number_format($lastDayEnd->balance_difference, 2) . ').'
+                    'message' => 'Cannot proceed. Previous Day End has a balance difference of ' . number_format($lastDayEnd->balance_difference, 2) . '. Please resolve it before continuing.'
                 ], 400);
             }
 
@@ -135,12 +134,9 @@ class CashierController extends Controller
                 if ($user){
                     $cashier=$user->cashier;
                     if ($cashier=="1"){
-                        Log::info($cashier);
                         $bank=tableWithBranch('company_bank_accounts')->where('Account_No','=',session('userid'))->first();
                         if ($bank){
-                            Log::info($bank->Idbank);
                             $cash=tableWithBranch('company_bank_accounts')->where('Account_No','=',"Cash")->first();
-                            Log::info($cash->Idbank);
                             $this->bankLogController->index($bank->Idbank,"Deposit","Morning Plot","Morning Plot","debit",$newTotal,$cash->Idbank);
                             $this->bankLogController->index($cash->Idbank,"Withdraw","Morning Plot","Morning Plot","credit",$newTotal,$bank->Idbank);
                         }else{
