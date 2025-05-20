@@ -1756,6 +1756,17 @@ $banner = DB::select($query);
         let balanceDifference = parseFloat($("#balanceDifference").text());
 
 
+        if (balanceDifference != 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Unbalanced Cash Drawer',
+                html: `Balance Difference must be <b>0.00</b> to save the Day End.<br><br>
+                   Current Difference: <strong style="color:red;">${balanceDifference.toFixed(2)}</strong>`,
+            });
+            return; // ❌ Stop further execution
+        }
+
+
         let drawerEntries = [];
 
         $("#cashDrawerTableBody tr").each(function () {
