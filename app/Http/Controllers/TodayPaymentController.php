@@ -577,7 +577,7 @@ class TodayPaymentController extends Controller
             });
         }
         if ($route != '0') {
-            $loanQuery_2->where('customer.id_route', '=', $route);
+            $loanQuery_2->where('customer.route_id', '=', $route);
         }
         if ($group != '0') {
             $loanQuery_2->where('customer_group.idCustomer_Group', '=', $group);
@@ -3296,6 +3296,10 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             // Log the SMS message
             $this->smsLogController->index($loan_id, $loan_number_txt, "Undo Payment");
         }
+
+
+
+
 
         return response()->json(['item' => 'success', 'id' => '1'], 200);
     }
