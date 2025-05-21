@@ -6,6 +6,8 @@ on:
       - main
       - rightwaycredit50
       - greenlankacapital
+      - northerncredit
+      - greenlankatrust
 
 jobs:
   deploy-client1:
@@ -127,3 +129,127 @@ jobs:
             .github/**
             public/**     
             tests/**               
+            
+
+#  deploy-client4:
+#    if: github.ref == 'refs/heads/peoplescredit'
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout Code
+#        uses: actions/checkout@v2
+#
+#      - name: Setup PHP
+#        uses: shivammathur/setup-php@v2
+#        with:
+#          php-version: 8.2
+#
+#      - name: Install Dependencies
+#        run: |
+#          composer install --no-dev --optimize-autoloader
+#          npm install
+#          npm run prod
+#          php artisan storage:link
+#
+#      - name: FTP Deploy to Server 3 (Client4)
+#        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+#        with:
+#          server: ${{ secrets.FTP_HOST_4 }}
+#          username: ${{ secrets.FTP_USERNAME_4 }}
+#          password: ${{ secrets.FTP_PASSWORD_4 }}
+#          protocol: ftps  # Or ftp if that's what's working for you
+#          local-dir: ./
+#          server-dir: /
+#          dry-run: false
+#          timeout: 900000
+#          exclude: |
+#            .git**
+#            node_modules/**
+#            storage/**
+#            .env*
+#            vendor/**              # ⛔️ Exclude vendor folder
+#            vendor/bin/*
+#            .github/**
+#            public/**
+#            tests/**
+
+  deploy-client5:
+    if: github.ref == 'refs/heads/greenlankatrust'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+
+      - name: Install Dependencies
+        run: |
+          composer install --no-dev --optimize-autoloader
+          npm install
+          npm run prod
+          php artisan storage:link
+
+      - name: FTP Deploy to Server 3 (Client4)
+        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+        with:
+          server: ${{ secrets.FTP_HOST_5 }}
+          username: ${{ secrets.FTP_USERNAME_5 }}
+          password: ${{ secrets.FTP_PASSWORD_5 }}
+          protocol: ftps  # Or ftp if that's what's working for you
+          local-dir: ./
+          server-dir: /
+          dry-run: false
+          timeout: 900000
+          exclude: |
+            .git**
+            node_modules/**
+            storage/**
+            .env*
+            vendor/**              # ⛔️ Exclude vendor folder
+            vendor/bin/*
+            .github/**
+            public/**     
+            tests/**  
+
+  deploy-client6:
+    if: github.ref == 'refs/heads/northerncredit'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+
+      - name: Install Dependencies
+        run: |
+          composer install --no-dev --optimize-autoloader
+          npm install
+          npm run prod
+          php artisan storage:link
+
+      - name: FTP Deploy to Server 3 (Client4)
+        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+        with:
+          server: ${{ secrets.FTP_HOST_6 }}
+          username: ${{ secrets.FTP_USERNAME_6 }}
+          password: ${{ secrets.FTP_PASSWORD_6 }}
+          protocol: ftps  # Or ftp if that's what's working for you
+          local-dir: ./
+          server-dir: /
+          dry-run: false
+          timeout: 900000
+          exclude: |
+            .git**
+            node_modules/**
+            storage/**
+            .env*
+            vendor/**              # ⛔️ Exclude vendor folder
+            vendor/bin/*
+            .github/**
+            public/**     
+            tests/**  
