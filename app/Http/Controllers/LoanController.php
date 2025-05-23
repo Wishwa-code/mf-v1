@@ -73,7 +73,7 @@ class LoanController extends Controller
 
         // Step 1: Fetch necessary data
         $maxId = DB::table('customer_loan')->where('branch_id', session('branch_id'))->count('idCustomer_Loan') ?? 1;
-
+        $maxId++;
         $type = $request->loan_type;
         $company = tableWithBranch('company')->first();
         $branch_no = $company->branch;
@@ -169,7 +169,7 @@ class LoanController extends Controller
             }
         }
 
-
+        Log::info($loan_number_txt);
         $loan->Loan_No = $loan_number_txt;
         $loan->Loan_Category_idLoan_Category = $request->loan_cate_id;
         $loan->Customer_idCustomer = $request->customer_id;
