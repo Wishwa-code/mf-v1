@@ -637,6 +637,7 @@ class ChartOfAccountController extends Controller
             })
             ->whereIn('company_bank_accounts.acc_type_group', ['Assets', 'Liabilities', 'Equity'])
             ->where('company_bank_accounts.Bank_Type', '!=', 'System_default_2')
+            ->where('company_bank_accounts.Bank_Type', '!=', 'System_default_5')
             ->select(
                 'company_bank_accounts.Idbank',
                 'company_bank_accounts.Bank_Name',
