@@ -107,7 +107,7 @@
                                     <select class="form-control select2" id="customer_id">
                                         <option value="0">All</option>
                                         @foreach($customers as $item)
-                                            <option value="{{$item->idCustomer}}">{{ $item->First_Name }} {{$item->Last_Name}}-{{ $item->Nic }}-{{ $item->Contact_No }}</option>
+                                            <option value="{{$item->idCustomer}}">{{ $item->cus_number }}-{{ $item->First_Name }} {{$item->Last_Name}}-{{ $item->Nic }}-{{ $item->Contact_No }}</option>
                                         @endforeach
                                     </select>
                                 </div>

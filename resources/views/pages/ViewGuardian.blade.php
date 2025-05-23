@@ -79,7 +79,7 @@
                                 <tr>
                                     <td>{{ $customer->First_Name }} {{ $customer->Last_Name }}</td>
                                     <td>{{ $customer->Nic }}</td>
-                                    <td>{{ $customer->Address }},{{ $customer->Address_2 }},{{ $customer->Address_3 }}</td>
+                                    <td>{{ $customer->Address }},{{ $customer->Address_02 }},{{ $customer->Address_03 }}</td>
                                     <td>{{ $customer->Contact_No }}</td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-light" onclick="openMap('{{ $customer->Latitude }}', '{{ $customer->Longitude }}')">
