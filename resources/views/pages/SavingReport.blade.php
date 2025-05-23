@@ -6,6 +6,8 @@
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.0.1/css/buttons.dataTables.min.css">
+
 
     <style>
         thead {
@@ -200,8 +202,12 @@
                             </div>
                         </div>
                         <button type="button" class="btn btn-danger" onclick="load_payment_table();"><i class="bi bi-search"></i> </button>
-                        <hr>
 
+                        <button id="export_excel" class="btn btn-success ms-2"><i class="fas fa-file-excel"></i> Excel</button>
+                        <button id="export_pdf" class="btn btn-primary ms-2"><i class="fas fa-file-pdf"></i> PDF</button>
+
+
+                        <hr>
                         <div class="table-responsive-sm">
                             <table class="table table-centered mb-0" id="loan_table">
                                 <thead class="sticky-top bg-purple">
@@ -252,38 +258,124 @@
 @endsection
 
 @section('script')
-    <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+    <!-- Core jQuery (must come first) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+
+    <!-- DataTables Core -->
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+
+    <!-- DataTables Extensions -->
     <script src="https://cdn.datatables.net/buttons/2.0.1/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.0.1/js/buttons.html5.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.0.1/js/buttons.print.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+
+    <!-- PDF & Excel Support -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
+
     <script src="../JS/validate.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/js/all.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- XLSX for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
     {{--    <script src="../JS/today_payment.js"></script>--}}
     <script>
         $(function() {
             load_payment_table();
             let x = ["#payment_amount"];
             decimalFormat(x);
-            //Initialize Select2 Elements
             $('.select2').select2()
 
-            //Initialize Select2 Elements
-            $('.select2bs4').select2({
-                theme: 'bootstrap4'
-            })
-            $('#loan_table').DataTable({
+            let table = $('#loan_table').DataTable({
                 responsive: true,
-                order: [[0, 'desc']], // First column (0-indexed) sorted in ascending order
-                // Other options if needed
+                order: [[0, 'desc']]
+            });
+        });
+
+        $(document).ready(function () {
+            $('#export_excel').on('click', function () {
+                let table = $('#loan_table').DataTable();
+
+                // Show all rows temporarily
+                table.page.len(-1).draw();
+
+                setTimeout(() => {
+                    // Export entire visible table
+                    const tableClone = document.getElementById("loan_table").cloneNode(true);
+                    const totalRow = tableClone.insertRow(-1);
+                    totalRow.innerHTML = `<td colspan="4" style="font-weight:bold">Total Saving Amount</td><td>${document.getElementById("tot_amount").innerText}</td>`;
+
+                    const wb = XLSX.utils.table_to_book(tableClone, {sheet: "Savings Report"});
+                    XLSX.writeFile(wb, "savings_report.xlsx");
+
+                    // Reset pagination back to original (10 rows)
+                    table.page.len(10).draw();
+                }, 500); // Give it time to render full rows
             });
 
 
-        })
+            $('#export_pdf').on('click', function () {
+                let table = $('#loan_table').DataTable();
+
+                // Show all rows temporarily
+                table.page.len(-1).draw();
+
+                setTimeout(() => {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF('landscape');
+
+                    doc.setFontSize(14);
+                    doc.text("Savings Report", 14, 14);
+
+                    const head = [["Center No", "Group No", "Member NIC", "Member Name", "Amount"]];
+                    const body = [];
+
+                    $("#loan_table tbody tr").each(function () {
+                        const row = [];
+                        $(this).find("td").each(function () {
+                            row.push($(this).text().trim());
+                        });
+                        if (row.length > 0) {
+                            body.push(row);
+                        }
+                    });
+
+                    // Add total row
+                    body.push([
+                        { content: "Total Saving Amount", colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
+                        document.getElementById("tot_amount").innerText
+                    ]);
+
+                    doc.autoTable({
+                        head: head,
+                        body: body,
+                        startY: 20,
+                        styles: { fontSize: 9, cellPadding: 2 },
+                        headStyles: { fillColor: [26, 41, 66] }
+                    });
+
+                    doc.save('savings_report.pdf');
+
+                    // Reset pagination back to 10 rows
+                    table.page.len(10).draw();
+                }, 500);
+            });
+
+        });
+
+
 
         function load_payment_table() {
             let center_details = $("#center_details").val();
