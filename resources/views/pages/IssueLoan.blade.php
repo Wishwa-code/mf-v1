@@ -1978,7 +1978,7 @@
                     $('#last_name'+number).val(customer.Last_Name);
                     $('#nic'+number).val(customer.Nic);
                     $('#contact'+number).val(customer.Contact_No);
-                    $('#address'+number).val(customer.Address);
+                    $('#address'+number).val(customer.Address_01+","+customer.Address_02+","+customer.Address_03);
                 }
             }
 
