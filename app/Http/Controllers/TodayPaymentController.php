@@ -160,6 +160,7 @@ class TodayPaymentController extends Controller
                 'customer.First_Name as customer_name',
                 'customer.Last_Name as customer_lastname',
                 'customer.Nic as NIC',
+                'customer.cus_number as cus_number',
                 'customer_loan.Loan_No as Loan_No',
                 'customer_loan.Amount as Loan_Amount',
                 'customer_loan.idCustomer_Loan as idCustomer_Loan',
