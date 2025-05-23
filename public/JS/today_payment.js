@@ -74,6 +74,7 @@ function load_payment_table(page = 1) {
                     var row = `<tr>
                         <td>${item.Loan_No}</td>
                         <td>${formatName(item.customer_name, item.customer_lastname)}</td>
+                        <td>${item.cus_number}</td>
                         <td>${parseFloat(item.Loan_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td>${parseFloat(item.Today_installment).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td>

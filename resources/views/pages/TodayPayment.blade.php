@@ -340,6 +340,7 @@
 {{--                                    <th scope="col">Center No</th>--}}
 {{--                                    <th scope="col">Group No</th>--}}
                                     <th scope="col">Member Name</th>
+                                    <th scope="col">Member No</th>
 
                                     <th scope="col">Loan Amount</th>
 {{--                                    <th scope="col">Total Loan Balance</th>--}}
