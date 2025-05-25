@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Validator;
@@ -185,6 +186,10 @@ class UserController extends Controller
                 if ($item->Status === "0") {
                     return redirect()->route('login')->with("error", "Please contact Admin!");
                 }
+            }
+            // Check if 'log_tracking_no' column exists in 'company_bank_has_log'
+            if (!Schema::hasColumn('company_bank_has_log', 'log_tracking_no')) {
+                DB::statement("ALTER TABLE `company_bank_has_log` ADD `log_tracking_no` VARCHAR(10) NULL");
             }
 
             // Call to the penalty creation function
