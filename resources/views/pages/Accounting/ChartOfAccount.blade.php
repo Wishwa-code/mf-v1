@@ -399,6 +399,7 @@
             <thead>
             <tr>
                 <th>Code</th>
+                <th>Log No</th>
                 <th>Name</th>
                 <th>Type</th>
                 <th>Group</th>
@@ -418,6 +419,7 @@
             <thead>
             <tr>
                 <th>Code</th>
+                <th>Log No</th>
                 <th>Name</th>
                 <th>Type</th>
                 <th>Group</th>
@@ -437,6 +439,7 @@
             <thead>
             <tr>
                 <th>Code</th>
+                <th>Log No</th>
                 <th>Name</th>
                 <th>Type</th>
                 <th>Group</th>
@@ -456,6 +459,7 @@
             <thead>
             <tr>
                 <th>Code</th>
+                <th>Log No</th>
                 <th>Name</th>
                 <th>Type</th>
                 <th>Group</th>
@@ -475,6 +479,7 @@
             <thead>
             <tr>
                 <th>Code</th>
+                <th>Log No</th>
                 <th>Name</th>
                 <th>Type</th>
                 <th>Group</th>
@@ -494,6 +499,7 @@
             <thead>
             <tr>
                 <th>Code</th>
+                <th>Log No</th>
                 <th>Name</th>
                 <th>Type</th>
                 <th>Group</th>
@@ -522,6 +528,11 @@
                     <label for="accountCode">Code</label>
                     <input type="number" id="accountCode" placeholder="Enter account code">
                 </div>
+                <div class="form-group">
+                    <label for="accountCode">Log Code</label>
+                    <input type="text" id="log_no" placeholder="Enter log code">
+                </div>
+                <label id="log_label" style="color: red"></label>
                 <div class="form-group">
                     <label for="accountName">Account Name</label>
                     <input type="text" id="accountName" placeholder="Enter account name">
@@ -635,6 +646,7 @@
                     <thead>
                     <tr>
                         <th>Id</th>
+                        <th>Tracking Code</th>
                         <th>Type</th>
                         <th>Description</th>
                         <th>Debit Amount</th>
@@ -673,8 +685,20 @@
     <!-- PDFMake for PDF export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
-
     <script>
+        document.getElementById('log_no').addEventListener('input', function () {
+            let value = this.value.toUpperCase();
+            let label = document.getElementById('log_label');
+
+            if (value !== '') {
+                label.textContent = value + '0001';
+            } else {
+                label.textContent = '';
+            }
+        });
+    </script>
+    <script>
+
         $(document).ready(function() {
             let x = ["#opening_balance"];
             decimalFormat(x);
@@ -725,6 +749,7 @@
                     var description = $('#description').val();
                     var primaryAccountSelect = $('#primaryAccountSelect').val();
                     var opening_balance = $('#opening_balance').val();
+                    var log_no = $('#log_no').val();
                     var isSubAccount = $('#isSubAccount').is(':checked') ? 1 : 0;
 
 
@@ -734,7 +759,7 @@
 
                     // Validation checks for required fields
                     // Adjust these conditions based on which fields are mandatory
-                    if (!code || !accName || !accTypeGroup || !accType || !cashFlowType || !opening_balance) {
+                    if (!code || !accName || !accTypeGroup || !accType || !cashFlowType || !opening_balance || !log_no) {
                         Swal.fire({
                             icon: 'warning',
                             title: 'Incomplete Fields',
@@ -753,6 +778,7 @@
                         cash_flow_type: cashFlowType,
                         primaryAccountSelect: primaryAccountSelect,
                         isSubAccount: isSubAccount,
+                        log_no: log_no,
                         description: description
                     };
 
@@ -853,6 +879,7 @@
                         const row = `
         <tr>
             <td>${item.code ? item.code : '-'}</td>
+            <td>${item.tracking_no ? item.tracking_no : '-'}</td>
             <td>${item.Bank_Name}</td>
             <td>${item.type}</td>
             <td>${item.acc_type_group}</td>
@@ -1096,6 +1123,7 @@
                             const row = `
                         <tr>
                             <td>${item.id}</td>
+                            <td>${item.log_tracking_no  ? item.log_tracking_no : '-'}</td>
                             <td>${item.Type}</td>
                             <td>${item.Description}</td>
                             <td>${parseFloat(item.Debit || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
