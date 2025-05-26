@@ -82,7 +82,30 @@ class BankLogController extends Controller
 
         $BankLog->User = $user_id;
 
-// Convert the BankLog object to an array for insertion
+        $prefix = tableWithBranch('company_bank_accounts')
+            ->where('Idbank', '=', $bank_id)
+            ->value('tracking_no'); // e.g. 'EL' or null
+
+
+// Now your prefix generation logic...
+
+        if ($prefix!='-') {
+            $lastTrackingNo = tableWithBranch('company_bank_has_log')
+                ->where('log_tracking_no', 'like', $prefix . '%')
+                ->orderByDesc('log_tracking_no')
+                ->value('log_tracking_no');
+
+            if ($lastTrackingNo) {
+                $numberPart = (int)substr($lastTrackingNo, strlen($prefix));
+                $nextNumber = str_pad($numberPart + 1, 4, '0', STR_PAD_LEFT);
+                $newLogCode = $prefix . $nextNumber;
+            } else {
+                $newLogCode = $prefix . '0001';
+            }
+        } else {
+            $newLogCode = '-';
+        }
+
         $bankLogData = [
             'Bank_Account_Id' => $BankLog->Bank_Account_Id,
             'Date_Time' => $BankLog->Date_Time,
@@ -96,12 +119,10 @@ class BankLogController extends Controller
             'payment_id' => $payment_id,
             'contra_account' => $contra_account,
             'reconsilation_status' => $reconsilation_status,
+            'log_tracking_no' => $newLogCode, // can be null
         ];
 
-// Insert the BankLog entry using the helper function
         insertWithBranch('company_bank_has_log', $bankLogData);
-
-
 
     }
 

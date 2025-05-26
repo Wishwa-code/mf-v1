@@ -88,19 +88,7 @@ class ChartOfAccountController extends Controller
             $primaryAccountSelect=$request->primaryAccountSelect;
         }
 
-        // Step 1: Get first letter of acc_type_group in uppercase
-        $prefix = strtoupper(substr($request->acc_type_group, 0, 1));
-
-// Step 2: Query max tracking_no for this prefix
-        $latestTracking = DB::table('company_bank_accounts')
-            ->where('tracking_no', 'like', $prefix . '%')
-            ->select(DB::raw("MAX(CAST(SUBSTRING(tracking_no, 2) AS UNSIGNED)) as max_number"))
-            ->first();
-
-        $nextNumber = $latestTracking && $latestTracking->max_number ? $latestTracking->max_number + 1 : 1;
-
-// Step 3: Format to 4 digits with leading zeros
-        $tracking_no = $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        $tracking_no = $request->log_no;
 
 
 
