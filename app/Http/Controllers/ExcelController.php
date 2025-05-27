@@ -111,41 +111,41 @@ class ExcelController extends Controller
             $customer = new Customer();
 
             // Handle Center creation or fetching existing one
-            $center_name = $row[1] ?? "Default";  // Assuming center_name is in the 3rd column
-            $center = tableWithBranch('center')->where('Name', '=', $center_name)->first();
-            if (!$center) {
-                $centerData = [
-                    'No' => '-',
-                    'Name' => $center_name,
-                    'Contact_no' => '-',
-                    'Address' => '-',
-                    'Route' => '-',
-                    'Center_incharge' => 1,
-                    'Location' => '-',
-                    'Groups' => "0",
-                    'Members' => "0",
-                    'route_id' => 1,
-                ];
-                $center_id = insertWithBranch('center', $centerData);
-            } else {
-                $center_id = $center->idCenter;
-            }
-
-            // Handle Group creation or fetching existing one
-            $group_name = $row[2] ?? "Default";  // Assuming group_name is in the same column
-            $group = tableWithBranch('customer_group')->where('Group_No', '=', $group_name)->first();
-            if (!$group) {
-                $groupData = [
-                    'Group_No' => $group_name,
-                    'Name' => $group_name,
-                    'Leader_name' => '-',
-                    'Contact_no' => '-',
-                    'center_id' => $center_id,
-                ];
-                $group_id = insertWithBranch('customer_group', $groupData);
-            } else {
-                $group_id = $group->idCustomer_Group;
-            }
+//            $center_name = $row[1] ?? "Default";  // Assuming center_name is in the 3rd column
+//            $center = tableWithBranch('center')->where('Name', '=', $center_name)->first();
+//            if (!$center) {
+//                $centerData = [
+//                    'No' => '-',
+//                    'Name' => $center_name,
+//                    'Contact_no' => '-',
+//                    'Address' => '-',
+//                    'Route' => '-',
+//                    'Center_incharge' => 1,
+//                    'Location' => '-',
+//                    'Groups' => "0",
+//                    'Members' => "0",
+//                    'route_id' => 1,
+//                ];
+//                $center_id = insertWithBranch('center', $centerData);
+//            } else {
+//                $center_id = $center->idCenter;
+//            }
+//
+//            // Handle Group creation or fetching existing one
+//            $group_name = $row[2] ?? "Default";  // Assuming group_name is in the same column
+//            $group = tableWithBranch('customer_group')->where('Group_No', '=', $group_name)->first();
+//            if (!$group) {
+//                $groupData = [
+//                    'Group_No' => $group_name,
+//                    'Name' => $group_name,
+//                    'Leader_name' => '-',
+//                    'Contact_no' => '-',
+//                    'center_id' => $center_id,
+//                ];
+//                $group_id = insertWithBranch('customer_group', $groupData);
+//            } else {
+//                $group_id = $group->idCustomer_Group;
+//            }
 
             // Map fields from Excel to Customer object
             $customer->Title = $row[4] ?? '-';  // Assuming Title is in 5th column
@@ -205,11 +205,11 @@ class ExcelController extends Controller
                 insertWithBranch('customer_has_bank', $documentData);
             }
 
-            // Link customer to group
-            insertWithBranch('group_has_customer', [
-                'cus_id' => $customer->id,
-                'group_id' => $group_id
-            ]);
+//            // Link customer to group
+//            insertWithBranch('group_has_customer', [
+//                'cus_id' => $customer->id,
+//                'group_id' => $group_id
+//            ]);
         }
         Log::info("Skipped Customers: ", $skipped);
         return response()->json(['message' => 'Data processed successfully.'], 200);
