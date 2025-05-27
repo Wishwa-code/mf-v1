@@ -172,7 +172,7 @@ jobs:
 #            public/**
 #            tests/**
 
-  deploy-client5:
+  deploy-client4:
     if: github.ref == 'refs/heads/greenlankatrust'
     runs-on: ubuntu-latest
     steps:
@@ -213,7 +213,7 @@ jobs:
             public/**     
             tests/**  
 
-  deploy-client6:
+  deploy-client5:
     if: github.ref == 'refs/heads/northerncredit'
     runs-on: ubuntu-latest
     steps:
