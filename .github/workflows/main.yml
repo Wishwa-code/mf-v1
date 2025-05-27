@@ -191,7 +191,7 @@ jobs:
           npm run prod
           php artisan storage:link
 
-      - name: FTP Deploy to Server 3 (Client4)
+      - name: FTP Deploy to Server 4 (Client4)
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
           server: ${{ secrets.FTP_HOST_5 }}
@@ -232,7 +232,7 @@ jobs:
           npm run prod
           php artisan storage:link
 
-      - name: FTP Deploy to Server 3 (Client4)
+      - name: FTP Deploy to Server 5 (Client5)
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
           server: ${{ secrets.FTP_HOST_6 }}
