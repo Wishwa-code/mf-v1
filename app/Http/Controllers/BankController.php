@@ -65,7 +65,6 @@ class BankController extends Controller
     {
         $bank_log = tableWithBranch('company_bank_has_log','company_bank_has_log')
             ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
-            ->join('user', 'company_bank_has_log.User', '=', 'user.id')
             ->where('Bank_Account_Id', $id)
             ->get();
 
