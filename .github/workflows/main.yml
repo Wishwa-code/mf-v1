@@ -8,6 +8,7 @@ on:
       - greenlankacapital
       - greenlankatrust
       - northerncredit
+      - noble
 
 jobs:
   deploy-client1:
@@ -196,6 +197,47 @@ jobs:
           server: ${{ secrets.FTP_HOST_5 }}
           username: ${{ secrets.FTP_USERNAME_5 }}
           password: ${{ secrets.FTP_PASSWORD_5 }}
+          protocol: ftps  # Or ftp if that's what's working for you
+          local-dir: ./
+          server-dir: /
+          dry-run: false
+          timeout: 900000
+          exclude: |
+            .git**
+            node_modules/**
+            storage/**
+            .env*
+            vendor/**              # ⛔️ Exclude vendor folder
+            vendor/bin/*
+            .github/**
+            public/**     
+            tests/**  
+
+  deploy-client6:
+    if: github.ref == 'refs/heads/noble'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+
+      - name: Install Dependencies
+        run: |
+          composer install --no-dev --optimize-autoloader
+          npm install
+          npm run prod
+          php artisan storage:link
+
+      - name: FTP Deploy to Server 6 (Client5)
+        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+        with:
+          server: ${{ secrets.FTP_HOST_NOBLE }}
+          username: ${{ secrets.FTP_USERNAME_NOBLE }}
+          password: ${{ secrets.FTP_PASSWORD_NOBLE }}
           protocol: ftps  # Or ftp if that's what's working for you
           local-dir: ./
           server-dir: /
