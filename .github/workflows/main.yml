@@ -6,8 +6,8 @@ on:
       - main
       - rightwaycredit50
       - greenlankacapital
-      - northerncredit
       - greenlankatrust
+      - northerncredit
 
 jobs:
   deploy-client1:
