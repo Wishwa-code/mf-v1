@@ -67,7 +67,9 @@ class BankController extends Controller
             ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
             ->leftJoin('user', 'company_bank_has_log.User', '=', 'user.id')
             ->where('Bank_Account_Id', $id)
+            ->select('company_bank_has_log.*', 'company_bank_accounts.Account_No', DB::raw("COALESCE(user.Full_Name, '-') as Full_Name"))
             ->get();
+
 
         // Replace NULL values with '-'
         $bank_log->transform(function ($item) {
