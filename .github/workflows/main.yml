@@ -257,7 +257,7 @@ jobs:
             
 
   deploy-client7:
-    if: github.ref == 'refs/heads/noble'
+    if: github.ref == 'refs/heads/finwin'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
