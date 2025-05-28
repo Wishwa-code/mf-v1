@@ -171,7 +171,17 @@ class ReportController extends Controller
     public function loansummary(Request $request)
     {
         // Fetch the list of centers
-        $branch = DB::table('branch')->where('status','=','1')->get();
+        $branch_access = session('branch_access');
+
+        if ($branch_access == 1) {
+            $branch = DB::table('branch')->where('status', '=', '1')->get();
+        } else {
+            $branch = DB::table('branch')
+                ->where('status', '=', '1')
+                ->where('branch_id', session('branch_id'))
+                ->get();
+        }
+
 
         $centers = DB::table('center')->where('branch_id', session('branch_id'))->get();
 
@@ -910,13 +920,27 @@ class ReportController extends Controller
         }
 
 // Fetch dropdown data
-        $branches = tableWithBranch('branch')->where('status', '=', '1')->get();
+        $branch_access = session('branch_access');
+
+        if ($branch_access == 1) {
+            // User can access all branches
+            $branches = DB::table('branch')->where('status', '=', '1')->get();
+        } else {
+            // User can only access their own branch
+            $branches = DB::table('branch')
+                ->where('status', '=', '1')
+                ->where('branch_id', session('branch_id'))
+                ->get();
+        }
+
         $routes = tableWithBranch('route')->get();
         $centers = tableWithBranch('center')->get();
         $collectors = tableWithBranch('user')->where('collector', '=', '1')->get();
         $loanProducts = tableWithBranch('loan_category')->get();
 
-        return view('pages.PaymentFullDetailsReport', compact('loanProducts', 'payments', 'collectors', 'branches', 'routes', 'centers'));
+        return view('pages.PaymentFullDetailsReport', compact(
+            'loanProducts', 'payments', 'collectors', 'branches', 'routes', 'centers', 'branch_access'
+        ));
 
     }
 
