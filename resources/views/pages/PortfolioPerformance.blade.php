@@ -66,13 +66,19 @@
                                 <div class="col-lg-3">
                                     <div class="mb-2">
                                         <label for="branch" class="form-label">Branch</label>
-                                        <select class="form-control select2" id="branch" name="branch">
-                                            <option value="0">All</option>
+                                        <select class="form-control select2" id="branch" name="branch" {{ $branch_access == 0 ? 'disabled' : '' }}>
+                                            @if($branch_access == 1)
+                                                <option value="0">All</option>
+                                            @endif
                                             @foreach($branch as $item)
-                                                <option value="{{$item->branch_id}}">{{ $item->Name }}</option>
+                                                <option value="{{ $item->branch_id }}"
+                                                        {{ session('branch_id') == $item->branch_id ? 'selected' : '' }}>
+                                                    {{ $item->Name }}
+                                                </option>
                                             @endforeach
                                         </select>
                                     </div>
+
                                 </div>
 
                                 <!-- Route Selection (Dynamic) -->

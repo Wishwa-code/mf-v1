@@ -73,17 +73,28 @@
                                 <div class="row mb-4">
 
                                     <!-- Branch Filter -->
+                                    @php
+                                        $selectedBranch = request('branch') ?? session('branch_id');
+                                    @endphp
+
                                     <div class="col-lg-3 col-md-4 col-sm-6 mb-2">
                                         <label for="branch" class="form-label">Filter by Branch</label>
-                                        <select class="form-control select2" id="branch" name="branch">
-                                            <option value="">All</option>
+                                        <select class="form-control select2" id="branch" name="branch" {{ session('branch_access') == 0 ? 'disabled' : '' }}>
+                                            @if(session('branch_access') == 1)
+                                                <option value="" {{ $selectedBranch == '' ? 'selected' : '' }}>All</option>
+                                            @endif
                                             @foreach($branch as $item)
-                                                <option value="{{ $item->branch_id }}" {{ request('branch') == $item->branch_id ? 'selected' : '' }}>
+                                                <option value="{{ $item->branch_id }}" {{ $selectedBranch == $item->branch_id ? 'selected' : '' }}>
                                                     {{ $item->Name }}
                                                 </option>
                                             @endforeach
                                         </select>
+
+                                        @if(session('branch_access') == 0)
+                                            <input type="hidden" name="branch" value="{{ session('branch_id') }}">
+                                        @endif
                                     </div>
+
 
                                     <!-- Center Filter -->
                                     <div class="col-lg-3 col-md-4 col-sm-6 mb-2">
