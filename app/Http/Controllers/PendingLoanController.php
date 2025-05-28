@@ -612,7 +612,8 @@ class PendingLoanController extends Controller
     public function portfolio_performance()
     {
         $branch = DB::table('branch')->where('status','=','1')->get();
-        return view('pages.PortfolioPerformance', compact('branch'));
+        $branch_access=session('branch_access');
+        return view('pages.PortfolioPerformance', compact('branch','branch_access'));
     }
 
     public function getRoutesCenters(Request $request)
@@ -812,7 +813,8 @@ class PendingLoanController extends Controller
 
     public function report_disbursement()
     {
-        return view('pages.DisbursmentPerformanceReport'); // assuming this is your blade file
+        $branch_access=session('branch_access');
+        return view('pages.DisbursmentPerformanceReport',compact('branch_access')); // assuming this is your blade file
     }
 
     public function getFilters_disbursement()
