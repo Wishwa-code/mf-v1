@@ -161,6 +161,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 
+    <script>
+        const branchAccess = @json($branch_access);
+        const userBranchId = @json(session('branch_id'));
+    </script>
 
     <script>
         $(document).ready(function () {
@@ -176,9 +180,27 @@
 
         function loadFilters() {
             $.get("{{ route('loan.report.filters') }}", function (res) {
-                res.branches.forEach(b => {
-                    $('#branch_id').append(`<option value="${b.branch_id}">${b.Name}</option>`);
-                });
+                // Clear existing
+                $('#branch_id').empty();
+
+                // If user has access, show "All" and enable selection
+                if (branchAccess == 1) {
+                    $('#branch_id').append(`<option value="">All</option>`);
+                    res.branches.forEach(b => {
+                        const selected = b.branch_id == userBranchId ? 'selected' : '';
+                        $('#branch_id').append(`<option value="${b.branch_id}" ${selected}>${b.Name}</option>`);
+                    });
+                    $('#branch_id').prop('disabled', false);
+                } else {
+                    // User has no access: only show their branch, and disable selection
+                    const userBranch = res.branches.find(b => b.branch_id == userBranchId);
+                    if (userBranch) {
+                        $('#branch_id').append(`<option value="${userBranch.branch_id}" selected>${userBranch.Name}</option>`);
+                    }
+                    $('#branch_id').prop('disabled', true);
+                }
+
+                // Load other filters
                 res.centers.forEach(c => {
                     $('#center_id').append(`<option value="${c.idCenter}">${c.Name}</option>`);
                 });
@@ -187,6 +209,7 @@
                 });
             });
         }
+
 
         function loadLoans() {
             const filters = {

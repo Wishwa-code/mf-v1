@@ -91,17 +91,35 @@
         <!-- Filter Form -->
         <form method="GET" action="{{ route('payment-detail.index') }}">
             <div class="row">
+                @if ($branch_access == 0)
+                    <input type="hidden" name="branch_id" value="{{ session('branch_id') }}">
+                @endif
+
+                @php
+                    $selectedBranchId = request('branch_id') ?? session('branch_id');
+                @endphp
+
                 <div class="col-md-3">
                     <label>Branch</label>
-                    <select name="branch_id" class="form-control">
-                        <option value="0">All</option>
+                    <select name="branch_id" class="form-control" {{ $branch_access == 0 ? 'disabled' : '' }}>
+                        @if($branch_access == 1)
+                            <option value="0" {{ $selectedBranchId == 0 ? 'selected' : '' }}>All</option>
+                        @endif
                         @foreach($branches as $branch)
-                            <option value="{{ $branch->branch_id }}" {{ request('branch_id') == $branch->branch_id ? 'selected' : '' }}>
+                            <option value="{{ $branch->branch_id }}"
+                                    {{ $selectedBranchId == $branch->branch_id ? 'selected' : '' }}>
                                 {{ $branch->Name }}
                             </option>
                         @endforeach
                     </select>
+
+                    @if ($branch_access == 0)
+                        <input type="hidden" name="branch_id" value="{{ session('branch_id') }}">
+                    @endif
                 </div>
+
+
+
 
                 <div class="col-md-3">
                     <label>Route</label>
