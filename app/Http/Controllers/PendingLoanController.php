@@ -138,209 +138,219 @@ class PendingLoanController extends Controller
      */
     public function show(Request $request)
     {
-        $id=$request->loan_id;
-        $id_show=$request->loan_id;
-        $company_bank=$request->company_bank;
-        $document_details=$request->document_details;
+        DB::beginTransaction();
+        try {
+            $id=$request->loan_id;
+            $id_show=$request->loan_id;
+            $company_bank=$request->company_bank;
+            $document_details=$request->document_details;
 
-        $customer_loan=tableWithBranch('customer_loan')
-            ->where('idCustomer_Loan','=',$id)
-            ->first();
-
-        $bank = tableWithBranch('company_bank_accounts')->where('Idbank','=',$company_bank)->first();
-        if ($bank->Account_Balance<$customer_loan->Amount){
-            return response()->json(['error' => 'Bank Balance is not enough','id' => 0], 200);
-        }else{
-            $affected = DB::table('customer_loan')
-                ->where('idCustomer_Loan', $id)
-                ->where('branch_id', session('branch_id'))
-                ->update(
-                    [
-                        'Status' => '0',
-                        'cus_bank_account' => $request->bank_acc,
-                        'company_bank_account' => $company_bank
-                    ]);
-
-
-            $bank_log_comment="Loan Number : {$customer_loan->Loan_No}\nLoan Amount : {$customer_loan->Amount}\n";
-
-
-            $bank_id=tableWithBranch('company_bank_accounts')
-                ->where('Bank_Type','=','System_default_1')
+            $customer_loan=tableWithBranch('customer_loan')
+                ->where('idCustomer_Loan','=',$id)
                 ->first();
 
-
-            $this->bankLogController->index($company_bank,"Issue Loan",$bank_log_comment,"-","credit",$customer_loan->Amount,$bank_id->Idbank);
-
-
-
-
-            $this->bankLogController->index($bank_id->Idbank,"Issue Loan",$bank_log_comment,"-","debit",$customer_loan->Amount,$company_bank);
-
-
-
-
-            $customer=tableWithBranch('customer')
-                ->where('idCustomer','=',$customer_loan->Customer_idCustomer)
-                ->first();
-            $sumAmount = DB::table('loan_other_charges')
-                ->where('Customer_Loan_idCustomer_Loan', '=', $id)
-                ->where('branch_id', session('branch_id'))
-                ->sum('Amount');
+            $bank = tableWithBranch('company_bank_accounts')->where('Idbank','=',$company_bank)->first();
+            if ($bank->Account_Balance<$customer_loan->Amount){
+                return response()->json(['error' => 'Bank Balance is not enough','id' => 0], 200);
+            }else{
+                $affected = DB::table('customer_loan')
+                    ->where('idCustomer_Loan', $id)
+                    ->where('branch_id', session('branch_id'))
+                    ->update(
+                        [
+                            'Status' => '0',
+                            'cus_bank_account' => $request->bank_acc,
+                            'company_bank_account' => $company_bank
+                        ]);
 
 
+                $bank_log_comment="Loan Number : {$customer_loan->Loan_No}\nLoan Amount : {$customer_loan->Amount}\n";
 
-            // Check if the sumAmount is greater than zero
-            if ($sumAmount > 0) {
-                $bank_log_doc_comment="Loan Number : {$customer_loan->Loan_No}\nLoan Amount : {$customer_loan->Amount}\n";
 
                 $bank_id=tableWithBranch('company_bank_accounts')
-                    ->where('Bank_Type','=','System_default_9')
+                    ->where('Bank_Type','=','System_default_1')
                     ->first();
 
 
-                $this->bankLogController->index($company_bank,"Loan Document Chargers",$bank_log_doc_comment,"-","debit",$sumAmount,$bank_id->Idbank);
+                $this->bankLogController->index($company_bank,"Issue Loan",$bank_log_comment,"-","credit",$customer_loan->Amount,$bank_id->Idbank);
 
-                $this->bankLogController->index($bank_id->Idbank,"Loan Document Chargers",$bank_log_doc_comment,"-","credit",$sumAmount,$company_bank);
 
-                $cate=tableWithBranch('income_category')
-                    ->where('description','=','Other')
+
+
+                $this->bankLogController->index($bank_id->Idbank,"Issue Loan",$bank_log_comment,"-","debit",$customer_loan->Amount,$company_bank);
+
+
+
+
+                $customer=tableWithBranch('customer')
+                    ->where('idCustomer','=',$customer_loan->Customer_idCustomer)
                     ->first();
-                $user_id = (int)session('userid');
-                if ($cate){
-
-                    // Create a new Expenses instance
-                    $expenses = new Expenses();
-
-                    // Set the values for the Expenses instance
-                    $expenses->type = "Income";
-                    $expenses->reason = "Other loan charges for loan number: ({$customer_loan->Loan_No}), Customer name: ({$customer->First_Name} {$customer->Last_Name})";
-                    $expenses->date = date('Y-m-d');
-                    $expenses->amount = $sumAmount;
-                    $expenses->category_id = $cate->id;
-                    $expenses->bank_id = 1;
-                    $expenses->user_id = $user_id;
-                    $expenses->branch_id = session('branch_id');
-
-                    $expenses->save();
-                }else{
-                    $cate_id=DB::table('income_category')->insertGetId([
-                        'description'=>"Other",
-                        'branch_id'=>session('branch_id')
-                    ]);
-
-                    // Create a new Expenses instance
-                    $expenses = new Expenses();
-
-                    // Set the values for the Expenses instance
-                    $expenses->type = "Income";
-                    $expenses->reason = "Other loan charges for loan number: ({$customer_loan->Loan_No}), Customer name: ({$customer->First_Name} {$customer->Last_Name})";
-                    $expenses->date = date('Y-m-d');
-                    $expenses->amount = $sumAmount;
-                    $expenses->category_id = $cate_id;
-                    $expenses->bank_id = 1;
-                    $expenses->user_id = $user_id;
-                    $expenses->branch_id = session('branch_id');
-
-                    $expenses->save();
-                }
+                $sumAmount = DB::table('loan_other_charges')
+                    ->where('Customer_Loan_idCustomer_Loan', '=', $id)
+                    ->where('branch_id', session('branch_id'))
+                    ->sum('Amount');
 
 
 
+                // Check if the sumAmount is greater than zero
+                if ($sumAmount > 0) {
+                    $bank_log_doc_comment="Loan Number : {$customer_loan->Loan_No}\nLoan Amount : {$customer_loan->Amount}\n";
 
-            }
-
-
-            $request = new Request([
-                'customer_id' => $customer_loan->Customer_idCustomer,
-                'description' => "Approve Loan ({$customer_loan->Loan_No})\nLoan Amount : ({$customer_loan->Amount})",
-                'description_id' => $id,
-                'comment' => ' ',
-                'type' => 'Approve Loan',
-            ]);
-
-            // Call the store method of CustomerLogController
-            $this->customerLogController->store($request);
+                    $bank_id=tableWithBranch('company_bank_accounts')
+                        ->where('Bank_Type','=','System_default_9')
+                        ->first();
 
 
-            if (!empty($document_details)) {
-                // Process the tableData as needed
-                foreach ($document_details as $row) {
-                    $id = $row['id'];
-                    $checked = $row['checked'];
+                    $this->bankLogController->index($company_bank,"Loan Document Chargers",$bank_log_doc_comment,"-","debit",$sumAmount,$bank_id->Idbank);
 
-                    // Convert checked value to 1 or 0
-                    $isChecked = $checked ? 1 : 0;
+                    $this->bankLogController->index($bank_id->Idbank,"Loan Document Chargers",$bank_log_doc_comment,"-","credit",$sumAmount,$company_bank);
 
-                    // Update database based on idDocuments
-                    DB::table('documents')
-                        ->where('idDocuments', $id)
-                        ->where('branch_id', session('branch_id'))
-                        ->update(['issue_loan_check' => $isChecked]);
-                }
-            }
+                    $cate=tableWithBranch('income_category')
+                        ->where('description','=','Other')
+                        ->first();
+                    $user_id = (int)session('userid');
+                    if ($cate){
 
-            $panelty_balance=tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan','=',$id)->sum('Panalty_Balance');
+                        // Create a new Expenses instance
+                        $expenses = new Expenses();
 
-            // Call the store method of LoanLogController
-            $this->LoanLogController->index(
-                $id_show,
-                'Issue Loan',
-                $id_show,
-                'Loan Issue',
-                $customer_loan->Amount,
-                '0',
-                '0',
-                '0',
-                '0',
-                $panelty_balance,
-                $customer_loan->Interest_Amount,
-                $customer_loan->capital_balance,
-                $customer_loan->Balance_Amount+$panelty_balance,
-                '0');
+                        // Set the values for the Expenses instance
+                        $expenses->type = "Income";
+                        $expenses->reason = "Other loan charges for loan number: ({$customer_loan->Loan_No}), Customer name: ({$customer->First_Name} {$customer->Last_Name})";
+                        $expenses->date = date('Y-m-d');
+                        $expenses->amount = $sumAmount;
+                        $expenses->category_id = $cate->id;
+                        $expenses->bank_id = 1;
+                        $expenses->user_id = $user_id;
+                        $expenses->branch_id = session('branch_id');
 
-// Instantiate UserController
-            $userController = new UserController();
+                        $expenses->save();
+                    }else{
+                        $cate_id=DB::table('income_category')->insertGetId([
+                            'description'=>"Other",
+                            'branch_id'=>session('branch_id')
+                        ]);
 
-            // Call the create_panelty function
-            $userController->create_panelty();
+                        // Create a new Expenses instance
+                        $expenses = new Expenses();
 
-            // Check if any rows were affected
-            if ($affected) {
+                        // Set the values for the Expenses instance
+                        $expenses->type = "Income";
+                        $expenses->reason = "Other loan charges for loan number: ({$customer_loan->Loan_No}), Customer name: ({$customer->First_Name} {$customer->Last_Name})";
+                        $expenses->date = date('Y-m-d');
+                        $expenses->amount = $sumAmount;
+                        $expenses->category_id = $cate_id;
+                        $expenses->bank_id = 1;
+                        $expenses->user_id = $user_id;
+                        $expenses->branch_id = session('branch_id');
 
-                $sms_template = tableWithBranch('sms_template')->where('type', '=', 'loan_issue')->where('status', '=', '1')->first();
-                if ($sms_template) {
-                    $customer = tableWithBranch('customer')->where('idCustomer', '=', $customer_loan->Customer_idCustomer)->first();
-                    $product = tableWithBranch('loan_category')->where('idLoan_Category', '=', $customer_loan->Loan_Category_idLoan_Category)->first();
-
-                    // Step 2: Define the mapping
-                    $placeholders = [
-                        '@Member_No@' => $customer->cus_number,
-                        '@Member_Name@' => $customer->First_Name . ' ' . $customer->Last_Name,
-                        '@Loan_No@' => $customer_loan->Loan_No,
-                        '@Loan_Amount@' => $customer_loan->Amount,
-                        '@Interest_Amount@' => $customer_loan->Interest_Amount,
-                        '@Repayment_Type@' => $product->Repayment_type,
-                        '@Installment_Amount@' => $customer_loan->Installment_Amount,
-                        '@Issue_Date@' => $customer_loan->Date_Time,
-                    ];
-
-                    // Step 3: Replace placeholders in the loan_format
-                    $loan_number_txt = $sms_template->template;
-                    foreach ($placeholders as $placeholder => $value) {
-                        $loan_number_txt = str_replace($placeholder, $value, $loan_number_txt);
+                        $expenses->save();
                     }
 
-                    // Log the SMS message
-                    $this->smsLogController->index($customer_loan->Customer_idCustomer, $loan_number_txt, "Issue Loan");
+
+
+
                 }
 
-                return response()->json(['message' => 'User updated successfully','id'=>1,$document_details], 200);
+
+                $request = new Request([
+                    'customer_id' => $customer_loan->Customer_idCustomer,
+                    'description' => "Approve Loan ({$customer_loan->Loan_No})\nLoan Amount : ({$customer_loan->Amount})",
+                    'description_id' => $id,
+                    'comment' => ' ',
+                    'type' => 'Approve Loan',
+                ]);
+
+                // Call the store method of CustomerLogController
+                $this->customerLogController->store($request);
 
 
-            } else {
-                return response()->json(['error' => 'User not found'], 404);
+                if (!empty($document_details)) {
+                    // Process the tableData as needed
+                    foreach ($document_details as $row) {
+                        $id = $row['id'];
+                        $checked = $row['checked'];
+
+                        // Convert checked value to 1 or 0
+                        $isChecked = $checked ? 1 : 0;
+
+                        // Update database based on idDocuments
+                        DB::table('documents')
+                            ->where('idDocuments', $id)
+                            ->where('branch_id', session('branch_id'))
+                            ->update(['issue_loan_check' => $isChecked]);
+                    }
+                }
+
+                $panelty_balance=tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan','=',$id)->sum('Panalty_Balance');
+
+                // Call the store method of LoanLogController
+                $this->LoanLogController->index(
+                    $id_show,
+                    'Issue Loan',
+                    $id_show,
+                    'Loan Issue',
+                    $customer_loan->Amount,
+                    '0',
+                    '0',
+                    '0',
+                    '0',
+                    $panelty_balance,
+                    $customer_loan->Interest_Amount,
+                    $customer_loan->capital_balance,
+                    $customer_loan->Balance_Amount+$panelty_balance,
+                    '0');
+
+// Instantiate UserController
+                $userController = new UserController();
+
+                // Call the create_panelty function
+                $userController->create_panelty();
+
+                // Check if any rows were affected
+                if ($affected) {
+
+                    $sms_template = tableWithBranch('sms_template')->where('type', '=', 'loan_issue')->where('status', '=', '1')->first();
+                    if ($sms_template) {
+                        $customer = tableWithBranch('customer')->where('idCustomer', '=', $customer_loan->Customer_idCustomer)->first();
+                        $product = tableWithBranch('loan_category')->where('idLoan_Category', '=', $customer_loan->Loan_Category_idLoan_Category)->first();
+
+                        // Step 2: Define the mapping
+                        $placeholders = [
+                            '@Member_No@' => $customer->cus_number,
+                            '@Member_Name@' => $customer->First_Name . ' ' . $customer->Last_Name,
+                            '@Loan_No@' => $customer_loan->Loan_No,
+                            '@Loan_Amount@' => $customer_loan->Amount,
+                            '@Interest_Amount@' => $customer_loan->Interest_Amount,
+                            '@Repayment_Type@' => $product->Repayment_type,
+                            '@Installment_Amount@' => $customer_loan->Installment_Amount,
+                            '@Issue_Date@' => $customer_loan->Date_Time,
+                        ];
+
+                        // Step 3: Replace placeholders in the loan_format
+                        $loan_number_txt = $sms_template->template;
+                        foreach ($placeholders as $placeholder => $value) {
+                            $loan_number_txt = str_replace($placeholder, $value, $loan_number_txt);
+                        }
+
+                        // Log the SMS message
+                        $this->smsLogController->index($customer_loan->Customer_idCustomer, $loan_number_txt, "Issue Loan");
+                    }
+                    DB::commit();
+                    return response()->json(['message' => 'User updated successfully','id'=>1,$document_details], 200);
+
+
+                } else {
+                    return response()->json(['error' => 'User not found'], 404);
+                }
             }
+        }catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Update failed',
+                'error' => $e->getMessage(),
+            ], 500);
         }
     }
 
