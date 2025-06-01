@@ -392,43 +392,43 @@ class UserController extends Controller
 
 
         $capitalBalanceController = new CapitalBalanceController();
-        $loan=DB::table('customer_loan')->get();
-        foreach ($loan as $loans){
-            $capitalBalanceController->index($loans->idCustomer_Loan);
-            $loan_log=DB::table('Loan_Log')->where('Loan_ID','=',$loans->idCustomer_Loan)->where('Type','=','Issue Loan')->first();
-            if (!$loan_log){
-                $id=$loans->idCustomer_Loan;
-                $branch_id=$loans->branch_id;
-                $panelty_balance=tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan','=',$id)->sum('Panalty_Balance');
-
-                $user_id = (int)session('userid');
-                // Insert the data into the Savings_Account_Log table
-                DB::table('Loan_Log')->insert([
-                    'Loan_ID' => $id,
-                    'Date_Time' => date('Y-m-d H:i:s'),
-                    'Type' => 'Issue Loan',
-                    'Type_ID' => $id,
-                    'Description' => 'Loan Issue',
-                    'Amount' => $loans->Amount,
-                    'Panelty_Payment' => '0',
-                    'Interest_Payment' => '0',
-                    'Capital_Payment' => '0',
-                    'Savings_Payment' => '0',
-                    'Panelty_Balance' => $panelty_balance,
-                    'Interest_Balance' => $loans->Interest_Amount,
-                    'Capital_Balance' => $loans->capital_balance,
-                    'Total_Pending_Balance' => $loans->Balance_Amount+$panelty_balance,
-                    'Saving_Account_Balance' => '0',
-                    'User_idUser' => $user_id,
-                    'branch_id' =>$branch_id
-                ]);
-
-
-
-
-
-            }
-        }
+//        $loan=DB::table('customer_loan')->get();
+//        foreach ($loan as $loans){
+//            $capitalBalanceController->index($loans->idCustomer_Loan);
+//            $loan_log=DB::table('Loan_Log')->where('Loan_ID','=',$loans->idCustomer_Loan)->where('Type','=','Issue Loan')->first();
+//            if (!$loan_log){
+//                $id=$loans->idCustomer_Loan;
+//                $branch_id=$loans->branch_id;
+//                $panelty_balance=tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan','=',$id)->sum('Panalty_Balance');
+//
+//                $user_id = (int)session('userid');
+//                // Insert the data into the Savings_Account_Log table
+//                DB::table('Loan_Log')->insert([
+//                    'Loan_ID' => $id,
+//                    'Date_Time' => date('Y-m-d H:i:s'),
+//                    'Type' => 'Issue Loan',
+//                    'Type_ID' => $id,
+//                    'Description' => 'Loan Issue',
+//                    'Amount' => $loans->Amount,
+//                    'Panelty_Payment' => '0',
+//                    'Interest_Payment' => '0',
+//                    'Capital_Payment' => '0',
+//                    'Savings_Payment' => '0',
+//                    'Panelty_Balance' => $panelty_balance,
+//                    'Interest_Balance' => $loans->Interest_Amount,
+//                    'Capital_Balance' => $loans->capital_balance,
+//                    'Total_Pending_Balance' => $loans->Balance_Amount+$panelty_balance,
+//                    'Saving_Account_Balance' => '0',
+//                    'User_idUser' => $user_id,
+//                    'branch_id' =>$branch_id
+//                ]);
+//
+//
+//
+//
+//
+//            }
+//        }
 
 //        $loan=DB::table('customer_loan')->where('Status','=','1')->get();
 //        foreach ($loan as $loans){

@@ -801,7 +801,11 @@ class TodayPaymentController extends Controller
             $type = $loan_item->type;
 
             $loan_cate = DB::table('loan_category')->where('branch_id', session('branch_id'))->where('idLoan_Category', '=', $loan_item->Loan_Category_idLoan_Category)->first();
-            $enable_saving_process = $loan_cate->enable_saving_process;
+            $enable_saving_process = "No";
+            if ($loan_cate){
+                $enable_saving_process = $loan_cate->enable_saving_process;
+            }
+
 
             if ($type === "Flat Rate") {
 
@@ -833,9 +837,12 @@ class TodayPaymentController extends Controller
                 }
 
                 $saving_payment_type="0";
-                if ($loan_category->enable_saving_process=="Yes") {
-                    $saving_payment_type=$loan_category->saving_payment;
+                if ($loan_category){
+                    if ($loan_category->enable_saving_process=="Yes") {
+                        $saving_payment_type=$loan_category->saving_payment;
+                    }
                 }
+
 
 
 

@@ -94,124 +94,174 @@ class ExcelController extends Controller
     {
         $data = $request->excelData;
 
-        // Loop through each row of Excel data, starting from the 6th row (index 5)
-        $skipped = [];
         foreach ($data as $key => $row) {
-            if (DB::table('customer')
+            $customer=DB::table('customer')
                 ->where('cus_number', '=', $row[3])
                 ->where('branch_id', '=', session('branch_id'))
-                ->exists()) {
-                $skipped[] = $row[3];  // Log skipped customer numbers
-                continue;
+                ->first();
+            if ($customer){
+                $center_name = $row[1] ?? "Default";  // Assuming center_name is in the 3rd column
+                $center = tableWithBranch('center')->where('Name', '=', $center_name)->first();
+                if (!$center) {
+                    $centerData = [
+                        'No' => '-',
+                        'Name' => $center_name,
+                        'Contact_no' => '-',
+                        'Address' => '-',
+                        'Route' => '-',
+                        'Center_incharge' => 1,
+                        'Location' => '-',
+                        'Groups' => "0",
+                        'Members' => "0",
+                        'route_id' => 1,
+                    ];
+                    $center_id = insertWithBranch('center', $centerData);
+                } else {
+                    $center_id = $center->idCenter;
+                }
+
+                // Handle Group creation or fetching existing one
+                $group_name = $row[2] ?? "Default";  // Assuming group_name is in the same column
+                $group = tableWithBranch('customer_group')->where('Group_No', '=', $group_name)->where('center_id', '=', $center_id)->first();
+                if (!$group) {
+                    $groupData = [
+                        'Group_No' => $group_name,
+                        'Name' => $group_name,
+                        'Leader_name' => '-',
+                        'Contact_no' => '-',
+                        'center_id' => $center_id,
+                    ];
+                    $group_id = insertWithBranch('customer_group', $groupData);
+                } else {
+                    $group_id = $group->idCustomer_Group;
+                }
+
+                // Link customer to group
+                insertWithBranch('group_has_customer', [
+                    'cus_id' => $customer->idCustomer,
+                    'group_id' => $group_id
+                ]);
             }
-
-
-
-            // Instantiate a new Customer object
-            $customer = new Customer();
-
-            // Handle Center creation or fetching existing one
-//            $center_name = $row[1] ?? "Default";  // Assuming center_name is in the 3rd column
-//            $center = tableWithBranch('center')->where('Name', '=', $center_name)->first();
-//            if (!$center) {
-//                $centerData = [
-//                    'No' => '-',
-//                    'Name' => $center_name,
-//                    'Contact_no' => '-',
-//                    'Address' => '-',
-//                    'Route' => '-',
-//                    'Center_incharge' => 1,
-//                    'Location' => '-',
-//                    'Groups' => "0",
-//                    'Members' => "0",
-//                    'route_id' => 1,
-//                ];
-//                $center_id = insertWithBranch('center', $centerData);
-//            } else {
-//                $center_id = $center->idCenter;
-//            }
-//
-//            // Handle Group creation or fetching existing one
-//            $group_name = $row[2] ?? "Default";  // Assuming group_name is in the same column
-//            $group = tableWithBranch('customer_group')->where('Group_No', '=', $group_name)->first();
-//            if (!$group) {
-//                $groupData = [
-//                    'Group_No' => $group_name,
-//                    'Name' => $group_name,
-//                    'Leader_name' => '-',
-//                    'Contact_no' => '-',
-//                    'center_id' => $center_id,
-//                ];
-//                $group_id = insertWithBranch('customer_group', $groupData);
-//            } else {
-//                $group_id = $group->idCustomer_Group;
-//            }
-
-            // Map fields from Excel to Customer object
-            $customer->Title = $row[4] ?? '-';  // Assuming Title is in 5th column
-            $customer->Customer_Group_idCustomer_Group = 1;  // Default group
-
-            // Handle cus_number and format
-            $customer->cus_number = $row[3] ?? '';
-            // Assigning other customer details from Excel
-            $customer->First_Name = $row[5] ?? '-';
-            $customer->Last_Name = $row[6] ?? '-';
-            $customer->Email = $row[7] ?? '-';
-            $customer->Contact_No = $row[8] ?? '-';
-            $customer->Nic = $row[10] ?? '-';
-            $customer->Gender = $row[11] ?? '-';
-            $customer->Dob = $row[12] ?? '-';
-
-            // Address details
-            $customer->Address = $row[13] ?? '-';
-            $customer->Address_02 = $row[14] ?? '-';
-            $customer->Address_03 = $row[15] ?? '-';
-            $customer->Per_Address_01 = $row[16] ?? '-';
-            $customer->Per_Address_02 = $row[17] ?? '-';
-            $customer->Per_Address_03 = $row[18] ?? '-';
-            $customer->City = $row[19] ?? '-';
-            $customer->State = $row[20] ?? '-';
-            $customer->Landline = $row[21] ?? '-';
-
-            // Guardian information
-            $customer->Gua_title = $row[22] ?? '-';
-            $customer->Gua_name = $row[23] ?? '-';
-            $customer->Guardian_gender = $row[24] ?? '-';
-            $customer->Gua_relation = $row[25] ?? '-';
-            $customer->Gua_occu = $row[26] ?? '-';
-            $customer->Gua_contact = $row[27] ?? '-';
-            $customer->Gua_address = $row[28] ?? '-';
-            $customer->Gua_nic = $row[29] ?? '-';
-
-            // Additional fields
-            $customer->Customer_Risk_Level = "1";  // Default risk level
-            $customer->civil_status = $row[30] ?? '-';
-
-            // Assign branch_id
-            $customer->branch_id = session('branch_id');
-
-            // Save the customer data
-            $customer->save();
-
-            // If bank details exist, save them
-            if (isset($row[37])) {
-                $documentData = [
-                    'cus_id' => $customer->id,  // Customer ID
-                    'bank_name' => $row[37],    // Bank name
-                    'account_name' => $row[38], // Account name
-                    'account_number' => $row[39], // Account number
-                    'branch' => session('branch_id'), // Bank branch
-                ];
-                insertWithBranch('customer_has_bank', $documentData);
-            }
-
-//            // Link customer to group
-//            insertWithBranch('group_has_customer', [
-//                'cus_id' => $customer->id,
-//                'group_id' => $group_id
-//            ]);
         }
-        Log::info("Skipped Customers: ", $skipped);
+
+        // Loop through each row of Excel data, starting from the 6th row (index 5)
+        // $skipped = [];
+        // foreach ($data as $key => $row) {
+        //     if (DB::table('customer')
+        //         ->where('cus_number', '=', $row[3])
+        //         ->where('branch_id', '=', session('branch_id'))
+        //         ->exists()) {
+        //         $skipped[] = $row[3];  // Log skipped customer numbers
+        //         continue;
+        //     }
+
+
+
+        //     // Instantiate a new Customer object
+        //     $customer = new Customer();
+
+        //     // Handle Center creation or fetching existing one
+        //     $center_name = $row[1] ?? "Default";  // Assuming center_name is in the 3rd column
+        //     $center = tableWithBranch('center')->where('Name', '=', $center_name)->first();
+        //     if (!$center) {
+        //         $centerData = [
+        //             'No' => '-',
+        //             'Name' => $center_name,
+        //             'Contact_no' => '-',
+        //             'Address' => '-',
+        //             'Route' => '-',
+        //             'Center_incharge' => 1,
+        //             'Location' => '-',
+        //             'Groups' => "0",
+        //             'Members' => "0",
+        //             'route_id' => 1,
+        //         ];
+        //         $center_id = insertWithBranch('center', $centerData);
+        //     } else {
+        //         $center_id = $center->idCenter;
+        //     }
+
+        //     // Handle Group creation or fetching existing one
+        //     $group_name = $row[2] ?? "Default";  // Assuming group_name is in the same column
+        //     $group = tableWithBranch('customer_group')->where('Group_No', '=', $group_name)->first();
+        //     if (!$group) {
+        //         $groupData = [
+        //             'Group_No' => $group_name,
+        //             'Name' => $group_name,
+        //             'Leader_name' => '-',
+        //             'Contact_no' => '-',
+        //             'center_id' => $center_id,
+        //         ];
+        //         $group_id = insertWithBranch('customer_group', $groupData);
+        //     } else {
+        //         $group_id = $group->idCustomer_Group;
+        //     }
+
+        //     // Map fields from Excel to Customer object
+        //     $customer->Title = $row[4] ?? '-';  // Assuming Title is in 5th column
+        //     $customer->Customer_Group_idCustomer_Group = 1;  // Default group
+
+        //     // Handle cus_number and format
+        //     $customer->cus_number = $row[3] ?? '';
+        //     // Assigning other customer details from Excel
+        //     $customer->First_Name = $row[5] ?? '-';
+        //     $customer->Last_Name = $row[6] ?? '-';
+        //     $customer->Email = $row[7] ?? '-';
+        //     $customer->Contact_No = $row[8] ?? '-';
+        //     $customer->Nic = $row[10] ?? '-';
+        //     $customer->Gender = $row[11] ?? '-';
+        //     $customer->Dob = $row[12] ?? '-';
+
+        //     // Address details
+        //     $customer->Address = $row[13] ?? '-';
+        //     $customer->Address_02 = $row[14] ?? '-';
+        //     $customer->Address_03 = $row[15] ?? '-';
+        //     $customer->Per_Address_01 = $row[16] ?? '-';
+        //     $customer->Per_Address_02 = $row[17] ?? '-';
+        //     $customer->Per_Address_03 = $row[18] ?? '-';
+        //     $customer->City = $row[19] ?? '-';
+        //     $customer->State = $row[20] ?? '-';
+        //     $customer->Landline = $row[21] ?? '-';
+
+        //     // Guardian information
+        //     $customer->Gua_title = $row[22] ?? '-';
+        //     $customer->Gua_name = $row[23] ?? '-';
+        //     $customer->Guardian_gender = $row[24] ?? '-';
+        //     $customer->Gua_relation = $row[25] ?? '-';
+        //     $customer->Gua_occu = $row[26] ?? '-';
+        //     $customer->Gua_contact = $row[27] ?? '-';
+        //     $customer->Gua_address = $row[28] ?? '-';
+        //     $customer->Gua_nic = $row[29] ?? '-';
+
+        //     // Additional fields
+        //     $customer->Customer_Risk_Level = "1";  // Default risk level
+        //     $customer->civil_status = $row[30] ?? '-';
+
+        //     // Assign branch_id
+        //     $customer->branch_id = session('branch_id');
+
+        //     // Save the customer data
+        //     $customer->save();
+
+        //     // If bank details exist, save them
+        //     if (isset($row[37])) {
+        //         $documentData = [
+        //             'cus_id' => $customer->id,  // Customer ID
+        //             'bank_name' => $row[37],    // Bank name
+        //             'account_name' => $row[38], // Account name
+        //             'account_number' => $row[39], // Account number
+        //             'branch' => session('branch_id'), // Bank branch
+        //         ];
+        //         insertWithBranch('customer_has_bank', $documentData);
+        //     }
+
+        //     // Link customer to group
+        //     insertWithBranch('group_has_customer', [
+        //         'cus_id' => $customer->id,
+        //         'group_id' => $group_id
+        //     ]);
+        // }
+        // Log::info("Skipped Customers: ", $skipped);
         return response()->json(['message' => 'Data processed successfully.'], 200);
     }
 
@@ -284,15 +334,15 @@ class ExcelController extends Controller
             $product_name = $row[2];
             $member_no = $row[3];
             $issue_date = $row[4];
+            $first_ins_date = $row[15];
             $loan_amount = $row[5];
-            $interest_rate = isset($row[6]) ? str_replace('%', '', $row[6]) : 0;
-            $interest_rate = floatval(trim($interest_rate*100));
+            $interest_rate = $row[6];
             $installment_count = $row[8];
             $interest_amount = $row[10];
-            $other_charge = $row[13];
-            $tot_loan_amount = $row[14];
-            $installment_amount = $row[15];
-            $collection_type = $row[16];
+            $other_charge = $row[11];
+            $tot_loan_amount = $row[12];
+            $installment_amount = $row[13];
+            $collection_type = $row[14];
 
             if ($collection_type=="WEEKLY"){
                 $collection_type="Weekly";
@@ -304,7 +354,30 @@ class ExcelController extends Controller
                 $collection_type="Daily";
             }
 
-            $issue_date = str_replace("f", "", $issue_date);
+            // Issue Date
+            if (is_numeric($issue_date)) {
+                $unix_date = ($issue_date - 25569) * 86400;
+                $issue_date = gmdate("Y-m-d", $unix_date);
+            } else {
+                try {
+                    $issue_date = (new DateTime($issue_date))->format('Y-m-d');
+                } catch (Exception $e) {
+                    return response()->json(['error' => 'Invalid issue date: ' . $issue_date], 400);
+                }
+            }
+
+// First Installment Date
+            if (is_numeric($first_ins_date)) {
+                $unix_date_2 = ($first_ins_date - 25569) * 86400;
+                $first_ins_date = gmdate("Y-m-d", $unix_date_2);
+            } else {
+                try {
+                    $first_ins_date = (new DateTime($first_ins_date))->format('Y-m-d');
+                } catch (Exception $e) {
+                    return response()->json(['error' => 'Invalid first installment date: ' . $first_ins_date], 400);
+                }
+            }
+
             $interest_rate = str_replace("%", "", $interest_rate);
 
             $product=tableWithBranch('loan_category')->where('Name','=',$product_name)->first();
@@ -316,22 +389,10 @@ class ExcelController extends Controller
                 if ($customer){
 
 
-                    $Collection_Date = new DateTime($issue_date);  // Create a DateTime object
+                    $Collection_Date = new DateTime($first_ins_date); // ✅ Keep as DateTime object
+                    $formattedCollectionDate = $Collection_Date->format('Y-m-d'); // For DB use
 
-                    if ($collection_type == "Weekly") {
-                        // Add 7 days for WEEKLY collection type
-                        $Collection_Date->modify('+7 days');
-                    } else if($collection_type=="Twice A Month"){
-                        $Collection_Date->modify('+14 days');
-                    }else if($collection_type=="Daily"){
-                        $Collection_Date->modify('+1 days');
-                    }else{
-                        // Add 1 month for other collection types
-                        $Collection_Date->modify('+1 month');
-                    }
 
-// Format the updated date if needed
-                    $Collection_Date = $Collection_Date->format('Y-m-d');
 
 
                     $loan = new Loan();
@@ -355,7 +416,7 @@ class ExcelController extends Controller
                     $loan->Total_Loan_Amount = $tot_loan_amount;
                     $loan->Installment_Amount = $installment_amount;
                     $loan->Collection_Type = 'Daily';
-                    $loan->Collection_Date = $Collection_Date;
+                    $loan->Collection_Date = $Collection_Date->format('Y-m-d'); // No time
                     $loan->Panalty_Date = $panelty_start_day;
                     $loan->Balance_Amount = $tot_loan_amount;
                     $loan->Status = "0";
@@ -426,21 +487,9 @@ class ExcelController extends Controller
                     $paidAmount = "0.00";  // Initial paid amount
                     $status = '0'; // Default status for new installments
                     $paneltyStatus = '0'; // Default penalty status for new installments
-
+                    $installmentDate=$Collection_Date;
                     // Loop to generate installments based on the installment count
                     for ($i = 0; $i < $installment_count; $i++) {
-                        if ($collection_type == "Weekly") {
-                            // Calculate installment dates in weekly intervals
-                            $installmentDate = date('Y-m-d', strtotime("+$i week", strtotime($Collection_Date)));
-                        } else if ($collection_type == "Per Month") {
-                            // Calculate installment dates in monthly intervals
-                            $installmentDate = date('Y-m-d', strtotime("+$i month", strtotime($Collection_Date)));
-                        } else if ($collection_type == "Daily") {
-                            // Calculate installment dates in monthly intervals
-                            $installmentDate = date('Y-m-d', strtotime("+$i day", strtotime($Collection_Date)));
-                        }else{
-                            $installmentDate = date('Y-m-d', strtotime("+$i month", strtotime($Collection_Date)));
-                        }
                         // Calculate the amounts and other details for each installment
                         $capitalAmount = $loan_amount / $installment_count; // Capital per installment
                         $interestForInstallment = $interest_amount / $installment_count; // Interest per installment
@@ -452,15 +501,31 @@ class ExcelController extends Controller
                             $panelty_start_day = 0; // Default value, adjust based on your requirement
                         }
 
-// Calculate penalty date using a valid $panelty_start_day
-                        $penaltyDate = date('Y-m-d', strtotime("+$panelty_start_day days", strtotime($installmentDate)));
+                        $installmentDate = clone $Collection_Date;
+
+                        if ($collection_type == "Weekly") {
+                            $installmentDate->modify("+{$i} week");
+                        } elseif ($collection_type == "Per Month") {
+                            $installmentDate->modify("+{$i} month");
+                        } elseif ($collection_type == "Daily") {
+                            $installmentDate->modify("+{$i} day");
+                        } elseif ($collection_type == "Twice A Month") {
+                            $installmentDate->modify("+".($i * 14)." days");
+                        } else {
+                            $installmentDate->modify("+{$i} month");
+                        }
+
+                        $formattedInstallmentDate = $installmentDate->format('Y-m-d');
+                        $penaltyDate = (clone $installmentDate)->modify("+{$panelty_start_day} days")->format('Y-m-d');
+
+
 
 
                         // Save each installment to the database
                         DB::table('installments')->insert([
                             'Customer_Loan_idCustomer_Loan' => $id, // Assuming loan_no is the customer loan reference
                             'No' => $i + 1, // Installment number (1, 2, 3, ...)
-                            'Installment_Date' => $installmentDate,
+                            'Installment_Date' => $installmentDate->format('Y-m-d'),
                             'Installment_Amount' => $installment_amount,
                             'capital_amount' => $capitalAmount,
                             'interest_amount' => $interestForInstallment,
@@ -478,6 +543,11 @@ class ExcelController extends Controller
                             'Saving_balance' => $savingBalance, // No penalty initially
                             'branch_id' => session('branch_id')
                         ]);
+
+
+
+
+
                     }
 
 
@@ -623,6 +693,15 @@ class ExcelController extends Controller
                             $customer_loan->Balance_Amount+$panelty_balance,
                             '0');
                     }
+                    if ($collection_type == "Weekly") {
+                        $Collection_Date->modify('+7 days');
+                    } elseif ($collection_type == "Twice A Month") {
+                        $Collection_Date->modify('+14 days');
+                    } elseif ($collection_type == "Daily") {
+                        $Collection_Date->modify('+1 days');
+                    } else {
+                        $Collection_Date->modify('+1 month');
+                    }
 
 
                 }else{
@@ -639,6 +718,118 @@ class ExcelController extends Controller
             return response()->json(['message' => 'Row processed.']);
         }
     }
+
+
+    public function reverseUploadedLoan(Request $request)
+    {
+
+        $row = $request->row;
+
+        // Do basic validation
+        if (!$row || count($row) < 16) {
+            return response()->json(['error' => 'Invalid row data.'], 400);
+        }
+
+        if ($row[1]!=''){
+            $loan_no = $row[1];
+
+            // Get loan entry
+            $loan = tableWithBranch('customer_loan')->where('Loan_No', $loan_no)->first();
+
+            if (!$loan) {
+                return response()->json(['error' => 'Loan not found.'], 404);
+            }
+
+            $loan_id = $loan->idCustomer_Loan;
+            $branch_id = session('branch_id');
+
+            // 1. Delete installments
+            tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', $loan_id)->delete();
+
+            // 2. Delete expenses with related reason
+            Expenses::where('branch_id', $branch_id)
+                ->where('reason', 'like', "%loan number: ({$loan->Loan_No})%")
+                ->delete();
+
+            // 3. Delete saving account and logs
+            $savingAccount = tableWithBranch('Customer_Saving_Accounts')
+                ->where('Loan_Id', $loan_id)->first();
+
+            if ($savingAccount) {
+                tableWithBranch('Savings_Account_Log')->where('Saving_Acount_Id', $savingAccount->id)->delete();
+                tableWithBranch('Customer_Saving_Accounts')->where('id', $savingAccount->id)->delete();
+            }
+
+            // 4. Delete loan other charges
+            tableWithBranch('loan_other_charges')->where('Customer_Loan_idCustomer_Loan', $loan_id)->delete();
+
+            // 5. Delete customer log (optional)
+            tableWithBranch('customer_log')
+                ->where('description_id', $loan_id)
+                ->where('type', 'Approve Loan')
+                ->delete();
+
+            // 6. Delete loan log (optional)
+            tableWithBranch('Loan_Log')
+                ->where('Loan_ID', $loan_id)
+                ->delete();
+
+
+            $loan_log_comment = "Loan Number : {$loan->Loan_No}\nLoan Amount : {$loan->Amount}\n";
+
+// Delete related bank logs: Loan Document Charges
+            tableWithBranch('company_bank_has_log')
+                ->where('Description', $loan_log_comment)
+                ->where('Type', 'Loan Document Chargers')
+                ->delete();
+
+// Delete related bank logs: Issue Loan
+            tableWithBranch('company_bank_has_log')
+                ->where('Description', $loan_log_comment)
+                ->where('Type', 'Issue Loan')
+                ->delete();
+
+            $loan_amount = $loan->Amount;
+
+            $bank_default_1 = tableWithBranch('company_bank_accounts')
+                ->where('Bank_Type', 'System_default_1')
+                ->first();
+
+            if ($bank_default_1) {
+                tableWithBranch('company_bank_accounts')
+                    ->where('Idbank', $bank_default_1->Idbank)
+                    ->update([
+                        'Account_Balance' => DB::raw("Account_Balance - {$loan_amount}")
+                    ]);
+            }
+            $sumAmount = DB::table('loan_other_charges')
+                ->where('Customer_Loan_idCustomer_Loan', '=', $loan_id)
+                ->where('branch_id', session('branch_id'))
+                ->sum('Amount');
+            $document_charge = $sumAmount;
+
+            $bank_default_9 = tableWithBranch('company_bank_accounts')
+                ->where('Bank_Type', 'System_default_9')
+                ->first();
+
+            if ($bank_default_9) {
+                tableWithBranch('company_bank_accounts')
+                    ->where('Idbank', $bank_default_9->Idbank)
+                    ->update([
+                        'Account_Balance' => DB::raw("Account_Balance - {$document_charge}")
+                    ]);
+            }
+
+
+
+            // 7. Delete the loan itself
+            tableWithBranch('customer_loan')->where('idCustomer_Loan', $loan_id)->delete();
+
+        }
+
+        return response()->json(['message' => 'Loan and related records reversed successfully.']);
+    }
+
 
 
 
