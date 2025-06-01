@@ -702,6 +702,13 @@ Route::get('/company/bank-accounts', [App\Http\Controllers\KYCController::class,
 Route::post('/save-cashier-entries', [CashierController::class, 'saveCashierEntries']);
 
 
+//data
+Route::get('/create_mivence_loan', [\App\Http\Controllers\DataMigrateController::class, 'create_loan']);
+Route::get('/create_product', [\App\Http\Controllers\DataMigrateController::class, 'create_product']);
+Route::get('/create_user', [\App\Http\Controllers\DataMigrateController::class, 'create_user']);
+Route::get('/create_customer', [\App\Http\Controllers\DataMigrateController::class, 'create_customer']);
+Route::get('/create_payment', [\App\Http\Controllers\DataMigrateController::class, 'create_payment']);
+
 
 
 
