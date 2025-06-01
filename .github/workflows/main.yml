@@ -300,7 +300,7 @@ jobs:
             
 
   deploy-client8:
-    if: github.ref == 'refs/heads/finwin'
+    if: github.ref == 'refs/heads/minvence'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
