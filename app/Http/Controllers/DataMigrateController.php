@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Session\Store;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class DataMigrateController extends Controller
 {
@@ -26,7 +27,7 @@ class DataMigrateController extends Controller
      */
     public function create_loan(Store $session)
     {
-        $session->put('branch_id',1);
+        $session->put('branch_id',3);
         $minvence_loans = DB::connection('mysql_second')->table('customer_loan')->get();
 
         foreach ($minvence_loans as $item) {
@@ -35,10 +36,11 @@ class DataMigrateController extends Controller
                 ->where('idLoan_Category', $item->Loan_Category_idLoan_Category)
                 ->value('Duration_period') ?? '-';
             $newLoanId=$item->idCustomer_Loan;
+            Log::info($newLoanId);
             // Insert into new customer_loan table
             DB::table('customer_loan')->insert([
                 'idCustomer_Loan' => $newLoanId,
-                'Loan_No' => $item->Loan_No,
+                'Loan_No' => 'K/'.$item->Loan_No,
                 'Loan_Category_idLoan_Category' => $item->Loan_Category_idLoan_Category,
                 'Customer_idCustomer' => $item->Customer_idCustomer,
                 'Leasing_type' => $item->Leasing_type,
@@ -59,15 +61,15 @@ class DataMigrateController extends Controller
                 'Balance_Amount' => $item->Balance_Amount,
                 'Status' => $item->Status,
                 'reason' => $item->reason,
-                'User_idUser' => $item->User_idUser,
+                'User_idUser' => '114',
                 'capital_balance' => $item->capital_balance,
                 'installment_balance' => $item->installment_balance,
                 'type' => $item->type,
                 'Interest_period' => $item->Interest_period,
                 'cus_bank_account' => $item->cus_bank_account,
                 'company_bank_account' => $item->company_bank_account,
-                'lending_officer_id' => $item->lending_officer_id,
-                'collector_id' => $item->collector_id,
+                'lending_officer_id' => '114',
+                'collector_id' => '114',
                 'repayment_duration' => $repayment_duration,
                 'loan_broker' => '1',
                 'loan_broker_commission' => "0",
@@ -128,7 +130,7 @@ class DataMigrateController extends Controller
                 '0');
 
 
-            $company_bank='33';
+            $company_bank='115';
 
             $bank_log_comment="Loan Number : {$item->Loan_No}\nLoan Amount : {$item->Amount}\n";
 
@@ -189,46 +191,49 @@ class DataMigrateController extends Controller
 
                 $this->bankLogController->index($bank_id->Idbank,"Loan Document Chargers",$bank_log_doc_comment,"-","credit",$sumAmount,$company_bank);
 
-                $cate=tableWithBranch('income_category')
-                    ->where('description','=','Other')
-                    ->first();
-                $user_id = (int)session('userid');
-                if ($cate){
 
-                    // Create a new Expenses instance
-                    $expenses = new Expenses();
+                $user_id = '114';
+                if ($customer){
+                    $cate=tableWithBranch('income_category')
+                        ->where('description','=','Other')
+                        ->first();
+                    if ($cate){
 
-                    // Set the values for the Expenses instance
-                    $expenses->type = "Income";
-                    $expenses->reason = "Other loan charges for loan number: ({$item->Loan_No}), Customer name: ({$customer->First_Name} {$customer->Last_Name})";
-                    $expenses->date = date('Y-m-d');
-                    $expenses->amount = $sumAmount;
-                    $expenses->category_id = $cate->id;
-                    $expenses->bank_id = 1;
-                    $expenses->user_id = $user_id;
-                    $expenses->branch_id = session('branch_id');
+                        // Create a new Expenses instance
+                        $expenses = new Expenses();
 
-                    $expenses->save();
-                }else{
-                    $cate_id=DB::table('income_category')->insertGetId([
-                        'description'=>"Other",
-                        'branch_id'=>session('branch_id')
-                    ]);
+                        // Set the values for the Expenses instance
+                        $expenses->type = "Income";
+                        $expenses->reason = "Other loan charges for loan number: ({$item->Loan_No}), Customer name: ({$customer->First_Name} {$customer->Last_Name})";
+                        $expenses->date = date('Y-m-d');
+                        $expenses->amount = $sumAmount;
+                        $expenses->category_id = $cate->id;
+                        $expenses->bank_id = 115;
+                        $expenses->user_id = $user_id;
+                        $expenses->branch_id = session('branch_id');
 
-                    // Create a new Expenses instance
-                    $expenses = new Expenses();
+                        $expenses->save();
+                    }else{
+                        $cate_id=DB::table('income_category')->insertGetId([
+                            'description'=>"Other",
+                            'branch_id'=>session('branch_id')
+                        ]);
 
-                    // Set the values for the Expenses instance
-                    $expenses->type = "Income";
-                    $expenses->reason = "Other loan charges for loan number: ({$item->Loan_No}), Customer name: ({$customer->First_Name} {$customer->Last_Name})";
-                    $expenses->date = date('Y-m-d');
-                    $expenses->amount = $sumAmount;
-                    $expenses->category_id = $cate_id;
-                    $expenses->bank_id = 1;
-                    $expenses->user_id = $user_id;
-                    $expenses->branch_id = session('branch_id');
+                        // Create a new Expenses instance
+                        $expenses = new Expenses();
 
-                    $expenses->save();
+                        // Set the values for the Expenses instance
+                        $expenses->type = "Income";
+                        $expenses->reason = "Other loan charges for loan number: ({$item->Loan_No}), Customer name: ({$customer->First_Name} {$customer->Last_Name})";
+                        $expenses->date = date('Y-m-d');
+                        $expenses->amount = $sumAmount;
+                        $expenses->category_id = $cate_id;
+                        $expenses->bank_id = 115;
+                        $expenses->user_id = $user_id;
+                        $expenses->branch_id = session('branch_id');
+
+                        $expenses->save();
+                    }
                 }
 
 
@@ -281,7 +286,7 @@ class DataMigrateController extends Controller
      */
     public function create_product(Store $session)
     {
-        $session->put('branch_id',1);
+        $session->put('branch_id',3);
         $minvence_loans = DB::connection('mysql_second')->table('loan_category')->get();
 
         foreach ($minvence_loans as $minvence_loan) {
@@ -304,6 +309,7 @@ class DataMigrateController extends Controller
                 $nextNumber = '001';
             }
 
+            $loancategory->idLoan_Category = $minvence_loan->idLoan_Category;
             $loancategory->Product_code = $prefix . $nextNumber;
 
             $loancategory->Loan_amount = $minvence_loan->Loan_amount;
@@ -406,7 +412,7 @@ class DataMigrateController extends Controller
      */
     public function create_user(Store $session)
     {
-        $session->put('branch_id',1);
+        $session->put('branch_id',3);
         $minvence_users = DB::connection('mysql_second')->table('user')->get();
 
         foreach ($minvence_users as $min_user) {
@@ -496,7 +502,7 @@ class DataMigrateController extends Controller
     public function create_customer(Store $session)
     {
 
-        $session->put('branch_id',1);
+        $session->put('branch_id',3);
 
         $branch_id = session('branch_id');
 
@@ -514,7 +520,7 @@ class DataMigrateController extends Controller
                 'Groups' => $center->Groups,
                 'Members' => $center->Members,
                 'Location' => '-',
-                'route_id' => '1',
+                'route_id' => '3',
                 'branch_id' => $branch_id,
             ]);
         }
@@ -582,8 +588,8 @@ class DataMigrateController extends Controller
                 'occu_longitude' => $cus->occu_longitude,
                 'occu_latitude' => $cus->occu_latitude,
                 'points' => $cus->points,
-                'route_id' => "1",
-                'Comment' => $cus->Comment,
+                'route_id' => "3",
+                'Comment' => "-",
                 'business_registration' => "-",
                 'branch_id' => $branch_id,
             ]);
@@ -608,15 +614,16 @@ class DataMigrateController extends Controller
      */
     public function create_payment(Store $session)
     {
-        $session->put('branch_id', 1);
+        $session->put('branch_id', 3);
 
         // Step 1: Get all loans from new DB
         $loans = tableWithBranch('customer_loan')->get();
 
         foreach ($loans as $loan) {
+            $cleanLoanNo = Str::after($loan->Loan_No, 'K/');
             // Step 2: Find matching loan in old DB using Loan_No
             $oldLoan = DB::connection('mysql_second')->table('customer_loan')
-                ->where('Loan_No', $loan->Loan_No)
+                ->where('Loan_No', $cleanLoanNo)
                 ->first();
 
             if (!$oldLoan) {
