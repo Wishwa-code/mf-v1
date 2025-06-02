@@ -1238,6 +1238,11 @@ $banner = DB::select($query);
                                                                 <a href="/daily_repayment_sheet_lasantha">Repayment Sheet 04</a>
                                                             </li>
                                                     @endif
+                                                        @if($privilege->repayment_sheet_05 == 1)
+                                                            <li>
+                                                                <a href="/daily_repayment_sheet_finwin">Repayment Sheet 05</a>
+                                                            </li>
+                                                        @endif
                                                 </ul>
                                             </div>
                                         </li>
