@@ -882,6 +882,7 @@ class PendingLoanController extends Controller
         $loans = $query->select(
             'cl.idCustomer_Loan',
             'cl.Loan_No',
+            'customer.cus_number as cus_number',
             'cl.Date_Time as create_date',
             'll.Date_Time as disburse_date',
             'lc.Name as product_name',
@@ -958,6 +959,7 @@ class PendingLoanController extends Controller
                 'Other_Amount_Balance' => number_format($loan->Interest_Amount-$loan->installment_balance, 2),
                 'Balance_Amount' => number_format($loan->Balance_Amount, 2),
                 'Status' => $loan->Status,
+                'cus_number' => $loan->cus_number,
             ];
         });
 
