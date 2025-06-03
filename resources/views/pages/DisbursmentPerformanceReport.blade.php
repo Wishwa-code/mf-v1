@@ -87,6 +87,7 @@
                                 <thead>
                                 <tr>
                                     <th>Loan No</th>
+                                    <th>Cus No</th>
                                     <th>Loan Create Date</th>
                                     <th>Loan Disbursement Date</th>
                                     <th>Approval Time</th>
@@ -234,6 +235,7 @@
                     tbody.append(`
         <tr>
             <td>${row.Loan_No}</td>
+            <td>${row.cus_number}</td>
             <td>${row.create_date}</td>
             <td>${row.disburse_date}</td>
             <td>${row.time}</td>
