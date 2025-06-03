@@ -98,6 +98,7 @@
                                     <th>Capital Balance</th>
                                     <th>Interest Collected</th>
                                     <th>Loan Balance</th>
+                                    <th>Status</th>
                                     <th>Action</th>
                                 </tr>
                                 </thead>
@@ -244,6 +245,7 @@
             <td>${row.capital_balance}</td>
             <td>${row.Other_Amount_Balance}</td>
             <td>${row.Balance_Amount}</td>
+            <td>${row.Status == 0 ? 'Ongoing' : (row.Status == 1 ? 'Settled' : '')}</td>
             <td>
                 <a href="/loanview/${row.idCustomer_Loan}" target="_blank" class="btn btn-warning">
                     <i class="bi bi-eye"></i>

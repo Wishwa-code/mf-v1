@@ -856,7 +856,7 @@ class PendingLoanController extends Controller
     WHERE Type = 'Issue Loan'
     GROUP BY Loan_ID
 ) as ll"), 'll.Loan_ID', '=', 'cl.idCustomer_Loan')
-            ->where('cl.Status', [0, 1]);
+            ->whereIn('cl.Status', [0, 1]);
 
 
         if ($request->date_from) {
@@ -892,8 +892,9 @@ class PendingLoanController extends Controller
             'cl.Total_Other_Amount',
             'cl.capital_balance',
             'cl.installment_balance',
-            'cl.Balance_Amount'
-        )->get();
+            'cl.Balance_Amount',
+            'cl.Status'
+        )->orderBy('disburse_date')->get();
 
         $data = $loans->map(function ($loan) {
 
@@ -956,6 +957,7 @@ class PendingLoanController extends Controller
                 'capital_balance' => number_format($loan->capital_balance, 2),
                 'Other_Amount_Balance' => number_format($loan->Interest_Amount-$loan->installment_balance, 2),
                 'Balance_Amount' => number_format($loan->Balance_Amount, 2),
+                'Status' => $loan->Status,
             ];
         });
 

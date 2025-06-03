@@ -391,7 +391,7 @@ class UserController extends Controller
 
 
 
-        $capitalBalanceController = new CapitalBalanceController();
+//        $capitalBalanceController = new CapitalBalanceController();
 //        $loan=DB::table('customer_loan')->get();
 //        foreach ($loan as $loans){
 //            $capitalBalanceController->index($loans->idCustomer_Loan);
