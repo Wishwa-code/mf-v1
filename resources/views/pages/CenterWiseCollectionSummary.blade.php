@@ -177,6 +177,24 @@
             // Initialize Select2
             $('.select2').select2();
 
+
+            // Function to get the current date and time in Asia/Colombo timezone
+            function getColomboDateTime() {
+                const options = {
+                    timeZone: 'Asia/Colombo',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: 'numeric',
+                    second: 'numeric',
+                    hour12: true
+                };
+                const formatter = new Intl.DateTimeFormat('en-IN', options);
+                return formatter.format(new Date());
+            }
+
+
             $('#customPDF').on('click', function() {
                 var branchName = {!! json_encode(session('branch_name')) !!} + ' Branch' || 'All Branches';
                 var executiveName = {!! json_encode(session('username')) !!} || 'All Executives';
@@ -219,13 +237,16 @@
                         { text: "", style: 'totalRow', alignment: 'right' }
                     ]
                 ];
-
+// Get the current date and time in Colombo
+                var dateTime = getColomboDateTime();
                 var docDefinition = {
                     pageSize: 'A4',
                     pageMargins: [30, 20, 30, 20], // Keep margins minimal to fit everything
                     content: [
                         { text: companyName, style: 'companyName', margin: [0, 0, 0, 5] },
                         { text: 'CASH DENOMINATION', style: 'title', margin: [0, 5, 0, 5] },
+                        // Add the current date and time here
+                        { text: `Date: ${dateTime}`, style: 'subheader', margin: [0, 2, 0, 5] },
                         {
                             columns: [
                                 { text: `Branch: ${branchName}`, style: 'subheader' },
