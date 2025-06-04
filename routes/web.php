@@ -671,6 +671,9 @@ Route::post('/get-loan-interest-details','\App\Http\Controllers\BankController@p
 Route::get('/RightWayDailyRepayment', [TransactionController::class, 'rightway'])->name('transaction.rightway');
 
 
+Route::get('/GreenLankaTrustRepayment', [TransactionController::class, 'GreenLankaTrustRepayment'])->name('transaction.GreenLankaTrustRepayment');
+
+
 Route::get('/PaymentFullDetailsReport','\App\Http\Controllers\ReportController@payment_report')->name('payment-detail.index');
 
 

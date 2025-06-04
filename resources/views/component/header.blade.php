@@ -1242,6 +1242,10 @@ $banner = DB::select($query);
                                                             <li>
                                                                 <a href="/daily_repayment_sheet_finwin">Repayment Sheet 05</a>
                                                             </li>
+
+                                                            <li>
+                                                                <a href="/GreenLankaTrustRepayment">Repayment Sheet 06</a>
+                                                            </li>
                                                         @endif
                                                 </ul>
                                             </div>

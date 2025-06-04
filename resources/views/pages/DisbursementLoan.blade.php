@@ -555,6 +555,22 @@
         var companyName = {!! json_encode(session('company_name')) !!};
 
 
+        // Function to get the current date and time in Asia/Colombo timezone
+        function getColomboDateTime() {
+            const options = {
+                timeZone: 'Asia/Colombo',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                second: 'numeric',
+                hour12: true
+            };
+            const formatter = new Intl.DateTimeFormat('en-IN', options);
+            return formatter.format(new Date());
+        }
+
         function exportFundRequestPDF() {
             var rows = document.getElementById('loan_table').getElementsByTagName('tr');
             var data = [['#', 'Customer No', 'Customer Name', 'NIC', 'Amount']];
@@ -581,6 +597,9 @@
 
             var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
 
+            // Get the current date and time in Colombo
+            var dateTime = getColomboDateTime();
+
             // Center company name
             pdf.setFontSize(14);
             var textWidth = pdf.getTextWidth(companyName);
@@ -593,10 +612,15 @@
             var titleWidth = pdf.getTextWidth(reportTitle);
             pdf.text(reportTitle, (pageWidth - titleWidth) / 2, 24);
 
+            // Add date and time
+            pdf.setFontSize(10);
+            var dateTimeWidth = pdf.getTextWidth("Date: " + dateTime);
+            pdf.text("Date: " + dateTime, (pageWidth - dateTimeWidth) / 2, 32);
+
             pdf.autoTable({
                 head: [data[0]],
                 body: data.slice(1),
-                startY: 30,
+                startY: 40,
                 theme: 'grid',
                 styles: {
                     halign: 'center',
@@ -608,11 +632,6 @@
 
             pdf.save('Fund_Request.pdf');
         }
-
-
-
-
-
 
         function exportDisbursementSheetPDF() {
             var rows = document.getElementById('loan_table').getElementsByTagName('tr');
@@ -642,6 +661,9 @@
 
             var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
 
+            // Get the current date and time in Colombo
+            var dateTime = getColomboDateTime();
+
             // Centered company name
             pdf.setFontSize(14);
             var pageWidth = pdf.internal.pageSize.getWidth();
@@ -654,10 +676,15 @@
             var titleWidth = pdf.getTextWidth(reportTitle);
             pdf.text(reportTitle, (pageWidth - titleWidth) / 2, 24);
 
+            // Add date and time
+            pdf.setFontSize(10);
+            var dateTimeWidth = pdf.getTextWidth("Date: " + dateTime);
+            pdf.text("Date: " + dateTime, (pageWidth - dateTimeWidth) / 2, 32);
+
             pdf.autoTable({
                 head: [data[0]],
                 body: data.slice(1),
-                startY: 30,
+                startY: 40,
                 theme: 'grid',
                 styles: {
                     halign: 'center',
@@ -679,10 +706,6 @@
 
             pdf.save('Disbursement_Sheet.pdf');
         }
-
-
-
-
 
         function exportDocumentChargesPDF() {
             var rows = document.getElementById('loan_table').getElementsByTagName('tr');
@@ -711,6 +734,9 @@
 
             var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
 
+            // Get the current date and time in Colombo
+            var dateTime = getColomboDateTime();
+
             // Centered company name
             pdf.setFontSize(14);
             var pageWidth = pdf.internal.pageSize.getWidth();
@@ -723,10 +749,15 @@
             var titleWidth = pdf.getTextWidth(reportTitle);
             pdf.text(reportTitle, (pageWidth - titleWidth) / 2, 24);
 
+            // Add date and time
+            pdf.setFontSize(10);
+            var dateTimeWidth = pdf.getTextWidth("Date: " + dateTime);
+            pdf.text("Date: " + dateTime, (pageWidth - dateTimeWidth) / 2, 32);
+
             pdf.autoTable({
                 head: [data[0]],
                 body: data.slice(1),
-                startY: 30,
+                startY: 40,
                 theme: 'grid',
                 styles: {
                     halign: 'center',
@@ -747,6 +778,7 @@
 
             pdf.save('Document_Charges_Register.pdf');
         }
+
 
 
 
