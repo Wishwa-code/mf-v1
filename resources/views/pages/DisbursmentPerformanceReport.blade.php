@@ -108,7 +108,7 @@
                                 </tbody>
                                 <tfoot class="bg-light fw-bold text-white">
                                 <tr>
-                                    <td colspan="5" class="text-end">Totals:</td>
+                                    <td colspan="6" class="text-end">Totals:</td>
                                     <td id="total_amount">0.00</td>
                                     <td id="total_interest">0.00</td>
                                     <td id="total_total_loan">0.00</td>
