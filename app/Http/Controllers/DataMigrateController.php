@@ -27,7 +27,7 @@ class DataMigrateController extends Controller
      */
     public function create_loan(Store $session)
     {
-        $session->put('branch_id',3);
+        $session->put('branch_id',1);
         $minvence_loans = DB::connection('mysql_second')->table('customer_loan')->get();
 
         foreach ($minvence_loans as $item) {
@@ -130,7 +130,7 @@ class DataMigrateController extends Controller
                 '0');
 
 
-            $company_bank='115';
+            $company_bank='33';
 
             $bank_log_comment="Loan Number : {$item->Loan_No}\nLoan Amount : {$item->Amount}\n";
 
@@ -192,7 +192,7 @@ class DataMigrateController extends Controller
                 $this->bankLogController->index($bank_id->Idbank,"Loan Document Chargers",$bank_log_doc_comment,"-","credit",$sumAmount,$company_bank);
 
 
-                $user_id = '114';
+                $user_id = '1';
                 if ($customer){
                     $cate=tableWithBranch('income_category')
                         ->where('description','=','Other')
@@ -208,7 +208,7 @@ class DataMigrateController extends Controller
                         $expenses->date = date('Y-m-d');
                         $expenses->amount = $sumAmount;
                         $expenses->category_id = $cate->id;
-                        $expenses->bank_id = 115;
+                        $expenses->bank_id = 33;
                         $expenses->user_id = $user_id;
                         $expenses->branch_id = session('branch_id');
 
@@ -228,7 +228,7 @@ class DataMigrateController extends Controller
                         $expenses->date = date('Y-m-d');
                         $expenses->amount = $sumAmount;
                         $expenses->category_id = $cate_id;
-                        $expenses->bank_id = 115;
+                        $expenses->bank_id = 33;
                         $expenses->user_id = $user_id;
                         $expenses->branch_id = session('branch_id');
 
@@ -286,7 +286,7 @@ class DataMigrateController extends Controller
      */
     public function create_product(Store $session)
     {
-        $session->put('branch_id',3);
+        $session->put('branch_id',1);
         $minvence_loans = DB::connection('mysql_second')->table('loan_category')->get();
 
         foreach ($minvence_loans as $minvence_loan) {
@@ -412,7 +412,7 @@ class DataMigrateController extends Controller
      */
     public function create_user(Store $session)
     {
-        $session->put('branch_id',3);
+        $session->put('branch_id',1);
         $minvence_users = DB::connection('mysql_second')->table('user')->get();
 
         foreach ($minvence_users as $min_user) {
@@ -502,7 +502,7 @@ class DataMigrateController extends Controller
     public function create_customer(Store $session)
     {
 
-        $session->put('branch_id',3);
+        $session->put('branch_id',1);
 
         $branch_id = session('branch_id');
 
@@ -614,13 +614,13 @@ class DataMigrateController extends Controller
      */
     public function create_payment(Store $session)
     {
-        $session->put('branch_id', 3);
+        $session->put('branch_id', 1);
 
         // Step 1: Get all loans from new DB
         $loans = tableWithBranch('customer_loan')->get();
 
         foreach ($loans as $loan) {
-            $cleanLoanNo = Str::after($loan->Loan_No, 'K/');
+            $cleanLoanNo = $loan->Loan_No;
             // Step 2: Find matching loan in old DB using Loan_No
             $oldLoan = DB::connection('mysql_second')->table('customer_loan')
                 ->where('Loan_No', $cleanLoanNo)
@@ -650,8 +650,8 @@ class DataMigrateController extends Controller
                     'loan_id' => $loan->idCustomer_Loan,
                     'payment_date' => $date,
                     'payment_type' => $payment->Payment_type ?? 'Cash',
-                    'bank_account_company' => '1',
-                    'cheque_issue_bank' => '1',
+                    'bank_account_company' => '33',
+                    'cheque_issue_bank' => '33',
                     'name_on_cheque' => '',
                     'chq_number' => '',
                     'chq_date' => '',

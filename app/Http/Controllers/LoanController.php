@@ -1070,7 +1070,7 @@ class LoanController extends Controller
         foreach ($witness as $item) {
             if ($item->type === "Guarantor") {
                 $guarantor = tableWithBranch('guardian')
-                    ->select('First_Name', 'Last_Name', 'Contact_No', 'Nic', 'Address', 'Address_2', 'Address_3', 'Gender', 'Dob')
+                    ->select('First_Name', 'Last_Name', 'Contact_No', 'Nic', 'Address', 'Address_02', 'Address_03', 'Gender', 'Dob')
                     ->where('idGuardian', $item->cus_id)->first();
 
                 $guarantorAddress = array_filter([
