@@ -223,11 +223,16 @@ class BankController extends Controller
 
 
 
-    public function chq(){
-        $chq = tableWithBranch('Cheque_payment','Cheque_payment')
+    public function chq(Request $request){
+        $query = tableWithBranch('Cheque_payment','Cheque_payment')
             ->join('company_bank_accounts', 'Cheque_payment.bank_account_company', '=', 'company_bank_accounts.Idbank')
-            ->join('customer_loan', 'Cheque_payment.loan_id', '=', 'customer_loan.idCustomer_Loan')
-            ->get();
+            ->join('customer_loan', 'Cheque_payment.loan_id', '=', 'customer_loan.idCustomer_Loan');
+
+        if ($request->has('date')) {
+            $query->whereDate('Cheque_payment.date', $request->date);
+        }
+
+        $chq = $query->orderBy('Cheque_payment.date', 'desc')->get();
 
         return view('pages.ChqDetails',compact('chq'));
     }

@@ -40,7 +40,14 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between mb-3">
                             <h4 class="page-title">Cheque Details</h4>
+                            <div class="d-flex gap-2">
+                                <input type="date" id="filter_date" value="{{ request('date') }}" class="form-control" style="width: 200px;">
+                                <input type="date" id="date" value="{{ date('Y-m-d') }}" class="form-control" style="width: 200px;" hidden>
+                                <button class="btn btn-primary" onclick="applyDateFilter()">Filter</button>
+                                <a href="{{ route('bank.chq') }}" class="btn btn-secondary">Show All</a>
+                            </div>
                         </div>
+
 
 
 
@@ -71,7 +78,7 @@
                                             <td>{{$item->chq_type}}</td>
                                             <td>{{$item->chq_date}}</td>
                                             <td>{{$item->Bank_Name}}-{{$item->Account_No}}</td>
-                                            <td>{{number_format($item->payment_amount,2,'.',',')}}</td>
+                                            <td>{{ number_format(str_replace(',', '', $item->payment_amount), 2, '.', ',') }}</td>
                                             @if($item->chq_status==="1")
                                                 <td><span style="color: red">Proceeded</span></td>
                                             @elseif($item->chq_status==="-1")
@@ -88,7 +95,7 @@
         '{{ $item->payment_amount }}',
         '{{ $item->file }}',
         '{{ $item->loan_id }}',
-        '{{ $item->payment_date }}',
+        '{{ $item->chq_date }}',
         '{{ $item->payment_type }}',
         '{{ $item->bank_account_company }}',
         '{{ $item->cheque_issue_bank }}',
@@ -114,7 +121,7 @@
                                                             style="background-color: white; color: #f51515;" disabled>Return
                                                         <i class="fas fa-spinner fa-spin fs-4" style="display:none;" id="return_icon_{{ $item->idChq }}"></i>
                                                     </button>
-                                               @endif
+                                                @endif
 
 
 
@@ -193,7 +200,6 @@
     <script>
         function process(id,cus_id,payment_amount,file,loan_id,payment_date,payment_type,bank_account_company,cheque_issue_bank,name_on_cheque,chq_number,chq_date,chq_type) {
             document.getElementById('process_icon_' + id).style.display = 'inline-block';
-
             Swal.fire({
                 title: "Are you sure?",
                 text: "Do you want to process this cheque payment?",
@@ -213,6 +219,7 @@
                             Swal.showLoading();
                         }
                     });
+
                     let formData = new FormData();
                     formData.append('cus_id', cus_id);
                     formData.append('payment_amount', payment_amount);
@@ -312,6 +319,13 @@
                 }
             });
         }
+        function applyDateFilter() {
+            const selectedDate = document.getElementById('filter_date').value;
+            if (selectedDate) {
+                window.location.href = `?date=${selectedDate}`;
+            }
+        }
+
 
     </script>
 

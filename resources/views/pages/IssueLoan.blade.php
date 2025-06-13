@@ -1946,7 +1946,6 @@
             let activeTabHref = activeTab.attr('href');
             let activeTabIndex = activeTabHref.split('#witness')[1]; // Split to get the number
 
-
             let type=$("#type_"+activeTabIndex+"").val();
             $('#fisrt_name'+number).val("");
             $('#last_name'+number).val("");
