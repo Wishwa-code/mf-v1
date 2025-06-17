@@ -66,6 +66,7 @@ function load_table(page = 1) {
                 }
 
 
+
                 // Add row data to the table
                 $("#loan_table tbody").append(`
                     <tr>
