@@ -358,7 +358,7 @@
                                     <th scope="col">Total Paid Amount</th>
                                     <th scope="col">Total Outstanding</th>
                                     <th scope="col">Capital Balance</th>
-                                    <th scope="col">Total Penelty Balance</th>
+                                    <th scope="col">Total Penalty Balance</th>
                                     <th scope="col">Loan Maturity Date</th>
                                     <th>Loan Status</th>
                                 </tr>
