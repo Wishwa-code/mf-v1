@@ -192,7 +192,8 @@
                                     </div>
                                     <div class="mb-3">
                                         <label for="simpleinput" class="form-label">Customer Photo</label>
-                                        <input type="file" id="cus_phto" name="cus_phto" class="form-control">
+                                        <input type="file" id="cus_phto" name="cus_phto" class="form-control" accept="image/*" capture="environment">
+                                        <button type="button" onclick="openGlobalCamera('#cus_phto')" class="btn btn-outline-secondary mt-1">📷</button>
                                     </div>
                                 </div>
 
@@ -551,13 +552,21 @@
                     return;
                 }
 
+                var uniqueId = 'docInput_' + Date.now(); // ensures unique ID based on timestamp
+
                 var newRow = `
-                    <tr>
-                        <td>${description}</td>
-                        <td><input type="file" class="form-control"></td>
-                        <td><button type="button" class="btn btn-danger removeDocBtn">Remove</button></td>
-                    </tr>
-                `;
+    <tr>
+        <td>${description}</td>
+        <td>
+            <input type="file" id="${uniqueId}" class="form-control doc-file" accept="image/*">
+            <button type="button" class="btn btn-outline-secondary mt-1" onclick="openGlobalCamera('#${uniqueId}')">📷</button>
+        </td>
+        <td>
+            <button type="button" class="btn btn-danger removeDocBtn">Remove</button>
+        </td>
+    </tr>
+`;
+
 
                 $('#documenttable tbody').append(newRow);
 

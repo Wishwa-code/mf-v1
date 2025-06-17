@@ -80,9 +80,16 @@
                             <th>Contact Number</th>
                             <th>Contact Number 02</th>
                             <th>Landline</th>
-{{--                            <th>Job Position</th>--}}
-{{--                            <th>Monthly Salary</th>--}}
-{{--                            <th>Working Place Address</th>--}}
+                            <th>Guardian Title</th>
+                            <th>Guardian Name</th>
+                            <th>Guardian Gender</th>
+                            <th>Relation</th>
+                            <th>Occupation</th>
+                            <th>Guardian Contact</th>
+                            <th>Guardian NIC</th>
+                            <th>Guardian Address</th>
+                            <th>Current Loan Count</th>
+                            <th>Settled Loan Count</th>
                             <th>Status</th>
                         </tr>
                         </thead>
@@ -106,7 +113,17 @@
                                 <td>{{ $customer->Contact_No }}</td>
                                 <td>{{ $customer->contact_number_2 }}</td>
                                 <td>{{ $customer->Landline }}</td>
-                                @if($customer->Status == "1")
+                                <td>{{ $customer->Gua_title }}</td>
+                                <td>{{ $customer->Gua_name }}</td>
+                                <td>{{ $customer->Guardian_gender }}</td>
+                                <td>{{ $customer->Gua_relation }}</td>
+                                <td>{{ $customer->Gua_occu }}</td>
+                                <td>{{ $customer->Gua_contact }}</td>
+                                <td>{{ $customer->Gua_nic }}</td>
+                                <td>{{ $customer->Gua_address }}</td>
+                                <td>{{ $customer->current_loan_count }}</td>
+                                <td>{{ $customer->settled_loan_count }}</td>
+                            @if($customer->Status == "1")
                                     <td class="text-center"><span class="badge bg-primary">Active</span></td>
                                 @else
                                     <td class="text-center"><span class="badge bg-danger">Inactive</span></td>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PaymentLoanController extends Controller
 {
@@ -40,8 +41,9 @@ class PaymentLoanController extends Controller
             ->join('user', 'route.id_officer', '=', 'user.id')
             ->get();
         $center = tableWithBranch('center')->get();
+        $bank = tableWithBranch('company_bank_accounts')->where('Bank_Type','=','Bank')->get();
 
-        return view('pages.Payment', compact('route','center','group', 'loan_category', 'customers'));
+        return view('pages.Payment', compact('route','center','group', 'loan_category', 'customers','bank'));
     }
 
 
@@ -165,10 +167,21 @@ class PaymentLoanController extends Controller
         $totalLoanAmount = $totals->sum('customer_loan.Amount');
         $designation=session('designation');
 
+
+        $permissions = DB::table('user_privileges_has_user')
+            ->where('user_id', session('userid'))
+            ->pluck('value', 'permission_key'); // [permission_key => value]
+
+        $current_loan = $permissions['current_loan_delete'] ?? 0;
+        $loan_agreement = $permissions['current_loan_agreement'] ?? 0;
+
+
         // Combine results with pagination and totals
         return response()->json([
             'item' => $loans,
             'designation' => $designation,
+            'current_loan' => $current_loan,
+            'loan_agreement' => $loan_agreement,
             'totals' => [
                 'totalLoanCount' => $totalLoanCount,
                 'totalCapitalBalance' => $totalCapitalBalance,

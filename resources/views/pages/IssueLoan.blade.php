@@ -1732,13 +1732,26 @@
                         documentsTable.empty(); // Clear existing rows
                         console.log(data.required_documents);
                         data.required_documents.forEach(function(document, index) {
+                            var uniqueId = 'docInput_' + Date.now() + '_' + index;
+
                             var row = $('<tr></tr>');
+
                             row.append('<td>' + document.Name + '</td>');
-                            row.append('<td><input type="file" class="form-control file-upload" data-document-id="' + document.idRequired_Documents + '"></td>');
-                            row.append('<td hidden><input type="checkbox" id="check' + (index + 1) + '" class="form-check-input" checked></td>'); // Set checkbox ID dynamically
+
+                            row.append(`
+        <td>
+            <input type="file" id="${uniqueId}" class="form-control file-upload" data-document-id="${document.idRequired_Documents}" accept="image/*">
+            <button type="button" class="btn btn-outline-secondary mt-1" onclick="openGlobalCamera('#${uniqueId}')">📷</button>
+        </td>
+    `);
+
+                            row.append(`<td hidden><input type="checkbox" id="check${index + 1}" class="form-check-input" checked></td>`);
+
                             row.append('<td><button class="btn btn-danger"><i class="bi bi-trash"></i></button></td>');
+
                             documentsTable.append(row);
                         });
+
                     }
                 },
                 error: function(xhr, textStatus, errorThrown) {
@@ -1945,7 +1958,6 @@
             let activeTab = $('.nav-tabs .nav-link.active');
             let activeTabHref = activeTab.attr('href');
             let activeTabIndex = activeTabHref.split('#witness')[1]; // Split to get the number
-
 
             let type=$("#type_"+activeTabIndex+"").val();
             $('#fisrt_name'+number).val("");

@@ -395,6 +395,7 @@
                     <div class="mb-3">
                         <label for="slipFile" class="form-label">Select Slip File</label>
                         <input type="file" id="slipFile" class="form-control">
+                        <button type="button" onclick="openGlobalCamera('#slipFile')" class="btn btn-outline-secondary mt-1">📷</button>
                     </div>
                 </div>
                 <div class="modal-footer">

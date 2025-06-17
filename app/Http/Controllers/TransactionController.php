@@ -648,6 +648,7 @@ class TransactionController extends Controller
                 'customer.Nic as NIC',
                 'customer.Contact_No as Contact_No',
                 'customer_loan.Loan_No as Loan_No',
+                'customer_loan.Balance_Amount as Balance_Amount',
                 'customer_loan.Amount as Loan_Amount',
                 'customer_loan.idCustomer_Loan as idCustomer_Loan',
                 'customer_loan.type as type',
@@ -675,6 +676,7 @@ class TransactionController extends Controller
                 'customer.Contact_No',
                 'customer.Nic',
                 'customer_loan.Loan_No',
+                'customer_loan.Balance_Amount',
                 'customer_loan.Amount',
                 'customer_loan.type',
                 'customer_loan.Installment_Count',
@@ -691,6 +693,19 @@ class TransactionController extends Controller
         }
 
         $loan = $loanQuery->get();
+        $loan->transform(function ($item) {
+            $initial = strtoupper(substr($item->customer_name, 0, 1)) . '.';
+            $item->name_with_initials = $initial . ' ' . $item->customer_lastname;
+            return $item;
+        });
+
+        $group_filter = $request->group_filter;
+        if ($group_filter) {
+            $loan = $loan->filter(function ($item) use ($group_filter) {
+                return $item->group_name === $group_filter;
+            });
+        }
+
 
         // Group data by 'group_name'
         $grouped_loans = $loan->groupBy('group_name');

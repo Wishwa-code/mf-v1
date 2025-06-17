@@ -622,6 +622,7 @@
                             </div>
                             <div class="col-sm-8">
                                 <input type="file" id="file" class="form-control">
+                                <button type="button" onclick="openGlobalCamera('#file')" class="btn btn-outline-secondary mt-1">📷</button>
                             </div>
                         </div>
 

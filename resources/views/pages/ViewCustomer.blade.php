@@ -78,8 +78,9 @@
                                 <th>Nic</th>
                                 <th>Address</th>
                                 <th>Contact Number</th>
-{{--                                <th>Business Reg Number</th>--}}
                                 <th>Points</th>
+                                <th>Current Loan Count</th>
+                                <th>Settled Loan Count</th>
                                 <th>Location</th>
                                 <th>Status</th>
                                 <th>Blacklist</th>
@@ -96,13 +97,15 @@
                                     <td>{{ $customer->Nic }}</td>
                                     <td>{{ $customer->Address }},{{ $customer->Address_02 }},{{ $customer->Address_03 }}</td>
                                     <td>{{ $customer->Contact_No }}</td>
-{{--                                    <td>{{ $customer->business_registration ?? '-'  }}</td>--}}
                                     <td>{{ number_format($customer->points,2,'.',',') }}</td>
+                                    <td>{{$customer->current_loans}}</td>
+                                    <td>{{$customer->settled_loans}}</td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-light" onclick="openMap('{{ $customer->Latitude }}', '{{ $customer->Longitude }}')">
                                             <i class="bi bi-map fs-4"></i>
                                         </button>
                                     </td>
+
                                     @if($customer->Status == "1")
                                         <td class="text-center"><span class="badge bg-primary">Active</span></td>
                                         <td><button class="btn btn-warning" onclick="change_status({{$customer->idCustomer}})">Move To Blacklist</button></td>
@@ -538,6 +541,7 @@
                         <div class="mb-3">
                             <label for="simpleinput" class="form-label">Document</label>
                             <input type="file" id="file" class="form-control">
+                            <button type="button" onclick="openGlobalCamera('#file')" class="btn btn-outline-secondary mt-1">📷</button>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-success" onclick="saveDocument()"><i

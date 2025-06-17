@@ -76,12 +76,82 @@
         </div>
     </div>
     @include('component.footer')
+    <!-- Global Camera Modal -->
+    <div id="globalCameraModal" class="modal fade" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">📷 Camera</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="closeGlobalCamera()"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <video id="globalVideo" autoplay style="width:100%; max-height:300px; border:1px solid #ccc;"></video>
+                    <canvas id="globalCanvas" style="display:none;"></canvas>
+                    <br>
+                    <button class="btn btn-success mt-2" onclick="captureGlobalImage()">✅</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 <script src="{{asset('assets/js/vendor.min.js')}}"></script>
 <script src="{{asset('assets/js/app.min.js')}}"></script>
 <script src="{{asset('../JS/validate.js')}}"></script>
 <script src="{{asset('assets/vendor/select2/js/select2.min.js')}}"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    let globalTargetInput = null;
+    let globalStream = null;
+
+    function openGlobalCamera(targetInputSelector) {
+        globalTargetInput = document.querySelector(targetInputSelector);
+        const video = document.getElementById('globalVideo');
+        $('#globalCameraModal').modal('show');
+
+        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+            globalStream = stream;
+            video.srcObject = stream;
+        }).catch(err => {
+            alert("Camera access denied");
+        });
+    }
+
+    function captureGlobalImage() {
+        const video = document.getElementById('globalVideo');
+        const canvas = document.getElementById('globalCanvas');
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = canvas.toDataURL("image/png");
+
+        // Stop camera
+        if (globalStream) {
+            globalStream.getTracks().forEach(track => track.stop());
+        }
+
+        $('#globalCameraModal').modal('hide');
+
+        // Convert base64 to File and attach to target file input
+        fetch(imageData)
+            .then(res => res.blob())
+            .then(blob => {
+                const file = new File([blob], `capture_${Date.now()}.png`, { type: "image/png" });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                globalTargetInput.files = dataTransfer.files;
+            });
+    }
+
+    function closeGlobalCamera() {
+        if (globalStream) {
+            globalStream.getTracks().forEach(track => track.stop());
+        }
+    }
+</script>
+
 <script>
     function validateContactNumber(event) {
         var charCode = event.which || event.keyCode;

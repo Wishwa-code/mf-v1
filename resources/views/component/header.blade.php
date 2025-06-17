@@ -383,7 +383,6 @@ $banner = DB::select($query);
     if (!$hasPermissions) {
         // Permissions arrays
         $mainPermissions = [
-            'Dashboard' => ['dashboard'],
             'Customer' => ['customer','add_customer', 'view_customer', 'view_blacklist_customer', 'customer_saving_acc', 'kyc', 'insurance'],
             'Loan Center' => ['loan_center','create_route', 'create_center', 'view_center', 'create_group', 'view_group', 'add_customer_to_group'],
             'Guarantee' => ['guarantee','add_guarantee', 'view_guarantee'],
@@ -410,7 +409,7 @@ $banner = DB::select($query);
         ];
 
         $deletePermissions = [
-            'Access' => ['payment_delete', 'branch_access']
+            'Access' => ['dashboard','payment_delete','current_loan_delete','current_loan_agreement','branch_access']
         ];
 
         $allPermissions = array_merge(
