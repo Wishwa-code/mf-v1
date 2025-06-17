@@ -245,7 +245,7 @@
                                 <thead>
                                 <tr>
                                     <th rowspan="2">Loan No</th>
-                                    <th rowspan="2">Member Name</th>
+                                    <th rowspan="2">Full Name</th>
                                     <th rowspan="2">Loan Amount</th>
                                     <th rowspan="2">Due Installment</th>
                                     <th rowspan="2">New Loan Amount</th>
