@@ -268,6 +268,7 @@
                         <div class="mb-3">
                             <label for="simpleinput" class="form-label">Document</label>
                             <input type="file" id="file" class="form-control">
+                            <button type="button" onclick="openGlobalCamera('#file')" class="btn btn-outline-secondary mt-1">📷</button>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-success" onclick="saveDocument()"><i

@@ -572,22 +572,22 @@
         }
 
         function exportFundRequestPDF() {
-            var rows = document.getElementById('loan_table').getElementsByTagName('tr');
+            var table = $('#loan_table').DataTable();
+            var rows = table.rows().data();
+
             var data = [['#', 'Customer No', 'Customer Name', 'NIC', 'Amount']];
             var totalAmount = 0;
 
-            for (var i = 1; i < rows.length; i++) {
-                var cols = rows[i].getElementsByTagName('td');
-                if (cols.length > 0) {
-                    var index = i;
-                    var cus_no = cols[5].innerText;
-                    var cus_name = cols[4].innerText;
-                    var nic = cols[6].innerText;
-                    var amount = parseFloat(cols[8].innerText.replace(/[^0-9.-]+/g, "")) || 0;
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                var index = i + 1;
+                var cus_no = row[5];
+                var cus_name = row[4];
+                var nic = row[6];
+                var amount = parseFloat(row[8].replace(/[^0-9.-]+/g, "")) || 0;
 
-                    totalAmount += amount;
-                    data.push([index, cus_no, cus_name, nic, amount.toFixed(2)]);
-                }
+                totalAmount += amount;
+                data.push([index, cus_no, cus_name, nic, amount.toFixed(2)]);
             }
 
             data.push(['', '', '', 'Total Amount', totalAmount.toFixed(2)]);
@@ -596,103 +596,81 @@
             data.push([authorizedText, '', '', '', 'Authorized 02:']);
 
             var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
-
-            // Get the current date and time in Colombo
             var dateTime = getColomboDateTime();
+            var pageWidth = pdf.internal.pageSize.getWidth();
 
-            // Center company name
             pdf.setFontSize(14);
             var textWidth = pdf.getTextWidth(companyName);
-            var pageWidth = pdf.internal.pageSize.getWidth();
             pdf.text(companyName, (pageWidth - textWidth) / 2, 16);
 
-            // Center report title
             pdf.setFontSize(12);
-            var reportTitle = "Fund Request";
-            var titleWidth = pdf.getTextWidth(reportTitle);
-            pdf.text(reportTitle, (pageWidth - titleWidth) / 2, 24);
+            var title = "Fund Request";
+            pdf.text(title, (pageWidth - pdf.getTextWidth(title)) / 2, 24);
 
-            // Add date and time
             pdf.setFontSize(10);
-            var dateTimeWidth = pdf.getTextWidth("Date: " + dateTime);
-            pdf.text("Date: " + dateTime, (pageWidth - dateTimeWidth) / 2, 32);
+            var dateTimeText = "Date: " + dateTime;
+            pdf.text(dateTimeText, (pageWidth - pdf.getTextWidth(dateTimeText)) / 2, 32);
 
             pdf.autoTable({
                 head: [data[0]],
                 body: data.slice(1),
                 startY: 40,
                 theme: 'grid',
-                styles: {
-                    halign: 'center',
-                    lineWidth: 0.5,
-                    lineColor: [0, 0, 0]
-                },
+                styles: { halign: 'center', lineWidth: 0.5, lineColor: [0, 0, 0] },
                 headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
             });
 
             pdf.save('Fund_Request.pdf');
         }
 
+
         function exportDisbursementSheetPDF() {
-            var rows = document.getElementById('loan_table').getElementsByTagName('tr');
+            var table = $('#loan_table').DataTable();
+            var rows = table.rows().data();
+
             var data = [['#', 'Customer Number', 'NIC', 'Customer Name', 'Amount', 'Received By']];
             var totalAmount = 0;
 
-            for (var i = 1; i < rows.length; i++) {
-                var cols = rows[i].getElementsByTagName('td');
-                if (cols.length > 0) {
-                    var index = i;
-                    var customerNumber = cols[5].innerText;
-                    var nic = cols[6].innerText;
-                    var customerName = cols[4].innerText;
-                    var amount = parseFloat(cols[8].innerText.replace(/[^0-9.-]+/g, "")) || 0;
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                var index = i + 1;
+                var customerNumber = row[5];
+                var nic = row[6];
+                var customerName = row[4];
+                var amount = parseFloat(row[8].replace(/[^0-9.-]+/g, "")) || 0;
 
-                    totalAmount += amount;
-                    data.push([index, customerNumber, nic, customerName, amount.toFixed(2), '']);
-                }
+                totalAmount += amount;
+                data.push([index, customerNumber, nic, customerName, amount.toFixed(2), '']);
             }
 
-            var authorizedText = "Prepared By: " + authorizedName;
             data.push(['', '', '', 'Total Amount', totalAmount.toFixed(2), '']);
             data.push([]);
+            var authorizedText = "Prepared By: " + authorizedName;
             data.push(['', authorizedText, '', '', 'Authorized 01:', '']);
             data.push(['', '', '', '', 'Authorized 02:', '']);
             data.push(['', '', '', '', 'All Cheques Received:', '']);
 
             var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
-
-            // Get the current date and time in Colombo
             var dateTime = getColomboDateTime();
-
-            // Centered company name
-            pdf.setFontSize(14);
             var pageWidth = pdf.internal.pageSize.getWidth();
-            var textWidth = pdf.getTextWidth(companyName);
-            pdf.text(companyName, (pageWidth - textWidth) / 2, 16);
 
-            // Centered report title
+            pdf.setFontSize(14);
+            pdf.text(companyName, (pageWidth - pdf.getTextWidth(companyName)) / 2, 16);
+
             pdf.setFontSize(12);
-            var reportTitle = "Disbursement Sheet";
-            var titleWidth = pdf.getTextWidth(reportTitle);
-            pdf.text(reportTitle, (pageWidth - titleWidth) / 2, 24);
+            var title = "Disbursement Sheet";
+            pdf.text(title, (pageWidth - pdf.getTextWidth(title)) / 2, 24);
 
-            // Add date and time
             pdf.setFontSize(10);
-            var dateTimeWidth = pdf.getTextWidth("Date: " + dateTime);
-            pdf.text("Date: " + dateTime, (pageWidth - dateTimeWidth) / 2, 32);
+            var dateTimeText = "Date: " + dateTime;
+            pdf.text(dateTimeText, (pageWidth - pdf.getTextWidth(dateTimeText)) / 2, 32);
 
             pdf.autoTable({
                 head: [data[0]],
                 body: data.slice(1),
                 startY: 40,
                 theme: 'grid',
-                styles: {
-                    halign: 'center',
-                    valign: 'middle',
-                    fontSize: 10,
-                    lineColor: [0, 0, 0],
-                    lineWidth: 0.4
-                },
+                styles: { halign: 'center', fontSize: 10, lineColor: [0, 0, 0], lineWidth: 0.4 },
                 headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
                 columnStyles: {
                     0: { cellWidth: 10 },
@@ -707,24 +685,25 @@
             pdf.save('Disbursement_Sheet.pdf');
         }
 
+
         function exportDocumentChargesPDF() {
-            var rows = document.getElementById('loan_table').getElementsByTagName('tr');
+            var table = $('#loan_table').DataTable();
+            var rows = table.rows().data();
+
             var data = [['#', 'Customer Number', 'NIC', 'Customer Name', 'Doc Charges']];
             var totalDocCharges = 0;
 
-            for (var i = 1; i < rows.length; i++) {
-                var cols = rows[i].getElementsByTagName('td');
-                if (cols.length > 0) {
-                    var index = i;
-                    var customerNumber = cols[5].innerText.trim();
-                    var nic = cols[6].innerText.trim();
-                    var customerName = cols[4].innerText.trim();
-                    var docCharges = parseFloat(cols[9].innerText.replace(/[^0-9.-]+/g, "")) || 0;
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                var index = i + 1;
+                var customerNumber = row[5];
+                var nic = row[6];
+                var customerName = row[4];
+                var docCharges = parseFloat(row[9].replace(/[^0-9.-]+/g, "")) || 0;
 
-                    if (docCharges > 0) {
-                        totalDocCharges += docCharges;
-                        data.push([index, customerNumber, nic, customerName, docCharges.toFixed(2)]);
-                    }
+                if (docCharges > 0) {
+                    totalDocCharges += docCharges;
+                    data.push([index, customerNumber, nic, customerName, docCharges.toFixed(2)]);
                 }
             }
 
@@ -733,39 +712,26 @@
             data.push(['', 'CRO:', '', 'Branch Manager:', '']);
 
             var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
-
-            // Get the current date and time in Colombo
             var dateTime = getColomboDateTime();
-
-            // Centered company name
-            pdf.setFontSize(14);
             var pageWidth = pdf.internal.pageSize.getWidth();
-            var textWidth = pdf.getTextWidth(companyName);
-            pdf.text(companyName, (pageWidth - textWidth) / 2, 16);
 
-            // Centered report title
+            pdf.setFontSize(14);
+            pdf.text(companyName, (pageWidth - pdf.getTextWidth(companyName)) / 2, 16);
+
             pdf.setFontSize(12);
-            var reportTitle = "Document Charges Register";
-            var titleWidth = pdf.getTextWidth(reportTitle);
-            pdf.text(reportTitle, (pageWidth - titleWidth) / 2, 24);
+            var title = "Document Charges Register";
+            pdf.text(title, (pageWidth - pdf.getTextWidth(title)) / 2, 24);
 
-            // Add date and time
             pdf.setFontSize(10);
-            var dateTimeWidth = pdf.getTextWidth("Date: " + dateTime);
-            pdf.text("Date: " + dateTime, (pageWidth - dateTimeWidth) / 2, 32);
+            var dateTimeText = "Date: " + dateTime;
+            pdf.text(dateTimeText, (pageWidth - pdf.getTextWidth(dateTimeText)) / 2, 32);
 
             pdf.autoTable({
                 head: [data[0]],
                 body: data.slice(1),
                 startY: 40,
                 theme: 'grid',
-                styles: {
-                    halign: 'center',
-                    valign: 'middle',
-                    fontSize: 10,
-                    lineColor: [0, 0, 0],
-                    lineWidth: 0.4
-                },
+                styles: { halign: 'center', fontSize: 10, lineColor: [0, 0, 0], lineWidth: 0.4 },
                 headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
                 columnStyles: {
                     0: { cellWidth: 10 },
@@ -778,6 +744,7 @@
 
             pdf.save('Document_Charges_Register.pdf');
         }
+
 
 
 

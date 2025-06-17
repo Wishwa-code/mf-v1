@@ -27,6 +27,8 @@ function load_table(page = 1) {
             let data = response.item.data; // paginated data
             let total = response.totals;
             let designation = response.designation;
+            let loan_agreement = response.loan_agreement;
+            let current_loan_delete = response.current_loan;
             let currentPage = response.item.current_page;
             let lastPage = response.item.last_page;
 
@@ -47,12 +49,22 @@ function load_table(page = 1) {
             data.forEach(function(item) {
                 let agreementButton = '';
 
-                if (designation === "Admin") {
+                if (loan_agreement == '1') {
                     agreementButton = `
             <a href="#" data-bs-toggle="modal" onclick="agreement(${item.idCustomer_Loan})" data-bs-target="#agreement" class="btn btn-dark">
                 <i class="bi bi-receipt"></i>
             </a>`;
                 }
+
+                let deleteButton = '';
+
+                if (current_loan_delete == '1') {
+                    deleteButton = `
+        <button onclick="deleteLoan(${item.idCustomer_Loan})" class="btn btn-outline-danger">
+            <i class="bi bi-trash"></i>
+        </button>`;
+                }
+
 
                 // Add row data to the table
                 $("#loan_table tbody").append(`
@@ -73,7 +85,11 @@ function load_table(page = 1) {
                         <td>
                             <a href="/loanview/${item.idCustomer_Loan}" target="_blank" class="btn btn-warning me-2"><i class="bi bi-eye"></i></a>
                             <a href="/invoice/${item.idCustomer_Loan}" target="_blank" class="btn btn-danger"><i class="bi bi-file-earmark-text"></i></a>
-                             ${agreementButton}
+                            ${agreementButton} 
+                            <a href="javascript:void(0)" class="btn btn-info" onclick="openExtraChargeModal(${item.idCustomer_Loan})">
+                                <i class="bi bi-plus-circle"></i>
+                            </a>
+                            ${deleteButton}
                         </td>
                     </tr>
                 `);
@@ -123,6 +139,134 @@ function formatName(firstName, lastName) {
 
     return `${initials} ${formattedLastName}`;
 }
+
+function deleteLoan(loanId) {
+    $('#deleteLoanId').val(loanId);
+    $('#deleteReason').val('');
+    $('#deleteLoanModal').modal('show');
+}
+
+function confirmLoanDelete() {
+    const loanId = $('#deleteLoanId').val();
+    const reason = $('#deleteReason').val();
+
+    if (!reason.trim()) {
+        Swal.fire('Reason Required', 'Please enter a reason for deleting this loan.', 'warning');
+        return;
+    }
+
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "This will mark the loan as deleted.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, update it'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '/loan-delete',
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                data: {
+                    loan_id: loanId,
+                    reason: reason
+                },
+                success: function (res) {
+                    Swal.fire('Deleted!', 'Loan has been updated.', 'success');
+                    $('#deleteLoanModal').modal('hide');
+                    load_table(); // Refresh the table if you're using it
+                },
+                error: function () {
+                    Swal.fire('Error', 'Something went wrong while updating.', 'error');
+                }
+            });
+        }
+    });
+}
+
+
+
+function openExtraChargeModal(loanId) {
+    $('#modalLoanId').val(loanId);
+    $('#extra_date').val('');
+    $('#extra_description').val('');
+    $('#extra_amount').val('');
+    $('#extraChargesTableBody').html('');
+    $('#extraChargeModal').modal('show');
+
+    $.ajax({
+        url: '/get-extra-charges',
+        type: 'GET',
+        data: { loan_id: loanId },
+        success: function (res) {
+            let rows = '';
+            res.forEach(function (item) {
+                rows += `<tr>
+                    <td>${item.date}</td>
+                    <td>${item.description}</td>
+                    <td>${parseFloat(item.amount).toFixed(2)}</td>
+                </tr>`;
+            });
+            $('#extraChargesTableBody').html(rows);
+        }
+    });
+}
+
+function saveExtraCharge() {
+    const loanId = $('#modalLoanId').val();
+    const date = $('#extra_date').val();
+    const description = $('#extra_description').val();
+    const amount = $('#extra_amount').val();
+    const bank_id = $('#bank_id').val();
+
+    if (!date || !description || !amount) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'All fields are required!',
+            confirmButtonText: 'OK'
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: 'Are you sure?',
+        html: `<b>Date:</b> ${date}<br><b>Description:</b> ${description}<br><b>Amount:</b> Rs. ${parseFloat(amount).toFixed(2)}`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Save',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '/save-extra-charge',
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr("content") },
+                data: {
+                    loan_id: loanId,
+                    date: date,
+                    description: description,
+                    bank_id: bank_id,
+                    amount: amount
+                },
+                success: function (res) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Saved successfully!',
+                        timer: 1200,
+                        showConfirmButton: false
+                    });
+                    openExtraChargeModal(loanId); // reload table
+                }
+            });
+        }
+    });
+}
+
+
 
 
 

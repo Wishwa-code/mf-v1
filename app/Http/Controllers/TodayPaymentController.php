@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Expenses;
 use Carbon\Carbon;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class TodayPaymentController extends Controller
@@ -3468,6 +3471,122 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
         // Return the response as JSON
         return response()->json($loanDetailsArray);
     }
+
+    public function saveExtraCharge(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            $customer_loan = tableWithBranch('customer_loan')
+                ->where('idCustomer_Loan', $request->loan_id)
+                ->first();
+
+            $customer = tableWithBranch('customer')
+                ->where('idCustomer', $customer_loan->Customer_idCustomer)
+                ->first();
+
+            $cate = tableWithBranch('income_category')
+                ->where('description', 'Other')
+                ->first();
+
+            $expenses = new Expenses();
+            $expenses->type = "Income";
+            $expenses->reason = "Other loan charges for loan number: ({$customer_loan->Loan_No}), Customer name: ({$customer->First_Name} {$customer->Last_Name})";
+            $expenses->date = date('Y-m-d');
+            $expenses->amount = $request->amount;
+            $expenses->category_id = $cate->id;
+            $expenses->bank_id = $request->bank_id;
+            $expenses->user_id = session('userid');
+            $expenses->branch_id = session('branch_id');
+            $expenses->save();
+
+            // Insert into extra_charger
+            DB::table('extra_charger')->insert([
+                'loan_id' => $request->loan_id,
+                'date' => $request->date,
+                'time' => now()->format('H:i:s'),
+                'description' => $request->description,
+                'amount' => $request->amount,
+                'bank_id' => $request->bank_id,
+                'expences_id' => $expenses->id,
+                'user_id' => session('userid'),
+                'branch_id' => session('branch_id')
+            ]);
+
+            $bank_id = tableWithBranch('company_bank_accounts')
+                ->where('Bank_Type', 'System_default_9')
+                ->first();
+
+            $company_bank = $request->bank_id;
+            $sumAmount = $request->amount;
+            $bank_log_doc_comment = 'Extra Charges - ' . $request->description;
+
+            $this->bankLogController->index(
+                $company_bank,
+                "Loan Document Charges",
+                $bank_log_doc_comment,
+                "-",
+                "debit",
+                $sumAmount,
+                $bank_id->Idbank
+            );
+
+            $this->bankLogController->index(
+                $bank_id->Idbank,
+                "Loan Document Charges",
+                $bank_log_doc_comment,
+                "-",
+                "credit",
+                $sumAmount,
+                $company_bank
+            );
+
+            DB::commit();
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getExtraCharges(Request $request)
+    {
+        // Ensure table exists
+        if (!Schema::hasTable('extra_charger')) {
+            Schema::create('extra_charger', function (Blueprint $table) {
+                $table->id('id_extra_charger');
+                $table->unsignedBigInteger('loan_id');
+                $table->date('date');
+                $table->time('time');
+                $table->string('description');
+                $table->string('bank_id');
+                $table->string('user_id');
+                $table->string('expences_id');
+                $table->string('branch_id');
+                $table->decimal('amount', 10, 2);
+            });
+        }
+
+        $charges = DB::table('extra_charger')
+            ->where('loan_id', $request->loan_id)
+            ->orderBy('id_extra_charger', 'desc')
+            ->get();
+
+        return response()->json($charges);
+    }
+
+    public function deleteLoan(Request $request)
+    {
+        DB::table('customer_loan')
+            ->where('idCustomer_Loan', $request->loan_id)
+            ->update([
+                'reason' => $request->reason,
+                'Status' => -2
+            ]);
+
+        return response()->json(['status' => 'success']);
+    }
+
 
 
 }

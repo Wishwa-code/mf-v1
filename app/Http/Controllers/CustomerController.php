@@ -359,16 +359,35 @@ class CustomerController extends Controller
      */
     public function edit()
     {
-        $customers = tableWithBranch('customer','customer')
+        $loanSub = tableWithBranch('customer_loan')
+            ->select(
+                'Customer_idCustomer',
+                DB::raw('SUM(CASE WHEN Status = 0 THEN 1 ELSE 0 END) as current_loans'),
+                DB::raw('SUM(CASE WHEN Status = 1 THEN 1 ELSE 0 END) as settled_loans')
+            )
+            ->groupBy('Customer_idCustomer');
+
+        $customers = tableWithBranch('customer', 'customer')
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
-            ->select('customer.*', 'customer_group.Name as group_name', 'center.Name as center_name')
+            ->leftJoinSub($loanSub, 'loan_counts', function ($join) {
+                $join->on('customer.idCustomer', '=', 'loan_counts.Customer_idCustomer');
+            })
+            ->select(
+                'customer.*',
+                'customer_group.Name as group_name',
+                'center.Name as center_name',
+                DB::raw('IFNULL(loan_counts.current_loans, 0) as current_loans'),
+                DB::raw('IFNULL(loan_counts.settled_loans, 0) as settled_loans')
+            )
             ->get();
+
         $group = tableWithBranch('customer_group')->get();
         $center = tableWithBranch('center')->get();
         $company = DB::table('company')->first();
         $route= tableWithBranch('route')->get();
+
         return view('pages.ViewCustomer', compact('customers','route','group','center','company'));
     }
 

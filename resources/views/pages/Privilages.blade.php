@@ -81,7 +81,6 @@
                         <tbody>
                         @php
                             $mainPermissions = [
-                                'Dashboard' => ['dashboard'],
                                 'Customer' => [
                                     'add_customer', 'view_customer', 'view_blacklist_customer',
                                     'customer_saving_acc', 'kyc', 'insurance'
@@ -133,7 +132,7 @@
                             ];
 
                             $deletePermissions = [
-                                'Access' => ['payment_delete','branch_access','collector_access','cashier_access']
+                                'Access' => ['dashboard','payment_delete','current_loan_delete','current_loan_agreement','branch_access','collector_access','cashier_access']
                             ];
                         @endphp
 

@@ -205,6 +205,19 @@
                                 </div>
 
                                 <div class="col-lg-3">
+                                    <label for="group_filter" class="form-label">Group</label>
+                                    <select class="form-control select2" id="group_filter" name="group_filter">
+                                        <option value="">All</option>
+                                        @foreach($grouped_loans->keys() as $groupKey)
+                                            <option value="{{ $groupKey }}" {{ request('group_filter') == $groupKey ? 'selected' : '' }}>
+                                                {{ $groupKey }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+<br>
+
+                                <div class="col-lg-3">
                                     <div class="mb-3">
                                         <button type="submit" class="btn btn-danger"><i class="bi bi-search"></i> Search</button>
                                     </div>
@@ -231,7 +244,7 @@
                             <table id="repaymentTable">
                                 <thead>
                                 <tr>
-                                    <th rowspan="2">Member No</th>
+                                    <th rowspan="2">Loan No</th>
                                     <th rowspan="2">Member Name</th>
                                     <th rowspan="2">Loan Amount</th>
                                     <th rowspan="2">Due Installment</th>
@@ -250,20 +263,35 @@
                                 <tbody>
                                 <!-- Sample Row -->
                                 @foreach($grouped_loans as $group_name => $group)
+                                    <tr><td colspan="17" style="text-align:left;"><strong>Group No: {{ $group_name }}</strong></td></tr>
+                                    @php
+                                        $groupLoanAmount = $group->sum('Loan_Amount');
+                                        $groupDueAmount = $group->sum('Installment_Amount');
+                                        $groupBalance = $group->sum('Balance_Amount');
+                                    @endphp
+
                                     @foreach($group as $item)
                                         <tr>
-                                            <td>{{ $item->cus_number }}</td>
-                                            <td>{{ $item->customer_name }} {{ $item->customer_lastname }}</td>
+                                            <td>{{ $item->Loan_No }}</td>
+                                            <td>{{ $item->name_with_initials }}</td>
                                             <td>{{ number_format($item->Loan_Amount, 2) }}</td>
                                             <td>{{ number_format($item->Installment_Amount, 2) }}</td>
-                                            <td></td>
+                                            <td>{{ number_format($item->Balance_Amount, 2) }}</td>
                                             @for ($i = 1; $i <= 6; $i++)
-                                                <td></td>
-                                                <td></td>
+                                                <td></td><td></td>
                                             @endfor
                                         </tr>
                                     @endforeach
+
+                                    <tr style="font-weight: bold;">
+                                        <td colspan="2">Group Total</td>
+                                        <td>{{ number_format($groupLoanAmount, 2) }}</td>
+                                        <td>{{ number_format($groupDueAmount, 2) }}</td>
+                                        <td>{{ number_format($groupBalance, 2) }}</td>
+                                        <td colspan="12"></td>
+                                    </tr>
                                 @endforeach
+
 
                                 <!-- Summary Rows -->
                                 <tr><td colspan="5"><strong>Cumulative Collection</strong></td><td colspan="12"></td></tr>
@@ -286,6 +314,10 @@
             </div> <!-- end col -->
         </div> <!-- end row -->
     </div> <!-- end container-fluid -->
+    @php
+        $printedBy = session('Full_Name');
+        $printedAt = now()->format('Y-m-d h:i A');
+    @endphp
 
 @endsection
 
@@ -401,6 +433,12 @@
 
                 const printWindow = window.open('', '', 'height=800,width=1200');
                 const printContent = document.getElementById('repaymentTable').outerHTML;
+
+                printWindow.document.write(`<div style="margin-top:10px;text-align:right;font-size:10px;">
+Printed By: {{ $printedBy }}<br>
+Printed On: {{ $printedAt }}
+                </div>`);
+
 
                 printWindow.document.write('<html><head><title>Repayment Sheet</title>');
                 printWindow.document.write('<style>');

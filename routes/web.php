@@ -718,6 +718,11 @@ Route::get('/create_payment', [\App\Http\Controllers\DataMigrateController::clas
 
 
 
+Route::post('/save-extra-charge', [\App\Http\Controllers\TodayPaymentController::class, 'saveExtraCharge']);
+Route::get('/get-extra-charges', [\App\Http\Controllers\TodayPaymentController::class, 'getExtraCharges']);
+Route::post('/loan-delete', [\App\Http\Controllers\TodayPaymentController::class, 'deleteLoan']);
+
+
 
 
 

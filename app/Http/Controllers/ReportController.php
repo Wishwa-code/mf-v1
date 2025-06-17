@@ -28,11 +28,28 @@ class ReportController extends Controller
      */
     public function index()
     {
-        $customers = tableWithBranch('customer','customer')
+        $loanCounts = DB::table('customer_loan')
+            ->select(
+                'Customer_idCustomer',
+                DB::raw('SUM(CASE WHEN Status = 0 THEN 1 ELSE 0 END) AS current_loan_count'),
+                DB::raw('SUM(CASE WHEN Status = 1 THEN 1 ELSE 0 END) AS settled_loan_count')
+            )
+            ->groupBy('Customer_idCustomer');
+
+        $customers = tableWithBranch('customer', 'customer')
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
-            ->select('customer.*', 'customer_group.Name as group_name', 'center.Name as center_name')
+            ->leftJoinSub($loanCounts, 'loan_data', function ($join) {
+                $join->on('customer.idCustomer', '=', 'loan_data.Customer_idCustomer');
+            })
+            ->select(
+                'customer.*',
+                'customer_group.Name as group_name',
+                'center.Name as center_name',
+                DB::raw('IFNULL(loan_data.current_loan_count, 0) AS current_loan_count'),
+                DB::raw('IFNULL(loan_data.settled_loan_count, 0) AS settled_loan_count')
+            )
             ->get();
         $group = tableWithBranch('customer_group')->get();
         $center = tableWithBranch('center')->get();

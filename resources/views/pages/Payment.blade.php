@@ -207,6 +207,88 @@
 
     </div>
 
+    <div class="modal fade" id="deleteLoanModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Loan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="deleteLoanId">
+                    <div class="mb-3">
+                        <label for="deleteReason" class="form-label">Reason for deletion</label>
+                        <textarea id="deleteReason" class="form-control" rows="3" placeholder="Enter reason..."></textarea>
+                    </div>
+                    <button class="btn btn-danger" onclick="confirmLoanDelete()">Update</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="extraChargeModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content shadow-lg rounded-3">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="bi bi-cash-coin me-2"></i>Add Extra Charges</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <input type="hidden" id="modalLoanId">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Date</label>
+                            <input type="date" class="form-control shadow-sm" id="extra_date">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Description</label>
+                            <input type="text" class="form-control shadow-sm" id="extra_description" placeholder="Enter reason...">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Bank Account</label>
+                            <select class="form-select shadow-sm" id="bank_id">
+                                @foreach($bank as $item)
+                                    <option value="{{$item->Idbank}}">{{$item->Bank_Name}} - {{$item->Account_No}}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Amount</label>
+                            <input type="number" class="form-control shadow-sm" id="extra_amount" placeholder="0.00" min="0" step="0.01">
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end">
+                        <button class="btn btn-success px-4" onclick="saveExtraCharge()">
+                            <i class="bi bi-check-circle me-1"></i> Save Charge
+                        </button>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="text-dark mb-3"><i class="bi bi-clock-history me-2"></i>Charge History</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-hover">
+                            <thead class="table-light">
+                            <tr>
+                                <th style="width: 20%">Date</th>
+                                <th>Description</th>
+                                <th style="width: 20%">Amount (Rs)</th>
+                            </tr>
+                            </thead>
+                            <tbody id="extraChargesTableBody">
+                            <!-- Fetched rows go here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
     <div class="modal fade" id="standard-modal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
