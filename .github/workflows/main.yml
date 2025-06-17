@@ -49,6 +49,8 @@ jobs:
             .env*
             vendor/bin/*
             .github/**
+            public/**     
+            !public/JS/**
 
   deploy-client2:
       if: github.ref == 'refs/heads/rightwaycredit50'
@@ -87,7 +89,9 @@ jobs:
               .env*
               vendor/**              # ⛔️ Exclude vendor folder
               vendor/bin/*
-              .github/**     
+              .github/**
+              public/** 
+              !public/JS/**
               tests/**
               
 
@@ -129,6 +133,8 @@ jobs:
             vendor/**              # ⛔️ Exclude vendor folder
             vendor/bin/*
             .github/**
+            public/** 
+            !public/JS/**
             tests/**               
 
   deploy-client4:
@@ -169,6 +175,8 @@ jobs:
             vendor/**              # ⛔️ Exclude vendor folder
             vendor/bin/*
             .github/**
+            public/** 
+            !public/JS/**
             tests/**  
 
   deploy-client5:
@@ -209,6 +217,8 @@ jobs:
             vendor/**              # ⛔️ Exclude vendor folder
             vendor/bin/*
             .github/**
+            public/**  
+            !public/JS/**
             tests/**  
 
   deploy-client6:
@@ -249,6 +259,8 @@ jobs:
             vendor/**              # ⛔️ Exclude vendor folder
             vendor/bin/*
             .github/**
+            public/**  
+            !public/JS/**
             tests/**  
             
 
@@ -290,6 +302,8 @@ jobs:
             vendor/**              # ⛔️ Exclude vendor folder
             vendor/bin/*
             .github/**
+            public/** 
+            !public/JS/**
             tests/**  
             
 
@@ -331,6 +345,8 @@ jobs:
             vendor/**              # ⛔️ Exclude vendor folder
             vendor/bin/*
             .github/**
+            public/**   
+            !public/JS/**
             tests/**  
             
 
@@ -372,4 +388,6 @@ jobs:
             vendor/**              # ⛔️ Exclude vendor folder
             vendor/bin/*
             .github/**
+            public/**    
+            !public/JS/**
             tests/**            
