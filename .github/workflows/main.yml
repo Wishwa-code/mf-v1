@@ -87,8 +87,7 @@ jobs:
               .env*
               vendor/**              # ⛔️ Exclude vendor folder
               vendor/bin/*
-              .github/**
-              public/**     
+              .github/**     
               tests/**
               
 
@@ -130,7 +129,6 @@ jobs:
             vendor/**              # ⛔️ Exclude vendor folder
             vendor/bin/*
             .github/**
-            public/**     
             tests/**               
 
   deploy-client4:
@@ -171,7 +169,6 @@ jobs:
             vendor/**              # ⛔️ Exclude vendor folder
             vendor/bin/*
             .github/**
-            public/**     
             tests/**  
 
   deploy-client5:
@@ -212,7 +209,6 @@ jobs:
             vendor/**              # ⛔️ Exclude vendor folder
             vendor/bin/*
             .github/**
-            public/**     
             tests/**  
 
   deploy-client6:
@@ -253,7 +249,6 @@ jobs:
             vendor/**              # ⛔️ Exclude vendor folder
             vendor/bin/*
             .github/**
-            public/**     
             tests/**  
             
 
@@ -295,7 +290,6 @@ jobs:
             vendor/**              # ⛔️ Exclude vendor folder
             vendor/bin/*
             .github/**
-            public/**     
             tests/**  
             
 
@@ -337,7 +331,6 @@ jobs:
             vendor/**              # ⛔️ Exclude vendor folder
             vendor/bin/*
             .github/**
-            public/**     
             tests/**  
             
 
@@ -379,5 +372,4 @@ jobs:
             vendor/**              # ⛔️ Exclude vendor folder
             vendor/bin/*
             .github/**
-            public/**     
             tests/**            
