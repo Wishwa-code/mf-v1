@@ -72,11 +72,11 @@ function load_payment_table(page = 1) {
                         let installmentPlaceholder = item.saving_payment === "1" ? "Installment Amount" : "Enter amount";
 
                         // Define payment field
-                        let paymentField = `<input type="text" class="form-control numeric-input amount-input" placeholder="${installmentPlaceholder}" value="${inputAmount}" data-loan-id="${item.idCustomer_Loan}" data-balance="${item.Balance_Amount}" />`;
+                        let paymentField = `<input type="text" class="form-control numeric-input amount-input" placeholder="${installmentPlaceholder}" value="${inputAmount}" data-loan-id="${item.idCustomer_Loan}" data-balance="${item.Balance_With_Penalty}" />`;
 
                         // Add extra input if saving_payment is "1"
                         if (item.saving_payment === "1") {
-                            paymentField += `<br><input type="text" class="form-control numeric-input saving-amount-input" placeholder="Enter Saving Amount" value="${savingAmount}" data-loan-id="${item.idCustomer_Loan}" data-balance="${item.Balance_Amount}" />`;
+                            paymentField += `<br><input type="text" class="form-control numeric-input saving-amount-input" placeholder="Enter Saving Amount" value="${savingAmount}" data-loan-id="${item.idCustomer_Loan}" data-balance="${item.Balance_With_Penalty}" />`;
                         }
 
                         // Construct row HTML
@@ -86,7 +86,7 @@ function load_payment_table(page = 1) {
                             <td>${item.center_no}</td>
                             <td>${item.group_name}</td>
                             <td>${parseFloat(item.Loan_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                            <td>${parseFloat(item.Balance_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td>${parseFloat(item.Balance_With_Penalty).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             <td>${parseFloat(item.Last_Payment_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             <td>${item.Last_Payment_Date}</td>
                             <td>${parseFloat(item.Today_installment).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
@@ -117,7 +117,7 @@ function load_payment_table(page = 1) {
                     let entered = parseFloat($(this).val()) || 0;
                     let max = parseFloat($(this).data("balance")) || 0;
 
-                    if (entered > max) {
+                    if (entered >= max) {
                         Swal.fire({
                             icon: "error",
                             title: "Invalid Payment Amount",

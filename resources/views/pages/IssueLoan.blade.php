@@ -687,13 +687,19 @@
                                                         <!-- Loan Charges Balance checkbox -->
                                                         <div class="row mb-3">
                                                             <div class="col-12 fw-bold d-flex align-items-center">
+{{--                                                                <div class="col-6 fw-bold">Total Other Charges In Loan</div>--}}
+{{--                                                                <div class="btn-group ms-2" role="group" aria-label="Checkbox group">--}}
+{{--                                                                    <input type="checkbox" class="form-check-input" id="loanChargesBalance" onchange="checkLoanChargesBalance()">--}}
+{{--                                                                    <label class="form-check-label ms-2" for="loanChargesBalance">Add Loan Charges to the Capital</label>--}}
+
+{{--                                                                    <input type="checkbox" class="form-check-input ms-3" id="deductCharges" onchange="checkAnotherCheckbox('deductCharges')">--}}
+{{--                                                                    <label class="form-check-label ms-2" for="deductCharges">Deduct Other Charges from Capital</label>--}}
+
+{{--                                                                    <input type="checkbox" class="form-check-input ms-3" id="separateCharges" onchange="checkAnotherCheckbox('separateCharges')" checked>--}}
+{{--                                                                    <label class="form-check-label ms-2" for="separateCharges">Loan Charges Separate from Loan</label>--}}
+{{--                                                                </div>--}}
                                                                 <div class="col-6 fw-bold">Total Other Charges In Loan</div>
                                                                 <div class="btn-group ms-2" role="group" aria-label="Checkbox group">
-{{--                                                                    <select class="form-select" id="loan_charge_dropdown" onchange="checkAnotherCheckbox(this.value)">--}}
-{{--                                                                        <option value="1">Add Loan Charges to the Capital</option>--}}
-{{--                                                                        <option value="2">Deduct Other Charges from Capital</option>--}}
-{{--                                                                        <option value="3" selected>Loan Charges Separate from Loan</option>--}}
-{{--                                                                    </select>--}}
                                                                     <input type="checkbox" class="form-check-input" id="loanChargesBalance" onchange="checkLoanChargesBalance()">
                                                                     <label class="form-check-label ms-2" for="loanChargesBalance">Add Loan Charges to the Capital</label>
 
@@ -703,6 +709,7 @@
                                                                     <input type="checkbox" class="form-check-input ms-3" id="separateCharges" onchange="checkAnotherCheckbox('separateCharges')" checked>
                                                                     <label class="form-check-label ms-2" for="separateCharges">Loan Charges Separate from Loan</label>
                                                                 </div>
+
                                                             </div>
                                                         </div>
 
@@ -3762,6 +3769,10 @@
             });
 
         }
+        function resetInstallmentSection() {
+            $('#installment_table tbody').empty();
+            $('#createLoanButton').prop('disabled', false);
+        }
 
 
         @if($company->product_editable==1)
@@ -3820,6 +3831,7 @@
                 saving_cal();
 
                 checkAnotherCheckbox('separateCharges');
+                resetInstallmentSection();
             }
         @else
             function calculateInterest(){
@@ -3903,42 +3915,8 @@
                 $("#total_capital_amount").text(capital_amount_2);
                 $("#total_interest_amount").text(interest_amount);
                 saving_cal();
-                // if (type==="Weekly"){
-                //     let loan_amount = parseFloat($("#loan_amount").val());
-                //     let interest = parseFloat($("#loan_interest").val());
-                //     let installment_count = parseFloat($("#loan_period").val());
-                //     if (isNaN(loan_amount) || isNaN(interest) || isNaN(installment_count)) {
-                //         return;
-                //     }
-                //     let new_installment_count=0.0;
-                //     let interest_amount = ((loan_amount * interest) / 100);
-                //     $("#interest_amount").val(interest_amount.toFixed(2));
-                //     let total = loan_amount + interest_amount;
-                //     $("#total_loan_amount").text(total.toFixed(2));
-                //     new_installment_count=total/installment_count;
-                //     $("#new_interest_amount").text(new_installment_count.toFixed(2));
-                //
-                // }else{
-                //     let loan_amount = parseFloat($("#loan_amount").val());
-                //     let interest = parseFloat($("#loan_interest").val());
-                //     let total_loan_charge = parseFloat($("#total_loan_charge").text());
-                //     let installment_count = parseFloat($("#ins_count").val());
-                //
-                //     if (isNaN(total_loan_charge)) {
-                //         total_loan_charge=0.00;
-                //     }
-                //     let new_installment_count=0.0;
-                //     if (!isNaN(loan_amount) && !isNaN(interest) && !isNaN(installment_count)) {
-                //         let interest_amount = ((loan_amount * interest) / 100)*installment_count;
-                //         $("#interest_amount").val(interest_amount.toFixed(2));
-                //
-                //         let total = loan_amount + interest_amount + total_loan_charge;
-                //         $("#total_loan_amount").text(total.toFixed(2));
-                //         new_installment_count=total/installment_count;
-                //         $("#new_interest_amount").text(new_installment_count.toFixed(2));
-                //     }
-                // }
                 checkAnotherCheckbox('separateCharges');
+                resetInstallmentSection();
             }
         @endif
 
@@ -4005,43 +3983,54 @@ function saving_cal(){
         @endif
 
         let lastChecked = '';
+        let currentLoanChargeMode = 'separate'; // possible values: 'add', 'deduct', 'separate'
+
 
         function checkLoanChargesBalance() {
             const loanChargesBalanceCheckbox = document.getElementById("loanChargesBalance");
             const deductChargesCheckbox = document.getElementById("deductCharges");
             const separateChargesCheckbox = document.getElementById("separateCharges");
-            updateIssuedAmount();
-            if (loanChargesBalanceCheckbox.checked) {
+
+            if (loanChargesBalanceCheckbox.checked && currentLoanChargeMode !== 'add') {
                 deductChargesCheckbox.checked = false;
                 separateChargesCheckbox.checked = false;
                 performCalculations('loanChargesBalance');
-            } else {
+                currentLoanChargeMode = 'add';
+            } else if (!loanChargesBalanceCheckbox.checked && currentLoanChargeMode !== 'separate') {
                 separateChargesCheckbox.checked = true;
                 performReversal('loanChargesBalance');
+                currentLoanChargeMode = 'separate';
             }
+
+            updateIssuedAmount();
         }
+
 
         function checkAnotherCheckbox(checkboxId) {
             const loanChargesBalanceCheckbox = document.getElementById("loanChargesBalance");
             const deductChargesCheckbox = document.getElementById("deductCharges");
             const separateChargesCheckbox = document.getElementById("separateCharges");
             const checkbox = document.getElementById(checkboxId);
-            updateIssuedAmount();
+
             if (checkbox.checked) {
                 loanChargesBalanceCheckbox.checked = false;
                 deductChargesCheckbox.checked = (checkboxId === 'deductCharges');
                 separateChargesCheckbox.checked = (checkboxId === 'separateCharges');
 
-                if (checkboxId === 'deductCharges') {
+                if (checkboxId === 'deductCharges' && currentLoanChargeMode !== 'deduct') {
                     performReversal('loanChargesBalance');
+                    currentLoanChargeMode = 'deduct';
                 }
-            } else {
-                separateChargesCheckbox.checked = true;
-                performReversal('loanChargesBalance');
+
+                if (checkboxId === 'separateCharges' && currentLoanChargeMode !== 'separate') {
+                    performReversal('loanChargesBalance');
+                    currentLoanChargeMode = 'separate';
+                }
             }
 
-
+            updateIssuedAmount();
         }
+
 
         function performCalculations(checkboxId) {
             let total_loan_amount = parseFloat($("#total_loan_amount").text());
@@ -4055,52 +4044,47 @@ function saving_cal(){
             if (checkboxId === 'loanChargesBalance') {
                 let tot = total_loan_amount + total_loan_charge;
                 let tot_1 = total_loan_amount - total_loan_charge;
-                if (interest_method==="Draft"){
-                    tot=total_interest_amount;
+
+                if (interest_method === "Draft") {
+                    tot = total_interest_amount;
                 }
+
                 let installment = tot / loan_period;
 
                 $("#total_loan_amount").text(tot_1.toFixed(2));
                 $("#new_interest_amount").text(installment.toFixed(2));
 
-                let tot_total_capital_amount = total_capital_amount + total_loan_charge;
-                $("#total_capital_amount").text(tot_total_capital_amount.toFixed(2));
+                let new_capital = total_capital_amount + total_loan_charge;
+                $("#total_capital_amount").text(new_capital.toFixed(2));
             }
 
             lastChecked = checkboxId;
         }
 
         function performReversal(checkboxId) {
-
             let interest_method = $("#interest_method").val();
-            if(interest_method!=="Reducing Balance"){
+            if (interest_method !== "Reducing Balance") {
                 if (lastChecked !== 'loanChargesBalance') return;
 
                 let total_loan_amount = parseFloat($("#total_loan_amount").text());
                 let total_loan_charge = parseFloat($("#total_loan_charge").text());
                 let total_capital_amount = parseFloat($("#total_capital_amount").text());
                 let loan_period = parseInt($("#loan_period").val());
-
-
                 let total_interest_amount = parseFloat($("#total_interest_amount").text());
-                let interest_method = $("#interest_method").val();
 
                 if (checkboxId === 'loanChargesBalance') {
                     let tot = total_loan_amount - total_loan_charge;
-                    let tot_1 = total_loan_amount - total_loan_charge;
-                    if (interest_method==="Draft"){
-                        tot=total_interest_amount;
+                    if (interest_method === "Draft") {
+                        tot = total_interest_amount;
                     }
+
                     let installment = tot / loan_period;
 
-
-
-
-                    $("#total_loan_amount").text(tot_1.toFixed(2));
+                    $("#total_loan_amount").text((total_loan_amount + total_loan_charge).toFixed(2));
                     $("#new_interest_amount").text(installment.toFixed(2));
 
-                    let tot_total_capital_amount = total_capital_amount - total_loan_charge;
-                    $("#total_capital_amount").text(tot_total_capital_amount.toFixed(2));
+                    let new_capital = total_capital_amount - total_loan_charge;
+                    $("#total_capital_amount").text(new_capital.toFixed(2));
                 }
 
                 lastChecked = '';
@@ -4108,23 +4092,19 @@ function saving_cal(){
         }
 
         function updateIssuedAmount() {
-            // Get the values using jQuery .val()
             const totalLoanCharge = parseFloat($('#total_loan_charge').text()) || 0;
             let issuedAmount = parseFloat($('#loan_amount').val()) || 0;
-            console.log(issuedAmount);
-            console.log(totalLoanCharge);
-            // Check if the relevant checkboxes are checked
+
             if ($('#loanChargesBalance').is(':checked')) {
                 issuedAmount += totalLoanCharge;
             }
             if ($('#deductCharges').is(':checked')) {
                 issuedAmount -= totalLoanCharge;
             }
-            // If 'Loan Charges Separate from Loan' is checked, no adjustment needed
 
-            // Update the issued amount in the DOM
             $('#new_issued_amount').text(issuedAmount.toFixed(2));
         }
+
 
 
         function toggleFields() {

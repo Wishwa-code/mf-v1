@@ -132,7 +132,7 @@
                             ];
 
                             $deletePermissions = [
-                                'Access' => ['dashboard','payment_delete','current_loan_delete','current_loan_agreement','branch_access','collector_access','cashier_access']
+                                'Access' => ['dashboard','payment_delete','current_loan_delete','loan_extra_charges','current_loan_agreement','branch_access','collector_access','cashier_access']
                             ];
                         @endphp
 

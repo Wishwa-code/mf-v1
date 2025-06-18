@@ -28,6 +28,7 @@ function load_table(page = 1) {
             let total = response.totals;
             let designation = response.designation;
             let loan_agreement = response.loan_agreement;
+            let extra_charge = response.extra_charge;
             let current_loan_delete = response.current_loan;
             let currentPage = response.item.current_page;
             let lastPage = response.item.last_page;
@@ -65,6 +66,15 @@ function load_table(page = 1) {
         </button>`;
                 }
 
+                let extra_chargeButton = '';
+
+                if (extra_charge == '1') {
+                    extra_chargeButton = `
+        <a href="javascript:void(0)" class="btn btn-info" onclick="openExtraChargeModal(${item.idCustomer_Loan})">
+                                <i class="bi bi-plus-circle"></i>
+                            </a>`;
+                }
+
 
 
                 // Add row data to the table
@@ -79,7 +89,10 @@ function load_table(page = 1) {
                         <td>${parseFloat(item.Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td>${parseFloat(item.capital_balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td>${parseFloat(item.Total_Loan_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        <td>${parseFloat(item.Balance_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td>${(
+                    (parseFloat(item.Balance_Amount) || 0) +
+                    (parseFloat(item.total_penalty) || 0)
+                ).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td>${item.Date_Time}</td>
                         <td>${item.lending_officer}</td>
                         <td>${item.user_name}</td>
@@ -87,9 +100,7 @@ function load_table(page = 1) {
                             <a href="/loanview/${item.idCustomer_Loan}" target="_blank" class="btn btn-warning me-2"><i class="bi bi-eye"></i></a>
                             <a href="/invoice/${item.idCustomer_Loan}" target="_blank" class="btn btn-danger"><i class="bi bi-file-earmark-text"></i></a>
                             ${agreementButton} 
-                            <a href="javascript:void(0)" class="btn btn-info" onclick="openExtraChargeModal(${item.idCustomer_Loan})">
-                                <i class="bi bi-plus-circle"></i>
-                            </a>
+                            ${extra_chargeButton} 
                             ${deleteButton}
                         </td>
                     </tr>

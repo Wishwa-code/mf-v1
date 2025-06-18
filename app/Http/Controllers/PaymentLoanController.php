@@ -78,6 +78,14 @@ class PaymentLoanController extends Controller
             ->join('user as u2', 'customer_loan.lending_officer_id', '=', 'u2.id')
             ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
             ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
+            ->leftJoin(DB::raw('(
+    SELECT 
+        Customer_Loan_idCustomer_Loan, 
+        SUM(Panalty_Balance) as total_penalty
+    FROM installments
+    GROUP BY Customer_Loan_idCustomer_Loan
+) as penalty_summary'), 'customer_loan.idCustomer_Loan', '=', 'penalty_summary.Customer_Loan_idCustomer_Loan')
+
             ->where('customer_loan.Status', '=', '0')
             ->select(
                 'customer_loan.*',
@@ -87,6 +95,7 @@ class PaymentLoanController extends Controller
                 DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
                 DB::raw('IFNULL(center.No, "-") as center_no'),
                 DB::raw('IFNULL(route.name, "-") as route_name'),
+                DB::raw('IFNULL(penalty_summary.total_penalty, 0) as total_penalty'),
                 'u1.Full_Name as user_name',
                 'u2.Full_Name as lending_officer'
             );
@@ -174,6 +183,7 @@ class PaymentLoanController extends Controller
 
         $current_loan = $permissions['current_loan_delete'] ?? 0;
         $loan_agreement = $permissions['current_loan_agreement'] ?? 0;
+        $extra_charge = $permissions['loan_extra_charges'] ?? 0;
 
 
         // Combine results with pagination and totals
@@ -182,6 +192,7 @@ class PaymentLoanController extends Controller
             'designation' => $designation,
             'current_loan' => $current_loan,
             'loan_agreement' => $loan_agreement,
+            'extra_charge' => $extra_charge,
             'totals' => [
                 'totalLoanCount' => $totalLoanCount,
                 'totalCapitalBalance' => $totalCapitalBalance,
