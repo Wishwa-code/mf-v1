@@ -85,11 +85,17 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="closeGlobalCamera()"></button>
                 </div>
                 <div class="modal-body text-center">
+                    <select id="cameraFacing" class="form-select mb-2" style="width: auto; display:inline-block;">
+                        <option value="user">📸 Selfie Camera</option>
+                        <option value="environment">📷 Back Camera</option>
+                    </select>
+
                     <video id="globalVideo" autoplay style="width:100%; max-height:300px; border:1px solid #ccc;"></video>
                     <canvas id="globalCanvas" style="display:none;"></canvas>
                     <br>
                     <button class="btn btn-success mt-2" onclick="captureGlobalImage()">✅</button>
                 </div>
+
             </div>
         </div>
     </div>
@@ -109,13 +115,23 @@
         const video = document.getElementById('globalVideo');
         $('#globalCameraModal').modal('show');
 
-        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-            globalStream = stream;
-            video.srcObject = stream;
-        }).catch(err => {
-            alert("Camera access denied");
-        });
+        const facingMode = document.getElementById('cameraFacing').value || 'user';
+
+        const constraints = {
+            video: { facingMode: { ideal: facingMode } }
+        };
+
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(stream => {
+                globalStream = stream;
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                Swal.fire('Error', 'Unable to access selected camera: ' + err.message, 'error');
+            });
     }
+
+
 
     function captureGlobalImage() {
         const video = document.getElementById('globalVideo');
@@ -144,6 +160,14 @@
                 globalTargetInput.files = dataTransfer.files;
             });
     }
+
+    document.getElementById('cameraFacing').addEventListener('change', () => {
+        if (globalStream) {
+            globalStream.getTracks().forEach(track => track.stop());
+        }
+        openGlobalCamera(globalTargetInput ? `#${globalTargetInput.id}` : null);
+    });
+
 
     function closeGlobalCamera() {
         if (globalStream) {

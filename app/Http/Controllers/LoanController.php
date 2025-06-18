@@ -746,6 +746,7 @@ class LoanController extends Controller
         $installments = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', $id)->orderBy('Installment_Date')->get();
         $Saving_amountSum = $installments->sum('Saving_amount');
         $Panalty_BalanceSum = $installments->sum('Panalty_Balance');
+        $Panalty_Amount = $installments->sum('Panalty_Amount');
 //        $Saving_balance = $installments->sum('Saving_balance');
 //        $savingBalanceSum=$Saving_amountSum-$Saving_balance;
         $last_log = DB::table('Loan_Log')->where('Loan_ID','=',$id)->orderBy('Loan_Log_ID', 'desc')->first();
@@ -857,6 +858,7 @@ class LoanController extends Controller
             'installment_logs',
             'customer_payments',
             'Panalty_BalanceSum',
+            'Panalty_Amount',
             'total_paid_amount',
             'Customer_Bank',
             'savingBalanceSum',

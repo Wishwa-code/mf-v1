@@ -433,6 +433,7 @@ class TodayPaymentController extends Controller
                 'Customer_Loan_idCustomer_Loan',
                 DB::raw('COUNT(idInstallments) as Calculated_Installment_Count'),
                 DB::raw('SUM(Total_Balance) as Total_Balance'),
+                DB::raw('SUM(Panalty_Balance) as Panalty_Balance'),
                 DB::raw('SUM(Paid_Amount) as Total_Paid_Amount'),
                 DB::raw('SUM(CASE WHEN Installment_Date <= CURDATE() THEN Total_Balance ELSE 0 END) as Total_Balance_until'),
                 DB::raw('SUM(CASE WHEN Installment_Date = CURDATE() THEN Total_Balance ELSE 0 END) as Today_installment'),
@@ -500,6 +501,7 @@ class TodayPaymentController extends Controller
                  DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
                 DB::raw('IFNULL(last_payment.last_payment_date, "-") as Last_Payment_Date'),
                 DB::raw('IFNULL(cp.Amount, 0) as Last_Payment_Amount'),
+                DB::raw('(customer_loan.Balance_Amount + installment_summary.Panalty_Balance) as Balance_With_Penalty'),
             )
             ->where('customer_loan.branch_id','=',session('branch_id'))
             ->where('customer_loan.Status', '=', '0');

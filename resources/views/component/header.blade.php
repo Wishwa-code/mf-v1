@@ -409,7 +409,7 @@ $banner = DB::select($query);
         ];
 
         $deletePermissions = [
-            'Access' => ['dashboard','payment_delete','current_loan_delete','current_loan_agreement','branch_access']
+            'Access' => ['dashboard','payment_delete','current_loan_delete','loan_extra_charges','current_loan_agreement','branch_access']
         ];
 
         $allPermissions = array_merge(

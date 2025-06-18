@@ -356,9 +356,11 @@
                                     <th scope="col">Paid Loan Amount</th>
                                     <th scope="col">Paid Saving Amount</th>
                                     <th scope="col">Total Paid Amount</th>
-                                    <th scope="col">Total Outstanding</th>
-                                    <th scope="col">Capital Balance</th>
+
+                                    <th scope="col">Total Paid Penalty</th>
                                     <th scope="col">Total Penalty Balance</th>
+                                    <th scope="col">Capital Balance</th>
+                                    <th scope="col">Total Outstanding</th>
                                     <th scope="col">Loan Maturity Date</th>
                                     <th>Loan Status</th>
                                 </tr>
@@ -370,9 +372,11 @@
                                     <td>{{ number_format($total_paid_amount-$savingBalanceSum, 2, '.', ',') }}</td>
                                     <td>{{ number_format($savingBalanceSum, 2, '.', ',') }}</td>
                                     <td>{{ number_format($total_paid_amount, 2, '.', ',') }}</td>
-                                    <td>{{ number_format($loan->Balance_Amount, 2, '.', ',') }}</td>
-                                    <td>{{ number_format($loan->capital_balance, 2, '.', ',') }}</td>
+
+                                    <td>{{ number_format($Panalty_Amount-$Panalty_BalanceSum, 2, '.', ',') }}</td>
                                     <td>{{ number_format($Panalty_BalanceSum, 2, '.', ',') }}</td>
+                                    <td>{{ number_format($loan->capital_balance, 2, '.', ',') }}</td>
+                                    <td>{{ number_format($loan->Balance_Amount+$Panalty_BalanceSum, 2, '.', ',') }}</td>
                                     <td>{{ $installments->last()->Installment_Date }}</td>
                                     <td style="color:
     {{ $loan->Status == -1 ? 'orange' : ($loan->Status == 0 ? 'red' : 'green') }};">
