@@ -13,7 +13,7 @@ class CapitalBalanceController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index($loan_id,$status=0)
+    public function index($loan_id,$check=0)
     {
         $loan = tableWithBranch('customer_loan')->where('idCustomer_Loan', $loan_id)->first();
         if ($loan) {
@@ -21,48 +21,39 @@ class CapitalBalanceController extends Controller
                 ->where('Customer_Loan_idCustomer_Loan', $loan_id)
                 ->get();
 
-            $penaltyBalanceSum = $installment->sum('Panalty_Balance');
-            $interestBalanceSum = $installment->sum('Interest_Balance');
-            $capitalBalanceSum = $installment->sum('capital_balance');
-            $totalBalance = $capitalBalanceSum + $interestBalanceSum + $penaltyBalanceSum;
+            $interestBalanceSum = round($installment->sum('Interest_Balance'),2);
+            $capitalBalanceSum = round($installment->sum('capital_balance'),2);
+            $totalBalance = round($installment->sum('Total_Balance'),2);
+
+            $status=0;
+            if ($totalBalance<1){
+                $status=1;
+                $interestBalanceSum=0;
+                $capitalBalanceSum=0;
+                $totalBalance=0;
+
+
+                DB::table('installments')
+                    ->where('Customer_Loan_idCustomer_Loan', $loan_id)
+                    ->update([
+                        'Interest_Balance' => 0.00,
+                        'Panalty_Balance' => 0.00,
+                        'capital_balance' => 0.00,
+                        'Total_Balance' => 0.00,
+                        'Status' => '1',
+                        'Panelty_status' => '2',
+                    ]);
+
+            }
 
             updateWithBranch('customer_loan', 'idCustomer_Loan', $loan_id, [
                 'capital_balance' => $capitalBalanceSum,
                 'installment_balance' => $interestBalanceSum,
                 'Balance_Amount' => $totalBalance,
+                'Status' => $status,
             ]);
 
-            // Re-fetch the loan after update
-            $loan_2 = tableWithBranch('customer_loan')->where('idCustomer_Loan', $loan_id)->where('Status','=','0')->first();
-
-            if($loan_2){
-                if ($loan_2->Balance_Amount < 1) {
-                    updateWithBranch('customer_loan', 'idCustomer_Loan', $loan_id, [
-                        'Balance_Amount' => '0.00',
-                        'capital_balance' => '0.00',
-                        'installment_balance' => '0.00',
-                        'Status' => '1',
-                    ]);
-
-                    updateWithBranch('installments', 'Customer_Loan_idCustomer_Loan', $loan_id, [
-                        'Panalty_Balance' => '0.00',
-                        'Interest_Balance' => '0.00',
-                        'capital_balance' => '0.00',
-                        'Saving_balance' => '0.00',
-                        'Total_Balance' => '0.00',
-                        'Status' => '1',
-                    ]);
-                } else {
-                    // Balance is greater than or equal to 2
-                    updateWithBranch('customer_loan', 'idCustomer_Loan', $loan_id, [
-                        'Status' => '0'
-                    ]);
-                }
-            }
-
         }
-
-
     }
 
     /**

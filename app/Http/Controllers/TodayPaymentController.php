@@ -1097,7 +1097,11 @@ class TodayPaymentController extends Controller
                 }
 
 
-                $Total_Pending_Balance_Log = $Panelty_Balance_Log + $Interest_Balance_Log + $Capital_Balance_Log + $Saving_Balance_Log;
+                $Total_Pending_Balance_Log = $Panelty_Balance_Log + $Interest_Balance_Log + $Capital_Balance_Log;
+                $saving_balance=round($installments->sum('Saving_Account_Balance'),2);
+                if (!$saving_balance>0){
+                    $Total_Pending_Balance_Log = $Panelty_Balance_Log + $Interest_Balance_Log + $Capital_Balance_Log + $Saving_Balance_Log;
+                }
 
 
                 $this->loanLogController->index(
@@ -1228,7 +1232,7 @@ class TodayPaymentController extends Controller
                     ->where('Loan_Id', '=', $loan_id)
                     ->first();
                 if ($enable_saving_process == "Yes") {
-                    $this->SavingAccountController->index($saving_account->id, 'Deposit', 'Payment', $Saving_balance_tot_paid, '0.00', $Saving_balance_tot_paid, 'Credit');
+                    $this->SavingAccountController->index($saving_account->id, 'Deposit', 'Payment', $Saving_balance_tot_paid, '0.00', $Saving_balance_tot_paid, 'Credit',$savedId);
                 }
                 return response()->json(['item' => 'sucess', 'id' => '1', 'test' => "1", 'payment_id' => $savedId], 200);
 
@@ -3024,303 +3028,334 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
 
     public function undoPayment(Request $request,$payment_id)
     {
-        $reason = $request->input('reason');
-        // Fetch the payment details to undo
-        $payment = DB::table('customer_payments')->where('idCustomer_Payments', $payment_id)->first();
+        DB::beginTransaction();
+        try {
+            $reason = $request->input('reason');
+            // Fetch the payment details to undo
+            $payment = DB::table('customer_payments')->where('idCustomer_Payments', $payment_id)->first();
 
-        if (!$payment) {
-            return response()->json(['error' => 'Payment not found'], 404);
-        }
-
-        $loan_id = $payment->Customer_Loan_idCustomer_Loan;
-        $loan=DB::table('customer_loan')->where('idCustomer_Loan','=',$loan_id)->first();
-        $undo_amount = $payment->Amount;
-        $undo_payment = $payment->Amount;
-        $user_id = $payment->User_idUser;
-
-        // Get current date and time
-        $currentDateTime = now()->format('Y-m-d H:i:s');
-
-        // Get current user
-        $currentUser = session('username');
-
-        // Revert the payment entry
-        DB::table('customer_payments')
-            ->where('idCustomer_Payments', $payment_id)
-            ->update([
-                'status' => 'Removed',
-                'Description' => $reason,
-                'Amount' => 0.00,
-                'comment' => "Payment of $undo_amount undone ($currentDateTime - $currentUser)",
-            ]);
-
-        // Fetch related installments
-        $installments = DB::table('installments')
-            ->where('Customer_Loan_idCustomer_Loan', $loan_id)
-            ->where('Paid_Amount', '>', 0)
-            ->orderBy('idInstallments', 'desc')
-            ->get();
-
-
-        foreach ($installments as $item) {
-            $idInstallments = $item->idInstallments;
-            $Paid_Amount = $item->Paid_Amount;
-
-            // Undo installment amount first
-            if ($undo_amount > 0) {
-                if ($undo_amount >= $Paid_Amount) {
-                    // Reduce undo amount by full installment amount
-                    $undo_amount -= $Paid_Amount;
-
-                    DB::table('installments')
-                        ->where('idInstallments', $idInstallments)
-                        ->update([
-                            'Paid_Amount' => 0.00,
-                            'Interest_Balance' => $item->interest_amount,
-                            'Panalty_Balance' => $item->Panalty_Amount,
-                            'Saving_balance' => $item->Saving_amount,
-                            'capital_balance' => $item->capital_amount,
-                            'Total_Balance' => $item->Installment_Amount + $item->Panalty_Amount + $item->Saving_amount,
-                            'Status' => '0',
-                        ]);
-
-                    // Log the installment undo
-                    DB::table('installment_log')->insert([
-                        'Installments_idInstallments' => $idInstallments,
-                        'Date' => now(),
-                        'Description' => 'Payment undone : ' . $undo_payment,
-                        'Amount' => $Paid_Amount,
-                        'Panalty_Total' => $item->Panalty_Amount,
-                        'Interest_Balance' => $item->Installment_Amount,
-                        'Capital_balance' => $item->capital_amount,
-                        'Saving_balance' => $item->Saving_amount,
-                        'Total_Balance' => $item->Installment_Amount + $item->Panalty_Amount + $item->Saving_amount,
-                        'User_idUser' => $user_id,
-                    ]);
-                } else {
-
-                    $Totalcapital_amount = $item->capital_amount;
-                    $Totalinterest_amount = $item->interest_amount;
-                    $TotalPanalty_Amount = $item->Panalty_Amount;
-                    $TotalSaving_amount = $item->Saving_amount;
-                    $Total_amount = $item->Total_Amount;
-
-                    $BalancePanalty_Balance = $item->Panalty_Balance;
-                    $BalanceInterest_Balance = $item->Interest_Balance;
-                    $Balancecapital_balance = $item->capital_balance;
-                    $BalanceSaving_balance = $item->Saving_balance;
-
-
-                    if ($undo_amount > 0) {
-                        if ($TotalSaving_amount > $BalanceSaving_balance) {
-                            if ($undo_amount >= ($TotalSaving_amount - $BalanceSaving_balance)) {
-                                $BalanceSaving_balance = $TotalSaving_amount;
-                                $undo_amount -= ($TotalSaving_amount - $BalanceSaving_balance);
-                            } else {
-                                $BalanceSaving_balance += $undo_amount;
-                                $undo_amount = 0;
-                            }
-                        }
-                    }
-
-
-                    if ($undo_amount > 0) {
-                        if ($Totalcapital_amount > $Balancecapital_balance) {
-                            if ($undo_amount >= ($Totalcapital_amount - $Balancecapital_balance)) {
-                                $Balancecapital_balance = $Totalcapital_amount;
-                                $undo_amount -= ($Totalcapital_amount - $Balancecapital_balance);
-                            } else {
-                                $Balancecapital_balance += $undo_amount;
-                                $undo_amount = 0;
-                            }
-                        }
-                    }
-
-
-                    if ($undo_amount > 0) {
-                        if ($Totalinterest_amount > $BalanceInterest_Balance) {
-                            if ($undo_amount >= ($Totalinterest_amount - $BalanceInterest_Balance)) {
-                                $BalanceInterest_Balance = $Totalinterest_amount;
-                                $undo_amount -= ($Totalinterest_amount - $BalanceInterest_Balance);
-                            } else {
-                                $BalanceInterest_Balance += $undo_amount;
-                                $undo_amount = 0;
-                            }
-                        }
-                    }
-
-
-                    if ($undo_amount > 0) {
-                        if ($TotalPanalty_Amount > $BalancePanalty_Balance) {
-                            if ($undo_amount >= ($TotalPanalty_Amount - $BalancePanalty_Balance)) {
-                                $BalancePanalty_Balance = $TotalPanalty_Amount;
-                                $undo_amount -= ($TotalPanalty_Amount - $BalancePanalty_Balance);
-                            } else {
-                                $BalancePanalty_Balance += $undo_amount;
-                                $undo_amount = 0;
-                            }
-                        }
-                    }
-
-
-                    $Installment_Paid_Amount = $Total_amount-($BalancePanalty_Balance + $BalanceInterest_Balance + $Balancecapital_balance + $BalanceSaving_balance);
-
-                    DB::table('installments')
-                        ->where('idInstallments', $idInstallments)
-                        ->update([
-                            'Paid_Amount' => $Installment_Paid_Amount,
-                            'Interest_Balance' => $BalanceInterest_Balance,
-                            'Panalty_Balance' => $BalancePanalty_Balance,
-                            'Saving_balance' => $BalanceSaving_balance,
-                            'capital_balance' => $Balancecapital_balance,
-                            'Total_Balance' => $BalancePanalty_Balance + $BalanceInterest_Balance + $Balancecapital_balance + $BalanceSaving_balance,
-                            'Status' => '0',
-                        ]);
-
-                    // Log the installment undo
-                    DB::table('installment_log')->insert([
-                        'Installments_idInstallments' => $idInstallments,
-                        'Date' => now(),
-                        'Description' => 'Payment undone : ' . $undo_payment,
-                        'Amount' => $undo_amount,
-                        'Panalty_Total' => $BalancePanalty_Balance,
-                        'Interest_Balance' => $item->Installment_Amount,
-                        'Capital_balance' => $Balancecapital_balance,
-                        'Saving_balance' => $BalanceSaving_balance,
-                        'Total_Balance' => $BalancePanalty_Balance + $BalanceInterest_Balance + $Balancecapital_balance + $BalanceSaving_balance,
-                        'User_idUser' => $user_id,
-                    ]);
-
-                    $undo_amount = 0;
-                }
+            if (!$payment) {
+                return response()->json(['error' => 'Payment not found'], 404);
             }
 
-            // Stop if no undo amount remains
-            if ($undo_amount <= 0) {
-                break;
-            }
-        }
+            $loan_id = $payment->Customer_Loan_idCustomer_Loan;
+            $loan=DB::table('customer_loan')->where('idCustomer_Loan','=',$loan_id)->first();
+            $undo_amount = $payment->Amount;
+            $undo_payment = $payment->Amount;
+            $user_id = $payment->User_idUser;
 
-        //customer savings
-        $saving = DB::table('Savings_Account_Log')->where('Payment_id', '=', $payment_id)->first();
-        if ($saving){
-            $this->SavingAccountController->index($saving->Saving_Acount_Id, 'Payment Undo', "Payment of $undo_payment undone ($currentDateTime - $currentUser)", '0.00', $saving->Credit, $saving->Balance, 'Debit');
-        }
+            // Get current date and time
+            $currentDateTime = now()->format('Y-m-d H:i:s');
 
-        //capital balance
-        $this->capitalBalanceController->index($loan_id);
-        $request = new Request([
-            'customer_id' => $loan->Customer_idCustomer,
-            'description' => 'Payment Undo',
-            'description_id' => $payment_id,
-            'comment' => "Payment of $undo_payment undone ($currentDateTime - $currentUser)",
-            'type' => "Payment Undo",
-        ]);
-        //customer balance
-        $this->customerLogController->store($request);
+            // Get current user
+            $currentUser = session('username');
 
-        //bank balance
-        $banklog=DB::table('company_bank_has_log')->where('payment_id','=',$payment_id)->get();
-        foreach ($banklog as $banklogs){
-            $description=$banklogs->Description;
-            $bank_log_comment="Payment Undone (".$description.")";
-            $type=$banklogs->Type;
-            $credit=$banklogs->Credit;
-            $debit=$banklogs->Debit;
-            $bank_id=$banklogs->Bank_Account_Id;
-            $contra_account=$banklogs->contra_account;
-
-            if ($type=="Loan Payment-Capital"){
-                //capital
-                if ($credit>0){
-                    $this->bankLogController->index($bank_id, "Loan Payment-Capital", $bank_log_comment, "Cash", "debit", $credit,$contra_account);
-                }else{
-                    $this->bankLogController->index($bank_id, "Loan Payment-Capital", $bank_log_comment, "Cash", "credit", $debit,$contra_account);
-                }
-            }
-
-            if ($type=="Loan Payment-Interest"){
-                //interest
-                if ($credit>0){
-                    $this->bankLogController->index($bank_id, "Loan Payment-Interest", $bank_log_comment, "Cash", "debit", $credit,$contra_account);
-                }else{
-                    $this->bankLogController->index($bank_id, "Loan Payment-Interest", $bank_log_comment, "Cash", "credit", $debit,$contra_account);
-                }
-            }
-
-            if ($type=="Loan Payment-Penalty"){
-                //panelty
-                if ($credit>0){
-                    $this->bankLogController->index($bank_id, "Loan Payment-Penalty", $bank_log_comment, "Cash", "debit", $credit,$contra_account);
-                }else{
-                    $this->bankLogController->index($bank_id, "Loan Payment-Penalty", $bank_log_comment, "Cash", "credit", $debit,$contra_account);
-                }
-            }
-
-        }
-
-        //loan log
-        $lastLoanLog = DB::table('Loan_Log')->where('Type', '=', "Customer Payment")->where('Type_ID', '=', $payment_id)->first();
-        $this->loanLogController->index(
-            $loan_id, 'Payment Undo', $payment_id,
-            "Payment of $undo_payment undone ($currentDateTime - $currentUser)", $undo_payment,
-            $lastLoanLog->Panelty_Payment, $lastLoanLog->Interest_Payment,
-            $lastLoanLog->Capital_Payment, $lastLoanLog->Savings_Payment, $lastLoanLog->Panelty_Balance,
-            $lastLoanLog->Interest_Balance, $lastLoanLog->Capital_Balance, $lastLoanLog->Total_Pending_Balance+$undo_payment, $lastLoanLog->Saving_Account_Balance
-        );
-
-        //customer points
-        $company = tableWithBranch('company')->first();
-
-
-        $points_to_add = 0;
-        if ($company->points === "1") {
-            $points_percentage = $company->points_percentage;
-            $payment_amount_for_points = $undo_payment;
-
-            // Calculate the points to be added
-            $points_to_add = ($payment_amount_for_points * $points_percentage) / 100;
-
-            // Retrieve the current points of the customer
-            $customer = DB::table('customer')->where('idCustomer', $loan->Customer_idCustomer)->first();
-            $current_points = $customer->points;
-
-            // Update the customer's points
-            DB::table('customer')
-                ->where('idCustomer', $loan->Customer_idCustomer)
+            // Revert the payment entry
+            DB::table('customer_payments')
+                ->where('idCustomer_Payments', $payment_id)
                 ->update([
-                    'points' => $current_points - $points_to_add
+                    'status' => 'Removed',
+                    'Description' => $reason,
+                    'Amount' => 0.00,
+                    'comment' => "Payment of $undo_amount undone ($currentDateTime - $currentUser)",
                 ]);
-        }
 
-        // Send SMS
-        $sms_template = DB::table('sms_template')->where('type', '=', 'payment_undo')->where('status', '=', '1')->first();
-        if ($sms_template) {
-            $customer = DB::table('customer')->where('idCustomer', '=', $loan->Customer_idCustomer)->first();
+            // Fetch related installments
+            $installments = DB::table('installments')
+                ->where('Customer_Loan_idCustomer_Loan', $loan_id)
+                ->where('Paid_Amount', '>', 0)
+                ->orderBy('idInstallments', 'desc')
+                ->get();
 
-            // Step 2: Define the mapping
-            $placeholders = [
-                '@Member_No@' => $customer->cus_number,
-                '@Member_Name@' => $customer->First_Name . ' ' . $customer->Last_Name,
-                '@Loan_No@' => $loan->Loan_No,
-                '@Paid_Amount@' => $undo_payment,
-            ];
-
-            // Step 3: Replace placeholders in the loan_format
-            $loan_number_txt = $sms_template->template;
-            foreach ($placeholders as $placeholder => $value) {
-                $loan_number_txt = str_replace($placeholder, $value, $loan_number_txt);
+            //customer savings
+            $saving = tableWithBranch('Savings_Account_Log')->where('Payment_id', '=', $payment_id)->first();
+            if ($saving){
+                $installment_check = DB::table('installments')
+                    ->where('Customer_Loan_idCustomer_Loan', $loan_id)
+                    ->first();
+                if ($installment_check){
+                    $check_saving=$installment_check->Saving_amount;
+                    if (!$check_saving>0){
+                        $undo_amount = $payment->Amount-$saving->Credit;
+                        $undo_payment = $payment->Amount-$saving->Credit;
+                    }
+                }
+                $Customer_Saving_Accounts = tableWithBranch('Savings_Account_Log')
+                    ->where('Saving_Acount_Id', '=', $saving->Saving_Acount_Id)
+                    ->orderBy('id', 'desc') // or ->orderBy('created_at', 'desc')
+                    ->first();
+                $this->SavingAccountController->index($saving->Saving_Acount_Id, 'Payment Undo', "Payment of $undo_payment undone ($currentDateTime - $currentUser)", '0.00', $saving->Credit, $Customer_Saving_Accounts->Balance, 'Debit');
             }
 
-            // Log the SMS message
-            $this->smsLogController->index($loan_id, $loan_number_txt, "Undo Payment");
+
+            foreach ($installments as $item) {
+                $idInstallments = $item->idInstallments;
+                $Paid_Amount = $item->Paid_Amount;
+
+                // Undo installment amount first
+                if ($undo_amount > 0) {
+                    if ($undo_amount >= $Paid_Amount) {
+                        // Reduce undo amount by full installment amount
+                        $undo_amount -= $Paid_Amount;
+
+                        DB::table('installments')
+                            ->where('idInstallments', $idInstallments)
+                            ->update([
+                                'Paid_Amount' => 0.00,
+                                'Interest_Balance' => $item->interest_amount,
+                                'Panalty_Balance' => $item->Panalty_Amount,
+                                'Saving_balance' => $item->Saving_amount,
+                                'capital_balance' => $item->capital_amount,
+                                'Total_Balance' => $item->Installment_Amount + $item->Panalty_Amount + $item->Saving_amount,
+                                'Status' => '0',
+                                'Panelty_status' => '0',
+                            ]);
+
+                        // Log the installment undo
+                        DB::table('installment_log')->insert([
+                            'Installments_idInstallments' => $idInstallments,
+                            'Date' => now(),
+                            'Description' => 'Payment undone : ' . $undo_payment,
+                            'Amount' => $Paid_Amount,
+                            'Panalty_Total' => $item->Panalty_Amount,
+                            'Interest_Balance' => $item->Installment_Amount,
+                            'Capital_balance' => $item->capital_amount,
+                            'Saving_balance' => $item->Saving_amount,
+                            'Total_Balance' => $item->Installment_Amount + $item->Panalty_Amount + $item->Saving_amount,
+                            'User_idUser' => $user_id,
+                        ]);
+                    } else {
+
+                        $Total_amount = $item->Total_Amount;
+
+                        $BalancePanalty_Balance = round($item->Panalty_Amount,2);
+                        $BalanceInterest_Balance = round($item->interest_amount,2);
+                        $Balancecapital_balance = round($item->capital_amount,2);
+                        $BalanceSaving_balance = round($item->Saving_amount,2);
+
+
+                        $previouse_payed_amount=$item->Paid_Amount-$undo_amount;
+
+                        if ($BalancePanalty_Balance>=$previouse_payed_amount){
+                            $BalancePanalty_Balance=$BalancePanalty_Balance-$previouse_payed_amount;
+                            $previouse_payed_amount=0;
+                        }else{
+                            $previouse_payed_amount=$previouse_payed_amount-$BalancePanalty_Balance;
+                            $BalancePanalty_Balance=0;
+                        }
+
+                        if ($previouse_payed_amount>0){
+                            if ($BalanceInterest_Balance>=$previouse_payed_amount){
+                                $BalanceInterest_Balance=$BalanceInterest_Balance-$previouse_payed_amount;
+                                $previouse_payed_amount=0;
+                            }else{
+                                $previouse_payed_amount=$previouse_payed_amount-$BalanceInterest_Balance;
+                                $BalanceInterest_Balance=0;
+                            }
+                        }
+
+                        if ($previouse_payed_amount>0){
+                            if ($Balancecapital_balance>=$previouse_payed_amount){
+                                $Balancecapital_balance=$Balancecapital_balance-$previouse_payed_amount;
+                                $previouse_payed_amount=0;
+                            }else{
+                                $previouse_payed_amount=$previouse_payed_amount-$Balancecapital_balance;
+                                $Balancecapital_balance=0;
+                            }
+                        }
+
+                        if ($previouse_payed_amount>0){
+                            if ($BalanceSaving_balance>=$previouse_payed_amount){
+                                $BalanceSaving_balance=$BalanceSaving_balance-$previouse_payed_amount;
+                                $previouse_payed_amount=0;
+                            }else{
+                                $previouse_payed_amount=$previouse_payed_amount-$BalanceSaving_balance;
+                                $BalanceSaving_balance=0;
+                            }
+                        }
+
+                        $Installment_Paid_Amount = $Total_amount-($BalancePanalty_Balance + $BalanceInterest_Balance + $Balancecapital_balance + $BalanceSaving_balance);
+
+                        DB::table('installments')
+                            ->where('idInstallments', $idInstallments)
+                            ->update([
+                                'Paid_Amount' => $Installment_Paid_Amount,
+                                'Interest_Balance' => $BalanceInterest_Balance,
+                                'Panalty_Balance' => $BalancePanalty_Balance,
+                                'Saving_balance' => $BalanceSaving_balance,
+                                'capital_balance' => $Balancecapital_balance,
+                                'Total_Balance' => $BalancePanalty_Balance + $BalanceInterest_Balance + $Balancecapital_balance + $BalanceSaving_balance,
+                                'Status' => '0',
+                            ]);
+
+                        // Log the installment undo
+                        DB::table('installment_log')->insert([
+                            'Installments_idInstallments' => $idInstallments,
+                            'Date' => now(),
+                            'Description' => 'Payment undone : ' . $undo_payment,
+                            'Amount' => $undo_amount,
+                            'Panalty_Total' => $BalancePanalty_Balance,
+                            'Interest_Balance' => $item->Installment_Amount,
+                            'Capital_balance' => $Balancecapital_balance,
+                            'Saving_balance' => $BalanceSaving_balance,
+                            'Total_Balance' => $BalancePanalty_Balance + $BalanceInterest_Balance + $Balancecapital_balance + $BalanceSaving_balance,
+                            'User_idUser' => $user_id,
+                        ]);
+
+                        $undo_amount = 0;
+                    }
+                }
+
+                // Stop if no undo amount remains
+                if ($undo_amount <= 0) {
+                    break;
+                }
+            }
+
+
+
+            //capital balance
+            $this->capitalBalanceController->index($loan_id);
+            $request = new Request([
+                'customer_id' => $loan->Customer_idCustomer,
+                'description' => 'Payment Undo',
+                'description_id' => $payment_id,
+                'comment' => "Payment of $undo_payment undone ($currentDateTime - $currentUser)",
+                'type' => "Payment Undo",
+            ]);
+            //customer balance
+            $this->customerLogController->store($request);
+
+            //bank balance
+            $banklog=DB::table('company_bank_has_log')->where('payment_id','=',$payment_id)->get();
+            foreach ($banklog as $banklogs){
+                $description=$banklogs->Description;
+                $bank_log_comment="Payment Undone (".$description.")";
+                $type=$banklogs->Type;
+                $credit=$banklogs->Credit;
+                $debit=$banklogs->Debit;
+                $bank_id=$banklogs->Bank_Account_Id;
+                $contra_account=$banklogs->contra_account;
+
+                if ($type=="Loan Payment-Capital"){
+                    //capital
+                    if ($credit>0){
+                        $this->bankLogController->index($bank_id, "Loan Payment-Capital", $bank_log_comment, "Cash", "debit", $credit,$contra_account);
+                    }else{
+                        $this->bankLogController->index($bank_id, "Loan Payment-Capital", $bank_log_comment, "Cash", "credit", $debit,$contra_account);
+                    }
+                }
+
+                if ($type=="Loan Payment-Interest"){
+                    //interest
+                    if ($credit>0){
+                        $this->bankLogController->index($bank_id, "Loan Payment-Interest", $bank_log_comment, "Cash", "debit", $credit,$contra_account);
+                    }else{
+                        $this->bankLogController->index($bank_id, "Loan Payment-Interest", $bank_log_comment, "Cash", "credit", $debit,$contra_account);
+                    }
+                }
+
+                if ($type=="Loan Payment-Penalty"){
+                    //panelty
+                    if ($credit>0){
+                        $this->bankLogController->index($bank_id, "Loan Payment-Penalty", $bank_log_comment, "Cash", "debit", $credit,$contra_account);
+                    }else{
+                        $this->bankLogController->index($bank_id, "Loan Payment-Penalty", $bank_log_comment, "Cash", "credit", $debit,$contra_account);
+                    }
+                }
+
+                if ($type=="Loan Payment-Saving"){
+                    //panelty
+                    if ($credit>0){
+                        $this->bankLogController->index($bank_id, "Loan Payment-Saving", $bank_log_comment, "Cash", "debit", $credit,$contra_account);
+                    }else{
+                        $this->bankLogController->index($bank_id, "Loan Payment-Saving", $bank_log_comment, "Cash", "credit", $debit,$contra_account);
+                    }
+                }
+
+            }
+
+            $balance_installments = DB::table('installments')
+                ->where('Customer_Loan_idCustomer_Loan', $loan_id)
+                ->get();
+
+            $saving_balance=round($balance_installments->sum('Saving_Account_Balance'),2);
+
+            $total_balance=round($balance_installments->sum('Interest_Balance') + $balance_installments->sum('capital_balance') + $balance_installments->sum('Saving_Account_Balance')+ $balance_installments->sum('Panelty_Balance'), 2);
+            if (!$saving_balance>0){
+                $saving_db=tableWithBranch('Customer_Saving_Accounts')->where('Loan_Id','=',$loan_id)->first();
+                $saving_balance=round($saving_db->Balance,2);
+                $total_balance=round($balance_installments->sum('Interest_Balance') + $balance_installments->sum('capital_balance')+ $balance_installments->sum('Panelty_Balance'), 2);
+            }
+
+
+            $this->loanLogController->index(
+                $loan_id, 'Payment Undo', $payment_id,
+                "Payment of $undo_payment undone ($currentDateTime - $currentUser)", $undo_payment,
+                '0.00', '0.00',
+                '0.00', '0.00',
+                round($balance_installments->sum('Panelty_Balance'), 2),
+                round($balance_installments->sum('Interest_Balance'), 2),
+                round($balance_installments->sum('capital_balance'), 2),
+                $total_balance,
+                $saving_balance
+            );
+
+
+
+            //customer points
+            $company = tableWithBranch('company')->first();
+
+
+            $points_to_add = 0;
+            if ($company->points === "1") {
+                $points_percentage = $company->points_percentage;
+                $payment_amount_for_points = $undo_payment;
+
+                // Calculate the points to be added
+                $points_to_add = ($payment_amount_for_points * $points_percentage) / 100;
+
+                // Retrieve the current points of the customer
+                $customer = DB::table('customer')->where('idCustomer', $loan->Customer_idCustomer)->first();
+                $current_points = $customer->points;
+
+                // Update the customer's points
+                DB::table('customer')
+                    ->where('idCustomer', $loan->Customer_idCustomer)
+                    ->update([
+                        'points' => $current_points - $points_to_add
+                    ]);
+            }
+
+            // Send SMS
+            $sms_template = DB::table('sms_template')->where('type', '=', 'payment_undo')->where('status', '=', '1')->first();
+            if ($sms_template) {
+                $customer = DB::table('customer')->where('idCustomer', '=', $loan->Customer_idCustomer)->first();
+
+                // Step 2: Define the mapping
+                $placeholders = [
+                    '@Member_No@' => $customer->cus_number,
+                    '@Member_Name@' => $customer->First_Name . ' ' . $customer->Last_Name,
+                    '@Loan_No@' => $loan->Loan_No,
+                    '@Paid_Amount@' => $undo_payment,
+                ];
+
+                // Step 3: Replace placeholders in the loan_format
+                $loan_number_txt = $sms_template->template;
+                foreach ($placeholders as $placeholder => $value) {
+                    $loan_number_txt = str_replace($placeholder, $value, $loan_number_txt);
+                }
+
+                // Log the SMS message
+                $this->smsLogController->index($loan_id, $loan_number_txt, "Undo Payment");
+            }
+
+            DB::commit();
+            return response()->json(['item' => 'success', 'id' => '1'], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
         }
-
-
-
-
-
-        return response()->json(['item' => 'success', 'id' => '1'], 200);
     }
 
 

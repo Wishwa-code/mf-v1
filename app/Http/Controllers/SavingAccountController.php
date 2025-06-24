@@ -26,9 +26,9 @@ class SavingAccountController extends Controller
 
 // Calculate the new balance
         if ($deposit_type == "Credit") {
-            $newBalance = $currentBalance->Balance + $balance;
+            $newBalance = $currentBalance->Balance + $credit;
         } else {
-            $newBalance = $currentBalance->Balance - $balance;
+            $newBalance = $currentBalance->Balance - $debit;
         }
 
 // Insert the data into the Savings_Account_Log table
@@ -49,15 +49,15 @@ class SavingAccountController extends Controller
             ->where('id', $savingAccountId)
             ->first();
         if ($deposit_type == "Credit") {
-            $newBalanceSaving = $Customer_Saving_AccountsBalance->Balance + $balance;
+            $newBalanceSaving = $Customer_Saving_AccountsBalance->Balance + $credit;
         } else {
-            $newBalanceSaving = $Customer_Saving_AccountsBalance->Balance - $balance;
+            $newBalanceSaving = $Customer_Saving_AccountsBalance->Balance - $debit;
         }
 
         DB::table('Customer_Saving_Accounts')->where('branch_id', session('branch_id'))->where('id','=',$savingAccountId)
             ->update([
-            'Balance' => $newBalanceSaving,
-        ]);
+                'Balance' => $newBalanceSaving,
+            ]);
 
     }
 
