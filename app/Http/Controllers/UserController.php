@@ -636,8 +636,8 @@ class UserController extends Controller
             $loanLogController->index(
                 $item->Customer_idCustomer, 'Penalty', $item->idInstallments,
                 'Penalty-Installment No : '.$item->idInstallments, $panelty_amount,
-                $last_log->Panelty_Payment, $last_log->Interest_Payment,
-                $last_log->Capital_Payment, $last_log->Savings_Payment, $Panelty_Balance,
+                '0.00', '0.00',
+                '0.00','0.00', $Panelty_Balance,
                 $last_log->Interest_Balance, $last_log->Capital_Balance, $Total_Pending_Balance, $last_log->Saving_Account_Balance
             );
 

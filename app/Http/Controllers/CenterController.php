@@ -65,7 +65,7 @@ class CenterController extends Controller
                 'Name' => $request->center_name,
                 'Contact_no' => $request->contact,
                 'Address' => $request->address,
-                'Route' => $request->route,
+                'Route' => '',
                 'Center_incharge' => $request->center_incharge,
                 'Location' => $request->location,
                 'Groups' => "0",
@@ -113,7 +113,7 @@ class CenterController extends Controller
             'Name' => $request->center_name,
             'Contact_no' => $request->contact,
             'Address' => $request->address,
-            'Route' => $request->route,
+            'Route' => '',
             'Center_incharge' => $request->center_incharge,
             'Location' => $request->location,
             'route_id' => $request->route_id,
@@ -132,7 +132,14 @@ class CenterController extends Controller
      */
     public function destroy(string $id)
     {
-        // Delete the center record using the helper function
+        // Check if center ID is used in customer_group table
+        $exists = DB::table('customer_group')->where('center_id', $id)->exists();
+
+        if ($exists) {
+            return response()->json(['message' => 'Cannot delete. Center is linked to one or more customer groups.'], 201);
+        }
+
+        // Proceed to delete if not linked
         $deleted = deleteWithBranch('center', 'idCenter', $id);
 
         if ($deleted) {
@@ -140,8 +147,8 @@ class CenterController extends Controller
         } else {
             return response()->json(['message' => 'Failed to delete data.'], 500);
         }
-
     }
+
 
 
     public function center_collection(Request $request){

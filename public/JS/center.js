@@ -214,7 +214,9 @@ function delete_center(id){
                         }).then(function () {
                             window.location.reload();
                         });
-                    } else {
+                    } else if (xhr.status === 201) {
+                        Swal.fire("Error!", data.message, "error");
+                    }else{
                         Swal.fire("Error!", "Failed to delete data!", "error");
                     }
                 },
