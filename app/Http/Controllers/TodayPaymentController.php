@@ -3357,6 +3357,11 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             return response()->json(['item' => 'success', 'id' => '1'], 200);
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('Undo Payment Error: ' . $e->getMessage(), [
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
         }
     }
