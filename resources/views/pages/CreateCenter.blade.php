@@ -44,7 +44,7 @@
                             <label for="simpleinput" class="form-label">Contact Number<span class="required-asterisk">*</span></label>
                             <input type="text" id="contact" class="form-control">
                         </div>
-                        <div class="mb-3">
+                        <div class="mb-3" hidden>
                             <label for="simpleinput" class="form-label">Route<span class="required-asterisk">*</span></label>
                             <input type="text" id="route" class="form-control">
                         </div>
@@ -88,7 +88,7 @@
     <script src="assets/vendor/daterangepicker/daterangepicker.js"></script>
     <script src="assets/js/pages/dashboard.js"></script>
     <script src="../JS/validate.js"></script>
-    <script src="../JS/center.js"></script>
+    <script src="../JS/center.js?n=2"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
     <!-- Select2 JavaScript -->

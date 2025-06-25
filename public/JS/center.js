@@ -23,10 +23,6 @@ $(function () {
           }
       } else if (e.target.id === "contact") {
           if (validateRequired("contact")) {
-              $("#route").focus().select();
-          }
-      } else if (e.target.id === "route") {
-          if (validateRequired("route")) {
               $("#address").focus().select();
           }
       } else if (e.target.id === "address") {
@@ -47,7 +43,7 @@ const validateSubmitCanter = (event) => {
 
   let err = 0;
 
-  let arr = ["center_number", "center_name","contact","route","address","center_incharge","location"];
+  let arr = ["center_number", "center_name","contact","address","center_incharge","location"];
   err = check_validate(arr, err);
 
   if (err == 0) {
