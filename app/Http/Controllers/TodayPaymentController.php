@@ -3284,7 +3284,10 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             $total_balance=round($balance_installments->sum('Interest_Balance') + $balance_installments->sum('capital_balance') + $balance_installments->sum('Saving_Account_Balance')+ $balance_installments->sum('Panelty_Balance'), 2);
             if (!$saving_balance>0){
                 $saving_db=tableWithBranch('Customer_Saving_Accounts')->where('Loan_Id','=',$loan_id)->first();
-                $saving_balance=round($saving_db->Balance,2);
+                $saving_balance=0;
+                if($saving_db){
+                    $saving_balance=round($saving_db->Balance,2);
+                }
                 $total_balance=round($balance_installments->sum('Interest_Balance') + $balance_installments->sum('capital_balance')+ $balance_installments->sum('Panelty_Balance'), 2);
             }
 
@@ -3354,6 +3357,11 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             return response()->json(['item' => 'success', 'id' => '1'], 200);
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('Undo Payment Error: ' . $e->getMessage(), [
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
         }
     }
