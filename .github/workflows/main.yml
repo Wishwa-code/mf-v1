@@ -11,6 +11,8 @@ on:
       - noble
       - finwin
       - minvence
+      - DandD
+      - futurehopeinvestment
 
 jobs:
   deploy-client1:
@@ -390,4 +392,89 @@ jobs:
             .github/**
             public/**    
             !public/JS/**
-            tests/**            
+            tests/**     
+            
+
+  deploy-client10:
+    if: github.ref == 'refs/heads/DandD'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+
+      - name: Install Dependencies
+        run: |
+          composer install --no-dev --optimize-autoloader
+          npm install
+          npm run prod
+          php artisan storage:link
+
+      - name: FTP Deploy to Server 10 (Client10)
+        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+        with:
+          server: ${{ secrets.FTP_HOST_DN_Invest }}
+          username: ${{ secrets.FTP_USERNAME_DandD }}
+          password: ${{ secrets.FTP_PASSWORD_DandD }}
+          protocol: ftps
+          local-dir: ./
+          server-dir: /
+          dry-run: false
+          timeout: 900000
+          exclude: |
+            .git**
+            node_modules/**
+            storage/**
+            .env*
+            vendor/**              # ⛔️ Exclude vendor folder
+            vendor/bin/*
+            .github/**
+            public/**    
+            !public/JS/**
+            tests/**
+
+  deploy-client11:
+    if: github.ref == 'refs/heads/futurehopeinvestment'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+
+      - name: Install Dependencies
+        run: |
+          composer install --no-dev --optimize-autoloader
+          npm install
+          npm run prod
+          php artisan storage:link
+
+      - name: FTP Deploy to Server 11 (Client11)
+        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+        with:
+          server: ${{ secrets.FTP_HOST_DN_Invest }}
+          username: ${{ secrets.FTP_USERNAME_Futurehopeinvestment }}
+          password: ${{ secrets.FTP_PASSWORD_Futurehopeinvestment }}
+          protocol: ftps
+          local-dir: ./
+          server-dir: /
+          dry-run: false
+          timeout: 900000
+          exclude: |
+            .git**
+            node_modules/**
+            storage/**
+            .env*
+            vendor/**              # ⛔️ Exclude vendor folder
+            vendor/bin/*
+            .github/**
+            public/**    
+            !public/JS/**
+            tests/**
