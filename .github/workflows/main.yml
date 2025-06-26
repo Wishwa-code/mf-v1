@@ -417,7 +417,7 @@ jobs:
       - name: FTP Deploy to Server 10 (Client10)
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
-          server: ${{ secrets.FTP_HOST_DN_Invest }}
+          server: ${{ secrets.FTP_HOST__DandD }}
           username: ${{ secrets.FTP_USERNAME_DandD }}
           password: ${{ secrets.FTP_PASSWORD_DandD }}
           protocol: ftps
@@ -459,7 +459,7 @@ jobs:
       - name: FTP Deploy to Server 11 (Client11)
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
-          server: ${{ secrets.FTP_HOST_DN_Invest }}
+          server: ${{ secrets.FTP_HOST_Futurehopeinvestment }}
           username: ${{ secrets.FTP_USERNAME_Futurehopeinvestment }}
           password: ${{ secrets.FTP_PASSWORD_Futurehopeinvestment }}
           protocol: ftps
