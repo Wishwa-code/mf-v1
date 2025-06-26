@@ -1000,7 +1000,7 @@
                                                 </select>
                                             </div>
 
-                                                <div class="mb-3" id="lending_officer_feild">
+                                                <div class="mb-3" id="lending_officer_feild" hidden>
                                                     <label for="simpleinput" class="form-label">Select Broker</label>
                                                     <select class="form-control"  id="loan_broker">
                                                         @foreach($collector as $item)
@@ -1009,7 +1009,7 @@
                                                     </select>
                                                 </div>
 
-                                                <div class="mb-3" id="lending_officer_feild">
+                                                <div class="mb-3" id="lending_officer_feild" hidden>
                                                     <label for="simpleinput" class="form-label">Broker Commission(%)</label>
                                                     <input type="number" class="form-control" value="0" id="loan_broker_commission">
                                                 </div>
