@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\BankBalanceService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -593,6 +594,13 @@ class ChartOfAccountController extends Controller
 
     public function BalanceSheet(Request $request)
     {
+        $service = new BankBalanceService();
+
+        $bank=tableWithBranch('company_bank_accounts')->get();
+        foreach ($bank as $banks){
+            $service->updateRunningBalance( $banks->Idbank);
+        }
+
         $date_to = $request->date_to ?? now()->toDateString();
 
         // Call the profit function
@@ -703,7 +711,7 @@ class ChartOfAccountController extends Controller
 
     public function profit(Request $request)
     {
-        $date_from = '2024-08-20';
+        $date_from = '2010-08-20';
         $date_to = $request->date_to;
         $total_expenses = 0.00;
 
