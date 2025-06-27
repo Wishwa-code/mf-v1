@@ -386,13 +386,16 @@ class LoanCategoryController extends Controller
                     ]);
                 }
 
-                foreach ($level['checklist'] as $item) {
-                    DB::table('approval_checklist')->insert([
-                        'level_id' => $levelId,
-                        'description' => $item,
-                        'branch_id'=>session('branch_id')
-                    ]);
+                if (!empty($level['checklist'])) {
+                    foreach ($level['checklist'] as $item) {
+                        DB::table('approval_checklist')->insert([
+                            'level_id' => $levelId,
+                            'description' => $item,
+                            'branch_id' => session('branch_id'),
+                        ]);
+                    }
                 }
+
             }
 
             DB::commit();
