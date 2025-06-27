@@ -722,12 +722,12 @@ class ChartOfAccountController extends Controller
         $bank=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_2')->first();
 
         $interest_Credit = tableWithBranch('company_bank_has_log','company_bank_has_log')
-            ->whereBetween('Date_Time', [$date_from, $date_to])
+            ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
             ->where('company_bank_has_log.Bank_Account_Id','=',$bank->Idbank)
             ->sum('Credit');
 
         $interest_Debit = tableWithBranch('company_bank_has_log','company_bank_has_log')
-            ->whereBetween('Date_Time', [$date_from, $date_to])
+            ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
             ->where('company_bank_has_log.Bank_Account_Id','=',$bank->Idbank)
             ->sum('Debit');
 
