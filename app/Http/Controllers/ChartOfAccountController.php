@@ -711,9 +711,14 @@ class ChartOfAccountController extends Controller
         $date_from_2 = Carbon::parse($date_from)->startOfDay();
 
         // Calculate various values
-        $interest = tableWithBranch('Loan_Log')
-            ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->sum('Interest_Payment');
+        $bank=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_2')->first();
+
+        $interest = tableWithBranch('company_bank_has_log','company_bank_has_log')
+            ->join('customer_payments','company_bank_has_log.payment_id','=','customer_payments.idCustomer_Payments')
+            ->whereBetween('customer_payments.Date', [$date_from, $date_to])
+            ->where('company_bank_has_log.Bank_Account_Id','=',$bank->Idbank)
+            ->where('customer_payments.status','!=','Removed')
+            ->sum('Credit');
 
         $panelty = tableWithBranch('Loan_Log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
