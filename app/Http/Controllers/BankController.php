@@ -311,11 +311,14 @@ class BankController extends Controller
         $date_to_2 = Carbon::parse($date_to)->endOfDay();
         $date_from_2 = Carbon::parse($date_from)->startOfDay(); // To ensure you're starting from the beginning of the day
 
+        $bank=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_2')->first();
 
-
-        $interest = tableWithBranch('Loan_Log')
-            ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->sum('Interest_Payment');
+        $interest = tableWithBranch('company_bank_has_log','company_bank_has_log')
+            ->join('customer_payments','company_bank_has_log.payment_id','=','customer_payments.idCustomer_Payments')
+            ->whereBetween('customer_payments.Date', [$date_from, $date_to])
+            ->where('company_bank_has_log.Bank_Account_Id','=',$bank->Idbank)
+            ->where('customer_payments.status','!=','Removed')
+            ->sum('Credit');
 
         $panelty = tableWithBranch('Loan_Log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
