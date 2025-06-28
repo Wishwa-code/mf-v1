@@ -1743,7 +1743,7 @@
 
                             row.append(`
         <td>
-            <input type="file" id="${uniqueId}" class="form-control file-upload" data-document-id="${document.idRequired_Documents}" accept="image/*">
+            <input type="file" id="${uniqueId}" class="form-control file-upload" data-document-id="${document.idRequired_Documents}">
             <button type="button" class="btn btn-outline-secondary mt-1" onclick="openGlobalCamera('#${uniqueId}')">📷</button>
         </td>
     `);
