@@ -45,6 +45,24 @@ class BankBalanceService
         ) AS updated_balances ON company_bank_has_log.id = updated_balances.id
         SET company_bank_has_log.Balance = updated_balances.new_balance
     ", [$branchId, $bankAccountId]);
+
+
+        // Step 5: Get the last log's updated balance
+        $lastBalance = DB::table('company_bank_has_log')
+            ->where('branch_id', $branchId)
+            ->where('Bank_Account_Id', $bankAccountId)
+            ->orderBy('id', 'desc')
+            ->value('Balance');
+
+        // Step 6: Update main account balance
+        if (!is_null($lastBalance)) {
+            DB::table('company_bank_accounts')
+                ->where('Idbank', $bankAccountId)
+                ->update(['Account_Balance' => $lastBalance]);
+        }
+
+
+
     }
 
 

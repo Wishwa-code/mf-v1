@@ -133,7 +133,7 @@
                                         </select>
                                     </div>
 
-                                    <div class="mb-3" id="customer_feild" hidden>
+                                    <div class="mb-3" id="customer_feild">
                                         <label for="simpleinput" class="form-label">Loan Number</label>
                                         <input type="text" id="type_loan_number" class="form-control">
                                     </div>

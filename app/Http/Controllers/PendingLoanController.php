@@ -654,6 +654,7 @@ class PendingLoanController extends Controller
         $branch = $request->input('branch');
         $route = $request->input('route');
         $center_details = $request->input('center_details');
+        $paid_type = $request->input('paid_type');
 
         // Subquery: Installments
         $installment_subquery = DB::table('installments')
@@ -776,7 +777,6 @@ class PendingLoanController extends Controller
 
         $loanDetailsData = $loanDetailsQuery->get();
 
-        // 📌 3️⃣ Merge Loan_Log values into loanDetailsData
         foreach ($loanDetailsData as $loan) {
             $log = $loanLogData->get($loan->loan_id, (object)[
                 'capital_received' => 0,
@@ -789,9 +789,17 @@ class PendingLoanController extends Controller
             $loan->interest_received = $log->interest_received;
             $loan->penalty_received = $log->penalty_received;
             $loan->collected_repayments = $log->collected_repayments;
+
+            // ✅ Apply paid_type filter
+            if ($paid_type === "1" && floatval($loan->collected_repayments) != 0) {
+                continue; // Not Paid: skip paid
+            }
+            if ($paid_type === "2" && floatval($loan->collected_repayments) <= 0) {
+                continue; // Paid: skip unpaid
+            }
+
         }
 
-        // 📌 4️⃣ Combine Center Summary + Loan Details
         $finalData = [];
 
         foreach ($centerSummaryData as $center) {
@@ -804,7 +812,16 @@ class PendingLoanController extends Controller
 
             foreach ($loanDetailsData as $loan) {
                 if ($loan->center_name === $center->center_name) {
-                    // Add loan values to center totals
+
+                    // ✅ Filter loan rows based on paid_type
+                    if ($paid_type === "1" && floatval($loan->collected_repayments) != 0) {
+                        continue; // Skip paid
+                    }
+                    if ($paid_type === "2" && floatval($loan->collected_repayments) <= 0) {
+                        continue; // Skip unpaid
+                    }
+
+                    // Add loan to center totals
                     $centerData['capital_received'] += $loan->capital_received;
                     $centerData['interest_received'] += $loan->interest_received;
                     $centerData['penalty_received'] += $loan->penalty_received;
@@ -814,8 +831,17 @@ class PendingLoanController extends Controller
                 }
             }
 
-            $finalData[] = $centerData;
+            // ✅ Add only if we have valid loan_details OR paid_type is summary only
+            if (
+                $paid_type === "0" || // All
+                ($paid_type === "1" && $centerData['collected_repayments'] == 0) || // Not paid
+                ($paid_type === "2" && $centerData['collected_repayments'] > 0)     // Paid
+            ) {
+                $finalData[] = $centerData;
+            }
         }
+
+
 
         return response()->json(['data' => $finalData]);
     }

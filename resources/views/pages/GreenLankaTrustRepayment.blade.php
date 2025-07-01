@@ -290,6 +290,16 @@
                                         <td>{{ number_format($groupBalance, 2) }}</td>
                                         <td colspan="12"></td>
                                     </tr>
+
+                                    {{-- Add 5 empty rows --}}
+                                    @for ($j = 0; $j < 5; $j++)
+                                        <tr>
+                                            @for ($k = 0; $k < 17; $k++)
+                                                <td>&nbsp;</td>
+                                            @endfor
+                                        </tr>
+                                    @endfor
+
                                 @endforeach
 
 

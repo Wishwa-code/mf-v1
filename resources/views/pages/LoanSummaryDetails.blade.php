@@ -155,9 +155,10 @@
                             <th>Issue Date</th>
                             <th>Loan Amount</th>
                             <th>Agreed Amount</th>
-                            <th>Outstanding</th>
-                            <th>Loan Stock</th>
                             <th>Portfolio</th>
+                            <th>Interest Balance</th>
+                            <th>Panelty</th>
+                            <th>Outstanding</th>
                             <th>Rental</th>
                             <th>Arrears</th>
                             <th>Total Over Paid</th>
@@ -195,23 +196,21 @@
                                 <td>{{ $item->Date_Time }}</td>
                                 <td>{{ number_format($item->Amount,2) }}</td>
                                 <td>{{ number_format($item->Total_Loan_Amount,2) }}</td>
-                                <td>{{ number_format($item->Balance_Amount,2) }}</td>
-                                <td>{{ number_format($item->capital_balance,2) }}</td>
                                 @php
-                                    $capital = DB::table('installments')
-                                        ->where('Customer_Loan_idCustomer_Loan', $item->idCustomer_Loan)
-                                        ->where('Installment_Date', '>', date('Y-m-d'))
-                                        ->where('branch_id', session('branch_id'))
-                                        ->sum('capital_amount');
                                     $arrease = DB::table('installments')
                                         ->where('Customer_Loan_idCustomer_Loan', $item->idCustomer_Loan)
                                         ->where('Installment_Date', '<=', date('Y-m-d'))
                                         ->where('branch_id', session('branch_id'))
                                         ->sum('Total_Balance');
-                                    $portfolio = $capital + $arrease; // Calculate Portfolio
+                                    $panelty = DB::table('installments')
+                                            ->where('Customer_Loan_idCustomer_Loan', $item->idCustomer_Loan)
+                                            ->where('branch_id', session('branch_id'))
+                                            ->sum('Panalty_Balance');
                                 @endphp
-
-                                <td>{{ number_format($portfolio, 2) }}</td>
+                                <td>{{ number_format($item->capital_balance,2) }}</td>
+                                <td>{{ number_format($item->installment_balance,2) }}</td>
+                                <td>{{ number_format($panelty,2) }}</td>
+                                <td>{{ number_format($item->Balance_Amount,2) }}</td>
                                 <td>{{ number_format($item->Installment_Amount,2) }}</td>
                                 @php
                                     $arrease = DB::table('installments')
