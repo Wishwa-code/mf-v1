@@ -17,10 +17,12 @@ class LoanController extends Controller
 {
 
     protected $customerLogController;
+    protected $CapitalBalanceController;
 
-    public function __construct(CustomerLogController $customerLogController)
+    public function __construct(CustomerLogController $customerLogController,CapitalBalanceController $capitalBalanceController)
     {
         $this->customerLogController = $customerLogController;
+        $this->CapitalBalanceController = $capitalBalanceController;
     }
 
     /**
@@ -464,8 +466,7 @@ class LoanController extends Controller
 
 // Call the store method of CustomerLogController
         $this->customerLogController->store($request);
-
-
+        $this->CapitalBalanceController->create($id);
 
 
 

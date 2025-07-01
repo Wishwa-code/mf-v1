@@ -103,10 +103,21 @@
 
                                 <div class="col-lg-3">
                                     <div class="mb-2">
-                                        <label for="center_details" class="form-label">Report Type</label>
+                                        <label for="report_type" class="form-label">Report Type</label>
                                         <select class="form-control select2" id="report_type" name="center_details">
                                             <option value="0">Summary Report</option>
                                             <option value="1">Detail Report</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-2">
+                                        <label for="paid_type" class="form-label">Paid Type</label>
+                                        <select class="form-control select2" id="paid_type" name="paid_type">
+                                            <option value="0">All</option>
+                                            <option value="1">Not Paid Loans</option>
+                                            <option value="2" selected>Paid Loans</option>
                                         </select>
                                     </div>
                                 </div>
@@ -261,6 +272,7 @@
                 let branch = $("#branch").val();
                 let route = $("#route").val();
                 let center_details = $("#center_details").val();
+                let paid_type = $("#paid_type").val();
 
                 $.ajax({
                     type: "GET",
@@ -270,6 +282,7 @@
                         date_to: date_to,
                         branch: branch,
                         route: route,
+                        paid_type: paid_type,
                         center_details: center_details
                     },
                     success: function (response) {
@@ -336,7 +349,7 @@
                 let mainRow = `<tr style="font-weight: bold; background-color: #f8f9fa;">
             <td>${row.branch_name}</td>
             <td>${row.route_name}</td>
-            <td>${row.center_name}</td>
+            <td>${row.center_name ?? '-'}</td>
 <td>${parseFloat(row.total_disbursement).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 <td>${parseFloat(row.total_loan_amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             <td>${row.issued_loan_count}</td>

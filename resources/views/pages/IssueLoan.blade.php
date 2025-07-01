@@ -133,7 +133,7 @@
                                         </select>
                                     </div>
 
-                                    <div class="mb-3" id="customer_feild" hidden>
+                                    <div class="mb-3" id="customer_feild">
                                         <label for="simpleinput" class="form-label">Loan Number</label>
                                         <input type="text" id="type_loan_number" class="form-control">
                                     </div>
@@ -207,7 +207,7 @@
                                                             <div class="mb-3">
                                                                 <label for="loan_amount" class="form-label">Loan Amount<span class="required-asterisk">*</span></label>
                                                                 <input type="text" id="loan_amount" class="form-control" onkeyup="calculateInterest()">
-                                                                <input type="hidden" id="loan_amount_from" class="form-control">
+                                                                <input type="hidden" id="loan_amount_from" class="form-control" >
                                                                 <input type="hidden" id="loan_amount_to" class="form-control">
                                                                 <p id="loan_display" style="color: blue; margin-top: 5px;"></p>
                                                             </div>
@@ -224,10 +224,10 @@
                                                                 <p id="interest_display" style="color: blue; margin-top: 5px;"></p>
                                                             </div>
                                                         </div>
-                                                        <div class="col-md-3" >
+                                                        <div class="col-md-3">
                                                             <div class="mb-3">
                                                                 <label for="interest_period" class="form-label">Default Loan Interest Period<span class="required-asterisk">*</span></label>
-                                                                <select class="form-select" id="interest_period" onchange="calculateInterest()" disabled>
+                                                                <select class="form-select" id="interest_period" onchange="calculateInterest()">
                                                                     <option value="Daily">Per Day</option>
                                                                     <option value="Weekly">Per Week</option>
                                                                     <option value="Per Month">Per Month</option>
@@ -236,17 +236,17 @@
                                                                 </select>
                                                             </div>
                                                         </div>
-                                                        <div class="col-md-2" hidden>
+                                                        <div class="col-md-2">
                                                             <div class="mb-3">
                                                                 <label for="period_count" class="form-label">Loan Period<span class="required-asterisk">*</span></label>
-                                                                <input type="number" id="interest_period_count" class="form-control" onkeyup="calculateInterest()" disabled>
+                                                                <input type="number" id="interest_period_count" class="form-control" onkeyup="calculateInterest()">
                                                             </div>
 
                                                         </div>
                                                         <div class="col-md-2">
                                                             <div class="mb-3">
-                                                                <label for="period_count" class="form-label" hidden>Type</label>
-                                                                <select class="form-select" id="duration_period" onchange="calculateInterest()" disabled hidden>
+                                                                <label for="period_count" class="form-label" >Type</label>
+                                                                <select class="form-select" id="duration_period" onchange="calculateInterest()"  >
                                                                     <option value="Days">Days</option>
                                                                     <option value="Weeks">Weeks</option>
                                                                     <option value="Months">Months</option>
@@ -258,15 +258,13 @@
                                                             <div class="col-md-3">
                                                                 <div class="mb-3">
                                                                     <label for="witnessCount" class="form-label">Guarantee Count<span class="required-asterisk">*</span></label>
-                                                                    <input type="number" id="guarantee_count" class="form-control" disabled>
+                                                                    <input type="number" id="guarantee_count" class="form-control">
                                                                 </div>
                                                             </div>
                                                         </div>
 
                                                     </div>
                                                 </div>
-
-
                                                 <div id="reducingBalanceFields" style="display: none;">
                                                     <div class="row mb-3">
                                                         <div class="col-md-4">
@@ -323,27 +321,25 @@
                                                     </div>
                                                 </div>
 
-
-
                                                 <div class="row mb-3 section-break">
                                                     <div class="col-12">
                                                         <div class="section-title">
-                                                            Loan duration and Repayments
+                                                            Repayment Cycle
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                                <div class="row mb-3">
+                                                <div class="row mb-5">
                                                     <div class="col-md-2">
                                                         <div class="mb-3">
-                                                            <label for="loan_duration" class="form-label">Loan Duration<span class="required-asterisk">*</span></label>
+                                                            <label for="loan_duration" class="form-label">Repayment Duration<span class="required-asterisk">*</span></label>
                                                             <input type="number" id="loan_period" class="form-control" onkeyup="calculateInterest()">
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-2">
-                                                        <div class="mb-3">
-                                                            <label for="loan_duration" class="form-label">Type<span class="required-asterisk">*</span></label>
-                                                            <select class="form-select" id="duration_period" onchange="change_loan_duration()">
+                                                    <div class="col-md-3" >
+                                                        <div class="mb-7">
+                                                            <label for="loan_duration" class="form-label">Repayment Duration Type<span class="required-asterisk">*</span></label>
+                                                            <select class="form-select" id="repayment_duration_period"  onchange="repayment_type(this.value)">
                                                                 <option value="Days">Days</option>
                                                                 <option value="Weeks">Weeks</option>
                                                                 <option value="Months">Months</option>
@@ -351,14 +347,14 @@
                                                         </div>
                                                     </div>
 
-                                                    <div class="col-md-2">
+                                                    <div class="col-md-1">
 
                                                     </div>
 
-                                                    <div class="col-md-6">
+                                                    <div class="col-md-6" >
                                                         <div class="mb-3">
                                                             <label for="collection_type" class="form-label">Repayment Type<span class="required-asterisk">*</span></label>
-                                                            <select class="form-select" id="repayment_type" onchange="calculateInterest()">
+                                                            <select class="form-select" id="repayment_type" onchange="calculateInterest()" >
                                                                 <option value="Daily">Daily</option>
                                                                 <option value="Weekly">Weekly</option>
                                                                 <option value="First Of The Month">First Of The Month</option>
@@ -382,13 +378,13 @@
                                                     <div class="col-md-6">
                                                         <div class="mb-3">
                                                             <label for="panelty_rate" class="form-label">Penalty Percentage (%)<span class="required-asterisk">*</span></label>
-                                                            <input type="text" id="penalty_percentage" class="form-control" onkeyup="calculateInterest()">
+                                                            <input type="text" id="penalty_percentage" class="form-control" onkeyup="calculateInterest()" disabled>
                                                         </div>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <div class="mb-3">
                                                             <label for="penalty_period" class="form-label">Penalty Period<span class="required-asterisk">*</span></label>
-                                                            <select class="form-select" id="penalty_period" onchange="calculateInterest()">
+                                                            <select class="form-select" id="penalty_period" onchange="calculateInterest()" disabled>
                                                                 <option value="Daily">Per Day</option>
                                                                 <option value="Weekly">Per Week</option>
                                                                 <option value="Per Month">Per Month</option>
@@ -403,13 +399,13 @@
                                                     <div class="col-md-2">
                                                         <div class="mb-3">
                                                             <label for="panelty_rate_date" class="form-label">Penalty Start After<span class="required-asterisk">*</span></label>
-                                                            <input type="text" id="penalty_date" class="form-control"  oninput="validateNumberInput(this)" onkeyup="calculateInterest()">
+                                                            <input type="number" id="penalty_date" class="form-control" onkeyup="calculateInterest()" disabled>
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-2" hidden>
+                                                    <div class="col-md-2">
                                                         <div class="mb-3">
                                                             <label for="loan_duration" class="form-label">Default Loan Duration<span class="required-asterisk">*</span></label>
-                                                            <select class="form-select" id="panelty_duration_period">
+                                                            <select class="form-select" id="duration_period" disabled>
                                                                 <option value="Days">Days</option>
                                                                 <option value="Weeks">Weeks</option>
                                                                 <option value="Months">Months</option>
@@ -1747,7 +1743,7 @@
 
                             row.append(`
         <td>
-            <input type="file" id="${uniqueId}" class="form-control file-upload" data-document-id="${document.idRequired_Documents}" accept="image/*">
+            <input type="file" id="${uniqueId}" class="form-control file-upload" data-document-id="${document.idRequired_Documents}">
             <button type="button" class="btn btn-outline-secondary mt-1" onclick="openGlobalCamera('#${uniqueId}')">📷</button>
         </td>
     `);
