@@ -396,7 +396,7 @@
 
                         tbody.append(`
                         <tr>
-                            <td>${item.center_name ?? ''}</td>
+                            <td>${item.center_name ?? '-'}</td>
                             <td>${item.loan_no}</td>
                             <td>${item.customer_no}</td>
                             <td>${parseFloat(item.total_loan_amount).toFixed(2)}</td>
