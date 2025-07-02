@@ -486,6 +486,20 @@ class CustomerController extends Controller
     }
 
     public function updateCustomer(Request $request) {
+
+        // Handle file upload
+        if ($request->hasFile('cus_phto')) {
+            $file = $request->file('cus_phto');
+            $directory = 'documents';
+
+            // Check if the directory exists on the public disk, create it if not
+            if (!Storage::disk('public')->exists($directory)) {
+                Storage::disk('public')->makeDirectory($directory);
+            }
+
+            // Store the file on the public disk
+            $documentPath = Storage::disk('public')->putFile($directory, $file);
+        }
         // Assuming you have the request object available
         $data = [
             'title' => $request->title,
@@ -526,7 +540,10 @@ class CustomerController extends Controller
             'occu_longitude' => $request->occu_longitude,
             'occu_latitude' => $request->occu_latitude,
             'route_id' => $request->root,
+            'Cus_phto' => $documentPath
         ];
+
+
 
 // Use the new helper function to update the customer record
         updateWithBranch('customer', 'idCustomer', $request->id, $data);

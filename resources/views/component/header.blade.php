@@ -395,7 +395,7 @@ $banner = DB::select($query);
             'Expenses' => ['expenses','add_expenses', 'view_expenses'],
             'User' => ['user','create_user', 'user_privileges'],
             'Reports' => [
-                'reports','main_reports_dashboard', 'loan_disbursement_performance', 'payment_detail_report', 'full_loan_detail', 'loan_summary',
+                'reports','main_reports_dashboard','prediction_report', 'loan_disbursement_performance', 'payment_detail_report', 'full_loan_detail', 'loan_summary',
                 'par_monthly', 'par_weekly', 'loan_status', 'cashflow_accumulated', 'cashflow_monthly', 'profit_loss', 'balance_sheet',
                 'trial_balance', 'daily_collection_sheet', 'center_collection_detail', 'center_collection_summary', 'route_collections',
                 'repayment_sheet_01', 'repayment_sheet_02', 'repayment_sheet_03', 'repayment_sheet_04', 'repayment_sheet_05', 'other_charges_report',
@@ -1122,6 +1122,9 @@ $banner = DB::select($query);
                                                             <li>
                                                                 <a href="/PaymentFullDetailsReport">Payment Details Report</a>
                                                             </li>
+                                                            <li>
+                                                                <a href="/prediction_report">Payment Prediction</a>
+                                                            </li>
                                                     @endif
                                                     @if($privilege->full_loan_detail == 1)
                                                             <li><a href="/AllLoanDetailReport">Full Loan Detail Report</a></li>
@@ -1140,6 +1143,7 @@ $banner = DB::select($query);
                                                                 <a href="/loanStatus">Loan Status</a>
                                                             </li>
                                                     @endif
+
                                                 </ul>
                                             </div>
                                         </li>

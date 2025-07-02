@@ -368,19 +368,25 @@ class CenterController extends Controller
 
 
 
-    public function root_wise(Request $request) {
+    public function root_wise(Request $request)
+    {
         $date = $request->input('date_from');
         $route_id = $request->input('route_id');
 
         $route = tableWithBranch('route')->get();
 
+        // ✅ Check if there are any payments on the selected date
+        $hasPayments = DB::table('customer_payments')
+            ->whereDate('Date', $date)
+            ->exists();
+
         $collection = DB::table('installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
-            ->leftJoin('customer_payments', function($join) use ($date) {
+            ->leftJoin('customer_payments', function ($join) use ($date) {
                 $join->on('installments.Customer_Loan_idCustomer_Loan', '=', 'customer_payments.Customer_Loan_idCustomer_Loan')
-                    ->whereDate('customer_payments.Date', $date); // Only include payments made on this date
+                    ->whereDate('customer_payments.Date', $date);
             })
             ->select(
                 'route.name as route_name',
@@ -392,6 +398,9 @@ class CenterController extends Controller
             )
             ->when($date, fn($q) => $q->whereDate('installments.Installment_Date', $date))
             ->when($route_id && $route_id != '0', fn($q) => $q->where('customer.route_id', $route_id))
+            ->when(!$hasPayments, function ($q) {
+                $q->where('customer_loan.Status', 0);
+            })
             ->groupBy(
                 'route.name',
                 'customer.cus_number',
@@ -406,6 +415,7 @@ class CenterController extends Controller
 
         return view('pages.RouteWiseCollection', compact('date', 'route', 'route_id', 'collection'));
     }
+
 
 
 

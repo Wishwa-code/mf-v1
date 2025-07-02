@@ -73,7 +73,7 @@
                     <select id="customerSelect" class="form-select">
                         <option value="0" selected>-- Choose Customer --</option>
                         @foreach($customers as $customer)
-                            <option value="{{ $customer->idCustomer }}">{{ $customer->cus_number }}-{{ $customer->First_Name }} {{ $customer->Last_Name }}</option>
+                            <option value="{{ $customer->idCustomer }}">{{ $customer->cus_number }}-{{ $customer->First_Name }} {{ $customer->Last_Name }}-{{ $customer->Contact_No }}-{{ $customer->Nic }}</option>
                         @endforeach
                     </select>
                 </div>

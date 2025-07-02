@@ -373,6 +373,12 @@
                                 <input type="tel" id="landline" name="landline" class="form-control" onkeypress="validateContactNumber(event)">
                             </div>
 
+                            <div class="mb-3">
+                                <label for="simpleinput" class="form-label">Customer Photo</label>
+                                <input type="file" id="cus_phto" name="cus_phto" class="form-control" accept="image/*" capture="environment">
+                                <button type="button" onclick="openGlobalCamera('#cus_phto')" class="btn btn-outline-secondary mt-1">📷</button>
+                            </div>
+
                             <div class="row">
                                 <label for="simpleinput" class="form-label">Note</label>
                                 <div class="form-floating mb-3">
@@ -934,6 +940,16 @@
 
 
         function update_cus() {
+
+            var input = $("#cus_phto")[0];
+            if (input.files && input.files[0]) {
+                var cus_phto = input.files[0];
+                console.log("Selected file:", cus_phto.name);
+            } else {
+                console.log("No file selected");
+            }
+
+
             // Get data from modal fields
             var id = $('#cus_id').val();
             var title = $('#title').val();
@@ -979,7 +995,53 @@
             var occu_contact_no = $('#occu_contact_no').val();
             var occu_longitude = $('#occu_longitude').val();
             var occu_latitude = $('#occu_latitude').val();
+            var cus_phto = $("#cus_phto")[0].files[0];
 
+// Inside the result.isConfirmed block
+            let formData = new FormData();
+            formData.append('id', id);
+            formData.append('cus_phto', cus_phto);
+            formData.append('root', root);
+            formData.append('title', title);
+            formData.append('f_name', f_name);
+            formData.append('last_name', last_name);
+            formData.append('email', email);
+            formData.append('contact_number', contact_number);
+            formData.append('nic', nic);
+            formData.append('cus_number', cus_number);
+            formData.append('gender', gender);
+            formData.append('dob', dob);
+
+            formData.append('curr_address_01', curr_address_01);
+            formData.append('curr_address_02', curr_address_02);
+            formData.append('curr_address_03', curr_address_03);
+            formData.append('per_address_01', per_address_01);
+            formData.append('per_address_02', per_address_02);
+            formData.append('per_address_03', per_address_03);
+            formData.append('city', city);
+            formData.append('state', state);
+            formData.append('landline', landline);
+
+            formData.append('gua_title', gua_title);
+            formData.append('gua_name', gua_name);
+            formData.append('guardian_gender', guardian_gender);
+            formData.append('gua_relation', gua_relation);
+            formData.append('gua_occu', gua_occu);
+            formData.append('gua_contact', gua_contact);
+            formData.append('gua_address', gua_address);
+            formData.append('note', note);
+            formData.append('longitude', longitude);
+            formData.append('latitude', latitude);
+            formData.append('gua_nic', gua_nic);
+
+            formData.append('occu_job_position', occu_job_position);
+            formData.append('occu_monthly_salary', occu_monthly_salary);
+            formData.append('occu_address_01', occu_address_01);
+            formData.append('occu_address_02', occu_address_02);
+            formData.append('occu_address_03', occu_address_03);
+            formData.append('occu_contact_no', occu_contact_no);
+            formData.append('occu_longitude', occu_longitude);
+            formData.append('occu_latitude', occu_latitude);
 
             Swal.fire({
                 title: "Are you sure?",
@@ -991,56 +1053,16 @@
                 confirmButtonText: "Yes, Update it!",
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Send AJAX request
                     $.ajax({
                         url: '/update-customer',
                         method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
-                        data: {
-                            id: id,
-                            root: root,
-                            title: title,
-                            f_name: f_name,
-                            last_name: last_name,
-                            email: email,
-                            contact_number: contact_number,
-                            nic: nic,
-                            cus_number: cus_number,
-                            gender: gender,
-                            dob: dob,
-                            curr_address_01: curr_address_01,
-                            curr_address_02: curr_address_02,
-                            curr_address_03: curr_address_03,
-                            per_address_01: per_address_01,
-                            per_address_02: per_address_02,
-                            per_address_03: per_address_03,
-                            city: city,
-                            state: state,
-                            landline: landline,
-                            gua_title: gua_title,
-                            gua_name: gua_name,
-                            guardian_gender: guardian_gender,
-                            gua_relation: gua_relation,
-                            gua_occu: gua_occu,
-                            gua_contact: gua_contact,
-                            gua_address: gua_address,
-                            note: note,
-                            longitude: longitude,
-                            latitude: latitude,
-                            gua_nic: gua_nic,
-                            occu_job_position: occu_job_position,
-                            occu_monthly_salary: occu_monthly_salary,
-                            occu_address_01: occu_address_01,
-                            occu_address_02: occu_address_02,
-                            occu_address_03: occu_address_03,
-                            occu_contact_no: occu_contact_no,
-                            occu_longitude: occu_longitude,
-                            occu_latitude: occu_latitude,
-                        },
+                        data: formData,
+                        processData: false,
+                        contentType: false,
                         success: function(response) {
-                            console.log(response);
                             Swal.fire({
                                 position: "center",
                                 icon: "success",
@@ -1050,7 +1072,6 @@
                             });
                         },
                         error: function(xhr, status, error) {
-                            // Handle error
                             console.error(error);
                         }
                     });

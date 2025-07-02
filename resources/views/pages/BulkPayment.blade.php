@@ -837,7 +837,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
     <script src="../JS/validate.js"></script>
-    <script src="../JS/bulk_payment.js?n=12"></script>
+    <script src="../JS/bulk_payment.js?n=15"></script>
     <script>
 
         function load_payment_reciept(id){

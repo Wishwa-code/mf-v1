@@ -36,7 +36,6 @@
                             <tr>
                                 <th>Route Name</th>
                                 <th>Route Code</th>
-                                <th>Route In-charge</th>
                                 <th class="text-center">Action</th>
                             </tr>
                             </thead>
@@ -45,10 +44,9 @@
                                 <tr class="style-tr">
                                     <td>{{$item->name}}</td>
                                     <td>{{$item->root_code}}</td>
-                                    <td>{{$item->incharge_name}}</td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-light edit-btn" data-bs-toggle="modal" data-bs-target="#standard-modal"
-                                                data-route="{{$item->name}}" data-route-id="{{$item->id_route}}" data-route-code="{{$item->root_code}}" data-center-incharge="{{$item->incharge_id}}"  title="Edit Route">
+                                                data-route="{{$item->name}}" data-route-id="{{$item->id_route}}" data-route-code="{{$item->root_code}}" title="Edit Route">
                                             <i class="bi bi-pencil fs-4"></i>
                                         </button>
                                         <button type="button" class="btn btn-danger" onclick="confirmDelete('{{$item->id_route}}')" title="Delete Route">
@@ -84,12 +82,10 @@
                                     <label for="route" class="form-label">Route Code<span class="required-asterisk">*</span></label>
                                     <input type="text" id="route_code" class="form-control">
                                 </div>
-                                <div class="mb-3">
+                                <div class="mb-3" hidden>
                                     <label for="center_incharge" class="form-label">Route In-charge<span class="required-asterisk">*</span></label>
                                     <select class="form-control" id="center_incharge">
-                                        @foreach($user as $item)
-                                            <option value="{{$item->id}}">{{$item->Full_Name}}</option>
-                                        @endforeach
+                                        <option value="1" selected>Admin</option>
                                     </select>
                                 </div>
                             </div>
@@ -120,12 +116,10 @@
                             <label for="new_route_name" class="form-label">Route Code<span class="required-asterisk">*</span></label>
                             <input type="text" id="new_route_code" class="form-control">
                         </div>
-                        <div class="mb-3">
+                        <div class="mb-3" hidden>
                             <label for="new_route_incharge" class="form-label">Route In-charge/Recovery Officer<span class="required-asterisk">*</span></label>
                             <select class="form-control" id="new_route_incharge">
-                                @foreach($user as $item)
-                                    <option value="{{$item->id}}">{{$item->Full_Name}}</option>
-                                @endforeach
+                                <option value="1" selected>Admin</option>
                             </select>
                         </div>
                     </div>
@@ -176,7 +170,6 @@
             $(document).on('click', '.edit-btn', function() {
                 const editButton = $(this);
                 $('#route').val(editButton.data('route'));
-                $('#center_incharge').val(editButton.data('center-incharge'));
                 $('#center_count').val(editButton.data('center-count'));
                 $('#center_id').val(editButton.data('route-id'));
                 $('#route_code').val(editButton.data('route-code'));
@@ -229,7 +222,6 @@
             var centerData = {
                 center_id: $('#center_id').val(),
                 route: $('#route').val(),
-                center_incharge: $('#center_incharge').val(),
                 route_code: $('#route_code').val(),
             };
 
