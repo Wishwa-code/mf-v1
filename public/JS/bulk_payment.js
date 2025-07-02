@@ -117,7 +117,7 @@ function load_payment_table(page = 1) {
                     let entered = parseFloat($(this).val()) || 0;
                     let max = parseFloat($(this).data("balance")) || 0;
 
-                    if (entered >= max) {
+                    if (entered > max) {
                         Swal.fire({
                             icon: "error",
                             title: "Invalid Payment Amount",

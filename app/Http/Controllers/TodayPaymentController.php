@@ -220,7 +220,7 @@ class TodayPaymentController extends Controller
         if ($loan_number != '0') {
             $loanQuery->where('customer_loan.idCustomer_Loan', '=', $loan_number);
         }
-
+        $loanQuery->orderBy('customer_loan.idCustomer_Loan', 'asc'); // Add this line to order by loan number
         // Paginate the loans
         $loan = $loanQuery->paginate(10);
         $loanQuery_2 = DB::table('installments')
@@ -549,7 +549,7 @@ class TodayPaymentController extends Controller
         if ($loan_number != '0') {
             $loanQuery->where('customer_loan.idCustomer_Loan', '=', $loan_number);
         }
-
+        $loanQuery->orderBy('customer_loan.idCustomer_Loan', 'asc'); // Add this line to order by loan number
         // Paginate the loans
         $loan = $loanQuery->paginate(500);
         $loanQuery_2 = DB::table('installments')
