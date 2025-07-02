@@ -68,7 +68,7 @@ function decimalFormat(input) {
 
             var userVal = val.replace(/,/g, ""); // remove commas
 
-            var validValue = userVal.search(/^[0-9]{0,13}\.?[0-9]{0,4}$/) == 0 ? true : false;
+            var validValue = /^[0-9]{0,13}(\.[0-9]*)?$/.test(userVal);
 
             $("#userVal").text(userVal);
             $("#validValue").text(validValue);

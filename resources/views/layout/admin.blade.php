@@ -103,7 +103,7 @@
 </div>
 <script src="{{asset('assets/js/vendor.min.js')}}"></script>
 <script src="{{asset('assets/js/app.min.js')}}"></script>
-<script src="{{asset('../JS/validate.js')}}"></script>
+<script src="{{asset('../JS/validate.js?n=2')}}"></script>
 <script src="{{asset('assets/vendor/select2/js/select2.min.js')}}"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
