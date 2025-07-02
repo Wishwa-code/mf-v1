@@ -13,8 +13,6 @@ class RouteController extends Controller
     public function index()
     {
         $userData = tableWithBranch('route','route')
-            ->join('user', 'route.id_officer', '=', 'user.id')
-            ->select('route.*', 'user.Full_Name as incharge_name', 'user.id as incharge_id')
             ->get();
         $user=tableWithBranch('user')->get();
 
@@ -78,7 +76,6 @@ class RouteController extends Controller
             ->where('branch_id', session('branch_id'))
             ->update([
                 'name' => $request->route,
-                'id_officer' => $request->center_incharge,
                 'root_code' => $request->route_code,
             ]);
 
