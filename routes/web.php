@@ -723,6 +723,6 @@ Route::get('/get-extra-charges', [\App\Http\Controllers\TodayPaymentController::
 Route::post('/loan-delete', [\App\Http\Controllers\TodayPaymentController::class, 'deleteLoan']);
 
 
-
-
+Route::get('/prediction_report','\App\Http\Controllers\TodayPaymentController@preditction_report');
+Route::post('/prediction-report/fetch','\App\Http\Controllers\TodayPaymentController@fetchPredictionReport')->name('fetchPredictionReport');
 

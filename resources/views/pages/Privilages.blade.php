@@ -112,7 +112,7 @@
                                 'Expenses' => ['add_expenses', 'view_expenses'],
                                 'User' => ['create_user', 'user_privileges'],
                                 'Reports' => [
-                                    'main_reports_dashboard', 'loan_disbursement_performance', 'payment_detail_report',
+                                    'main_reports_dashboard', 'loan_disbursement_performance', 'payment_detail_report','prediction_report',
                                     'full_loan_detail', 'loan_summary', 'par_monthly', 'par_weekly', 'loan_status',
                                     'cashflow_accumulated', 'cashflow_monthly', 'profit_loss', 'balance_sheet', 'trial_balance',
                                     'daily_collection_sheet', 'center_collection_detail', 'center_collection_summary', 'route_collections',

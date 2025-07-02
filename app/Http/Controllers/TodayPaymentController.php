@@ -3633,5 +3633,69 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
     }
 
 
+    public function preditction_report()
+    {
+        $branches=DB::table('branch')->where('status', 1)->get();
+        $centers=DB::table('center')->get();
+        return view('pages.PaymentPrediction',compact('branches','centers'));
+    }
+
+    public function fetchPredictionReport(Request $request)
+    {
+        $request->validate([
+//            'from_date' => 'required|date|after_or_equal:today',
+            'to_date' => 'required|date|after_or_equal:from_date'
+        ]);
+
+        $loanQuery = DB::table('customer_loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->join('installments', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->whereBetween('installments.Installment_Date', [$request->from_date, $request->to_date])
+            ->where('installments.Status', 0); // Only unpaid
+
+        if ($request->center_id != 0) {
+            $loanQuery->where('center.idCenter', $request->center_id);
+        }
+
+        if ($request->branch_id != 0) {
+            $loanQuery->where('customer_loan.branch_id', $request->branch_id);
+        }
+
+        $data = $loanQuery
+            ->groupBy(
+                'customer_loan.idCustomer_Loan',
+                'customer_loan.Loan_No',
+                'customer.cus_number',
+                'customer_loan.Total_Loan_Amount',
+                'customer_loan.Balance_Amount',
+                'customer_loan.Installment_Amount',
+                'center.No',
+                'center.Name'
+            )
+            ->selectRaw('
+            customer_loan.idCustomer_Loan,
+            customer_loan.Loan_No as loan_no,
+            customer.cus_number as customer_no,
+            customer_loan.Total_Loan_Amount as total_loan_amount,
+            customer_loan.Balance_Amount as loan_balance,
+            customer_loan.Installment_Amount as Installment_Amount,
+            SUM(installments.Installment_Amount) as installment_amount,
+            SUM(CASE WHEN installments.Installment_Date < ? THEN installments.Total_Balance ELSE 0 END) as arrears,
+            SUM(installments.Panalty_Balance) as penalty,
+            SUM(installments.Total_Balance) as total_balance,
+            center.No as center_no,
+            center.Name as center_name
+        ', [Carbon::today()->toDateString()])
+            ->get();
+
+        return response()->json($data);
+    }
+
+
+
+
 
 }
