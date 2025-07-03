@@ -289,10 +289,10 @@
                                     <th>Center Name</th>
                                     <th>Loan No</th>
                                     <th>Member No</th>
-                                    <th>Total Loan Amount</th>
+                                    <th>Loan Portfolio</th>
                                     <th>Installment Amount</th>
                                     <th>Loan Balance</th>
-                                    <th>Target Amount</th>
+                                    <th>Scheduled Installment Amount</th>
                                     <th>Arrears Amount</th>
                                     <th>Penalty Amount</th>
                                     <th>Action</th>
@@ -301,13 +301,17 @@
                                 <tbody style="max-height: 400px; overflow-y: auto;"></tbody>
                                 <tfoot>
                                 <tr style="font-weight: bold; background: #f2f2f2;">
-                                    <td colspan="5" class="text-end">Total</td>
+                                    <td colspan="4" class="text-end">Total</td>
                                     <td id="tot_installment">0.00</td>
+                                    <td id="tot_balance">0.00</td>
+                                    <td id="tot_target">0.00</td>
                                     <td id="tot_arrears">0.00</td>
                                     <td id="tot_penalty">0.00</td>
+                                    <td></td>
                                 </tr>
                                 </tfoot>
                             </table>
+
                         </div>
 
                         <div class="text-end mt-2">
@@ -378,45 +382,50 @@
                     let tbody = $('#loan_table tbody');
                     tbody.empty();
 
-                    let total = 0;
-                    let totalInstallment = 0;
-                    let totalArrears = 0;
-                    let totalPenalty = 0;
+                    let tot_target = 0;
+                    let tot_installment = 0;
+                    let tot_arrears = 0;
+                    let tot_penalty = 0;
+                    let tot_balance = 0;
 
                     if (res.length === 0) {
-                        tbody.append('<tr><td colspan="9" class="text-center">No data found</td></tr>');
+                        tbody.append('<tr><td colspan="10" class="text-center">No data found</td></tr>');
                         return;
                     }
 
                     res.forEach(item => {
-                        total += parseFloat(item.total_balance || 0);
-                        totalInstallment += parseFloat(item.installment_amount || 0);
-                        totalArrears += parseFloat(item.arrears || 0);
-                        totalPenalty += parseFloat(item.penalty || 0);
+                        tot_target += parseFloat(item.total_balance || 0);
+                        tot_installment += parseFloat(item.Installment_Amount || 0);
+                        tot_arrears += parseFloat(item.arrears || 0);
+                        tot_penalty += parseFloat(item.penalty || 0);
+                        tot_balance += parseFloat(item.loan_balance || 0);
 
                         tbody.append(`
-                        <tr>
-                            <td>${item.center_name ?? '-'}</td>
-                            <td>${item.loan_no}</td>
-                            <td>${item.customer_no}</td>
-                            <td>${parseFloat(item.total_loan_amount).toFixed(2)}</td>
-                            <td>${parseFloat(item.Installment_Amount).toFixed(2)}</td>
-                            <td>${parseFloat(item.loan_balance).toFixed(2)}</td>
-                            <td>${parseFloat(item.total_balance).toFixed(2)}</td>
-                            <td>${parseFloat(item.arrears).toFixed(2)}</td>
-                            <td>${parseFloat(item.penalty).toFixed(2)}</td>
- <td>
-                <a href="/loanview/${item.idCustomer_Loan}" target="_blank" class="btn btn-primary btn-sm" title="View Loan">
-                    <i class="ri ri-send-plane-line"></i>
-                </a>
-            </td>
-                        </tr>
-                    `);
+                    <tr>
+                        <td>${item.center_name ?? '-'}</td>
+                        <td>${item.loan_no}</td>
+                        <td>${item.customer_no}</td>
+                        <td>${parseFloat(item.total_loan_amount).toFixed(2)}</td>
+                        <td>${parseFloat(item.Installment_Amount).toFixed(2)}</td>
+                        <td>${parseFloat(item.loan_balance).toFixed(2)}</td>
+                        <td>${parseFloat(item.total_balance).toFixed(2)}</td>
+                        <td>${parseFloat(item.arrears).toFixed(2)}</td>
+                        <td>${parseFloat(item.penalty).toFixed(2)}</td>
+                        <td>
+                            <a href="/loanview/${item.idCustomer_Loan}" target="_blank" class="btn btn-primary btn-sm" title="View Loan">
+                                <i class="ri ri-send-plane-line"></i>
+                            </a>
+                        </td>
+                    </tr>
+                `);
                     });
 
-                    $('#tot_installment').text(totalInstallment.toFixed(2));
-                    $('#tot_arrears').text(totalArrears.toFixed(2));
-                    $('#tot_penalty').text(totalPenalty.toFixed(2));
+                    // ✅ Update total fields
+                    $('#tot_balance').text(tot_balance.toFixed(2));
+                    $('#tot_installment').text(tot_installment.toFixed(2));
+                    $('#tot_arrears').text(tot_arrears.toFixed(2));
+                    $('#tot_penalty').text(tot_penalty.toFixed(2));
+                    $('#tot_target').text(tot_target.toFixed(2));
                 },
                 error: function (xhr) {
                     console.log(xhr.responseText);
@@ -424,6 +433,8 @@
                 }
             });
         }
+
+
 
         function exportTableToExcel(tableID, filename = '') {
             let downloadLink;

@@ -744,7 +744,7 @@ class LoanController extends Controller
         }
 
         // Fetch the installments
-        $installments = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', $id)->orderBy('Installment_Date')->get();
+        $installments = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', $id)->orderBy('idInstallments')->get();
         $Saving_amountSum = $installments->sum('Saving_amount');
         $Panalty_BalanceSum = $installments->sum('Panalty_Balance');
         $Panalty_Amount = $installments->sum('Panalty_Amount');
