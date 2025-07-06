@@ -38,7 +38,7 @@
                             @foreach($branches as $item)
                                 <tr class="style-tr">
                                     <td>{{$item->Name}}</td>
-                                    @if($item->status===1)
+                                    @if($item->status==1)
                                         <td><span style="color: green">Active</span></td>
                                     @else
                                         <td><span style="color: red">Inactive</span></td>
