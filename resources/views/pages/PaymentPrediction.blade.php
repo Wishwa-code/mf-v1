@@ -244,7 +244,7 @@
                                 <div class="row g-2 align-items-end">
                                     <div class="col-md-3">
                                         <label class="form-label">Center</label>
-                                        <select class="form-select select2" id="center">
+                                        <select class="form-select select2" id="center_id">
                                             <option value="0">All Centers</option>
                                             @foreach($centers as $center)
                                                 <option value="{{ $center->idCenter }}">{{ $center->No }} - {{ $center->Name }}</option>
@@ -343,7 +343,7 @@
         function loadPredictionReport() {
             let fromDate = $('#from_date').val();
             let toDate = $('#to_date').val();
-            let center = $('#center').val();
+            let center = $('#center_id').val();
 
             if (!fromDate || !toDate) {
                 Swal.fire("Validation Error", "Please select both From and To dates.", "warning");
@@ -378,39 +378,36 @@
 
                     if (res.length === 0) {
                         tbody.append('<tr><td colspan="10" class="text-center">No data found</td></tr>');
-                        return;
+                    } else {
+                        res.forEach(item => {
+                            tot_target += parseFloat(item.total_balance || 0);
+                            tot_installment += parseFloat(item.Installment_Amount || 0);
+                            tot_arrears += parseFloat(item.arrears || 0);
+                            tot_penalty += parseFloat(item.penalty || 0);
+                            tot_balance += parseFloat(item.loan_balance || 0);
+
+                            tbody.append(`
+                        <tr>
+                            <td>${item.center_name ?? '-'}</td>
+                            <td>${item.loan_no}</td>
+                            <td>${item.customer_no}</td>
+                            <td>${parseFloat(item.total_loan_amount).toFixed(2)}</td>
+                            <td>${parseFloat(item.Installment_Amount).toFixed(2)}</td>
+                            <td>${parseFloat(item.loan_balance).toFixed(2)}</td>
+                            <td>${parseFloat(item.total_balance).toFixed(2)}</td>
+                            <td>${parseFloat(item.arrears).toFixed(2)}</td>
+                            <td>${parseFloat(item.penalty).toFixed(2)}</td>
+                            <td>
+                                <a href="/loanview/${item.idCustomer_Loan}" target="_blank" class="btn btn-warning btn-sm" title="View Loan">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    `);
+                        });
                     }
 
-                    res.forEach(item => {
-                        tot_target += parseFloat(item.total_balance || 0);
-                        tot_installment += parseFloat(item.Installment_Amount || 0);
-                        tot_arrears += parseFloat(item.arrears || 0);
-                        tot_penalty += parseFloat(item.penalty || 0);
-                        tot_balance += parseFloat(item.loan_balance || 0);
-
-                        tbody.append(`
-                    <tr>
-                        <td>${item.center_name ?? '-'}</td>
-                        <td>${item.loan_no}</td>
-                        <td>${item.customer_no}</td>
-                        <td>${parseFloat(item.total_loan_amount).toFixed(2)}</td>
-                        <td>${parseFloat(item.Installment_Amount).toFixed(2)}</td>
-                        <td>${parseFloat(item.loan_balance).toFixed(2)}</td>
-                        <td>${parseFloat(item.total_balance).toFixed(2)}</td>
-                        <td>${parseFloat(item.arrears).toFixed(2)}</td>
-                        <td>${parseFloat(item.penalty).toFixed(2)}</td>
-                        <td>
-    <a href="/loanview/${item.idCustomer_Loan}" target="_blank" class="btn btn-warning btn-sm" title="View Loan">
-        <i class="bi bi-eye"></i>
-    </a>
-</td>
-
-
-                    </tr>
-                `);
-                    });
-
-                    // ✅ Update total fields
+                    // ✅ Always update total fields
                     $('#tot_balance').text(tot_balance.toFixed(2));
                     $('#tot_installment').text(tot_installment.toFixed(2));
                     $('#tot_arrears').text(tot_arrears.toFixed(2));
@@ -423,6 +420,7 @@
                 }
             });
         }
+
 
 
 

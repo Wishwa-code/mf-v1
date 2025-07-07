@@ -3635,14 +3635,14 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
 
     public function preditction_report()
     {
-        $centers=DB::table('center')->get();
+        $centers=tableWithBranch('center')->get();
         return view('pages.PaymentPrediction',compact('centers'));
     }
 
     public function fetchPredictionReport(Request $request)
     {
         $date = date('Y-m-d');
-
+        $center = $request->center_id;
 
         $arrearsSub = tableWithBranch('installments')
             ->select(
@@ -3654,7 +3654,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             ->where('installments.Total_Balance', '>', 0)
             ->groupBy('Customer_Loan_idCustomer_Loan');
 
-        $data = tableWithBranch('customer_loan','customer_loan')
+        $query = tableWithBranch('customer_loan', 'customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
@@ -3665,38 +3665,41 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             })
             ->where('installments.Status', 0)
             ->where('customer_loan.Status', 0)
-            ->whereBetween('installments.Installment_Date', [$request->from_date, $request->to_date]) // 👈 Added range filter
-            ->groupBy(
-                'customer_loan.idCustomer_Loan',
-                'customer_loan.Loan_No',
-                'customer.cus_number',
-                'customer_loan.Total_Loan_Amount',
-                'customer_loan.Balance_Amount',
-                'customer_loan.Installment_Amount',
-                'center.No',
-                'center.Name',
-                'arrears_table.arrears'
-            )
+            ->whereBetween('installments.Installment_Date', [$request->from_date, $request->to_date]);
+
+        // 👉 Apply center filter only if center != 0
+        if ($center != 0) {
+            $query->where('center.idCenter', $center);
+        }
+
+        $data = $query->groupBy(
+            'customer_loan.idCustomer_Loan',
+            'customer_loan.Loan_No',
+            'customer.cus_number',
+            'customer_loan.Total_Loan_Amount',
+            'customer_loan.Balance_Amount',
+            'customer_loan.Installment_Amount',
+            'center.No',
+            'center.Name',
+            'arrears_table.arrears'
+        )
             ->selectRaw("
-        customer_loan.idCustomer_Loan,
-        customer_loan.Loan_No as loan_no,
-        customer.cus_number as customer_no,
-        customer_loan.Total_Loan_Amount as total_loan_amount,
-        customer_loan.Balance_Amount as loan_balance,
-        customer_loan.Installment_Amount as Installment_Amount,
-        SUM(installments.Installment_Amount) as installment_amount,
-        IFNULL(arrears_table.arrears, 0) as arrears,
-        SUM(installments.Panalty_Balance) as penalty,
-        SUM(installments.Total_Balance) as total_balance,
-        center.No as center_no,
-        center.Name as center_name
-    ")
+            customer_loan.idCustomer_Loan,
+            customer_loan.Loan_No as loan_no,
+            customer.cus_number as customer_no,
+            customer_loan.Total_Loan_Amount as total_loan_amount,
+            customer_loan.Balance_Amount as loan_balance,
+            customer_loan.Installment_Amount as Installment_Amount,
+            SUM(installments.Installment_Amount) as installment_amount,
+            IFNULL(arrears_table.arrears, 0) as arrears,
+            SUM(installments.Panalty_Balance) as penalty,
+            SUM(installments.Total_Balance) as total_balance,
+            center.No as center_no,
+            center.Name as center_name
+        ")
             ->get();
 
-
-
         return response()->json($data);
-
     }
 
 
