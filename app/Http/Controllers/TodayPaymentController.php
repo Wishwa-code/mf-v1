@@ -3635,52 +3635,26 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
 
     public function preditction_report()
     {
-        $branches=DB::table('branch')->where('status', 1)->get();
         $centers=DB::table('center')->get();
-        return view('pages.PaymentPrediction',compact('branches','centers'));
+        return view('pages.PaymentPrediction',compact('centers'));
     }
 
     public function fetchPredictionReport(Request $request)
     {
-        $request->validate([
-//            'from_date' => 'required|date|after_or_equal:today',
-            'to_date' => 'required|date|after_or_equal:from_date'
-        ]);
-
-        $loanQuery = DB::table('customer_loan')
-            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
-            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
-            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
-            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
-            ->join('installments', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
-            ->whereBetween('installments.Installment_Date', [$request->from_date, $request->to_date])
-            ->where('installments.Status', 0)
-            ->where('customer_loan.Status', 0); // Only unpaid
-
-        if ($request->center_id != 0) {
-            $loanQuery->where('center.idCenter', $request->center_id);
-        }
-
-        if ($request->branch_id != 0) {
-            $loanQuery->where('customer_loan.branch_id', $request->branch_id);
-        }
-
         $date = date('Y-m-d');
 
 
-        $arrearsSub = DB::table('installments')
+        $arrearsSub = tableWithBranch('installments')
             ->select(
                 'Customer_Loan_idCustomer_Loan',
                 DB::raw('SUM(Total_Balance) as arrears')
             )
-            ->where('installments.Status', 0) // unpaid
+            ->where('installments.Status', 0)
             ->whereDate('installments.Installment_Date', '<', $date)
             ->where('installments.Total_Balance', '>', 0)
             ->groupBy('Customer_Loan_idCustomer_Loan');
 
-
-
-        $data = DB::table('customer_loan')
+        $data = tableWithBranch('customer_loan','customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
@@ -3690,6 +3664,8 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
                 $join->on('arrears_table.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan');
             })
             ->where('installments.Status', 0)
+            ->where('customer_loan.Status', 0)
+            ->whereBetween('installments.Installment_Date', [$request->from_date, $request->to_date]) // 👈 Added range filter
             ->groupBy(
                 'customer_loan.idCustomer_Loan',
                 'customer_loan.Loan_No',
@@ -3716,6 +3692,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
         center.Name as center_name
     ")
             ->get();
+
 
 
         return response()->json($data);

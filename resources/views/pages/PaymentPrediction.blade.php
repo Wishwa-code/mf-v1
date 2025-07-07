@@ -243,16 +243,6 @@
                             <div class="card p-3 mb-3">
                                 <div class="row g-2 align-items-end">
                                     <div class="col-md-3">
-                                        <label class="form-label">Branch</label>
-                                        <select class="form-select select2" id="branch">
-                                            <option value="0">All Branches</option>
-                                            @foreach($branches as $branch)
-                                                <option value="{{ $branch->branch_id }}">{{ $branch->Name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    <div class="col-md-3">
                                         <label class="form-label">Center</label>
                                         <select class="form-select select2" id="center">
                                             <option value="0">All Centers</option>
@@ -353,7 +343,6 @@
         function loadPredictionReport() {
             let fromDate = $('#from_date').val();
             let toDate = $('#to_date').val();
-            let branch = $('#branch').val();
             let center = $('#center').val();
 
             if (!fromDate || !toDate) {
@@ -375,7 +364,6 @@
                 data: {
                     from_date: fromDate,
                     to_date: toDate,
-                    branch_id: branch,
                     center_id: center
                 },
                 success: function (res) {
@@ -412,10 +400,12 @@
                         <td>${parseFloat(item.arrears).toFixed(2)}</td>
                         <td>${parseFloat(item.penalty).toFixed(2)}</td>
                         <td>
-                            <a href="/loanview/${item.idCustomer_Loan}" target="_blank" class="btn btn-primary btn-sm" title="View Loan">
-                                <i class="ri ri-send-plane-line"></i>
-                            </a>
-                        </td>
+    <a href="/loanview/${item.idCustomer_Loan}" target="_blank" class="btn btn-warning btn-sm" title="View Loan">
+        <i class="bi bi-eye"></i>
+    </a>
+</td>
+
+
                     </tr>
                 `);
                     });
