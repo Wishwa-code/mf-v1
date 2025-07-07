@@ -63,51 +63,56 @@ class CapitalBalanceController extends Controller
     {
         $loans = tableWithBranch('customer_loan')->where('idCustomer_Loan','=',$loan_id)->where('Status','!=','1')->first();
         if ($loans) {
-            $loan_id=$loans->idCustomer_Loan;
-            $capital_amount=$loans->Amount;
-            $interest_amount=$loans->Interest_Amount;
+            $ins_count=$loans->Installment_Count;
+            $installment_count=tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan_id)->count();
+            if ($ins_count==$installment_count){
+                $product=tableWithBranch('loan_category')->where('idLoan_Category','=',$loans->Loan_Category_idLoan_Category)->where('Interest_method','=','Flat Rate')->first();
+                if ($product){
+                    $loan_id=$loans->idCustomer_Loan;
+                    $capital_amount=$loans->Amount;
+                    $interest_amount=$loans->Interest_Amount;
 
-            $ins_capital=tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan_id)->sum('capital_amount');
-            $ins_interest=tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan_id)->sum('interest_amount');
-            $capital_additional_amount=0;
-            $interest_additional_amount=0;
+                    $ins_capital=tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan_id)->sum('capital_amount');
+                    $ins_interest=tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan_id)->sum('interest_amount');
+                    $capital_additional_amount=0;
+                    $interest_additional_amount=0;
 
-            if ($capital_amount!=$ins_capital){
-                $capital_additional_amount=$capital_amount-$ins_capital;
-            }
+                    if ($capital_amount!=$ins_capital){
+                        $capital_additional_amount=$capital_amount-$ins_capital;
+                    }
 
-            if ($interest_amount!=$ins_interest){
-                $interest_additional_amount=$interest_amount-$ins_interest;
-            }
+                    if ($interest_amount!=$ins_interest){
+                        $interest_additional_amount=$interest_amount-$ins_interest;
+                    }
 
-            if ($capital_additional_amount!=0 || $interest_additional_amount!=0){
-                $lastInstallment = DB::table('installments')
-                    ->where('Customer_Loan_idCustomer_Loan', $loan_id)
-                    ->orderByDesc('idInstallments')
-                    ->first();
+                    if ($capital_additional_amount!=0 || $interest_additional_amount!=0){
+                        $lastInstallment = DB::table('installments')
+                            ->where('Customer_Loan_idCustomer_Loan', $loan_id)
+                            ->orderByDesc('idInstallments')
+                            ->first();
 
-                if ($lastInstallment) {
+                        if ($lastInstallment) {
 
-                    $capital_additional_amount = (float) $capital_additional_amount;
-                    $interest_additional_amount = (float) $interest_additional_amount;
+                            $capital_additional_amount = (float) $capital_additional_amount;
+                            $interest_additional_amount = (float) $interest_additional_amount;
 
 
-                    DB::table('installments')
-                        ->where('idInstallments', $lastInstallment->idInstallments)
-                        ->update([
-                            'Installment_Amount' => DB::raw("Installment_Amount + $capital_additional_amount + $interest_additional_amount"),
-                            'capital_amount'     => DB::raw("capital_amount + $capital_additional_amount"),
-                            'interest_amount'    => DB::raw("interest_amount + $interest_additional_amount"),
-                            'Total_Amount'       => DB::raw("Total_Amount + $capital_additional_amount + $interest_additional_amount"),
-                            'capital_balance'    => DB::raw("capital_balance + $capital_additional_amount"),
-                            'Interest_Balance'   => DB::raw("Interest_Balance + $interest_additional_amount"),
-                            'Total_Balance'      => DB::raw("Total_Balance + $capital_additional_amount + $interest_additional_amount"),
-                        ]);
+                            DB::table('installments')
+                                ->where('idInstallments', $lastInstallment->idInstallments)
+                                ->update([
+                                    'Installment_Amount' => DB::raw("Installment_Amount + $capital_additional_amount + $interest_additional_amount"),
+                                    'capital_amount'     => DB::raw("capital_amount + $capital_additional_amount"),
+                                    'interest_amount'    => DB::raw("interest_amount + $interest_additional_amount"),
+                                    'Total_Amount'       => DB::raw("Total_Amount + $capital_additional_amount + $interest_additional_amount"),
+                                    'capital_balance'    => DB::raw("capital_balance + $capital_additional_amount"),
+                                    'Interest_Balance'   => DB::raw("Interest_Balance + $interest_additional_amount"),
+                                    'Total_Balance'      => DB::raw("Total_Balance + $capital_additional_amount + $interest_additional_amount"),
+                                ]);
+                        }
+
+                    }
                 }
-
             }
-
-
         }
     }
 

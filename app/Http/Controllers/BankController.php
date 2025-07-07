@@ -331,12 +331,21 @@ class BankController extends Controller
             ->sum('Panelty_Payment');
 
 
+        // Calculate various values
+        $chargers=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_9')->first();
 
-        // Get the sum of Amount
-        $other_chargers = tableWithBranch('company_bank_has_log')
+        $chargers_Credit = tableWithBranch('company_bank_has_log','company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('Type', '=', 'Loan Document Chargers')
+            ->where('company_bank_has_log.Bank_Account_Id','=',$chargers->Idbank)
+            ->sum('Credit');
+
+        $chargers_Debit = tableWithBranch('company_bank_has_log','company_bank_has_log')
+            ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
+            ->where('company_bank_has_log.Bank_Account_Id','=',$chargers->Idbank)
             ->sum('Debit');
+
+        $other_chargers = $chargers_Credit-$chargers_Debit;
+
 
         $total_income = tableWithBranch('expences')
             ->whereBetween('date', [$date_from_2, $date_to_2])

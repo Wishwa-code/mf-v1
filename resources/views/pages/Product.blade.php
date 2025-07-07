@@ -357,77 +357,113 @@
 
 
         function upload_excel() {
-            var fileInput = document.getElementById('uploadExcel');  // Get the file input element
-            var file = fileInput.files[0];  // Get the selected file
+            const fileInput = document.getElementById('uploadExcel');
+            const file = fileInput.files[0];
 
-            if (file) {
-                var reader = new FileReader();
-                reader.onload = function(e) {
-                    var data = new Uint8Array(e.target.result);
-                    var workbook = XLSX.read(data, { type: 'array' });
+            if (!file) return;
 
-                    // Assuming the first sheet in the Excel file
-                    var firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                const dataFrom5thRow = rows.slice(5); // Skip first 5 rows
 
-                    // Convert sheet to JSON, starting from the 5th row (index 5 in zero-indexed array)
-                    var jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                const finalData = [];
 
-                    // Start reading data from the 5th index (skip the first 5 rows)
-                    var dataFrom5thRow = jsonData.slice(5);
+                for (let row of dataFrom5thRow) {
+                    if (!row[1]) continue; // Skip if product_code is missing
 
-                    console.log(dataFrom5thRow);  // Debugging: see the data in console
+                    const product_code = row[1];
+                    const product_name = product_code;
 
-                    // SweetAlert2 confirmation prompt
-                    Swal.fire({
-                        title: 'Are you sure?',
-                        text: "Do you want to upload the Excel data?",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'Yes, upload it!',
-                        cancelButtonText: 'No, cancel!',
-                        reverseButtons: true
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            // Send data to backend using AJAX
-                            $.ajax({
-                                url: '/upload-excel-product',  // Your route URL
-                                type: 'POST',
-                                data: {
-                                    excelData: dataFrom5thRow,  // Send the Excel data
-                                },
-                                headers: {
-                                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-                                },
-                                success: function(response) {
-                                    Swal.fire({
-                                        position: "center",
-                                        icon: "success",
-                                        title: "Your Excel data has been uploaded.",
-                                    }).then(function () {
-                                        window.location.reload();
-                                    });
-                                },
-                                error: function(xhr, status, error) {
-                                    Swal.fire(
-                                        'Error!',
-                                        'There was an issue uploading the file.',
-                                        'error'
-                                    );
-                                    console.error(error);  // Handle errors
-                                }
-                            });
-                        } else if (result.dismiss === Swal.DismissReason.cancel) {
-                            Swal.fire(
-                                'Cancelled',
-                                'Your Excel data upload was cancelled.',
-                                'error'
-                            );
+                    // ⬇️ Collect Other Charges from columns 15–26 (4 charges max)
+                    const othercharges = [];
+                    for (let i = 15; i <= 26; i += 3) {
+                        const desc = row[i];
+                        const type = row[i + 1];
+                        const amount = parseFloat(row[i + 2]) || 0;
+
+                        if (desc && type && amount) {
+                            othercharges.push([String(desc).trim(), String(type).trim(), amount]);
                         }
+                    }
+
+                    // ⬇️ Collect Required Documents from columns 27, 28, 29
+                    const document = [];
+                    for (let i = 27; i <= 29; i++) {
+                        if (row[i]) {
+                            document.push([String(row[i]).trim()]);
+                        }
+                    }
+
+                    // ⬇️ Build the product entry
+                    finalData.push({
+                        product_name: product_name,
+                        product_code: product_code,
+                        loan_amount_from: parseFloat(row[2]) || 0,
+                        loan_amount_to: parseFloat(row[3]) || 0,
+                        interest_from: parseFloat(row[4]) || 0,
+                        interest_to: parseFloat(row[5]) || 0,
+                        interest_method: "Flat Rate",
+                        interest_period: "Per Month",
+                        duration_period: "Weeks",
+                        loan_duration: parseFloat(row[7]) || 0,
+                        collection_type: row[6] || "Weekly",
+                        penalty_period: row[8] || "Weekly",
+                        panelty_rate: parseFloat(row[9]) || 0,
+                        panelty_rate_date: '1',
+                        witnessCount: 2,
+                        period_count: 1,
+                        enable_saving: 'No',
+
+                        saving_account_amount_type: row[30] ? row[30].toString() : "pre_defined",
+                        saving_payment: row[31] ? row[31].toString() : "0",
+                        saving_amount: parseFloat(row[32]) || 0,
+
+                        default_loan_duration_period: "Weeks",
+                        othercharges: othercharges,
+                        document: document,
+                        level_data: []
                     });
-                };
-                reader.readAsArrayBuffer(file);
-            }
+                }
+
+                // ✅ Confirm and Send to Server
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "Do you want to upload the Excel data?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, upload it!',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/upload-excel-product',
+                            method: 'POST',
+                            data: {
+                                excelData: finalData
+                            },
+                            headers: {
+                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                            },
+                            success: function (res) {
+                                Swal.fire("Success", res.message, "success").then(() => location.reload());
+                            },
+                            error: function (err) {
+                                Swal.fire("Error", "Upload failed", "error");
+                                console.error(err);
+                            }
+                        });
+                    }
+                });
+            };
+
+            reader.readAsArrayBuffer(file);
         }
+
+
+
 
 
     </script>
