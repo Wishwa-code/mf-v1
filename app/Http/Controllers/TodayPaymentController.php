@@ -66,7 +66,7 @@ class TodayPaymentController extends Controller
             $loanQuery->join('collector_has_route', 'customer.route_id', '=', 'collector_has_route.route_id')
                 ->where('collector_has_route.collector_id', '=', $user_id);
         }
-        $loanQuery->orderBy('customer_loan.Loan_No', 'asc'); // Add this line to order by loan number
+        $loanQuery->orderBy('customer_loan.idCustomer_Loan', 'asc'); // Add this line to order by loan number
 
         $loan = $loanQuery->get();
         $route = tableWithBranch('route', 'route')
@@ -104,6 +104,7 @@ class TodayPaymentController extends Controller
             $loanQuery->join('collector_has_route', 'customer.route_id', '=', 'collector_has_route.route_id')
                 ->where('collector_has_route.collector_id', '=', $user_id);
         }
+        $loanQuery->orderBy('customer_loan.idCustomer_Loan', 'asc'); // Add this line to order by loan number
         $loan = $loanQuery->get();
         return view('pages.BulkPayment', compact('group','loan', 'route', 'center', 'customers', 'company'));
     }
