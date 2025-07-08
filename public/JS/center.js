@@ -132,7 +132,7 @@ function update_center(){
     const center_number = $("#center_number").val();
     const center_name = $("#center_name").val();
     const contact = $("#contact").val();
-    const route = $("#route").val();
+    const route = '-';
     const address = $("#address").val();
     const center_incharge = $("#center_incharge").val();
     const location = $("#location").val();
