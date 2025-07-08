@@ -487,6 +487,7 @@ class CustomerController extends Controller
 
     public function updateCustomer(Request $request) {
 
+        $documentPath='';
         // Handle file upload
         if ($request->hasFile('cus_phto')) {
             $file = $request->file('cus_phto');
