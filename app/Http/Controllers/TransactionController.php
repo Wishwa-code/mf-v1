@@ -689,7 +689,7 @@ class TransactionController extends Controller
         }
 
         $loan = $loanQuery->get();
-        $loan->transform(function ($item) {
+        $loan = $loan->transform(function ($item) {
             $initial = strtoupper(substr($item->customer_name, 0, 1)) . '.';
             $item->name_with_initials = $initial . ' ' . $item->customer_lastname;
             return $item;
@@ -702,11 +702,23 @@ class TransactionController extends Controller
             });
         }
 
+        $grouped_loans = $loan->groupBy('group_name'); // ✅ ADD THIS LINE
 
-        // Group data by 'group_name'
-        $grouped_loans = $loan->groupBy('group_name');
+        $selected_center = $center->firstWhere('idCenter', $center_details);
 
-        return view('pages.GreenLankaTrustRepayment', compact('center', 'grouped_loans','center_details'));
+        $center_no = $selected_center->No ?? 'N/A';
+        $center_name = $selected_center->Name ?? 'N/A';
+        $printedBy = session('Full_Name') ?? 'System';
+        $printedAt = now()->format('Y-m-d h:i A');
+
+        return view('pages.GreenLankaTrustRepayment', compact(
+            'center', 'grouped_loans', 'center_details',
+            'center_no', 'center_name', 'printedBy', 'printedAt'
+        ));
+
+
+
+
     }
 
 }

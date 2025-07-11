@@ -23,11 +23,15 @@ class ExcelController extends Controller
     protected $LoanLogController;
 
     protected $bankLogController;
-    public function __construct(CustomerLogController $customerLogController,LoanLogController $LoanLogController,BankLogController $bankLogController)
+    protected $loanLogController;
+    protected $capitalBalanceController;
+    public function __construct(CustomerLogController $customerLogController,LoanLogController $LoanLogController,BankLogController $bankLogController,LoanLogController $loanLogController,CapitalBalanceController $capitalBalanceController)
     {
         $this->customerLogController = $customerLogController;
         $this->LoanLogController = $LoanLogController;
         $this->bankLogController = $bankLogController;
+        $this->loanLogController = $loanLogController;
+        $this->capitalBalanceController = $capitalBalanceController;
     }
 
 
@@ -98,81 +102,81 @@ class ExcelController extends Controller
 
 
 //         Loop through each row of Excel data, starting from the 6th row (index 5)
-         $skipped = [];
-         foreach ($data as $key => $row) {
-             Log::info($row[3]);
-             if (DB::table('customer')
-                 ->where('cus_number', '=', $row[3])
-                 ->where('branch_id', '=', session('branch_id'))
-                 ->exists()) {
-                 $skipped[] = $row[3];  // Log skipped customer numbers
-                 continue;
-             }
+        $skipped = [];
+        foreach ($data as $key => $row) {
+            Log::info($row[3]);
+            if (DB::table('customer')
+                ->where('cus_number', '=', $row[3])
+                ->where('branch_id', '=', session('branch_id'))
+                ->exists()) {
+                $skipped[] = $row[3];  // Log skipped customer numbers
+                continue;
+            }
 
 
 
-             // Instantiate a new Customer object
-             $customer = new Customer();
+            // Instantiate a new Customer object
+            $customer = new Customer();
 
-             // Map fields from Excel to Customer object
-             $customer->Title = $row[4] ?? '-';  // Assuming Title is in 5th column
-             $customer->Customer_Group_idCustomer_Group = 1;  // Default group
+            // Map fields from Excel to Customer object
+            $customer->Title = $row[4] ?? '-';  // Assuming Title is in 5th column
+            $customer->Customer_Group_idCustomer_Group = 1;  // Default group
 
-             // Handle cus_number and format
-             $customer->cus_number = $row[3] ?? '';
-             // Assigning other customer details from Excel
-             $customer->First_Name = $row[5] ?? '-';
-             $customer->Last_Name = $row[6] ?? '-';
-             $customer->Email = $row[7] ?? '-';
-             $customer->Contact_No = $row[8] ?? '-';
-             $customer->Nic = $row[10] ?? '-';
-             $customer->Gender = $row[11] ?? '-';
-             $customer->Dob = $row[12] ?? '-';
+            // Handle cus_number and format
+            $customer->cus_number = $row[3] ?? '';
+            // Assigning other customer details from Excel
+            $customer->First_Name = $row[5] ?? '-';
+            $customer->Last_Name = $row[6] ?? '-';
+            $customer->Email = $row[7] ?? '-';
+            $customer->Contact_No = $row[8] ?? '-';
+            $customer->Nic = $row[10] ?? '-';
+            $customer->Gender = $row[11] ?? '-';
+            $customer->Dob = $row[12] ?? '-';
 
-             // Address details
-             $customer->Address = $row[13] ?? '-';
-             $customer->Address_02 = $row[14] ?? '-';
-             $customer->Address_03 = $row[15] ?? '-';
-             $customer->Per_Address_01 = $row[16] ?? '-';
-             $customer->Per_Address_02 = $row[17] ?? '-';
-             $customer->Per_Address_03 = $row[18] ?? '-';
-             $customer->City = $row[19] ?? '-';
-             $customer->State = $row[20] ?? '-';
-             $customer->Landline = $row[21] ?? '-';
+            // Address details
+            $customer->Address = $row[13] ?? '-';
+            $customer->Address_02 = $row[14] ?? '-';
+            $customer->Address_03 = $row[15] ?? '-';
+            $customer->Per_Address_01 = $row[16] ?? '-';
+            $customer->Per_Address_02 = $row[17] ?? '-';
+            $customer->Per_Address_03 = $row[18] ?? '-';
+            $customer->City = $row[19] ?? '-';
+            $customer->State = $row[20] ?? '-';
+            $customer->Landline = $row[21] ?? '-';
 
-             // Guardian information
-             $customer->Gua_title = $row[22] ?? '-';
-             $customer->Gua_name = $row[23] ?? '-';
-             $customer->Guardian_gender = $row[24] ?? '-';
-             $customer->Gua_relation = $row[25] ?? '-';
-             $customer->Gua_occu = $row[26] ?? '-';
-             $customer->Gua_contact = $row[27] ?? '-';
-             $customer->Gua_address = $row[28] ?? '-';
-             $customer->Gua_nic = $row[29] ?? '-';
+            // Guardian information
+            $customer->Gua_title = $row[22] ?? '-';
+            $customer->Gua_name = $row[23] ?? '-';
+            $customer->Guardian_gender = $row[24] ?? '-';
+            $customer->Gua_relation = $row[25] ?? '-';
+            $customer->Gua_occu = $row[26] ?? '-';
+            $customer->Gua_contact = $row[27] ?? '-';
+            $customer->Gua_address = $row[28] ?? '-';
+            $customer->Gua_nic = $row[29] ?? '-';
 
-             // Additional fields
-             $customer->Customer_Risk_Level = "1";  // Default risk level
-             $customer->civil_status = $row[30] ?? '-';
+            // Additional fields
+            $customer->Customer_Risk_Level = "1";  // Default risk level
+            $customer->civil_status = $row[30] ?? '-';
 
-             // Assign branch_id
-             $customer->branch_id = session('branch_id');
+            // Assign branch_id
+            $customer->branch_id = session('branch_id');
 
-             // Save the customer data
-             $customer->save();
+            // Save the customer data
+            $customer->save();
 
-             // If bank details exist, save them
-             if (isset($row[37])) {
-                 $documentData = [
-                     'cus_id' => $customer->id,  // Customer ID
-                     'bank_name' => $row[37],    // Bank name
-                     'account_name' => $row[38], // Account name
-                     'account_number' => $row[39], // Account number
-                     'branch' => session('branch_id'), // Bank branch
-                 ];
-                 insertWithBranch('customer_has_bank', $documentData);
-             }
-         }
-         Log::info("Skipped Customers: ", $skipped);
+            // If bank details exist, save them
+            if (isset($row[37])) {
+                $documentData = [
+                    'cus_id' => $customer->id,  // Customer ID
+                    'bank_name' => $row[37],    // Bank name
+                    'account_name' => $row[38], // Account name
+                    'account_number' => $row[39], // Account number
+                    'branch' => session('branch_id'), // Bank branch
+                ];
+                insertWithBranch('customer_has_bank', $documentData);
+            }
+        }
+        Log::info("Skipped Customers: ", $skipped);
 
 
         DB::table('group_has_customer')
@@ -878,6 +882,255 @@ class ExcelController extends Controller
         return response()->json(['message' => 'Data processed successfully.'], 200);
     }
 
+
+    public function undo(Request $request){
+        $row = $request->input('row'); // Each row sent as 'row' from frontend
+
+        if (!isset($row[0], $row[1], $row[4])) {
+            return response()->json(['message' => 'Invalid data'], 400);
+        }
+
+        $loan_number = $row[1];
+        $amount = $row[4];
+
+        if ($amount <= 0) {
+            return response()->json(['message' => 'Amount is zero or negative, skipped.']);
+        }
+
+        $loan = tableWithBranch('customer_loan')->where('Loan_No', $loan_number)->first();
+
+        if (!$loan) {
+            Log::info($loan_number);
+        }else{
+
+            $payment = tableWithBranch('customer_payments')
+                ->where('Customer_Loan_idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                ->orderByDesc('idCustomer_Payments')
+                ->first();
+
+            if ($payment) {
+                $payment_id = $payment->idCustomer_Payments;
+
+                $request = new Request([
+                    'reason' => 'Mistake',
+                ]);
+
+                $paymentController = app(TodayPaymentController::class);
+                $paymentController->undoPayment($request, $payment_id); // <-- fix here
+
+                return response()->json(['message' => 'Payment stored for loan: ' . $loan_number]);
+            }
+
+
+        }
+        return response()->json(['message' => 'Not Saved: ' . $loan_number]);
+    }
+
+
+    public function balance_change(Request $request) {
+        $row = $request->input('row'); // Expecting one row as array
+
+        if (!isset($row[3], $row[7])) {
+            return response()->json(['message' => 'Invalid data'], 400);
+        }
+
+        $customer_name = $row[3];  // Member Name
+        $customer_name_for_table = $row[3];  // Member Name
+        // Remove all whitespace characters (spaces, tabs, non-breaking spaces) and lowercase
+        $customer_name = strtolower(preg_replace('/\s+/', '', $customer_name));
+
+        $disbursment_date = $row[7];     // Disbursal Date
+        $excel_balance_amount = $row[12] ?? 0;
+        $excel_panelty_amount = $row[14] ?? 0;
+
+
+        if ($excel_panelty_amount > 0) {
+            $excel_balance_amount = round($excel_balance_amount - $excel_panelty_amount, 2);
+        }
+
+        // Handle Excel date (numeric) or string date
+        if (is_numeric($disbursment_date)) {
+            $issue_date = date('Y-m-d', ($disbursment_date - 25569) * 86400);
+        } else {
+            $issue_date = date('Y-m-d', strtotime($disbursment_date));
+        }
+
+
+        // Match customer by removing all spaces in DB fields and lowercasing
+        $customer = tableWithBranch('customer')
+            ->whereRaw("
+            LOWER(
+                REPLACE(
+                    REPLACE(
+                        REPLACE(CONCAT(TRIM(`First_Name`), TRIM(`Last_Name`)), ' ', ''),
+                        CHAR(160), ''
+                    ),
+                    '\t', ''
+                )
+            ) = ?", [$customer_name])
+            ->first();
+
+        // Fallback: try First_Name alone (after removing all spaces and lowercasing)
+        if (!$customer) {
+            $customer = tableWithBranch('customer')
+                ->whereRaw("
+                LOWER(
+                    REPLACE(
+                        REPLACE(
+                            REPLACE(TRIM(`First_Name`), ' ', ''),
+                            CHAR(160), ''
+                        ),
+                        '\t', ''
+                    )
+                ) = ?", [$customer_name])
+                ->first();
+
+            if (!$customer) {
+//                Log::warning("Customer not found after fallback: $customer_name");
+                return response()->json(['message' => 'Customer not found: ' . $customer_name], 404);
+            }
+        }
+
+        $cus_id = $customer->idCustomer;
+
+        $loan = tableWithBranch('customer_loan')
+            ->where('Customer_idCustomer', $cus_id)
+            ->whereDate('Date_Time', $issue_date)
+            ->first();
+
+        if (!$loan) {
+            DB::table('import_log')->insert([
+                'customer_name' => $customer_name_for_table,
+                'issue_date' => $issue_date,
+                'created_at' => now()
+            ]);
+            return response()->json(['message' => 'Loan not found for: ' . $customer_name], 404);
+        }
+
+        $balance_amount = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan->idCustomer_Loan)->sum('Total_Balance');
+        $new_balance = round($excel_balance_amount - $balance_amount, 2);
+
+
+        $jangiya='Equal';
+// Calculate jangiya status
+        if ($new_balance < 0) {
+            $jangiya = 'Payment';
+        } else if ($new_balance > 0) {
+            $jangiya = 'Undo';
+        }
+
+
+
+
+        if($jangiya=='Payment'){
+
+            $payment_amount=$new_balance*-1;
+
+            $bank_account_company = DB::table('company_bank_accounts')
+                ->where('branch_id', session('branch_id'))
+                ->whereRaw('LOWER(Account_No) = ?', ['cash'])  // Case-insensitive comparison
+                ->value('Idbank');
+
+            $paymentData = [
+                'cus_id' => $loan->Customer_idCustomer,
+                'payment_amount' => $payment_amount,
+                'saving_amount' => '0.00',
+                'file' => '-',
+                'loan_id' => $loan->idCustomer_Loan,
+                'payment_date' => date('Y-m-d'),
+                'payment_type' => 'Cash',
+                'bank_account_company' => $bank_account_company,
+                'cheque_issue_bank' => '1',
+                'name_on_cheque' => '',
+                'chq_number' => '',
+                'chq_date' => '',
+                'chq_type' => 'Crossed',
+            ];
+
+            $paymentController = app(TodayPaymentController::class);
+            $paymentController->store(new Request($paymentData));
+        }else if($jangiya=='Undo'){
+
+            $undo_amount=$new_balance;
+            $check_payment=tableWithBranch('customer_payments')->where('Amount','=',$undo_amount)->where('Customer_Loan_idCustomer_Loan','=',$loan->idCustomer_Loan)->first();
+
+            if ($check_payment){
+                $paymentController = app(TodayPaymentController::class);
+                $request = new Request([
+                    'reason' => 'Payment Adjustment',
+                ]);
+                $paymentController->undoPayment($request, $check_payment->idCustomer_Payments);
+                tableWithBranch('customer_loan')
+                    ->where('idCustomer_Loan', $loan->idCustomer_Loan)
+                    ->update([
+                        'jangiya' => DB::raw("CONCAT(jangiya, 'Pass')")
+                    ]);
+
+            }
+
+
+        }
+
+
+
+
+
+
+        if ($excel_panelty_amount > 0){
+            $jangiya =$jangiya.'Panelty';
+
+            $installment = tableWithBranch('installments')
+                ->where('Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
+                ->where('Status','=', '0')
+                ->orderByDesc('idInstallments')
+                ->first();
+
+            if ($installment){
+                tableWithBranch('installments')
+                    ->where('idInstallments', $installment->idInstallments)
+                    ->update([
+                        'Panalty_Amount' => $excel_panelty_amount,
+                        'Panalty_Balance' => $excel_panelty_amount,
+                        'Total_Balance' => DB::raw("Total_Balance + $excel_panelty_amount")
+                    ]);
+
+                $last_loan_log=tableWithBranch('Loan_Log')
+                    ->where('Loan_ID', $loan->idCustomer_Loan)
+                    ->orderByDesc('Loan_Log_ID')
+                    ->first();
+
+                // Call the store method of LoanLogController
+                $this->LoanLogController->index(
+                    $loan->idCustomer_Loan,
+                    'Penalty',
+                    $loan->idCustomer_Loan,
+                    'Penalty-Installment No :'.$installment->idInstallments,
+                    $excel_panelty_amount,
+                    '0',
+                    '0',
+                    '0',
+                    '0',
+                    $last_loan_log->Panelty_Balance+$excel_panelty_amount,
+                    $last_loan_log->Interest_Balance,
+                    $last_loan_log->Capital_Balance,
+                    $last_loan_log->Total_Pending_Balance+$excel_panelty_amount,
+                    '0');
+
+                $bankLogController = new BankLogController();
+
+                $System_default_5=tableWithBranch('company_bank_accounts')
+                    ->where('Bank_Type','=','System_default_5')
+                    ->first();
+                $System_default_6=tableWithBranch('company_bank_accounts')
+                    ->where('Bank_Type','=','System_default_6')
+                    ->first();
+                $bankLogController->index($System_default_5->Idbank,"Penalty","Penalty","-","debit",$excel_panelty_amount,$System_default_6->Idbank);
+                $bankLogController->index($System_default_6->Idbank,"Penalty","Penalty","-","credit",$excel_panelty_amount,$System_default_5->Idbank);
+            }
+        }
+
+        return response()->json(['message' => 'Row processed successfully']);
+    }
 
 
 

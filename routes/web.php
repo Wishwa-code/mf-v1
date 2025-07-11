@@ -502,6 +502,7 @@ Route::post('/upload-excel-customer', [\App\Http\Controllers\ExcelController::cl
 Route::post('/upload-excel-product', [\App\Http\Controllers\ExcelController::class, 'uploadExcelProduct']);
 Route::post('/upload-excel-loan', [\App\Http\Controllers\ExcelController::class, 'uploadExcelLoan']);
 Route::post('/upload-excel-payment', [\App\Http\Controllers\ExcelController::class, 'uploadExcelPayment']);
+Route::post('/undo-excel-payment', [\App\Http\Controllers\ExcelController::class, 'undo']);
 
 
 Route::post('/upload-excel-category', [\App\Http\Controllers\ExcelController::class, 'uploadExcelCate']);
@@ -726,3 +727,14 @@ Route::post('/loan-delete', [\App\Http\Controllers\TodayPaymentController::class
 Route::get('/prediction_report','\App\Http\Controllers\TodayPaymentController@preditction_report');
 Route::post('/prediction-report/fetch','\App\Http\Controllers\TodayPaymentController@fetchPredictionReport')->name('fetchPredictionReport');
 
+Route::get('/get-loan-ids', function () {
+    $loan_ids = tableWithBranch('customer_loan')
+        ->pluck('idCustomer_Loan')
+        ->toArray();
+
+    return response()->json(['loan_ids' => $loan_ids]);
+});
+
+Route::get('/loan_log/{loan_id}','\App\Http\Controllers\CapitalBalanceController@show')->name('sms.show');
+
+Route::post('/upload-excel-balance', [\App\Http\Controllers\ExcelController::class, 'balance_change']);

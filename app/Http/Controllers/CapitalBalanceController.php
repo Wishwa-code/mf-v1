@@ -127,9 +127,142 @@ class CapitalBalanceController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show($loan_id)
     {
-        //
+        $loans=tableWithBranch('customer_loan')->where('idCustomer_Loan',$loan_id)->get();
+        foreach ($loans as $loan){
+            $loan_id=$loan->idCustomer_Loan;
+            $loan_date = date('Y-m-d', strtotime($loan->Date_Time));
+            $loan_logs=tableWithBranch('Loan_Log')->where('Loan_ID',$loan_id)->get();
+
+            foreach ($loan_logs as $logs){
+                $type=$logs->Type;
+
+
+                if ($type=='Payment Undo'){
+                    $type_id=$logs->Type_ID;
+                    if ($loan_id!=$type_id){
+                        $payment_log=tableWithBranch('Loan_Log')->where('Type_ID',$type_id)->where('Loan_ID','=',$loan_id)->where('Type','=','Customer Payment')->first();
+                        if ($payment_log){
+                            $interest_amount=$payment_log->Interest_Payment;
+                            $capital_amount=$payment_log->Capital_Payment;
+
+                            DB::table('Loan_Log')
+                                ->where('Loan_Log_ID', $logs->Loan_Log_ID)
+                                ->update([
+                                    'Interest_Payment' =>$interest_amount,
+                                    'Capital_Payment' =>$capital_amount,
+                                ]);
+
+                        }
+                    }
+                }
+            }
+
+
+
+
+            $count=0;
+            foreach ($loan_logs as $logs){
+                $type=$logs->Type;
+
+                $log_time = date('H:i:s', strtotime($logs->Date_Time));
+                $new_datetime = $loan_date . ' ' . $log_time;
+
+                if ($type=='Issue Loan'){
+                    DB::table('Loan_Log')
+                        ->where('Loan_Log_ID', $logs->Loan_Log_ID)
+                        ->update([
+                            'Date_Time' =>$new_datetime
+                        ]);
+                }else if($type=='Customer Payment'){
+                    $customer_payment = tableWithBranch('customer_payments')
+                        ->where('Customer_Loan_idCustomer_Loan', $loan_id)
+                        ->orderBy('idCustomer_Payments', 'asc')
+                        ->get();
+
+                    $Payment = $customer_payment->get($count); // index starts from 0, so 2 means 3rd item
+
+                    if ($Payment) {
+                        $payment_date=$Payment->Date;
+                        $new_datetime=$payment_date . ' ' . $log_time;
+
+
+
+                        // Get previous log before current one
+                        $previous_log = tableWithBranch('Loan_Log')
+                            ->where('Loan_ID', $loan_id)
+                            ->where('Loan_Log_ID', '<', $logs->Loan_Log_ID)
+                            ->orderBy('Loan_Log_ID', 'desc')
+                            ->first();
+
+                        if ($previous_log) {
+                            $Interest_Balance_previous=$previous_log->Interest_Balance;
+                            $Capital_Balance_previous=$previous_log->Capital_Balance;
+                            $Total_Pending_Balance_previous=$previous_log->Total_Pending_Balance;
+
+                            $Interest_Payment=$logs->Interest_Payment;
+                            $Capital_Payment=$logs->Capital_Payment;
+
+                            DB::table('Loan_Log')
+                                ->where('Loan_Log_ID', $logs->Loan_Log_ID)
+                                ->update([
+                                    'Type_ID' =>$Payment->idCustomer_Payments,
+                                    'Date_Time' =>$new_datetime,
+                                    'Interest_Balance' =>$Interest_Balance_previous-$Interest_Payment,
+                                    'Capital_Balance' =>$Capital_Balance_previous-$Capital_Payment,
+                                    'Total_Pending_Balance' =>$Total_Pending_Balance_previous-$Interest_Payment-$Capital_Payment,
+                                ]);
+                            DB::table('customer_loan')
+                                ->where('idCustomer_Loan', $loan_id)
+                                ->update([
+                                    'installment_balance' =>$Interest_Balance_previous-$Interest_Payment,
+                                    'capital_balance' =>$Capital_Balance_previous-$Capital_Payment,
+                                    'Balance_Amount' =>$Total_Pending_Balance_previous-$Interest_Payment-$Capital_Payment,
+                                ]);
+
+                            $count++;
+                        }
+                    }
+                }else{
+                    // Get previous log before current one
+                    $previous_log = tableWithBranch('Loan_Log')
+                        ->where('Loan_ID', $loan_id)
+                        ->where('Loan_Log_ID', '<', $logs->Loan_Log_ID)
+                        ->orderBy('Loan_Log_ID', 'desc')
+                        ->first();
+
+                    if ($previous_log) {
+                        $Interest_Balance_previous=$previous_log->Interest_Balance;
+                        $Capital_Balance_previous=$previous_log->Capital_Balance;
+                        $Total_Pending_Balance_previous=$previous_log->Total_Pending_Balance;
+
+                        $Interest_Payment=$logs->Interest_Payment;
+                        $Capital_Payment=$logs->Capital_Payment;
+
+                        DB::table('Loan_Log')
+                            ->where('Loan_Log_ID', $logs->Loan_Log_ID)
+                            ->update([
+                                'Interest_Balance' =>$Interest_Balance_previous+$Interest_Payment,
+                                'Capital_Balance' =>$Capital_Balance_previous+$Capital_Payment,
+                                'Total_Pending_Balance' =>$Total_Pending_Balance_previous+$Interest_Payment+$Capital_Payment,
+                            ]);
+
+
+                        DB::table('customer_loan')
+                            ->where('idCustomer_Loan', $loan_id)
+                            ->update([
+                                'installment_balance' =>$Interest_Balance_previous+$Interest_Payment,
+                                'capital_balance' =>$Capital_Balance_previous+$Capital_Payment,
+                                'Balance_Amount' =>$Total_Pending_Balance_previous+$Interest_Payment+$Capital_Payment,
+                            ]);
+
+                    }
+                }
+            }
+
+        }
+        return response()->json(['message' => 'Loan log update completed']);
     }
 
     /**
