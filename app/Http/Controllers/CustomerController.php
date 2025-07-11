@@ -109,6 +109,11 @@ class CustomerController extends Controller
             ->where('branch_id', '=', session('branch_id')) // Check within the same branch
             ->exists()) {
             return response()->json(['message' => 'This customer number already exists!', 'id' => '0'], 200);
+        } else if (DB::table('customer')
+            ->Where('Contact_No', '=', $request->contact_number)
+            ->where('branch_id', '=', session('branch_id')) // Check within the same branch
+            ->exists()) {
+            return response()->json(['message' => 'This customer number already exists!', 'id' => '0'], 200);
         }else{
 
             // Instantiate a new Customer object
