@@ -500,9 +500,9 @@ Route::post('/changeCollector_filter','\App\Http\Controllers\TodayPaymentControl
 
 Route::post('/upload-excel-customer', [\App\Http\Controllers\ExcelController::class, 'uploadExcelCustomer']);
 Route::post('/upload-excel-product', [\App\Http\Controllers\ExcelController::class, 'uploadExcelProduct']);
-Route::post('/upload-excel-loan', [\App\Http\Controllers\ExcelController::class, 'uploadExcelLoan']);
-Route::post('/upload-excel-payment', [\App\Http\Controllers\ExcelController::class, 'uploadExcelPayment']);
-Route::post('/undo-excel-payment', [\App\Http\Controllers\ExcelController::class, 'undo']);
+Route::post('/upload-excel-loan', [\App\Http\Controllers\ExcelController::class, 'uploadExcelLoanGreenLanka']);
+//Route::post('/upload-excel-payment', [\App\Http\Controllers\ExcelController::class, 'uploadExcelPayment']);
+Route::post('/upload-excel-payment', [\App\Http\Controllers\ExcelController::class, 'balance_change']);
 
 
 Route::post('/upload-excel-category', [\App\Http\Controllers\ExcelController::class, 'uploadExcelCate']);

@@ -200,12 +200,11 @@
                                     $arrease = DB::table('installments')
                                         ->where('Customer_Loan_idCustomer_Loan', $item->idCustomer_Loan)
                                         ->where('Installment_Date', '<=', date('Y-m-d'))
-                                        ->where('branch_id', session('branch_id'))
                                         ->sum('Total_Balance');
                                     $panelty = DB::table('installments')
                                             ->where('Customer_Loan_idCustomer_Loan', $item->idCustomer_Loan)
-                                            ->where('branch_id', session('branch_id'))
                                             ->sum('Panalty_Balance');
+                                    dd($panelty)
                                 @endphp
                                 <td>{{ number_format($item->capital_balance,2) }}</td>
                                 <td>{{ number_format($item->installment_balance,2) }}</td>
@@ -216,7 +215,6 @@
                                     $arrease = DB::table('installments')
                                         ->where('Customer_Loan_idCustomer_Loan', $item->idCustomer_Loan)
                                         ->where('Installment_Date', '<', date('Y-m-d'))
-                                        ->where('branch_id', session('branch_id'))
                                         ->sum('Total_Balance');
                                 @endphp
                                 <td>{{ number_format($arrease, 2) }}</td>
@@ -225,7 +223,6 @@
                                     $overpaid = DB::table('installments')
                                         ->where('Customer_Loan_idCustomer_Loan', $item->idCustomer_Loan)
                                         ->where('Installment_Date', '>', date('Y-m-d'))
-                                        ->where('branch_id', session('branch_id'))
                                         ->sum('Paid_Amount');
                                 @endphp
                                 <td>{{ number_format($overpaid, 2) }}</td>
@@ -237,7 +234,6 @@
                                 @php
                                     $maturityDate = DB::table('installments')
                                         ->where('Customer_Loan_idCustomer_Loan', $item->idCustomer_Loan)
-                                        ->where('branch_id', session('branch_id'))
                                         ->orderBy('Installment_Date', 'desc')
                                         ->value('Installment_Date'); // Get the last installment date directly
                                 @endphp
@@ -257,7 +253,6 @@
                                 @php
                                     $lastPayment = DB::table('customer_payments')
                                         ->where('Customer_Loan_idCustomer_Loan', $item->idCustomer_Loan)
-                                        ->where('branch_id', session('branch_id'))
                                         ->orderBy('Date', 'desc')
                                         ->first(['Date', 'Amount']); // Get the last payment date and amount
                                 @endphp
@@ -269,12 +264,10 @@
                                     $lastDueDate = DB::table('installments')
                                         ->where('Customer_Loan_idCustomer_Loan', $item->idCustomer_Loan)
                                         ->where('Installment_Date', '<', date('Y-m-d'))
-                                        ->where('branch_id', session('branch_id'))
                                         ->orderBy('Installment_Date', 'desc') // Order by date descending
                                         ->value('Installment_Date'); // Get the last due date
                                     $nextDueDate = DB::table('installments')
                                         ->where('Customer_Loan_idCustomer_Loan', $item->idCustomer_Loan)
-                                        ->where('branch_id', session('branch_id'))
                                         ->where('Installment_Date', '>', date('Y-m-d'))
                                         ->orderBy('Installment_Date', 'asc') // Order by date descending
                                         ->value('Installment_Date'); // Get the last due date
