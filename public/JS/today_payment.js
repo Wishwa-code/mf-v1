@@ -966,7 +966,7 @@ function upload_excel() {
                     for (let i = 0; i < dataFrom5thRow.length; i++) {
                         try {
                             await $.ajax({
-                                url: '/upload-excel-payment',
+                                url: '/upload-excel-customer-id',
                                 method: 'POST',
                                 data: {
                                     row: dataFrom5thRow[i]

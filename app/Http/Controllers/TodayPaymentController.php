@@ -3587,10 +3587,19 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
                 $company_bank
             );
 
+            DB::table('loan_comment')->insert([
+                'comment' => "Extra Loan Document Charges",
+                'loan_id' => $request->loan_id,
+                'user_id' => session('userid'),
+                'date' => now()->toDateString(),
+                'time' => now()->toTimeString(),
+            ]);
+
             DB::commit();
             return response()->json(['status' => 'success']);
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::info($e->getMessage());
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
