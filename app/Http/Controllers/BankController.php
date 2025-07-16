@@ -292,13 +292,16 @@ class BankController extends Controller
         $date_to = date('Y-m-d'); // Current date
         $interest=0.00;
         $panelty=0.00;
+        $interest_bank=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_2')->first();
+        $penelty_bank=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_5')->first();
+        $chargers_bank=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_9')->first();
         $other_chargers=0.00;
         $loan_expenses=0.00;
         $total_income=0.00;
         $total_expenses=0.00;
         $system_expenses=[];
         $system_revenue=[];
-        return view('pages.Accounting.ProfitLoss',compact('date_from','system_expenses','date_to','interest','panelty','other_chargers','loan_expenses','total_income','total_expenses','system_revenue'));
+        return view('pages.Accounting.ProfitLoss',compact('date_from','system_expenses','date_to','interest','panelty','other_chargers','loan_expenses','total_income','total_expenses','system_revenue','interest_bank','penelty_bank','chargers_bank'));
     }
 
 
@@ -312,32 +315,32 @@ class BankController extends Controller
         $date_from_2 = Carbon::parse($date_from)->startOfDay(); // To ensure you're starting from the beginning of the day
 
         // Calculate various values
-        $bank=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_2')->first();
+        $interest_bank=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_2')->first();
 
         $interest_Credit = tableWithBranch('company_bank_has_log','company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('company_bank_has_log.Bank_Account_Id','=',$bank->Idbank)
+            ->where('company_bank_has_log.Bank_Account_Id','=',$interest_bank->Idbank)
             ->sum('Credit');
 
         $interest_Debit = tableWithBranch('company_bank_has_log','company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('company_bank_has_log.Bank_Account_Id','=',$bank->Idbank)
+            ->where('company_bank_has_log.Bank_Account_Id','=',$interest_bank->Idbank)
             ->sum('Debit');
 
         $interest=$interest_Credit-$interest_Debit;
 
 
-        $penelty_system=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_5')->first();
+        $penelty_bank=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_5')->first();
 
         $panelty_Credit = tableWithBranch('company_bank_has_log','company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('company_bank_has_log.Bank_Account_Id','=',$penelty_system->Idbank)
+            ->where('company_bank_has_log.Bank_Account_Id','=',$penelty_bank->Idbank)
             ->where('company_bank_has_log.Type','!=','Penalty')
             ->sum('Credit');
 
         $panelty_Debit = tableWithBranch('company_bank_has_log','company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('company_bank_has_log.Bank_Account_Id','=',$penelty_system->Idbank)
+            ->where('company_bank_has_log.Bank_Account_Id','=',$penelty_bank->Idbank)
             ->where('company_bank_has_log.Type','!=','Penalty')
             ->sum('Debit');
 
@@ -345,16 +348,16 @@ class BankController extends Controller
 
 
         // Calculate various values
-        $chargers=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_9')->first();
+        $chargers_bank=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_9')->first();
 
         $chargers_Credit = tableWithBranch('company_bank_has_log','company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('company_bank_has_log.Bank_Account_Id','=',$chargers->Idbank)
+            ->where('company_bank_has_log.Bank_Account_Id','=',$chargers_bank->Idbank)
             ->sum('Credit');
 
         $chargers_Debit = tableWithBranch('company_bank_has_log','company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('company_bank_has_log.Bank_Account_Id','=',$chargers->Idbank)
+            ->where('company_bank_has_log.Bank_Account_Id','=',$chargers_bank->Idbank)
             ->sum('Debit');
 
         $other_chargers = $chargers_Credit-$chargers_Debit;
@@ -373,11 +376,12 @@ class BankController extends Controller
             ->whereBetween('company_bank_has_log.Date_Time', [$date_from_2, $date_to_2])
             ->select(
                 'company_bank_accounts.Bank_Name',
+                'company_bank_accounts.idbank',
                 DB::raw("SUM(COALESCE(company_bank_has_log.Credit, 0)) as total_credit"),
                 DB::raw("SUM(COALESCE(company_bank_has_log.Debit, 0)) as total_debit"),
                 DB::raw("(SUM(COALESCE(company_bank_has_log.Debit, 0)) - SUM(COALESCE(company_bank_has_log.Credit, 0))) as balance_difference")
             )
-            ->groupBy('company_bank_accounts.Bank_Name')
+            ->groupBy('company_bank_accounts.Bank_Name','company_bank_accounts.idbank')
             ->havingRaw("balance_difference != 0") // Exclude zero balance difference
             ->orderByDesc('balance_difference') // Order by highest difference
             ->get();
@@ -390,18 +394,19 @@ class BankController extends Controller
             ->whereBetween('company_bank_has_log.Date_Time', [$date_from_2, $date_to_2])
             ->select(
                 'company_bank_accounts.Bank_Name',
+                'company_bank_accounts.idbank',
                 DB::raw("SUM(COALESCE(company_bank_has_log.Credit, 0)) as total_credit"),
                 DB::raw("SUM(COALESCE(company_bank_has_log.Debit, 0)) as total_debit"),
                 DB::raw("(SUM(COALESCE(company_bank_has_log.Credit, 0)) - SUM(COALESCE(company_bank_has_log.Debit, 0))) as balance_difference")
             )
-            ->groupBy('company_bank_accounts.Bank_Name')
+            ->groupBy('company_bank_accounts.Bank_Name','company_bank_accounts.idbank')
             ->havingRaw("balance_difference != 0") // Exclude zero balance difference
             ->orderByDesc('balance_difference') // Order by highest difference
             ->get();
 
 
 
-        return view('pages.Accounting.ProfitLoss',compact('date_from','system_expenses','date_to','interest','panelty','other_chargers','loan_expenses','total_income','total_expenses','system_revenue'));
+        return view('pages.Accounting.ProfitLoss',compact('date_from','system_expenses','date_to','interest','panelty','other_chargers','loan_expenses','total_income','total_expenses','system_revenue','interest_bank','penelty_bank','chargers_bank'));
     }
 
     public function profitLog(Request $request){
