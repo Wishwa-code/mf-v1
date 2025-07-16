@@ -345,7 +345,7 @@ class UserController extends Controller
         $todayinstallment = tableWithBranch('customer_loan', 'customer_loan')
             ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
             ->where('installments.Installment_Date', '=', date('Y-m-d'))
-            ->where('customer_loan.Status', '=', 0)
+            ->where('customer_loan.Status', '=', '0')
             ->sum('installments.Total_Balance');
         $todaycollected = tableWithBranch('customer_payments')->where('Date',date('Y-m-d'))->sum('Amount');
 
