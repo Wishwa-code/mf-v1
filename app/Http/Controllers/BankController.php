@@ -326,9 +326,22 @@ class BankController extends Controller
 
         $interest=$interest_Credit-$interest_Debit;
 
-        $panelty = tableWithBranch('Loan_Log')
+
+        $penelty_system=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_5')->first();
+
+        $panelty_Credit = tableWithBranch('company_bank_has_log','company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->sum('Panelty_Payment');
+            ->where('company_bank_has_log.Bank_Account_Id','=',$penelty_system->Idbank)
+            ->where('company_bank_has_log.Type','!=','Penalty')
+            ->sum('Credit');
+
+        $panelty_Debit = tableWithBranch('company_bank_has_log','company_bank_has_log')
+            ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
+            ->where('company_bank_has_log.Bank_Account_Id','=',$penelty_system->Idbank)
+            ->where('company_bank_has_log.Type','!=','Penalty')
+            ->sum('Debit');
+
+        $panelty=$panelty_Credit-$panelty_Debit;
 
 
         // Calculate various values
