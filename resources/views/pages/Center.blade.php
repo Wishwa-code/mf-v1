@@ -37,7 +37,6 @@
                                 <th>Center Name</th>
                                 <th>Contact Number</th>
                                 <th>Address</th>
-                                <th>Center Route</th>
                                 <th>Location</th>
                                 <th>Center In-charge</th>
                                 <th class="text-center">Group Count</th>
@@ -54,7 +53,6 @@
                                     <td>{{$item->Name}}</td>
                                     <td>{{$item->Contact_no}}</td>
                                     <td>{{$item->Address}}</td>
-                                    <td>{{$item->Route}}</td>
                                     <td>{{$item->Location}}</td>
                                     <td>{{$item->Center_incharge}}</td>
                                     <td class="text-center">{{$item->Groups}}</td>
@@ -120,7 +118,7 @@
                                     <label for="simpleinput" class="form-label">Contact Number<span class="required-asterisk">*</span></label>
                                     <input type="text" id="contact" class="form-control">
                                 </div>
-                                <div class="mb-3">
+                                <div class="mb-3" hidden>
                                     <label for="simpleinput" class="form-label">Route<span class="required-asterisk">*</span></label>
                                     <input type="text" id="route" class="form-control">
                                 </div>
@@ -172,7 +170,7 @@
     <script src="assets/vendor/daterangepicker/daterangepicker.js"></script>
     <script src="assets/js/pages/dashboard.js"></script>
     <script src="../JS/validate.js"></script>
-    <script src="../JS/center.js?n=5"></script>
+    <script src="../JS/center.js?n=6"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
     <!-- Select2 JavaScript -->

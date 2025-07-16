@@ -40,7 +40,7 @@ class DataMigrateController extends Controller
             // Insert into new customer_loan table
             DB::table('customer_loan')->insert([
                 'idCustomer_Loan' => $newLoanId,
-                'Loan_No' => 'K/'.$item->Loan_No,
+                'Loan_No' => $item->Loan_No,
                 'Loan_Category_idLoan_Category' => $item->Loan_Category_idLoan_Category,
                 'Customer_idCustomer' => $item->Customer_idCustomer,
                 'Leasing_type' => $item->Leasing_type,
@@ -125,8 +125,8 @@ class DataMigrateController extends Controller
                 '0',
                 $panelty_balance,
                 $item->Interest_Amount,
-                $item->capital_balance,
-                $item->Balance_Amount+$panelty_balance,
+                $item->Amount,
+                $item->Interest_Amount+$item->Amount,
                 '0');
 
 

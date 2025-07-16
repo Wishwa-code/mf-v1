@@ -31,7 +31,7 @@ class SmsController extends Controller
         ]);
         $customer=tableWithBranch('customer')->where('idCustomer',$customer_id)->first();
         try {
-            $company=tableWithBranch('company')->where('branch_id',\session('branch_id'))->first();
+            $company=tableWithBranch('company')->where('branch_id',session('branch_id'))->first();
             $branch_code=$company->id ?? 0;
 
             $newTransactionId = intval(

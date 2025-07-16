@@ -66,7 +66,7 @@ class TodayPaymentController extends Controller
             $loanQuery->join('collector_has_route', 'customer.route_id', '=', 'collector_has_route.route_id')
                 ->where('collector_has_route.collector_id', '=', $user_id);
         }
-        $loanQuery->orderBy('customer_loan.Loan_No', 'asc'); // Add this line to order by loan number
+        $loanQuery->orderBy('customer_loan.idCustomer_Loan', 'asc'); // Add this line to order by loan number
 
         $loan = $loanQuery->get();
         $route = tableWithBranch('route', 'route')
@@ -104,6 +104,7 @@ class TodayPaymentController extends Controller
             $loanQuery->join('collector_has_route', 'customer.route_id', '=', 'collector_has_route.route_id')
                 ->where('collector_has_route.collector_id', '=', $user_id);
         }
+        $loanQuery->orderBy('customer_loan.idCustomer_Loan', 'asc'); // Add this line to order by loan number
         $loan = $loanQuery->get();
         return view('pages.BulkPayment', compact('group','loan', 'route', 'center', 'customers', 'company'));
     }
@@ -418,7 +419,15 @@ class TodayPaymentController extends Controller
         $user_id = (int)session('userid');
 
         $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
-        $collector = $collector_val->collector;
+        $collector='0';
+        $bank_id = DB::table('company_bank_accounts')
+            ->where('branch_id', session('branch_id'))
+            ->whereRaw('LOWER(Account_No) = ?', ['cash'])  // Case-insensitive comparison
+            ->value('Idbank');
+        if ($collector_val){
+            $collector = $collector_val->collector;
+            $bank_id=tableWithBranch('company_bank_accounts')->where('Account_No', '=', $user_id)->value('Idbank');
+        }
 
 
         $recovery_officer = $request->has('recovery') && !empty($request->recovery) ? $request->recovery : '0';
@@ -469,16 +478,29 @@ class TodayPaymentController extends Controller
             ->leftJoinSub($lastPaymentSubquery, 'last_payment', function($join) {
                 $join->on('customer_loan.idCustomer_Loan', '=', 'last_payment.Customer_Loan_idCustomer_Loan');
             })
-            ->leftJoin('customer_payments as cp', function($join) {
-                $join->on('customer_loan.idCustomer_Loan', '=', 'cp.Customer_Loan_idCustomer_Loan')
-                    ->on('cp.Date', '=', 'last_payment.last_payment_date');
-            })
-
+            ->leftJoin(DB::raw('
+    (
+        SELECT
+            cp1.Customer_Loan_idCustomer_Loan,
+            MAX(cp1.Amount) AS Amount,
+            MAX(cp1.Date) AS Date
+        FROM customer_payments cp1
+        INNER JOIN (
+            SELECT Customer_Loan_idCustomer_Loan, MAX(Date) as MaxDate
+            FROM customer_payments
+            GROUP BY Customer_Loan_idCustomer_Loan
+        ) cp2
+        ON cp1.Customer_Loan_idCustomer_Loan = cp2.Customer_Loan_idCustomer_Loan
+        AND cp1.Date = cp2.MaxDate
+        GROUP BY cp1.Customer_Loan_idCustomer_Loan
+    ) as cp
+'), 'customer_loan.idCustomer_Loan', '=', 'cp.Customer_Loan_idCustomer_Loan')
             ->select(
                 'customer.First_Name as customer_name',
                 'customer.Last_Name as customer_lastname',
                 'loan_category.saving_payment as saving_payment',
                 'customer.Nic as NIC',
+                'customer.cus_number as cus_number',
                 'customer.route_id',
                 'customer.idCustomer',
                 'customer_loan.Loan_No as Loan_No',
@@ -496,10 +518,10 @@ class TodayPaymentController extends Controller
                 'installment_summary.Total_Balance_until',
                 'installment_summary.Today_installment',
                 'installment_summary.arrease',
-                 DB::raw('COALESCE(center.idCenter, "No Center") as Center_ID'),
-                 DB::raw('IFNULL(center.Name, "-") as center_no'),
-                 DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
-                DB::raw('IFNULL(last_payment.last_payment_date, "-") as Last_Payment_Date'),
+                DB::raw('COALESCE(center.idCenter, "No Center") as Center_ID'),
+                DB::raw('IFNULL(center.Name, "-") as center_no'),
+                DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
+                DB::raw('IFNULL(cp.Date, "-") as Last_Payment_Date'),
                 DB::raw('IFNULL(cp.Amount, 0) as Last_Payment_Amount'),
                 DB::raw('(customer_loan.Balance_Amount + installment_summary.Panalty_Balance) as Balance_With_Penalty'),
             )
@@ -531,8 +553,12 @@ class TodayPaymentController extends Controller
             $loanQuery->where('customer_loan.lending_officer_id', '=', $lending_officer);
         }
         if ($collector == 1) {
-            $loanQuery->join('collector_has_route', 'customer.route_id', '=', 'collector_has_route.route_id')
-                ->where('collector_has_route.collector_id', '=', $user_id);
+            $loanQuery->whereExists(function ($query) use ($user_id) {
+                $query->select(DB::raw(1))
+                    ->from('collector_has_route')
+                    ->whereColumn('collector_has_route.route_id', 'customer.route_id')
+                    ->where('collector_has_route.collector_id', '=', $user_id);
+            });
         }
 
         // Apply status-specific filters
@@ -549,63 +575,12 @@ class TodayPaymentController extends Controller
         if ($loan_number != '0') {
             $loanQuery->where('customer_loan.idCustomer_Loan', '=', $loan_number);
         }
-        $loanQuery->orderBy('customer_loan.idCustomer_Loan', 'asc'); // Add this line to order by loan number
+
         // Paginate the loans
+        $loanQuery->distinct('customer_loan.idCustomer_Loan');
         $loan = $loanQuery->paginate(500);
-        $loanQuery_2 = DB::table('installments')
-            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
-            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
-            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
-            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
-            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
-            ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
-            ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
-            ->select(
-                'Customer_Loan_idCustomer_Loan',
-                DB::raw('COUNT(idInstallments) as Calculated_Installment_Count'),
-                DB::raw('SUM(Total_Balance) as Total_Balance'),
-                DB::raw('SUM(Paid_Amount) as Total_Paid_Amount'),
-                DB::raw('SUM(CASE WHEN Installment_Date <= CURDATE() THEN Total_Balance ELSE 0 END) as Total_Balance_until'),
-                DB::raw('SUM(CASE WHEN Installment_Date = CURDATE() THEN Total_Balance ELSE 0 END) as Today_installment'),
-                DB::raw('SUM(CASE WHEN Installment_Date < CURDATE() THEN Total_Balance ELSE 0 END) as arrease'),
-                DB::raw('COALESCE(center.idCenter, "No Center") as Center_ID') // Handle NULL values
-            )
-            ->where('installments.branch_id','=',session('branch_id'))
-            ->groupBy('Customer_Loan_idCustomer_Loan','center.idCenter');
-        if ($collector == 1) {
-            $loanQuery_2->join('collector_has_route', 'customer.route_id', '=', 'collector_has_route.route_id')
-                ->where('collector_has_route.collector_id', '=', $user_id);
-        }
-        if ($center_details != '0') {
-            $loanQuery_2->where('center.idCenter', '=', $center_details);
-        }else{
-            $loanQuery_2->where(function ($query) use ($center_details) {
-                $query->where('center.idCenter', '=', $center_details)
-                    ->orWhereNull('center.idCenter'); // Include customers with no center
-            });
-        }
-        if ($route != '0') {
-            $loanQuery_2->where('customer.route_id', '=', $route);
-        }
-        if ($group != '0') {
-            $loanQuery_2->where('customer_group.idCustomer_Group', '=', $group);
-        }
-        if ($customer != '0') {
-            $loanQuery_2->where('customer.idCustomer', '=', $customer);
-        }
-        if ($recovery_officer != '0') {
-            $loanQuery_2->where('customer_loan.collector_id', '=', $recovery_officer);
-        }
-        if ($lending_officer != '0') {
-            $loanQuery_2->where('customer_loan.lending_officer_id', '=', $lending_officer);
-        }
 
-        $gettotal = $loanQuery_2->get();
-
-
-
-
-        return response()->json(['item' => $loan, 'message' => 'all', 'gettotal' => $gettotal], 200);
+        return response()->json(['item' => $loan, 'message' => 'all','collector' => $collector,'bank_id' => $bank_id], 200);
     }
 
     public function create_view($id){
@@ -656,6 +631,7 @@ class TodayPaymentController extends Controller
         $chq_type= $request->chq_type ?? '0';
         $name_on_cheque= $request->name_on_cheque ?? '0';
         $chq_date= $request->chq_date ?? '0';
+        $sms_status= $request->sms ?? '0';
 
 
         if ($request->extraAmount > 0){
@@ -1234,6 +1210,35 @@ class TodayPaymentController extends Controller
                 if ($enable_saving_process == "Yes") {
                     $this->SavingAccountController->index($saving_account->id, 'Deposit', 'Payment', $Saving_balance_tot_paid, '0.00', $Saving_balance_tot_paid, 'Credit',$savedId);
                 }
+
+                $customer_payment = DB::table('customer_payments')->where('idCustomer_Payments', '=', $savedId)->first();
+                $loan = DB::table('customer_loan')->where('idCustomer_Loan', '=', $loan_id)->first();
+                $sms_template = DB::table('sms_template')->where('type', '=', 'loan_payment')->where('status', '=', '1')->first();
+                if ($sms_template) {
+                    $customer = DB::table('customer')->where('idCustomer', '=', $loan->Customer_idCustomer)->first();
+                    $placeholders = [
+                        '@Member_No@' => $customer->cus_number,
+                        '@Member_Name@' => $customer->First_Name . ' ' . $customer->Last_Name,
+                        '@Loan_No@' => $loan->Loan_No,
+                        '@Payment_Date@' => $customer_payment->Date,
+                        '@Paid_Amount@' => number_format($customer_payment->Amount, 2, '.', ','),
+                        '@Loan_Balance@' => number_format($loan->Balance_Amount, 2, '.', ','),
+                        '@Capital_Balance@' => number_format($loan->capital_balance, 2, '.', ','),
+                    ];
+
+                    // Step 3: Replace placeholders in the loan_format
+                    $loan_number_txt = $sms_template->template;
+                    foreach ($placeholders as $placeholder => $value) {
+                        $loan_number_txt = str_replace($placeholder, $value, $loan_number_txt);
+                    }
+                    Log::info($sms_status);
+                    if ($sms_status == '1') {
+                        $this->smsLogController->index($loan->Customer_idCustomer, $loan_number_txt, "Customer Loan Payment");
+                    }
+
+                }
+
+
                 return response()->json(['item' => 'sucess', 'id' => '1', 'test' => "1", 'payment_id' => $savedId], 200);
 
             } else if ($type === "Draft") {
@@ -2810,6 +2815,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
 
 
             if ($status == '1') {
+                Log::info("janith");
 // Log the SMS message
                 $this->smsLogController->index($loan->Customer_idCustomer, $loan_number_txt, "Customer Loan Payment");
             }
@@ -3586,10 +3592,19 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
                 $company_bank
             );
 
+            DB::table('loan_comment')->insert([
+                'comment' => "Extra Loan Document Charges",
+                'loan_id' => $request->loan_id,
+                'user_id' => session('userid'),
+                'date' => now()->toDateString(),
+                'time' => now()->toTimeString(),
+            ]);
+
             DB::commit();
             return response()->json(['status' => 'success']);
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::info($e->getMessage());
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }

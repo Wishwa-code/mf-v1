@@ -133,7 +133,7 @@
                                         </select>
                                     </div>
 
-                                    <div class="mb-3" id="customer_feild">
+                                    <div class="mb-3" id="customer_feild" hidden>
                                         <label for="simpleinput" class="form-label">Loan Number</label>
                                         <input type="text" id="type_loan_number" class="form-control">
                                     </div>
@@ -813,7 +813,7 @@
                                                             <option value="4">Thursday</option>
                                                             <option value="5">Friday</option>
                                                             <option value="6">Saturday</option>
-                                                            <option value="7">Sunday</option>
+                                                            <option value="0">Sunday</option>
                                                         </select>
 
                                                     </div>

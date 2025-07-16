@@ -315,13 +315,13 @@ class GuardianController extends Controller
         if ($type === "1") {
             $guardian = tableWithBranch('guardian')
                 ->where('idGuardian', $id)
-                ->select('First_Name','Last_Name','Nic','Address as Address_01','Address_02 as Address_02','Address_03 as Address_03')
+                ->select('First_Name','Last_Name','Nic','Address as Address_01','Address_02 as Address_02','Address_03 as Address_03','Contact_No as Contact_No')
                 ->get();
             return response()->json(['customer' => $guardian], 200);
         } else {
             $customer = tableWithBranch('customer','customer')
                 ->leftJoin('group_has_customer','group_has_customer.cus_id','customer.idCustomer')
-                ->select('First_Name','Last_Name','Nic','Address as Address_01','Address_02 as Address_02','Address_03 as Address_03')
+                ->select('First_Name','Last_Name','Nic','Address as Address_01','Address_02 as Address_02','Address_03 as Address_03','Contact_No as Contact_No')
                 ->where('idCustomer', $id)
                 ->get();
             return response()->json(['customer' => $customer], 200);

@@ -271,6 +271,7 @@
 
         </div>
         </div>
+        <button id="startLoanProcess" hidden>Start Processing Loans</button>
     @endif
 @endsection
 
@@ -481,6 +482,70 @@
             "show_popup_button": true,
             "popup_width": "1000",
             "popup_height": "650"
+        });
+    </script>
+    <script>
+        $('#startLoanProcess').on('click', function () {
+            $.get('/get-loan-ids', function (data) {
+                const loanIds = data.loan_ids;
+                const total = loanIds.length;
+                let index = 0;
+
+                // Start with a Swal loading popup
+                Swal.fire({
+                    title: 'Processing Loans...',
+                    html: `<div style="font-size:14px;">Please wait while we process ${total} loans.</div>
+                       <div id="swal-progress" style="margin-top:15px; background:#eee; border-radius:4px; overflow:hidden;">
+                           <div id="swal-progress-bar" style="height:15px; width:0%; background:#4caf50;"></div>
+                       </div>
+                       <div style="margin-top:10px; font-size:13px;">
+                           <span id="swal-count">0/${total}</span>
+                       </div>`,
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        processNextLoan();
+                    }
+                });
+
+                function updateProgress() {
+                    const percentage = Math.round((index / total) * 100);
+                    $('#swal-progress-bar').css('width', percentage + '%');
+                    $('#swal-count').text(`${index}/${total}`);
+                }
+
+                function processNextLoan() {
+                    if (index >= total) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'All loans processed!',
+                            text: `${total} loans have been successfully updated.`,
+                            confirmButtonText: 'OK'
+                        });
+                        return;
+                    }
+
+                    const loan_id = loanIds[index];
+
+                    $.ajax({
+                        url: '/loan_log/' + loan_id,
+                        method: 'GET',
+                        success: function (res) {
+                            console.log(`Loan ${loan_id}: `, res.message);
+                            index++;
+                            updateProgress();
+                            processNextLoan();
+                        },
+                        error: function (xhr) {
+                            console.error(`Loan ${loan_id} failed: `, xhr.responseText);
+                            index++;
+                            updateProgress();
+                            processNextLoan(); // Continue even on failure
+                        }
+                    });
+                }
+            });
         });
     </script>
 

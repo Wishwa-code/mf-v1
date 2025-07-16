@@ -92,76 +92,71 @@
     </style>
     <style>
         @media print {
-            body {
-                margin: 0;
-                padding: 0;
-                font-size: 10px;
+            @page {
+                size: A4 landscape;
+                margin: 0.5in;
+                counter-increment: page;
+            }
+
+
+
+            .page-break {
+                page-break-after: always;
+            }
+
+            .group-row {
+                height: 30px !important;
+                overflow: hidden;
+            }
+
+            .fixed-name {
+                max-width: 150px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .paid-amount {
+                width: 80px;
+            }
+
+            .correct-column {
+                width: 30px;
             }
 
             #repaymentTable {
                 width: 100%;
-                table-layout: fixed;
                 border-collapse: collapse;
-                font-size: 9px;
-
-            }
-            td, th {
-                word-break: break-word;
+                table-layout: fixed;
             }
 
             #repaymentTable th,
             #repaymentTable td {
-                border: 1px solid #000;
-                padding: 5px;
-                word-wrap: break-word;
-
+                border: 1px solid black;
+                padding: 4px;
+                text-align: center;
+                word-break: break-word;
             }
 
-            .attendance-cell {
-                width: 20px;
-                height: 20px;
-            }
-
-            @page {
-                size: auto; /* let the browser decide: supports both portrait & landscape */
-                margin: 0.5in;
-            }
-
-            .page-title, .btn, .select2, form {
-                display: none !important; /* hide UI for printing */
+            .btn, form, .select2, .page-title, .no-print {
+                display: none !important;
             }
         }
-
-
-        .attendance-cell {
-            border: 1px solid black;
-            width: 25px;
-            height: 25px;
+        @media print {
+            .print-footer {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                font-size: 11px;
+                color: black;
+                display: flex;
+                justify-content: space-between;
+                padding: 5px 30px;
+                background-color: white;
+                border-top: 1px solid #000;
+            }
         }
-
-        #repaymentTable {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-
-        #repaymentTable th,
-        #repaymentTable td {
-            border: 1px solid black;
-            text-align: center;
-            padding: 6px;
-            vertical-align: middle;
-        }
-
-        #repaymentTable thead th {
-            background-color: #f1f1f1;
-            font-weight: bold;
-        }
-
-        #repaymentTable tbody tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-
 
     </style>
 
@@ -249,81 +244,75 @@
                                     <th rowspan="2">Loan Amount</th>
                                     <th rowspan="2">Due Installment</th>
                                     <th rowspan="2">New Loan Amount</th>
-                                    @for ($i = 1; $i <= 6; $i++)
+                                    @for ($i = 1; $i < 6; $i++)
                                         <th colspan="2">Date</th>
                                     @endfor
                                 </tr>
                                 <tr>
-                                    @for ($i = 1; $i <= 6; $i++)
-                                        <th>Paid Amount</th>
+                                    @for ($i = 1; $i < 6; $i++)
+                                        <th>Paid</th>
                                         <th>Correct</th>
                                     @endfor
                                 </tr>
                                 </thead>
                                 <tbody>
-                                <!-- Sample Row -->
-                                @foreach($grouped_loans as $group_name => $group)
-                                    <tr><td colspan="17" style="text-align:left;"><strong>Group No: {{ $group_name }}</strong></td></tr>
-                                    @php
-                                        $groupLoanAmount = $group->sum('Loan_Amount');
-                                        $groupDueAmount = $group->sum('Installment_Amount');
-                                        $groupBalance = $group->sum('Balance_Amount');
-                                    @endphp
-
-                                    @foreach($group as $item)
-                                        <tr>
-                                            <td>{{ $item->Loan_No }}</td>
-                                            <td>{{ $item->name_with_initials }}</td>
-                                            <td>{{ number_format($item->Loan_Amount, 2) }}</td>
-                                            <td>{{ number_format($item->Installment_Amount, 2) }}</td>
-                                            <td>{{ number_format($item->Balance_Amount, 2) }}</td>
-                                            @for ($i = 1; $i <= 6; $i++)
-                                                <td></td><td></td>
-                                            @endfor
+                                @foreach($grouped_loans->chunk(2) as $groupPair)
+                                    <tbody class="page-break">
+                                    @foreach($groupPair as $group_name => $group)
+                                        <tr><td colspan="15"><strong>Group No: {{ $group_name }}</strong></td></tr>
+                                        @foreach($group as $item)
+                                            <tr class="group-row">
+                                                <td>{{ $item->Loan_No }}</td>
+                                                <td class="fixed-name">{{ $item->name_with_initials }}</td>
+                                                <td>{{ number_format($item->Loan_Amount, 2) }}</td>
+                                                <td>{{ number_format($item->Installment_Amount, 2) }}</td>
+                                                <td>{{ number_format($item->Balance_Amount, 2) }}</td>
+                                                @for ($i = 1; $i < 6; $i++)
+                                                    <td class="paid-amount"></td>
+                                                    <td class="correct-column"></td>
+                                                @endfor
+                                            </tr>
+                                        @endforeach
+                                        <tr class="group-row" style="font-weight: bold;">
+                                            <td colspan="2">Group Total</td>
+                                            <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
+                                            <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
+                                            <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
+                                            <td colspan="10"></td>
                                         </tr>
+                                        {{-- Empty 7 Rows --}}
+                                        @for ($j = 0; $j < 7; $j++)
+                                            <tr class="group-row">
+                                                @for ($k = 0; $k < 15; $k++)
+                                                    <td>&nbsp;</td>
+                                                @endfor
+                                            </tr>
+                                        @endfor
                                     @endforeach
-
-                                    <tr style="font-weight: bold;">
-                                        <td colspan="2">Group Total</td>
-                                        <td>{{ number_format($groupLoanAmount, 2) }}</td>
-                                        <td>{{ number_format($groupDueAmount, 2) }}</td>
-                                        <td>{{ number_format($groupBalance, 2) }}</td>
-                                        <td colspan="12"></td>
-                                    </tr>
-
-                                    {{-- Add 5 empty rows --}}
-                                    @for ($j = 0; $j < 5; $j++)
-                                        <tr>
-                                            @for ($k = 0; $k < 17; $k++)
-                                                <td>&nbsp;</td>
-                                            @endfor
-                                        </tr>
-                                    @endfor
-
-                                @endforeach
-
-
-                                <!-- Summary Rows -->
-                                <tr><td colspan="5"><strong>Cumulative Collection</strong></td><td colspan="12"></td></tr>
-                                <tr><td colspan="5"><strong>Cumulative Due</strong></td><td colspan="12"></td></tr>
-                                <tr><td colspan="5"><strong>Total</strong></td><td colspan="12"></td></tr>
-                                <tr><td colspan="5">No of Under Payment</td><td colspan="12"></td></tr>
-                                <tr><td colspan="5">Amount</td><td colspan="12"></td></tr>
-                                <tr><td colspan="5">No of Not Paid</td><td colspan="12"></td></tr>
-                                <tr><td colspan="5">Amount</td><td colspan="12"></td></tr>
-                                <tr><td colspan="5">No of Settlement</td><td colspan="12"></td></tr>
-                                <tr><td colspan="17" style="padding-top: 40px;"><strong>Full Signature Center Manager</strong></td></tr>
-                                </tbody>
+                                    </tbody>
+                                    @endforeach
+                                    </tbody>
                             </table>
 
 
+
                         </div>
+
 
                     </div> <!-- end card-body -->
                 </div> <!-- end card -->
             </div> <!-- end col -->
         </div> <!-- end row -->
     </div> <!-- end container-fluid -->
+    <div class="print-footer">
+        <div class="left">
+            Company: Asipiya Holdings | Center No: {{ $center_no }} | Center Name: {{ $center_name }}
+        </div>
+        <div class="right">
+            Printed by: {{ $printedBy }} on {{ $printedAt }} | Page <span class="page-number"></span>
+        </div>
+    </div>
+
     @php
         $printedBy = session('Full_Name');
         $printedAt = now()->format('Y-m-d h:i A');
@@ -444,12 +433,6 @@
                 const printWindow = window.open('', '', 'height=800,width=1200');
                 const printContent = document.getElementById('repaymentTable').outerHTML;
 
-                printWindow.document.write(`<div style="margin-top:10px;text-align:right;font-size:10px;">
-Printed By: {{ $printedBy }}<br>
-Printed On: {{ $printedAt }}
-                </div>`);
-
-
                 printWindow.document.write('<html><head><title>Repayment Sheet</title>');
                 printWindow.document.write('<style>');
                 printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 9px; zoom: 80%; margin: 0.5in; }');
@@ -493,7 +476,32 @@ Printed On: {{ $printedAt }}
                 printWindow.print();
             });
         });
+
+
     </script>
+    <script>
+        window.addEventListener('beforeprint', function () {
+            const existing = document.querySelectorAll('.print-footer');
+            existing.forEach(e => e.remove());
+
+            const footer = document.createElement('div');
+            footer.className = 'print-footer';
+
+            const left = document.createElement('div');
+            left.className = 'left';
+            left.innerHTML = "Company: Asipiya Holdings | Center No: {{ $center_no }} | Center Name: {{ $center_name }}";
+
+            const right = document.createElement('div');
+            right.className = 'right';
+            right.innerHTML = "Printed by: {{ $printedBy }} on {{ $printedAt }} | Page 1";
+
+            footer.appendChild(left);
+            footer.appendChild(right);
+
+            document.body.appendChild(footer);
+        });
+    </script>
+
 
 @endsection
 

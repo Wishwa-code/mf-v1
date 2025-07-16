@@ -1148,7 +1148,7 @@
 @section('script')
 
      <script src="../JS/validate.js"></script>
-    <script src="../JS/today_payment.js?n=25"></script>
+    <script src="../JS/today_payment.js?n=27"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         $(document).ready(function() {

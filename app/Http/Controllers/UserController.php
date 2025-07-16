@@ -788,8 +788,8 @@ class UserController extends Controller
             'desi_level' => $request->desi_level,
             'loan_creat' => $request->loan_create,
             'loan_issue' => $request->loan_approve,
-            'max_create_amount' => $request->max_amount_create,
-            'max_issue_amount' => $request->max_amount_approve,
+            'max_create_amount' => str_replace(',', '', $request->max_amount_create),
+            'max_issue_amount' => str_replace(',', '', $request->max_amount_approve),
             'branch_id' => session('branch_id')
         ]);
         if ($designation){
