@@ -733,15 +733,38 @@ class ChartOfAccountController extends Controller
 
         $interest=$interest_Credit-$interest_Debit;
 
-        $panelty = tableWithBranch('Loan_Log')
-            ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->sum('Panelty_Payment');
 
-        // Get the sum of Amount
-        $other_chargers = tableWithBranch('company_bank_has_log')
+        $penelty_system=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_5')->first();
+
+        $panelty_Credit = tableWithBranch('company_bank_has_log','company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('Type', '=', 'Loan Document Chargers')
+            ->where('company_bank_has_log.Bank_Account_Id','=',$penelty_system->Idbank)
+            ->where('company_bank_has_log.Type','!=','Penalty')
+            ->sum('Credit');
+
+        $panelty_Debit = tableWithBranch('company_bank_has_log','company_bank_has_log')
+            ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
+            ->where('company_bank_has_log.Bank_Account_Id','=',$penelty_system->Idbank)
+            ->where('company_bank_has_log.Type','!=','Penalty')
             ->sum('Debit');
+
+        $panelty=$panelty_Credit-$panelty_Debit;
+
+
+        // Calculate various values
+        $chargers=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_9')->first();
+
+        $chargers_Credit = tableWithBranch('company_bank_has_log','company_bank_has_log')
+            ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
+            ->where('company_bank_has_log.Bank_Account_Id','=',$chargers->Idbank)
+            ->sum('Credit');
+
+        $chargers_Debit = tableWithBranch('company_bank_has_log','company_bank_has_log')
+            ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
+            ->where('company_bank_has_log.Bank_Account_Id','=',$chargers->Idbank)
+            ->sum('Debit');
+
+        $other_chargers = $chargers_Credit-$chargers_Debit;
 
         $total_income = tableWithBranch('expences')
             ->whereBetween('date', [$date_from_2, $date_to_2])

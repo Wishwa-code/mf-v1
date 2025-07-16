@@ -132,9 +132,14 @@ class CustomerController extends Controller
 
 
 // Step 3: Generate next customer ID
-            $last_customer_id = tableWithBranch('customer')->max('idCustomer') ?? 0;
-            $next_customer_id = $last_customer_id + 1;
+            $total_customer_count = tableWithBranch('customer')->count() ?? 0;
+
+// Increment by 1
+            $next_customer_id = $total_customer_count + 1;
+
+// Format as 3-digit string (001, 002, etc.)
             $formatted_customer_id = str_pad($next_customer_id, 3, '0', STR_PAD_LEFT);
+
 
 // Step 4: Start building new customer number from template
             $new_type = $cus_number_template;

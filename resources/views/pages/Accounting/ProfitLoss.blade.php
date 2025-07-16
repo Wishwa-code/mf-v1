@@ -235,19 +235,17 @@
                 <tr>
                     <td class="ps-3">Revenue From Loans</td>
                 </tr>
-                <tr class="interest-on-loans" style="cursor: pointer;">
-                    <td class="ps-5">
-                        <a href="javascript:void(0);">Interest on Loans</a>
-                    </td>
+                <tr style="cursor: pointer;" onclick="openFinancialReportModal('{{ $interest_bank->Idbank }}', '{{ $interest_bank->Bank_Name }}')">
+                    <td class="ps-5">Interest on Loans</td>
                     <td>{{ number_format($interest,2,'.',',') }}</td>
                 </tr>
 
 
-                <tr>
+                <tr style="cursor: pointer;" onclick="openFinancialReportModal('{{ $penelty_bank->Idbank }}', '{{ $penelty_bank->Bank_Name }}')">
                     <td class="ps-5">Penalty on Loans</td>
                     <td>{{ number_format($panelty,2,'.',',') }}</td>
                 </tr>
-                <tr>
+                <tr style="cursor: pointer;" onclick="openFinancialReportModal('{{ $chargers_bank->Idbank }}', '{{ $chargers_bank->Bank_Name }}')">
                     <td class="ps-5">Other Charges On Loans</td>
                     <td>{{ number_format($other_chargers,2,'.',',') }}</td>
                 </tr>
@@ -261,11 +259,11 @@
                 @if (!empty($system_revenue) && is_iterable($system_revenue))
                     @foreach ($system_revenue as $revenue)
                         @php
-                            $total_difference_revenue += $revenue->balance_difference; // Running total of balance differences
+                            $total_difference_revenue += $revenue->balance_difference;
                         @endphp
-                        <tr>
+                        <tr style="cursor: pointer;" onclick="openFinancialReportModal('{{ $revenue->idbank }}', '{{ $revenue->Bank_Name }}')">
                             <td class="ps-5">{{ $revenue->Bank_Name }}</td>
-                            <td>{{ number_format($revenue->balance_difference,2,'.',',') }}</td> {{-- Show only the difference --}}
+                            <td>{{ number_format($revenue->balance_difference,2,'.',',') }}</td>
                         </tr>
                     @endforeach
                 @endif
@@ -289,7 +287,7 @@
                         @php
                             $total_difference += $expense->balance_difference; // Running total of balance differences
                         @endphp
-                        <tr>
+                        <tr style="cursor: pointer;" onclick="openFinancialReportModal('{{ $expense->idbank }}', '{{ $expense->Bank_Name }}')">
                             <td class="ps-3">{{ $expense->Bank_Name }}</td>
                             <td>{{ number_format($expense->balance_difference,2,'.',',') }}</td> {{-- Show only the difference --}}
                         </tr>
@@ -344,7 +342,35 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="financialReportModal" tabindex="-1" role="dialog" aria-labelledby="financialReportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="financialReportModalLabel">Financial Report</h5>
+                </div>
+                <div class="modal-body">
+                    <table id="financialReportTable" class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th style="text-align: left">Id</th>
+                            <th style="text-align: left">Type</th>
+                            <th style="text-align: left">Description</th>
+                            <th style="text-align: right">Debit Amount</th>
+                            <th style="text-align: right">Credit Amount</th>
+                            <th style="text-align: right">Balance</th>
+                            <th style="text-align: right">Contra Account</th>
+                            <th style="text-align: right">Reconciliation No</th>
+                            <th style="text-align: right">Created At</th>
+                        </tr>
+                        </thead>
+                        <tbody>
 
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
 @endsection
 
@@ -560,6 +586,89 @@
             document.body.innerHTML = originalContents;
         }
 
+    </script>
+    <script>
+
+        function openFinancialReportModal(idbank, bankName) {
+            $('#financialReportModalLabel').text('Financial Report for - ' + bankName);
+            $('#financialReportModal').modal('show');
+
+            var financialReportTable = $('#financialReportTable');
+
+            if ($.fn.dataTable.isDataTable(financialReportTable)) {
+                financialReportTable.DataTable().clear().destroy();
+            }
+
+            $('#financialReportTable tbody').empty();  // 🟢 Clear previous rows explicitly
+
+            var date_from = $("#date_from").val();
+            var date_to = $("#date_to").val();
+
+            $.ajax({
+                url: '/get-financial-full-report',
+                type: 'POST',
+                data: {
+                    account_id: idbank,
+                    date_from: date_from,
+                    date_to: date_to
+                },
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function (data) {
+                    data.forEach(function (item) {
+                        var row = `
+                    <tr>
+                        <td style="text-align: left">${item.id}</td>
+                        <td style="text-align: left">${item.Type || 'N/A'}</td>
+                        <td style="text-align: left">${item.Description || 'N/A'}</td>
+                        <td style="text-align: right">${formatNumber(parseFloat(item.Debit).toFixed(2) || 0)}</td>
+                        <td style="text-align: right">${formatNumber(parseFloat(item.Credit).toFixed(2) || 0)}</td>
+                        <td style="text-align: right">${formatNumber(parseFloat(item.Balance).toFixed(2) || 0)}</td>
+                        <td style="text-align: right">${item.Account_Name ?? '-'}</td>
+                        <td style="text-align: right">${item.reconsilation_status || 'N/A'}</td>
+                        <td style="text-align: right">${item.Date_Time || 'N/A'}</td>
+                    </tr>
+                `;
+                        $('#financialReportTable tbody').append(row);
+                    });
+
+                    $('#financialReportTable').DataTable({
+                        destroy: true,
+                        dom: 'Bfrtip',
+                        buttons: [
+                            {
+                                extend: 'excelHtml5',
+                                text: 'Download Excel',
+                                title: 'Ledger Details',
+                                className: 'btn btn-success'
+                            }
+                        ],
+                        order: [[0, 'asc']],
+                        columnDefs: [
+                            {
+                                orderable: true,
+                                targets: 0
+                            },
+                            {
+                                orderable: false,
+                                targets: '_all'
+                            }
+                        ]
+                    });
+                },
+                error: function (xhr) {
+                    console.error("AJAX error:", xhr.responseText);
+                    alert("Error fetching financial report. Check console for details.");
+                }
+            });
+        }
+
+
+        // Function to format numbers with commas
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
     </script>
 
 @endsection
