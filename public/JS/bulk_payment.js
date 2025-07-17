@@ -4,6 +4,22 @@ $(function () {
 });
 
 let inputDataStore = {}; // Object to store input data
+// 1️⃣ Global delegated event handler for `.amount-input`
+$(document).on("input", ".amount-input", function () {
+    let entered = parseFloat($(this).val()) || 0;
+    let max = parseFloat($(this).data("balance")) || 0;
+
+    if (entered > max) {
+        Swal.fire({
+            icon: "error",
+            title: "Invalid Payment Amount",
+            text: `Entered amount (${entered.toFixed(2)}) exceeds balance (${max.toFixed(2)}).`,
+        });
+        $(this).val("");
+    }
+
+    updateTotalEnteredAmount();
+});
 
 function load_payment_table(page = 1) {
     let center_details = $("#center_details").val();
@@ -113,21 +129,8 @@ function load_payment_table(page = 1) {
                 // Update total today installment amount
                 $('#tot_amount').text(tot.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
-                $(".amount-input").on("input", function () {
-                    let entered = parseFloat($(this).val()) || 0;
-                    let max = parseFloat($(this).data("balance")) || 0;
 
-                    if (entered > max) {
-                        Swal.fire({
-                            icon: "error",
-                            title: "Invalid Payment Amount",
-                            text: `Entered amount (${entered.toFixed(2)}) exceeds balance (${max.toFixed(2)}).`,
-                        });
-                        $(this).val(""); // Clear invalid input
-                    }
 
-                    updateTotalEnteredAmount();
-                });
 
 
                 // Initial calculation in case prefilled values exist
