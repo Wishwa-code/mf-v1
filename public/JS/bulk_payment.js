@@ -1,8 +1,3 @@
-$(function () {
-
-    load_payment_table();
-});
-
 let inputDataStore = {}; // Object to store input data
 // 1️⃣ Global delegated event handler for `.amount-input`
 $(document).on("input", ".amount-input", function () {
@@ -22,6 +17,7 @@ $(document).on("input", ".amount-input", function () {
 });
 
 function load_payment_table(page = 1) {
+    console.log('load_payment_table called with page:', page);
     let center_details = $("#center_details").val();
     let group = $("#group").val();
     let customer = $("#customer_id").val();

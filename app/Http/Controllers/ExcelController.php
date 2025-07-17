@@ -201,7 +201,7 @@ class ExcelController extends Controller
                 $center = tableWithBranch('center')->where('Name', '=', $center_name)->first();
                 if (!$center) {
                     $centerData = [
-                        'No' => $center_no,
+                        'No' => $center_name,
                         'Name' => $center_name,
                         'Contact_no' => '-',
                         'Address' => '-',
@@ -783,7 +783,7 @@ class ExcelController extends Controller
     {
         $row = $request->input('row'); // Each row sent as 'row' from frontend
 
-        if (!isset($row[0], $row[1], $row[4])) {
+        if (!isset($row[0], $row[1], $row[3])) {
             return response()->json(['message' => 'Invalid data'], 400);
         }
 
@@ -794,7 +794,7 @@ class ExcelController extends Controller
         } else {
             $date = date('Y-m-d', strtotime($excelDate));
         }
-        $amount = $row[4];
+        $amount = $row[3];
         $saving_amount = '0';
 
         if ($amount <= 0) {

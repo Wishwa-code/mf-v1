@@ -280,7 +280,7 @@
                             <div class="col-lg-3">
                                 <div class="mb-3">
                                     <label for="simpleinput" class="form-label">Loan Number</label>
-                                    <select class="form-control select2" id="loan_number_search" onchange="load_payment_table()">
+                                    <select class="form-control select2" id="loan_number_search">
                                         <option value="0">All</option>
                                         @foreach($loan as $item)
                                             <option value="{{$item->idCustomer_Loan}}">{{ $item->Loan_No }}</option>
@@ -839,6 +839,9 @@
     <script src="../JS/validate.js"></script>
     <script src="../JS/bulk_payment.js?n=17"></script>
     <script>
+        $('#loan_number_search').on('change', function () {
+            load_payment_table();
+        });
 
         function load_payment_reciept(id){
             // document.getElementById('issue-loan-modal').style.display = 'none';
