@@ -131,16 +131,17 @@ class LoanController extends Controller
                         ->where('customer.idCustomer', $customer_id)
                         ->select('customer.*','customer_group.*','center.*','route.root_code as root')
                         ->first();
-                    $center_id = $loan_no->idCenter;
-                    $center_customer_count = DB::table('customer')
-                        ->join('group_has_customer', 'group_has_customer.cus_id', '=', 'customer.idCustomer')
-                        ->join('customer_group', 'customer_group.idCustomer_Group', '=', 'group_has_customer.group_id')
-                        ->where('customer_group.center_id', $center_id)
-                        ->distinct('customer.idCustomer') // Optional if customers can be in multiple groups
-                        ->count('customer.idCustomer');
+
 
 
                     if ($loan_no){
+                        $center_id = $loan_no->idCenter;
+                        $center_customer_count = DB::table('customer')
+                            ->join('group_has_customer', 'group_has_customer.cus_id', '=', 'customer.idCustomer')
+                            ->join('customer_group', 'customer_group.idCustomer_Group', '=', 'group_has_customer.group_id')
+                            ->where('customer_group.center_id', $center_id)
+                            ->distinct('customer.idCustomer') // Optional if customers can be in multiple groups
+                            ->count('customer.idCustomer');
                         // Step 2: Define the mapping
                         $placeholders = [
                             '@Branch_No@' => $branch_no,
