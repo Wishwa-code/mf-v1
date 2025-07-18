@@ -124,15 +124,14 @@ class LoanController extends Controller
                     }
                 } else {
                     $loan_no = tableWithBranch('customer','customer')
-                        ->join('group_has_customer', 'group_has_customer.cus_id', '=', 'customer.idCustomer')
-                        ->join('customer_group', 'customer_group.idCustomer_Group', '=', 'group_has_customer.group_id')
-                        ->join('center', 'center.idCenter', '=', 'customer_group.center_id')
-                        ->join('route', 'route.id_route', '=', 'center.route_id')
+                        ->leftJoin('group_has_customer', 'group_has_customer.cus_id', '=', 'customer.idCustomer')
+                        ->leftJoin('customer_group', 'customer_group.idCustomer_Group', '=', 'group_has_customer.group_id')
+                        ->leftJoin('center', 'center.idCenter', '=', 'customer_group.center_id')
+                        ->leftJoin('route', 'route.id_route', '=', 'center.route_id')
                         ->where('customer.idCustomer', $customer_id)
                         ->select('customer.*','customer_group.*','center.*','route.root_code as root')
                         ->first();
-
-
+ 
 
                     if ($loan_no){
                         $center_id = $loan_no->idCenter;
