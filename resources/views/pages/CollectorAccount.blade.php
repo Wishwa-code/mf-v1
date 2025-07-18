@@ -58,7 +58,7 @@
                                                     <th>Account Name</th>
                                                     <th>Account Number</th>
                                                     <th>Branch</th>
-                                                    <th>Opening Balance</th>
+                                                    <th>Account Balance</th>
                                                     <th>User</th>
                                                     <th style="text-align: center">Action</th>
                                                 </tr>
