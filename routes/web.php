@@ -507,7 +507,7 @@ Route::post('/upload-excel-payment', [\App\Http\Controllers\ExcelController::cla
 
 Route::post('/upload-excel-category', [\App\Http\Controllers\ExcelController::class, 'uploadExcelCate']);
 Route::post('/upload-excel-guardian', [\App\Http\Controllers\ExcelController::class, 'uploadExcelWitness']);
-Route::post('/upload-excel-customer-id', [\App\Http\Controllers\ExcelController::class, 'uploadExcelPayment']);
+//Route::post('/upload-excel-customer-id', [\App\Http\Controllers\ExcelController::class, 'uploadExcelPayment']);
 
 
 Route::get('/LoanChargers','\App\Http\Controllers\ReportController@LoanChargers')->name('LoanChargers');
