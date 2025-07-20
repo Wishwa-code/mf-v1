@@ -103,80 +103,80 @@ class ExcelController extends Controller
 
 //         Loop through each row of Excel data, starting from the 6th row (index 5)
         $skipped = [];
-        foreach ($data as $key => $row) {
-            Log::info($row[3]);
-            if (DB::table('customer')
-                ->where('cus_number', '=', $row[3])
-                ->where('branch_id', '=', session('branch_id'))
-                ->exists()) {
-                $skipped[] = $row[3];  // Log skipped customer numbers
-                continue;
-            }
-
-
-
-            // Instantiate a new Customer object
-            $customer = new Customer();
-
-            // Map fields from Excel to Customer object
-            $customer->Title = $row[4] ?? '-';  // Assuming Title is in 5th column
-            $customer->Customer_Group_idCustomer_Group = 1;  // Default group
-
-            // Handle cus_number and format
-            $customer->cus_number = $row[3] ?? '';
-            // Assigning other customer details from Excel
-            $customer->First_Name = $row[5] ?? '-';
-            $customer->Last_Name = $row[6] ?? '-';
-            $customer->Email = $row[7] ?? '-';
-            $customer->Contact_No = $row[8] ?? '-';
-            $customer->Nic = $row[10] ?? '-';
-            $customer->Gender = $row[11] ?? '-';
-            $customer->Dob = $row[12] ?? '-';
-
-            // Address details
-            $customer->Address = $row[13] ?? '-';
-            $customer->Address_02 = $row[14] ?? '-';
-            $customer->Address_03 = $row[15] ?? '-';
-            $customer->Per_Address_01 = $row[16] ?? '-';
-            $customer->Per_Address_02 = $row[17] ?? '-';
-            $customer->Per_Address_03 = $row[18] ?? '-';
-            $customer->City = $row[19] ?? '-';
-            $customer->State = $row[20] ?? '-';
-            $customer->Landline = $row[21] ?? '-';
-
-            // Guardian information
-            $customer->Gua_title = $row[22] ?? '-';
-            $customer->Gua_name = $row[23] ?? '-';
-            $customer->Guardian_gender = $row[24] ?? '-';
-            $customer->Gua_relation = $row[25] ?? '-';
-            $customer->Gua_occu = $row[26] ?? '-';
-            $customer->Gua_contact = $row[27] ?? '-';
-            $customer->Gua_address = $row[28] ?? '-';
-            $customer->Gua_nic = $row[29] ?? '-';
-
-            // Additional fields
-            $customer->Customer_Risk_Level = "1";  // Default risk level
-            $customer->civil_status = $row[30] ?? '-';
-
-            // Assign branch_id
-            $customer->branch_id = session('branch_id');
-
-            // Save the customer data
-            $customer->save();
-
-            // If bank details exist, save them
-            if (isset($row[37])) {
-                $documentData = [
-                    'cus_id' => $customer->id,  // Customer ID
-                    'bank_name' => $row[37],    // Bank name
-                    'account_name' => $row[38], // Account name
-                    'account_number' => $row[39], // Account number
-                    'branch' => session('branch_id'), // Bank branch
-                ];
-                insertWithBranch('customer_has_bank', $documentData);
-            }
-        }
-        Log::info("Skipped Customers: ", $skipped);
+//        foreach ($data as $key => $row) {
+//            Log::info($row[3]);
+//            if (DB::table('customer')
+//                ->where('cus_number', '=', $row[3])
+//                ->where('branch_id', '=', session('branch_id'))
+//                ->exists()) {
+//                $skipped[] = $row[3];  // Log skipped customer numbers
+//                continue;
+//            }
+//
+//
+//
+//            // Instantiate a new Customer object
+//            $customer = new Customer();
+//
+//            // Map fields from Excel to Customer object
+//            $customer->Title = $row[4] ?? '-';  // Assuming Title is in 5th column
+//            $customer->Customer_Group_idCustomer_Group = 1;  // Default group
+//
+//            // Handle cus_number and format
+//            $customer->cus_number = $row[3] ?? '';
+//            // Assigning other customer details from Excel
+//            $customer->First_Name = $row[5] ?? '-';
+//            $customer->Last_Name = $row[6] ?? '-';
+//            $customer->Email = $row[7] ?? '-';
+//            $customer->Contact_No = $row[8] ?? '-';
+//            $customer->Nic = $row[10] ?? '-';
+//            $customer->Gender = $row[11] ?? '-';
+//            $customer->Dob = $row[12] ?? '-';
+//
+//            // Address details
+//            $customer->Address = $row[13] ?? '-';
+//            $customer->Address_02 = $row[14] ?? '-';
+//            $customer->Address_03 = $row[15] ?? '-';
+//            $customer->Per_Address_01 = $row[16] ?? '-';
+//            $customer->Per_Address_02 = $row[17] ?? '-';
+//            $customer->Per_Address_03 = $row[18] ?? '-';
+//            $customer->City = $row[19] ?? '-';
+//            $customer->State = $row[20] ?? '-';
+//            $customer->Landline = $row[21] ?? '-';
+//
+//            // Guardian information
+//            $customer->Gua_title = $row[22] ?? '-';
+//            $customer->Gua_name = $row[23] ?? '-';
+//            $customer->Guardian_gender = $row[24] ?? '-';
+//            $customer->Gua_relation = $row[25] ?? '-';
+//            $customer->Gua_occu = $row[26] ?? '-';
+//            $customer->Gua_contact = $row[27] ?? '-';
+//            $customer->Gua_address = $row[28] ?? '-';
+//            $customer->Gua_nic = $row[29] ?? '-';
+//
+//            // Additional fields
+//            $customer->Customer_Risk_Level = "1";  // Default risk level
+//            $customer->civil_status = $row[30] ?? '-';
+//
+//            // Assign branch_id
+//            $customer->branch_id = session('branch_id');
+//
+//            // Save the customer data
+//            $customer->save();
+//
+//            // If bank details exist, save them
+//            if (isset($row[37])) {
+//                $documentData = [
+//                    'cus_id' => $customer->id,  // Customer ID
+//                    'bank_name' => $row[37],    // Bank name
+//                    'account_name' => $row[38], // Account name
+//                    'account_number' => $row[39], // Account number
+//                    'branch' => session('branch_id'), // Bank branch
+//                ];
+//                insertWithBranch('customer_has_bank', $documentData);
+//            }
+//        }
+//        Log::info("Skipped Customers: ", $skipped);
 
 
         DB::table('group_has_customer')
@@ -184,8 +184,8 @@ class ExcelController extends Controller
             ->delete();
 
         $routeData = [
-            'name' => 'Gampola',
-            'root_code' => 'G001',
+            'name' => 'Polonnaruwa',
+            'root_code' => 'P001',
             'id_officer' => '1',
         ];
         $route_id = insertWithBranch('route', $routeData);
@@ -197,7 +197,7 @@ class ExcelController extends Controller
                 ->first();
             if ($customer){
                 $center_name = $row[1] ?? "Default";  // Assuming center_name is in the 3rd column
-                $center_no = $row[43] ?? "Default";
+                $center_no = $row[1] ?? "Default";
                 $center = tableWithBranch('center')->where('Name', '=', $center_name)->first();
                 if (!$center) {
                     $centerData = [

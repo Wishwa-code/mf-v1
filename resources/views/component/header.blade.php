@@ -398,7 +398,7 @@ $banner = DB::select($query);
                 'reports','main_reports_dashboard','prediction_report', 'loan_disbursement_performance', 'payment_detail_report', 'full_loan_detail', 'loan_summary',
                 'par_monthly', 'par_weekly', 'loan_status', 'cashflow_accumulated', 'cashflow_monthly', 'profit_loss', 'balance_sheet',
                 'trial_balance', 'daily_collection_sheet', 'center_collection_detail', 'center_collection_summary', 'route_collections',
-                'repayment_sheet_01', 'repayment_sheet_02', 'repayment_sheet_03', 'repayment_sheet_04', 'repayment_sheet_05', 'other_charges_report',
+                'repayment_sheet_01', 'repayment_sheet_02', 'repayment_sheet_03', 'repayment_sheet_04', 'repayment_sheet_05','repayment_sheet_06','repayment_sheet_07', 'other_charges_report',
                 'center_dashboard', 'repayment_summary', 'savings_report', 'arrears_report', 'arrears_overview', 'datewise_cashflow',
                 'loan_detail_report', 'collector_report', 'sms_history', 'customer_detail_report', 'officer_customer_detail', 'guardian_detail_report'
             ]
@@ -1245,11 +1245,15 @@ $banner = DB::select($query);
                                                             <li>
                                                                 <a href="/daily_repayment_sheet_finwin">Repayment Sheet 05</a>
                                                             </li>
-
                                                             <li>
                                                                 <a href="/GreenLankaTrustRepayment">Repayment Sheet 06</a>
                                                             </li>
+                                                            <li>
+                                                                <a href="/DandDRepayment">Repayment Sheet 07</a>
+                                                            </li>
+
                                                         @endif
+
                                                 </ul>
                                             </div>
                                         </li>

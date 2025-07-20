@@ -721,4 +721,127 @@ class TransactionController extends Controller
 
     }
 
+    public function DandDRepayment(Request $request){
+        $center = tableWithBranch('center')->get();
+
+        // Check if $center is empty
+        if ($center->isEmpty()) {
+            // Handle the case when the center table has no values
+            $center_details = null; // Or any default value you want to assign
+            $grouped_loans = array(); // Or any default value you want to assign
+            return view('pages.RightWayDailyRepayment', compact('center', 'grouped_loans','center_details'));
+        } else {
+            // If $center is not empty, set the default center value
+            $center_details = $request->center_details ?? $center[0]->idCenter;
+        }
+
+        // Loan Query
+        $loanQuery = tableWithBranch('installments','installments')
+            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->join('loan_category', 'loan_category.idLoan_Category', '=', 'customer_loan.Loan_Category_idLoan_Category')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
+                     FROM group_has_customer
+                     LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
+                'customer.idCustomer', '=', 'subquery.cus_id')
+            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
+            ->where('customer_loan.Status', '=', '0')
+            ->select(
+                'customer.idCustomer',
+                DB::raw('IFNULL(center.No, "-") as center_no'),
+                'customer.First_Name as customer_name',
+                'customer.cus_number as cus_number',
+                'customer.Contact_No as Contact_No',
+                'loan_category.Product_code as Product_code',
+                'customer.Last_Name as customer_lastname',
+                'customer.Nic as NIC',
+                'customer.Contact_No as Contact_No',
+                'customer_loan.Loan_No as Loan_No',
+                'customer_loan.Balance_Amount as Balance_Amount',
+                'customer_loan.Amount as Loan_Amount',
+                'customer_loan.idCustomer_Loan as idCustomer_Loan',
+                'customer_loan.type as type',
+                'customer_loan.Installment_Count as Installment_Count',
+                'customer_loan.capital_balance as capital_balance',
+                'customer_loan.Installment_Amount as Installment_Amount',
+                'customer_loan.Vehicle_No as Vehicle_No',
+                DB::raw('COUNT(installments.idInstallments) as Installment_Count'),
+                DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
+                DB::raw('ROUND(SUM(installments.Total_Balance), 2) as Total_Balance'),
+                DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date <= CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as Total_Balance_until'),
+                DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date = CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as Today_installment'),
+                DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date < CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as arrease'),
+                DB::raw('(SELECT Saving_Account_Balance FROM Loan_Log 
+          WHERE Loan_Log.Loan_ID = customer_loan.idCustomer_Loan 
+          ORDER BY Loan_Log.Loan_Log_ID DESC LIMIT 1) as last_saving_balance')
+            )
+            ->groupBy(
+                'customer.idCustomer',
+                'center.No',
+                'customer.First_Name',
+                'customer.Contact_No',
+                'loan_category.Product_code',
+                'customer.cus_number',
+                'customer.Last_Name',
+                'customer.Contact_No',
+                'customer.Nic',
+                'customer_loan.Loan_No',
+                'customer_loan.Balance_Amount',
+                'customer_loan.Amount',
+                'customer_loan.type',
+                'customer_loan.Installment_Count',
+                'customer_loan.Vehicle_No',
+                'customer_loan.idCustomer_Loan',
+                'customer_loan.capital_balance',
+                'customer_loan.Installment_Amount',
+                'subquery.group_name'
+            );
+
+        // Filter by center, group, and customer if provided
+        if ($center_details != '0') {
+            $loanQuery->where('center.idCenter', '=', $center_details);
+        }
+
+        $loan = $loanQuery->get();
+        $loan = $loan->transform(function ($item) {
+            $parts = explode(' ', trim($item->customer_name));
+            $lastName = array_pop($parts); // Take last part as surname
+            $initials = '';
+            foreach ($parts as $part) {
+                $initials .= strtoupper(substr($part, 0, 1)) . '.';
+            }
+            $item->name_with_initials = $initials . strtoupper($lastName);
+            return $item;
+        });
+
+
+        $group_filter = $request->group_filter;
+        if ($group_filter) {
+            $loan = $loan->filter(function ($item) use ($group_filter) {
+                return $item->group_name === $group_filter;
+            });
+        }
+
+        $grouped_loans = $loan->groupBy('group_name'); // ✅ ADD THIS LINE
+
+        $selected_center = $center->firstWhere('idCenter', $center_details);
+
+        $center_no = $selected_center->No ?? 'N/A';
+        $center_name = $selected_center->Name ?? 'N/A';
+        $printedBy = session('Full_Name') ?? 'System';
+        $printedAt = now()->format('Y-m-d h:i A');
+
+        return view('pages.DandDRepayment', compact(
+            'center', 'grouped_loans', 'center_details',
+            'center_no', 'center_name', 'printedBy', 'printedAt'
+        ));
+
+
+
+
+    }
+
 }

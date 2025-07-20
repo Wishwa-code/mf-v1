@@ -131,7 +131,7 @@ class LoanController extends Controller
                         ->where('customer.idCustomer', $customer_id)
                         ->select('customer.*','customer_group.*','center.*','route.root_code as root')
                         ->first();
- 
+
 
                     if ($loan_no){
                         $center_id = $loan_no->idCenter;

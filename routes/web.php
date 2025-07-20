@@ -674,6 +674,7 @@ Route::get('/RightWayDailyRepayment', [TransactionController::class, 'rightway']
 
 
 Route::get('/GreenLankaTrustRepayment', [TransactionController::class, 'GreenLankaTrustRepayment'])->name('transaction.GreenLankaTrustRepayment');
+Route::get('/DandDRepayment', [TransactionController::class, 'DandDRepayment'])->name('transaction.DandDRepayment');
 
 
 Route::get('/PaymentFullDetailsReport','\App\Http\Controllers\ReportController@payment_report')->name('payment-detail.index');
