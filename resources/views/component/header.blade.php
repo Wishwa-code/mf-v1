@@ -557,21 +557,21 @@ $banner = DB::select($query);
                         <h6 class="text-overflow m-0">Welcome !</h6>
                     </div>
                     @if($privilege)
-                        @if($privilege->my_account == 1)
+                        @if(optional($privilege)->my_account == 1)
                             <a href="/company" class="dropdown-item">
                                 <i class="ri-account-circle-line fs-18 align-middle me-1"></i>
                                 <span>My Account</span>
                             </a>
                         @endif
 
-                            @if($privilege->settings == 1)
+                            @if(optional($privilege)->settings == 1)
                                 <a href="/setting" class="dropdown-item">
                                     <i class="ri-settings-4-line fs-18 align-middle me-1"></i>
                                     <span>Settings</span>
                                 </a>
                             @endif
 
-                            @if($privilege->sms_format == 1)
+                            @if(optional($privilege)->sms_format == 1)
 
 
                                 <?php
@@ -597,21 +597,21 @@ $banner = DB::select($query);
 
                             @endif
 
-                            @if($privilege->document_format == 1)
+                            @if(optional($privilege)->document_format == 1)
                                 <a href="/agreement" class="dropdown-item">
                                     <i class="ri-file-paper-2-fill fs-18 align-middle me-1"></i>
                                     <span>Document Format</span>
                                 </a>
                             @endif
 
-                            @if($privilege->company_holidays == 1)
+                            @if(optional($privilege)->company_holidays == 1)
                                 <a href="/holidays" class="dropdown-item">
                                     <i class="ri-moon-clear-line fs-18 align-middle me-1"></i>
                                     <span>Company Holidays</span>
                                 </a>
                             @endif
 
-                            @if($privilege->branches == 1)
+                            @if(optional($privilege)->branches == 1)
                                 <a href="/branch" class="dropdown-item">
                                     <i class="ri-building-2-fill fs-18 align-middle me-1"></i>
                                     <span>Branches</span>
@@ -640,13 +640,13 @@ $banner = DB::select($query);
                                 <div class=" dropdown-header noti-title">
                                     <h6 class="text-overflow m-0">Cashier Section</h6>
                                 </div>
-                                @if($privilege->cashier_start == 1)
+                                @if(optional($privilege)->cashier_start == 1)
                                     <a class="dropdown-item d-flex align-items-center" href="#" data-bs-toggle="modal" data-bs-target="#cashierStartModal">
                                         <i class="ri-money-dollar-box-line font-size-17 align-middle me-1"></i> Cashier Start
                                     </a>
                                 @endif
 
-                                @if($privilege->cashier_close == 1)
+                                @if(optional($privilege)->cashier_close == 1)
                                     <a class="dropdown-item" href="#"  data-bs-toggle="modal" data-bs-target="#dayEndModal">
                                         <i class="mdi mdi-lock-open-outline font-size-17 align-middle me-1"></i> Cashier Close
                                     </a>
@@ -719,7 +719,7 @@ $banner = DB::select($query);
 
 
             @if($privilege)
-                @if($privilege->dashboard == 1)
+                @if(optional($privilege)->dashboard == 1)
                     <li class="side-nav-item">
                         <a href="/" class="side-nav-link">
                             <i class="ri-dashboard-3-line"></i>
@@ -727,7 +727,7 @@ $banner = DB::select($query);
                         </a>
                     </li>
                 @endif
-                @if($privilege->customer == 1)
+                @if(optional($privilege)->customer == 1)
                         <li class="side-nav-item">
                             <a data-bs-toggle="collapse" href="#customer" aria-expanded="false"
                                aria-controls="sidebarPagesAuth" class="side-nav-link">
@@ -737,32 +737,32 @@ $banner = DB::select($query);
                             </a>
                             <div class="collapse" id="customer">
                                 <ul class="side-nav-second-level">
-                                    @if($privilege->add_customer == 1)
+                                    @if(optional($privilege)->add_customer == 1)
                                         <li>
                                             <a href="/customers">Add Customer</a>
                                         </li>
                                     @endif
-                                    @if($privilege->view_customer == 1)
+                                    @if(optional($privilege)->view_customer == 1)
                                         <li>
                                             <a href="/showcustomers">View Customer</a>
                                         </li>
                                     @endif
-                                    @if($privilege->view_blacklist_customer == 1)
+                                    @if(optional($privilege)->view_blacklist_customer == 1)
                                         <li>
                                             <a href="/showblacklistcustomers">View Blacklist Customer</a>
                                         </li>
                                     @endif
-                                    @if($privilege->customer_saving_acc == 1)
+                                    @if(optional($privilege)->customer_saving_acc == 1)
                                         <li>
                                             <a href="/showcustomerssaving">Customer Saving Acc.</a>
                                         </li>
                                     @endif
-                                    @if($privilege->kyc == 1)
+                                    @if(optional($privilege)->kyc == 1)
                                         <li>
                                             <a href="/kyc">KYC</a>
                                         </li>
                                     @endif
-                                    @if($privilege->insurance == 1)
+                                    @if(optional($privilege)->insurance == 1)
                                         <li>
                                             <a href="/insurance">Insurance</a>
                                         </li>
@@ -774,7 +774,7 @@ $banner = DB::select($query);
                         </li>
                 @endif
 
-                    @if($privilege->loan_center == 1)
+                    @if(optional($privilege)->loan_center == 1)
                             <li class="side-nav-item">
                                 <a data-bs-toggle="collapse" href="#center" aria-expanded="false" aria-controls="center"
                                    class="side-nav-link">
@@ -784,32 +784,32 @@ $banner = DB::select($query);
                                 </a>
                                 <div class="collapse" id="center">
                                     <ul class="side-nav-second-level">
-                                        @if($privilege->create_route == 1)
+                                        @if(optional($privilege)->create_route == 1)
                                             <li>
                                                 <a href="/viewroutes">Create Route</a>
                                             </li>
                                         @endif
-                                        @if($privilege->create_center == 1)
+                                        @if(optional($privilege)->create_center == 1)
                                             <li>
                                                 <a href="/center">Create Center</a>
                                             </li>
                                         @endif
-                                        @if($privilege->view_center == 1)
+                                        @if(optional($privilege)->view_center == 1)
                                             <li>
                                                 <a href="/viewcenter">View Center</a>
                                             </li>
                                         @endif
-                                        @if($privilege->create_group == 1)
+                                        @if(optional($privilege)->create_group == 1)
                                             <li>
                                                 <a href="/customergroup">Create Group</a>
                                             </li>
                                         @endif
-                                        @if($privilege->view_group == 1)
+                                        @if(optional($privilege)->view_group == 1)
                                             <li>
                                                 <a href="/viewgroups">View Group</a>
                                             </li>
                                         @endif
-                                        @if($privilege->add_customer_to_group == 1)
+                                        @if(optional($privilege)->add_customer_to_group == 1)
                                             <li>
                                                 <a href="/customergroupassign">Add Customers To Group</a>
                                             </li>
@@ -819,7 +819,7 @@ $banner = DB::select($query);
                             </li>
                     @endif
 
-                    @if($privilege->guarantee == 1)
+                    @if(optional($privilege)->guarantee == 1)
                             <li class="side-nav-item">
                                 <a data-bs-toggle="collapse" href="#Guarantee" aria-expanded="false"
                                    aria-controls="sidebarPagesAuth" class="side-nav-link">
@@ -829,12 +829,12 @@ $banner = DB::select($query);
                                 </a>
                                 <div class="collapse" id="Guarantee">
                                     <ul class="side-nav-second-level">
-                                        @if($privilege->add_guarantee == 1)
+                                        @if(optional($privilege)->add_guarantee == 1)
                                             <li>
                                                 <a href="/guardian">Add Guarantee</a>
                                             </li>
                                         @endif
-                                        @if($privilege->view_guarantee == 1)
+                                        @if(optional($privilege)->view_guarantee == 1)
                                             <li>
                                                 <a href="/showguardian">View Guarantee</a>
                                             </li>
@@ -845,7 +845,7 @@ $banner = DB::select($query);
                             </li>
                     @endif
 
-                    @if($privilege->product == 1)
+                    @if(optional($privilege)->product == 1)
                             <li class="side-nav-item">
                                 <a data-bs-toggle="collapse" href="#sidebarPages" aria-expanded="false"
                                    aria-controls="sidebarPages" class="side-nav-link">
@@ -855,42 +855,42 @@ $banner = DB::select($query);
                                 </a>
                                 <div class="collapse" id="sidebarPages">
                                     <ul class="side-nav-second-level">
-                                        @if($privilege->add_product == 1)
+                                        @if(optional($privilege)->add_product == 1)
                                             <li>
                                                 <a href="/product">Add Product</a>
                                             </li>
                                         @endif
-                                        @if($privilege->view_product == 1)
+                                        @if(optional($privilege)->view_product == 1)
                                             <li>
                                                 <a href="/viewproduct">View Product</a>
                                             </li>
                                         @endif
-                                        @if($privilege->create_loan == 1)
+                                        @if(optional($privilege)->create_loan == 1)
                                             <li>
                                                 <a href="/loan">Create Loans</a>
                                             </li>
                                         @endif
-                                        @if($privilege->change_collector == 1)
+                                        @if(optional($privilege)->change_collector == 1)
                                             <li>
                                                 <a href="/changeCollector">Change Collector In Loan</a>
                                             </li>
                                         @endif
-                                        @if($privilege->pending_loan == 1)
+                                        @if(optional($privilege)->pending_loan == 1)
                                             <li>
                                                 <a href="/pendingloan">Pending Loans</a>
                                             </li>
                                         @endif
-                                        @if($privilege->loan_disbursement == 1)
+                                        @if(optional($privilege)->loan_disbursement == 1)
                                             <li>
                                                 <a href="/loan_disbursement">Loans Disbursement</a>
                                             </li>
                                         @endif
-                                        @if($privilege->current_loans == 1)
+                                        @if(optional($privilege)->current_loans == 1)
                                             <li>
                                                 <a href="/payment_step_1">Current Loans</a>
                                             </li>
                                         @endif
-                                        @if($privilege->settled_loans == 1)
+                                        @if(optional($privilege)->settled_loans == 1)
                                             <li>
                                                 <a href="/showsettleloan">Settled Loans</a>
                                             </li>
@@ -901,7 +901,7 @@ $banner = DB::select($query);
                     @endif
 
 
-                    @if($privilege->payment_details == 1)
+                    @if(optional($privilege)->payment_details == 1)
                             <li class="side-nav-item">
                                 <a data-bs-toggle="collapse" href="#payment" aria-expanded="false" aria-controls="center"
                                    class="side-nav-link">
@@ -911,32 +911,32 @@ $banner = DB::select($query);
                                 </a>
                                 <div class="collapse" id="payment">
                                     <ul class="side-nav-second-level">
-                                        @if($privilege->add_repayment == 1)
+                                        @if(optional($privilege)->add_repayment == 1)
                                             <li>
                                                 <a href="/payment">Add Repayment</a>
                                             </li>
                                         @endif
-                                        @if($privilege->bulk_repayment == 1)
+                                        @if(optional($privilege)->bulk_repayment == 1)
                                             <li>
                                                 <a href="/bulk_repayment">Bulk Repayment</a>
                                             </li>
                                         @endif
-                                        @if($privilege->loan_settlement == 1)
+                                        @if(optional($privilege)->loan_settlement == 1)
                                             <li>
                                                 <a href="/loan_settlement">Loan Settlement</a>
                                             </li>
                                         @endif
-                                        @if($privilege->loan_reschedule == 1)
+                                        @if(optional($privilege)->loan_reschedule == 1)
                                             <li>
                                                 <a href="/loan_reschedule">Loan Reschedule</a>
                                             </li>
                                         @endif
-                                        @if($privilege->view_payment == 1)
+                                        @if(optional($privilege)->view_payment == 1)
                                             <li>
                                                 <a href="/viewpayment">View Repayment</a>
                                             </li>
                                         @endif
-                                        @if($privilege->collector_wise_collection == 1)
+                                        @if(optional($privilege)->collector_wise_collection == 1)
                                             <li>
                                                 <a href="/collection">Collector Wise Collection</a>
                                             </li>
@@ -946,7 +946,7 @@ $banner = DB::select($query);
                             </li>
                     @endif
 
-                    @if($privilege->account_center == 1)
+                    @if(optional($privilege)->account_center == 1)
 
                             <li class="side-nav-item">
                                 <a data-bs-toggle="collapse" href="#account" aria-expanded="false" aria-controls="center" class="side-nav-link">
@@ -956,22 +956,22 @@ $banner = DB::select($query);
                                 </a>
                                 <div class="collapse" id="account">
                                     <ul class="side-nav-second-level">
-                                        @if($privilege->bank_cash_account == 1)
+                                        @if(optional($privilege)->bank_cash_account == 1)
                                             <li>
                                                 <a href="/bank_account">Bank/Cash Account</a>
                                             </li>
                                         @endif
-                                        @if($privilege->internal_bank_transfer == 1)
+                                        @if(optional($privilege)->internal_bank_transfer == 1)
                                             <li>
                                                 <a href="/InnerBankTransfer">Internal Account Transfer</a>
                                             </li>
                                         @endif
-                                        @if($privilege->collector_account == 1)
+                                        @if(optional($privilege)->collector_account == 1)
                                             <li>
                                                 <a href="/collector_index">Collector Account</a>
                                             </li>
                                         @endif
-                                        @if($privilege->cheque_details == 1)
+                                        @if(optional($privilege)->cheque_details == 1)
                                             <li>
                                                 <a href="/chq">Cheque Details</a>
                                             </li>
@@ -982,7 +982,7 @@ $banner = DB::select($query);
                     @endif
 
 
-                    @if($privilege->account_department == 1)
+                    @if(optional($privilege)->account_department == 1)
                             <li class="side-nav-item">
                                 <a data-bs-toggle="collapse" href="#accountmanagement" aria-expanded="false" aria-controls="center" class="side-nav-link">
                                     <i class="bi bi-bank"></i>
@@ -991,27 +991,27 @@ $banner = DB::select($query);
                                 </a>
                                 <div class="collapse" id="accountmanagement">
                                     <ul class="side-nav-second-level">
-                                        @if($privilege->add_asset == 1)
+                                        @if(optional($privilege)->add_asset == 1)
                                             <li>
                                                 <a href="/AddAssetManagement">Add Asset Management</a>
                                             </li>
                                         @endif
-                                        @if($privilege->asset_management == 1)
+                                        @if(optional($privilege)->asset_management == 1)
                                             <li>
                                                 <a href="/AssetManagement">Asset Management</a>
                                             </li>
                                         @endif
-                                        @if($privilege->bank_reconciliation == 1)
+                                        @if(optional($privilege)->bank_reconciliation == 1)
                                             <li>
                                                 <a href="/BankReconciliation">Bank Reconciliation</a>
                                             </li>
                                         @endif
-                                        @if($privilege->manual_journal == 1)
+                                        @if(optional($privilege)->manual_journal == 1)
                                             <li>
                                                 <a href="/ManualJournal">Manual Journal</a>
                                             </li>
                                         @endif
-                                        @if($privilege->chart_of_account == 1)
+                                        @if(optional($privilege)->chart_of_account == 1)
                                             <li>
                                                 <a href="/ChartOfAccount">Chart Of Account</a>
                                             </li>
@@ -1021,7 +1021,7 @@ $banner = DB::select($query);
                             </li>
                     @endif
 
-                    @if($privilege->loan_calculator == 1)
+                    @if(optional($privilege)->loan_calculator == 1)
                         <li class="side-nav-item">
                             <a href="/calculator" class="side-nav-link">
                                 <i class="ri-dashboard-3-line"></i>
@@ -1030,7 +1030,7 @@ $banner = DB::select($query);
                         </li>
                     @endif
 
-                    @if($privilege->calendar == 1)
+                    @if(optional($privilege)->calendar == 1)
                         <li class="side-nav-item">
                             <a href="/calender" class="side-nav-link">
                                 <i class="ri-dashboard-3-line"></i>
@@ -1039,7 +1039,7 @@ $banner = DB::select($query);
                         </li>
                     @endif
 
-                    @if($privilege->expenses == 1)
+                    @if(optional($privilege)->expenses == 1)
 
                             <li class="side-nav-item">
                                 <a data-bs-toggle="collapse" href="#expences" aria-expanded="false" aria-controls="expences"
@@ -1050,12 +1050,12 @@ $banner = DB::select($query);
                                 </a>
                                 <div class="collapse" id="expences">
                                     <ul class="side-nav-second-level">
-                                        @if($privilege->add_expenses == 1)
+                                        @if(optional($privilege)->add_expenses == 1)
                                             <li>
                                                 <a href="/expenses">Add Expenses</a>
                                             </li>
                                         @endif
-                                        @if($privilege->view_expenses == 1)
+                                        @if(optional($privilege)->view_expenses == 1)
                                             <li>
                                                 <a href="/view_expenses">View Expenses</a>
                                             </li>
@@ -1065,7 +1065,7 @@ $banner = DB::select($query);
                             </li>
                     @endif
 
-                    @if($privilege->user == 1)
+                    @if(optional($privilege)->user == 1)
 
                             <li class="side-nav-item">
                                 <a data-bs-toggle="collapse" href="#user" aria-expanded="false" aria-controls="user"
@@ -1076,12 +1076,12 @@ $banner = DB::select($query);
                                 </a>
                                 <div class="collapse" id="user" style="">
                                     <ul class="side-nav-second-level">
-                                        @if($privilege->create_user == 1)
+                                        @if(optional($privilege)->create_user == 1)
                                             <li>
                                                 <a href="/user" class="active">Create User</a>
                                             </li>
                                         @endif
-                                        @if($privilege->user_privileges == 1)
+                                        @if(optional($privilege)->user_privileges == 1)
                                             <li>
                                                 <a href="/privileges">User Privileges</a>
                                             </li>
@@ -1092,7 +1092,7 @@ $banner = DB::select($query);
                     @endif
 
 
-                    @if($privilege->reports == 1)
+                    @if(optional($privilege)->reports == 1)
                             <li class="side-nav-item">
                                 <a data-bs-toggle="collapse" href="#reports_section" aria-expanded="false" class="side-nav-link">
                                     <i class="ri-file-paper-2-fill"></i>
@@ -1108,17 +1108,17 @@ $banner = DB::select($query);
                                             </a>
                                             <div class="collapse" id="main_report">
                                                 <ul class="side-nav-third-level">
-                                                    @if($privilege->main_reports_dashboard == 1)
+                                                    @if(optional($privilege)->main_reports_dashboard == 1)
                                                         <li>
                                                             <a href="/portfolio_performance">Portfolio & Performance - Dashboard</a>
                                                         </li>
                                                     @endif
-                                                    @if($privilege->loan_disbursement_performance == 1)
+                                                    @if(optional($privilege)->loan_disbursement_performance == 1)
                                                             <li>
                                                                 <a href="/loan-report">Loan Disbursement Performance - Dashboard</a>
                                                             </li>
                                                     @endif
-                                                    @if($privilege->payment_detail_report == 1)
+                                                    @if(optional($privilege)->payment_detail_report == 1)
                                                             <li>
                                                                 <a href="/PaymentFullDetailsReport">Payment Details Report</a>
                                                             </li>
@@ -1126,19 +1126,19 @@ $banner = DB::select($query);
                                                                 <a href="/prediction_report">Payment Prediction</a>
                                                             </li>
                                                     @endif
-                                                    @if($privilege->full_loan_detail == 1)
+                                                    @if(optional($privilege)->full_loan_detail == 1)
                                                             <li><a href="/AllLoanDetailReport">Full Loan Detail Report</a></li>
                                                     @endif
-                                                    @if($privilege->loan_summary == 1)
+                                                    @if(optional($privilege)->loan_summary == 1)
                                                             <li><a href="/loansummaryreport">Loan Summary Report</a></li>
                                                     @endif
-                                                    @if($privilege->par_monthly == 1)
+                                                    @if(optional($privilege)->par_monthly == 1)
                                                             <li><a href="/par">PAR (Monthly)</a></li>
                                                     @endif
-                                                    @if($privilege->par_weekly == 1)
+                                                    @if(optional($privilege)->par_weekly == 1)
                                                             <li><a href="/par_weekly">PAR (Weekly)</a></li>
                                                     @endif
-                                                    @if($privilege->loan_status == 1)
+                                                    @if(optional($privilege)->loan_status == 1)
                                                             <li>
                                                                 <a href="/loanStatus">Loan Status</a>
                                                             </li>
@@ -1155,27 +1155,27 @@ $banner = DB::select($query);
                                             </a>
                                             <div class="collapse" id="acc_report">
                                                 <ul class="side-nav-third-level">
-                                                    @if($privilege->cashflow_accumulated == 1)
+                                                    @if(optional($privilege)->cashflow_accumulated == 1)
                                                         <li>
                                                             <a href="/CashFlow">CashFlow Accumulated</a>
                                                         </li>
                                                     @endif
-                                                    @if($privilege->cashflow_monthly == 1)
+                                                    @if(optional($privilege)->cashflow_monthly == 1)
                                                             <li>
                                                                 <a href="/CashFlowMonthly">CashFlow Monthly</a>
                                                             </li>
                                                     @endif
-                                                    @if($privilege->profit_loss == 1)
+                                                    @if(optional($privilege)->profit_loss == 1)
                                                             <li>
                                                                 <a href="/ProfitLoss">Profit & Loss (P&L)</a>
                                                             </li>
                                                     @endif
-                                                    @if($privilege->balance_sheet == 1)
+                                                    @if(optional($privilege)->balance_sheet == 1)
                                                             <li>
                                                                 <a href="/BalanceSheet">Balance Sheet</a>
                                                             </li>
                                                     @endif
-                                                    @if($privilege->trial_balance == 1)
+                                                    @if(optional($privilege)->trial_balance == 1)
                                                             <li>
                                                                 <a href="/trialBalanceAccounting">Trial Balance</a>
                                                             </li>
@@ -1191,22 +1191,22 @@ $banner = DB::select($query);
                                             </a>
                                             <div class="collapse" id="payment_report">
                                                 <ul class="side-nav-third-level">
-                                                    @if($privilege->daily_collection_sheet == 1)
+                                                    @if(optional($privilege)->daily_collection_sheet == 1)
                                                         <li>
                                                             <a href="/daily">Daily Collection Sheet</a>
                                                         </li>
                                                     @endif
-                                                    @if($privilege->center_collection_detail == 1)
+                                                    @if(optional($privilege)->center_collection_detail == 1)
                                                             <li>
                                                                 <a href="/center_collection">Center Wise collection Detail</a>
                                                             </li>
                                                     @endif
-                                                    @if($privilege->center_collection_summary == 1)
+                                                    @if(optional($privilege)->center_collection_summary == 1)
                                                             <li>
                                                                 <a href="/center_collection_summary">Center Wise collection Summary</a>
                                                             </li>
                                                     @endif
-                                                    @if($privilege->route_collections == 1)
+                                                    @if(optional($privilege)->route_collections == 1)
                                                             <li>
                                                                 <a href="/root_wise_collection">Route Wise Daily Collection</a>
                                                             </li>
@@ -1221,27 +1221,27 @@ $banner = DB::select($query);
                                             </a>
                                             <div class="collapse" id="repayment_report">
                                                 <ul class="side-nav-third-level">
-                                                    @if($privilege->repayment_sheet_01 == 1)
+                                                    @if(optional($privilege)->repayment_sheet_01 == 1)
                                                         <li>
                                                             <a href="/daily_repayment_sheet">Repayment Sheet 01</a>
                                                         </li>
                                                     @endif
-                                                    @if($privilege->repayment_sheet_02 == 1)
+                                                    @if(optional($privilege)->repayment_sheet_02 == 1)
                                                             <li>
                                                                 <a href="/RightWayDailyRepayment">Repayment Sheet 02</a>
                                                             </li>
                                                     @endif
-                                                    @if($privilege->repayment_sheet_03 == 1)
+                                                    @if(optional($privilege)->repayment_sheet_03 == 1)
                                                             <li>
                                                                 <a href="/daily_repayment_sheet_hm">Repayment Sheet 03</a>
                                                             </li>
                                                     @endif
-                                                    @if($privilege->repayment_sheet_04 == 1)
+                                                    @if(optional($privilege)->repayment_sheet_04 == 1)
                                                             <li>
                                                                 <a href="/daily_repayment_sheet_lasantha">Repayment Sheet 04</a>
                                                             </li>
                                                     @endif
-                                                        @if($privilege->repayment_sheet_05 == 1)
+                                                        @if(optional($privilege)->repayment_sheet_05 == 1)
                                                             <li>
                                                                 <a href="/daily_repayment_sheet_finwin">Repayment Sheet 05</a>
                                                             </li>
@@ -1264,34 +1264,34 @@ $banner = DB::select($query);
                                             </a>
                                             <div class="collapse" id="sub_report">
                                                 <ul class="side-nav-third-level">
-                                                    @if($privilege->other_charges_report == 1)
+                                                    @if(optional($privilege)->other_charges_report == 1)
                                                         <li><a href="/LoanChargers">Loan Chargers Report</a></li>
                                                     @endif
-                                                    @if($privilege->center_dashboard == 1)
+                                                    @if(optional($privilege)->center_dashboard == 1)
                                                             <li><a href="/dandlreport">Center Collection Dashboard</a></li>
                                                     @endif
-                                                    @if($privilege->repayment_summary == 1)
+                                                    @if(optional($privilege)->repayment_summary == 1)
                                                             <li><a href="/monthlyprofit">Loan Repayment Summary Report</a></li>
                                                     @endif
-                                                    @if($privilege->savings_report == 1)
+                                                    @if(optional($privilege)->savings_report == 1)
                                                             <li><a href="/savings_report">Savings Report</a></li>
                                                     @endif
-                                                    @if($privilege->arrears_report == 1)
+                                                    @if(optional($privilege)->arrears_report == 1)
                                                             <li><a href="/latePayment">Loan In Areas</a></li>
                                                     @endif
-                                                    @if($privilege->arrears_overview == 1)
+                                                    @if(optional($privilege)->arrears_overview == 1)
                                                             <li><a href="/late_payment_report">Arrease Details</a></li>
                                                     @endif
-                                                    @if($privilege->datewise_cashflow == 1)
+                                                    @if(optional($privilege)->datewise_cashflow == 1)
                                                             <li><a href="/ViewDateWiseCashFlow">Date Wise Cash Flow Details</a></li>
                                                     @endif
-                                                    @if($privilege->loan_detail_report == 1)
+                                                    @if(optional($privilege)->loan_detail_report == 1)
                                                             <li><a href="/loanreport">Loan Details</a></li>
                                                     @endif
-                                                    @if($privilege->collector_report == 1)
+                                                    @if(optional($privilege)->collector_report == 1)
                                                             <li><a href="/repaymentreport">Collector Wise Repayment Collection</a></li>
                                                     @endif
-                                                    @if($privilege->sms_history == 1)
+                                                    @if(optional($privilege)->sms_history == 1)
                                                             <li><a href="/sms_history">SMS History Report</a></li>
                                                     @endif
                                                 </ul>
@@ -1305,13 +1305,13 @@ $banner = DB::select($query);
                                             </a>
                                             <div class="collapse" id="people_report">
                                                 <ul class="side-nav-third-level">
-                                                        @if($privilege->customer_detail_report == 1)
+                                                        @if(optional($privilege)->customer_detail_report == 1)
                                                             <li><a href="/customerreport_details">All Customer Details</a></li>
                                                         @endif
-                                                        @if($privilege->officer_customer_detail == 1)
+                                                        @if(optional($privilege)->officer_customer_detail == 1)
                                                             <li><a href="/customerreport_details_recover_officer">Recover Officer Wise Customers</a></li>
                                                         @endif
-                                                        @if($privilege->guardian_detail_report == 1)
+                                                        @if(optional($privilege)->guardian_detail_report == 1)
                                                             <li><a href="/borrowerreport">Guardian Details</a></li>
                                                         @endif
                                                 </ul>
