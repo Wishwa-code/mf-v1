@@ -752,7 +752,7 @@ class TransactionController extends Controller
             ->select(
                 'customer.idCustomer',
                 DB::raw('IFNULL(center.No, "-") as center_no'),
-                'customer.First_Name as customer_name',
+                DB::raw("CONCAT(customer.First_Name, ' ', customer.Last_Name) as customer_name"),
                 'customer.cus_number as cus_number',
                 'customer.Contact_No as Contact_No',
                 'loan_category.Product_code as Product_code',
@@ -825,7 +825,8 @@ class TransactionController extends Controller
             });
         }
 
-        $grouped_loans = $loan->groupBy('group_name'); // ✅ ADD THIS LINE
+        $grouped_loans = $loan->groupBy('group_name')->sortKeys();
+
 
         $selected_center = $center->firstWhere('idCenter', $center_details);
 
@@ -838,10 +839,6 @@ class TransactionController extends Controller
             'center', 'grouped_loans', 'center_details',
             'center_no', 'center_name', 'printedBy', 'printedAt'
         ));
-
-
-
-
     }
 
 }

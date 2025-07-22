@@ -110,10 +110,10 @@
             }
 
             .fixed-name {
-                max-width: 150px;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
+                max-width: 150px;
             }
 
             .paid-amount {
@@ -171,6 +171,21 @@
                 padding: 6px !important;
             }
         }
+        @media print {
+            #repaymentTable th, #repaymentTable td {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            #repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 8%; }   /* Loan No */
+            #repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 18%; } /* Full Name */
+            #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 16%; } /* Contact No (wider!) */
+            #repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 9%; }  /* Loan Amount */
+            #repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 9%; }  /* Due Installment */
+            #repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 10%; } /* New Loan Amount */
+        }
+
 
     </style>
 
@@ -259,12 +274,12 @@
                                     <th rowspan="2">Loan Amount</th>
                                     <th rowspan="2">Due Installment</th>
                                     <th rowspan="2">New Loan Amount</th>
-                                    @for ($i = 1; $i < 6; $i++)
+                                    @for ($i = 1; $i < 5; $i++)
                                         <th colspan="2">Date</th>
                                     @endfor
                                 </tr>
                                 <tr>
-                                    @for ($i = 1; $i < 6; $i++)
+                                    @for ($i = 1; $i < 5; $i++)
                                         <th>Paid</th>
                                         <th>Correct</th>
                                     @endfor
@@ -274,7 +289,7 @@
                                 @foreach($grouped_loans->chunk(2) as $groupPair)
                                     <tbody class="page-break">
                                     @foreach($groupPair as $group_name => $group)
-                                        <tr><td colspan="16"><strong>Group No: {{ $group_name }}</strong></td></tr>
+                                        <tr><td colspan="14"><strong>Group No: {{ $group_name }}</strong></td></tr>
                                         @foreach($group as $item)
                                             <tr class="group-row">
                                                 <td>{{ $item->Loan_No }}</td>
@@ -283,7 +298,7 @@
                                                 <td>{{ number_format($item->Loan_Amount, 2) }}</td>
                                                 <td>{{ number_format($item->Installment_Amount, 2) }}</td>
                                                 <td>{{ number_format($item->Balance_Amount, 2) }}</td>
-                                                @for ($i = 1; $i < 6; $i++)
+                                                @for ($i = 1; $i < 5; $i++)
                                                     <td class="paid-amount"></td>
                                                     <td class="correct-column"></td>
                                                 @endfor
@@ -294,12 +309,12 @@
                                             <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
                                             <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
                                             <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
-                                            <td colspan="11"></td>
+                                            <td colspan="9"></td>
                                         </tr>
                                         {{-- Empty 7 Rows --}}
-                                        @for ($j = 0; $j < 7; $j++)
+                                        @for ($j = 0; $j < 2; $j++)
                                             <tr class="group-row">
-                                                @for ($k = 0; $k < 16; $k++)
+                                                @for ($k = 0; $k < 14; $k++)
                                                     <td>&nbsp;</td>
                                                 @endfor
                                             </tr>
@@ -451,11 +466,13 @@
 
                 printWindow.document.write('<html><head><title>Repayment Sheet</title>');
                 printWindow.document.write('<style>');
-                printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 12px; margin: 0.5in; }');
-                printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; }');
-                printWindow.document.write('#repaymentTable th, #repaymentTable td { border: 1px solid black; padding: 6px; text-align: center; word-break: break-word; }');
+                printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 11px; margin: 0.5in; }');
+                printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 10px; }');
+                printWindow.document.write('#repaymentTable th, #repaymentTable td { border: 1px solid black; padding: 4px; text-align: center; word-break: break-word; }');
+                printWindow.document.write('#repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 20%; }');  // 🎯 Full Name wider
                 printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
                 printWindow.document.write('</style>');
+
 
                 printWindow.document.write('<h2 style="text-align:center;">Repayment Sheet for ' + currentMonth + ' (' + center_details + ')</h2>');
                 printWindow.document.write(printContent);

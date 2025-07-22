@@ -73,10 +73,118 @@ class ExcelController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Request $request)
     {
-        //
+        $data = $request->excelData;
+
+        DB::table('group_has_customer')
+            ->where('branch_id', session('branch_id'))
+            ->delete();
+
+        $route_id = '';
+        $insertedCusIds = [];  // 👉 To track already inserted cus_id
+
+        foreach ($data as $key => $row) {
+            $customer_name = $row[3];
+            $customer_name = strtolower(preg_replace('/\s+/', '', $customer_name));
+
+            $customer = tableWithBranch('customer')
+                ->whereRaw("
+                LOWER(
+                    REPLACE(
+                        REPLACE(
+                            REPLACE(CONCAT(TRIM(`First_Name`), TRIM(`Last_Name`)), ' ', ''),
+                            CHAR(160), ''
+                        ),
+                        '\t', ''
+                    )
+                ) = ?", [$customer_name])
+                ->first();
+
+            if (!$customer) {
+                $customer = tableWithBranch('customer')
+                    ->whereRaw("
+                    LOWER(
+                        REPLACE(
+                            REPLACE(
+                                REPLACE(TRIM(`First_Name`), ' ', ''),
+                                CHAR(160), ''
+                            ),
+                            '\t', ''
+                        )
+                    ) = ?", [$customer_name])
+                    ->first();
+
+                if (!$customer) {
+                    Log::warning("Customer not found after fallback: $customer_name");
+                    $customer = tableWithBranch('customer')->where('First_Name', '=', 'Default')->first();
+                }
+            }
+
+            $member_no = $customer->cus_number;
+
+            $customer = DB::table('customer')
+                ->where('cus_number', '=', $member_no)
+                ->where('branch_id', '=', session('branch_id'))
+                ->first();
+
+            if ($customer) {
+                if (in_array($customer->idCustomer, $insertedCusIds)) {
+                    continue;  // 👉 Skip if cus_id already processed
+                }
+
+                $center_name = $row[1] ?? "Default";
+                $center_no = $row[1] ?? "Default";
+                $center = tableWithBranch('center')->where('Name', '=', $center_name)->first();
+
+                if (!$center) {
+                    $centerData = [
+                        'No' => $center_no,
+                        'Name' => $center_name,
+                        'Contact_no' => '-',
+                        'Address' => '-',
+                        'Route' => '-',
+                        'Center_incharge' => 1,
+                        'Location' => '-',
+                        'Groups' => "0",
+                        'Members' => "0",
+                        'route_id' => $route_id,
+                    ];
+                    $center_id = insertWithBranch('center', $centerData);
+                } else {
+                    $center_id = $center->idCenter;
+                }
+
+                $group_name = $row[2] ?? "Default";
+                $group = tableWithBranch('customer_group')
+                    ->where('Group_No', '=', $group_name)
+                    ->where('center_id', '=', $center_id)
+                    ->first();
+
+                if (!$group) {
+                    $groupData = [
+                        'Group_No' => $group_name,
+                        'Name' => $group_name,
+                        'Leader_name' => '-',
+                        'Contact_no' => '-',
+                        'center_id' => $center_id,
+                    ];
+                    $group_id = insertWithBranch('customer_group', $groupData);
+                } else {
+                    $group_id = $group->idCustomer_Group;
+                }
+
+                // Link customer to group only if not already linked
+                insertWithBranch('group_has_customer', [
+                    'cus_id' => $customer->idCustomer,
+                    'group_id' => $group_id
+                ]);
+
+                $insertedCusIds[] = $customer->idCustomer;  // 👉 Track inserted cus_id
+            }
+        }
     }
+
 
     /**
      * Update the specified resource in storage.
@@ -102,62 +210,62 @@ class ExcelController extends Controller
         $insertedCustomers = []; // 👈 New array to keep track of new inserts
 
         foreach ($data as $key => $row) {
-//            if (DB::table('customer')
-//                ->where('cus_number', '=', $row[3])
-//                ->where('branch_id', '=', session('branch_id'))
-//                ->exists()) {
-//                $skipped[] = $row[3];
-//                continue;
-//            }
-//
-//            $customer = new Customer();
-//            $customer->Title = $row[4] ?? '-';
-//            $customer->Customer_Group_idCustomer_Group = 1;
-//            $customer->cus_number = $row[3] ?? '';
-//            $customer->First_Name = $row[5] ?? '-';
-//            $customer->Last_Name = $row[6] ?? '-';
-//            $customer->Email = $row[7] ?? '-';
-//            $customer->Contact_No = $row[8] ?? '-';
-//            $customer->Nic = $row[10] ?? '-';
-//            $customer->Gender = $row[11] ?? '-';
-//            $customer->Dob = $row[12] ?? '-';
-//            $customer->Address = $row[13] ?? '-';
-//            $customer->Address_02 = $row[14] ?? '-';
-//            $customer->Address_03 = $row[15] ?? '-';
-//            $customer->Per_Address_01 = $row[16] ?? '-';
-//            $customer->Per_Address_02 = $row[17] ?? '-';
-//            $customer->Per_Address_03 = $row[18] ?? '-';
-//            $customer->City = $row[19] ?? '-';
-//            $customer->State = $row[20] ?? '-';
-//            $customer->Landline = $row[21] ?? '-';
-//            $customer->Gua_title = $row[22] ?? '-';
-//            $customer->Gua_name = $row[23] ?? '-';
-//            $customer->Guardian_gender = $row[24] ?? '-';
-//            $customer->Gua_relation = $row[25] ?? '-';
-//            $customer->Gua_occu = $row[26] ?? '-';
-//            $customer->Gua_contact = $row[27] ?? '-';
-//            $customer->Gua_address = $row[28] ?? '-';
-//            $customer->Gua_nic = $row[29] ?? '-';
-//            $customer->Customer_Risk_Level = "1";
-//            $customer->civil_status = $row[30] ?? '-';
-//            $customer->branch_id = session('branch_id');
-//            $customer->save();
-//
-//            $insertedCustomers[$row[3]] = $customer->idCustomer; // 👈 Remember this insert
-//
-//            if (isset($row[37])) {
-//                $documentData = [
-//                    'cus_id' => $customer->idCustomer,
-//                    'bank_name' => $row[37],
-//                    'account_name' => $row[38],
-//                    'account_number' => $row[39],
-//                    'branch' => session('branch_id'),
-//                ];
-//                insertWithBranch('customer_has_bank', $documentData);
-//            }
+            if (DB::table('customer')
+                ->where('cus_number', '=', $row[3])
+                ->where('branch_id', '=', session('branch_id'))
+                ->exists()) {
+                $skipped[] = $row[3];
+                continue;
+            }
+
+            $customer = new Customer();
+            $customer->Title = $row[4] ?? '-';
+            $customer->Customer_Group_idCustomer_Group = 1;
+            $customer->cus_number = $row[3] ?? '';
+            $customer->First_Name = $row[5] ?? '-';
+            $customer->Last_Name = $row[6] ?? '-';
+            $customer->Email = $row[7] ?? '-';
+            $customer->Contact_No = $row[8] ?? '-';
+            $customer->Nic = $row[10] ?? '-';
+            $customer->Gender = $row[11] ?? '-';
+            $customer->Dob = $row[12] ?? '-';
+            $customer->Address = $row[13] ?? '-';
+            $customer->Address_02 = $row[14] ?? '-';
+            $customer->Address_03 = $row[15] ?? '-';
+            $customer->Per_Address_01 = $row[16] ?? '-';
+            $customer->Per_Address_02 = $row[17] ?? '-';
+            $customer->Per_Address_03 = $row[18] ?? '-';
+            $customer->City = $row[19] ?? '-';
+            $customer->State = $row[20] ?? '-';
+            $customer->Landline = $row[21] ?? '-';
+            $customer->Gua_title = $row[22] ?? '-';
+            $customer->Gua_name = $row[23] ?? '-';
+            $customer->Guardian_gender = $row[24] ?? '-';
+            $customer->Gua_relation = $row[25] ?? '-';
+            $customer->Gua_occu = $row[26] ?? '-';
+            $customer->Gua_contact = $row[27] ?? '-';
+            $customer->Gua_address = $row[28] ?? '-';
+            $customer->Gua_nic = $row[29] ?? '-';
+            $customer->Customer_Risk_Level = "1";
+            $customer->civil_status = $row[30] ?? '-';
+            $customer->branch_id = session('branch_id');
+            $customer->save();
+
+            $insertedCustomers[$row[3]] = $customer->idCustomer; // 👈 Remember this insert
+
+            if (isset($row[37])) {
+                $documentData = [
+                    'cus_id' => $customer->idCustomer,
+                    'bank_name' => $row[37],
+                    'account_name' => $row[38],
+                    'account_number' => $row[39],
+                    'branch' => session('branch_id'),
+                ];
+                insertWithBranch('customer_has_bank', $documentData);
+            }
         }
 //
-//        Log::info("Skipped Customers: ", $skipped);
+        Log::info("Skipped Customers: ", $skipped);
 
         DB::table('group_has_customer')
             ->where('branch_id', session('branch_id'))
