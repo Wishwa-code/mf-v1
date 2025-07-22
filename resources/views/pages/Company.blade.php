@@ -265,7 +265,7 @@
                             <button type="button" class="btn btn-primary" onclick="addToField('@Year@','Year')">Year</button>
                             <button type="button" class="btn btn-primary" onclick="addToField('@CountMonthly@','MonthlyCount')">Monthly Count</button>
                             <button type="button" class="btn btn-primary" onclick="addToField('@RootlyCount@','RootlyCount')">Root Wise Count</button>
-
+                            <button type="button" class="btn btn-primary" onclick="addToField('@Center_Cus_Count@','Center_Cus_Count')">Center's Customer Count</button>
                         </div>
                     </div>
                     <div class="row mb-3">

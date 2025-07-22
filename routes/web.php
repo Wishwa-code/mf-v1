@@ -499,6 +499,7 @@ Route::post('/changeCollector_filter','\App\Http\Controllers\TodayPaymentControl
 
 
 Route::post('/upload-excel-customer', [\App\Http\Controllers\ExcelController::class, 'uploadExcelCustomer']);
+//Route::post('/upload-excel-customer', [\App\Http\Controllers\ExcelController::class, 'edit']);
 Route::post('/upload-excel-product', [\App\Http\Controllers\ExcelController::class, 'uploadExcelProduct']);
 Route::post('/upload-excel-loan', [\App\Http\Controllers\ExcelController::class, 'uploadExcelLoan']);
 Route::post('/upload-excel-payment', [\App\Http\Controllers\ExcelController::class, 'uploadExcelPayment']);
@@ -507,7 +508,7 @@ Route::post('/upload-excel-payment', [\App\Http\Controllers\ExcelController::cla
 
 Route::post('/upload-excel-category', [\App\Http\Controllers\ExcelController::class, 'uploadExcelCate']);
 Route::post('/upload-excel-guardian', [\App\Http\Controllers\ExcelController::class, 'uploadExcelWitness']);
-Route::post('/upload-excel-customer-id', [\App\Http\Controllers\ExcelController::class, 'uploadExcelPayment']);
+//Route::post('/upload-excel-customer-id', [\App\Http\Controllers\ExcelController::class, 'uploadExcelPayment']);
 
 
 Route::get('/LoanChargers','\App\Http\Controllers\ReportController@LoanChargers')->name('LoanChargers');
@@ -674,6 +675,7 @@ Route::get('/RightWayDailyRepayment', [TransactionController::class, 'rightway']
 
 
 Route::get('/GreenLankaTrustRepayment', [TransactionController::class, 'GreenLankaTrustRepayment'])->name('transaction.GreenLankaTrustRepayment');
+Route::get('/DandDRepayment', [TransactionController::class, 'DandDRepayment'])->name('transaction.DandDRepayment');
 
 
 Route::get('/PaymentFullDetailsReport','\App\Http\Controllers\ReportController@payment_report')->name('payment-detail.index');

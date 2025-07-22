@@ -35,7 +35,7 @@
                                             <label id="formatted_num_use" hidden></label>
                                         @elseif($company->customer_num_type == "Format")
                                             @php
-                                                $newnum = str_replace(['@Center_No@', '@Group_No@','@Customize_No@','@Auto_ID@','@Branch_No@','@Root@'], ['C000', 'G000','Customize No',$formatted_customer_id,'@Branch_No@','@Root@'], $company->customer_format);
+                                                $newnum = str_replace(['@Center_No@', '@Group_No@','@Customize_No@','@Auto_ID@','@Branch_No@','@Root@','@Center_Cus_Count@'], ['C000', 'G000','Customize No',$formatted_customer_id,'@Branch_No@','@Root@','CenterCustomerCount'], $company->customer_format);
                                             @endphp
 
                                             @if(strpos($company->customer_format, '@Customize_No@') !== false)

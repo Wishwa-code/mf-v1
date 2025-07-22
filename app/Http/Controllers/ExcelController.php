@@ -73,10 +73,118 @@ class ExcelController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Request $request)
     {
-        //
+        $data = $request->excelData;
+
+        DB::table('group_has_customer')
+            ->where('branch_id', session('branch_id'))
+            ->delete();
+
+        $route_id = '';
+        $insertedCusIds = [];  // 👉 To track already inserted cus_id
+
+        foreach ($data as $key => $row) {
+            $customer_name = $row[3];
+            $customer_name = strtolower(preg_replace('/\s+/', '', $customer_name));
+
+            $customer = tableWithBranch('customer')
+                ->whereRaw("
+                LOWER(
+                    REPLACE(
+                        REPLACE(
+                            REPLACE(CONCAT(TRIM(`First_Name`), TRIM(`Last_Name`)), ' ', ''),
+                            CHAR(160), ''
+                        ),
+                        '\t', ''
+                    )
+                ) = ?", [$customer_name])
+                ->first();
+
+            if (!$customer) {
+                $customer = tableWithBranch('customer')
+                    ->whereRaw("
+                    LOWER(
+                        REPLACE(
+                            REPLACE(
+                                REPLACE(TRIM(`First_Name`), ' ', ''),
+                                CHAR(160), ''
+                            ),
+                            '\t', ''
+                        )
+                    ) = ?", [$customer_name])
+                    ->first();
+
+                if (!$customer) {
+                    Log::warning("Customer not found after fallback: $customer_name");
+                    $customer = tableWithBranch('customer')->where('First_Name', '=', 'Default')->first();
+                }
+            }
+
+            $member_no = $customer->cus_number;
+
+            $customer = DB::table('customer')
+                ->where('cus_number', '=', $member_no)
+                ->where('branch_id', '=', session('branch_id'))
+                ->first();
+
+            if ($customer) {
+                if (in_array($customer->idCustomer, $insertedCusIds)) {
+                    continue;  // 👉 Skip if cus_id already processed
+                }
+
+                $center_name = $row[1] ?? "Default";
+                $center_no = $row[1] ?? "Default";
+                $center = tableWithBranch('center')->where('Name', '=', $center_name)->first();
+
+                if (!$center) {
+                    $centerData = [
+                        'No' => $center_no,
+                        'Name' => $center_name,
+                        'Contact_no' => '-',
+                        'Address' => '-',
+                        'Route' => '-',
+                        'Center_incharge' => 1,
+                        'Location' => '-',
+                        'Groups' => "0",
+                        'Members' => "0",
+                        'route_id' => $route_id,
+                    ];
+                    $center_id = insertWithBranch('center', $centerData);
+                } else {
+                    $center_id = $center->idCenter;
+                }
+
+                $group_name = $row[2] ?? "Default";
+                $group = tableWithBranch('customer_group')
+                    ->where('Group_No', '=', $group_name)
+                    ->where('center_id', '=', $center_id)
+                    ->first();
+
+                if (!$group) {
+                    $groupData = [
+                        'Group_No' => $group_name,
+                        'Name' => $group_name,
+                        'Leader_name' => '-',
+                        'Contact_no' => '-',
+                        'center_id' => $center_id,
+                    ];
+                    $group_id = insertWithBranch('customer_group', $groupData);
+                } else {
+                    $group_id = $group->idCustomer_Group;
+                }
+
+                // Link customer to group only if not already linked
+                insertWithBranch('group_has_customer', [
+                    'cus_id' => $customer->idCustomer,
+                    'group_id' => $group_id
+                ]);
+
+                $insertedCusIds[] = $customer->idCustomer;  // 👉 Track inserted cus_id
+            }
+        }
     }
+
 
     /**
      * Update the specified resource in storage.
@@ -98,33 +206,22 @@ class ExcelController extends Controller
     {
         $data = $request->excelData;
 
-
-
-
-//         Loop through each row of Excel data, starting from the 6th row (index 5)
         $skipped = [];
+        $insertedCustomers = []; // 👈 New array to keep track of new inserts
+
         foreach ($data as $key => $row) {
-            Log::info($row[3]);
             if (DB::table('customer')
                 ->where('cus_number', '=', $row[3])
                 ->where('branch_id', '=', session('branch_id'))
                 ->exists()) {
-                $skipped[] = $row[3];  // Log skipped customer numbers
+                $skipped[] = $row[3];
                 continue;
             }
 
-
-
-            // Instantiate a new Customer object
             $customer = new Customer();
-
-            // Map fields from Excel to Customer object
-            $customer->Title = $row[4] ?? '-';  // Assuming Title is in 5th column
-            $customer->Customer_Group_idCustomer_Group = 1;  // Default group
-
-            // Handle cus_number and format
+            $customer->Title = $row[4] ?? '-';
+            $customer->Customer_Group_idCustomer_Group = 1;
             $customer->cus_number = $row[3] ?? '';
-            // Assigning other customer details from Excel
             $customer->First_Name = $row[5] ?? '-';
             $customer->Last_Name = $row[6] ?? '-';
             $customer->Email = $row[7] ?? '-';
@@ -132,8 +229,6 @@ class ExcelController extends Controller
             $customer->Nic = $row[10] ?? '-';
             $customer->Gender = $row[11] ?? '-';
             $customer->Dob = $row[12] ?? '-';
-
-            // Address details
             $customer->Address = $row[13] ?? '-';
             $customer->Address_02 = $row[14] ?? '-';
             $customer->Address_03 = $row[15] ?? '-';
@@ -143,8 +238,6 @@ class ExcelController extends Controller
             $customer->City = $row[19] ?? '-';
             $customer->State = $row[20] ?? '-';
             $customer->Landline = $row[21] ?? '-';
-
-            // Guardian information
             $customer->Gua_title = $row[22] ?? '-';
             $customer->Gua_name = $row[23] ?? '-';
             $customer->Guardian_gender = $row[24] ?? '-';
@@ -153,39 +246,34 @@ class ExcelController extends Controller
             $customer->Gua_contact = $row[27] ?? '-';
             $customer->Gua_address = $row[28] ?? '-';
             $customer->Gua_nic = $row[29] ?? '-';
-
-            // Additional fields
-            $customer->Customer_Risk_Level = "1";  // Default risk level
+            $customer->Customer_Risk_Level = "1";
             $customer->civil_status = $row[30] ?? '-';
-
-            // Assign branch_id
             $customer->branch_id = session('branch_id');
-
-            // Save the customer data
             $customer->save();
 
-            // If bank details exist, save them
+            $insertedCustomers[$row[3]] = $customer->idCustomer; // 👈 Remember this insert
+
             if (isset($row[37])) {
                 $documentData = [
-                    'cus_id' => $customer->id,  // Customer ID
-                    'bank_name' => $row[37],    // Bank name
-                    'account_name' => $row[38], // Account name
-                    'account_number' => $row[39], // Account number
-                    'branch' => session('branch_id'), // Bank branch
+                    'cus_id' => $customer->idCustomer,
+                    'bank_name' => $row[37],
+                    'account_name' => $row[38],
+                    'account_number' => $row[39],
+                    'branch' => session('branch_id'),
                 ];
                 insertWithBranch('customer_has_bank', $documentData);
             }
         }
+//
         Log::info("Skipped Customers: ", $skipped);
-
 
         DB::table('group_has_customer')
             ->where('branch_id', session('branch_id'))
             ->delete();
 
         $routeData = [
-            'name' => 'Gampola',
-            'root_code' => 'G001',
+            'name' => session('branch_name'),
+            'root_code' => 'P001',
             'id_officer' => '1',
         ];
         $route_id = insertWithBranch('route', $routeData);
@@ -197,11 +285,11 @@ class ExcelController extends Controller
                 ->first();
             if ($customer){
                 $center_name = $row[1] ?? "Default";  // Assuming center_name is in the 3rd column
-                $center_no = $row[43] ?? "Default";
+                $center_no = $row[1] ?? "Default";
                 $center = tableWithBranch('center')->where('Name', '=', $center_name)->first();
                 if (!$center) {
                     $centerData = [
-                        'No' => $center_name,
+                        'No' => $center_no,
                         'Name' => $center_name,
                         'Contact_no' => '-',
                         'Address' => '-',
@@ -240,6 +328,8 @@ class ExcelController extends Controller
                 ]);
             }
         }
+
+
 
 
         return response()->json(['message' => 'Data processed successfully.'], 200);
@@ -300,11 +390,23 @@ class ExcelController extends Controller
 
             // Issue Date
             if (is_numeric($issue_date)) {
+                // Excel serial date (e.g., 45124)
                 $unix_date = ($issue_date - 25569) * 86400;
                 $issue_date = gmdate("Y-m-d", $unix_date);
             } else {
+                // Check if already in Y-m-d format or convert from m/d/Y etc.
                 try {
-                    $issue_date = (new DateTime($issue_date))->format('Y-m-d');
+                    $date = DateTime::createFromFormat('Y-m-d', $issue_date);
+                    if ($date && $date->format('Y-m-d') === $issue_date) {
+                        // Already correct format
+                    } else {
+                        // Try to parse alternative formats like m/d/Y
+                        $date = DateTime::createFromFormat('n/j/Y', $issue_date);
+                        if (!$date) {
+                            $date = new DateTime($issue_date); // Fallback general parser
+                        }
+                        $issue_date = $date->format('Y-m-d');
+                    }
                 } catch (Exception $e) {
                     return response()->json(['error' => 'Invalid issue date: ' . $issue_date], 400);
                 }
@@ -316,11 +418,21 @@ class ExcelController extends Controller
                 $first_ins_date = gmdate("Y-m-d", $unix_date_2);
             } else {
                 try {
-                    $first_ins_date = (new DateTime($first_ins_date))->format('Y-m-d');
+                    $date = DateTime::createFromFormat('Y-m-d', $first_ins_date);
+                    if ($date && $date->format('Y-m-d') === $first_ins_date) {
+                        // Already in correct format
+                    } else {
+                        $date = DateTime::createFromFormat('n/j/Y', $first_ins_date);
+                        if (!$date) {
+                            $date = new DateTime($first_ins_date); // Fallback general parser
+                        }
+                        $first_ins_date = $date->format('Y-m-d');
+                    }
                 } catch (Exception $e) {
                     return response()->json(['error' => 'Invalid first installment date: ' . $first_ins_date], 400);
                 }
             }
+
 
             $interest_rate = str_replace("%", "", $interest_rate);
 
@@ -789,11 +901,30 @@ class ExcelController extends Controller
 
         $loan_number = $row[1];
         $excelDate = $row[0];
+
         if (is_numeric($excelDate)) {
-            $date = date('Y-m-d', ($excelDate - 25569) * 86400);
+            // Excel serial number
+            $date = gmdate('Y-m-d', ($excelDate - 25569) * 86400);
         } else {
-            $date = date('Y-m-d', strtotime($excelDate));
+            try {
+                $parsedDate = DateTime::createFromFormat('Y-m-d', $excelDate);
+                if ($parsedDate && $parsedDate->format('Y-m-d') === $excelDate) {
+                    $date = $excelDate; // Already correct format
+                } else {
+                    // Try parsing m/d/Y or n/j/Y formats
+                    $parsedDate = DateTime::createFromFormat('n/j/Y', $excelDate);
+                    if (!$parsedDate) {
+                        $parsedDate = new DateTime($excelDate); // Fallback general parsing
+                    }
+                    $date = $parsedDate->format('Y-m-d');
+                }
+            } catch (Exception $e) {
+                $date = null; // or handle the error appropriately
+                // Example:
+                // return response()->json(['error' => 'Invalid date: ' . $excelDate], 400);
+            }
         }
+
         $amount = $row[3];
         $saving_amount = '0';
 

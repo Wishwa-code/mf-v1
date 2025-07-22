@@ -218,16 +218,26 @@ class GroupController extends Controller
 
             $type = $company->customer_num_type;
 
+            $center_customer_count = DB::table('customer')
+                ->join('group_has_customer', 'group_has_customer.cus_id', '=', 'customer.idCustomer')
+                ->join('customer_group', 'customer_group.idCustomer_Group', '=', 'group_has_customer.group_id')
+                ->where('customer_group.center_id', $customer_group->center_id)
+                ->distinct('customer.idCustomer')
+                ->count('customer.idCustomer');
+            $center_customer_count++;
+
             if ($type == "Format") {
-//                 Assuming $customer->cus_number is in the format "C000-G000-XXX"
-                $newnum = str_replace(['C000', 'G000', 'CLM'], [$center->No, $group->Group_No,$root->name], $customer_table->cus_number);
+                $newnum = str_replace(
+                    ['C000', 'G000', 'CLM', 'CenterCustomerCount'],
+                    [$center->No, $group->Group_No, $root->name, $center_customer_count],
+                    $customer_table->cus_number
+                );
 
                 updateWithBranch('customer', 'idCustomer', $customer, [
                     'cus_number' => $newnum
                 ]);
-
-
             }
+
 
             $request = new Request([
                 'customer_id' => $customer,
