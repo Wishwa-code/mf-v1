@@ -108,7 +108,16 @@ class TransactionController extends Controller
         $loan = $loanQuery->get();
 
         // Group data by 'group_name'
-        $grouped_loans = $loan->groupBy('group_name');
+        $grouped_loans = $loan->groupBy('group_name')->sortKeysUsing(function($a, $b) {
+            // Extract numbers from group names like "Group No: 1"
+            preg_match('/\d+/', $a, $matchA);
+            preg_match('/\d+/', $b, $matchB);
+
+            $numA = isset($matchA[0]) ? (int)$matchA[0] : 0;
+            $numB = isset($matchB[0]) ? (int)$matchB[0] : 0;
+
+            return $numA <=> $numB;
+        });
 
         // Convert the grouped loans array to an array (if not already)
         $grouped_loans = is_array($grouped_loans) ? $grouped_loans : $grouped_loans->toArray();
@@ -325,7 +334,18 @@ class TransactionController extends Controller
         $loan = $loanQuery->get();
 
         // Group data by 'group_name'
-        $grouped_loans = $loan->groupBy('group_name');
+        // Group data by 'group_name'
+        $grouped_loans = $loan->groupBy('group_name')->sortKeysUsing(function($a, $b) {
+            // Extract numbers from group names like "Group No: 1"
+            preg_match('/\d+/', $a, $matchA);
+            preg_match('/\d+/', $b, $matchB);
+
+            $numA = isset($matchA[0]) ? (int)$matchA[0] : 0;
+            $numB = isset($matchB[0]) ? (int)$matchB[0] : 0;
+
+            return $numA <=> $numB;
+        });
+
 
         return view('pages.DailyRepaymentLasantha', compact('center','route', 'grouped_loans','center_details'));
     }
@@ -511,7 +531,18 @@ class TransactionController extends Controller
         }
 
         $loan = $loanQuery->get();
-        $grouped_loans = $loan->groupBy('group_name');
+        // Group data by 'group_name'
+        $grouped_loans = $loan->groupBy('group_name')->sortKeysUsing(function($a, $b) {
+            // Extract numbers from group names like "Group No: 1"
+            preg_match('/\d+/', $a, $matchA);
+            preg_match('/\d+/', $b, $matchB);
+
+            $numA = isset($matchA[0]) ? (int)$matchA[0] : 0;
+            $numB = isset($matchB[0]) ? (int)$matchB[0] : 0;
+
+            return $numA <=> $numB;
+        });
+
 
         return view('pages.DailyRepaymentNoble', compact('center', 'grouped_loans', 'center_details', 'from_date'));
 
@@ -601,7 +632,17 @@ class TransactionController extends Controller
         $loan = $loanQuery->get();
 
         // Group data by 'group_name'
-        $grouped_loans = $loan->groupBy('group_name');
+        $grouped_loans = $loan->groupBy('group_name')->sortKeysUsing(function($a, $b) {
+            // Extract numbers from group names like "Group No: 1"
+            preg_match('/\d+/', $a, $matchA);
+            preg_match('/\d+/', $b, $matchB);
+
+            $numA = isset($matchA[0]) ? (int)$matchA[0] : 0;
+            $numB = isset($matchB[0]) ? (int)$matchB[0] : 0;
+
+            return $numA <=> $numB;
+        });
+
 
         return view('pages.RightWayDailyRepayment', compact('center', 'grouped_loans','center_details'));
     }
@@ -702,7 +743,18 @@ class TransactionController extends Controller
             });
         }
 
-        $grouped_loans = $loan->groupBy('group_name'); // ✅ ADD THIS LINE
+        // Group data by 'group_name'
+        $grouped_loans = $loan->groupBy('group_name')->sortKeysUsing(function($a, $b) {
+            // Extract numbers from group names like "Group No: 1"
+            preg_match('/\d+/', $a, $matchA);
+            preg_match('/\d+/', $b, $matchB);
+
+            $numA = isset($matchA[0]) ? (int)$matchA[0] : 0;
+            $numB = isset($matchB[0]) ? (int)$matchB[0] : 0;
+
+            return $numA <=> $numB;
+        });
+
 
         $selected_center = $center->firstWhere('idCenter', $center_details);
 

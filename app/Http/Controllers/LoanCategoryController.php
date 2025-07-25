@@ -6,6 +6,7 @@ use App\Models\LoanCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class LoanCategoryController extends Controller
 {
@@ -15,6 +16,10 @@ class LoanCategoryController extends Controller
      */
     public function index()
     {
+        // Dynamically add 'status' column if it does not exist
+        if (!Schema::hasColumn('loan_category', 'status')) {
+            DB::statement("ALTER TABLE loan_category ADD COLUMN status TINYINT DEFAULT 1");
+        }
         $loan_category = tableWithBranch('loan_category')->get();
         return view('pages.Product', compact('loan_category'));
     }
@@ -33,7 +38,10 @@ class LoanCategoryController extends Controller
      */
     public function store(Request $request)
     {
-
+// Dynamically add 'status' column if it does not exist
+        if (!Schema::hasColumn('loan_category', 'status')) {
+            DB::statement("ALTER TABLE loan_category ADD COLUMN status TINYINT DEFAULT 1");
+        }
         // Save LoanCategory
         $loancategory = new LoanCategory();
         $loancategory->Name = $request->product_name;

@@ -123,6 +123,11 @@ function tableWithBranch($table, $useBranchIdFromTable = null)
         return $query->where("$useBranchIdFromTable.branch_id", session('branch_id'));
     }
 
+    // If table is loan_category, also apply status = 1 filter
+    if ($table === 'loan_category') {
+        $query->where('status', 1);
+    }
+
     return $query->where('branch_id', session('branch_id'));
 }
 

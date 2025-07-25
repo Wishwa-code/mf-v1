@@ -6,6 +6,7 @@ use App\Models\Center;
 use App\Models\Group;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use function Laravel\Prompts\table;
 
 class CenterController extends Controller
 {
@@ -159,7 +160,7 @@ class CenterController extends Controller
         $collector = tableWithBranch('user')->where('collector','=','1')->get();
 
         // --- Expenses Query (Processing Fee) ---
-        $expensesQuery = DB::table('expences')
+        $expensesQuery = tableWithBranch('expences','expences')
             ->selectRaw("
             DISTINCT SUBSTRING_INDEX(SUBSTRING_INDEX(reason, 'loan number: (', -1), ')', 1) as loan_number,
             expences.amount,
@@ -208,7 +209,7 @@ class CenterController extends Controller
 
 
         // --- Payments Query (Loan Payments) ---
-        $paymentQuery = DB::table('customer_payments')
+        $paymentQuery = tableWithBranch('customer_payments','customer_payments')
             ->selectRaw("
             DISTINCT customer_payments.Amount as amount,
             customer_loan_sub.Loan_No as loan_number,
