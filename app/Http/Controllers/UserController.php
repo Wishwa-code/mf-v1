@@ -138,36 +138,7 @@ class UserController extends Controller
             $user = DB::table('user')->where('email', $request->email)->get();
             foreach ($user as $item) {
 
-                // Try-catch block to handle cURL errors
-                try {
-                    $client = new Client([
-                        'base_uri' => 'https://e-sms.dialog.lk/api/v1/',
-                    ]);
 
-                    $response = $client->post('login', [
-                        'headers' => [
-                            'Content-Type' => 'application/json',
-                        ],
-                        'json' => [
-                            'username' => 'ASIPIYA',
-                            'password' => 'Dialog@123',
-                        ],
-                    ]);
-
-                    $responseData = json_decode($response->getBody()->getContents(), true);
-
-                    // Check if token exists in the response data
-                    if (isset($responseData['token'])) {
-                        // Store token in session
-                        $session->put('token', $responseData['token']);
-
-                        // Optionally, store other relevant data in session
-                        $session->put('userData', $responseData['userData']);
-                    }
-                } catch (\Exception $e) {
-                    // Log the error and proceed with login
-                    \Log::error('SMS API Login Error: ' . $e->getMessage());
-                }
 
                 // Store user information in session
 

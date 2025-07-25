@@ -281,13 +281,7 @@
                                             </tr>
                                         @endforeach
 
-                                        <tr class="group-row" style="font-weight: bold;">
-                                            <td colspan="2">Group Total</td>
-                                            <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
-                                            <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
-                                            <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
-                                            <td colspan="10"></td>
-                                        </tr>
+
 
                                         @for ($j = 0; $j < 7; $j++)
                                             <tr class="group-row">
@@ -296,6 +290,13 @@
                                                 @endfor
                                             </tr>
                                         @endfor
+                                        <tr class="group-row" style="font-weight: bold;">
+                                            <td colspan="2">Group Total</td>
+                                            <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
+                                            <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
+                                            <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
+                                            <td colspan="10"></td>
+                                        </tr>
                                     @endforeach
                                     </tbody>
                                     @endforeach
@@ -422,59 +423,47 @@
                 XLSX.writeFile(wb, `Repayment_Report_${new Date().toLocaleString('default', { month: 'long' })}.xlsx`);
             });
 
-            $('#pdfButton').click(function () {
-                const element = document.getElementById('repaymentTable');
-                const opt = {
-                    margin: [0.5, 0.5, 0.5, 0.5],
-                    filename: `Repayment_Report_${new Date().toLocaleString('default', {month: 'long'})}.pdf`,
-                    image: {type: 'jpeg', quality: 0.98},
-                    html2canvas: {scale: 2, useCORS: true},
-                    jsPDF: {unit: 'in', format: [11, 8.5], orientation: 'landscape'}
-                };
-                html2pdf().from(element).set(opt).save();
-            });
-
-            let grandTotalLoanAmount = 0;
-            let grandTotalInstallmentAmount = 0;
-            let grandTotalBalanceAmount = 0;
-
-            $('#repaymentTable tbody tr.group-row').each(function () {
-                const loanAmount = parseFloat($(this).find('td:eq(2)').text().replace(/,/g, '')) || 0;
-                const installmentAmount = parseFloat($(this).find('td:eq(3)').text().replace(/,/g, '')) || 0;
-                const balanceAmount = parseFloat($(this).find('td:eq(4)').text().replace(/,/g, '')) || 0;
-
-                grandTotalLoanAmount += loanAmount;
-                grandTotalInstallmentAmount += installmentAmount;
-                grandTotalBalanceAmount += balanceAmount;
-            });
-
-
             $('#printButton').click(function () {
                 const currentMonth = new Date().toLocaleString('default', { month: 'long' });
-                const center_details = $('#center_details').find('option:selected').text();
+                const centerDetails = $('#center_details option:selected').text();
                 const orientation = $('#pageOrientation').val();
 
+                const centerNo = '{{ $center_no }}';
+                const centerName = '{{ $center_name }}';
+                const printedBy = '{{ $printedBy }}';
+                const printedAt = '{{ $printedAt }}';
+                const companyName = '{{ session("company_name") }}';
+
                 const printWindow = window.open('', '', 'height=800,width=1200');
-                printWindow.document.write('<html><head><title>Repayment Sheet</title>');
-                printWindow.document.write('<style>');
-                printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 9px; zoom: 80%; margin: 0.5in; }');
-                printWindow.document.write('table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8px; }');
-                printWindow.document.write('th, td { border: 1px solid black; padding: 4px; text-align: center; word-break: break-word; }');
-                printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
+                printWindow.document.write('<html><head><title>Repayment Sheet</title><style>');
+
+                printWindow.document.write(`
+        @page { size: ${orientation}; margin: 0.5in; }
+        body { font-family: Arial, sans-serif; font-size: 9px; margin: 0.5in; zoom: 80%; }
+        h2 { text-align: center; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8px; }
+        th, td { border: 1px solid black; padding: 4px; text-align: center; word-break: break-word; min-height: 25px; }
+        .paid-amount { width: 80px !important; }
+        .correct-column { width: 40px !important; }
+        .print-header { display: flex; justify-content: space-between; font-size: 10px; color: black; border-bottom: 1px solid #ccc; margin-bottom: 5px; padding-bottom: 4px; }
+        .summary-table td { border: none; }
+    `);
+
                 printWindow.document.write('</style></head><body>');
-                printWindow.document.write('<h2 style="text-align:center;">Repayment Sheet for ' + currentMonth + ' (' + center_details + ')</h2>');
+
+                const printHeader = `
+        <div class="print-header">
+            <div>Company: ${companyName} | Center No: ${centerNo} | Center Name: ${centerName}</div>
+            <div>Printed by: ${printedBy} on ${printedAt}</div>
+        </div>
+        <h2>Repayment Sheet - ${currentMonth} (${centerDetails})</h2>
+    `;
 
                 const groups = document.querySelectorAll('#repaymentTable tbody');
                 let groupCount = 0;
                 let tempContent = '';
-
-                let grandLoanAmount = 0;
-                let grandInstallmentAmount = 0;
-                let grandBalanceAmount = 0;
-
-                let pageLoanAmount = 0;
-                let pageInstallmentAmount = 0;
-                let pageBalanceAmount = 0;
+                let grandLoanAmount = 0, grandInstAmount = 0, grandBalAmount = 0;
+                let pageLoanAmount = 0, pageInstAmount = 0, pageBalAmount = 0;
 
                 groups.forEach((group, index) => {
                     if (groupCount === 0) {
@@ -483,83 +472,68 @@
 
                     tempContent += group.outerHTML;
 
-                    // Accumulate page and grand totals
                     $(group).find('tr').each(function () {
                         const cells = $(this).find('td');
                         if (cells.length >= 5) {
-                            const loanNo = $(cells[0]).text().trim();
-                            const name = $(cells[1]).text().trim();
-                            if (loanNo !== '' && name !== '') {
-                                const loanAmt = parseFloat($(cells[2]).text().replace(/,/g, '')) || 0;
-                                const instAmt = parseFloat($(cells[3]).text().replace(/,/g, '')) || 0;
-                                const balAmt = parseFloat($(cells[4]).text().replace(/,/g, '')) || 0;
+                            const loanAmt = parseFloat($(cells[2]).text().replace(/,/g, '')) || 0;
+                            const instAmt = parseFloat($(cells[3]).text().replace(/,/g, '')) || 0;
+                            const balAmt = parseFloat($(cells[4]).text().replace(/,/g, '')) || 0;
 
-                                pageLoanAmount += loanAmt;
-                                pageInstallmentAmount += instAmt;
-                                pageBalanceAmount += balAmt;
+                            pageLoanAmount += loanAmt;
+                            pageInstAmount += instAmt;
+                            pageBalAmount += balAmt;
 
-                                grandLoanAmount += loanAmt;
-                                grandInstallmentAmount += instAmt;
-                                grandBalanceAmount += balAmt;
-                            }
+                            grandLoanAmount += loanAmt;
+                            grandInstAmount += instAmt;
+                            grandBalAmount += balAmt;
                         }
                     });
 
                     groupCount++;
                     const isLastGroup = (index === groups.length - 1);
 
-                    if (groupCount === 2 || isLastGroup) {
+                    if ((groupCount === 2 && index === 1) || isLastGroup || groupCount === 2) {
                         tempContent += '</table>';
+                        printWindow.document.write(printHeader);
                         printWindow.document.write(tempContent);
 
-                        if (!isLastGroup) {
-                            printWindow.document.write(`
-                    <table style="width:100%; border-collapse: collapse; margin-top: 10px; font-size: 10px;">
-                        <tr style="font-weight:bold;">
-                            <td colspan="2">Page Total</td>
-                            <td>${pageLoanAmount.toFixed(2)}</td>
-                            <td>${pageInstallmentAmount.toFixed(2)}</td>
-                            <td>${pageBalanceAmount.toFixed(2)}</td>
-                            <td colspan="10"></td>
-                        </tr>
-                    </table>
-                `);
-                        } else {
-                            printWindow.document.write(`
-                    <table style="width:100%; border-collapse: collapse; margin-top: 10px; font-size: 10px;">
-                        <tr style="font-weight:bold;">
-                            <td colspan="2">Cumulative Total</td>
-                            <td>${grandLoanAmount.toFixed(2)}</td>
-                            <td>${grandInstallmentAmount.toFixed(2)}</td>
-                            <td>${grandBalanceAmount.toFixed(2)}</td>
-                            <td colspan="10"></td>
-                        </tr>
-                    </table>
-                `);
-                        }
+                        const totalLabel = isLastGroup ? 'Center Summary' : 'Page Total';
+                        const totalLoan = isLastGroup ? grandLoanAmount : pageLoanAmount;
+                        const totalInst = isLastGroup ? grandInstAmount : pageInstAmount;
+                        const totalBal = isLastGroup ? grandBalAmount : pageBalAmount;
+
+                        printWindow.document.write(`
+                <table style="margin-top: 10px;" class="summary-table">
+                    <tr style="font-weight:bold;">
+                        <td colspan="2">${totalLabel}</td>
+                        <td>${totalLoan.toFixed(2)}</td>
+                        <td>${totalInst.toFixed(2)}</td>
+                        <td>${totalBal.toFixed(2)}</td>
+                        <td colspan="10"></td>
+                    </tr>
+                </table>
+            `);
 
                         if (!isLastGroup) {
                             printWindow.document.write('<div style="page-break-after: always;"></div>');
                         }
 
-                        // Reset page totals after each page
                         pageLoanAmount = 0;
-                        pageInstallmentAmount = 0;
-                        pageBalanceAmount = 0;
-
+                        pageInstAmount = 0;
+                        pageBalAmount = 0;
                         tempContent = '';
                         groupCount = 0;
                     }
                 });
 
-                // Signature section at end
+                // Signature section at the end
                 printWindow.document.write(`
         <br><br>
         <table style="width: 100%; font-size: 12px; border: none; line-height: 2;">
-            <tr><td style="width: 35%;"><strong>EXECUTIVE SIGNATURE</strong></td><td style="width: 65%;"><div style="border-bottom: 2px solid black; width: 100%;"></div></td></tr>
-            <tr><td><strong>SLIP NUMBER</strong></td><td><div style="border-bottom: 2px solid black; width: 100%;"></div></td></tr>
-            <tr><td><strong>CASHIER SIGNATURE</strong></td><td><div style="border-bottom: 2px solid black; width: 100%;"></div></td></tr>
-            <tr><td><strong>MANAGER SIGNATURE</strong></td><td><div style="border-bottom: 2px solid black; width: 100%;"></div></td></tr>
+            <tr><td style="width: 35%;"><strong>EXECUTIVE SIGNATURE</strong></td><td><div style="border-bottom: 2px solid black;"></div></td></tr>
+            <tr><td><strong>SLIP NUMBER</strong></td><td><div style="border-bottom: 2px solid black;"></div></td></tr>
+            <tr><td><strong>CASHIER SIGNATURE</strong></td><td><div style="border-bottom: 2px solid black;"></div></td></tr>
+            <tr><td><strong>MANAGER SIGNATURE</strong></td><td><div style="border-bottom: 2px solid black;"></div></td></tr>
         </table>
     `);
 
@@ -568,7 +542,6 @@
                 printWindow.focus();
                 printWindow.print();
             });
-
 
 
 
