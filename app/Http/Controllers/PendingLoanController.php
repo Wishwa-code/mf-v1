@@ -559,6 +559,7 @@ class PendingLoanController extends Controller
 
         $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin('customer_has_bank', 'customer_loan.Customer_idCustomer', '=', 'customer_has_bank.cus_id')
             ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
             FROM group_has_customer 
             LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
@@ -581,6 +582,7 @@ class PendingLoanController extends Controller
             ->where('approval_subquery.pending_approvals', '=', 0)  // Ensure no pending approvals (fully approved)
             ->select(
                 'customer_loan.*',
+                'customer_has_bank.*',
                 'loan_category.Name as loan_name',
                 'customer.*',
                 DB::raw('IFNULL(subquery.group_name, "-") as group_name'),

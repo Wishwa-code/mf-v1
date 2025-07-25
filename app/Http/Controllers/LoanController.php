@@ -105,12 +105,12 @@ class LoanController extends Controller
                 if ($type == "0") {
                     $loan_format = $company->inv_loan_format;
                     $cus_root=tableWithBranch('customer','customer')
-                        ->join('route', 'route.id_route', '=', 'customer.route_id')
+                        ->leftjoin('route', 'route.id_route', '=', 'customer.route_id')
                         ->where('idCustomer','=',$customer_id)
                         ->first();
                     $placeholders = [
                         '@Branch_No@' => $branch_no,
-                        '@Root@' => $cus_root->root_code,
+                        '@Root@' => $cus_root->root_code ?? '',
                         '@Product_Code@' => $product_code->Product_code,
                         '@Customer_No@' => str_pad($cus_root->idCustomer, 3, '0', STR_PAD_LEFT),
                         '@Auto_Id@' => $formatted_loan_id,

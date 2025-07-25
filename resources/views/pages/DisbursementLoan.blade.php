@@ -628,7 +628,7 @@
             var table = $('#loan_table').DataTable();
             var rows = table.rows().data();
 
-            var data = [['#', 'Customer Number', 'NIC', 'Customer Name', 'Amount', 'Received By']];
+            var data = [['#', 'Customer Number', 'NIC', 'Customer Name','Bank Details', 'Amount', 'Received By']];
             var totalAmount = 0;
 
             for (var i = 0; i < rows.length; i++) {

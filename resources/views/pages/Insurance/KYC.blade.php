@@ -146,8 +146,8 @@
     <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
-        document.addEvaentListener("DOMContentLoaded", function () {
-            const selectedId = "{{ $id ?? 0 }}";
+        const selectedId = "{{ $id ?? 0 }}";
+        if(selectedId!='0'){
             const customerSelect = document.getElementById("customerSelect");
 
             if (selectedId && selectedId !== "0") {
@@ -157,7 +157,7 @@
                 const event = new Event('change');
                 customerSelect.dispatchEvent(event);
             }
-        });
+        }
     </script>
 
     <script>
