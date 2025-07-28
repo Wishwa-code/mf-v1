@@ -204,7 +204,11 @@ function load_payment_reciept(id) {
                 $("#loan_number").text(loan.Loan_No);
                 $("#payment_date").text(payment.Date);
                 $("#payment_time").text(payment.time);
+                let cashier=$("#cashier").val();
                 $("#payment_type_view").text(payment.Payment_type);
+                if (cashier=="1") {
+                    $("#payment_type_view").text("Cashier");
+                }
 
                 if (parseFloat(data.panelty_balance) > 0) {
                     $("#panelty_balance").text(parseFloat(data.panelty_balance).toFixed(2));

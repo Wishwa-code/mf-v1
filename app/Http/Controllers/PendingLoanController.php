@@ -149,18 +149,13 @@ class PendingLoanController extends Controller
                 ->where('idCustomer_Loan','=',$id)
                 ->first();
 
-//            $bank = tableWithBranch('company_bank_accounts')->where('Idbank','=',$company_bank)->first();
-//            if ($bank->Account_Balance<$customer_loan->Amount){
-//                return response()->json(['error' => 'Bank Balance is not enough','id' => 0], 200);
-//            }else{
-//
-//            }
             $affected = DB::table('customer_loan')
                 ->where('idCustomer_Loan', $id)
                 ->where('branch_id', session('branch_id'))
                 ->update(
                     [
                         'Status' => '0',
+                        'Date_Time' => date('Y-m-d H:i:s'),
                         'cus_bank_account' => $request->bank_acc,
                         'company_bank_account' => $company_bank
                     ]);
@@ -879,21 +874,15 @@ class PendingLoanController extends Controller
                 'customer.idCustomer', '=', 'subquery.cus_id')
             ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
             ->leftJoin('loan_category as lc', 'lc.idLoan_Category', '=', 'cl.Loan_Category_idLoan_Category')
-            ->leftJoin(DB::raw("(
-    SELECT Loan_ID, MIN(Date_Time) as Date_Time
-    FROM Loan_Log
-    WHERE Type = 'Issue Loan'
-    GROUP BY Loan_ID
-) as ll"), 'll.Loan_ID', '=', 'cl.idCustomer_Loan')
             ->whereIn('cl.Status', [0, 1]);
 
 
         if ($request->date_from) {
-            $query->whereDate('ll.Date_Time', '>=', $request->date_from);
+            $query->whereDate('cl.Date_Time', '>=', $request->date_from);
         }
 
         if ($request->date_to) {
-            $query->whereDate('ll.Date_Time', '<=', $request->date_to);
+            $query->whereDate('cl.Date_Time', '<=', $request->date_to);
         }
 
         if ($request->branch_id) {
@@ -913,7 +902,7 @@ class PendingLoanController extends Controller
             'cl.Loan_No',
             'customer.cus_number as cus_number',
             'cl.Date_Time as create_date',
-            'll.Date_Time as disburse_date',
+            'cl.Date_Time as disburse_date',
             'lc.Name as product_name',
             'lc.Product_code as Product_code',
             'cl.Amount',

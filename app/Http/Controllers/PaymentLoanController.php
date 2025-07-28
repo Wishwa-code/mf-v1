@@ -123,7 +123,7 @@ class PaymentLoanController extends Controller
         if (!empty($loan_number)) {
             $loanQuery->where('customer_loan.Loan_No', 'LIKE', '%' . $loan_number . '%');
         }
-
+        $loanQuery->orderBy('idCustomer_Loan','desc');
         $loans = $loanQuery->paginate(10);
 
 

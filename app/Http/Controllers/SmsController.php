@@ -92,8 +92,8 @@ class SmsController extends Controller
                                 'X-API-VERSION' => 'v1',
                             ],
                             'json' => [
-                                'username' => 'abc@example.com',
-                                'password' => 'abc@123',
+                                'username' => 'finance.asipiya@gmail.com',
+                                'password' => 'Asipiya@hutch123',
                             ],
                         ]);
                         $data = json_decode($response->getBody()->getContents(), true);

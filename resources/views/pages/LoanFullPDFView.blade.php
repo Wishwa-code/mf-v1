@@ -143,7 +143,7 @@
                 <thead>
                 <tr style="align-content: center">
                     <th>Loan Amount</th>
-                    <th>Total Loan Amount</th>
+                    <th>Loan Portfolio</th>
                     <th>Total Paid Amount</th>
                     <th>Total Balance</th>
                     <th>Capital Balance</th>
@@ -532,47 +532,46 @@
 {{--            </div>--}}
 {{--        </div>--}}
 {{--    </div>--}}
-
-    <div class="page-break"></div> <!-- Page break here -->
-    <br>
-    <div class="card shadow">
-        <div class="card-header">
-            Payment History
-        </div>
-        <div class="card-body">
-            <div class="table-responsive custom-scrollbar">
-                <table class="table table-bordered table-sm table-striped">
-                    <thead class="sticky-top bg-white">
-                    <tr>
-                        {{--                            <th scope="col">Payment ID</th>--}}
-                        <th scope="col">Date</th>
-                        <th scope="col">Description</th>
-                        <th scope="col">Amount</th>
-                        <th scope="col">Comment</th>
-{{--                        <th scope="col">Slip</th>--}}
-                        <th scope="col">User</th>
-                    </tr>
-                    </thead>
-                    <tbody class="custom-scrollbar" style="max-height: 400px;">
-                    @foreach ($customer_payments as $customer_payment)
-
+    @if ($customer_payments->count() > 0)
+        <div class="page-break"></div> <!-- Page break here -->
+        <br>
+        <div class="card shadow">
+            <div class="card-header">
+                Payment History
+            </div>
+            <div class="card-body">
+                <div class="table-responsive custom-scrollbar">
+                    <table class="table table-bordered table-sm table-striped">
+                        <thead class="sticky-top bg-white">
                         <tr>
-
-                            <td>{{ $customer_payment->Date }} - {{ $customer_payment->time }}</td>
-                            <td>{{ $customer_payment->Description }}</td>
-                            <td>{{ number_format($customer_payment->Amount, 2, '.', ',') }}</td>
-                            <td>{{ $customer_payment->comment }}</td>
-{{--                            <td>{{ $customer_payment->Slip }}</td>--}}
-                            <td>{{ $customer_payment->Full_Name }} ( {{ $customer_payment->Designation }} - {{ $customer_payment->email }} )</td>
-
+                            <th scope="col">Date</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">Amount</th>
+                            <th scope="col">Comment</th>
+                            <th scope="col">User</th>
                         </tr>
-                    @endforeach
+                        </thead>
+                        <tbody class="custom-scrollbar" style="max-height: 400px;">
+                        @foreach ($customer_payments as $customer_payment)
 
-                    </tbody>
-                </table>
+                            <tr>
+
+                                <td>{{ $customer_payment->Date }} - {{ $customer_payment->time }}</td>
+                                <td>{{ $customer_payment->Description }}</td>
+                                <td>{{ number_format($customer_payment->Amount, 2, '.', ',') }}</td>
+                                <td>{{ $customer_payment->comment }}</td>
+                                <td>{{ $customer_payment->Full_Name }} ( {{ $customer_payment->Designation }} - {{ $customer_payment->email }} )</td>
+
+                            </tr>
+                        @endforeach
+
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-    </div>
+    @endif
+
 
 
 </div>

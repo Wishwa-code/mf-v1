@@ -1346,6 +1346,17 @@
                         }
                         $("#capital_balance").text(parseFloat(loan.Balance_Amount).toFixed(2));
                         $("#payment_type_view").text(payment.Payment_type);
+                        <?php
+                        $user_id = session('userid');
+                        $cashier = DB::table('user')
+                            ->where('id', $user_id)
+                            ->where('cashier','=','1')
+                            ->first();
+                        ?>
+                        @if($cashier)
+                            $("#payment_type_view").text("Cashier");
+                        @endif
+
 
                         $("#signature").text(user.Full_Name);
                     }
