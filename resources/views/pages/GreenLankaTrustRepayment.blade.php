@@ -446,89 +446,105 @@
         .paid-amount { width: 80px !important; }
         .correct-column { width: 40px !important; }
         .print-header { display: flex; justify-content: space-between; font-size: 10px; color: black; border-bottom: 1px solid #ccc; margin-bottom: 5px; padding-bottom: 4px; }
-        .summary-table td { border: none; }
+        .summary-table td { border: none; font-weight: bold; }
     `);
 
                 printWindow.document.write('</style></head><body>');
 
                 const printHeader = `
         <div class="print-header">
-            <div>Company: ${companyName} | Center No: ${centerNo} | Center Name: ${centerName}</div>
+            <div>${companyName} | Center No: ${centerNo} | Center Name: ${centerName}</div>
             <div>Printed by: ${printedBy} on ${printedAt}</div>
         </div>
         <h2>Repayment Sheet - ${currentMonth} (${centerDetails})</h2>
     `;
 
-                const groups = document.querySelectorAll('#repaymentTable tbody');
-                let groupCount = 0;
-                let tempContent = '';
-                let grandLoanAmount = 0, grandInstAmount = 0, grandBalAmount = 0;
-                let pageLoanAmount = 0, pageInstAmount = 0, pageBalAmount = 0;
+                const groupBlocks = document.querySelectorAll('.print-group-block');
+                let finalPrint = '';
 
-                groups.forEach((group, index) => {
-                    if (groupCount === 0) {
-                        tempContent += '<table><thead>' + document.querySelector('#repaymentTable thead').innerHTML + '</thead>';
-                    }
+                // Grand totals
+                let totalLoanAmount = 0;
+                let totalInstallmentAmount = 0;
+                let totalBalanceAmount = 0;
 
-                    tempContent += group.outerHTML;
+                groupBlocks.forEach((block, index) => {
+                    finalPrint += printHeader;
+                    finalPrint += '<table><thead>' + document.querySelector('#repaymentTable thead').innerHTML + '</thead>';
+                    finalPrint += block.outerHTML;
 
-                    $(group).find('tr').each(function () {
-                        const cells = $(this).find('td');
+                    // Page total calculation
+                    let pageLoanAmount = 0, pageInstallmentAmount = 0, pageBalanceAmount = 0;
+                    const rows = block.querySelectorAll('tr');
+
+                    rows.forEach(row => {
+                        const cells = row.querySelectorAll('td');
                         if (cells.length >= 5) {
-                            const loanAmt = parseFloat($(cells[2]).text().replace(/,/g, '')) || 0;
-                            const instAmt = parseFloat($(cells[3]).text().replace(/,/g, '')) || 0;
-                            const balAmt = parseFloat($(cells[4]).text().replace(/,/g, '')) || 0;
+                            const loan = parseFloat(cells[2]?.innerText.replace(/,/g, '')) || 0;
+                            const inst = parseFloat(cells[3]?.innerText.replace(/,/g, '')) || 0;
+                            const bal = parseFloat(cells[4]?.innerText.replace(/,/g, '')) || 0;
 
-                            pageLoanAmount += loanAmt;
-                            pageInstAmount += instAmt;
-                            pageBalAmount += balAmt;
+                            pageLoanAmount += loan;
+                            pageInstallmentAmount += inst;
+                            pageBalanceAmount += bal;
 
-                            grandLoanAmount += loanAmt;
-                            grandInstAmount += instAmt;
-                            grandBalAmount += balAmt;
+                            totalLoanAmount += loan;
+                            totalInstallmentAmount += inst;
+                            totalBalanceAmount += bal;
                         }
                     });
 
-                    groupCount++;
-                    const isLastGroup = (index === groups.length - 1);
+                    // Only show page total if not the last block
+                    if (index !== groupBlocks.length - 1) {
+                        finalPrint += `
+                <tr style="font-weight:bold;">
+                    <td colspan="2">Page Total</td>
+                    <td>${pageLoanAmount.toFixed(2)}</td>
+                    <td>${pageInstallmentAmount.toFixed(2)}</td>
+                    <td>${pageBalanceAmount.toFixed(2)}</td>
+                    <td colspan="10"></td>
+                </tr>
+            `;
+                    }
 
-                    if ((groupCount === 2 && index === 1) || isLastGroup || groupCount === 2) {
-                        tempContent += '</table>';
-                        printWindow.document.write(printHeader);
-                        printWindow.document.write(tempContent);
+                    finalPrint += '</table>';
 
-                        const totalLabel = isLastGroup ? 'Center Summary' : 'Page Total';
-                        const totalLoan = isLastGroup ? grandLoanAmount : pageLoanAmount;
-                        const totalInst = isLastGroup ? grandInstAmount : pageInstAmount;
-                        const totalBal = isLastGroup ? grandBalAmount : pageBalAmount;
-
-                        printWindow.document.write(`
-                <table style="margin-top: 10px;" class="summary-table">
-                    <tr style="font-weight:bold;">
-                        <td colspan="2">${totalLabel}</td>
-                        <td>${totalLoan.toFixed(2)}</td>
-                        <td>${totalInst.toFixed(2)}</td>
-                        <td>${totalBal.toFixed(2)}</td>
-                        <td colspan="10"></td>
-                    </tr>
-                </table>
-            `);
-
-                        if (!isLastGroup) {
-                            printWindow.document.write('<div style="page-break-after: always;"></div>');
-                        }
-
-                        pageLoanAmount = 0;
-                        pageInstAmount = 0;
-                        pageBalAmount = 0;
-                        tempContent = '';
-                        groupCount = 0;
+                    if (index !== groupBlocks.length - 1) {
+                        finalPrint += '<div style="page-break-after: always;"></div>';
                     }
                 });
 
-                // Signature section at the end
+                // Write all group pages
+                printWindow.document.write(finalPrint);
+
+                // Add summary and signature on last page
+                printWindow.document.write('<div style="page-break-before: always;"></div>');
+
+                // Center Summary block
                 printWindow.document.write(`
         <br><br>
+        <table style="width: 100%; font-size: 11px; margin-bottom: 20px;">
+            <thead>
+                <tr style="font-weight: bold; text-align: center;">
+                    <td colspan="3">Center Summary</td>
+                </tr>
+                <tr style="font-weight: bold;">
+                    <td>Loan Amount</td>
+                    <td>Due Installment</td>
+                    <td>New Loan Amount</td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>${totalLoanAmount.toFixed(2)}</td>
+                    <td>${totalInstallmentAmount.toFixed(2)}</td>
+                    <td>${totalBalanceAmount.toFixed(2)}</td>
+                </tr>
+            </tbody>
+        </table>
+    `);
+
+                // Signature block
+                printWindow.document.write(`
         <table style="width: 100%; font-size: 12px; border: none; line-height: 2;">
             <tr><td style="width: 35%;"><strong>EXECUTIVE SIGNATURE</strong></td><td><div style="border-bottom: 2px solid black;"></div></td></tr>
             <tr><td><strong>SLIP NUMBER</strong></td><td><div style="border-bottom: 2px solid black;"></div></td></tr>
