@@ -329,8 +329,7 @@
                                                         <label for="interest_method" class="form-label">Interest Method<span class="required-asterisk">*</span></label>
                                                         <select class="form-select" id="interest_method" disabled>
                                                             <option value="Flat Rate">Flat Rate</option>
-                                                            <option value="Reducing Balance - Equal Installments">Reducing Balance - Equal Installments</option>
-                                                            <option value="Reducing Balance - Equal Capital">Reducing Balance - Equal Capital</option>
+                                                            <option value="Reducing Balance">Reducing Balance</option>
                                                             <option value="Interest Only">Interest Only</option>
                                                             <option value="Draft">Draft</option>
                                                         </select>
@@ -761,11 +760,10 @@
                                                                 <th class="text-end">Paid Amount</th>
                                                                 <th class="text-end">Penalty Balance</th>
                                                                 <th class="text-end">Installment Balance</th>
-                                                                <th class="text-end">Savings Balance</th>
+                                                                <th class="text-end">Capital Balance</th>
                                                                 <th class="text-end">Total Balance</th>
                                                             </tr>
                                                             </thead>
-                                                            <tbody>
                                                             <tbody>
                                                             @foreach($installments as $item)
                                                                 <tr data-installment-id="{{ $item->idInstallments }}"
@@ -801,9 +799,6 @@
                                                                 </tr>
                                                             @endforeach
                                                             </tbody>
-                                                        </table>
-
-                                                        </tbody>
                                                         </table>
 
                                                     </div> <!-- end table-responsive-->
@@ -1027,7 +1022,8 @@
                 theme: 'bootstrap4'
             })
             load_individual_customer();
-
+            let x = ["#payment_amount"];
+            decimalFormat(x);
 
         })
 
@@ -1087,7 +1083,6 @@
                 }
             });
         }
-
 
 
         function change_type(type){
@@ -1715,37 +1710,101 @@
                     // Update rows in the installment table starting from indexToUpdate
                     let indexToUpdate = installments.indexOf(earliestInstallment);
 
-                    let count=0;
-                    if(interest_method === "Reducing Balance") {
-                        for (let i = indexToUpdate; i < installments.length; i++) {
-
-                            // ins_amount=parseFloat($("#installment_amount").val());
-                            // let loan_period=parseFloat($("#loan_period").val());
-                            // let total_interest_amount=parseFloat($("#total_interest_amount").text());
-                            // interest_amount=0;
-                            // interest_amount=(total_interest_amount/((loan_period*(1+loan_period))/2)*((loan_period+1)-count));
-                            // capital_amount=ins_amount-interest_amount;
 
 
-                            let paid = parseFloat(installments[i].row.find('td').eq(9).text()); // Convert text to a float
-                            installments[i].row.find('td').eq(2).text(interest_per_installment.toFixed(2));
-                            installments[i].row.find('td').eq(3).text(installment_capital.toFixed(2));
-                            installments[i].row.find('td').eq(4).text(interest_per_installment.toFixed(2));
-                            installments[i].row.find('td').eq(8).text((ins_amount).toFixed(2)); // Correct the calculation
-                            installments[i].row.find('td').eq(11).text((ins_amount - paid).toFixed(2)); // Correct the calculation
-                            installments[i].row.find('td').eq(13).text((ins_amount - paid).toFixed(2)); // Correct the calculation
+                    if (interest_method === "Reducing Balance") {
+                        let filteredInstallments = installments.filter(x => x.totalBalance !== 0.00);
+                        let indexToUpdate = installments.indexOf(filteredInstallments[0]);
+                        let installmentCount = filteredInstallments.length;
+
+                        let duration_period = $('#duration_period').val();
+                        let interest_period_count = installmentCount;
+                        let interestRate = parseFloat($('#loan_interest').val());
+                        let interest_period = $("#interest_period").text();
+                        let principal_balance = parseFloat($("#loan_capital_balance").text());
+                        let reducing_amount = payment_amount - required_payment_before_capital;
+
+                        let new_principal_balance = principal_balance - reducing_amount;
+
+                        // Calculate total interest for the remaining period
+                        let total_interest = 0;
+                        if (interest_period === "Daily") {
+                            if (duration_period === "Days") {
+                                total_interest = interestRate * interest_period_count;
+                            } else if (duration_period === "Weeks") {
+                                total_interest = interestRate * interest_period_count * 7;
+                            } else if (duration_period === "Months") {
+                                total_interest = interestRate * interest_period_count * 30;
+                            }
+                        } else if (interest_period === "Weekly") {
+                            if (duration_period === "Days") {
+                                total_interest = (interestRate / 7) * interest_period_count;
+                            } else if (duration_period === "Weeks") {
+                                total_interest = interestRate * interest_period_count;
+                            } else if (duration_period === "Months") {
+                                total_interest = (interestRate / 7) * 30 * interest_period_count;
+                            }
+                        } else if (interest_period === "Per Month") {
+                            if (duration_period === "Days") {
+                                total_interest = (interestRate / 30) * interest_period_count;
+                            } else if (duration_period === "Weeks") {
+                                total_interest = (interestRate / 30) * 7 * interest_period_count;
+                            } else if (duration_period === "Months") {
+                                total_interest = interestRate * interest_period_count;
+                            }
+                        } else if (interest_period === "Per Year") {
+                            if (duration_period === "Days") {
+                                total_interest = (interestRate / 365) * interest_period_count;
+                            } else if (duration_period === "Weeks") {
+                                total_interest = (interestRate / 365) * 7 * interest_period_count;
+                            } else if (duration_period === "Months") {
+                                total_interest = (interestRate / 12) * interest_period_count;
+                            }
+                        } else if (interest_period === "Per Loan") {
+                            total_interest = (new_principal_balance * interestRate / 100);
                         }
-                    }else{
-                        for (let i = indexToUpdate; i < installments.length; i++) {
-                            let paid = parseFloat(installments[i].row.find('td').eq(9).text()); // Convert text to a float
-                            installments[i].row.find('td').eq(2).text(interest_per_installment.toFixed(2));
-                            installments[i].row.find('td').eq(3).text(installment_capital.toFixed(2));
-                            installments[i].row.find('td').eq(4).text(interest_per_installment.toFixed(2));
-                            installments[i].row.find('td').eq(8).text((ins_amount).toFixed(2)); // Correct the calculation
-                            installments[i].row.find('td').eq(11).text((ins_amount - paid).toFixed(2)); // Correct the calculation
-                            installments[i].row.find('td').eq(13).text((ins_amount - paid).toFixed(2)); // Correct the calculation
+
+                        total_interest = parseFloat(total_interest.toFixed(2));
+
+                        // Standard EMI calculation using Reducing Balance formula
+                        let monthly_rate = total_interest / 100;
+                        let r = monthly_rate / installmentCount;
+                        let n = installmentCount;
+                        let EMI = new_principal_balance * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                        EMI = parseFloat(EMI.toFixed(2));
+
+                        let count = 1;
+                        let saving_amount_value = 0; // You can set this from a field if needed
+
+                        principal_balance = new_principal_balance;
+
+                        for (let i = indexToUpdate; i < installments.length && principal_balance > 0; i++) {
+                            let row = installments[i].row;
+                            let paid = parseFloat(row.find('td').eq(9).text()) || 0;
+
+                            let interest_amt = parseFloat((principal_balance * r).toFixed(2));
+                            let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
+
+                            if (count === installmentCount || principal_balance - capital_amt < 0) {
+                                capital_amt = parseFloat(principal_balance.toFixed(2));
+                                EMI = capital_amt + interest_amt;
+                            }
+
+                            principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
+
+                            row.find('td').eq(2).text(EMI.toFixed(2));                   // Installment Amount
+                            row.find('td').eq(3).text(capital_amt.toFixed(2));           // Capital
+                            row.find('td').eq(4).text(interest_amt.toFixed(2));          // Interest
+                            row.find('td').eq(8).text(EMI.toFixed(2));                   // Total
+                            row.find('td').eq(11).text((EMI - paid).toFixed(2));         // Installment Balance
+                            row.find('td').eq(12).text(capital_amt.toFixed(2));         // Installment Balance
+                            row.find('td').eq(13).text(EMI.toFixed(2));         // Total Balance
+
+                            count++;
                         }
                     }
+
+
 
 
 
@@ -1781,12 +1840,13 @@
                     let interestAmount = parseFloat($(this).find('td').eq(4).text()); // Assuming column index 4
                     let penaltyDate = $(this).find('td').eq(5).text(); // Assuming column index 5
                     let penaltyAmount = parseFloat($(this).find('td').eq(6).text()); // Assuming column index 6
-                    let savingAmount = parseFloat($(this).find('td').eq(7).text()); // Assuming column index 7
+                    let savingAmount = '0.00'; // Assuming column index 7
                     let totalAmount = parseFloat($(this).find('td').eq(8).text()); // Assuming column index 8
                     let paidAmount = parseFloat($(this).find('td').eq(9).text()); // Assuming column index 9
                     let penaltyBalance = parseFloat($(this).find('td').eq(10).text()); // Assuming column index 10
                     let installmentBalance = parseFloat($(this).find('td').eq(11).text()); // Assuming column index 10
-                    let savingBalance = parseFloat($(this).find('td').eq(12).text()); // Assuming column index 10
+                    let savingBalance = '0'; // Assuming column index 10
+                    let capitalBalance = parseFloat($(this).find('td').eq(12).text()); // Assuming column index 10
                     let totalBalance = parseFloat($(this).find('td').eq(13).text()); // Assuming column index 11
 
                     let rowData = {
@@ -1802,12 +1862,16 @@
                         paidAmount: paidAmount,
                         penaltyBalance: penaltyBalance,
                         savingBalance: savingBalance,
+                        capitalBalance: capitalBalance,
                         installmentBalance: installmentBalance,
                         totalBalance: totalBalance
                     };
 
                     installments.push(rowData);
                 });
+
+
+                console.log(installments);
 
                 Swal.fire({
                     title: "Are you sure?",

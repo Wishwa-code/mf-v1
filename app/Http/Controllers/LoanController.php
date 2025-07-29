@@ -895,8 +895,7 @@ class LoanController extends Controller
                     ->first(); // Get the first record in this order
             }
 
-            // Extract the date if next installment is found, otherwise set to null
-            $nextInstallmentDate = $nextInstallment ? Carbon::parse($nextInstallment->Installment_Date) : '-';
+            $nextInstallmentDate = Carbon::parse($nextInstallment->Installment_Date);
 
             $startDate = Carbon::parse($nextInstallment->Installment_Date);
             $endDate = Carbon::parse(date('Y-m-d'));
