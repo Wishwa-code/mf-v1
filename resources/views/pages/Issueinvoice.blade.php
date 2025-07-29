@@ -242,10 +242,10 @@
 <body>
 <div class="buttons">
     <label for="dataToggle">Select Mode:</label>
-    <select id="dataToggle" onchange="toggleDataMode()">
-        <option value="fill">Fill Data</option>
-        <option value="empty">Without Data</option>
-    </select>
+{{--    <select id="dataToggle" onchange="toggleDataMode()">--}}
+{{--        <option value="fill">Fill Data</option>--}}
+{{--        <option value="empty">Without Data</option>--}}
+{{--    </select>--}}
     <button onclick="printInvoice()">Print</button>
     <button onclick="downloadPDF()">Download as PDF</button>
 </div>
@@ -523,67 +523,67 @@
 
 </script>
 <script>
-    function toggleDataMode() {
-        const mode = document.getElementById("dataToggle").value;
-
-        const installmentData = document.querySelectorAll(".installment-data tr");
-        const chargeData = document.querySelectorAll(".charge-data");
-
-        if (mode === "empty") {
-            installmentData.forEach(row => {
-                const cells = row.querySelectorAll("td");
-                if (cells.length > 1) {
-                    // Store original values before clearing
-                    if (!cells[cells.length - 2].hasAttribute('data-original')) {
-                        cells[cells.length - 2].setAttribute('data-original', cells[cells.length - 2].textContent);
-                    }
-                    if (!cells[cells.length - 1].hasAttribute('data-original')) {
-                        cells[cells.length - 1].setAttribute('data-original', cells[cells.length - 1].textContent);
-                    }
-
-                    cells[cells.length - 2].textContent = '';
-                    cells[cells.length - 1].textContent = '';
-                }
-            });
-
-            chargeData.forEach(row => {
-                row.querySelectorAll('td').forEach(cell => {
-                    if (!cell.hasAttribute('data-original')) {
-                        cell.setAttribute('data-original', cell.textContent);
-                    }
-                    cell.textContent = '';
-                });
-            });
-
-        } else {
-            // Restore installment data
-            installmentData.forEach(row => {
-                const cells = row.querySelectorAll("td");
-                if (cells.length > 1) {
-                    const original2 = cells[cells.length - 2].getAttribute('data-original');
-                    const original1 = cells[cells.length - 1].getAttribute('data-original');
-
-                    if (original2 !== null) cells[cells.length - 2].textContent = original2;
-                    if (original1 !== null) cells[cells.length - 1].textContent = original1;
-                }
-            });
-
-            // Restore charge table
-            chargeData.forEach(row => {
-                row.querySelectorAll('td').forEach(cell => {
-                    const original = cell.getAttribute('data-original');
-                    if (original !== null) cell.textContent = original;
-                });
-            });
-        }
-    }
+    // function toggleDataMode() {
+    //     const mode = document.getElementById("dataToggle").value;
+    //
+    //     const installmentData = document.querySelectorAll(".installment-data tr");
+    //     const chargeData = document.querySelectorAll(".charge-data");
+    //
+    //     if (mode === "empty") {
+    //         installmentData.forEach(row => {
+    //             const cells = row.querySelectorAll("td");
+    //             if (cells.length > 1) {
+    //                 // Store original values before clearing
+    //                 if (!cells[cells.length - 2].hasAttribute('data-original')) {
+    //                     cells[cells.length - 2].setAttribute('data-original', cells[cells.length - 2].textContent);
+    //                 }
+    //                 if (!cells[cells.length - 1].hasAttribute('data-original')) {
+    //                     cells[cells.length - 1].setAttribute('data-original', cells[cells.length - 1].textContent);
+    //                 }
+    //
+    //                 cells[cells.length - 2].textContent = '';
+    //                 cells[cells.length - 1].textContent = '';
+    //             }
+    //         });
+    //
+    //         chargeData.forEach(row => {
+    //             row.querySelectorAll('td').forEach(cell => {
+    //                 if (!cell.hasAttribute('data-original')) {
+    //                     cell.setAttribute('data-original', cell.textContent);
+    //                 }
+    //                 cell.textContent = '';
+    //             });
+    //         });
+    //
+    //     } else {
+    //         // Restore installment data
+    //         installmentData.forEach(row => {
+    //             const cells = row.querySelectorAll("td");
+    //             if (cells.length > 1) {
+    //                 const original2 = cells[cells.length - 2].getAttribute('data-original');
+    //                 const original1 = cells[cells.length - 1].getAttribute('data-original');
+    //
+    //                 if (original2 !== null) cells[cells.length - 2].textContent = original2;
+    //                 if (original1 !== null) cells[cells.length - 1].textContent = original1;
+    //             }
+    //         });
+    //
+    //         // Restore charge table
+    //         chargeData.forEach(row => {
+    //             row.querySelectorAll('td').forEach(cell => {
+    //                 const original = cell.getAttribute('data-original');
+    //                 if (original !== null) cell.textContent = original;
+    //             });
+    //         });
+    //     }
+    // }
 
     // ✅ On initial load, force "empty" mode
-    window.addEventListener('DOMContentLoaded', function () {
-        const dataToggle = document.getElementById("dataToggle");
-        dataToggle.value = "empty";
-        toggleDataMode();
-    });
+    // window.addEventListener('DOMContentLoaded', function () {
+    //     const dataToggle = document.getElementById("dataToggle");
+    //     dataToggle.value = "empty";
+    //     toggleDataMode();
+    // });
 </script>
 
 

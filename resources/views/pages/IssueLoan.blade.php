@@ -1317,6 +1317,7 @@
         $(function() {
             $('#customer_details').select2();
             $('#package_details').select2();
+            $('#group').select2();
             $("#createLoanButton").addClass("disabled").on("click", function(event) {
                 event.preventDefault();
             });
@@ -1558,6 +1559,7 @@
                     .attr('value', "0")
                     .text("Select");
                 $('#customer_details').append(defaultOption);
+
             }
         }
 
@@ -2210,22 +2212,29 @@
                 return; // Stop the function if validation fails
             }
 
-            // Check if interest is within the range
-            if (interest < loan_interest_from) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: `Interest must be greater than or equal to ${loan_interest_from}`,
-                });
-                return; // Stop the function if validation fails
-            } else if (interest > loan_interest_to) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: `Interest must be less than or equal to ${loan_interest_to}`,
-                });
-                return; // Stop the function if validation fails
+
+            if(interest_method === "Reducing Balance") {
+
+            }else{
+                // Check if interest is within the range
+                if (interest < loan_interest_from) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: `Interest must be greater than or equal to ${loan_interest_from}`,
+                    });
+                    return; // Stop the function if validation fails
+                } else if (interest > loan_interest_to) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: `Interest must be less than or equal to ${loan_interest_to}`,
+                    });
+                    return; // Stop the function if validation fails
+                }
             }
+
+
 
 
 
@@ -2371,7 +2380,13 @@
                             // Usage
 
 
-
+                            let total_interest_percent = interest; // input like 10 (meaning 10%)
+                            let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
+                            let r = monthly_rate / installmentDates.length; // divide over months
+                            let n = installmentDates.length;
+                            let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                            EMI = parseFloat(EMI.toFixed(2));
+                            let principal_balance = loan_amount;
 
 
                             // Get the table body
@@ -2391,46 +2406,55 @@
 
                                 let panelty_date = currentDate.toISOString().slice(0, 10);
 
-                                if(interest_method === "Reducing Balance") {
-                                    installmentAmount = parseFloat($("#installment_amount").val());
-                                    let loan_period = parseFloat($("#loan_period").val());
-                                    let total_interest_amount = parseFloat($("#total_interest_amount").text());
+                                if (interest_method === "Reducing Balance") {
+                                    let currentDate = new Date(date);
+                                    currentDate.setDate(currentDate.getDate() + panelty_date_2);
+                                    let panelty_date = currentDate.toISOString().slice(0, 10);
 
-// Ensure variables are valid and not NaN
-                                    if (!isNaN(installmentAmount) && !isNaN(loan_period) && !isNaN(total_interest_amount)) {
-                                        interest_amount = (total_interest_amount / ((loan_period * (1 + loan_period)) / 2)) * ((loan_period + 1) - count);
-                                        let capital_amount = installmentAmount - interest_amount;
+                                    let interest_amt = parseFloat((principal_balance * r).toFixed(2));
+                                    let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
 
-                                        // Ensure saving_amount_value and saving_amount_show are valid
-                                        saving_amount_value = parseFloat(saving_amount_value) || 0;
-                                        saving_amount_show = parseFloat(saving_amount_show) || 0;
-
-                                        var row = '<tr>' +
-                                            '<td>' + count + '</td>' +
-                                            '<td>' + date + '</td>' +
-                                            '<td class="text-end">' + installmentAmount.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + capital_amount.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + interest_amount.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + panelty_date + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + saving_amount_value.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + installmentAmount.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + saving_amount_value.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                            '<td class="text-center">' +
-                                            '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                            '</td>' +
-                                            '</tr>';
-
-                                        tableBody.append(row);
-                                    } else {
-                                        console.error("Invalid input: Check installment amount, loan period, or total interest amount.");
+                                    if (count === installmentDates.length) {
+                                        capital_amt = parseFloat(principal_balance.toFixed(2));
+                                        EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
                                     }
 
-                                }else{
+                                    principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
+                                    let saving_amount_show = EMI + parseFloat(saving_amount_value);
+
+                                    var row = '<tr>' +
+                                        '<td>' + count + '</td>' +
+                                        '<td>' + date + '</td>' +
+                                        '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + panelty_date + '</td>' +
+                                        '<td class="text-end">0.00</td>' +
+                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                        '<td class="text-end">0.00</td>' +
+                                        '<td class="text-end">0.00</td>' +
+                                        '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                        '<td class="text-center">' +
+                                        '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                        '</td>' +
+                                        '</tr>';
+
+                                    tableBody.append(row);
+
+                                    var span = tableBody.children('tr:last-child').find('span');
+                                    var installmentDate = new Date(date);
+                                    var currentTime = new Date();
+
+                                    if (installmentDate > currentTime) {
+                                        span.addClass('bg-warning text-danger').text('-');
+                                    } else {
+                                        span.addClass('bg-danger text-warning').text('-');
+                                    }
+
+                                } else{
 
                                     // Create the row
                                     var row = '<tr>' +
@@ -2519,7 +2543,13 @@
                                 let saving_amount_show=installmentAmount+parseFloat(saving_amount_value);
                                 installmentAmount=installmentAmount.toFixed(2);
 
-
+                                let total_interest_percent = interest; // input like 10 (meaning 10%)
+                                let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
+                                let r = monthly_rate / installmentDates.length; // divide over months
+                                let n = installmentDates.length;
+                                let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                                EMI = parseFloat(EMI.toFixed(2));
+                                let principal_balance = loan_amount;
 
 
                                 let count=1;
@@ -2532,42 +2562,51 @@
                                     let panelty_date = currentDate.toISOString().slice(0, 10);
 
                                     if(interest_method === "Reducing Balance") {
-                                        installmentAmount = parseFloat($("#installment_amount").val());
-                                        let loan_period = parseFloat($("#loan_period").val());
-                                        let total_interest_amount = parseFloat($("#total_interest_amount").text());
+                                        let currentDate = new Date(date);
+                                        currentDate.setDate(currentDate.getDate() + panelty_date_2);
+                                        let panelty_date = currentDate.toISOString().slice(0, 10);
 
-// Ensure variables are valid and not NaN
-                                        if (!isNaN(installmentAmount) && !isNaN(loan_period) && !isNaN(total_interest_amount)) {
-                                            interest_amount = (total_interest_amount / ((loan_period * (1 + loan_period)) / 2)) * ((loan_period + 1) - count);
-                                            let capital_amount = installmentAmount - interest_amount;
+                                        let interest_amt = parseFloat((principal_balance * r).toFixed(2));
+                                        let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
 
-                                            // Ensure saving_amount_value and saving_amount_show are valid
-                                            saving_amount_value = parseFloat(saving_amount_value) || 0;
-                                            saving_amount_show = parseFloat(saving_amount_show) || 0;
+                                        if (count === installmentDates.length) {
+                                            capital_amt = parseFloat(principal_balance.toFixed(2));
+                                            EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
+                                        }
 
-                                            var row = '<tr>' +
-                                                '<td>' + count + '</td>' +
-                                                '<td>' + date + '</td>' +
-                                                '<td class="text-end">' + installmentAmount.toFixed(2) + '</td>' +
-                                                '<td class="text-end">' + capital_amount.toFixed(2) + '</td>' +
-                                                '<td class="text-end">' + interest_amount.toFixed(2) + '</td>' +
-                                                '<td class="text-end">' + panelty_date + '</td>' +
-                                                '<td class="text-end">0.00</td>' +
-                                                '<td class="text-end">' + saving_amount_value.toFixed(2) + '</td>' +
-                                                '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                                '<td class="text-end">0.00</td>' +
-                                                '<td class="text-end">0.00</td>' +
-                                                '<td class="text-end">' + installmentAmount.toFixed(2) + '</td>' +
-                                                '<td class="text-end">' + saving_amount_value.toFixed(2) + '</td>' +
-                                                '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                                '<td class="text-center">' +
-                                                '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                                '</td>' +
-                                                '</tr>';
+                                        principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
+                                        let saving_amount_show = EMI + parseFloat(saving_amount_value);
 
-                                            tableBody.append(row);
+                                        var row = '<tr>' +
+                                            '<td>' + count + '</td>' +
+                                            '<td>' + date + '</td>' +
+                                            '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                            '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                            '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                            '<td class="text-end">' + panelty_date + '</td>' +
+                                            '<td class="text-end">0.00</td>' +
+                                            '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                            '<td class="text-end">0.00</td>' +
+                                            '<td class="text-end">0.00</td>' +
+                                            '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                            '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                            '<td class="text-center">' +
+                                            '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                            '</td>' +
+                                            '</tr>';
+
+                                        tableBody.append(row);
+
+                                        var span = tableBody.children('tr:last-child').find('span');
+                                        var installmentDate = new Date(date);
+                                        var currentTime = new Date();
+
+                                        if (installmentDate > currentTime) {
+                                            span.addClass('bg-warning text-danger').text('-');
                                         } else {
-                                            console.error("Invalid input: Check installment amount, loan period, or total interest amount.");
+                                            span.addClass('bg-danger text-warning').text('-');
                                         }
 
                                     }else{
@@ -2649,6 +2688,14 @@
                                 // Get the table body
                                 var tableBody = $('#installment_table tbody');
 
+                                let total_interest_percent = interest; // input like 10 (meaning 10%)
+                                let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
+                                let r = monthly_rate / installmentDates.length; // divide over months
+                                let n = installmentDates.length;
+                                let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                                EMI = parseFloat(EMI.toFixed(2));
+                                let principal_balance = loan_amount;
+
                                 // Clear existing rows
                                 tableBody.empty();
                                 let saving_amount_show=installmentAmount+parseFloat(saving_amount_value);
@@ -2662,42 +2709,51 @@
                                     let panelty_date = currentDate.toISOString().slice(0, 10);
 
                                     if(interest_method === "Reducing Balance") {
-                                        installmentAmount = parseFloat($("#installment_amount").val());
-                                        let loan_period = parseFloat($("#loan_period").val());
-                                        let total_interest_amount = parseFloat($("#total_interest_amount").text());
+                                        let currentDate = new Date(date);
+                                        currentDate.setDate(currentDate.getDate() + panelty_date_2);
+                                        let panelty_date = currentDate.toISOString().slice(0, 10);
 
-// Ensure variables are valid and not NaN
-                                        if (!isNaN(installmentAmount) && !isNaN(loan_period) && !isNaN(total_interest_amount)) {
-                                            interest_amount = (total_interest_amount / ((loan_period * (1 + loan_period)) / 2)) * ((loan_period + 1) - count);
-                                            let capital_amount = installmentAmount - interest_amount;
+                                        let interest_amt = parseFloat((principal_balance * r).toFixed(2));
+                                        let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
 
-                                            // Ensure saving_amount_value and saving_amount_show are valid
-                                            saving_amount_value = parseFloat(saving_amount_value) || 0;
-                                            saving_amount_show = parseFloat(saving_amount_show) || 0;
+                                        if (count === installmentDates.length) {
+                                            capital_amt = parseFloat(principal_balance.toFixed(2));
+                                            EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
+                                        }
 
-                                            var row = '<tr>' +
-                                                '<td>' + count + '</td>' +
-                                                '<td>' + date + '</td>' +
-                                                '<td class="text-end">' + installmentAmount.toFixed(2) + '</td>' +
-                                                '<td class="text-end">' + capital_amount.toFixed(2) + '</td>' +
-                                                '<td class="text-end">' + interest_amount.toFixed(2) + '</td>' +
-                                                '<td class="text-end">' + panelty_date + '</td>' +
-                                                '<td class="text-end">0.00</td>' +
-                                                '<td class="text-end">' + saving_amount_value.toFixed(2) + '</td>' +
-                                                '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                                '<td class="text-end">0.00</td>' +
-                                                '<td class="text-end">0.00</td>' +
-                                                '<td class="text-end">' + installmentAmount.toFixed(2) + '</td>' +
-                                                '<td class="text-end">' + saving_amount_value.toFixed(2) + '</td>' +
-                                                '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                                '<td class="text-center">' +
-                                                '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                                '</td>' +
-                                                '</tr>';
+                                        principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
+                                        let saving_amount_show = EMI + parseFloat(saving_amount_value);
 
-                                            tableBody.append(row);
+                                        var row = '<tr>' +
+                                            '<td>' + count + '</td>' +
+                                            '<td>' + date + '</td>' +
+                                            '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                            '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                            '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                            '<td class="text-end">' + panelty_date + '</td>' +
+                                            '<td class="text-end">0.00</td>' +
+                                            '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                            '<td class="text-end">0.00</td>' +
+                                            '<td class="text-end">0.00</td>' +
+                                            '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                            '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                            '<td class="text-center">' +
+                                            '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                            '</td>' +
+                                            '</tr>';
+
+                                        tableBody.append(row);
+
+                                        var span = tableBody.children('tr:last-child').find('span');
+                                        var installmentDate = new Date(date);
+                                        var currentTime = new Date();
+
+                                        if (installmentDate > currentTime) {
+                                            span.addClass('bg-warning text-danger').text('-');
                                         } else {
-                                            console.error("Invalid input: Check installment amount, loan period, or total interest amount.");
+                                            span.addClass('bg-danger text-warning').text('-');
                                         }
 
                                     }else{
@@ -2789,6 +2845,15 @@
                                 // Get the table body
                                 var tableBody = $('#installment_table tbody');
 
+
+                                let total_interest_percent = interest; // input like 10 (meaning 10%)
+                                let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
+                                let r = monthly_rate / installmentDates.length; // divide over months
+                                let n = installmentDates.length;
+                                let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                                EMI = parseFloat(EMI.toFixed(2));
+                                let principal_balance = loan_amount;
+
                                 // Clear existing rows
                                 tableBody.empty();
                                 let saving_amount_show=installmentAmount+parseFloat(saving_amount_value);
@@ -2803,44 +2868,52 @@
                                     let panelty_date = currentDate.toISOString().slice(0, 10);
 
                                     if(interest_method === "Reducing Balance") {
-                                        installmentAmount = parseFloat($("#installment_amount").val());
-                                        let loan_period = parseFloat($("#loan_period").val());
-                                        let total_interest_amount = parseFloat($("#total_interest_amount").text());
+                                        let currentDate = new Date(date);
+                                        currentDate.setDate(currentDate.getDate() + panelty_date_2);
+                                        let panelty_date = currentDate.toISOString().slice(0, 10);
 
-// Ensure variables are valid and not NaN
-                                        if (!isNaN(installmentAmount) && !isNaN(loan_period) && !isNaN(total_interest_amount)) {
-                                            interest_amount = (total_interest_amount / ((loan_period * (1 + loan_period)) / 2)) * ((loan_period + 1) - count);
-                                            let capital_amount = installmentAmount - interest_amount;
+                                        let interest_amt = parseFloat((principal_balance * r).toFixed(2));
+                                        let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
 
-                                            // Ensure saving_amount_value and saving_amount_show are valid
-                                            saving_amount_value = parseFloat(saving_amount_value) || 0;
-                                            saving_amount_show = parseFloat(saving_amount_show) || 0;
-
-                                            var row = '<tr>' +
-                                                '<td>' + count + '</td>' +
-                                                '<td>' + date + '</td>' +
-                                                '<td class="text-end">' + installmentAmount.toFixed(2) + '</td>' +
-                                                '<td class="text-end">' + capital_amount.toFixed(2) + '</td>' +
-                                                '<td class="text-end">' + interest_amount.toFixed(2) + '</td>' +
-                                                '<td class="text-end">' + panelty_date + '</td>' +
-                                                '<td class="text-end">0.00</td>' +
-                                                '<td class="text-end">' + saving_amount_value.toFixed(2) + '</td>' +
-                                                '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                                '<td class="text-end">0.00</td>' +
-                                                '<td class="text-end">0.00</td>' +
-                                                '<td class="text-end">' + installmentAmount.toFixed(2) + '</td>' +
-                                                '<td class="text-end">' + saving_amount_value.toFixed(2) + '</td>' +
-                                                '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                                '<td class="text-center">' +
-                                                '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                                '</td>' +
-                                                '</tr>';
-
-                                            tableBody.append(row);
-                                        } else {
-                                            console.error("Invalid input: Check installment amount, loan period, or total interest amount.");
+                                        if (count === installmentDates.length) {
+                                            capital_amt = parseFloat(principal_balance.toFixed(2));
+                                            EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
                                         }
 
+                                        principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
+                                        let saving_amount_show = EMI + parseFloat(saving_amount_value);
+
+                                        var row = '<tr>' +
+                                            '<td>' + count + '</td>' +
+                                            '<td>' + date + '</td>' +
+                                            '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                            '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                            '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                            '<td class="text-end">' + panelty_date + '</td>' +
+                                            '<td class="text-end">0.00</td>' +
+                                            '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                            '<td class="text-end">0.00</td>' +
+                                            '<td class="text-end">0.00</td>' +
+                                            '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                            '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                            '<td class="text-center">' +
+                                            '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                            '</td>' +
+                                            '</tr>';
+
+                                        tableBody.append(row);
+
+                                        var span = tableBody.children('tr:last-child').find('span');
+                                        var installmentDate = new Date(date);
+                                        var currentTime = new Date();
+
+                                        if (installmentDate > currentTime) {
+                                            span.addClass('bg-warning text-danger').text('-');
+                                        } else {
+                                            span.addClass('bg-danger text-warning').text('-');
+                                        }
                                     }else{
                                         var row = '<tr>' +
                                             '<td>' + count + '</td>' +
@@ -2924,6 +2997,13 @@
 
                             // Get the table body
                             var tableBody = $('#installment_table tbody');
+                            let total_interest_percent = interest; // input like 10 (meaning 10%)
+                            let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
+                            let r = monthly_rate / installmentDates.length; // divide over months
+                            let n = installmentDates.length;
+                            let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                            EMI = parseFloat(EMI.toFixed(2));
+                            let principal_balance = loan_amount;
 
                             // Clear existing rows
                             tableBody.empty();
@@ -2939,42 +3019,51 @@
 
 
                                 if(interest_method === "Reducing Balance") {
-                                    installmentAmount = parseFloat($("#installment_amount").val());
-                                    let loan_period = parseFloat($("#loan_period").val());
-                                    let total_interest_amount = parseFloat($("#total_interest_amount").text());
+                                    let currentDate = new Date(date);
+                                    currentDate.setDate(currentDate.getDate() + panelty_date_2);
+                                    let panelty_date = currentDate.toISOString().slice(0, 10);
 
-// Ensure variables are valid and not NaN
-                                    if (!isNaN(installmentAmount) && !isNaN(loan_period) && !isNaN(total_interest_amount)) {
-                                        interest_amount = (total_interest_amount / ((loan_period * (1 + loan_period)) / 2)) * ((loan_period + 1) - count);
-                                        let capital_amount = installmentAmount - interest_amount;
+                                    let interest_amt = parseFloat((principal_balance * r).toFixed(2));
+                                    let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
 
-                                        // Ensure saving_amount_value and saving_amount_show are valid
-                                        saving_amount_value = parseFloat(saving_amount_value) || 0;
-                                        saving_amount_show = parseFloat(saving_amount_show) || 0;
+                                    if (count === installmentDates.length) {
+                                        capital_amt = parseFloat(principal_balance.toFixed(2));
+                                        EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
+                                    }
 
-                                        var row = '<tr>' +
-                                            '<td>' + count + '</td>' +
-                                            '<td>' + date + '</td>' +
-                                            '<td class="text-end">' + installmentAmount.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + capital_amount.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + interest_amount.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + panelty_date + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + saving_amount_value.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + installmentAmount.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + saving_amount_value.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                            '<td class="text-center">' +
-                                            '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                            '</td>' +
-                                            '</tr>';
+                                    principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
+                                    let saving_amount_show = EMI + parseFloat(saving_amount_value);
 
-                                        tableBody.append(row);
+                                    var row = '<tr>' +
+                                        '<td>' + count + '</td>' +
+                                        '<td>' + date + '</td>' +
+                                        '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + panelty_date + '</td>' +
+                                        '<td class="text-end">0.00</td>' +
+                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                        '<td class="text-end">0.00</td>' +
+                                        '<td class="text-end">0.00</td>' +
+                                        '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                        '<td class="text-center">' +
+                                        '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                        '</td>' +
+                                        '</tr>';
+
+                                    tableBody.append(row);
+
+                                    var span = tableBody.children('tr:last-child').find('span');
+                                    var installmentDate = new Date(date);
+                                    var currentTime = new Date();
+
+                                    if (installmentDate > currentTime) {
+                                        span.addClass('bg-warning text-danger').text('-');
                                     } else {
-                                        console.error("Invalid input: Check installment amount, loan period, or total interest amount.");
+                                        span.addClass('bg-danger text-warning').text('-');
                                     }
 
                                 }else{
@@ -3061,6 +3150,14 @@
                             // Get the table body
                             var tableBody = $('#installment_table tbody');
 
+                            let total_interest_percent = interest; // input like 10 (meaning 10%)
+                            let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
+                            let r = monthly_rate / installmentDates.length; // divide over months
+                            let n = installmentDates.length;
+                            let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                            EMI = parseFloat(EMI.toFixed(2));
+                            let principal_balance = loan_amount;
+
                             // Clear existing rows
                             tableBody.empty();
                             let saving_amount_show=installmentAmount+parseFloat(saving_amount_value);
@@ -3075,42 +3172,51 @@
 
 
                                 if(interest_method === "Reducing Balance") {
-                                    installmentAmount = parseFloat($("#installment_amount").val());
-                                    let loan_period = parseFloat($("#loan_period").val());
-                                    let total_interest_amount = parseFloat($("#total_interest_amount").text());
+                                    let currentDate = new Date(date);
+                                    currentDate.setDate(currentDate.getDate() + panelty_date_2);
+                                    let panelty_date = currentDate.toISOString().slice(0, 10);
 
-// Ensure variables are valid and not NaN
-                                    if (!isNaN(installmentAmount) && !isNaN(loan_period) && !isNaN(total_interest_amount)) {
-                                        interest_amount = (total_interest_amount / ((loan_period * (1 + loan_period)) / 2)) * ((loan_period + 1) - count);
-                                        let capital_amount = installmentAmount - interest_amount;
+                                    let interest_amt = parseFloat((principal_balance * r).toFixed(2));
+                                    let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
 
-                                        // Ensure saving_amount_value and saving_amount_show are valid
-                                        saving_amount_value = parseFloat(saving_amount_value) || 0;
-                                        saving_amount_show = parseFloat(saving_amount_show) || 0;
+                                    if (count === installmentDates.length) {
+                                        capital_amt = parseFloat(principal_balance.toFixed(2));
+                                        EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
+                                    }
 
-                                        var row = '<tr>' +
-                                            '<td>' + count + '</td>' +
-                                            '<td>' + date + '</td>' +
-                                            '<td class="text-end">' + installmentAmount.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + capital_amount.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + interest_amount.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + panelty_date + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + saving_amount_value.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + installmentAmount.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + saving_amount_value.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                            '<td class="text-center">' +
-                                            '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                            '</td>' +
-                                            '</tr>';
+                                    principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
+                                    let saving_amount_show = EMI + parseFloat(saving_amount_value);
 
-                                        tableBody.append(row);
+                                    var row = '<tr>' +
+                                        '<td>' + count + '</td>' +
+                                        '<td>' + date + '</td>' +
+                                        '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + panelty_date + '</td>' +
+                                        '<td class="text-end">0.00</td>' +
+                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                        '<td class="text-end">0.00</td>' +
+                                        '<td class="text-end">0.00</td>' +
+                                        '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                        '<td class="text-center">' +
+                                        '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                        '</td>' +
+                                        '</tr>';
+
+                                    tableBody.append(row);
+
+                                    var span = tableBody.children('tr:last-child').find('span');
+                                    var installmentDate = new Date(date);
+                                    var currentTime = new Date();
+
+                                    if (installmentDate > currentTime) {
+                                        span.addClass('bg-warning text-danger').text('-');
                                     } else {
-                                        console.error("Invalid input: Check installment amount, loan period, or total interest amount.");
+                                        span.addClass('bg-danger text-warning').text('-');
                                     }
 
                                 }else{
@@ -3184,6 +3290,14 @@
                             // Get the table body
                             var tableBody = $('#installment_table tbody');
 
+                            let total_interest_percent = interest; // input like 10 (meaning 10%)
+                            let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
+                            let r = monthly_rate / installmentDates.length; // divide over months
+                            let n = installmentDates.length;
+                            let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                            EMI = parseFloat(EMI.toFixed(2));
+                            let principal_balance = loan_amount;
+
                             // Clear existing rows
                             tableBody.empty();
                             let saving_amount_show=installmentAmount+parseFloat(saving_amount_value);
@@ -3198,44 +3312,52 @@
                                 let panelty_date = currentDate.toISOString().slice(0, 10);
 
                                 if(interest_method === "Reducing Balance") {
-                                    installmentAmount = parseFloat($("#installment_amount").val());
-                                    let loan_period = parseFloat($("#loan_period").val());
-                                    let total_interest_amount = parseFloat($("#total_interest_amount").text());
+                                    let currentDate = new Date(date);
+                                    currentDate.setDate(currentDate.getDate() + panelty_date_2);
+                                    let panelty_date = currentDate.toISOString().slice(0, 10);
 
-// Ensure variables are valid and not NaN
-                                    if (!isNaN(installmentAmount) && !isNaN(loan_period) && !isNaN(total_interest_amount)) {
-                                        interest_amount = (total_interest_amount / ((loan_period * (1 + loan_period)) / 2)) * ((loan_period + 1) - count);
-                                        let capital_amount = installmentAmount - interest_amount;
+                                    let interest_amt = parseFloat((principal_balance * r).toFixed(2));
+                                    let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
 
-                                        // Ensure saving_amount_value and saving_amount_show are valid
-                                        saving_amount_value = parseFloat(saving_amount_value) || 0;
-                                        saving_amount_show = parseFloat(saving_amount_show) || 0;
-
-                                        var row = '<tr>' +
-                                            '<td>' + count + '</td>' +
-                                            '<td>' + date + '</td>' +
-                                            '<td class="text-end">' + installmentAmount.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + capital_amount.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + interest_amount.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + panelty_date + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + saving_amount_value.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + installmentAmount.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + saving_amount_value.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                            '<td class="text-center">' +
-                                            '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                            '</td>' +
-                                            '</tr>';
-
-                                        tableBody.append(row);
-                                    } else {
-                                        console.error("Invalid input: Check installment amount, loan period, or total interest amount.");
+                                    if (count === installmentDates.length) {
+                                        capital_amt = parseFloat(principal_balance.toFixed(2));
+                                        EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
                                     }
 
+                                    principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
+                                    let saving_amount_show = EMI + parseFloat(saving_amount_value);
+
+                                    var row = '<tr>' +
+                                        '<td>' + count + '</td>' +
+                                        '<td>' + date + '</td>' +
+                                        '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + panelty_date + '</td>' +
+                                        '<td class="text-end">0.00</td>' +
+                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                        '<td class="text-end">0.00</td>' +
+                                        '<td class="text-end">0.00</td>' +
+                                        '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                        '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                        '<td class="text-center">' +
+                                        '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                        '</td>' +
+                                        '</tr>';
+
+                                    tableBody.append(row);
+
+                                    var span = tableBody.children('tr:last-child').find('span');
+                                    var installmentDate = new Date(date);
+                                    var currentTime = new Date();
+
+                                    if (installmentDate > currentTime) {
+                                        span.addClass('bg-warning text-danger').text('-');
+                                    } else {
+                                        span.addClass('bg-danger text-warning').text('-');
+                                    }
                                 }else{
                                     var row = '<tr>' +
                                         '<td>' + count + '</td>' +
@@ -4106,15 +4228,15 @@ function saving_cal(){
         function toggleFields() {
             const interestMethodSelect = document.getElementById('interest_method').value; // Get the selected value
 
-            if (interestMethodSelect === "Reducing Balance") {
-                $("#normal_loan").hide();
-                $("#reducingBalanceFields").show();
-                $("#loan_period").prop('disabled', true); // Disables the field
-            } else {
-                $("#reducingBalanceFields").hide();
-                $("#normal_loan").show();
-                $("#loan_period").prop('disabled', false); // Disables the field
-            }
+            // if (interestMethodSelect === "Reducing Balance") {
+            //     $("#normal_loan").hide();
+            //     $("#reducingBalanceFields").show();
+            //     $("#loan_period").prop('disabled', true); // Disables the field
+            // } else {
+            //     $("#reducingBalanceFields").hide();
+            //     $("#normal_loan").show();
+            //     $("#loan_period").prop('disabled', false); // Disables the field
+            // }
         }
 
         function change_ins_values(){

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Sms;
 use Illuminate\Http\Request;
 use GuzzleHttp\Client;
+use Illuminate\Session\Store;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
@@ -15,69 +16,145 @@ class SmsController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index($customer_id,$message,$type)
+    public function index($customer_id, $message, $type)
     {
-        // Retrieve the token from session
-        $token = Session::get('token');
+        $company = tableWithBranch('company')->first();
+        $customer = tableWithBranch('customer')->where('idCustomer', $customer_id)->first();
 
-        if (!$token) {
-            return response()->json(['error' => 'Token not found in session'], 401);
-        }else{
-
+        if (!$company || !$customer) {
+            return response()->json(['error' => 'Company or Customer not found'], 404);
         }
 
-        $client = new Client([
-            'base_uri' => 'https://e-sms.dialog.lk/api/v2/',
-        ]);
-        $customer=tableWithBranch('customer')->where('idCustomer',$customer_id)->first();
+
+
         try {
-            $company=tableWithBranch('company')->where('branch_id',session('branch_id'))->first();
-            $branch_code=$company->id ?? 0;
+            if ($company->provider === "Dialog") {
+                // Login to Dialog
+                $dialogToken = Session::get('token');
+                if (!$dialogToken) {
+                    try {
+                        $client = new Client(['base_uri' => 'https://e-sms.dialog.lk/api/v1/']);
+                        $response = $client->post('login', [
+                            'headers' => ['Content-Type' => 'application/json'],
+                            'json' => [
+                                'username' => 'ASIPIYA',
+                                'password' => 'Dialog@123',
+                            ],
+                        ]);
+                        $responseData = json_decode($response->getBody()->getContents(), true);
+                        if (isset($responseData['token'])) {
+                            $dialogToken = $responseData['token'];
+                            Session::put('token', $dialogToken);
+                            Session::put('userData', $responseData['userData'] ?? []);
+                        }
+                    } catch (\Exception $e) {
+                        \Log::error('Dialog SMS Login Error: ' . $e->getMessage());
+                        return response()->json(['error' => 'Dialog login failed'], 500);
+                    }
+                }
 
-            $newTransactionId = intval(
-                $branch_code . date('ymd') . date('His') . rand(10, 99)
-            );
+                // Send Dialog SMS
+                try {
+                    $client = new Client(['base_uri' => 'https://e-sms.dialog.lk/api/v2/']);
+                    $newTransactionId = intval($company->id . date('ymdHis') . rand(10, 99));
+                    $response = $client->post('sms', [
+                        'headers' => [
+                            'Content-Type' => 'application/json',
+                            'Authorization' => 'Bearer ' . $dialogToken,
+                        ],
+                        'json' => [
+                            'msisdn' => [['mobile' => $customer->Contact_No]],
+                            'message' => $message,
+                            'sourceAddress' => $company->mask,
+                            'transaction_id' => $newTransactionId,
+                            'payment_method' => 0,
+                        ],
+                    ]);
+                    $responseData = json_decode($response->getBody()->getContents(), true);
+                    if ($responseData['status'] === "success") {
+                        $this->logSMS($customer_id, $customer, $message, $type);
+                    }
+                    return response()->json($responseData);
+                } catch (\Exception $e) {
+                    return response()->json(['error' => $e->getMessage()], 500);
+                }
 
-            $company=DB::table('company')->first();
+            } else {
+                // Login to Hutch
+                $accessToken = Session::get('hutch_access_token');
+                if (!$accessToken) {
+                    try {
+                        $client = new Client(['base_uri' => 'https://bsms.hutch.lk/api/']);
+                        $response = $client->post('login', [
+                            'headers' => [
+                                'Content-Type' => 'application/json',
+                                'Accept' => '*/*',
+                                'X-API-VERSION' => 'v1',
+                            ],
+                            'json' => [
+                                'username' => 'finance.asipiya@gmail.com',
+                                'password' => 'Asipiya@hutch123',
+                            ],
+                        ]);
+                        $data = json_decode($response->getBody()->getContents(), true);
+                        if (isset($data['accessToken'])) {
+                            $accessToken = $data['accessToken'];
+                            Session::put('hutch_access_token', $accessToken);
+                            Session::put('hutch_refresh_token', $data['refreshToken'] ?? null);
+                        }
+                    } catch (\Exception $e) {
+                        \Log::error('Hutch SMS Login Error: ' . $e->getMessage());
+                        return response()->json(['error' => 'Hutch login failed'], 500);
+                    }
+                }
 
-            $response = $client->post('sms', [
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                    'Authorization' => 'Bearer ' . $token,
-                ],
-                'json' => [
-                    'msisdn' => [
-                        [
-                            'mobile' => $customer->Contact_No,
-                        ]
-                    ],
-                    'message' => $message,
-                    'sourceAddress' => $company->mask,
-                    'transaction_id' => $newTransactionId,
-                    'payment_method' => 0,
-
-                ],
-            ]);
-            $responseData = json_decode($response->getBody()->getContents(), true);
-            if ($responseData['status']==="success") {
-                DB::table('sms')->insert([
-                    'cus_id' => $customer_id,
-                    'cus_name' => $customer->First_Name . ' ' . $customer->Last_Name,
-                    'contact_no' => $customer->Contact_No,
-                    'message' => $message,
-                    'type' => $type,
-                    'date' => date('Y-m-d'),
-                    'time' => date('H:i:s'),
-                    'branch_id' => session('branch_id')
-                ]);
+                // Send Hutch SMS
+                try {
+                    $client = new Client(['base_uri' => 'https://bsms.hutch.lk/api/']);
+                    $response = $client->post('sendsms', [
+                        'headers' => [
+                            'Content-Type' => 'application/json',
+                            'Accept' => '*/*',
+                            'X-API-VERSION' => 'v1',
+                            'Authorization' => 'Bearer ' . $accessToken,
+                        ],
+                        'json' => [
+                            'campaignName' => 'campaign_' . date('YmdHis'),
+                            'mask' => $company->mask ?? 'DefaultMask',
+                            'numbers' => $customer->Contact_No,
+                            'content' => $message,
+                            'deliveryReportRequest' => true,
+                        ],
+                    ]);
+                    $result = json_decode($response->getBody()->getContents(), true);
+                    if (isset($result['serverRef'])) {
+                        $this->logSMS($customer_id, $customer, $message, $type);
+                    }
+                    return response()->json($result);
+                } catch (\Exception $e) {
+                    return response()->json(['error' => $e->getMessage()], 500);
+                }
             }
-
-            return response()->json($responseData);
         } catch (\Exception $e) {
-            // Handle exceptions
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json(['error' => 'Unhandled error: ' . $e->getMessage()], 500);
         }
     }
+
+
+    private function logSMS($customer_id, $customer, $message, $type)
+    {
+        DB::table('sms')->insert([
+            'cus_id' => $customer_id,
+            'cus_name' => $customer->First_Name . ' ' . $customer->Last_Name,
+            'contact_no' => $customer->Contact_No,
+            'message' => $message,
+            'type' => $type,
+            'date' => now()->toDateString(),
+            'time' => now()->toTimeString(),
+            'branch_id' => session('branch_id'),
+        ]);
+    }
+
 
     /**
      * Show the form for creating a new resource.

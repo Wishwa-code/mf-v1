@@ -3711,33 +3711,42 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
 
     public function fetchPredictionReport(Request $request)
     {
-        $date = date('Y-m-d');
+        $today = date('Y-m-d');
+        $fromDate = $request->from_date;
+        $toDate = $request->to_date;
         $center = $request->center_id;
 
+        // Subquery for arrears before today, but excluding selected date range
         $arrearsSub = tableWithBranch('installments')
             ->select(
                 'Customer_Loan_idCustomer_Loan',
                 DB::raw('SUM(Total_Balance) as arrears')
             )
-            ->where('installments.Status', 0)
-            ->whereDate('installments.Installment_Date', '<', $date)
-            ->where('installments.Total_Balance', '>', 0)
+            ->where('Status', 0)
+            ->whereDate('Installment_Date', '<', $today)
+            ->where(function ($q) use ($fromDate, $toDate) {
+                $q->whereDate('Installment_Date', '<', $fromDate)
+                    ->orWhereDate('Installment_Date', '>', $toDate);
+            })
             ->groupBy('Customer_Loan_idCustomer_Loan');
 
+        // Main query: fetch installments within date range
         $query = tableWithBranch('customer_loan', 'customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
-            ->join('installments', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->leftJoin('installments', function ($join) use ($fromDate, $toDate) {
+                $join->on('installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+                    ->whereBetween('installments.Installment_Date', [$fromDate, $toDate])
+                    ->where('installments.Status', 0);
+            })
             ->leftJoinSub($arrearsSub, 'arrears_table', function ($join) {
                 $join->on('arrears_table.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan');
             })
-            ->where('installments.Status', 0)
-            ->where('customer_loan.Status', 0)
-            ->whereBetween('installments.Installment_Date', [$request->from_date, $request->to_date]);
+            ->where('customer_loan.Status', 0);
 
-        // 👉 Apply center filter only if center != 0
+        // Apply center filter
         if ($center != 0) {
             $query->where('center.idCenter', $center);
         }
@@ -3760,10 +3769,10 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             customer_loan.Total_Loan_Amount as total_loan_amount,
             customer_loan.Balance_Amount as loan_balance,
             customer_loan.Installment_Amount as Installment_Amount,
-            SUM(installments.Installment_Amount) as installment_amount,
+            SUM(IFNULL(installments.Installment_Amount, 0)) as installment_amount,
             IFNULL(arrears_table.arrears, 0) as arrears,
-            SUM(installments.Panalty_Balance) as penalty,
-            SUM(installments.Total_Balance) as total_balance,
+            SUM(IFNULL(installments.Panalty_Balance, 0)) as penalty,
+            SUM(IFNULL(installments.Total_Balance, 0)) as total_balance,
             center.No as center_no,
             center.Name as center_name
         ")

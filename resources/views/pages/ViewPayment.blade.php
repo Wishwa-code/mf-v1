@@ -462,7 +462,18 @@
             </div><!-- /.modal-dialog -->
         </div><!-- /.modal -->
     </div>
-
+    <?php
+    $user_id = session('userid');
+    $cashier = DB::table('user')
+        ->where('id', $user_id)
+        ->where('cashier','=','1')
+        ->first();
+    ?>
+    @if($cashier)
+        <input type="hidden" id="cashier" value="1">
+    @else
+        <input type="hidden" id="cashier" value="0">
+    @endif
 
 
 
@@ -527,6 +538,8 @@
                             <b><span class="amount"  id="tot_balance">9,000.00</span></b>
                         </div>
                     </div>
+
+
                     <div class="payment-info">
                         <div class="item">
                             <span class="description">Payment Type</span>

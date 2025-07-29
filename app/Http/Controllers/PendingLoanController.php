@@ -149,18 +149,13 @@ class PendingLoanController extends Controller
                 ->where('idCustomer_Loan','=',$id)
                 ->first();
 
-//            $bank = tableWithBranch('company_bank_accounts')->where('Idbank','=',$company_bank)->first();
-//            if ($bank->Account_Balance<$customer_loan->Amount){
-//                return response()->json(['error' => 'Bank Balance is not enough','id' => 0], 200);
-//            }else{
-//
-//            }
             $affected = DB::table('customer_loan')
                 ->where('idCustomer_Loan', $id)
                 ->where('branch_id', session('branch_id'))
                 ->update(
                     [
                         'Status' => '0',
+                        'Date_Time' => date('Y-m-d H:i:s'),
                         'cus_bank_account' => $request->bank_acc,
                         'company_bank_account' => $company_bank
                     ]);
@@ -559,6 +554,7 @@ class PendingLoanController extends Controller
 
         $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin('customer_has_bank', 'customer_loan.Customer_idCustomer', '=', 'customer_has_bank.cus_id')
             ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
             FROM group_has_customer 
             LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
@@ -581,6 +577,7 @@ class PendingLoanController extends Controller
             ->where('approval_subquery.pending_approvals', '=', 0)  // Ensure no pending approvals (fully approved)
             ->select(
                 'customer_loan.*',
+                'customer_has_bank.*',
                 'loan_category.Name as loan_name',
                 'customer.*',
                 DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
@@ -877,21 +874,15 @@ class PendingLoanController extends Controller
                 'customer.idCustomer', '=', 'subquery.cus_id')
             ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
             ->leftJoin('loan_category as lc', 'lc.idLoan_Category', '=', 'cl.Loan_Category_idLoan_Category')
-            ->leftJoin(DB::raw("(
-    SELECT Loan_ID, MIN(Date_Time) as Date_Time
-    FROM Loan_Log
-    WHERE Type = 'Issue Loan'
-    GROUP BY Loan_ID
-) as ll"), 'll.Loan_ID', '=', 'cl.idCustomer_Loan')
             ->whereIn('cl.Status', [0, 1]);
 
 
         if ($request->date_from) {
-            $query->whereDate('ll.Date_Time', '>=', $request->date_from);
+            $query->whereDate('cl.Date_Time', '>=', $request->date_from);
         }
 
         if ($request->date_to) {
-            $query->whereDate('ll.Date_Time', '<=', $request->date_to);
+            $query->whereDate('cl.Date_Time', '<=', $request->date_to);
         }
 
         if ($request->branch_id) {
@@ -911,7 +902,7 @@ class PendingLoanController extends Controller
             'cl.Loan_No',
             'customer.cus_number as cus_number',
             'cl.Date_Time as create_date',
-            'll.Date_Time as disburse_date',
+            'cl.Date_Time as disburse_date',
             'lc.Name as product_name',
             'lc.Product_code as Product_code',
             'cl.Amount',

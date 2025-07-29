@@ -142,6 +142,14 @@ function save_loan(){
 
     let bank_acc = $("#bank_acc").val();
     let customer_id = $("#customer_details").val();
+    if (customer_id=='0') {
+        Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: 'Please select a Customer.',
+        });
+        return;
+    }
     let loan_cate_id = $("#package_details").val();
     let leasing_type = $("#leasing_type").val();
     let loan_number = "001";
