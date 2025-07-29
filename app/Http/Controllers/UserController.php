@@ -162,6 +162,10 @@ class UserController extends Controller
             if (!Schema::hasColumn('company_bank_has_log', 'log_tracking_no')) {
                 DB::statement("ALTER TABLE `company_bank_has_log` ADD `log_tracking_no` VARCHAR(10) NULL");
             }
+            // Dynamically add 'status' column if it does not exist
+            if (!Schema::hasColumn('loan_category', 'status')) {
+                DB::statement("ALTER TABLE loan_category ADD COLUMN status TINYINT DEFAULT 1");
+            }
 
             // Call to the penalty creation function
             $this->create_panelty();
