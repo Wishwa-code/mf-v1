@@ -840,6 +840,31 @@ class LoanController extends Controller
             $payment_delete_status=(int)$payment_delete->payment_delete;
         }
 
+        $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
+            ->leftJoin(DB::raw('(
+        SELECT loan_id, COUNT(*) as approval_count, 
+               SUM(CASE WHEN date = "-" THEN 1 ELSE 0 END) as pending_approvals 
+        FROM loan_has_approval 
+        GROUP BY loan_id
+    ) as approval_subquery'), 'customer_loan.idCustomer_Loan', '=', 'approval_subquery.loan_id')
+            ->leftJoin(DB::raw('(
+        SELECT Customer_Loan_idCustomer_Loan, SUM(Amount) as total_other_charges 
+        FROM loan_other_charges 
+        GROUP BY Customer_Loan_idCustomer_Loan
+    ) as charges_subquery'), 'customer_loan.idCustomer_Loan', '=', 'charges_subquery.Customer_Loan_idCustomer_Loan')
+            ->where('idCustomer_Loan','=',$id)
+            ->select(
+                'customer_loan.idCustomer_Loan',
+                DB::raw('IFNULL(approval_subquery.approval_count, 0) as approval_count'),
+                DB::raw('IFNULL(approval_subquery.pending_approvals, 0) as pending_approvals'),
+                DB::raw('IFNULL(charges_subquery.total_other_charges, 0) as total_other_charges')
+            );
+
+        $loans = $loanQuery->first();
+
+        if ($loans->pending_approvals=='0') {
+            return redirect('/pendingloan');
+        }
 
         // Pass the data to the view with compact and handle potential nulls
         return view('pages.LoanView', compact(

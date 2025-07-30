@@ -730,10 +730,9 @@ class ReportController extends Controller
         $customer = $request->customer;
         $date_from = $request->date_from;
         $date_to = $request->date_to;
-        $branch = $request->branch ?? '0';
         $lending_officer = $request->has('lending') && !empty($request->lending) ? $request->lending : '0';
 
-        $loanQuery = DB::table('customer_loan')
+        $loanQuery = tableWithBranch('customer_loan','customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
             ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
@@ -752,8 +751,7 @@ class ReportController extends Controller
                 DB::raw('CONCAT(customer.First_Name, " ", customer.Last_Name) as member_name'),
                 DB::raw('SUM(installments.Saving_amount-installments.Saving_balance) as saving_amount') // Summing saving balances
             )
-            ->where('customer_loan.Status', '=', '0')
-            ->where('customer_loan.branch_id', session('branch_id'))
+            ->whereIn('customer_loan.Status', [0, 1])
             ->orderBy('center_no');
 
         // Apply filters based on center, group, customer, etc.
@@ -771,10 +769,6 @@ class ReportController extends Controller
         }
         if ($lending_officer != '0') {
             $loanQuery->where('customer_loan.lending_officer_id', '=', $lending_officer);
-        }
-
-        if ($branch != '0') {
-            $loanQuery->where('customer_loan.branch_id', '=', $branch);
         }
 
         // Filter by date range if both dates are provided

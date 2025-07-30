@@ -241,6 +241,7 @@ class TodayPaymentController extends Controller
                 DB::raw("SUM(CASE WHEN Installment_Date < '$today' THEN Total_Balance ELSE 0 END) as arrease")
             )
             ->where('installments.branch_id','=',session('branch_id'))
+            ->where('customer_loan.Status', '=', '0')
             ->groupBy('Customer_Loan_idCustomer_Loan');
         if ($collector == 1) {
             $loanQuery_2->join('collector_has_route', 'customer.route_id', '=', 'collector_has_route.route_id')
