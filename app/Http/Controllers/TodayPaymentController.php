@@ -3466,13 +3466,17 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             $sms_template = DB::table('sms_template')->where('type', '=', 'payment_undo')->where('status', '=', '1')->first();
             if ($sms_template) {
                 $customer = DB::table('customer')->where('idCustomer', '=', $loan->Customer_idCustomer)->first();
-
+                $loan_balance=DB::table('customer_loan')->where('idCustomer_Loan','=',$loan_id)->value('Balance_Amount');
                 // Step 2: Define the mapping
                 $placeholders = [
                     '@Member_No@' => $customer->cus_number,
                     '@Member_Name@' => $customer->First_Name . ' ' . $customer->Last_Name,
                     '@Loan_No@' => $loan->Loan_No,
                     '@Paid_Amount@' => $undo_payment,
+                    '@Date@' => date('Y-m-d'),
+                    '@Payment_Date@' => $payment->Date,
+                    '@Loan_Balance@' => number_format($loan_balance, 2, '.', ','),
+
                 ];
 
                 // Step 3: Replace placeholders in the loan_format

@@ -172,12 +172,6 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
     <script src="../JS/validate.js"></script>
     <script src="../JS/sms.js"></script>
-    <!-- Ensure jQuery and Bootstrap 5 are included -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
-    <!-- Include Bootstrap Toggle JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
-    <!-- Custom JS -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize Bootstrap Toggle after DOM content is loaded
@@ -238,7 +232,10 @@
                 <button type="button" class="btn btn-primary mt-3" onclick="appendToTextArea('Member_No')">Member No</button>
                 <button type="button" class="btn btn-primary mt-3" onclick="appendToTextArea('Member_Name')">Member Name</button>
                 <button type="button" class="btn btn-primary mt-3" onclick="appendToTextArea('Loan_No')">Loan No</button>
+                <button type="button" class="btn btn-primary mt-3" onclick="appendToTextArea('Loan_Balance')">Loan Balance</button>
                 <button type="button" class="btn btn-primary mt-3" onclick="appendToTextArea('Paid_Amount')">Paid Amount</button>
+                <button type="button" class="btn btn-primary mt-3" onclick="appendToTextArea('Payment_Date')">Payment Date</button>
+                <button type="button" class="btn btn-primary mt-3" onclick="appendToTextArea('Date')">Date</button>
             `;
 
                     break;
@@ -361,6 +358,7 @@
             smsContent = smsContent.replace(/@Pending_Amount@/g, '<span style="color: #ad000d;">2,628.68 LKR</span>');
             smsContent = smsContent.replace(/@Penalty_Date@/g, '<span style="color: #ad000d;">2024-05-11</span>');
             smsContent = smsContent.replace(/@Age@/g, '<span style="color: #ad000d;">29</span>');
+            smsContent = smsContent.replace(/@Date@/g, '<span style="color: #ad000d;">2024-05-11</span>');
 
             smsContent = smsContent.replace(/\n/g, '<br>');
 
@@ -385,6 +383,12 @@
         }
 
     </script>
+    <!-- Ensure jQuery and Bootstrap 5 are included -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <!-- Include Bootstrap Toggle JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
+    <!-- Custom JS -->
 
 
     <script>
