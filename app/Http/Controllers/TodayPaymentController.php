@@ -1191,7 +1191,7 @@ class TodayPaymentController extends Controller
                         $this->bankLogController->index($bank_account_company, "Loan Payment-Saving", $bank_log_comment, "Bank Deposit", "debit", $Saving_balance_tot_paid,$saving_id->Idbank,$savedId);
                         $this->bankLogController->index($saving_id->Idbank, "Loan Payment-Saving", $bank_log_comment, "Bank Deposit", "credit", $Saving_balance_tot_paid,$bank_account_company,$savedId);
                     }
-                } else if ($payment_type === "Collector") {
+                } else if ($payment_type === "Collector" || $payment_type === "Cashier") {
                     if ($capital_balance_tot_paid>0){
                         //capital
                         $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Collector Deposit", "debit", $capital_balance_tot_paid,$capital_id->Idbank,$savedId);
@@ -1590,7 +1590,7 @@ class TodayPaymentController extends Controller
                         $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Bank Deposit", "debit", $Panalty_Balance_tot_paid,$panelty_id->Idbank,$savedId);
                         $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Bank Deposit", "credit", $Panalty_Balance_tot_paid,$bank_account_company,$savedId);
                     }
-                } else if ($payment_type === "Collector") {
+                } else if ($payment_type === "Collector" || $payment_type === "Cashier") {
                     if ($capital_balance_tot_paid>0){
                         //capital
                         $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Collector Deposit", "debit", $capital_balance_tot_paid,$capital_id->Idbank,$savedId);
@@ -2003,7 +2003,7 @@ class TodayPaymentController extends Controller
                         $this->bankLogController->index($bank_account_company, "Loan Payment-Saving", $bank_log_comment, "Bank Deposit", "debit", $Saving_balance_tot_paid,$saving_id->Idbank,$savedId);
                         $this->bankLogController->index($saving_id->Idbank, "Loan Payment-Saving", $bank_log_comment, "Bank Deposit", "credit", $Saving_balance_tot_paid,$bank_account_company,$savedId);
                     }
-                } else if ($payment_type === "Collector") {
+                } else if ($payment_type === "Collector" || $payment_type === "Cashier") {
                     if ($capital_balance_tot_paid>0){
                         //capital
                         $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Collector Deposit", "debit", $capital_balance_tot_paid,$capital_id->Idbank,$savedId);
