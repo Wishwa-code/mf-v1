@@ -505,23 +505,30 @@
                                 <label for="payment_type" class="form-label fw-bold">Payment Type</label>
                             </div>
                             <div class="col-sm-8">
-                                    @if($collector==1 || $cashier==1)
+                                @if($collector==1)
                                         <select class="form-control" id="payment_type" onchange="togglePaymentSections(this.value)" disabled>
                                             <option value="Cash">Cash</option>
                                             <option value="Bank Deposit">Bank Deposit</option>
                                             <option value="Cheque">Cheque</option>
                                             <option value="Collector" selected>Collector</option>
                                         </select>
-                                    @else
+                                @elseif($cashier==1)
+                                    <select class="form-control" id="payment_type" onchange="togglePaymentSections(this.value)" disabled>
+                                        <option value="Cash">Cash</option>
+                                        <option value="Bank Deposit">Bank Deposit</option>
+                                        <option value="Cheque">Cheque</option>
+                                        <option value="Collector" >Collector</option>
+                                        <option value="Cashier" selected>Cashier</option>
+                                    </select>
+                                @else
                                     <select class="form-control" id="payment_type" onchange="togglePaymentSections(this.value)">
                                         <option value="Cash" selected>Cash</option>
                                         <option value="Bank Deposit">Bank Deposit</option>
                                         <option value="Cheque">Cheque</option>
                                         <option value="Collector" >Collector</option>
+                                        <option value="Cashier" >Cashier</option>
                                     </select>
-                                    @endif
-
-
+                                @endif
                             </div>
                         </div>
 <hr>
@@ -731,12 +738,21 @@
                             </div>
                             <div class="col-md-6">
                                 <label for="payment_type_2" class="form-label fw-bold">Payment Type:</label>
-                                @if($collector==1 || $cashier==1)
+                                @if($collector==1)
                                     <select class="form-control" id="payment_type_2" onchange="togglePaymentSections_2(this.value)" disabled>
                                         <option value="Cash">Cash</option>
                                         <option value="Bank Deposit">Bank Deposit</option>
                                         <option value="Cheque">Cheque</option>
                                         <option value="Collector" selected>Collector</option>
+                                        <option value="Cashier">Cashier</option>
+                                    </select>
+                                @elseif($cashier==1)
+                                    <select class="form-control" id="payment_type_2" onchange="togglePaymentSections_2(this.value)" disabled>
+                                        <option value="Cash">Cash</option>
+                                        <option value="Bank Deposit">Bank Deposit</option>
+                                        <option value="Cheque">Cheque</option>
+                                        <option value="Collector">Collector</option>
+                                        <option value="Cashier" selected>Cashier</option>
                                     </select>
                                 @else
                                     <select class="form-control" id="payment_type_2" onchange="togglePaymentSections_2(this.value)">
@@ -1548,8 +1564,10 @@
             chequeTypeSection.style.display = 'none';
             cheque_issue_bank_section.style.display = 'none';
 
+
+
             // Show relevant sections based on the selected payment type
-            if (value === 'Bank Deposit' || value === 'Collector') {
+            if (value === 'Bank Deposit' || value === 'Collector' || value === 'Cashier') {
                 bankAccountSection.style.display = 'block';
             } else if (value === 'Cheque') {
                 chequeDetailsSection.style.display = 'block';
@@ -1578,7 +1596,7 @@
             cheque_issue_bank_section.style.display = 'none';
 
             // Show relevant sections based on the selected payment type
-            if (value === 'Bank Deposit' || value === 'Collector') {
+            if (value === 'Bank Deposit' || value === 'Collector' || value === 'Cashier') {
                 bankAccountSection.style.display = 'block';
             } else if (value === 'Cheque') {
                 chequeDetailsSection.style.display = 'block';

@@ -8,6 +8,7 @@ use GuzzleHttp\Client;
 use Illuminate\Session\Store;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 
@@ -25,6 +26,10 @@ class SmsController extends Controller
             return response()->json(['error' => 'Company or Customer not found'], 404);
         }
 
+// Dynamically add 'status' column if it does not exist
+        if (!Schema::hasColumn('company', 'provider')) {
+            DB::statement("ALTER TABLE company ADD COLUMN provider VARCHAR(50) NOT NULL DEFAULT 'Dialog'");
+        }
 
 
         try {
@@ -71,6 +76,7 @@ class SmsController extends Controller
                         ],
                     ]);
                     $responseData = json_decode($response->getBody()->getContents(), true);
+                    Log::info($responseData);
                     if ($responseData['status'] === "success") {
                         $this->logSMS($customer_id, $customer, $message, $type);
                     }

@@ -723,10 +723,10 @@ class ReportController extends Controller
 
 
 
-    public function savings_report_filter(Request $request){
+    public function savings_report_filter(Request $request)
+    {
         $center_details = $request->center_details;
         $route = $request->route;
-        $group = $request->group;
         $customer = $request->customer;
         $date_from = $request->date_from;
         $date_to = $request->date_to;
@@ -735,36 +735,47 @@ class ReportController extends Controller
 
         $loanQuery = DB::table('customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
-            ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
             ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
-                            FROM group_has_customer
-                            LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
+                        FROM group_has_customer
+                        LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
                 'customer.idCustomer', '=', 'subquery.cus_id')
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
             ->leftJoin('route', 'center.route_id', '=', 'route.id_route')
+            ->leftJoin('Customer_Saving_Accounts', function ($join) {
+                $join->on('Customer_Saving_Accounts.Customer_Id', '=', 'customer.idCustomer')
+                    ->on('Customer_Saving_Accounts.Loan_Id', '=', 'customer_loan.idCustomer_Loan')
+                    ->where('Customer_Saving_Accounts.Status', '=', 1);
+            })
+            ->leftJoin('Savings_Account_Log', function ($join) use ($date_from, $date_to) {
+                $join->on('Savings_Account_Log.Saving_Acount_Id', '=', 'Customer_Saving_Accounts.id');
+
+                if (!empty($date_from) && !empty($date_to)) {
+                    $startDateTime = $date_from . ' 00:00:00';
+                    $endDateTime = $date_to . ' 23:59:59';
+
+                    $join->whereBetween('Savings_Account_Log.Date_Time', [$startDateTime, $endDateTime]);
+                }
+            })
             ->select(
                 DB::raw('IFNULL(center.No, "-") as center_no'),
                 DB::raw('IFNULL(center.Name, "-") as center_name'),
                 DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
                 'customer.Nic as member_nic',
                 DB::raw('CONCAT(customer.First_Name, " ", customer.Last_Name) as member_name'),
-                DB::raw('SUM(installments.Saving_amount-installments.Saving_balance) as saving_amount') // Summing saving balances
+                DB::raw('SUM(Savings_Account_Log.Credit) as saving_amount')
             )
             ->where('customer_loan.Status', '=', '0')
             ->where('customer_loan.branch_id', session('branch_id'))
             ->orderBy('center_no');
 
-        // Apply filters based on center, group, customer, etc.
+        // Filters
         if ($center_details != '0') {
             $loanQuery->where('center.idCenter', '=', $center_details);
         }
         if ($route != '0') {
             $loanQuery->where('route.id_route', '=', $route);
-        }
-        if ($group != '0') {
-            $loanQuery->where('customer_group.idCustomer_Group', '=', $group);
         }
         if ($customer != '0') {
             $loanQuery->where('customer.idCustomer', '=', $customer);
@@ -772,18 +783,22 @@ class ReportController extends Controller
         if ($lending_officer != '0') {
             $loanQuery->where('customer_loan.lending_officer_id', '=', $lending_officer);
         }
-
         if ($branch != '0') {
             $loanQuery->where('customer_loan.branch_id', '=', $branch);
         }
 
-        // Filter by date range if both dates are provided
-        if (!empty($date_from) && !empty($date_to)) {
-            $loanQuery->whereBetween('installments.Installment_Date', [$date_from, $date_to]);
-        }
+        $loanQuery->groupBy(
+            'center.No',
+            'center.Name',
+            'subquery.group_name',
+            'customer.Nic',
+            'customer.First_Name',
+            'customer.Last_Name',
+            'customer.idCustomer',
+        );
 
-        // Group by required columns
-        $loanQuery->groupBy('center.No','center.Name', 'subquery.group_name', 'customer.Nic', 'customer.First_Name', 'customer.Last_Name');
+        // Only show rows with savings
+        $loanQuery->havingRaw('SUM(Savings_Account_Log.Credit) > 0');
 
         $result = $loanQuery->get();
 

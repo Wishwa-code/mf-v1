@@ -108,6 +108,17 @@ class LoanController extends Controller
                         ->leftjoin('route', 'route.id_route', '=', 'customer.route_id')
                         ->where('idCustomer','=',$customer_id)
                         ->first();
+                    // Step 1: Get the route_id of the given customer
+                    $routeId = DB::table('customer')
+                        ->where('idCustomer', $customer_id)
+                        ->value('route_id');
+
+                    // Step 2: Count total loans in that route
+                    $routewiseloanCount = DB::table('customer_loan as cl')
+                        ->join('customer as c', 'cl.Customer_idCustomer', '=', 'c.idCustomer')
+                        ->where('c.route_id', $routeId)
+                        ->count();
+
                     $placeholders = [
                         '@Branch_No@' => $branch_no,
                         '@Root@' => $cus_root->root_code ?? '',
@@ -115,6 +126,7 @@ class LoanController extends Controller
                         '@Customer_No@' => str_pad($cus_root->idCustomer, 3, '0', STR_PAD_LEFT),
                         '@Auto_Id@' => $formatted_loan_id,
                         '@Loan_Count@' => $cus_loan_count+1,
+                        '@RootlyCount@' => str_pad($routewiseloanCount+1, 3, '0', STR_PAD_LEFT),
                     ];
 
                     // Step 3: Replace placeholders in the loan_format
@@ -141,6 +153,20 @@ class LoanController extends Controller
                             ->where('customer_group.center_id', $center_id)
                             ->distinct('customer.idCustomer') // Optional if customers can be in multiple groups
                             ->count('customer.idCustomer');
+
+                        // Step 1: Get the route_id of the given customer
+                        $routeId = DB::table('customer')
+                            ->where('idCustomer', $customer_id)
+                            ->value('route_id');
+
+                        // Step 2: Count total loans in that route
+                        $routewiseloanCount = DB::table('customer_loan as cl')
+                            ->join('customer as c', 'cl.Customer_idCustomer', '=', 'c.idCustomer')
+                            ->where('c.route_id', $routeId)
+                            ->count();
+
+
+
                         // Step 2: Define the mapping
                         $placeholders = [
                             '@Branch_No@' => $branch_no,
@@ -152,6 +178,7 @@ class LoanController extends Controller
                             '@Auto_Id@' => $formatted_loan_id,
                             '@Loan_Count@' => $cus_loan_count+1,
                             '@Center_Cus_Count@' => $center_customer_count+1,
+                            '@RootlyCount@' => str_pad($routewiseloanCount+1, 3, '0', STR_PAD_LEFT),
                         ];
 
                         // Step 3: Replace placeholders in the loan_format
@@ -782,7 +809,7 @@ class LoanController extends Controller
 
 
         // Fetch the loan category
-        $Loan_Category = tableWithBranch('loan_category')->where('idLoan_Category', $loan->Loan_Category_idLoan_Category)->first();
+        $Loan_Category = DB::table('loan_category')->where('idLoan_Category', $loan->Loan_Category_idLoan_Category)->first();
 
         // Fetch the customer bank
         $Customer_Bank = tableWithBranch('customer_has_bank')->where([
@@ -840,6 +867,31 @@ class LoanController extends Controller
             $payment_delete_status=(int)$payment_delete->payment_delete;
         }
 
+        $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
+            ->leftJoin(DB::raw('(
+        SELECT loan_id, COUNT(*) as approval_count, 
+               SUM(CASE WHEN date = "-" THEN 1 ELSE 0 END) as pending_approvals 
+        FROM loan_has_approval 
+        GROUP BY loan_id
+    ) as approval_subquery'), 'customer_loan.idCustomer_Loan', '=', 'approval_subquery.loan_id')
+            ->leftJoin(DB::raw('(
+        SELECT Customer_Loan_idCustomer_Loan, SUM(Amount) as total_other_charges 
+        FROM loan_other_charges 
+        GROUP BY Customer_Loan_idCustomer_Loan
+    ) as charges_subquery'), 'customer_loan.idCustomer_Loan', '=', 'charges_subquery.Customer_Loan_idCustomer_Loan')
+            ->where('idCustomer_Loan','=',$id)
+            ->select(
+                'customer_loan.idCustomer_Loan',
+                DB::raw('IFNULL(approval_subquery.approval_count, 0) as approval_count'),
+                DB::raw('IFNULL(approval_subquery.pending_approvals, 0) as pending_approvals'),
+                DB::raw('IFNULL(charges_subquery.total_other_charges, 0) as total_other_charges')
+            );
+
+        $loans = $loanQuery->first();
+
+        if ($loans->pending_approvals=='0') {
+            return redirect('/pendingloan');
+        }
 
         // Pass the data to the view with compact and handle potential nulls
         return view('pages.LoanView', compact(
@@ -895,8 +947,7 @@ class LoanController extends Controller
                     ->first(); // Get the first record in this order
             }
 
-            // Extract the date if next installment is found, otherwise set to null
-            $nextInstallmentDate = $nextInstallment ? Carbon::parse($nextInstallment->Installment_Date) : '-';
+            $nextInstallmentDate = Carbon::parse($nextInstallment->Installment_Date);
 
             $startDate = Carbon::parse($nextInstallment->Installment_Date);
             $endDate = Carbon::parse(date('Y-m-d'));
@@ -1339,6 +1390,25 @@ class LoanController extends Controller
         return response()->json([ 'installment' => $request->installment], 200);
 
     }
+
+    public function getCustomerBankDetails(Request $request)
+    {
+        $customerIds = $request->customer_ids;
+
+        $results = DB::table('customer_has_bank')
+            ->join('customer','customer_has_bank.cus_id','=','customer.idCustomer')
+            ->whereIn('customer.cus_number', $customerIds)
+            ->select('cus_number', 'bank_name', 'account_number')
+            ->get();
+
+        $data = [];
+        foreach ($results as $row) {
+            $data[$row->cus_number] = $row->bank_name . ' - ' . $row->account_number;
+        }
+
+        return response()->json($data);
+    }
+
 
 
 

@@ -126,7 +126,7 @@
                                     <button class="btn btn-primary w-100" onclick="exportFundRequestPDF();">FUND REQUEST</button>
                                 </div>
                                 <div class="col-lg-4">
-                                    <button class="btn btn-success w-100" onclick="exportDisbursementSheetPDF();">DISBURSEMENT SHEET</button>
+                                    <button class="btn btn-success w-100" onclick="promptDisbursementExport();">DISBURSEMENT SHEET</button>
                                 </div>
                                 <div class="col-lg-4">
                                     <button class="btn btn-info w-100" onclick="exportDocumentChargesPDF();">Document Charges Register</button>
@@ -622,68 +622,186 @@
 
             pdf.save('Fund_Request.pdf');
         }
+        function promptDisbursementExport() {
+            Swal.fire({
+                title: 'Choose Export Format',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'PDF',
+                cancelButtonText: 'Excel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    exportDisbursementSheetPDF(); // existing function
+                } else if (result.dismiss === Swal.DismissReason.cancel) {
+                    exportDisbursementSheetExcel(); // new function below
+                }
+            });
+        }
+
+        function exportDisbursementSheetExcel() {
+            var table = $('#loan_table').DataTable();
+            var rows = table.rows().data();
+
+            var wb = XLSX.utils.book_new();
+            var ws_data = [['#', 'Customer Number', 'NIC', 'Customer Name', 'Amount', 'Bank Details', 'Received By']];
+            var customerIds = [];
+            var rowData = [];
+            var totalAmount = 0;
+
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                var amount = parseFloat(row[8].replace(/[^0-9.-]+/g, "")) || 0;
+                totalAmount += amount;
+
+                rowData.push({
+                    index: i + 1,
+                    customerNumber: row[5],
+                    nic: row[6],
+                    customerName: row[4],
+                    amount: amount,
+                    id: row[5]
+                });
+
+                customerIds.push(row[5]);
+            }
+
+            $.ajax({
+                url: '/get-customer-bank-details',
+                type: 'POST',
+                data: {
+                    customer_ids: customerIds,
+                    _token: $('meta[name="csrf-token"]').attr("content")
+                },
+                success: function (response) {
+                    rowData.forEach(function (item) {
+                        let bankDetail = response[item.id] || '';
+                        ws_data.push([
+                            item.index,
+                            item.customerNumber,
+                            item.nic,
+                            item.customerName,
+                            item.amount.toFixed(2),
+                            bankDetail,
+                            ''
+                        ]);
+                    });
+
+                    // Add footer rows
+                    ws_data.push([]);
+                    ws_data.push(['', '', '', 'Total Amount', totalAmount.toFixed(2)]);
+
+                    var ws = XLSX.utils.aoa_to_sheet(ws_data);
+                    XLSX.utils.book_append_sheet(wb, ws, "Disbursement Sheet");
+
+                    XLSX.writeFile(wb, 'Disbursement_Sheet.xlsx');
+                },
+                error: function (xhr) {
+                    console.error("Error loading bank details for Excel");
+                }
+            });
+        }
+
 
 
         function exportDisbursementSheetPDF() {
             var table = $('#loan_table').DataTable();
             var rows = table.rows().data();
 
-            var data = [['#', 'Customer Number', 'NIC', 'Customer Name','Bank Details', 'Amount', 'Received By']];
+            var data = [['#', 'Customer Number', 'NIC', 'Customer Name', 'Amount', 'Bank Details', 'Received By']];
             var totalAmount = 0;
+            var customerIds = [];
+            var rowData = [];
 
+            // Step 1: Extract data and collect customer IDs
             for (var i = 0; i < rows.length; i++) {
                 var row = rows[i];
-                var index = i + 1;
-                var customerNumber = row[5];
-                var nic = row[6];
-                var customerName = row[4];
                 var amount = parseFloat(row[8].replace(/[^0-9.-]+/g, "")) || 0;
-
                 totalAmount += amount;
-                data.push([index, customerNumber, nic, customerName, amount.toFixed(2), '']);
+
+                rowData.push({
+                    index: i + 1,
+                    customerNumber: row[5],
+                    nic: row[6],
+                    customerName: row[4],
+                    amount: amount,
+                    id: row[5] // Assuming customer number is unique ID (adjust if needed)
+                });
+
+                customerIds.push(row[5]);
             }
 
-            data.push(['', '', '', 'Total Amount', totalAmount.toFixed(2), '']);
-            data.push([]);
-            var authorizedText = "Prepared By: " + authorizedName;
-            data.push(['', authorizedText, '', '', 'Authorized 01:', '']);
-            data.push(['', '', '', '', 'Authorized 02:', '']);
-            data.push(['', '', '', '', 'All Cheques Received:', '']);
+            // Step 2: Fetch bank details by customer numbers
+            $.ajax({
+                url: '/get-customer-bank-details',
+                type: 'POST',
+                data: {
+                    customer_ids: customerIds,
+                    _token: $('meta[name="csrf-token"]').attr("content")
+                },
+                success: function(response) {
+                    // Step 3: Match and insert into PDF data
+                    rowData.forEach(function(item) {
+                        let bankDetail = response[item.id] || '';
+                        data.push([
+                            item.index,
+                            item.customerNumber,
+                            item.nic,
+                            item.customerName,
+                            item.amount.toFixed(2),
+                            bankDetail,
+                            ''
+                        ]);
+                    });
 
-            var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
-            var dateTime = getColomboDateTime();
-            var pageWidth = pdf.internal.pageSize.getWidth();
+                    // Step 4: Add total and footer info
+                    data.push(['', '', '', 'Total Amount', totalAmount.toFixed(2), '', '']);
+                    data.push([]);
+                    var authorizedText = "Prepared By: " + authorizedName;
+                    data.push(['', authorizedText, '', '', 'Authorized 01:', '', '']);
+                    data.push(['', '', '', '', 'Authorized 02:', '', '']);
+                    data.push(['', '', '', '', 'All Cheques Received:', '', '']);
 
-            pdf.setFontSize(14);
-            pdf.text(companyName, (pageWidth - pdf.getTextWidth(companyName)) / 2, 16);
+                    // Step 5: Generate PDF
+                    var pdf = new window.jspdf.jsPDF('landscape', 'mm', 'a4');
+                    var dateTime = getColomboDateTime();
+                    var pageWidth = pdf.internal.pageSize.getWidth();
 
-            pdf.setFontSize(12);
-            var title = "Disbursement Sheet";
-            pdf.text(title, (pageWidth - pdf.getTextWidth(title)) / 2, 24);
+                    pdf.setFontSize(14);
+                    pdf.text(companyName, (pageWidth - pdf.getTextWidth(companyName)) / 2, 16);
 
-            pdf.setFontSize(10);
-            var dateTimeText = "Date: " + dateTime;
-            pdf.text(dateTimeText, (pageWidth - pdf.getTextWidth(dateTimeText)) / 2, 32);
+                    pdf.setFontSize(12);
+                    pdf.text("Disbursement Sheet", (pageWidth - pdf.getTextWidth("Disbursement Sheet")) / 2, 24);
 
-            pdf.autoTable({
-                head: [data[0]],
-                body: data.slice(1),
-                startY: 40,
-                theme: 'grid',
-                styles: { halign: 'center', fontSize: 10, lineColor: [0, 0, 0], lineWidth: 0.4 },
-                headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
-                columnStyles: {
-                    0: { cellWidth: 10 },
-                    1: { cellWidth: 35 },
-                    2: { cellWidth: 35 },
-                    3: { cellWidth: 50 },
-                    4: { cellWidth: 30 },
-                    5: { cellWidth: 30 },
+                    pdf.setFontSize(10);
+                    pdf.text("Date: " + dateTime, (pageWidth - pdf.getTextWidth("Date: " + dateTime)) / 2, 32);
+
+                    pdf.autoTable({
+                        head: [data[0]],
+                        body: data.slice(1),
+                        startY: 40,
+                        theme: 'grid',
+                        styles: { halign: 'center', fontSize: 10 },
+                        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
+                        columnStyles: {
+                            0: { cellWidth: 10 },
+                            1: { cellWidth: 35 },
+                            2: { cellWidth: 35 },
+                            3: { cellWidth: 60 },
+                            4: { cellWidth: 30 },
+                            5: { cellWidth: 50 },
+                            6: { cellWidth: 45 }
+                        }
+                    });
+
+                    pdf.save('Disbursement_Sheet.pdf');
+                },
+                error: function(xhr) {
+                    console.error("Error loading bank details");
                 }
             });
-
-            pdf.save('Disbursement_Sheet.pdf');
         }
+
 
 
         function exportDocumentChargesPDF() {
@@ -831,61 +949,61 @@
             }
         }
     </script>
-{{--    <script>--}}
-{{--        const exampleModal = document.getElementById('standard-modal')--}}
-{{--        exampleModal.addEventListener('show.bs.modal', event => {--}}
-{{--            // Button that triggered the modal--}}
-{{--            const button = event.relatedTarget--}}
-{{--            // Extract info from data-bs-* attributes--}}
-{{--            const recipient = button.getAttribute('data-bs-whatever')--}}
-{{--            // If necessary, you could initiate an AJAX request here--}}
-{{--            // and then do the updating in a callback.--}}
-{{--            //--}}
-{{--            // Update the modal's content.--}}
-{{--            const modalTitle = exampleModal.querySelector('.modal-title')--}}
-{{--            const modalBodyInput = exampleModal.querySelector('.modal-body input')--}}
+    {{--    <script>--}}
+    {{--        const exampleModal = document.getElementById('standard-modal')--}}
+    {{--        exampleModal.addEventListener('show.bs.modal', event => {--}}
+    {{--            // Button that triggered the modal--}}
+    {{--            const button = event.relatedTarget--}}
+    {{--            // Extract info from data-bs-* attributes--}}
+    {{--            const recipient = button.getAttribute('data-bs-whatever')--}}
+    {{--            // If necessary, you could initiate an AJAX request here--}}
+    {{--            // and then do the updating in a callback.--}}
+    {{--            //--}}
+    {{--            // Update the modal's content.--}}
+    {{--            const modalTitle = exampleModal.querySelector('.modal-title')--}}
+    {{--            const modalBodyInput = exampleModal.querySelector('.modal-body input')--}}
 
-{{--            modalTitle.textContent = `New message to ${recipient}`--}}
-{{--            modalBodyInput.value = recipient--}}
-{{--        })--}}
-{{--    </script>--}}
-{{--    <script>--}}
-{{--        const issueLoanModal = document.getElementById('issue-loan-modal')--}}
-{{--        issueLoanModal.addEventListener('show.bs.modal', event => {--}}
-{{--            // Button that triggered the modal--}}
-{{--            const button = event.relatedTarget--}}
-{{--            // Extract info from data-bs-* attributes--}}
-{{--            const recipient = button.getAttribute('data-bs-whatever')--}}
-{{--            // If necessary, you could initiate an AJAX request here--}}
-{{--            // and then do the updating in a callback.--}}
-{{--            //--}}
-{{--            // Update the modal's content.--}}
-{{--            const modalTitle = issueLoanModal.querySelector('.modal-title')--}}
-{{--            const modalBodyInput = issueLoanModal.querySelector('.modal-body input')--}}
+    {{--            modalTitle.textContent = `New message to ${recipient}`--}}
+    {{--            modalBodyInput.value = recipient--}}
+    {{--        })--}}
+    {{--    </script>--}}
+    {{--    <script>--}}
+    {{--        const issueLoanModal = document.getElementById('issue-loan-modal')--}}
+    {{--        issueLoanModal.addEventListener('show.bs.modal', event => {--}}
+    {{--            // Button that triggered the modal--}}
+    {{--            const button = event.relatedTarget--}}
+    {{--            // Extract info from data-bs-* attributes--}}
+    {{--            const recipient = button.getAttribute('data-bs-whatever')--}}
+    {{--            // If necessary, you could initiate an AJAX request here--}}
+    {{--            // and then do the updating in a callback.--}}
+    {{--            //--}}
+    {{--            // Update the modal's content.--}}
+    {{--            const modalTitle = issueLoanModal.querySelector('.modal-title')--}}
+    {{--            const modalBodyInput = issueLoanModal.querySelector('.modal-body input')--}}
 
-{{--            modalTitle.textContent = `New message to ${recipient}`--}}
-{{--            modalBodyInput.value = recipient--}}
-{{--        })--}}
-{{--    </script>--}}
+    {{--            modalTitle.textContent = `New message to ${recipient}`--}}
+    {{--            modalBodyInput.value = recipient--}}
+    {{--        })--}}
+    {{--    </script>--}}
 
-{{--    <script>--}}
-{{--        const viewModal = document.getElementById('view-modal')--}}
-{{--        exampleModal.addEventListener('show.bs.modal', event => {--}}
-{{--            // Button that triggered the modal--}}
-{{--            const button = event.relatedTarget--}}
-{{--            // Extract info from data-bs-* attributes--}}
-{{--            const recipient = button.getAttribute('data-bs-whatever')--}}
-{{--            // If necessary, you could initiate an AJAX request here--}}
-{{--            // and then do the updating in a callback.--}}
-{{--            //--}}
-{{--            // Update the modal's content.--}}
-{{--            const modalTitle = viewModal.querySelector('.modal-title')--}}
-{{--            const modalBodyInput = viewModal.querySelector('.modal-body input')--}}
+    {{--    <script>--}}
+    {{--        const viewModal = document.getElementById('view-modal')--}}
+    {{--        exampleModal.addEventListener('show.bs.modal', event => {--}}
+    {{--            // Button that triggered the modal--}}
+    {{--            const button = event.relatedTarget--}}
+    {{--            // Extract info from data-bs-* attributes--}}
+    {{--            const recipient = button.getAttribute('data-bs-whatever')--}}
+    {{--            // If necessary, you could initiate an AJAX request here--}}
+    {{--            // and then do the updating in a callback.--}}
+    {{--            //--}}
+    {{--            // Update the modal's content.--}}
+    {{--            const modalTitle = viewModal.querySelector('.modal-title')--}}
+    {{--            const modalBodyInput = viewModal.querySelector('.modal-body input')--}}
 
-{{--            modalTitle.textContent = `New message to ${recipient}`--}}
-{{--            modalBodyInput.value = recipient--}}
-{{--        })--}}
-{{--    </script>--}}
+    {{--            modalTitle.textContent = `New message to ${recipient}`--}}
+    {{--            modalBodyInput.value = recipient--}}
+    {{--        })--}}
+    {{--    </script>--}}
 
 @endsection
 

@@ -261,6 +261,15 @@
                                         <label class="form-label">To Date</label>
                                         <input type="date" id="to_date" class="form-control" min="{{ now()->toDateString() }}">
                                     </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Filter Type</label>
+                                        <select class="form-select" id="filter_type">
+                                            <option value="all">All</option>
+                                            <option value="scheduled">Scheduled Installment Amount</option>
+                                            <option value="arrears">Arrears Amount</option>
+                                        </select>
+                                    </div>
+
 
                                     <div class="col-md-2 d-grid">
                                         <button class="btn btn-primary" onclick="loadPredictionReport()">
@@ -344,7 +353,7 @@
             let fromDate = $('#from_date').val();
             let toDate = $('#to_date').val();
             let center = $('#center_id').val();
-
+            let filterType = $('#filter_type').val();
             if (!fromDate || !toDate) {
                 Swal.fire("Validation Error", "Please select both From and To dates.", "warning");
                 return;
@@ -380,6 +389,15 @@
                         tbody.append('<tr><td colspan="10" class="text-center">No data found</td></tr>');
                     } else {
                         res.forEach(item => {
+
+                            const scheduled = parseFloat(item.total_balance || 0);
+                            const arrears = parseFloat(item.arrears || 0);
+
+                            if (filterType === 'scheduled' && scheduled <= 0) return;
+                            if (filterType === 'arrears' && arrears <= 0) return;
+
+
+
                             tot_target += parseFloat(item.total_balance || 0);
                             tot_installment += parseFloat(item.Installment_Amount || 0);
                             tot_arrears += parseFloat(item.arrears || 0);

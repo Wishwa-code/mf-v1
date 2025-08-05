@@ -129,6 +129,7 @@
                                 <th>Group</th>
                                 <th>Loan Number</th>
                                 <th>Customer Name</th>
+                                <th>Customer No</th>
                                 <th>Payment Type</th>
                                 <th>Amount</th>
                                 <th>Collected User</th>
@@ -144,6 +145,7 @@
                                         <td>{{ $item->group_name }}</td>
                                         <td>{{ $item->loan_number }}</td>
                                         <td>{{ $item->f_name }} {{$item->l_name}}</td>
+                                        <td>{{ $item->cus_number }}</td>
                                         <td>{{ $item->payment_type }}</td>
                                         <td>{{ number_format($item->amount,2) }}</td>
                                         <td>{{ $item->collected_user }}</td>

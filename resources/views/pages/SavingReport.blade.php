@@ -124,17 +124,7 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-lg-3">
-                                <div class="mb-3">
-                                    <label for="branch" class="form-label">Branch</label>
-                                    <select class="form-control select2" id="branch">
-                                        <option value="0">All</option>
-                                        @foreach($branch as $item)
-                                            <option value="{{ $item->branch_id }}">{{ $item->Name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
+
 
                             <div class="col-lg-3">
                                 <div class="mb-3">
@@ -385,7 +375,6 @@
             let lending = $("#lending").val();
             let date_from = $("#date_from").val();
             let date_to = $("#date_to").val();
-            let branch = $("#branch").val();
 
             $.ajax({
                 type: "POST",
@@ -400,7 +389,7 @@
                     customer: customer,
                     lending: lending,
                     date_from: date_from,
-                    branch: branch,
+
                     date_to: date_to
                 },
                 success: function(data, textStatus, xhr) {

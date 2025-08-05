@@ -714,22 +714,22 @@
                                                             <div class="col-6 fw-bold fw-size ">Capital Amount</div>
                                                             <div class="col-6 text-left fw-bold fw-size " id="total_capital_amount">0.00</div>
                                                         </div>
-                                                        <div class="row mb-3">
+                                                        <div class="row mb-3" id="total_interest_amount_show">
                                                             <div class="col-6 fw-bold fw-size ">Interest Amount</div>
                                                             <div class="col-6 text-left fw-bold fw-size " id="total_interest_amount">0.00</div>
                                                         </div>
 
-                                                        <div class="row mb-3">
+                                                        <div class="row mb-3"  id="total_loan_amount_show">
                                                             <div class="col-6 fw-bold fw-size ">Total Loan Amount</div>
                                                             <div class="col-6 text-left fw-bold fw-size " id="total_loan_amount">0.00</div>
                                                         </div>
                                                         <!-- Installment Amount -->
-                                                        <div class="row mb-3">
+                                                        <div class="row mb-3"  id="new_interest_amount_show">
                                                             <div class="col-6 fw-bold fw-size ">Installment Amount</div>
                                                             <div class="col-6 text-left fw-bold fw-size " id="new_interest_amount">0.00</div>
                                                         </div>
                                                         <!-- Add more inputs here -->
-                                                        <div class="row mb-3">
+                                                        <div class="row mb-3"  id="new_issued_amount_show">
                                                             <div class="col-6 fw-bold fw-size ">Issued Amount</div>
                                                             <div class="col-6 text-left fw-bold fw-size " id="new_issued_amount">0.00</div>
                                                         </div>
@@ -2145,7 +2145,9 @@
             let installmentAmount = 0.0;  // Initialize installmentAmount
             let interest = $("#loan_interest").val();
 
-
+            let interest_period = $("#interest_period").val();
+            let duration_period = $("#duration_period").val();
+            let interest_period_count = $("#interest_period_count").val();
 
             const loanAmountFrom = parseFloat($("#loan_amount_from").val());
             const loanAmountTo = parseFloat($("#loan_amount_to").val());
@@ -2214,6 +2216,53 @@
 
 
             if(interest_method === "Reducing Balance") {
+                let interest_amt = 0;
+
+                let interestRate = parseFloat(interest); // input interest value
+                let principal = parseFloat(loan_amount); // loan amount
+
+                if (interest_period === "Daily") {
+                    if (duration_period === "Days") {
+                        interest_amt = interestRate * interest_period_count;
+                    } else if (duration_period === "Weeks") {
+                        interest_amt = interestRate * interest_period_count * 7;
+                    } else if (duration_period === "Months") {
+                        interest_amt = interestRate * interest_period_count * 30;
+                    }
+
+                } else if (interest_period === "Weekly") {
+                    if (duration_period === "Days") {
+                        interest_amt = (interestRate / 7) * interest_period_count;
+                    } else if (duration_period === "Weeks") {
+                        interest_amt = interestRate * interest_period_count;
+                    } else if (duration_period === "Months") {
+                        interest_amt = (interestRate / 7) * 30 * interest_period_count;
+                    }
+
+                } else if (interest_period === "Per Month") {
+                    if (duration_period === "Days") {
+                        interest_amt = (interestRate / 30) * interest_period_count;
+                    } else if (duration_period === "Weeks") {
+                        interest_amt = (interestRate / 30) * 7 * interest_period_count;
+                    } else if (duration_period === "Months") {
+                        interest_amt = interestRate * interest_period_count;
+                    }
+
+                } else if (interest_period === "Per Year") {
+                    if (duration_period === "Days") {
+                        interest_amt = (interestRate / 365) * interest_period_count;
+                    } else if (duration_period === "Weeks") {
+                        interest_amt = (interestRate / 365) * 7 * interest_period_count;
+                    } else if (duration_period === "Months") {
+                        interest_amt = (interestRate / 12) * interest_period_count;
+                    }
+
+                } else if (interest_period === "Per Loan") {
+                    interest_amt = (principal * interestRate / 100);
+                }
+
+                interest = parseFloat(interest_amt.toFixed(2)); // Final assignment
+
 
             }else{
                 // Check if interest is within the range
@@ -3942,6 +3991,16 @@
 
                 if (interest_method==="Draft"){
                     capital_amount_2=0.0;
+                }else if(interest_method==="Reducing Balance"){
+                    $('#total_interest_amount_show').hide();
+                    $('#total_loan_amount_show').hide();
+                    $('#new_interest_amount_show').hide();
+                    $('#new_issued_amount_show').hide();
+                }else{
+                    $('#total_interest_amount_show').show();
+                    $('#total_loan_amount_show').show();
+                    $('#new_interest_amount_show').show();
+                    $('#new_issued_amount_show').show();
                 }
 
                 $("#total_capital_amount").text(capital_amount_2);
@@ -4006,6 +4065,16 @@
 
                 if (interest_method==="Draft"){
                     total_loan_amount=parseFloat(interest_amount);
+                }else if(interest_method==="Reducing Balance"){
+                    $('#total_interest_amount_show').hide();
+                    $('#total_loan_amount_show').hide();
+                    $('#new_interest_amount_show').hide();
+                    $('#new_issued_amount_show').hide();
+                }else{
+                    $('#total_interest_amount_show').show();
+                    $('#total_loan_amount_show').show();
+                    $('#new_interest_amount_show').show();
+                    $('#new_issued_amount_show').show();
                 }
 
                 let installment_amount=total_loan_amount/loan_period;

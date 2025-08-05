@@ -167,6 +167,7 @@ class CenterController extends Controller
             expences.date,
             customer.First_Name as f_name,
             customer.Last_Name as l_name,
+            customer.cus_number as cus_number,
             subquery.group_name,
             center.Name as center_name,
             u1.id as collector_id,
@@ -216,6 +217,7 @@ class CenterController extends Controller
             CONCAT(customer_payments.Date, ' ', customer_payments.time) as date,
             customer.First_Name as f_name,
             customer.Last_Name as l_name,
+            customer.cus_number as cus_number,
             subquery.group_name,
             center.Name as center_name,
             u1.id as collector_id,
@@ -402,6 +404,7 @@ class CenterController extends Controller
             ->when(!$hasPayments, function ($q) {
                 $q->where('customer_loan.Status', 0);
             })
+            ->where('customer_loan.Status', 0) // ✅ Always apply this filter
             ->groupBy(
                 'route.name',
                 'customer.cus_number',

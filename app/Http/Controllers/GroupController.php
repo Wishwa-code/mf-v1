@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Group;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class GroupController extends Controller
 {
@@ -224,7 +225,7 @@ class GroupController extends Controller
                 ->where('customer_group.center_id', $customer_group->center_id)
                 ->distinct('customer.idCustomer')
                 ->count('customer.idCustomer');
-            $center_customer_count++;
+            $center_customer_count = str_pad($center_customer_count, 3, '0', STR_PAD_LEFT);
 
             if ($type == "Format") {
                 $newnum = str_replace(
@@ -237,6 +238,7 @@ class GroupController extends Controller
                     'cus_number' => $newnum
                 ]);
             }
+
 
 
             $request = new Request([

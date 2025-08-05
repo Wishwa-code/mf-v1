@@ -196,7 +196,7 @@ class AgreementController extends Controller
             '@First_Installment_Date@' => $installments_first_date->Installment_Date,
             '@Maturity_Date@' => $last_installment->Installment_Date,
             '@Installment_Period_Type@' => $loan->Collection_Type,
-            '@Product_Name@' => $Loan_Category->Name, // Assuming 'name' is a column in the loan_category table
+            '@Product_Name@' => $Loan_Category->Name ?? '-', // Assuming 'name' is a column in the loan_category table
             '@Date@' => date('Y-m-d'),
             '@Loan_Amount@' => number_format($loan->Amount, 2, '.', ','),
             '@Interest_Rate@' => $loan->Interest_Rate . '%',

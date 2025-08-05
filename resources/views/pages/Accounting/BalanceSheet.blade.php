@@ -405,9 +405,8 @@
             // Clear previous data
             var financialReportTable = $('#financialReportTable');
 
-            // Destroy any existing DataTable instance to avoid reinitialization error
-            if ($.fn.dataTable.isDataTable(financialReportTable)) {
-                financialReportTable.DataTable().clear().destroy(); // Clear and destroy the old DataTable instance
+            if ($.fn.DataTable.isDataTable('#financialReportTable')) {
+                financialReportTable.DataTable().clear().destroy();
             }
 
             var date_from = $("#date_from").val();

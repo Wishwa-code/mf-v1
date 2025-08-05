@@ -163,6 +163,15 @@
                 page-break-after: always;
             }
         }
+        @media print {
+            .print-group-block {
+                break-inside: avoid;
+            }
+
+            div[style*="page-break-after"] {
+                page-break-after: always;
+            }
+        }
 
 
     </style>
@@ -299,8 +308,8 @@
                                         </tr>
                                     @endforeach
                                     </tbody>
-                                    @endforeach
-                                    </tbody>
+                                @endforeach
+                                </tbody>
 
                             </table>
 
@@ -439,118 +448,90 @@
 
                 printWindow.document.write(`
         @page { size: ${orientation}; margin: 0.5in; }
-        body { font-family: Arial, sans-serif; font-size: 9px; margin: 0.5in; zoom: 80%; }
-        h2 { text-align: center; }
-        table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8px; }
-        th, td { border: 1px solid black; padding: 4px; text-align: center; word-break: break-word; min-height: 25px; }
-        .paid-amount { width: 80px !important; }
-        .correct-column { width: 40px !important; }
-        .print-header { display: flex; justify-content: space-between; font-size: 10px; color: black; border-bottom: 1px solid #ccc; margin-bottom: 5px; padding-bottom: 4px; }
-        .summary-table td { border: none; font-weight: bold; }
+        body { font-family: Arial, sans-serif; font-size: 10px; margin: 0.5in; zoom: 80%; }
+        h2 { text-align: center; font-size: 16px; margin-top: 40px; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px; }
+        th, td { border: 1px solid black; padding: 8px; text-align: center; word-break: break-word; min-height: 30px; }
+        th:nth-child(2), td:nth-child(2) { width: 180px !important; }
+        th:nth-child(6), td:nth-child(6),
+        th:nth-child(8), td:nth-child(8),
+        th:nth-child(10), td:nth-child(10),
+        th:nth-child(12), td:nth-child(12),
+        th:nth-child(14), td:nth-child(14) {
+            width: 100px !important;
+        }
+        .print-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: black;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 5px;
+            padding-bottom: 4px;
+            font-weight: bold;
+        }
+        .print-group-block {
+            page-break-inside: avoid;
+        }
     `);
 
                 printWindow.document.write('</style></head><body>');
 
-                const printHeader = `
+                const printHeader = () => `
         <div class="print-header">
-            <div>${companyName} | Center No: ${centerNo} | Center Name: ${centerName}</div>
+            <div style="font-size: 18px; font-weight: bold;">${companyName}</div>
+            <div>Center No: ${centerNo} | Center Name: ${centerName}</div>
             <div>Printed by: ${printedBy} on ${printedAt}</div>
         </div>
-        <h2>Repayment Sheet - ${currentMonth} (${centerDetails})</h2>
+        <h2>Repayment Sheet (${centerDetails})</h2>
     `;
 
                 const groupBlocks = document.querySelectorAll('.print-group-block');
                 let finalPrint = '';
 
-                // Grand totals
-                let totalLoanAmount = 0;
-                let totalInstallmentAmount = 0;
-                let totalBalanceAmount = 0;
+                for (let i = 0; i < groupBlocks.length; i += 2) {
+                    finalPrint += '<div style="page-break-after: always;">';
 
-                groupBlocks.forEach((block, index) => {
-                    finalPrint += printHeader;
+                    // Header for each page
+                    finalPrint += printHeader();
                     finalPrint += '<table><thead>' + document.querySelector('#repaymentTable thead').innerHTML + '</thead>';
-                    finalPrint += block.outerHTML;
 
-                    // Page total calculation
-                    let pageLoanAmount = 0, pageInstallmentAmount = 0, pageBalanceAmount = 0;
-                    const rows = block.querySelectorAll('tr');
+                    // First group
+                    finalPrint += groupBlocks[i].outerHTML;
 
-                    rows.forEach(row => {
-                        const cells = row.querySelectorAll('td');
-                        if (cells.length >= 5) {
-                            const loan = parseFloat(cells[2]?.innerText.replace(/,/g, '')) || 0;
-                            const inst = parseFloat(cells[3]?.innerText.replace(/,/g, '')) || 0;
-                            const bal = parseFloat(cells[4]?.innerText.replace(/,/g, '')) || 0;
-
-                            pageLoanAmount += loan;
-                            pageInstallmentAmount += inst;
-                            pageBalanceAmount += bal;
-
-                            totalLoanAmount += loan;
-                            totalInstallmentAmount += inst;
-                            totalBalanceAmount += bal;
-                        }
-                    });
-
-                    // Only show page total if not the last block
-                    if (index !== groupBlocks.length - 1) {
-                        finalPrint += `
-                <tr style="font-weight:bold;">
-                    <td colspan="2">Page Total</td>
-                    <td>${pageLoanAmount.toFixed(2)}</td>
-                    <td>${pageInstallmentAmount.toFixed(2)}</td>
-                    <td>${pageBalanceAmount.toFixed(2)}</td>
-                    <td colspan="10"></td>
-                </tr>
-            `;
+                    // Second group if exists
+                    if (i + 1 < groupBlocks.length) {
+                        finalPrint += groupBlocks[i + 1].outerHTML;
                     }
 
                     finalPrint += '</table>';
+                    finalPrint += '</div>';
+                }
 
-                    if (index !== groupBlocks.length - 1) {
-                        finalPrint += '<div style="page-break-after: always;"></div>';
-                    }
-                });
 
-                // Write all group pages
+
+
                 printWindow.document.write(finalPrint);
 
-                // Add summary and signature on last page
+                // Final summary page
                 printWindow.document.write('<div style="page-break-before: always;"></div>');
-
-                // Center Summary block
                 printWindow.document.write(`
-        <br><br>
-        <table style="width: 100%; font-size: 11px; margin-bottom: 20px;">
-            <thead>
-                <tr style="font-weight: bold; text-align: center;">
-                    <td colspan="3">Center Summary</td>
-                </tr>
-                <tr style="font-weight: bold;">
-                    <td>Loan Amount</td>
-                    <td>Due Installment</td>
-                    <td>New Loan Amount</td>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>${totalLoanAmount.toFixed(2)}</td>
-                    <td>${totalInstallmentAmount.toFixed(2)}</td>
-                    <td>${totalBalanceAmount.toFixed(2)}</td>
-                </tr>
-            </tbody>
-        </table>
-    `);
-
-                // Signature block
-                printWindow.document.write(`
-        <table style="width: 100%; font-size: 12px; border: none; line-height: 2;">
-            <tr><td style="width: 35%;"><strong>EXECUTIVE SIGNATURE</strong></td><td><div style="border-bottom: 2px solid black;"></div></td></tr>
-            <tr><td><strong>SLIP NUMBER</strong></td><td><div style="border-bottom: 2px solid black;"></div></td></tr>
-            <tr><td><strong>CASHIER SIGNATURE</strong></td><td><div style="border-bottom: 2px solid black;"></div></td></tr>
-            <tr><td><strong>MANAGER SIGNATURE</strong></td><td><div style="border-bottom: 2px solid black;"></div></td></tr>
-        </table>
+    <table style="width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 10px;">
+        <tbody>
+            <tr><td colspan="15" style="height: 20px;"></td></tr>
+            <tr><td colspan="2"><strong>Cumulative Collection</strong></td><td colspan="13"></td></tr>
+            <tr><td colspan="2"><strong>Cumulative Due</strong></td><td colspan="13"></td></tr>
+            <tr><td colspan="2"><strong>Total</strong></td><td colspan="13"></td></tr>
+            <tr><td colspan="2"><strong>No of Under Payment</strong></td><td colspan="13"></td></tr>
+            <tr><td colspan="2"><strong>Amount</strong></td><td colspan="13"></td></tr>
+            <tr><td colspan="2"><strong>No of Not Paid</strong></td><td colspan="13"></td></tr>
+            <tr><td colspan="2"><strong>Amount</strong></td><td colspan="13"></td></tr>
+            <tr><td colspan="2"><strong>No of Settlement</strong></td><td colspan="13"></td></tr>
+            <tr><td colspan="15" style="height: 30px;"></td></tr>
+            <tr><td colspan="2"><strong>Full Signature</strong></td><td colspan="13"></td></tr>
+            <tr><td colspan="2"><strong>Center Manager</strong></td><td colspan="13"></td></tr>
+        </tbody>
+    </table>
     `);
 
                 printWindow.document.write('</body></html>');
@@ -558,8 +539,6 @@
                 printWindow.focus();
                 printWindow.print();
             });
-
-
 
 
         });

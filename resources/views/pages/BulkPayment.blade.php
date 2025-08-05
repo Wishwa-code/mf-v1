@@ -192,6 +192,14 @@
 
 
     </style>
+    <style>
+        .amount-column,
+        #loan_table td.amount-column {
+            width: 100px;
+            text-align: right;
+            white-space: nowrap;
+        }
+    </style>
 
 @endsection
 
@@ -350,7 +358,7 @@
                                                 <th scope="col">Last Payment Date</th>
                                                 <th scope="col">Today Installment</th>
                                                 <th scope="col">Date</th>
-                                                <th scope="col">Amount</th>
+                                                <th scope="col" class="amount-column">Amount</th>
                                                 <th scope="col">Member Name</th>
                                                 <th scope="col">Type</th>
                                             </tr>
