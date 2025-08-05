@@ -169,6 +169,85 @@ class UserController extends Controller
 
             // Call to the penalty creation function
             $this->create_panelty();
+
+//            $loanLogs = DB::table('Loan_Log')
+//                ->orderBy('Loan_ID')
+//                ->orderBy('Loan_Log_ID')
+//                ->get();
+//
+//            $prevLogs = [];
+//
+//            foreach ($loanLogs as $log) {
+//                $loanId = $log->Loan_ID;
+//
+//                // Initialize previous log if not exists
+//                if (!isset($prevLogs[$loanId])) {
+//                    $prevLogs[$loanId] = (object)[
+//                        'Capital_Balance' => 0,
+//                        'Interest_Balance' => 0,
+//                        'Panelty_Balance' => 0,
+//                        'Total_Pending_Balance' => 0,
+//                    ];
+//                }
+//
+//                $prev = $prevLogs[$loanId];
+//                $update = [];
+//
+//                if ($log->Type === 'Issue Loan') {
+//                    // Do nothing, just carry over
+//                    $update = $prev;
+//
+//                } elseif ($log->Type === 'Customer Payment') {
+//                    $update = (object)[
+//                        'Capital_Balance' => $prev->Capital_Balance - $log->Capital_Payment,
+//                        'Interest_Balance' => $prev->Interest_Balance - $log->Interest_Payment,
+//                        'Panelty_Balance' => $prev->Panelty_Balance - $log->Panelty_Payment,
+//                        'Total_Pending_Balance' => $prev->Total_Pending_Balance - $log->Amount,
+//                    ];
+//
+//                } elseif ($log->Type === 'Penalty') {
+//                    $update = (object)[
+//                        'Capital_Balance' => $prev->Capital_Balance,
+//                        'Interest_Balance' => $prev->Interest_Balance,
+//                        'Panelty_Balance' => $prev->Panelty_Balance + $log->Amount,
+//                        'Total_Pending_Balance' => $prev->Total_Pending_Balance + $log->Amount,
+//                    ];
+//
+//                } elseif ($log->Type === 'Payment Undo') {
+//                    $original = DB::table('Loan_Log')
+//                        ->where('Loan_Log_ID', $log->Type_ID)
+//                        ->where('Type', 'Customer Payment')
+//                        ->first();
+//
+//                    if ($original) {
+//                        $update = (object)[
+//                            'Capital_Balance' => $prev->Capital_Balance + $original->Capital_Payment,
+//                            'Interest_Balance' => $prev->Interest_Balance + $original->Interest_Payment,
+//                            'Panelty_Balance' => $prev->Panelty_Balance + $original->Panelty_Payment,
+//                            'Total_Pending_Balance' => $prev->Total_Pending_Balance + $original->Amount,
+//                        ];
+//                    } else {
+//                        // If original not found, keep previous balances
+//                        $update = $prev;
+//                    }
+//                }
+//
+//                // Update the Loan_Log row
+//                DB::table('Loan_Log')
+//                    ->where('Loan_Log_ID', $log->Loan_Log_ID)
+//                    ->update([
+//                        'Capital_Balance' => $update->Capital_Balance,
+//                        'Interest_Balance' => $update->Interest_Balance,
+//                        'Panelty_Balance' => $update->Panelty_Balance,
+//                        'Total_Pending_Balance' => $update->Total_Pending_Balance,
+//                    ]);
+//
+//                // Set as previous for next loop
+//                $prevLogs[$loanId] = $update;
+//            }
+
+
+
             return redirect()->intended(route('home'));
         }
 

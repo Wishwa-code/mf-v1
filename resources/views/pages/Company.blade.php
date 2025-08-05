@@ -366,8 +366,8 @@
                             <button type="button" class="btn btn-primary" onclick="addToField_Loan('@Product_Code@','Product_Code')">Product Code</button>
                             <button type="button" class="btn btn-primary" onclick="addToField_Loan('@Customer_No@','Customer_No')">Customer Number</button>
                             <button type="button" class="btn btn-primary" onclick="addToField_Loan('@Loan_Count@','Loan_Count')">Customer Loan Count</button>
-
                             <button type="button" class="btn btn-primary" onclick="addToField_Loan('@Auto_Id@','Auto_Id')">Auto Create Number</button>
+                            <button type="button" class="btn btn-primary" onclick="addToField_Loan('@RootlyCount@','RootlyCount')">Root Wise Count</button>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -434,6 +434,7 @@
                             <button type="button" class="btn btn-primary" onclick="addToField_Inv_Loan('@Customer_No@','Customer_No')">Customer Number</button>
                             <button type="button" class="btn btn-primary" onclick="addToField_Inv_Loan('@Loan_Count@','Loan_Count')">Customer Loan Count</button>
                             <button type="button" class="btn btn-primary" onclick="addToField_Inv_Loan('@Auto_Id@','Auto_Id')">Auto Create Number</button>
+                            <button type="button" class="btn btn-primary" onclick="addToField_Inv_Loan('@RootlyCount@','RootlyCount')">Root Wise Count</button>
                         </div>
                     </div>
                     <div class="row mb-3">

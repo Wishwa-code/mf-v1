@@ -741,3 +741,5 @@ Route::get('/get-loan-ids', function () {
 Route::get('/loan_log/{loan_id}','\App\Http\Controllers\CapitalBalanceController@show')->name('sms.show');
 
 Route::post('/upload-excel-balance', [\App\Http\Controllers\ExcelController::class, 'balance_change']);
+
+Route::post('/get-customer-bank-details', [LoanController::class, 'getCustomerBankDetails']);

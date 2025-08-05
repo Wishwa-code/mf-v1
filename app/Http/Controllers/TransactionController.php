@@ -729,10 +729,24 @@ class TransactionController extends Controller
 
         $loan = $loanQuery->get();
         $loan = $loan->transform(function ($item) {
-            $initial = strtoupper(substr($item->customer_name, 0, 1)) . '.';
-            $item->name_with_initials = $initial . ' ' . $item->customer_lastname;
+            // Combine first name and last name if needed
+            $fullName = trim($item->customer_name . ' ' . $item->customer_lastname);
+
+            $parts = preg_split('/\s+/', $fullName);
+            $lastName = array_pop($parts); // Get last word (e.g., Renuka)
+            $initials = '';
+
+            foreach ($parts as $part) {
+                $clean = preg_replace('/[^a-zA-Z]/', '', $part); // remove dots or other symbols
+                if (!empty($clean)) {
+                    $initials .= strtoupper(substr($clean, 0, 1)) . '.';
+                }
+            }
+
+            $item->name_with_initials = $initials . ' ' . $lastName;
             return $item;
         });
+
 
         $group_filter = $request->group_filter;
         if ($group_filter) {
