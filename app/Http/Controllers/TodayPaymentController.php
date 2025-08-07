@@ -146,7 +146,6 @@ class TodayPaymentController extends Controller
                 DB::raw("SUM(CASE WHEN Installment_Date < '$today' THEN Total_Balance ELSE 0 END) as arrease")
             )
             ->where('installments.branch_id', '=', session('branch_id'))
-            ->whereNotIn('Panelty_date', $poyaDates)
             ->groupBy('Customer_Loan_idCustomer_Loan');
 
 
