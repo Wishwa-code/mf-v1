@@ -192,14 +192,18 @@ class PDFController extends Controller
             ['cus_id', $loan->Customer_idCustomer]
         ])->first();
 
+        $disburse_date=tableWithBranch('Loan_Log')->where('Loan_ID', $id)->where('Type','=', 'Issue Loan')->value('Date_Time') ?? $loan->Date_Time;
+
         $pdf = app('dompdf.wrapper');
-        $pdf->loadView('pages/Payment_Voucher_PDF', compact('customers', 'loan', 'User', 'Customer_Bank','company'))
+        $pdf->loadView('pages/Payment_Voucher_PDF', compact('customers', 'loan', 'User', 'Customer_Bank','company','disburse_date'))
             ->setPaper('A4', 'landscape')
             ->setOptions([
                 'isHtml5ParserEnabled' => true,
                 'isPhpEnabled' => true,
                 'defaultFont' => 'sans-serif'
             ]);
+
+
 
         // Remove margins
         $pdf->getDomPDF()->getOptions()->set('isHtml5ParserEnabled', true);

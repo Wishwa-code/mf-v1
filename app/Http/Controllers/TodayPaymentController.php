@@ -1269,7 +1269,7 @@ class TodayPaymentController extends Controller
 
                 $customer_payment = DB::table('customer_payments')->where('idCustomer_Payments', '=', $savedId)->first();
                 $loan = DB::table('customer_loan')->where('idCustomer_Loan', '=', $loan_id)->first();
-                $sms_template = DB::table('sms_template')->where('type', '=', 'loan_payment')->where('status', '=', '1')->first();
+                $sms_template = tableWithBranch('sms_template')->where('type', '=', 'loan_payment')->where('status', '=', '1')->first();
                 if ($sms_template) {
                     $customer = DB::table('customer')->where('idCustomer', '=', $loan->Customer_idCustomer)->first();
                     $placeholders = [

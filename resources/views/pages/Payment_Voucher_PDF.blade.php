@@ -87,7 +87,7 @@
     <table>
         <tr>
             <td style="width: 7%;"><span class="subtitles">Date:</span></td>
-            <td style="width: 20%;"><span class="subtitles">{{ $loan->Date_Time }}</span></td>
+            <td style="width: 20%;"><span class="subtitles">{{ $disburse_date }}</span></td>
             <td style="width: 2%;"></td>
             <td style="width: 10%;"></td>
             <td style="width: 38%;"></td>

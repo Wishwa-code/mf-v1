@@ -497,7 +497,7 @@ class CustomerController extends Controller
 
     public function updateCustomer(Request $request) {
 
-        $documentPath='';
+        $documentPath=null;
         // Handle file upload
         if ($request->hasFile('cus_phto')) {
             $file = $request->file('cus_phto');
@@ -551,10 +551,12 @@ class CustomerController extends Controller
             'occu_longitude' => $request->occu_longitude,
             'occu_latitude' => $request->occu_latitude,
             'route_id' => $request->root,
-            'Cus_phto' => $documentPath
         ];
 
-
+// Only set Cus_phto if a new file was uploaded (keeps existing photo otherwise)
+        if ($documentPath) {
+            $data['Cus_phto'] = $documentPath;
+        }
 
 // Use the new helper function to update the customer record
         updateWithBranch('customer', 'idCustomer', $request->id, $data);

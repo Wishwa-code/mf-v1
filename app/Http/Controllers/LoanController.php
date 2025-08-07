@@ -889,9 +889,10 @@ class LoanController extends Controller
 
         $loans = $loanQuery->first();
 
-        if ($loans->pending_approvals=='0') {
+        if ($loans->pending_approvals == '0' && str_contains(url()->previous(), 'pendingloan')) {
             return redirect('/pendingloan');
         }
+
 
         // Pass the data to the view with compact and handle potential nulls
         return view('pages.LoanView', compact(
