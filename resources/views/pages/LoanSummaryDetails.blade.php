@@ -66,71 +66,72 @@
 
                     <!-- Center Filter Dropdown -->
                     <div class="row mb-4">
-                        <div class="col-lg-3 col-md-5 col-sm-6">
-                            <!-- Filter Form -->
-                            <form action="{{ route('report.loansummary') }}" method="get">
-                                @csrf
-                                <div class="row mb-4">
+                        <form action="{{ route('report.loansummary') }}" method="get" class="d-flex flex-wrap w-100">
+                            @csrf
+                            @php
+                                $selectedBranch = request('branch') ?? session('branch_id');
+                            @endphp
 
                                     <!-- Branch Filter -->
-                                    @php
-                                        $selectedBranch = request('branch') ?? session('branch_id');
-                                    @endphp
+                            <div class="col-md-3 mb-2 pe-2">
+                                <label for="branch" class="form-label">Filter by Branch</label>
+                                <select class="form-control select2" id="branch" name="branch" {{ session('branch_access') == 0 ? 'disabled' : '' }}>
+                                    @foreach($branch as $item)
+                                        <option value="{{ $item->branch_id }}" {{ $selectedBranch == $item->branch_id ? 'selected' : '' }}>
+                                            {{ $item->Name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @if(session('branch_access') == 0)
+                                    <input type="hidden" name="branch" value="{{ session('branch_id') }}">
+                                @endif
+                            </div>
 
-                                    <div class="col-lg-3 col-md-4 col-sm-6 mb-2">
-                                        <label for="branch" class="form-label">Filter by Branch</label>
-                                        <select class="form-control select2" id="branch" name="branch" {{ session('branch_access') == 0 ? 'disabled' : '' }}>
-                                            @if(session('branch_access') == 1)
-                                                <option value="" {{ $selectedBranch == '' ? 'selected' : '' }}>All</option>
-                                            @endif
-                                            @foreach($branch as $item)
-                                                <option value="{{ $item->branch_id }}" {{ $selectedBranch == $item->branch_id ? 'selected' : '' }}>
-                                                    {{ $item->Name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+                            <!-- Center Filter -->
+                            <div class="col-md-3 mb-2 pe-2">
+                                <label for="centerFilter" class="form-label">Filter by Center</label>
+                                <select id="centerFilter" name="center_id" class="form-control select2">
+                                    <option value="">All</option>
+                                    @foreach($centers as $center)
+                                        <option value="{{ $center->idCenter }}" {{ request('center_id') == $center->idCenter ? 'selected' : '' }}>
+                                            {{ $center->No }} - {{ $center->Name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
 
-                                        @if(session('branch_access') == 0)
-                                            <input type="hidden" name="branch" value="{{ session('branch_id') }}">
-                                        @endif
-                                    </div>
+                            <!-- Group Filter -->
+                            <div class="col-md-3 mb-2 pe-2">
+                                <label for="groupFilter" class="form-label">Filter by Group</label>
+                                <select id="groupFilter" name="group_name" class="form-control select2">
+                                    <option value="">All Groups</option>
+                                    @foreach($groups as $group)
+                                        <option value="{{ $group->group_name }}" {{ request('group_name') == $group->group_name ? 'selected' : '' }}>
+                                            {{ $group->group_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Loan Status Filter -->
+                            <div class="col-md-3 mb-2 pe-2">
+                                <label for="loan_status" class="form-label">Loan Type</label>
+                                <select id="loan_status" name="loan_status" class="form-control select2">
+                                    <option value="">All Loans</option>
+                                    <option value="1" {{ request('loan_status') == 'without_settlement' ? 'selected' : '' }}>
+                                        Without Settlement
+                                    </option>
+                                </select>
+                            </div>
 
 
-                                    <!-- Center Filter -->
-                                    <div class="col-lg-3 col-md-4 col-sm-6 mb-2">
-                                        <label for="centerFilter" class="form-label">Filter by Center</label>
-                                        <select id="centerFilter" name="center_id" class="form-control select2">
-                                            <option value="">All</option>
-                                            @foreach($centers as $center)
-                                                <option value="{{ $center->idCenter }}" {{ request('center_id') == $center->idCenter ? 'selected' : '' }}>
-                                                    {{ $center->No }} - {{ $center->Name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    <!-- Group Filter -->
-                                    <div class="col-lg-3 col-md-4 col-sm-6 mb-2">
-                                        <label for="groupFilter" class="form-label">Filter by Group</label>
-                                        <select id="groupFilter" name="group_name" class="form-control select2">
-                                            <option value="">All Groups</option>
-                                            @foreach($groups as $group)
-                                                <option value="{{ $group->group_name }}" {{ request('group_name') == $group->group_name ? 'selected' : '' }}>
-                                                    {{ $group->group_name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    <!-- Search Button -->
-                                    <div class="col-lg-2 col-md-3 col-sm-4 d-flex align-items-end">
-                                        <button type="submit" class="btn btn-danger w-100">Search</button>
-                                    </div>
-                                </div>
-                            </form>
-
-                        </div>
+                            <!-- Search Button -->
+                            <div class="col-md-3 mb-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-danger w-100">Search</button>
+                            </div>
+                        </form>
                     </div>
+
 
 
 
@@ -210,7 +211,7 @@
                                 <td>{{ number_format($item->capital_balance,2) }}</td>
                                 <td>{{ number_format($item->installment_balance,2) }}</td>
                                 <td>{{ number_format($panelty,2) }}</td>
-                                <td>{{ number_format($item->Balance_Amount,2) }}</td>
+                                <td>{{ number_format(($panelty ?? 0) + ($item->Balance_Amount ?? 0), 2) }}</td>
                                 <td>{{ number_format($item->Installment_Amount,2) }}</td>
                                 @php
                                     $arrease = DB::table('installments')
