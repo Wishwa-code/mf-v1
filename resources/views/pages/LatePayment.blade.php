@@ -88,6 +88,22 @@
                 font-size: 12px;  /* Smaller font for smaller screens */
             }
         }
+        .table-scroll-container {
+            max-height: 700px; /* Change height as needed */
+            overflow-y: auto;
+            overflow-x: hidden;
+            border: 1px solid #ccc;
+        }
+
+        /* Keep the header sticky */
+        #loan_table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background-color: #1A2942; /* Match your bg-purple */
+            color: white;
+        }
+
 
     </style>
 @endsection
@@ -170,6 +186,16 @@
                                     </select>
                                 </div>
                             </div>
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="installment_filter" class="form-label">Pending Installments Filter</label>
+                                    <select class="form-control select2" id="installment_filter">
+                                        <option value="all">All</option>
+                                        <option value="more_than_3">More than 3</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <div class="col-lg-3" hidden>
                                 <div class="mb-3">
 
@@ -209,7 +235,7 @@
                             </div>
                         </div>
 
-                        <div class="table-responsive-sm">
+                        <div class="table-scroll-container">
                             <table class="table table-centered mb-0" id="loan_table">
                                 <thead class="sticky-top bg-purple">
                                 <tr>
@@ -218,21 +244,21 @@
                                     <th>Group No</th>
                                     <th>Leasing</th>
                                     <th>Member NIC</th>
+                                    <th>Member Contact No</th>
                                     <th>Member Name</th>
                                     <th>Pending Installments</th>
-{{--                                    <th>Installment Total</th>--}}
                                     <th>Penalty Total</th>
                                     <th>Pending Total</th>
+                                    <th>Loan Balance</th>
                                     <th>Status</th>
                                     <th>Action</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-
                                 </tbody>
                             </table>
-                            <div id="pagination" class="d-flex justify-content-end mt-3 me-3"></div>
-                        </div> <!-- end table-responsive-->
+                        </div>
+
 
                         <div class="row mt-1 mb-1 p-2">
                             <div class="col-md-8 row">
@@ -320,21 +346,23 @@
                 </div>
                 <div class="modal-body pt-2">
                     <div class="table-responsive-sm">
-                        <table class="table table-centered mb-0" id="ins_table">
-                            <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Description</th>
-                                <th>Amount</th>
-                                <th>Penalty Total</th>
-                                <th>Installment Balance</th>
-                                <th>Total Balance</th>
-                            </tr>
-                            </thead>
-                            <tbody>
+                        <div class="table-scroll-container">
+                            <table class="table table-centered mb-0" id="ins_table">
+                                <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Amount</th>
+                                    <th>Penalty Total</th>
+                                    <th>Installment Balance</th>
+                                    <th>Total Balance</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
 
-                            </tbody>
-                        </table>
                     </div> <!-- end table-responsive-->
 
                     <div class="row mt-1 mb-1 pt-3">
@@ -419,21 +447,15 @@
             $('.select2bs4').select2({
                 theme: 'bootstrap4'
             })
-            $('#loan_table').DataTable({
-                responsive: true,
-                dom: 'Bfrtip', // Add this line to show buttons
-                buttons: [
-                    {
-                        extend: 'excelHtml5',
-                        title: 'Loan_in_Arrears_Report',
-                        text: '<i class="fas fa-file-excel"></i> Download Excel',
-                        className: 'btn btn-success'
-                    }
-                ]
-            });
+
+
 
 
         })
+
+        $('#installment_filter').on('change', function () {
+            load_payment_table();
+        });
 
         function load_payment_table(page = 1) {
             let center_details = $("#center_details").val();
@@ -442,10 +464,11 @@
             let customer = $("#customer_id").val();
             let status = $("#status").val();
             let lending = $("#lending").val();
+            let installmentFilter = $("#installment_filter").val();
 
             $.ajax({
                 type: "POST",
-                url: `/latePayment_load_check`,
+                url: `/latePayment_load_check?page=${page}`,
                 headers: {
                     "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                 },
@@ -455,86 +478,78 @@
                     group: group,
                     customer: customer,
                     lending: lending,
-                    status: status
+                    status: status,
+                    installment_filter: installmentFilter
                 },
                 success: function(data, textStatus, xhr) {
                     console.log(data);
-                    let table = $('#loan_table').DataTable();
 
-                    // Clear existing rows and redraw the table
-                    table.clear().draw(); // Clear the table and redraw
+                    const tbody = $('#loan_table tbody');
+                    tbody.empty(); // Clear old rows
 
-                    if (xhr.status === 200) {
-                        // Check if there are items in the data
-                        if (data.item.length > 0) {
-                            let currentPage = data.item.current_page;
-                            let lastPage = data.item.last_page;
-                            let tot = 0.0;
+                    if (xhr.status === 200 && data.item.length > 0) {
+                        let tot = 0.0;
 
-                            // Loop through each item in the response data
-                            data.item.forEach(function(item) {
-                                // Calculate total balance
-                                let totalBalance = parseFloat(item.Total_Balance);
-                                tot += totalBalance;
+                        let currentPage = data.current_page ?? page;
+                        let lastPage = data.last_page ?? 1;
 
-                                // Determine status color based on installment count
-                                let statusColor;
-                                if (item.Installment_Count === 1) {
-                                    statusColor = "#e1cf1e";
-                                } else if (item.Installment_Count === 2) {
-                                    statusColor = "orange";
-                                } else if (item.Installment_Count > 2) {
-                                    statusColor = "#f35858";
-                                } else {
-                                    statusColor = "#000"; // Default color if needed
-                                }
+                        data.item.forEach(function(item) {
+                            let totalBalance = parseFloat(item.Total_Balance);
+                            tot += totalBalance;
 
-                                // Add row data to DataTable
-                                table.row.add([
-                                    item.Loan_No,
-                                    item.center_no,
-                                    item.group_name,
-                                    item.Vehicle_No !== null ? item.Vehicle_No : '-',
-                                    item.NIC,
-                                    item.customer_name + ' ' + item.customer_lastname,
-                                    item.Installment_Count,
-                                    // parseFloat(item.Installment_Balance).toFixed(2),
-                                    parseFloat(item.Panalty_Balance).toFixed(2),
-                                    parseFloat(item.Total_Balance).toFixed(2),
-                                    `<i class="fas fa-lightbulb bulb-icon" style="color: ${statusColor}"></i>`,
-                                    `<a href="/loanview/${item.idCustomer_Loan}" target="_blank" class="btn btn-warning"><i class="bi bi-eye"></i></a>`
-                                ]).draw(false);
-                            });
+                            let statusColor = "#000";
+                            if (item.Installment_Count === 1) {
+                                statusColor = "#e1cf1e";
+                            } else if (item.Installment_Count === 2) {
+                                statusColor = "orange";
+                            } else if (item.Installment_Count > 2) {
+                                statusColor = "#f35858";
+                            }
 
-                            // Draw the table with new data
-                            table.draw();
+                            let row = `
+                        <tr>
+                            <td>${item.Loan_No}</td>
+                            <td>${item.center_no}</td>
+                            <td>${item.group_name}</td>
+                            <td>${item.Vehicle_No ?? '-'}</td>
+                            <td>${item.NIC}</td>
+                            <td>${item.Contact_No}</td>
+                            <td>${item.customer_name} ${item.customer_lastname}</td>
+                            <td>${item.Installment_Count}</td>
+                            <td>${parseFloat(item.Panalty_Balance).toFixed(2)}</td>
+                            <td>${parseFloat(item.Total_Balance).toFixed(2)}</td>
+                            <td>${parseFloat(item.Balance_Amount).toFixed(2)}</td>
+                            <td><i class="fas fa-lightbulb bulb-icon" style="color: ${statusColor}"></i></td>
+                            <td><a href="/loanview/${item.idCustomer_Loan}" target="_blank" class="btn btn-warning"><i class="bi bi-eye"></i></a></td>
+                        </tr>
+                    `;
+                            tbody.append(row);
+                        });
 
-                            // Update total amount
-                            $("#tot_amount").text(tot.toFixed(2));
-                            // Add pagination controls
-                            let paginationControls = '';
+                        // Update total amount
+                        $("#tot_amount").text(tot.toFixed(2));
 
-                            if (currentPage > 1) {
-                                paginationControls += `
+                        // Custom Pagination
+                        let paginationControls = '';
+                        if (currentPage > 1) {
+                            paginationControls += `
                         <button onclick="load_payment_table(${currentPage - 1})" class="btn btn-sm btn-outline-primary me-2">
                             <i class="bi bi-arrow-left-circle me-1"></i> Previous
                         </button>`;
-                            }
-
-                            if (currentPage < lastPage) {
-                                paginationControls += `
+                        }
+                        if (currentPage < lastPage) {
+                            paginationControls += `
                         <button onclick="load_payment_table(${currentPage + 1})" class="btn btn-sm btn-outline-primary">
                             Next <i class="bi bi-arrow-right-circle ms-1"></i>
                         </button>`;
-                            }
-
-                            $('#pagination').html(paginationControls);
-                        } else {
-                            // Handle empty data case
-                            $("#tot_amount").text("0.00"); // Reset total amount if no items
-                            // Optionally draw the empty table
-                            table.draw(); // Ensure the table reflects the cleared state
                         }
+
+                        $('#pagination').html(paginationControls);
+
+                    } else {
+                        tbody.append('<tr><td colspan="12" class="text-center">No records found</td></tr>');
+                        $("#tot_amount").text("0.00");
+                        $('#pagination').html('');
                     }
                 },
                 error: function(xhr, textStatus, errorThrown) {
@@ -545,64 +560,40 @@
 
 
 
+
         function formatNumber(num) {
             return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
         function downloadExcel() {
-            $.ajax({
-                type: "POST",
-                url: `/latePayment_load_check`,
-                headers: {
-                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-                },
-                data: {
-                    // same filter parameters as current table
-                    center_details: $("#center_details").val(),
-                    route: $("#route").val(),
-                    group: $("#group").val(),
-                    customer: $("#customer_id").val(),
-                    lending: $("#lending").val(),
-                    status: $("#status").val(),
-                    export_all: true // <-- Add this to signal "get all rows"
-                },
-                success: function(data) {
-                    // create table in memory
-                    let tempTable = document.createElement('table');
-                    tempTable.innerHTML = `
-                <thead>
-                    <tr>
-                        <th>Loan No</th>
-                        <th>Center No</th>
-                        <th>Group No</th>
-                        <th>Leasing</th>
-                        <th>Member NIC</th>
-                        <th>Member Name</th>
-                        <th>Pending Installments</th>
-                        <th>Penalty Total</th>
-                        <th>Pending Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${data.item.map(item => `
-                        <tr>
-                            <td>${item.Loan_No}</td>
-                            <td>${item.center_no}</td>
-                            <td>${item.group_name}</td>
-                            <td>${item.Vehicle_No ?? '-'}</td>
-                            <td>${item.NIC}</td>
-                            <td>${item.customer_name} ${item.customer_lastname}</td>
-                            <td>${item.Installment_Count}</td>
-                            <td>${parseFloat(item.Panalty_Balance).toFixed(2)}</td>
-                            <td>${parseFloat(item.Total_Balance).toFixed(2)}</td>
-                        </tr>`).join('')}
-                </tbody>
-            `;
+            const wb = XLSX.utils.book_new();
+            const ws_data = [];
 
-                    let workbook = XLSX.utils.table_to_book(tempTable, { sheet: "Loan Report" });
-                    XLSX.writeFile(workbook, 'Loan_in_Arrears_Report.xlsx');
+            // Add header (excluding last 2)
+            const headers = [];
+            $('#loan_table thead th').each(function(index) {
+                if (index < $('#loan_table thead th').length - 2) {
+                    headers.push($(this).text().trim());
                 }
             });
+            ws_data.push(headers);
+
+            // Add rows
+            $('#loan_table tbody tr').each(function () {
+                const row = [];
+                $(this).find('td').each(function (index) {
+                    if (index < $(this).parent().find('td').length - 2) {
+                        row.push($(this).text().trim());
+                    }
+                });
+                ws_data.push(row);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+            XLSX.utils.book_append_sheet(wb, ws, "Loan Report");
+
+            XLSX.writeFile(wb, 'Loan_in_Arrears_Report.xlsx');
         }
+
 
 
     </script>

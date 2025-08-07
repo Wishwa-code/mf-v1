@@ -263,10 +263,11 @@ class TodayPaymentController extends Controller
         $route = $request->route;
         $status = $request->status;
         $lending_officer = $request->lending;
+        $installmentFilter = $request->input('installment_filter');
+
 
 
         if ($status == '-1') {
-            $today = Carbon::now()->toDateString();
             $loanQuery = tableWithBranch('installments','installments')
                 ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
                 ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
@@ -284,10 +285,12 @@ class TodayPaymentController extends Controller
                     'customer.idCustomer',
                     DB::raw('IFNULL(center.No, "-") as center_no'),
                     'customer.First_Name as customer_name',
+                    'customer.Contact_No as Contact_No',
                     'route.name as routename',
                     'customer.Last_Name as customer_lastname',
                     'customer.Nic as NIC',
                     'customer_loan.Loan_No as Loan_No',
+                    'customer_loan.Balance_Amount as Balance_Amount',
                     'customer_loan.Amount as Loan_Amount',
                     'customer_loan.idCustomer_Loan as idCustomer_Loan',
                     'customer_loan.type as type',
@@ -307,8 +310,10 @@ class TodayPaymentController extends Controller
                     'route.name',
                     'customer.First_Name',
                     'customer.Last_Name',
+                    'customer.Contact_No',
                     'customer.Nic',
                     'customer_loan.Loan_No',
+                    'customer_loan.Balance_Amount',
                     'customer_loan.Amount',
                     'customer_loan.type',
                     'customer_loan.Installment_Count',
@@ -337,10 +342,12 @@ class TodayPaymentController extends Controller
                     'customer.idCustomer',
                     DB::raw('IFNULL(center.No, "-") as center_no'),
                     'customer.First_Name as customer_name',
+                    'customer.Contact_No as Contact_No',
                     'route.name as routename',
                     'customer.Last_Name as customer_lastname',
                     'customer.Nic as NIC',
                     'customer_loan.Loan_No as Loan_No',
+                    'customer_loan.Balance_Amount as Balance_Amount',
                     'customer_loan.Amount as Loan_Amount',
                     'customer_loan.idCustomer_Loan as idCustomer_Loan',
                     'customer_loan.type as type',
@@ -359,8 +366,10 @@ class TodayPaymentController extends Controller
                     'route.name',
                     'customer.First_Name',
                     'customer.Last_Name',
+                    'customer.Contact_No',
                     'customer.Nic',
                     'customer_loan.Loan_No',
+                    'customer_loan.Balance_Amount',
                     'customer_loan.Amount',
                     'customer_loan.type',
                     'customer_loan.Vehicle_No',
@@ -401,6 +410,11 @@ class TodayPaymentController extends Controller
         } else{
             $loanQuery->whereDate('installments.Installment_Date', '<=', date('Y-m-d'));
         }
+
+        if ($installmentFilter === 'more_than_3') {
+            $loanQuery->havingRaw('COUNT(installments.idInstallments) > 3');
+        }
+
 
         $loan = $loanQuery->get();
 
@@ -453,7 +467,6 @@ class TodayPaymentController extends Controller
                 DB::raw('SUM(CASE WHEN Installment_Date < CURDATE() THEN Total_Balance ELSE 0 END) as arrease')
             )
             ->where('installments.branch_id', '=', session('branch_id'))
-            ->whereNotIn('Panelty_date', $poyaDates) // Exclude dates in $poya
             ->groupBy('Customer_Loan_idCustomer_Loan');
 
         $lastPaymentSubquery = DB::table('customer_payments')
