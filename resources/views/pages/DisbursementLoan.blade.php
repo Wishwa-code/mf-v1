@@ -509,7 +509,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
     <script src="../JS/validate.js"></script>
-    <script src="../JS/disbursement_loan.js?n=15"></script>
+    <script src="../JS/disbursement_loan.js?n=16"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 
@@ -534,8 +534,10 @@
                     { width: '15%', targets: 7 }, // Lending Officer
                     { width: '7%', targets: 8 }, // User
                     { width: '5%', targets: 9 }, // Status
-                    { width: '50%', targets: 10 } // Action
+                    { width: '50%', targets: 10 }, // Action
+                    { targets: [16], visible: false } // Hide the idCustomer column
                 ],
+
                 // Additional DataTables options and initialization here
             });
 
@@ -660,22 +662,25 @@
                     nic: row[6],
                     customerName: row[4],
                     amount: amount,
-                    id: row[5]
+                    idCustomer: row[16]
                 });
 
-                customerIds.push(row[5]);
+                customerIds.push(row[16]);
             }
+
 
             $.ajax({
                 url: '/get-customer-bank-details',
                 type: 'POST',
+                dataType: 'json',
                 data: {
                     customer_ids: customerIds,
                     _token: $('meta[name="csrf-token"]').attr("content")
                 },
                 success: function (response) {
-                    rowData.forEach(function (item) {
-                        let bankDetail = response[item.id] || '';
+                    rowData.forEach(item => {
+                        const key = String(item.idCustomer).trim();
+                        const bankDetail = response[key] || '';
                         ws_data.push([
                             item.index,
                             item.customerNumber,
@@ -686,7 +691,6 @@
                             ''
                         ]);
                     });
-
                     // Add footer rows
                     ws_data.push([]);
                     ws_data.push(['', '', '', 'Total Amount', totalAmount.toFixed(2)]);

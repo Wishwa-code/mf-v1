@@ -1394,21 +1394,22 @@ class LoanController extends Controller
 
     public function getCustomerBankDetails(Request $request)
     {
-        $customerIds = $request->customer_ids;
-
+        $customerIds = $request->input('customer_ids', []);
         $results = DB::table('customer_has_bank')
             ->join('customer','customer_has_bank.cus_id','=','customer.idCustomer')
-            ->whereIn('customer.cus_number', $customerIds)
-            ->select('cus_number', 'bank_name', 'account_number')
+            ->whereIn('customer.idCustomer', $customerIds)
+            ->select('customer.idCustomer','customer_has_bank.bank_name','customer_has_bank.account_number')
             ->get();
 
         $data = [];
         foreach ($results as $row) {
-            $data[$row->cus_number] = $row->bank_name . ' - ' . $row->account_number;
+            $data[$row->idCustomer] = $row->bank_name . ' - ' . $row->account_number;
         }
 
         return response()->json($data);
     }
+
+
 
 
 

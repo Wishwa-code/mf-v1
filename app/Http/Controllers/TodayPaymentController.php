@@ -3219,10 +3219,12 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
                     ->first();
                 if ($installment_check){
                     $check_saving=$installment_check->Saving_amount;
-                    if (!$check_saving>0){
-                        $undo_amount = $payment->Amount-$saving->Credit;
-                        $undo_payment = $payment->Amount-$saving->Credit;
-                    }
+//                    if (!$check_saving>0){
+//                        $undo_amount = $payment->Amount-$saving->Credit;
+//                        $undo_payment = $payment->Amount-$saving->Credit;
+//                    }
+                    $undo_amount = $payment->Amount-$saving->Credit;
+                    $undo_payment = $payment->Amount-$saving->Credit;
                 }
                 $Customer_Saving_Accounts = tableWithBranch('Savings_Account_Log')
                     ->where('Saving_Acount_Id', '=', $saving->Saving_Acount_Id)
