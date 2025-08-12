@@ -2,13 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Schema;
 
 class CapitalBalanceController extends Controller
 {
 
+    private string $table = 'app_settings';
+
+    public function __construct()
+    {
+        $this->ensureSchema();
+    }
 
     /**
      * Display a listing of the resource.
@@ -288,4 +298,99 @@ class CapitalBalanceController extends Controller
     {
         //
     }
+
+    // GET /settings/all
+    public function all()
+    {
+        $keys = ['payment_member_name'];
+
+        $rows = DB::table($this->table)
+            ->whereIn('key', $keys)
+            ->pluck('value', 'key');
+
+        // return as { items: { payment_member_name: "full_name" } }
+        return response()->json(['items' => $rows], 200);
+    }
+
+    // POST /settings/upsert
+    public function upsert(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'key'   => ['required', 'in:payment_member_name'],
+            'value' => ['required', 'in:full_name,with_initial'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => $validator->errors()->first()], 422);
+        }
+
+        $key = $request->input('key');
+        $value = $request->input('value');
+        $uid = auth()->id();
+
+        $existing = DB::table($this->table)->where('key', $key)->first();
+
+        if ($existing) {
+            DB::table($this->table)
+                ->where('key', $key)
+                ->update([
+                    'value'      => $value,
+                    'updated_by' => $uid,
+                    'updated_at' => now(),
+                ]);
+        } else {
+            DB::table($this->table)->insert([
+                'key'        => $key,
+                'value'      => $value,
+                'created_by' => $uid,
+                'updated_by' => $uid,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+        Cache::forget('app_settings');
+        return response()->json(['success' => true], 200);
+    }
+
+    /**
+     * Create table if not exists (per your requirement to do it in controller).
+     * Columns: id, key (unique), value, created_by, updated_by, timestamps
+     */
+    private function ensureSchema(): void
+    {
+        if (!Schema::hasTable($this->table)) {
+            Schema::create($this->table, function (Blueprint $table) {
+                $table->bigIncrements('id');
+                $table->string('key')->unique();
+                $table->string('value');
+                $table->unsignedBigInteger('created_by')->nullable();
+                $table->unsignedBigInteger('updated_by')->nullable();
+                $table->timestamps();
+            });
+        } else {
+            // Optional: ensure columns exist if table already there
+            $this->ensureColumn('value', fn(Blueprint $t) => $t->string('value')->nullable(false));
+            $this->ensureColumn('created_by', fn(Blueprint $t) => $t->unsignedBigInteger('created_by')->nullable());
+            $this->ensureColumn('updated_by', fn(Blueprint $t) => $t->unsignedBigInteger('updated_by')->nullable());
+            // timestamps usually exist; add if missing
+            if (!Schema::hasColumn($this->table, 'created_at') || !Schema::hasColumn($this->table, 'updated_at')) {
+                Schema::table($this->table, function (Blueprint $t) {
+                    $t->timestamps();
+                });
+            }
+        }
+    }
+
+    // Helper to add a column if it doesn't exist
+    private function ensureColumn(string $name, \Closure $definition): void
+    {
+        if (!Schema::hasColumn($this->table, $name)) {
+            Schema::table($this->table, function (Blueprint $table) use ($definition) {
+                $definition($table);
+            });
+        }
+    }
+
+
+
 }

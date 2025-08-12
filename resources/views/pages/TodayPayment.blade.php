@@ -324,6 +324,21 @@
                                     </select>
                                 </div>
                             </div>
+
+                            <div class="col-lg-3" hidden>
+                                <div class="mb-3">
+                                    <label for="simpleinput" class="form-label">Member Name Type</label>
+                                    <select class="form-control select2" id="mem_name_type" onchange="load_payment_table()">
+                                        <option value="0" {{ config('app.settings.payment_member_name') == 'with_initial' ? 'selected' : '' }}>
+                                            With Initial
+                                        </option>
+                                        <option value="1" {{ config('app.settings.payment_member_name') == 'full_name' ? 'selected' : '' }}>
+                                            Full Name
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <div class="col-lg-3">
                                 <div class="mb-3">
                                     <button type="button" class="btn btn-danger" onclick="load_payment_table();"><i class="bi bi-search"></i> </button>
@@ -1166,6 +1181,10 @@
      <script src="../JS/validate.js"></script>
     <script src="../JS/today_payment.js?n=27"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+     <script>
+         // Pass Laravel config value to JS
+         const MEM_NAME_TYPE = "{{ config('app.settings.payment_member_name') == 'with_initial' ? '0' : '1' }}";
+     </script>
     <script>
         $(document).ready(function() {
             @if($collector==1 || $cashier==1)
