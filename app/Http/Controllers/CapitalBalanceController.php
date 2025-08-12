@@ -317,7 +317,7 @@ class CapitalBalanceController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'key'   => ['required', 'in:payment_member_name'],
-            'value' => ['required', 'in:full_name,with_initial'],
+            'value' => ['required', 'in:full_name,with_initial,only_first_name,only_last_name'],
         ]);
 
         if ($validator->fails()) {

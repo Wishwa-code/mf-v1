@@ -107,6 +107,11 @@
 <script src="{{asset('assets/vendor/select2/js/select2.min.js')}}"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    // Make all settings globally available
+    window.APP_SETTINGS = @json(config('app.settings', []));
+</script>
+
+<script>
     let globalTargetInput = null;
     let globalStream = null;
 
@@ -185,6 +190,7 @@
         }
     }
 </script>
+
 @yield('script')
 <script>
     let timer;

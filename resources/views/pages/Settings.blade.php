@@ -242,6 +242,8 @@
                                 <select id="payment_member_name" class="form-select" style="max-width: 300px;">
                                     <option value="full_name">Full Name</option>
                                     <option value="with_initial">With Initial</option>
+                                    <option value="only_first_name">Only First Name</option>
+                                    <option value="only_last_name">Only Last Name</option>
                                 </select>
                                 <button id="btnUpdatePaymentMemberName" class="btn btn-primary">
                                     <i class="fa-solid fa-floppy-disk me-1"></i> Update
