@@ -11,7 +11,7 @@ function load_payment_table(page = 1) {
     let customer = $("#customer_id").val();
     let status = $("#status").val();
     let loan_number_search = $("#loan_number_search").val();
-
+    let currentType = document.getElementById('mem_name_type').value;
     $.ajax({
         type: "POST",
         url: `/today_payment_load_check?page=${page}`,
@@ -73,7 +73,7 @@ function load_payment_table(page = 1) {
 
                     var row = `<tr>
                         <td>${item.Loan_No}</td>
-                        <td>${formatName(item.customer_name, item.customer_lastname)}</td>
+                        <td>${formatName(item.customer_name, item.customer_lastname,currentType)}</td>
                         <td>${item.cus_number}</td>
                         <td>${parseFloat(item.Loan_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td>${parseFloat(item.Today_installment).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
@@ -144,14 +144,17 @@ function open_model(id){
 
 
 
-function formatName(firstName, lastName) {
-    let firstNameParts = firstName.trim().split(' ');
-    let initials = firstNameParts.map(name => name.charAt(0).toUpperCase() + '.').join('');
+function formatName(firstName, lastName, mem_name_type) {
+    if (mem_name_type === "0") {
+        let firstNameParts = firstName.trim().split(' ');
+        let initials = firstNameParts.map(name => name.charAt(0).toUpperCase() + '.').join('');
 
-    let lastNameParts = lastName.trim().split(' ');
-    let formattedLastName = lastNameParts[lastNameParts.length - 1];
+        let lastNameParts = lastName.trim().split(' ');
+        let formattedLastName = lastNameParts[lastNameParts.length - 1];
 
-    return `${initials} ${formattedLastName}`;
+        return `${initials} ${formattedLastName}`;
+    }
+    return `${firstName} ${lastName}`;
 }
 
 

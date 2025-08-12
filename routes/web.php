@@ -743,3 +743,7 @@ Route::get('/loan_log/{loan_id}','\App\Http\Controllers\CapitalBalanceController
 Route::post('/upload-excel-balance', [\App\Http\Controllers\ExcelController::class, 'balance_change']);
 
 Route::post('/get-customer-bank-details', [LoanController::class, 'getCustomerBankDetails']);
+
+
+Route::get('/settings/all','\App\Http\Controllers\CapitalBalanceController@all')->name('');
+Route::post('/settings/upsert','\App\Http\Controllers\CapitalBalanceController@upsert')->name('upsert');

@@ -37,7 +37,7 @@
 @section('content')
     <div>
         <div class="row mt-3">
-            <div class="col-12">
+            <div class="col-6">
                 <div class="card">
                     <div class="card-body">
                         <div class="table-responsive">
@@ -231,6 +231,28 @@
                     </div>
                 </div>
             </div>
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="mb-3">Settings</h5>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Payment Section Member Name</label>
+                            <div class="d-flex gap-2">
+                                <select id="payment_member_name" class="form-select" style="max-width: 300px;">
+                                    <option value="full_name">Full Name</option>
+                                    <option value="with_initial">With Initial</option>
+                                </select>
+                                <button id="btnUpdatePaymentMemberName" class="btn btn-primary">
+                                    <i class="fa-solid fa-floppy-disk me-1"></i> Update
+                                </button>
+                            </div>
+                            <small class="text-muted">Controls how member names show on the Payment section.</small>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 @endsection
@@ -245,6 +267,14 @@
 
         $(document).ready(function() {
             load_data_shortcut();
+            // you already call load_data_shortcut(); keep it
+            load_settings();
+
+            $('#btnUpdatePaymentMemberName').on('click', function (e) {
+                e.preventDefault();
+                const value = $('#payment_member_name').val(); // 'full_name' or 'with_initial'
+                save_setting('payment_member_name', value);
+            });
         });
 
 
@@ -397,5 +427,64 @@
                 }
             });
         };
+
+        // ========== SETTINGS ==========
+
+        // Load settings into UI
+        const load_settings = () => {
+            $.ajax({
+                type: "GET",
+                url: "/settings/all",
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                },
+                success: function (data) {
+                    const items = data.items || {};
+                    if (items.payment_member_name) {
+                        $('#payment_member_name').val(items.payment_member_name);
+                    }
+                },
+                error: function (xhr) {
+                    console.error('Settings load error:', xhr.responseText || xhr.statusText);
+                }
+            });
+        };
+
+        // Save a single setting with confirmation
+        const save_setting = (key, value) => {
+            Swal.fire({
+                title: "Are you sure?",
+                text: "Update this setting?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, Update",
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                $.ajax({
+                    type: "POST",
+                    url: "/settings/upsert",
+                    headers: {
+                        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                    },
+                    data: { key, value },
+                    success: function () {
+                        Swal.fire({
+                            position: "center",
+                            icon: "success",
+                            title: "Setting updated!",
+                            timer: 1400,
+                            showConfirmButton: false
+                        });
+                    },
+                    error: function (xhr) {
+                        Swal.fire("Error", xhr.responseJSON?.message || "Failed to update setting", "error");
+                    }
+                });
+            });
+        };
+
     </script>
 @endsection
