@@ -495,6 +495,7 @@
 
                         data.item.forEach(function(item) {
                             let totalBalance = parseFloat(item.Total_Balance);
+                            let Panalty_Balance = parseFloat(item.Panalty_Balance);
                             tot += totalBalance;
 
                             let statusColor = "#000";
@@ -518,7 +519,10 @@
                             <td>${item.Installment_Count}</td>
                             <td>${parseFloat(item.Panalty_Balance).toFixed(2)}</td>
                             <td>${parseFloat(item.Total_Balance).toFixed(2)}</td>
-                            <td>${parseFloat(item.Balance_Amount).toFixed(2)}</td>
+                            <td>${(
+                                (parseFloat(item.Balance_Amount) || 0) +
+                                (parseFloat(item.Panalty_Balance) || 0)
+                            ).toFixed(2)}</td>
                             <td><i class="fas fa-lightbulb bulb-icon" style="color: ${statusColor}"></i></td>
                             <td><a href="/loanview/${item.idCustomer_Loan}" target="_blank" class="btn btn-warning"><i class="bi bi-eye"></i></a></td>
                         </tr>

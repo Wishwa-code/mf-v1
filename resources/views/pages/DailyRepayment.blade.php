@@ -205,7 +205,8 @@
                             <table id="repaymentTable">
                                 <thead>
                                 <tr>
-                                    <th rowspan="2">Client</th>
+                                    <th rowspan="2">Customer</th>
+                                    <th rowspan="2">Customer No</th>
                                     <th rowspan="2">Loan No</th>
                                     <th rowspan="2">Phone No</th>
                                     <th rowspan="2">Loan Amount</th>
@@ -248,6 +249,7 @@
                                         @endphp
                                         <tr>
                                             <td>{{ $shortName }}</td>
+                                            <td>{{ $item->cus_number }}</td>
                                             <td>{{ $item->Loan_No }}</td>
                                             <td>{{ $item->Contact_No }}</td>
                                             <td class="loan-amount">{{ number_format($item->Loan_Amount, 2) }}</td>
@@ -266,6 +268,7 @@
                                     @endforeach
                                     <tr class="group-total">
                                         <td><strong>Group Total</strong></td>
+                                        <td></td>
                                         <td></td>
                                         <td></td>
                                         <td class="group-loan-amount"></td>
@@ -288,6 +291,7 @@
                                 <tfoot>
                                 <tr>
                                     <td><strong>Center Total</strong></td>
+                                    <td></td>
                                     <td></td>
                                     <td></td>
                                     <td id="total-loan-amount"></td>
