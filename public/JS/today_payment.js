@@ -11,7 +11,7 @@ function load_payment_table(page = 1) {
     let customer = $("#customer_id").val();
     let status = $("#status").val();
     let loan_number_search = $("#loan_number_search").val();
-    let currentType = document.getElementById('mem_name_type').value;
+    const currentType = window.APP_SETTINGS.payment_member_name;
     $.ajax({
         type: "POST",
         url: `/today_payment_load_check?page=${page}`,
@@ -145,7 +145,8 @@ function open_model(id){
 
 
 function formatName(firstName, lastName, mem_name_type) {
-    if (mem_name_type === "0") {
+
+    if (mem_name_type === "with_initial") {
         let firstNameParts = firstName.trim().split(' ');
         let initials = firstNameParts.map(name => name.charAt(0).toUpperCase() + '.').join('');
 
@@ -153,7 +154,12 @@ function formatName(firstName, lastName, mem_name_type) {
         let formattedLastName = lastNameParts[lastNameParts.length - 1];
 
         return `${initials} ${formattedLastName}`;
+    }else if(mem_name_type === "only_first_name"){
+        return `${firstName}`;
+    }else if(mem_name_type === "only_last_name"){
+        return `${lastName}`;
     }
+
     return `${firstName} ${lastName}`;
 }
 

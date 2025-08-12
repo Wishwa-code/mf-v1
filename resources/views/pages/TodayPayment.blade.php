@@ -1178,14 +1178,12 @@
 
 @section('script')
 
-     <script src="../JS/validate.js"></script>
-    <script src="../JS/today_payment.js?n=27"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script src="../JS/validate.js"></script>
+    <script src="../JS/today_payment.js?n=29"></script>
      <script>
-         // Pass Laravel config value to JS
-         const MEM_NAME_TYPE = "{{ config('app.settings.payment_member_name') == 'with_initial' ? '0' : '1' }}";
-     </script>
-    <script>
         $(document).ready(function() {
             @if($collector==1 || $cashier==1)
                 togglePaymentSections("Collector");
