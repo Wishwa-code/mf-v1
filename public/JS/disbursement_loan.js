@@ -86,7 +86,8 @@ function load_table() {
                             '<a href="#" target="_blank" data-bs-toggle="modal" onclick="agreement(' + item.idCustomer_Loan + ')" data-bs-target="#agreement" class="btn btn-dark"><i class="bi bi-receipt"></i></a>' +
                             '<a href="#' + item.idCustomer_Loan + '" data-bs-toggle="modal" data-bs-target="#loan_edit" onclick="change_installment(' + item.idCustomer_Loan + ')"  class="btn btn-info"><i class="bi bi-pen"></i></a>' +
                             '<button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#standard-modal_2" onclick="set_cus(' + item.idCustomer_Loan + ')">' +
-                            '<i class="bi bi-camera fs-4"></i></button>'
+                            '<i class="bi bi-camera fs-4"></i></button>',
+                        item.idCustomer // <-- Hidden extra column
                     ]).draw(false); // Draw the row without refreshing the DataTable
 
                     loan_count++; // Increment loan count (assuming `loan_count` is defined)

@@ -264,7 +264,7 @@
                                             <td class="loan-balance">{{ number_format($item->Total_Balance, 2) }}</td>
                                             <td class="due-amount">{{ number_format($item->Installment_Amount, 2) }}</td>
                                             <td class="arrears">{{ number_format($item->arrease, 2) }}</td>
-                                            <td class="saving-balance">{{ number_format($item->last_saving_balance, 2) }}</td>
+                                            <td class="saving-balance">{{ number_format($item->total_saving_balance, 2) }}</td>
                                             <td></td> <!-- Week 1 Rent -->
                                             <td></td> <!-- Week 1 R.R.P -->
                                             <td></td> <!-- Week 2 Rent -->

@@ -246,10 +246,12 @@
                                     <th>Member NIC</th>
                                     <th>Member Contact No</th>
                                     <th>Member Name</th>
+                                    <th>Installment Amount</th>
                                     <th>Pending Installments</th>
                                     <th>Penalty Total</th>
                                     <th>Pending Total</th>
                                     <th>Loan Balance</th>
+                                    <th>Capital Balance</th>
                                     <th>Status</th>
                                     <th>Action</th>
                                 </tr>
@@ -495,14 +497,15 @@
 
                         data.item.forEach(function(item) {
                             let totalBalance = parseFloat(item.Total_Balance);
+                            let Installment_Count = parseFloat(item.Installment_Count);
                             tot += totalBalance;
 
                             let statusColor = "#000";
-                            if (item.Installment_Count === 1) {
+                            if (Installment_Count === 1) {
                                 statusColor = "#e1cf1e";
-                            } else if (item.Installment_Count === 2) {
+                            } else if (Installment_Count === 2) {
                                 statusColor = "orange";
-                            } else if (item.Installment_Count > 2) {
+                            } else if (Installment_Count > 2) {
                                 statusColor = "#f35858";
                             }
 
@@ -515,6 +518,7 @@
                             <td>${item.NIC}</td>
                             <td>${item.Contact_No}</td>
                             <td>${item.customer_name} ${item.customer_lastname}</td>
+                            <td>${parseFloat(item.Installment_Amount).toFixed(2)}</td>
                             <td>${item.Installment_Count}</td>
                             <td>${parseFloat(item.Panalty_Balance).toFixed(2)}</td>
                             <td>${parseFloat(item.Total_Balance).toFixed(2)}</td>
@@ -522,6 +526,7 @@
                                 (parseFloat(item.Total_Balance) || 0) +
                                 (parseFloat(item.Panalty_Balance) || 0)
                             ).toFixed(2)}</td>
+                            <td>${parseFloat(item.capital_balance).toFixed(2)}</td>
                             <td><i class="fas fa-lightbulb bulb-icon" style="color: ${statusColor}"></i></td>
                             <td><a href="/loanview/${item.idCustomer_Loan}" target="_blank" class="btn btn-warning"><i class="bi bi-eye"></i></a></td>
                         </tr>

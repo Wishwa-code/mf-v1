@@ -88,6 +88,9 @@
                                 <tr>
                                     <th>Loan No</th>
                                     <th>Cus No</th>
+                                    <th>Cus Name</th>
+                                    <th>Center</th>
+                                    <th>Group</th>
                                     <th>Loan Create Date</th>
                                     <th>Loan Disbursement Date</th>
                                     <th>Approval Time</th>
@@ -108,7 +111,7 @@
                                 </tbody>
                                 <tfoot class="bg-light fw-bold text-white">
                                 <tr>
-                                    <td colspan="6" class="text-end">Totals:</td>
+                                    <td colspan="9" class="text-end">Totals:</td>
                                     <td id="total_amount">0.00</td>
                                     <td id="total_interest">0.00</td>
                                     <td id="total_total_loan">0.00</td>
@@ -236,6 +239,9 @@
         <tr>
             <td>${row.Loan_No}</td>
             <td>${row.cus_number}</td>
+<td>${row.customer_fname} ${row.customer_lastname}</td>
+<td>${row.center_no}</td>
+<td>${row.Group_name}</td>
             <td>${row.create_date}</td>
             <td>${row.disburse_date}</td>
             <td>${row.time}</td>

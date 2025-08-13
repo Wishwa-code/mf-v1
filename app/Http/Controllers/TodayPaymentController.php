@@ -291,6 +291,7 @@ class TodayPaymentController extends Controller
                     'customer.Nic as NIC',
                     'customer_loan.Loan_No as Loan_No',
                     'customer_loan.Balance_Amount as Balance_Amount',
+                    'customer_loan.capital_balance as capital_balance',
                     'customer_loan.Amount as Loan_Amount',
                     'customer_loan.idCustomer_Loan as idCustomer_Loan',
                     'customer_loan.type as type',
@@ -313,6 +314,7 @@ class TodayPaymentController extends Controller
                     'customer.Contact_No',
                     'customer.Nic',
                     'customer_loan.Loan_No',
+                    'customer_loan.capital_balance',
                     'customer_loan.Balance_Amount',
                     'customer_loan.Amount',
                     'customer_loan.type',
@@ -346,6 +348,7 @@ class TodayPaymentController extends Controller
                     'route.name as routename',
                     'customer.Last_Name as customer_lastname',
                     'customer.Nic as NIC',
+                    'customer_loan.capital_balance as capital_balance',
                     'customer_loan.Loan_No as Loan_No',
                     'customer_loan.Balance_Amount as Balance_Amount',
                     'customer_loan.Amount as Loan_Amount',
@@ -370,6 +373,7 @@ class TodayPaymentController extends Controller
                     'customer.Nic',
                     'customer_loan.Loan_No',
                     'customer_loan.Balance_Amount',
+                    'customer_loan.capital_balance',
                     'customer_loan.Amount',
                     'customer_loan.type',
                     'customer_loan.Vehicle_No',
@@ -3219,10 +3223,12 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
                     ->first();
                 if ($installment_check){
                     $check_saving=$installment_check->Saving_amount;
-                    if (!$check_saving>0){
-                        $undo_amount = $payment->Amount-$saving->Credit;
-                        $undo_payment = $payment->Amount-$saving->Credit;
-                    }
+//                    if (!$check_saving>0){
+//                        $undo_amount = $payment->Amount-$saving->Credit;
+//                        $undo_payment = $payment->Amount-$saving->Credit;
+//                    }
+                    $undo_amount = $payment->Amount-$saving->Credit;
+                    $undo_payment = $payment->Amount-$saving->Credit;
                 }
                 $Customer_Saving_Accounts = tableWithBranch('Savings_Account_Log')
                     ->where('Saving_Acount_Id', '=', $saving->Saving_Acount_Id)

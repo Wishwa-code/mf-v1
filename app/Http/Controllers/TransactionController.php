@@ -565,6 +565,12 @@ class TransactionController extends Controller
             $center_details = $request->center_details ?? $center[0]->idCenter;
         }
 
+        $savingSub = DB::table('Customer_Saving_Accounts as csa')
+            ->select('csa.Customer_Id', DB::raw('ROUND(SUM(csa.Balance), 2) as total_saving_balance'))
+            ->where('csa.Status', 1)
+            ->groupBy('csa.Customer_Id');
+
+
         // Loan Query
         $loanQuery = tableWithBranch('installments','installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
@@ -577,6 +583,7 @@ class TransactionController extends Controller
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->leftJoinSub($savingSub, 'sa', 'sa.Customer_Id', '=', 'customer.idCustomer')
             ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
             ->where('customer_loan.Status', '=', '0')
             ->select(
@@ -602,7 +609,7 @@ class TransactionController extends Controller
                 DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date <= CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as Total_Balance_until'),
                 DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date = CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as Today_installment'),
                 DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date < CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as arrease'),
-                DB::raw("(SELECT sal.Balance FROM Customer_Saving_Accounts csa INNER JOIN Savings_Account_Log sal ON sal.Saving_Acount_Id = csa.id WHERE csa.Loan_Id = customer_loan.idCustomer_Loan ORDER BY sal.id DESC LIMIT 1) AS last_saving_balance")
+                'sa.total_saving_balance',
             )
             ->groupBy(
                 'customer.idCustomer',
@@ -621,7 +628,8 @@ class TransactionController extends Controller
                 'customer_loan.idCustomer_Loan',
                 'customer_loan.capital_balance',
                 'customer_loan.Installment_Amount',
-                'subquery.group_name'
+                'subquery.group_name',
+                'sa.total_saving_balance',
             );
 
         // Filter by center, group, and customer if provided
