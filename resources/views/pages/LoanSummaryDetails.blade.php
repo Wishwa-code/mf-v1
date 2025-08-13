@@ -76,6 +76,7 @@
                             <div class="col-md-3 mb-2 pe-2">
                                 <label for="branch" class="form-label">Filter by Branch</label>
                                 <select class="form-control select2" id="branch" name="branch" {{ session('branch_access') == 0 ? 'disabled' : '' }}>
+                                    <option value="">All</option>
                                     @foreach($branch as $item)
                                         <option value="{{ $item->branch_id }}" {{ $selectedBranch == $item->branch_id ? 'selected' : '' }}>
                                             {{ $item->Name }}
