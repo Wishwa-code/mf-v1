@@ -246,6 +246,7 @@
                                     <th>Member NIC</th>
                                     <th>Member Contact No</th>
                                     <th>Member Name</th>
+                                    <th>Installment Amount</th>
                                     <th>Pending Installments</th>
                                     <th>Penalty Total</th>
                                     <th>Pending Total</th>
@@ -517,6 +518,7 @@
                             <td>${item.NIC}</td>
                             <td>${item.Contact_No}</td>
                             <td>${item.customer_name} ${item.customer_lastname}</td>
+                            <td>${parseFloat(item.Installment_Amount).toFixed(2)}</td>
                             <td>${item.Installment_Count}</td>
                             <td>${parseFloat(item.Panalty_Balance).toFixed(2)}</td>
                             <td>${parseFloat(item.Total_Balance).toFixed(2)}</td>
