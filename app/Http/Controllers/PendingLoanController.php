@@ -873,6 +873,8 @@ class PendingLoanController extends Controller
             LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
                 'customer.idCustomer', '=', 'subquery.cus_id')
             ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
+            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('loan_category as lc', 'lc.idLoan_Category', '=', 'cl.Loan_Category_idLoan_Category')
             ->whereIn('cl.Status', [0, 1]);
 
@@ -900,7 +902,11 @@ class PendingLoanController extends Controller
         $loans = $query->select(
             'cl.idCustomer_Loan',
             'cl.Loan_No',
+            DB::raw('IFNULL(center.No, "-") as center_no'),
+            'customer_group.Name as Group_name',
             'customer.cus_number as cus_number',
+            'customer.First_Name as customer_fname',
+            'customer.Last_Name as customer_lastname',
             'cl.Date_Time as create_date',
             'cl.Date_Time as disburse_date',
             'lc.Name as product_name',
@@ -978,6 +984,10 @@ class PendingLoanController extends Controller
                 'Balance_Amount' => number_format($loan->Balance_Amount, 2),
                 'Status' => $loan->Status,
                 'cus_number' => $loan->cus_number,
+                'customer_fname' => $loan->customer_fname,
+                'customer_lastname' => $loan->customer_lastname,
+                'center_no' => $loan->center_no,
+                'Group_name' => $loan->Group_name,
             ];
         });
 
