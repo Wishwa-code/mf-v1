@@ -249,10 +249,16 @@ class ReportController extends Controller
             $query->where('customer_loan.Status','!=', $request->loan_status);
         }
 
-        // Apply group filter if group_name is provided
-        if ($request->has('branch') && $request->branch != '') {
-            $query->where('customer_loan.branch_id', $request->branch);
+
+        if ($branch_access == 1) {
+            // Apply group filter if group_name is provided
+            if ($request->has('branch') && $request->branch != '') {
+                $query->where('customer_loan.branch_id', $request->branch);
+            }
+        }else{
+            $query->where('customer_loan.branch_id', session('branch_id'));
         }
+
 
 
 
