@@ -2680,7 +2680,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
         $loan = $loanQuery->get();
 
         $user_id = (int)session('userid');
-        $payment_delete=tableWithBranch('user')->where('id','=',$user_id)->first();
+        $payment_delete=DB::table('user')->where('id','=',$user_id)->first();
         $payment_delete_status=0;
         if ($payment_delete){
             $payment_delete_status=(int) $payment_delete->payment_delete;
