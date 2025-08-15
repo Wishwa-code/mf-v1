@@ -572,37 +572,97 @@
         function formatNumber(num) {
             return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
+
         function downloadExcel() {
             const wb = XLSX.utils.book_new();
             const ws_data = [];
 
-            // Add header (excluding last 2)
+            // 1) Collect headers (excluding last 2 columns)
             const headers = [];
-            $('#loan_table thead th').each(function(index) {
-                if (index < $('#loan_table thead th').length - 2) {
-                    headers.push($(this).text().trim());
-                }
-            });
+            const $ths = $('#loan_table thead th');
+            const colCount = $ths.length - 2; // drop Status + Action
+            for (let i = 0; i < colCount; i++) {
+                headers.push($($ths[i]).text().trim());
+            }
             ws_data.push(headers);
 
-            // Add rows
+            // 2) Which headers are numeric? (adjust names if yours differ)
+            const NUMERIC_HEADERS = new Set([
+                'Installment Amount',
+                'Pending Installments',
+                'Penalty Total',
+                'Pending Total',
+                'Loan Balance',
+                'Capital Balance'
+            ]);
+
+            // Build a map of column index -> numeric (true/false)
+            const numericColMap = {};
+            headers.forEach((h, i) => {
+                numericColMap[i] = NUMERIC_HEADERS.has(h);
+            });
+
+            // 3) Add body rows; coerce numeric cells to real numbers
             $('#loan_table tbody tr').each(function () {
                 const row = [];
-                $(this).find('td').each(function (index) {
-                    if (index < $(this).parent().find('td').length - 2) {
-                        row.push($(this).text().trim());
+                const $tds = $(this).find('td');
+
+                for (let i = 0; i < colCount; i++) {
+                    let txt = $($tds[i]).text().trim();
+
+                    if (numericColMap[i]) {
+                        // Remove commas/spaces and convert; treat '-' or empty as blank
+                        const cleaned = txt.replace(/,/g, '').replace(/\s+/g, '');
+                        const num = parseFloat(cleaned);
+                        if (!isNaN(num) && isFinite(num)) {
+                            row.push(num); // push a Number, not a string
+                        } else {
+                            row.push(null); // keep cell empty if not a valid number
+                        }
+                    } else {
+                        row.push(txt);
                     }
-                });
+                }
                 ws_data.push(row);
             });
 
+            // 4) Create sheet
             const ws = XLSX.utils.aoa_to_sheet(ws_data);
-            XLSX.utils.book_append_sheet(wb, ws, "Loan Report");
 
+            // 5) Apply number format to numeric columns (two decimals)
+            //    Also make sure those cells are typed as numeric.
+            const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+            for (let C = 0; C < colCount; C++) {
+                if (!numericColMap[C]) continue;
+
+                for (let R = 1; R <= range.e.r; R++) { // skip header at R=0
+                    const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                    const cell = ws[cellAddress];
+                    if (!cell) continue;
+                    if (typeof cell.v === 'number') {
+                        cell.t = 'n';          // explicitly numeric
+                        cell.z = '0.00';       // 2 decimal places
+                    } else if (cell.v == null || cell.v === '') {
+                        // leave empty
+                    } else {
+                        // Try one more time to coerce (in case something slipped through)
+                        const maybe = parseFloat(String(cell.v).replace(/,/g, ''));
+                        if (!isNaN(maybe) && isFinite(maybe)) {
+                            cell.v = maybe;
+                            cell.t = 'n';
+                            cell.z = '0.00';
+                        }
+                    }
+                }
+            }
+
+            // 6) Optional: set column widths a bit wider for readability
+            ws['!cols'] = headers.map(() => ({ wch: 16 }));
+
+            // 7) Append and write
+            XLSX.utils.book_append_sheet(wb, ws, 'Loan Report');
             XLSX.writeFile(wb, 'Loan_in_Arrears_Report.xlsx');
         }
-
-
 
     </script>
 

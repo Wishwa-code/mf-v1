@@ -219,25 +219,29 @@ class GroupController extends Controller
 
             $type = $company->customer_num_type;
 
-            $center_customer_count = DB::table('customer')
-                ->join('group_has_customer', 'group_has_customer.cus_id', '=', 'customer.idCustomer')
-                ->join('customer_group', 'customer_group.idCustomer_Group', '=', 'group_has_customer.group_id')
-                ->where('customer_group.center_id', $customer_group->center_id)
-                ->distinct('customer.idCustomer')
-                ->count('customer.idCustomer');
-            $center_customer_count = str_pad($center_customer_count, 3, '0', STR_PAD_LEFT);
 
-            if ($type == "Format") {
+            $centerId = $customer_group->center_id;
+
+            // Count unique customers in this center
+            $center_customer_count = DB::table('group_has_customer as ghc')
+                ->join('customer_group as cg', 'cg.idCustomer_Group', '=', 'ghc.group_id')
+                ->where('cg.center_id', $centerId)
+                ->count(DB::raw('DISTINCT ghc.cus_id'));   // ← exact center-assigned customer count
+
+            // If you need the NEXT number in the code, use +1; if not, remove the +1.
+            $seq = str_pad($center_customer_count + 1, 3, '0', STR_PAD_LEFT);
+
+            if ($type === "Format") {
                 $newnum = str_replace(
                     ['C000', 'G000', 'CLM', 'CenterCustomerCount'],
-                    [$center->No, $group->Group_No, $root->name, $center_customer_count],
+                    [$center->No, $group->Group_No, $root->name, $seq],
                     $customer_table->cus_number
                 );
 
-                updateWithBranch('customer', 'idCustomer', $customer, [
-                    'cus_number' => $newnum
-                ]);
+                updateWithBranch('customer', 'idCustomer', $customer, ['cus_number' => $newnum]);
             }
+
+
 
 
 
