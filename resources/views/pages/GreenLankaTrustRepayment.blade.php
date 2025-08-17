@@ -433,112 +433,137 @@
             });
 
             $('#printButton').click(function () {
-                const currentMonth = new Date().toLocaleString('default', { month: 'long' });
                 const centerDetails = $('#center_details option:selected').text();
-                const orientation = $('#pageOrientation').val();
+                const orientation   = $('#pageOrientation').val();
 
-                const centerNo = '{{ $center_no }}';
-                const centerName = '{{ $center_name }}';
-                const printedBy = '{{ $printedBy }}';
-                const printedAt = '{{ $printedAt }}';
+                const centerNo    = '{{ $center_no }}';
+                const centerName  = '{{ $center_name }}';
+                const printedBy   = '{{ $printedBy }}';
+                const printedAt   = '{{ $printedAt }}';
                 const companyName = '{{ session("company_name") }}';
 
                 const printWindow = window.open('', '', 'height=800,width=1200');
+
+                // ===== CSS =====
                 printWindow.document.write('<html><head><title>Repayment Sheet</title><style>');
-
                 printWindow.document.write(`
-        @page { size: ${orientation}; margin: 0.5in; }
-        body { font-family: Arial, sans-serif; font-size: 10px; margin: 0.5in; zoom: 80%; }
-        h2 { text-align: center; font-size: 16px; margin-top: 40px; }
-        table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px; }
-        th, td { border: 1px solid black; padding: 8px; text-align: center; word-break: break-word; min-height: 30px; }
-        th:nth-child(2), td:nth-child(2) { width: 180px !important; }
-        th:nth-child(6), td:nth-child(6),
-        th:nth-child(8), td:nth-child(8),
-        th:nth-child(10), td:nth-child(10),
-        th:nth-child(12), td:nth-child(12),
-        th:nth-child(14), td:nth-child(14) {
-            width: 100px !important;
-        }
-        .print-header {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: black;
-            border-bottom: 1px solid #ccc;
-            margin-bottom: 5px;
-            padding-bottom: 4px;
-            font-weight: bold;
-        }
-        .print-group-block {
-            page-break-inside: avoid;
-        }
-    `);
+    @page { size: ${orientation}; margin: 0.5in; }
+    html, body { margin:0; padding:0; }
+    body { font-family: Arial, sans-serif; font-size: 11px; }
 
+    .page { page-break-after: always; }
+    .page:last-child { page-break-after: auto; }
+
+    thead { display: table-header-group; }
+    tfoot { display: table-footer-group; }
+
+    h2 { margin: 2px 0 4px 0; font-size: 14px; text-align: center; }
+
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; }
+    th, td { border: 1px solid #000; padding: 4px; text-align: center; word-break: break-word; min-height: 20px; }
+
+    /* Name column */
+    th:nth-child(2), td:nth-child(2) { width: 180px !important; }
+
+    /* Paid columns wider */
+    th:nth-child(6), td:nth-child(6),
+    th:nth-child(8), td:nth-child(8),
+    th:nth-child(10), td:nth-child(10),
+    th:nth-child(12), td:nth-child(12),
+    th:nth-child(14), td:nth-child(14) {
+        width: 120px !important;
+    }
+
+    /* Correct columns narrower */
+    th:nth-child(7), td:nth-child(7),
+    th:nth-child(9), td:nth-child(9),
+    th:nth-child(11), td:nth-child(11),
+    th:nth-child(13), td:nth-child(13),
+    th:nth-child(15), td:nth-child(15) {
+        width: 50px !important;
+    }
+
+    .brandline { font-size: 14px; font-weight: 700; text-align: left; }
+    .metaline  { font-size: 10px; font-weight: 500; text-align: right; }
+    .thead-bar td { border: none; padding: 0; }
+    .print-group-block { page-break-inside: avoid; }
+  `);
                 printWindow.document.write('</style></head><body>');
 
-                const printHeader = () => `
-        <div class="print-header">
-            <div style="font-size: 18px; font-weight: bold;">${companyName}</div>
-            <div>Center No: ${centerNo} | Center Name: ${centerName}</div>
-            <div>Printed by: ${printedBy} on ${printedAt}</div>
-        </div>
-        <h2>Repayment Sheet (${centerDetails})</h2>
-    `;
+                // Column header HTML
+                const columnsHeadHTML = document.querySelector('#repaymentTable thead').innerHTML;
 
-                const groupBlocks = document.querySelectorAll('.print-group-block');
-                let finalPrint = '';
+                // Build header
+                const buildRepeatingThead = () => `
+    <thead>
+      <tr class="thead-bar">
+        <td colspan="15" style="border:none; padding:0 0 2px 0;">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ccc; padding-bottom:2px; margin-bottom:2px;">
+            <div class="brandline">${companyName}</div>
+            <div class="metaline">Center No: ${centerNo} | Center Name: ${centerName} | Printed by: ${printedBy} on ${printedAt}</div>
+          </div>
+          <h2>Repayment Sheet (${centerDetails})</h2>
+        </td>
+      </tr>
+      ${columnsHeadHTML}
+    </thead>
+  `;
 
+                const groupBlocks = Array.from(document.querySelectorAll('.print-group-block'));
+                let html = '';
+
+                // 2 groups per page
                 for (let i = 0; i < groupBlocks.length; i += 2) {
-                    finalPrint += '<div style="page-break-after: always;">';
-
-                    // Header for each page
-                    finalPrint += printHeader();
-                    finalPrint += '<table><thead>' + document.querySelector('#repaymentTable thead').innerHTML + '</thead>';
-
-                    // First group
-                    finalPrint += groupBlocks[i].outerHTML;
-
-                    // Second group if exists
-                    if (i + 1 < groupBlocks.length) {
-                        finalPrint += groupBlocks[i + 1].outerHTML;
-                    }
-
-                    finalPrint += '</table>';
-                    finalPrint += '</div>';
+                    html += '<div class="page"><table>';
+                    html += buildRepeatingThead();
+                    html += '<tbody>';
+                    html += groupBlocks[i].outerHTML;
+                    if (i + 1 < groupBlocks.length) html += groupBlocks[i + 1].outerHTML;
+                    html += '</tbody></table></div>';
                 }
 
-
-
-
-                printWindow.document.write(finalPrint);
-
-                // Final summary page
-                printWindow.document.write('<div style="page-break-before: always;"></div>');
-                printWindow.document.write(`
-    <table style="width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 10px;">
-        <tbody>
-            <tr><td colspan="15" style="height: 20px;"></td></tr>
-            <tr><td colspan="2"><strong>Cumulative Collection</strong></td><td colspan="13"></td></tr>
-            <tr><td colspan="2"><strong>Cumulative Due</strong></td><td colspan="13"></td></tr>
-            <tr><td colspan="2"><strong>Total</strong></td><td colspan="13"></td></tr>
-            <tr><td colspan="2"><strong>No of Under Payment</strong></td><td colspan="13"></td></tr>
-            <tr><td colspan="2"><strong>Amount</strong></td><td colspan="13"></td></tr>
-            <tr><td colspan="2"><strong>No of Not Paid</strong></td><td colspan="13"></td></tr>
-            <tr><td colspan="2"><strong>Amount</strong></td><td colspan="13"></td></tr>
-            <tr><td colspan="2"><strong>No of Settlement</strong></td><td colspan="13"></td></tr>
-            <tr><td colspan="15" style="height: 30px;"></td></tr>
-            <tr><td colspan="2"><strong>Full Signature</strong></td><td colspan="13"></td></tr>
-            <tr><td colspan="2"><strong>Center Manager</strong></td><td colspan="13"></td></tr>
-        </tbody>
+                // Summary page (NO table header here)
+                html += `
+  <div class="page">
+    <table>
+      <tbody>
+        <tr>
+          <td colspan="15" style="border:none; padding:0 0 2px 0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ccc; padding-bottom:2px; margin-bottom:2px;">
+              <div class="brandline">${companyName}</div>
+              <div class="metaline">Center No: ${centerNo} | Center Name: ${centerName} | Printed by: ${printedBy} on ${printedAt}</div>
+            </div>
+            <h2>Repayment Sheet (${centerDetails})</h2>
+          </td>
+        </tr>
+        <tr><td colspan="15" style="height: 10px;"></td></tr>
+        <tr><td colspan="2"><strong>Cumulative Collection</strong></td><td colspan="13"></td></tr>
+        <tr><td colspan="2"><strong>Cumulative Due</strong></td><td colspan="13"></td></tr>
+        <tr><td colspan="2"><strong>Total</strong></td><td colspan="13"></td></tr>
+        <tr><td colspan="2"><strong>No of Under Payment</strong></td><td colspan="13"></td></tr>
+        <tr><td colspan="2"><strong>Amount</strong></td><td colspan="13"></td></tr>
+        <tr><td colspan="2"><strong>No of Not Paid</strong></td><td colspan="13"></td></tr>
+        <tr><td colspan="2"><strong>Amount</strong></td><td colspan="13"></td></tr>
+        <tr><td colspan="2"><strong>No of Settlement</strong></td><td colspan="13"></td></tr>
+        <tr><td colspan="15" style="height: 15px;"></td></tr>
+        <tr><td colspan="2"><strong>Full Signature</strong></td><td colspan="13"></td></tr>
+        <tr><td colspan="2"><strong>Center Manager</strong></td><td colspan="13"></td></tr>
+      </tbody>
     </table>
-    `);
+  </div>
+`;
 
+
+                printWindow.document.write(html);
                 printWindow.document.write('</body></html>');
                 printWindow.document.close();
-                printWindow.focus();
-                printWindow.print();
+
+                printWindow.onload = function () {
+                    printWindow.focus();
+                    printWindow.print();
+                };
             });
+
 
 
         });
