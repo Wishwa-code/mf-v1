@@ -90,7 +90,7 @@ class SmsController extends Controller
                 $accessToken = Session::get('hutch_access_token');
                 if (!$accessToken) {
                     try {
-                        $client = new Client(['base_uri' => 'https://bsms.hutch.lk/api/']);
+                        $client = new Client(['base_uri' => 'https://bsms.hutch.lk/api/login']);
                         $response = $client->post('login', [
                             'headers' => [
                                 'Content-Type' => 'application/json',
@@ -116,7 +116,7 @@ class SmsController extends Controller
 
                 // Send Hutch SMS
                 try {
-                    $client = new Client(['base_uri' => 'https://bsms.hutch.lk/api/']);
+                    $client = new Client(['base_uri' => 'https://bsms.hutch.lk/api/sendsms']);
                     $response = $client->post('sendsms', [
                         'headers' => [
                             'Content-Type' => 'application/json',
