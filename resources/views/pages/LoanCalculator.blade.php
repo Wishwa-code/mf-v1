@@ -96,7 +96,10 @@
                                 </div>
                                 <input type="hidden" id="saturday_sunday" class="form-control" value="{{$company->saturday_sunday}}">
                                 <div class="col-lg-12">
-
+                                    <div class="mb-3" hidden>
+                                        <label for="simpleinput" class="form-label">Issue Date</label>
+                                        <input type="date" id="issue_date" class="form-control" value="{{date('Y-m-d')}}">
+                                    </div>
                                     <div class="mb-3" hidden>
                                         <label for="simpleinput" class="form-label">Type</label>
                                         <select class="form-control"  id="type" onchange="change_type(this.value)">
@@ -130,6 +133,11 @@
                                         </select>
                                     </div>
 
+                                    <div class="mb-3" id="customer_feild" hidden>
+                                        <label for="simpleinput" class="form-label">Loan Number</label>
+                                        <input type="text" id="type_loan_number" class="form-control">
+                                    </div>
+
                                     <div class="mb-3" id="customer_bank_feild" hidden>
                                         <label for="simpleinput" class="form-label">Customer Bank Account</label>
                                         <select class="form-control" id="bank_acc">
@@ -151,10 +159,10 @@
                                         </select>
                                     </div>
 
-                                    <div class="mb-3" id="leasing_feild">
+                                    <div class="mb-3" id="leasing_feild" hidden>
                                         <label for="simpleinput" class="form-label">Select Type</label>
                                         <select class="form-control"  id="lease_type" onchange="check_leasing(this.value)">
-                                            <option id="0">Cash</option>
+                                            <option id="0" selected>Cash</option>
                                             <option id="1">Leasing</option>
 
                                         </select>
@@ -199,6 +207,9 @@
                                                             <div class="mb-3">
                                                                 <label for="loan_amount" class="form-label">Loan Amount<span class="required-asterisk">*</span></label>
                                                                 <input type="text" id="loan_amount" class="form-control" onkeyup="calculateInterest()">
+                                                                <input type="hidden" id="loan_amount_from" class="form-control" >
+                                                                <input type="hidden" id="loan_amount_to" class="form-control">
+                                                                <p id="loan_display" style="color: blue; margin-top: 5px;"></p>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -208,30 +219,34 @@
                                                             <div class="mb-3">
                                                                 <label for="interest" class="form-label">Default Loan Interest (%)<span class="required-asterisk">*</span></label>
                                                                 <input type="text" id="loan_interest" class="form-control" onkeyup="calculateInterest()">
+                                                                <input type="hidden" id="loan_interest_from" class="form-control">
+                                                                <input type="hidden" id="loan_interest_to" class="form-control">
+                                                                <p id="interest_display" style="color: blue; margin-top: 5px;"></p>
                                                             </div>
                                                         </div>
-                                                        <div class="col-md-3" >
+                                                        <div class="col-md-3">
                                                             <div class="mb-3">
                                                                 <label for="interest_period" class="form-label">Default Loan Interest Period<span class="required-asterisk">*</span></label>
-                                                                <select class="form-select" id="interest_period" onchange="calculateInterest()" disabled>
+                                                                <select class="form-select" id="interest_period" onchange="calculateInterest()">
                                                                     <option value="Daily">Per Day</option>
                                                                     <option value="Weekly">Per Week</option>
                                                                     <option value="Per Month">Per Month</option>
                                                                     <option value="Per Year">Per Year</option>
+                                                                    <option value="Per Loan">Per Loan</option>
                                                                 </select>
                                                             </div>
                                                         </div>
-                                                        <div class="col-md-2" hidden>
+                                                        <div class="col-md-2">
                                                             <div class="mb-3">
                                                                 <label for="period_count" class="form-label">Loan Period<span class="required-asterisk">*</span></label>
-                                                                <input type="number" id="interest_period_count" class="form-control" onkeyup="calculateInterest()" disabled>
+                                                                <input type="number" id="interest_period_count" class="form-control" onkeyup="calculateInterest()">
                                                             </div>
 
                                                         </div>
                                                         <div class="col-md-2">
                                                             <div class="mb-3">
-                                                                <label for="period_count" class="form-label" hidden>Type</label>
-                                                                <select class="form-select" id="duration_period" onchange="calculateInterest()" disabled hidden>
+                                                                <label for="period_count" class="form-label" >Type</label>
+                                                                <select class="form-select" id="duration_period" onchange="calculateInterest()"  >
                                                                     <option value="Days">Days</option>
                                                                     <option value="Weeks">Weeks</option>
                                                                     <option value="Months">Months</option>
@@ -243,15 +258,13 @@
                                                             <div class="col-md-3">
                                                                 <div class="mb-3">
                                                                     <label for="witnessCount" class="form-label">Guarantee Count<span class="required-asterisk">*</span></label>
-                                                                    <input type="number" id="guarantee_count" class="form-control" disabled>
+                                                                    <input type="number" id="guarantee_count" class="form-control">
                                                                 </div>
                                                             </div>
                                                         </div>
 
                                                     </div>
                                                 </div>
-
-
                                                 <div id="reducingBalanceFields" style="display: none;">
                                                     <div class="row mb-3">
                                                         <div class="col-md-4">
@@ -308,27 +321,25 @@
                                                     </div>
                                                 </div>
 
-
-
                                                 <div class="row mb-3 section-break">
                                                     <div class="col-12">
                                                         <div class="section-title">
-                                                            Loan duration and Repayments
+                                                            Repayment Cycle
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                                <div class="row mb-3">
+                                                <div class="row mb-5">
                                                     <div class="col-md-2">
                                                         <div class="mb-3">
-                                                            <label for="loan_duration" class="form-label">Loan Duration<span class="required-asterisk">*</span></label>
+                                                            <label for="loan_duration" class="form-label">Repayment Duration<span class="required-asterisk">*</span></label>
                                                             <input type="number" id="loan_period" class="form-control" onkeyup="calculateInterest()">
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-2">
-                                                        <div class="mb-3">
-                                                            <label for="loan_duration" class="form-label">Type<span class="required-asterisk">*</span></label>
-                                                            <select class="form-select" id="duration_period" onchange="change_loan_duration()">
+                                                    <div class="col-md-3" >
+                                                        <div class="mb-7">
+                                                            <label for="loan_duration" class="form-label">Repayment Duration Type<span class="required-asterisk">*</span></label>
+                                                            <select class="form-select" id="repayment_duration_period"  onchange="repayment_type(this.value)">
                                                                 <option value="Days">Days</option>
                                                                 <option value="Weeks">Weeks</option>
                                                                 <option value="Months">Months</option>
@@ -336,14 +347,14 @@
                                                         </div>
                                                     </div>
 
-                                                    <div class="col-md-2">
+                                                    <div class="col-md-1">
 
                                                     </div>
 
-                                                    <div class="col-md-6">
+                                                    <div class="col-md-6" >
                                                         <div class="mb-3">
                                                             <label for="collection_type" class="form-label">Repayment Type<span class="required-asterisk">*</span></label>
-                                                            <select class="form-select" id="repayment_type" onchange="calculateInterest()">
+                                                            <select class="form-select" id="repayment_type" onchange="calculateInterest()" >
                                                                 <option value="Daily">Daily</option>
                                                                 <option value="Weekly">Weekly</option>
                                                                 <option value="First Of The Month">First Of The Month</option>
@@ -367,13 +378,13 @@
                                                     <div class="col-md-6">
                                                         <div class="mb-3">
                                                             <label for="panelty_rate" class="form-label">Penalty Percentage (%)<span class="required-asterisk">*</span></label>
-                                                            <input type="text" id="penalty_percentage" class="form-control" onkeyup="calculateInterest()">
+                                                            <input type="text" id="penalty_percentage" class="form-control" onkeyup="calculateInterest()" disabled>
                                                         </div>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <div class="mb-3">
                                                             <label for="penalty_period" class="form-label">Penalty Period<span class="required-asterisk">*</span></label>
-                                                            <select class="form-select" id="penalty_period" onchange="calculateInterest()">
+                                                            <select class="form-select" id="penalty_period" onchange="calculateInterest()" disabled>
                                                                 <option value="Daily">Per Day</option>
                                                                 <option value="Weekly">Per Week</option>
                                                                 <option value="Per Month">Per Month</option>
@@ -388,13 +399,13 @@
                                                     <div class="col-md-2">
                                                         <div class="mb-3">
                                                             <label for="panelty_rate_date" class="form-label">Penalty Start After<span class="required-asterisk">*</span></label>
-                                                            <input type="text" id="penalty_date" class="form-control"  oninput="validateNumberInput(this)" onkeyup="calculateInterest()">
+                                                            <input type="number" id="penalty_date" class="form-control" onkeyup="calculateInterest()" disabled>
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-2" hidden>
+                                                    <div class="col-md-2">
                                                         <div class="mb-3">
                                                             <label for="loan_duration" class="form-label">Default Loan Duration<span class="required-asterisk">*</span></label>
-                                                            <select class="form-select" id="panelty_duration_period">
+                                                            <select class="form-select" id="duration_period" disabled>
                                                                 <option value="Days">Days</option>
                                                                 <option value="Weeks">Weeks</option>
                                                                 <option value="Months">Months</option>
@@ -423,6 +434,9 @@
                                                             <div class="mb-3">
                                                                 <label for="loan_amount" class="form-label">Loan Amount<span class="required-asterisk">*</span></label>
                                                                 <input type="text" id="loan_amount" class="form-control" onkeyup="calculateInterest()">
+                                                                <input type="hidden" id="loan_amount_from" class="form-control" >
+                                                                <input type="hidden" id="loan_amount_to" class="form-control">
+                                                                <p id="loan_display" style="color: blue; margin-top: 5px;"></p>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -431,7 +445,10 @@
                                                         <div class="col-md-3">
                                                             <div class="mb-3">
                                                                 <label for="interest" class="form-label">Default Loan Interest (%)<span class="required-asterisk">*</span></label>
-                                                                <input type="text" id="loan_interest" class="form-control" onkeyup="calculateInterest()" disabled>
+                                                                <input type="text" id="loan_interest" class="form-control" onkeyup="calculateInterest()">
+                                                                <input type="hidden" id="loan_interest_from" class="form-control">
+                                                                <input type="hidden" id="loan_interest_to" class="form-control">
+                                                                <p id="interest_display" style="color: blue; margin-top: 5px;"></p>
                                                             </div>
                                                         </div>
                                                         <div class="col-md-3">
@@ -666,6 +683,17 @@
                                                         <!-- Loan Charges Balance checkbox -->
                                                         <div class="row mb-3">
                                                             <div class="col-12 fw-bold d-flex align-items-center">
+                                                                {{--                                                                <div class="col-6 fw-bold">Total Other Charges In Loan</div>--}}
+                                                                {{--                                                                <div class="btn-group ms-2" role="group" aria-label="Checkbox group">--}}
+                                                                {{--                                                                    <input type="checkbox" class="form-check-input" id="loanChargesBalance" onchange="checkLoanChargesBalance()">--}}
+                                                                {{--                                                                    <label class="form-check-label ms-2" for="loanChargesBalance">Add Loan Charges to the Capital</label>--}}
+
+                                                                {{--                                                                    <input type="checkbox" class="form-check-input ms-3" id="deductCharges" onchange="checkAnotherCheckbox('deductCharges')">--}}
+                                                                {{--                                                                    <label class="form-check-label ms-2" for="deductCharges">Deduct Other Charges from Capital</label>--}}
+
+                                                                {{--                                                                    <input type="checkbox" class="form-check-input ms-3" id="separateCharges" onchange="checkAnotherCheckbox('separateCharges')" checked>--}}
+                                                                {{--                                                                    <label class="form-check-label ms-2" for="separateCharges">Loan Charges Separate from Loan</label>--}}
+                                                                {{--                                                                </div>--}}
                                                                 <div class="col-6 fw-bold">Total Other Charges In Loan</div>
                                                                 <div class="btn-group ms-2" role="group" aria-label="Checkbox group">
                                                                     <input type="checkbox" class="form-check-input" id="loanChargesBalance" onchange="checkLoanChargesBalance()">
@@ -677,6 +705,7 @@
                                                                     <input type="checkbox" class="form-check-input ms-3" id="separateCharges" onchange="checkAnotherCheckbox('separateCharges')" checked>
                                                                     <label class="form-check-label ms-2" for="separateCharges">Loan Charges Separate from Loan</label>
                                                                 </div>
+
                                                             </div>
                                                         </div>
 
@@ -723,6 +752,10 @@
                                                 <div class="row mb-3" hidden>
                                                     <div class="col-6 fw-bold fw-size ">Enable Savings Account Process</div>
                                                     <div class="col-6 text-left fw-bold fw-size " id="enable_saving">Yes</div>
+                                                </div>
+                                                <div class="row mb-3" hidden>
+                                                    <div class="col-6 fw-bold fw-size ">Enable Savings Account Process 02</div>
+                                                    <div class="col-6 text-left fw-bold fw-size " id="saving_payment_active">0.00</div>
                                                 </div>
                                                 <div class="row mb-3">
                                                     <div class="col-6 fw-bold fw-size ">Saving Account Amount Type</div>
@@ -780,7 +813,7 @@
                                                             <option value="4">Thursday</option>
                                                             <option value="5">Friday</option>
                                                             <option value="6">Saturday</option>
-                                                            <option value="7">Sunday</option>
+                                                            <option value="0">Sunday</option>
                                                         </select>
 
                                                     </div>
@@ -828,6 +861,8 @@
                                                             <option value="26">26</option>
                                                             <option value="27">27</option>
                                                             <option value="28">28</option>
+                                                            <option value="29">29</option>
+                                                            <option value="30">30</option>
                                                         </select>
 
 
@@ -943,33 +978,17 @@
                                             </div>
 
 
-                                            <div class="mb-3" id="lending_officer_feild" hidden>
-                                                <label for="simpleinput" class="form-label">Select Lending Officer</label>
-                                                <select class="form-control"  id="lending_officer">
-                                                    @foreach($lending_officer as $item)
-                                                        <option value="{{$item->id}}">{{$item->Full_Name}}-{{$item->Designation}}-{{$item->TP}}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-
-                                            <div class="mb-3" id="lending_officer_feild" hidden>
-                                                <label for="simpleinput" class="form-label">Select Recovery officer</label>
-                                                <select class="form-control"  id="collector_officer">
-                                                    @foreach($collector as $item)
-                                                        <option value="{{$item->id}}">{{$item->Full_Name}}-{{$item->Designation}}-{{$item->TP}}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-
-                                            <div class="mb-3" id="lending_officer_feild" hidden>
-                                                <label for="simpleinput" class="form-label">User</label>
-                                                <input type="text" class="form-control" value="{{session('Full_Name')}}" readonly>
-                                            </div>
                                         </div> <!-- end row -->
                                     </div>
 
 
 
+                                </div>
+
+
+                                <div class="mb-4" hidden>
+                                    <label for="simpleinput" id="interest_amount_txt" class="form-label">Total Interest Amount</label>
+                                    <input type="text" id="interest_amount" class="form-control" disabled>
                                 </div>
 
                             </div> <!-- end card-->
@@ -981,84 +1000,21 @@
     </div>
 
 
-    <div class="modal fade" id="bank-modal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <!-- <h4 class="modal-title" >gwegerg</h4> -->
-                    <h4>Bank Details</h4>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
 
-                <div class="modal-body">
-                    <div class="mb-3">
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="bank_name" class="form-label">Bank Name</label>
-                                    <input type="text" id="bank_name" class="form-control">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="account_name" class="form-label">Account Name</label>
-                                    <input type="text" id="account_name" class="form-control">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="account_number" class="form-label">Account Number</label>
-                                    <input type="text" id="account_number" class="form-control">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="branch" class="form-label">Branch</label>
-                                    <input type="text" id="branch" class="form-control">
-                                </div>
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-success" id="addBankBtn" onclick="save_bank_details()">Add Bank Account</button>
-                    </div>
-                    <div class="table-responsive-sm">
-                        <div class="table-responsive-sm">
-                            <table class="table table-centered mb-0" id="bank_table">
-                                <thead>
-                                <tr>
-                                    <th>Bank Name</th>
-                                    <th>Account Name</th>
-                                    <th>Account Number</th>
-                                    <th>Branch</th>
-                                    <th>Action</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-
-                                </tbody>
-                            </table>
-                        </div>
-
-                    </div><!-- /.modal-content -->
-                </div><!-- /.modal-dialog -->
-            </div><!-- /.modal -->
-        </div>
-    </div>
 
 @endsection
 
 @section('script')
     <script src="../JS/validate.js"></script>
-    <script src="../JS/issueloan.js?n=12"></script>
+    <script src="../JS/issueloan.js?n=15"></script>
     <script>
 
         $(document).ready(function() {
             let x = ["#installment_amount","#offer_decided"];
             decimalFormat(x);
-            $("#package_feild").slideDown();
+
+            fetchHolidays();
+
         });
 
 
@@ -1089,6 +1045,7 @@
                 var monthOptions = [
                     { text: "First Of The Month", value: "First Of The Month" },
                     { text: "End Of The Month", value: "End Of The Month" },
+                    { text: "Twice A Month", value: "Twice A Month" },
                     { text: "On A Selected Date", value: "On A Selected Date" }
                 ];
 
@@ -1255,12 +1212,14 @@
         $(function() {
             $('#customer_details').select2();
             $('#package_details').select2();
+            $('#group').select2();
             $("#createLoanButton").addClass("disabled").on("click", function(event) {
                 event.preventDefault();
             });
             $("#center_feild").slideUp();
             $("#customer_bank_feild").slideUp();
             $("#group_feild").slideUp();
+            // $("#package_feild").slideUp();
             $("#product_details").slideUp();
             $("#leasing_feild").slideUp();
             $("#leasing_feild_vehicle").slideUp();
@@ -1288,6 +1247,66 @@
                 view_doc(id);
 
             }
+        }
+
+
+        function load_doc_charge(){
+            let id=$("#package_details").val();
+            $.ajax({
+                type: "GET",
+                url: "/loancategory/cost/" + id,
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                },
+                success: function (data, textStatus, xhr) {
+                    if (xhr.status === 200) {
+                        // Process other charges
+                        var otherChargesTable = $('#loan_charge_table tbody');
+                        otherChargesTable.empty(); // Clear existing rows
+                        var totalAmount = 0; // Initialize total amount
+
+                        data.other_charges.forEach(function(charge) {
+                            let charge_type = charge.charge_type;
+                            let amount = parseFloat(charge.Amount);
+
+                            // Check if the amount is valid
+                            if (!isNaN(amount)) {
+                                amount = amount.toFixed(2); // Format as 2 decimal places
+
+                                if(charge_type === "Percentage") {
+                                    let loan_amount = parseFloat($("#loan_amount").val());
+
+                                    // Check if loan_amount is valid before performing calculations
+                                    if (!isNaN(loan_amount)) {
+                                        let new_loan_amount = loan_amount * (amount / 100);
+                                        amount = new_loan_amount.toFixed(2); // Update the amount with the percentage value
+                                        charge_type = charge_type + " (" + charge.Amount + "%)";
+                                        console.log(amount);
+                                    } else {
+                                        console.warn("Invalid loan amount");
+                                        amount = '0.00'; // Default value if loan amount is invalid
+                                    }
+                                }
+
+                                // Create a new table row with valid data
+                                var row = $('<tr></tr>');
+                                row.append('<td>' + charge.Description + '</td>');
+                                row.append('<td>' + charge_type + '</td>');
+                                row.append('<td class="text-end">' + amount + '</td>');
+                                otherChargesTable.append(row);
+                                totalAmount += parseFloat(amount); // Add to total if valid
+                            } else {
+                                console.warn("Invalid charge amount for:", charge);
+                            }
+                        });
+
+                        $('#total_loan_charge').text(totalAmount.toFixed(2));
+                    }
+                },
+                error: function(xhr, textStatus, errorThrown) {
+                    console.log("Error:", errorThrown);
+                }
+            });
         }
 
 
@@ -1378,7 +1397,6 @@
         }
 
 
-
         function issue_request() {
             let id=$("#customer_details").val();
 
@@ -1412,6 +1430,7 @@
 
 
         function change_type(type){
+            $("#package_feild").slideUp();
             $("#product_details").slideUp();
             if(type==="0"){
                 $("#center_feild").slideUp();
@@ -1435,6 +1454,7 @@
                     .attr('value', "0")
                     .text("Select");
                 $('#customer_details').append(defaultOption);
+
             }
         }
 
@@ -1557,69 +1577,94 @@
         }
 
         function view_doc(id){
-
             $.ajax({
                 type: "GET",
-                url: "/loancategory/cost/"+id,
+                url: "/loancategory/cost/" + id,
                 headers: {
                     "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                 },
                 success: function (data, textStatus, xhr) {
-
                     if (xhr.status === 200) {
                         // Process other charges
                         var otherChargesTable = $('#loan_charge_table tbody');
                         otherChargesTable.empty(); // Clear existing rows
                         var totalAmount = 0; // Initialize total amount
+
                         data.other_charges.forEach(function(charge) {
+                            let charge_type = charge.charge_type;
+                            let amount = parseFloat(charge.Amount);
 
-                            let charge_type=charge.charge_type;
-                            let amount=parseFloat(charge.Amount).toFixed(2);
-                            if(charge.charge_type==="Percentage"){
-                                let loan_amount=parseFloat($("#loan_amount").val());
-                                let new_loan_amount=loan_amount*(charge.Amount/100);
-                                amount=new_loan_amount.toFixed(2);
-                                charge_type=charge_type+"("+charge.Amount+"%)";
+                            // Check if the amount is valid
+                            if (!isNaN(amount)) {
+                                amount = amount.toFixed(2); // Format as 2 decimal places
+
+                                if(charge_type === "Percentage") {
+                                    let loan_amount = parseFloat($("#loan_amount").val());
+
+                                    // Check if loan_amount is valid before performing calculations
+                                    if (!isNaN(loan_amount)) {
+                                        let new_loan_amount = loan_amount * (amount / 100);
+                                        amount = new_loan_amount.toFixed(2); // Update the amount with the percentage value
+                                        charge_type = charge_type + " (" + charge.Amount + "%)";
+                                        console.log(amount);
+                                    } else {
+                                        console.warn("Invalid loan amount");
+                                        amount = '0.00'; // Default value if loan amount is invalid
+                                    }
+                                }
+
+                                // Create a new table row with valid data
+                                var row = $('<tr></tr>');
+                                row.append('<td>' + charge.Description + '</td>');
+                                row.append('<td>' + charge_type + '</td>');
+                                row.append('<td class="text-end">' + amount + '</td>');
+                                otherChargesTable.append(row);
+                                totalAmount += parseFloat(amount); // Add to total if valid
+                            } else {
+                                console.warn("Invalid charge amount for:", charge);
                             }
-
-
-                            var row = $('<tr></tr>');
-                            row.append('<td>' + charge.Description + '</td>');
-                            row.append('<td>' + charge_type + '</td>');
-                            row.append('<td class="text-end">' + amount + '</td>');
-                            otherChargesTable.append(row);
-                            totalAmount += parseFloat(amount);
                         });
-
 
                         $('#total_loan_charge').text(totalAmount.toFixed(2));
 
+                        // Process required documents
                         var documentsTable = $('#document_show_table tbody');
                         documentsTable.empty(); // Clear existing rows
                         console.log(data.required_documents);
                         data.required_documents.forEach(function(document, index) {
+                            var uniqueId = 'docInput_' + Date.now() + '_' + index;
+
                             var row = $('<tr></tr>');
+
                             row.append('<td>' + document.Name + '</td>');
-                            row.append('<td><input type="file" class="form-control file-upload" data-document-id="' + document.idRequired_Documents + '"></td>');
-                            row.append('<td hidden><input type="checkbox" id="check' + (index + 1) + '" class="form-check-input" checked></td>'); // Set checkbox ID dynamically
+
+                            row.append(`
+        <td>
+            <input type="file" id="${uniqueId}" class="form-control file-upload" data-document-id="${document.idRequired_Documents}">
+            <button type="button" class="btn btn-outline-secondary mt-1" onclick="openGlobalCamera('#${uniqueId}')">📷</button>
+        </td>
+    `);
+
+                            row.append(`<td hidden><input type="checkbox" id="check${index + 1}" class="form-check-input" checked></td>`);
+
                             row.append('<td><button class="btn btn-danger"><i class="bi bi-trash"></i></button></td>');
+
                             documentsTable.append(row);
                         });
 
-
                     }
                 },
-
                 error: function(xhr, textStatus, errorThrown) {
                     console.log("Error:", errorThrown);
                 }
             });
 
+            // Handle document removal
             $('#document_show_table').on('click', '.btn-danger', function() {
-
                 $(this).closest('tr').remove(); // Remove the closest <tr> (row) to the clicked button
             });
         }
+
 
         function generateWitnessTabs(witnessCount) {
             let tabsContainer = $(".nav-tabs");
@@ -1768,31 +1813,36 @@
             }
         }
 
-        function set_customers(id,number){
-
+        function set_customers(id, number) {
+            let customer_details = $("#customer_details").val();
             $.ajax({
                 type: "GET",
-                url: "/guarantor/load/"+id,
+                url: "/guarantor/load/" + id + "/" + customer_details,
                 headers: {
                     "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                 },
-                success: function (data, textStatus, xhr) {
+                success: function(data, textStatus, xhr) {
                     if (xhr.status === 200) {
-
-                        $('#customer_'+number).empty();
+                        $('#customer_' + number).empty();
 
                         // Add a default option
-                        $('#customer_'+number).append($('<option>', {
+                        $('#customer_' + number).append($('<option>', {
                             value: '0',
                             text: 'Select Customer'
                         }));
 
                         // Add customer options
-                        data.customer.forEach(function (customer) {
-                            $('#customer_'+number).append($('<option>', {
+                        data.customer.forEach(function(customer) {
+                            $('#customer_' + number).append($('<option>', {
                                 value: customer.idCustomer,
                                 text: customer.First_Name + ' ' + customer.Last_Name + ' - ' + customer.Contact_No + ' - ' + customer.Nic
                             }));
+                        });
+
+                        // Initialize Select2 on the dropdown
+                        $('#customer_' + number).select2({
+                            placeholder: "Select Customer", // Set placeholder
+                            allowClear: true // Allow clearing the selection
                         });
                     }
                 },
@@ -1801,14 +1851,13 @@
                     console.log("Error:", errorThrown);
                 }
             });
-
         }
+
 
         function getCusDetails(id,number){
             let activeTab = $('.nav-tabs .nav-link.active');
             let activeTabHref = activeTab.attr('href');
             let activeTabIndex = activeTabHref.split('#witness')[1]; // Split to get the number
-
 
             let type=$("#type_"+activeTabIndex+"").val();
             $('#fisrt_name'+number).val("");
@@ -1818,7 +1867,7 @@
             $('#address'+number).val("");
             $.ajax({
                 type: "GET",
-                url: "/guarantor/load/details/"+id+"/"+type,
+                url: "/guarantor/load/details/"+id+"/"+type+"/",
                 headers: {
                     "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                 },
@@ -1841,7 +1890,7 @@
                     $('#last_name'+number).val(customer.Last_Name);
                     $('#nic'+number).val(customer.Nic);
                     $('#contact'+number).val(customer.Contact_No);
-                    $('#address'+number).val(customer.Address);
+                    $('#address'+number).val(customer.Address_01+","+customer.Address_02+","+customer.Address_03);
                 }
             }
 
@@ -1926,6 +1975,55 @@
             $('#installment_date_txt').val(nextMonthDate.toISOString().slice(0, 10));
         }
 
+
+        let holidays = []; // Global variable for holidays
+
+        // Function to fetch holidays
+        function fetchHolidays() {
+            return new Promise((resolve, reject) => {
+                $.ajax({
+                    url: '/get-holidays',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        holidays = response.map(date => new Date(date).toISOString().split('T')[0]); // Ensure consistent format
+                        console.log('Holidays fetched successfully:', holidays);
+                        resolve(); // Resolve the Promise once holidays are fetched
+                    },
+                    error: function (error) {
+                        console.error('Failed to fetch holidays:', error);
+                        reject(error); // Reject the Promise on error
+                    }
+                });
+            });
+        }
+
+        // Function to calculate dates (returns a Promise)
+        function calculateDates(installmentCount) {
+            return new Promise(async (resolve) => {
+                const installmentDates = [];
+                let i = 0;
+                let currentDate = new Date();
+
+                while (i < installmentCount) {
+                    currentDate.setDate(currentDate.getDate() + 1);
+                    const formattedDate = new Date(currentDate).toISOString().split('T')[0];
+
+                    if (!holidays.includes(formattedDate)) {
+                        installmentDates.push(formattedDate);
+                        i++;
+                    }
+                }
+
+                console.log('Final Installment Dates:', installmentDates);
+                resolve(installmentDates); // Resolve the Promise with the installment dates
+            });
+        }
+
+
+
+
+
         function addInstallmentDates() {
 
             let startDate = $("#installment_date_txt").val();
@@ -1936,11 +2034,155 @@
             let installmentCount = $("#loan_period").val();
             let saturday_sunday = $("#saturday_sunday").val();
             let interest_method = $("#interest_method").val();
-            let interest = $("#loan_interest").val();
             let capital_amount = 0.0;
             let interest_amount = 0.0;
             let tot_amount = 0.0;
             let installmentAmount = 0.0;  // Initialize installmentAmount
+            let interest = $("#loan_interest").val();
+
+            let interest_period = $("#interest_period").val();
+            let duration_period = $("#duration_period").val();
+            let interest_period_count = $("#interest_period_count").val();
+
+            const loanAmountFrom = parseFloat($("#loan_amount_from").val());
+            const loanAmountTo = parseFloat($("#loan_amount_to").val());
+
+            // Validate if loan_amount_from and loan_amount_to are numeric
+            if (isNaN(loanAmountFrom) || isNaN(loanAmountTo)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: 'Please enter valid numeric values for Minimum Loan Amount to Maximum Loan Amount',
+                });
+                return; // Stop the function if validation fails
+            }
+
+            // Validate if loan_amount is a valid number
+            loan_amount = parseFloat(loan_amount);
+            if (isNaN(loan_amount)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: 'Please enter a valid Loan Amount.',
+                });
+                return; // Stop the function if validation fails
+            }
+
+            // Check if loan_amount is within the range
+            if (loan_amount < loanAmountFrom) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: `Loan Amount must be greater than or equal to ${loanAmountFrom}`,
+                });
+                return; // Stop the function if validation fails
+            } else if (loan_amount > loanAmountTo) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: `Loan Amount must be less than or equal to ${loanAmountTo}`,
+                });
+                return; // Stop the function if validation fails
+            }
+
+            const loan_interest_from = parseFloat($("#loan_interest_from").val());
+            const loan_interest_to = parseFloat($("#loan_interest_to").val());
+
+            // Validate if loan_interest_from and loan_interest_to are numeric
+            if (isNaN(loan_interest_from) || isNaN(loan_interest_to)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: 'Please enter valid numeric values for Minimum Interest to Maximum Interest',
+                });
+                return; // Stop the function if validation fails
+            }
+
+            // Validate if interest is a valid number
+            interest = parseFloat(interest);
+            if (isNaN(interest)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: 'Please enter a valid Loan Interest.',
+                });
+                return; // Stop the function if validation fails
+            }
+
+
+            if(interest_method === "Reducing Balance") {
+                let interest_amt = 0;
+
+                let interestRate = parseFloat(interest); // input interest value
+                let principal = parseFloat(loan_amount); // loan amount
+
+                if (interest_period === "Daily") {
+                    if (duration_period === "Days") {
+                        interest_amt = interestRate * interest_period_count;
+                    } else if (duration_period === "Weeks") {
+                        interest_amt = interestRate * interest_period_count * 7;
+                    } else if (duration_period === "Months") {
+                        interest_amt = interestRate * interest_period_count * 30;
+                    }
+
+                } else if (interest_period === "Weekly") {
+                    if (duration_period === "Days") {
+                        interest_amt = (interestRate / 7) * interest_period_count;
+                    } else if (duration_period === "Weeks") {
+                        interest_amt = interestRate * interest_period_count;
+                    } else if (duration_period === "Months") {
+                        interest_amt = (interestRate / 7) * 30 * interest_period_count;
+                    }
+
+                } else if (interest_period === "Per Month") {
+                    if (duration_period === "Days") {
+                        interest_amt = (interestRate / 30) * interest_period_count;
+                    } else if (duration_period === "Weeks") {
+                        interest_amt = (interestRate / 30) * 7 * interest_period_count;
+                    } else if (duration_period === "Months") {
+                        interest_amt = interestRate * interest_period_count;
+                    }
+
+                } else if (interest_period === "Per Year") {
+                    if (duration_period === "Days") {
+                        interest_amt = (interestRate / 365) * interest_period_count;
+                    } else if (duration_period === "Weeks") {
+                        interest_amt = (interestRate / 365) * 7 * interest_period_count;
+                    } else if (duration_period === "Months") {
+                        interest_amt = (interestRate / 12) * interest_period_count;
+                    }
+
+                } else if (interest_period === "Per Loan") {
+                    interest_amt = (principal * interestRate / 100);
+                }
+
+                interest = parseFloat(interest_amt.toFixed(2)); // Final assignment
+
+
+            }else{
+                // Check if interest is within the range
+                if (interest < loan_interest_from) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: `Interest must be greater than or equal to ${loan_interest_from}`,
+                    });
+                    return; // Stop the function if validation fails
+                } else if (interest > loan_interest_to) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: `Interest must be less than or equal to ${loan_interest_to}`,
+                    });
+                    return; // Stop the function if validation fails
+                }
+            }
+
+
+
+
+
+
 
             let loanChargesBalanceCheckbox = document.getElementById("loanChargesBalance");
 
@@ -1989,15 +2231,19 @@
 
 
                 let saving=$("#enable_saving").text();
+                let saving_payment_active=$("#saving_payment_active").text();
 
 
 
                 let saving_amount_value=0.00;
                 if (saving==="Yes"){
-                    let loan_period=$("#loan_period").val();
                     let saving_amount=$("#saving_amount").text();
-                    saving_amount_value=saving_amount/loan_period;
+                    saving_amount_value=saving_amount;
+                    if(saving_payment_active==="1"){
+                        saving_amount_value=0.00;
+                    }
                 }
+
 
 
 
@@ -3585,6 +3831,10 @@
             });
 
         }
+        function resetInstallmentSection() {
+            $('#installment_table tbody').empty();
+            $('#createLoanButton').prop('disabled', false);
+        }
 
 
         @if($company->product_editable==1)
@@ -3752,65 +4002,6 @@
         }
         @endif
 
-        function load_doc_charge(){
-            let id=$("#package_details").val();
-            $.ajax({
-                type: "GET",
-                url: "/loancategory/cost/" + id,
-                headers: {
-                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-                },
-                success: function (data, textStatus, xhr) {
-                    if (xhr.status === 200) {
-                        // Process other charges
-                        var otherChargesTable = $('#loan_charge_table tbody');
-                        otherChargesTable.empty(); // Clear existing rows
-                        var totalAmount = 0; // Initialize total amount
-
-                        data.other_charges.forEach(function(charge) {
-                            let charge_type = charge.charge_type;
-                            let amount = parseFloat(charge.Amount);
-
-                            // Check if the amount is valid
-                            if (!isNaN(amount)) {
-                                amount = amount.toFixed(2); // Format as 2 decimal places
-
-                                if(charge_type === "Percentage") {
-                                    let loan_amount = parseFloat($("#loan_amount").val());
-
-                                    // Check if loan_amount is valid before performing calculations
-                                    if (!isNaN(loan_amount)) {
-                                        let new_loan_amount = loan_amount * (amount / 100);
-                                        amount = new_loan_amount.toFixed(2); // Update the amount with the percentage value
-                                        charge_type = charge_type + " (" + charge.Amount + "%)";
-                                        console.log(amount);
-                                    } else {
-                                        console.warn("Invalid loan amount");
-                                        amount = '0.00'; // Default value if loan amount is invalid
-                                    }
-                                }
-
-                                // Create a new table row with valid data
-                                var row = $('<tr></tr>');
-                                row.append('<td>' + charge.Description + '</td>');
-                                row.append('<td>' + charge_type + '</td>');
-                                row.append('<td class="text-end">' + amount + '</td>');
-                                otherChargesTable.append(row);
-                                totalAmount += parseFloat(amount); // Add to total if valid
-                            } else {
-                                console.warn("Invalid charge amount for:", charge);
-                            }
-                        });
-
-                        $('#total_loan_charge').text(totalAmount.toFixed(2));
-                    }
-                },
-                error: function(xhr, textStatus, errorThrown) {
-                    console.log("Error:", errorThrown);
-                }
-            });
-        }
-
 
         function saving_cal(){
             let saving_account_amount_type_3 = $("#saving_account_amount_type_3").text();
@@ -3873,50 +4064,55 @@
         }
         @endif
 
-
-        function resetInstallmentSection() {
-            $('#installment_table tbody').empty();
-            $('#createLoanButton').prop('disabled', false);
-        }
-
         let lastChecked = '';
+        let currentLoanChargeMode = 'separate'; // possible values: 'add', 'deduct', 'separate'
+
 
         function checkLoanChargesBalance() {
             const loanChargesBalanceCheckbox = document.getElementById("loanChargesBalance");
             const deductChargesCheckbox = document.getElementById("deductCharges");
             const separateChargesCheckbox = document.getElementById("separateCharges");
-            updateIssuedAmount();
-            if (loanChargesBalanceCheckbox.checked) {
+
+            if (loanChargesBalanceCheckbox.checked && currentLoanChargeMode !== 'add') {
                 deductChargesCheckbox.checked = false;
                 separateChargesCheckbox.checked = false;
                 performCalculations('loanChargesBalance');
-            } else {
+                currentLoanChargeMode = 'add';
+            } else if (!loanChargesBalanceCheckbox.checked && currentLoanChargeMode !== 'separate') {
                 separateChargesCheckbox.checked = true;
                 performReversal('loanChargesBalance');
+                currentLoanChargeMode = 'separate';
             }
+
+            updateIssuedAmount();
         }
+
 
         function checkAnotherCheckbox(checkboxId) {
             const loanChargesBalanceCheckbox = document.getElementById("loanChargesBalance");
             const deductChargesCheckbox = document.getElementById("deductCharges");
             const separateChargesCheckbox = document.getElementById("separateCharges");
             const checkbox = document.getElementById(checkboxId);
-            updateIssuedAmount();
+
             if (checkbox.checked) {
                 loanChargesBalanceCheckbox.checked = false;
                 deductChargesCheckbox.checked = (checkboxId === 'deductCharges');
                 separateChargesCheckbox.checked = (checkboxId === 'separateCharges');
 
-                if (checkboxId === 'deductCharges') {
+                if (checkboxId === 'deductCharges' && currentLoanChargeMode !== 'deduct') {
                     performReversal('loanChargesBalance');
+                    currentLoanChargeMode = 'deduct';
                 }
-            } else {
-                separateChargesCheckbox.checked = true;
-                performReversal('loanChargesBalance');
+
+                if (checkboxId === 'separateCharges' && currentLoanChargeMode !== 'separate') {
+                    performReversal('loanChargesBalance');
+                    currentLoanChargeMode = 'separate';
+                }
             }
 
-
+            updateIssuedAmount();
         }
+
 
         function performCalculations(checkboxId) {
             let total_loan_amount = parseFloat($("#total_loan_amount").text());
@@ -3930,16 +4126,18 @@
             if (checkboxId === 'loanChargesBalance') {
                 let tot = total_loan_amount + total_loan_charge;
                 let tot_1 = total_loan_amount - total_loan_charge;
-                if (interest_method==="Draft"){
-                    tot=total_interest_amount;
+
+                if (interest_method === "Draft") {
+                    tot = total_interest_amount;
                 }
+
                 let installment = tot / loan_period;
 
                 $("#total_loan_amount").text(tot_1.toFixed(2));
                 $("#new_interest_amount").text(installment.toFixed(2));
 
-                let tot_total_capital_amount = total_capital_amount + total_loan_charge;
-                $("#total_capital_amount").text(tot_total_capital_amount.toFixed(2));
+                let new_capital = total_capital_amount + total_loan_charge;
+                $("#total_capital_amount").text(new_capital.toFixed(2));
             }
 
             lastChecked = checkboxId;
@@ -3947,34 +4145,28 @@
 
         function performReversal(checkboxId) {
             let interest_method = $("#interest_method").val();
-            if(interest_method!=="Reducing Balance"){
+            if (interest_method !== "Reducing Balance") {
                 if (lastChecked !== 'loanChargesBalance') return;
 
                 let total_loan_amount = parseFloat($("#total_loan_amount").text());
                 let total_loan_charge = parseFloat($("#total_loan_charge").text());
                 let total_capital_amount = parseFloat($("#total_capital_amount").text());
                 let loan_period = parseInt($("#loan_period").val());
-
-
                 let total_interest_amount = parseFloat($("#total_interest_amount").text());
-                let interest_method = $("#interest_method").val();
 
                 if (checkboxId === 'loanChargesBalance') {
                     let tot = total_loan_amount - total_loan_charge;
-                    let tot_1 = total_loan_amount - total_loan_charge;
-                    if (interest_method==="Draft"){
-                        tot=total_interest_amount;
+                    if (interest_method === "Draft") {
+                        tot = total_interest_amount;
                     }
+
                     let installment = tot / loan_period;
 
-
-
-
-                    $("#total_loan_amount").text(tot_1.toFixed(2));
+                    $("#total_loan_amount").text((total_loan_amount + total_loan_charge).toFixed(2));
                     $("#new_interest_amount").text(installment.toFixed(2));
 
-                    let tot_total_capital_amount = total_capital_amount - total_loan_charge;
-                    $("#total_capital_amount").text(tot_total_capital_amount.toFixed(2));
+                    let new_capital = total_capital_amount - total_loan_charge;
+                    $("#total_capital_amount").text(new_capital.toFixed(2));
                 }
 
                 lastChecked = '';
@@ -3982,23 +4174,19 @@
         }
 
         function updateIssuedAmount() {
-            // Get the values using jQuery .val()
             const totalLoanCharge = parseFloat($('#total_loan_charge').text()) || 0;
             let issuedAmount = parseFloat($('#loan_amount').val()) || 0;
-            console.log(issuedAmount);
-            console.log(totalLoanCharge);
-            // Check if the relevant checkboxes are checked
+
             if ($('#loanChargesBalance').is(':checked')) {
                 issuedAmount += totalLoanCharge;
             }
             if ($('#deductCharges').is(':checked')) {
                 issuedAmount -= totalLoanCharge;
             }
-            // If 'Loan Charges Separate from Loan' is checked, no adjustment needed
 
-            // Update the issued amount in the DOM
             $('#new_issued_amount').text(issuedAmount.toFixed(2));
         }
+
 
 
         function toggleFields() {
