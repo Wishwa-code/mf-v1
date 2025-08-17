@@ -521,18 +521,13 @@
                             </div>
                             <div class="col-sm-8">
                                 @if($collector==1)
-                                        <select class="form-control" id="payment_type" onchange="togglePaymentSections(this.value)" disabled>
-                                            <option value="Cash">Cash</option>
-                                            <option value="Bank Deposit">Bank Deposit</option>
-                                            <option value="Cheque">Cheque</option>
-                                            <option value="Collector" selected>Collector</option>
-                                        </select>
-                                @elseif($cashier==1)
-                                    <select class="form-control" id="payment_type" onchange="togglePaymentSections(this.value)" disabled>
-                                        <option value="Cash">Cash</option>
-                                        <option value="Bank Deposit">Bank Deposit</option>
+                                    <select class="form-control" id="payment_type" onchange="togglePaymentSections(this.value)">
                                         <option value="Cheque">Cheque</option>
-                                        <option value="Collector" >Collector</option>
+                                        <option value="Collector" selected>Collector</option>
+                                    </select>
+                                @elseif($cashier==1)
+                                    <select class="form-control" id="payment_type" onchange="togglePaymentSections(this.value)">
+                                        <option value="Cheque">Cheque</option>
                                         <option value="Cashier" selected>Cashier</option>
                                     </select>
                                 @else
@@ -755,18 +750,12 @@
                                 <label for="payment_type_2" class="form-label fw-bold">Payment Type:</label>
                                 @if($collector==1)
                                     <select class="form-control" id="payment_type_2" onchange="togglePaymentSections_2(this.value)" disabled>
-                                        <option value="Cash">Cash</option>
-                                        <option value="Bank Deposit">Bank Deposit</option>
                                         <option value="Cheque">Cheque</option>
                                         <option value="Collector" selected>Collector</option>
-                                        <option value="Cashier">Cashier</option>
                                     </select>
                                 @elseif($cashier==1)
                                     <select class="form-control" id="payment_type_2" onchange="togglePaymentSections_2(this.value)" disabled>
-                                        <option value="Cash">Cash</option>
-                                        <option value="Bank Deposit">Bank Deposit</option>
                                         <option value="Cheque">Cheque</option>
-                                        <option value="Collector">Collector</option>
                                         <option value="Cashier" selected>Cashier</option>
                                     </select>
                                 @else

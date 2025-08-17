@@ -512,11 +512,7 @@ function payment() {
                                     }).then(function () {
                                         if (payment_id===0){
                                             load_payment_table(currentLoadedPage);
-                                            $("#printerModal").fadeOut();
-                                            $("#issue-loan-modal").fadeOut();
-                                            $("#issue-loan-modal_2").fadeOut();
-                                            $("#payment_amount").val("");
-                                            $("#payment_amount_2").val("");
+                                            $('.modal').modal('hide');
                                             $('.btn-success').prop('disabled', false);
                                         }else{
                                             load_payment_reciept(payment_id);
