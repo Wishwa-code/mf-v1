@@ -199,7 +199,7 @@
     <script src="../JS/validate.js"></script>
     <script>
         function process(id,cus_id,payment_amount,file,loan_id,payment_date,payment_type,bank_account_company,cheque_issue_bank,name_on_cheque,chq_number,chq_date,chq_type) {
-            alert(bank_account_company);
+
             document.getElementById('process_icon_' + id).style.display = 'inline-block';
             Swal.fire({
                 title: "Are you sure?",
