@@ -309,10 +309,17 @@
 
                             <!-- Search Button -->
                             <div class="col-lg-3 mb-3 d-flex align-items-end">
-                                <button type="button" class="btn btn-danger" onclick="load_payment_table();">
+                                <!-- Search Button -->
+                                <button type="button" class="btn btn-danger me-2" onclick="load_payment_table();">
                                     <i class="bi bi-search"></i> Search
                                 </button>
+
+                                <!-- Download Excel Button -->
+                                <button type="button" class="btn btn-success" onclick="download_excel();">
+                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
+                                </button>
                             </div>
+
                         </div>
 
                         <hr>
@@ -593,6 +600,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="../JS/validate.js"></script>
     <script src="../JS/re_payment.js?n=17"></script>
     <script>
@@ -835,6 +843,87 @@
 
 
     </script>
+    <script>
+        function download_excel() {
+            const table = document.getElementById('loan_table');
+            if (!table) return;
+
+            // Get headers and find the "Action" column index
+            const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.innerText.trim());
+            const actionIdx = headers.findIndex(h => h.toLowerCase() === 'action');
+
+            // Build list of included column indexes (exclude "Action" if found)
+            const includedIdxs = headers.map((_, i) => i).filter(i => i !== actionIdx);
+            const exportHeaders = includedIdxs.map(i => headers[i]);
+
+            // Collect body rows
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            const data = rows.map(tr => {
+                const cells = Array.from(tr.children);
+                return includedIdxs.map(i => (cells[i] ? cells[i].innerText.trim() : ''));
+            });
+
+            // 👉 Find "Amount" column index
+            const amountIdx = exportHeaders.findIndex(h => h.toLowerCase() === 'amount');
+
+            // 👉 Calculate total
+            let totalAmount = 0;
+            if (amountIdx !== -1) {
+                totalAmount = data.reduce((sum, row) => {
+                    let val = parseFloat(row[amountIdx].replace(/,/g, '')) || 0;
+                    return sum + val;
+                }, 0);
+            }
+
+            // 👉 Add total row
+            const totalRow = exportHeaders.map((_, i) => (i === amountIdx ? totalAmount : (i === 0 ? 'Total:' : '')));
+            data.push(totalRow);
+
+            // Create worksheet from AOA
+            const ws = XLSX.utils.aoa_to_sheet([exportHeaders, ...data]);
+
+            // 👉 Force numeric type for Amount column
+            if (amountIdx !== -1) {
+                for (let r = 1; r <= data.length; r++) { // skip header (r=0)
+                    let cellRef = XLSX.utils.encode_cell({ r, c: amountIdx });
+                    if (ws[cellRef]) {
+                        ws[cellRef].t = 'n'; // force type to number
+                        ws[cellRef].v = parseFloat(ws[cellRef].v.toString().replace(/,/g, '')) || 0;
+                    }
+                }
+            }
+
+            // Autosize columns
+            ws['!cols'] = exportHeaders.map((h, colIdx) => {
+                const maxLen = Math.max(
+                    h.length,
+                    ...data.map(r => (r[colIdx] ? r[colIdx].toString().length : 0))
+                );
+                return { wch: Math.min(50, Math.max(10, maxLen + 2)) };
+            });
+
+            // Create workbook and save
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Payments');
+
+            // Get selected date range
+            let fromDate = document.getElementById('select_date').value || '';
+            let toDate   = document.getElementById('select_date_to').value || '';
+
+            let fileName = 'payments';
+            if (fromDate && toDate) {
+                fileName += `_${fromDate}_to_${toDate}`;
+            } else if (fromDate) {
+                fileName += `_${fromDate}`;
+            } else if (toDate) {
+                fileName += `_upto_${toDate}`;
+            }
+
+            fileName += '.xlsx';
+            XLSX.writeFile(wb, fileName);
+        }
+    </script>
+
 
 
 @endsection
