@@ -84,11 +84,11 @@ function load_payment_table(page = 1) {
                         let installmentPlaceholder = item.saving_payment === "1" ? "Installment Amount" : "Enter amount";
 
                         // Define payment field
-                        let paymentField = `<input type="text" class="form-control numeric-input amount-input" placeholder="${installmentPlaceholder}" value="${inputAmount}" data-loan-id="${item.idCustomer_Loan}" data-balance="${item.Balance_With_Penalty}" />`;
+                        let paymentField = `<input type="text" class="form-control numeric-input amount-input" style="width:200px;"  placeholder="${installmentPlaceholder}" value="${inputAmount}" data-loan-id="${item.idCustomer_Loan}" data-balance="${item.Balance_With_Penalty}" />`;
 
                         // Add extra input if saving_payment is "1"
                         if (item.saving_payment === "1") {
-                            paymentField += `<br><input type="text" class="form-control numeric-input saving-amount-input" placeholder="Enter Saving Amount" value="${savingAmount}" data-loan-id="${item.idCustomer_Loan}" data-balance="${item.Balance_With_Penalty}" />`;
+                            paymentField += `<br><input type="text" class="form-control numeric-input saving-amount-input" style="width:200px;"  placeholder="Enter Saving Amount" value="${savingAmount}" data-loan-id="${item.idCustomer_Loan}" data-balance="${item.Balance_With_Penalty}" />`;
                         }
 
                         // Construct row HTML
