@@ -1012,11 +1012,8 @@
         $(document).ready(function() {
             let x = ["#installment_amount","#offer_decided"];
             decimalFormat(x);
-
             fetchHolidays();
-
         });
-
 
         function repayment_type(id) {
             var select = document.getElementById("repayment_type");
