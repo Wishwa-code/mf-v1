@@ -221,6 +221,7 @@
                 <button type="button" class="btn btn-primary mt-3" onclick="appendToTextArea('Paid_Amount')">Paid Amount</button>
                 <button type="button" class="btn btn-primary mt-3" onclick="appendToTextArea('Loan_Balance')">Loan Balance</button>
                 <button type="button" class="btn btn-primary mt-3" onclick="appendToTextArea('Capital_Balance')">Capital Balance</button>
+                <button type="button" class="btn btn-primary mt-3" onclick="appendToTextArea('Pending_Total')">Arrease Amount</button>
             `;
 
                     break;
@@ -352,6 +353,7 @@
             smsContent = smsContent.replace(/@Issue_Date@/g, '<span style="color: #ad000d;">2024-08-20</span>');
             smsContent = smsContent.replace(/@Payment_Date@/g, '<span style="color: #ad000d;">2024-12-23 09:25:32</span>');
             smsContent = smsContent.replace(/@Paid_Amount@/g, '<span style="color: #ad000d;">1,500.00 LKR</span>');
+            smsContent = smsContent.replace(/@Pending_Total@/g, '<span style="color: #ad000d;">2,500.00 LKR</span>');
             smsContent = smsContent.replace(/@Loan_Balance@/g, '<span style="color: #ad000d;">88,000.00 LKR</span>');
             smsContent = smsContent.replace(/@Capital_Balance@/g, '<span style="color: #ad000d;">58,225.25 LKR</span>');
             smsContent = smsContent.replace(/@Installment_Amount@/g, '<span style="color: #ad000d;">1,438.50 LKR</span>');
