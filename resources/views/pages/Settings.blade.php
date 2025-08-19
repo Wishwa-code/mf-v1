@@ -235,7 +235,31 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="mb-3">Settings</h5>
-
+                        <hr>
+                        <!-- Loan Disbursement Policy -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Loan Disbursement Policy</label>
+                            <div class="d-flex flex-column gap-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="loan_policy" id="strict_mode" value="strict">
+                                    <label class="form-check-label" for="strict_mode">
+                                        <span class="fw-bold">Strict mode</span> → Don’t allow disbursement if balance is insufficient.
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="loan_policy" id="flexible_mode" value="flexible" checked>
+                                    <label class="form-check-label" for="flexible_mode">
+                                        <span class="fw-bold">Flexible mode</span> → Allow disbursement and show the account in minus (overdraft-like).
+                                    </label>
+                                </div>
+                                <button id="btnUpdateLoanPolicy" class="btn btn-primary mt-2" style="max-width: 150px;">
+                                    <i class="fa-solid fa-floppy-disk me-1"></i> Update
+                                </button>
+                            </div>
+                            <small class="text-muted">Controls how loan disbursements are handled.</small>
+                        </div>
+                        <hr>
+                        <!-- Payment Section Member Name -->
                         <div class="mb-3">
                             <label class="form-label fw-bold">Payment Section Member Name</label>
                             <div class="d-flex gap-2">
@@ -255,6 +279,7 @@
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 @endsection
@@ -277,6 +302,19 @@
                 const value = $('#payment_member_name').val(); // 'full_name' or 'with_initial'
                 save_setting('payment_member_name', value);
             });
+
+            $('#btnUpdateLoanPolicy').on('click', function (e) {
+                e.preventDefault();
+                const value = $('input[name="loan_policy"]:checked').val(); // 'strict' or 'flexible'
+
+                if (!value) {
+                    Swal.fire("Warning", "Please select a Loan Disbursement Policy before updating.", "warning");
+                    return;
+                }
+
+                save_setting('loan_disbursement_policy', value);
+            });
+
         });
 
 
@@ -444,6 +482,10 @@
                     const items = data.items || {};
                     if (items.payment_member_name) {
                         $('#payment_member_name').val(items.payment_member_name);
+                    }
+                    // Loan Disbursement Policy
+                    if (items.loan_disbursement_policy) {
+                        $(`input[name="loan_policy"][value="${items.loan_disbursement_policy}"]`).prop('checked', true);
                     }
                 },
                 error: function (xhr) {

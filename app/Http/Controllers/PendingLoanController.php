@@ -149,6 +149,16 @@ class PendingLoanController extends Controller
                 ->where('idCustomer_Loan','=',$id)
                 ->first();
 
+            $app_settings = DB::table('app_settings')->where('key','=','loan_disbursement_policy')->first();
+            $loan_disbursement_policy=$app_settings->value ?? 'flexible';
+
+            if ($loan_disbursement_policy=='strict'){
+                $bank = tableWithBranch('company_bank_accounts')->where('Idbank','=',$company_bank)->first();
+                if ($bank->Account_Balance<$customer_loan->Amount){
+                    return response()->json(['error' => 'Bank Balance is not enough','id' => 0], 200);
+                }
+            }
+
             $affected = DB::table('customer_loan')
                 ->where('idCustomer_Loan', $id)
                 ->where('branch_id', session('branch_id'))
@@ -540,6 +550,7 @@ class PendingLoanController extends Controller
             ->join('user', 'route.id_officer', '=', 'user.id')
             ->get();
         $center = tableWithBranch('center')->get();
+
         return view('pages.DisbursementLoan', compact('route','center','group', 'loan_category', 'customers','bank','documents'));
     }
 

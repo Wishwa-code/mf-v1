@@ -302,7 +302,7 @@ class CapitalBalanceController extends Controller
     // GET /settings/all
     public function all()
     {
-        $keys = ['payment_member_name'];
+        $keys = ['payment_member_name','loan_disbursement_policy'];
 
         $rows = DB::table($this->table)
             ->whereIn('key', $keys)
@@ -316,8 +316,21 @@ class CapitalBalanceController extends Controller
     public function upsert(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'key'   => ['required', 'in:payment_member_name'],
-            'value' => ['required', 'in:full_name,with_initial,only_first_name,only_last_name'],
+            'key'   => ['required', 'in:payment_member_name,loan_disbursement_policy'],
+            'value' => [
+                'required',
+                function ($attribute, $value, $fail) use ($request) {
+                    if ($request->key === 'payment_member_name' &&
+                        !in_array($value, ['full_name', 'with_initial', 'only_first_name', 'only_last_name'])) {
+                        $fail('Invalid value for payment_member_name.');
+                    }
+
+                    if ($request->key === 'loan_disbursement_policy' &&
+                        !in_array($value, ['strict', 'flexible'])) {
+                        $fail('Invalid value for loan_disbursement_policy.');
+                    }
+                },
+            ],
         ]);
 
         if ($validator->fails()) {
@@ -348,9 +361,11 @@ class CapitalBalanceController extends Controller
                 'updated_at' => now(),
             ]);
         }
+
         Cache::forget('app_settings');
         return response()->json(['success' => true], 200);
     }
+
 
     /**
      * Create table if not exists (per your requirement to do it in controller).

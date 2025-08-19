@@ -1313,14 +1313,23 @@ class TodayPaymentController extends Controller
                 $sms_template = tableWithBranch('sms_template')->where('type', '=', 'loan_payment')->where('status', '=', '1')->first();
                 if ($sms_template) {
                     $customer = DB::table('customer')->where('idCustomer', '=', $loan->Customer_idCustomer)->first();
+                    $arrears = DB::table('installments')
+                        ->where('installments.Customer_Loan_idCustomer_Loan', $loan_id)
+                        ->where('installments.Status', '=', '0')
+                        ->where('installments.Installment_Date', '<', date('Y-m-d'))
+                        ->sum('installments.Total_Balance');
+
+                    $arrears = $arrears ?? 0; // make sure it is numeric
+
                     $placeholders = [
-                        '@Member_No@' => $customer->cus_number,
-                        '@Member_Name@' => $customer->First_Name . ' ' . $customer->Last_Name,
-                        '@Loan_No@' => $loan->Loan_No,
-                        '@Payment_Date@' => $customer_payment->Date,
-                        '@Paid_Amount@' => number_format($customer_payment->Amount, 2, '.', ','),
-                        '@Loan_Balance@' => number_format($loan->Balance_Amount, 2, '.', ','),
-                        '@Capital_Balance@' => number_format($loan->capital_balance, 2, '.', ','),
+                        '@Member_No@'        => $customer->cus_number,
+                        '@Member_Name@'      => $customer->First_Name . ' ' . $customer->Last_Name,
+                        '@Loan_No@'          => $loan->Loan_No,
+                        '@Payment_Date@'     => $customer_payment->Date,
+                        '@Paid_Amount@'      => number_format($customer_payment->Amount, 2, '.', ','),
+                        '@Loan_Balance@'     => number_format($loan->Balance_Amount, 2, '.', ','),
+                        '@Capital_Balance@'  => number_format($loan->capital_balance, 2, '.', ','),
+                        '@Pending_Total@'  => number_format($arrears, 2, '.', ','),
                     ];
 
                     // Step 3: Replace placeholders in the loan_format
@@ -1328,7 +1337,6 @@ class TodayPaymentController extends Controller
                     foreach ($placeholders as $placeholder => $value) {
                         $loan_number_txt = str_replace($placeholder, $value, $loan_number_txt);
                     }
-                    Log::info($sms_status);
                     if ($sms_status == '1') {
                         $this->smsLogController->index($loan->Customer_idCustomer, $loan_number_txt, "Customer Loan Payment");
                     }
@@ -2961,6 +2969,13 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
         $sms_template = DB::table('sms_template')->where('type', '=', 'loan_payment')->where('status', '=', '1')->first();
         if ($sms_template) {
             $customer = DB::table('customer')->where('idCustomer', '=', $loan->Customer_idCustomer)->first();
+            $arrears = DB::table('installments')
+                ->where('installments.Customer_Loan_idCustomer_Loan', $loan->Customer_idCustomer)
+                ->where('installments.Status', '=', '0')
+                ->where('installments.Installment_Date', '<', date('Y-m-d'))
+                ->sum('installments.Total_Balance');
+
+            $arrears = $arrears ?? 0; // make sure it is numeric
             $placeholders = [
                 '@Member_No@' => $customer->cus_number,
                 '@Member_Name@' => $customer->First_Name . ' ' . $customer->Last_Name,
@@ -2969,6 +2984,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
                 '@Paid_Amount@' => number_format($customer_payment->Amount, 2, '.', ','),
                 '@Loan_Balance@' => number_format($loan->Balance_Amount, 2, '.', ','),
                 '@Capital_Balance@' => number_format($loan->capital_balance, 2, '.', ','),
+                '@Pending_Total@'  => number_format($arrears, 2, '.', ','),
             ];
 
             // Step 3: Replace placeholders in the loan_format
@@ -2982,7 +2998,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
 
 
             if ($status == '1') {
-                Log::info("janith");
+
 // Log the SMS message
                 $this->smsLogController->index($loan->Customer_idCustomer, $loan_number_txt, "Customer Loan Payment");
             }
