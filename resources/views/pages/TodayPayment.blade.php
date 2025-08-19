@@ -522,11 +522,15 @@
                             <div class="col-sm-8">
                                 @if($collector==1)
                                     <select class="form-control" id="payment_type" onchange="togglePaymentSections(this.value)">
+                                        <option value="Cash" >Cash</option>
+                                        <option value="Bank Deposit">Bank Deposit</option>
                                         <option value="Cheque">Cheque</option>
                                         <option value="Collector" selected>Collector</option>
                                     </select>
                                 @elseif($cashier==1)
                                     <select class="form-control" id="payment_type" onchange="togglePaymentSections(this.value)">
+                                        <option value="Cash">Cash</option>
+                                        <option value="Bank Deposit">Bank Deposit</option>
                                         <option value="Cheque">Cheque</option>
                                         <option value="Cashier" selected>Cashier</option>
                                     </select>
@@ -535,8 +539,6 @@
                                         <option value="Cash" selected>Cash</option>
                                         <option value="Bank Deposit">Bank Deposit</option>
                                         <option value="Cheque">Cheque</option>
-                                        <option value="Collector" >Collector</option>
-                                        <option value="Cashier" >Cashier</option>
                                     </select>
                                 @endif
                             </div>
@@ -551,7 +553,7 @@
                                 <select class="form-control" id="bank_account_company">
                                     @foreach($banks as $bank)
                                         @if($bank->Account_No!="Cash")
-                                            <option value="{{ $bank->Idbank }}">{{ $bank->Bank_Name }} - {{ $bank->Account_No }} - {{ $bank->Account_Name }}</option>
+                                            <option value="{{ $bank->Idbank }}">{{ $bank->Account_No }} - {{ $bank->Account_Name }}</option>
                                         @endif
                                     @endforeach
                                 </select>
@@ -566,7 +568,7 @@
                             <div class="col-sm-12">
                                 <select class="form-control" id="cheque_issue_bank">
                                     @foreach($banks as $bank)
-                                        <option value="{{ $bank->Idbank }}">{{ $bank->Bank_Name }} - {{ $bank->Account_No }} - {{ $bank->Account_Name }}</option>
+                                        <option value="{{ $bank->Idbank }}">{{ $bank->Account_No }} - {{ $bank->Account_Name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -749,12 +751,16 @@
                             <div class="col-md-6">
                                 <label for="payment_type_2" class="form-label fw-bold">Payment Type:</label>
                                 @if($collector==1)
-                                    <select class="form-control" id="payment_type_2" onchange="togglePaymentSections_2(this.value)" disabled>
+                                    <select class="form-control" id="payment_type_2" onchange="togglePaymentSections_2(this.value)">
+                                        <option value="Cash" >Cash</option>
+                                        <option value="Bank Deposit">Bank Deposit</option>
                                         <option value="Cheque">Cheque</option>
                                         <option value="Collector" selected>Collector</option>
                                     </select>
                                 @elseif($cashier==1)
-                                    <select class="form-control" id="payment_type_2" onchange="togglePaymentSections_2(this.value)" disabled>
+                                    <select class="form-control" id="payment_type_2" onchange="togglePaymentSections_2(this.value)">
+                                        <option value="Cash">Cash</option>
+                                        <option value="Bank Deposit">Bank Deposit</option>
                                         <option value="Cheque">Cheque</option>
                                         <option value="Cashier" selected>Cashier</option>
                                     </select>
@@ -763,7 +769,6 @@
                                         <option value="Cash" selected>Cash</option>
                                         <option value="Bank Deposit">Bank Deposit</option>
                                         <option value="Cheque">Cheque</option>
-                                        <option value="Collector" >Collector</option>
                                     </select>
                                 @endif
                             </div>
@@ -776,7 +781,9 @@
                                 <label for="bank_account_company_2" class="form-label fw-bold">Bank Account:</label>
                                 <select class="form-control" id="bank_account_company_2">
                                     @foreach($banks as $bank)
-                                        <option value="{{ $bank->Idbank }}">{{ $bank->Bank_Name }} - {{ $bank->Account_No }} - {{ $bank->Account_Name }}</option>
+                                        @if($bank->Account_No!="Cash")
+                                            <option value="{{ $bank->Idbank }}">{{ $bank->Account_No }} - {{ $bank->Account_Name }}</option>
+                                        @endif
                                     @endforeach
                                 </select>
                             </div>
@@ -788,7 +795,7 @@
                                 <label for="cheque_issue_bank_2" class="form-label fw-bold">Cheque Issue Bank:</label>
                                 <select class="form-control" id="cheque_issue_bank_2">
                                     @foreach($banks as $bank)
-                                        <option value="{{ $bank->Idbank }}">{{ $bank->Bank_Name }} - {{ $bank->Account_No }} - {{ $bank->Account_Name }}</option>
+                                        <option value="{{ $bank->Idbank }}">{{ $bank->Account_No }} - {{ $bank->Account_Name }}</option>
                                     @endforeach
                                 </select>
                             </div>

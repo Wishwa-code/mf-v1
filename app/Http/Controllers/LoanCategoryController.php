@@ -406,6 +406,52 @@ class LoanCategoryController extends Controller
 
             }
 
+
+            $pending_loan=tableWithBranch('customer_loan')->where('Status','=','-1')->get();
+            foreach ($pending_loan as $item){
+                $product=tableWithBranch('loan_category')->where('idLoan_Category','=',$item->Loan_Category_idLoan_Category)->first();
+                if ($product){
+
+                    DB::table('loan_has_approval')
+                        ->where('loan_id','=' ,$item->idCustomer_Loan)
+                        ->delete();
+                    DB::table('loan_has_approval_checklist')
+                        ->where('loan_id','=' ,$item->idCustomer_Loan)
+                        ->delete();
+
+                    $levels=tableWithBranch('level')->where('product_id','=',$item->Loan_Category_idLoan_Category)->get();
+                    foreach ($levels as $level){
+                        // Prepare data for the loan approval
+                        $loanApprovalData = [
+                            'loan_id' => $item->idCustomer_Loan,
+                            'level' => $level->type,
+                            'level_id' => $level->id,
+                            'description' => $level->description,
+                            'comment' => '',
+                            'user_id' => 0,
+                            'date' => '-',
+                        ];
+
+                        insertWithBranch('loan_has_approval', $loanApprovalData);
+
+
+                        $checklist=tableWithBranch('approval_checklist')->where('level_id','=',$level->id)->get();
+                        foreach ($checklist as $check_item){
+                            $loanChecklistData = [
+                                'loan_id' => $item->idCustomer_Loan,
+                                'level' => $level->id,
+                                'description' => $check_item->description,
+                                'status' => '0',
+                            ];
+                            insertWithBranch('loan_has_approval_checklist', $loanChecklistData);
+                        }
+
+                    }
+                }
+            }
+
+
+
             DB::commit();
             return response()->json(['message' => 'Updated successfully'], 200);
         } catch (\Exception $e) {
