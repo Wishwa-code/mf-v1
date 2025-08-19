@@ -72,10 +72,8 @@ class TodayPaymentController extends Controller
         $route = tableWithBranch('route', 'route')
             ->join('user', 'route.id_officer', '=', 'user.id')
             ->get();
-        $banks = DB::table('company_bank_accounts')->where('branch_id','=',session('branch_id'))->where('status', '=', '1')->get();
-        if ($collector == 1 || $cashier == 1) {
-            $banks = DB::table('company_bank_accounts')->where('branch_id','=',session('branch_id'))->where('Account_No', '=', $user_id)->where('status', '=', '1')->get();
-        }
+        $banks = DB::table('company_bank_accounts')->where('branch_id','=',session('branch_id'))->whereIn('Bank_Type', ['Bank', 'Collector'])->where('status', '=', '1')->get();
+
         return view('pages.TodayPayment', compact('collector','cashier', 'group', 'loan', 'route', 'center', 'customers', 'company', 'banks'));
     }
 

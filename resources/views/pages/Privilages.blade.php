@@ -235,4 +235,25 @@
             });
         });
     </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const collectorCheckbox = document.querySelector('input[data-key="collector_access"]');
+            const cashierCheckbox   = document.querySelector('input[data-key="cashier_access"]');
+
+            if (collectorCheckbox && cashierCheckbox) {
+                collectorCheckbox.addEventListener("change", function () {
+                    if (this.checked) {
+                        cashierCheckbox.checked = false;
+                    }
+                });
+
+                cashierCheckbox.addEventListener("change", function () {
+                    if (this.checked) {
+                        collectorCheckbox.checked = false;
+                    }
+                });
+            }
+        });
+    </script>
+
 @endsection
