@@ -199,6 +199,7 @@
     <script src="../JS/validate.js"></script>
     <script>
         function process(id,cus_id,payment_amount,file,loan_id,payment_date,payment_type,bank_account_company,cheque_issue_bank,name_on_cheque,chq_number,chq_date,chq_type) {
+            let date = new Date().toISOString().slice(0, 10); // "2025-08-19"
 
             document.getElementById('process_icon_' + id).style.display = 'inline-block';
             Swal.fire({
@@ -226,7 +227,7 @@
                     formData.append('payment_amount', payment_amount);
                     formData.append('file', file);
                     formData.append('loan_id', loan_id);
-                    formData.append('payment_date', payment_date);
+                    formData.append('payment_date', date);
                     formData.append('payment_type', payment_type);
                     formData.append('bank_account_company', bank_account_company);
                     formData.append('cheque_issue_bank', cheque_issue_bank);

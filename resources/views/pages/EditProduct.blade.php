@@ -947,12 +947,23 @@
             // === Ajax Update ===
             Swal.fire({
                 title: "Are you sure?",
-                text: "Do you want to update this Product?",
+                html: `
+        <div style="text-align:left;">
+            <p>You are about to update this <b>Product</b>.</p>
+            <p style="margin-top:6px;">
+                <b>Important:</b> If you proceed, <b>all pending loans</b> under this product
+                will need to be <b>approved again from the beginning</b>.
+            </p>
+            <p style="color:#b71c1c;margin-top:6px;"><b>This action cannot be undone.</b></p>
+        </div>
+    `,
                 icon: "warning",
                 showCancelButton: true,
                 confirmButtonColor: "#3085d6",
                 cancelButtonColor: "#d33",
                 confirmButtonText: "Yes, update it!",
+                cancelButtonText: "Cancel",
+                focusCancel: true
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
@@ -1008,6 +1019,7 @@
                     });
                 }
             });
+
         };
 
     </script>
