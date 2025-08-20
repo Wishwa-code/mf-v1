@@ -325,57 +325,74 @@
             });
 
             function calculateTotals() {
-                let totalLoanAmount = 0;
-                let totalDueAmount = 0;
-                let totalBalance = 0;
-                let totalArrears = 0;
+                // helper: parse "12,345.67" -> 12345.67
+                const num = (txt) => {
+                    if (txt == null) return 0;
+                    const t = String(txt).replace(/,/g, '').trim();
+                    const v = parseFloat(t);
+                    return isNaN(v) ? 0 : v;
+                };
+                // helper: format 2dp with thousands
+                const fmt = (n) => Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-                // Loop through each group
-                $('#repaymentTable tbody').find('tr').each(function() {
-                    // Check if this row is a group total row
-                    if ($(this).hasClass('group-total')) {
-                        let groupLoanAmount = 0;
-                        let groupDueAmount = 0;
-                        let groupBalance = 0;
-                        let groupArrears = 0;
+                let centerLoan = 0, centerDue = 0, centerBal = 0, centerArr = 0;
+                let groupLoan = 0, groupDue = 0, groupBal = 0, groupArr = 0;
 
-                        // Calculate totals for each group
-                        $(this).prevAll('tr').each(function() {
-                            let loanAmount = parseFloat($(this).find('.loan-amount').text().replace(/,/g, '')) || 0;
-                            let dueAmount = parseFloat($(this).find('.due-amount').text().replace(/,/g, '')) || 0;
-                            let balance = parseFloat($(this).find('.total-balance').text().replace(/,/g, '')) || 0;
-                            let arrears = parseFloat($(this).find('.arrears').text().replace(/,/g, '')) || 0;
+                // We iterate rows in order and keep running group totals
+                const $rows = $('#repaymentTable tbody tr');
 
-                            if ($(this).find('td').first().text().startsWith('Group No :-')) {
-                                // This is the start of a new group
-                                return false;
-                            }
+                $rows.each(function () {
+                    const $tr = $(this);
 
-                            groupLoanAmount += loanAmount;
-                            groupDueAmount += dueAmount;
-                            groupBalance += balance;
-                            groupArrears += arrears;
-                        });
+                    // Group header row uses <th> (e.g., "Group No :- X")
+                    const isGroupHeader = $tr.find('th').length && /Group\s*No\s*:-/i.test($tr.text());
 
-                        // Update the group total row
-                        $(this).find('.group-loan-amount').text(groupLoanAmount.toFixed(2));
-                        $(this).find('.group-due-amount').text(groupDueAmount.toFixed(2));
-                        $(this).find('.group-total-balance').text(groupBalance.toFixed(2));
-                        $(this).find('.group-arrears').text(groupArrears.toFixed(2));
+                    // The “data” rows have the numeric cells with these classes
+                    const isDataRow = $tr.find('td').length &&
+                        ($tr.find('.loan-amount').length ||
+                            $tr.find('.due-amount').length ||
+                            $tr.find('.total-balance').length ||
+                            $tr.find('.arrears').length);
 
-                        // Update center totals
-                        totalLoanAmount += groupLoanAmount;
-                        totalDueAmount += groupDueAmount;
-                        totalBalance += groupBalance;
-                        totalArrears += groupArrears;
+                    const isGroupTotalRow = $tr.hasClass('group-total');
+
+                    if (isGroupHeader) {
+                        // New group starting — reset per-group accumulators
+                        groupLoan = groupDue = groupBal = groupArr = 0;
+                        return; // continue
+                    }
+
+                    if (isDataRow) {
+                        groupLoan += num($tr.find('.loan-amount').text());
+                        groupDue  += num($tr.find('.due-amount').text());
+                        groupBal  += num($tr.find('.total-balance').text());
+                        groupArr  += num($tr.find('.arrears').text());
+                        return; // continue
+                    }
+
+                    if (isGroupTotalRow) {
+                        // Write group totals to this total row
+                        $tr.find('.group-loan-amount').text(fmt(groupLoan));
+                        $tr.find('.group-due-amount').text(fmt(groupDue));
+                        $tr.find('.group-total-balance').text(fmt(groupBal));
+                        $tr.find('.group-arrears').text(fmt(groupArr));
+
+                        // Add to center totals
+                        centerLoan += groupLoan;
+                        centerDue  += groupDue;
+                        centerBal  += groupBal;
+                        centerArr  += groupArr;
+
+                        // Reset for safety before next group (optional)
+                        groupLoan = groupDue = groupBal = groupArr = 0;
                     }
                 });
 
-                // Update the footer with center totals
-                $('#total-loan-amount').text(totalLoanAmount.toFixed(2));
-                $('#total-due-amount').text(totalDueAmount.toFixed(2));
-                $('#total-balance').text(totalBalance.toFixed(2));
-                $('#total-arrears').text(totalArrears.toFixed(2));
+                // Footer (center totals)
+                $('#total-loan-amount').text(fmt(centerLoan));
+                $('#total-due-amount').text(fmt(centerDue));
+                $('#total-balance').text(fmt(centerBal));
+                $('#total-arrears').text(fmt(centerArr));
             }
 
             // Calculate totals when the document is ready
