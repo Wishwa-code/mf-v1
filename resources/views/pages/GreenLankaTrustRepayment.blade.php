@@ -69,7 +69,10 @@
             font-size: 14px;
         }
 
-        /* Responsive adjustments */
+    /* Hidden by default; shown only for print to reserve punch space */
+    .punch-space { display: none; }
+
+    /* Responsive adjustments */
         @media (max-width: 768px) {
             table {
                 font-size: 12px;
@@ -78,6 +81,37 @@
             th, td {
                 padding: 5px;
             }
+        }
+        /* Keep 'Correct' header on one line (screen) - target 2nd header row, even cells */
+        #repaymentTable thead tr:nth-child(2) th:nth-child(2n) {
+            white-space: nowrap !important;
+            word-break: normal !important;
+            padding-left: 4px;
+            padding-right: 4px;
+            font-size: 12px;
+        }
+        /* Column widths (screen): colgroup is source of truth; keep this in sync if used */
+        #repaymentTable {
+            table-layout: fixed !important;
+        }
+        #repaymentTable th:nth-child(1),
+        #repaymentTable td:nth-child(1) {
+            width: 13% !important;
+        }
+
+        /* Compact the second header row (Paid/Correct) for web view */
+        #repaymentTable thead tr:nth-child(2) th {
+            padding: 4px 6px !important;
+            font-size: 12px !important;
+            line-height: 1.1;
+        }
+
+        /* Prevent Loan No and Name from causing tall rows; show ellipsis */
+        #repaymentTable td:nth-child(1),
+        #repaymentTable td:nth-child(2) {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         @media (max-width: 480px) {
@@ -94,6 +128,7 @@
         @media print {
             @page {
                 size: A4 landscape;
+                /* Keep physical page margins compact; we'll add an inner spacer for reliable punch space */
                 margin: 0.5in;
                 counter-increment: page;
             }
@@ -115,14 +150,9 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
-
-            .paid-amount {
-                width: 80px;
-            }
-
-            .correct-column {
-                width: 30px;
-            }
+            /* Let colgroup control widths for paid/correct */
+            .paid-amount { width: auto; }
+            .correct-column { width: auto; }
 
             #repaymentTable {
                 width: 100%;
@@ -138,9 +168,28 @@
                 word-break: break-word;
             }
 
+            /* Keep 'Correct' header on one line (print) - target 2nd header row, even cells */
+            #repaymentTable thead tr:nth-child(2) th:nth-child(2n) {
+                white-space: nowrap;
+                word-break: normal;
+            }
+
+            /* Loan No width (print) */
+            #repaymentTable th:nth-child(1),
+            #repaymentTable td:nth-child(1) {
+                width: 13% !important;
+            }
+
             .btn, form, .select2, .page-title, .no-print {
                 display: none !important;
             }
+
+            /* Ensure 1.0in inner spacer + 0.5in page margin = 1.5in total punch space */
+            .punch-space { display: block; height: 1in; }
+
+            /* Larger titles on printed pages */
+            .brandline { font-size: 20px !important; font-weight: 800; line-height: 1.2; }
+            h2 { font-size: 18px !important; }
         }
         @media print {
             .print-footer {
@@ -182,6 +231,8 @@
 @section('content')
 
     <div class="container-fluid">
+    <!-- Print-only top spacer to create punch space -->
+    <div class="punch-space"></div>
 
         <!-- start page title -->
         <div class="row">
@@ -253,6 +304,23 @@
                         <!-- Repayment table -->
                         <div class="table-responsive">
                             <table id="repaymentTable">
+                                <colgroup>
+                                    <col style="width:13%"><!-- Loan No (smaller) -->
+                                    <col style="width:11%"><!-- Full Name (smaller) -->
+                                    <col style="width:7%"><!-- Loan Amount -->
+                                    <col style="width:7%"><!-- Due Installment -->
+                                    <col style="width:7%"><!-- New Loan Amount -->
+                                    <col style="width:6.8%"><!-- Paid 1 -->
+                                    <col style="width:4.2%"><!-- Correct 1 (wider) -->
+                                    <col style="width:6.8%"><!-- Paid 2 -->
+                                    <col style="width:4.2%"><!-- Correct 2 (wider) -->
+                                    <col style="width:6.8%"><!-- Paid 3 -->
+                                    <col style="width:4.2%"><!-- Correct 3 (wider) -->
+                                    <col style="width:6.8%"><!-- Paid 4 -->
+                                    <col style="width:4.2%"><!-- Correct 4 (wider) -->
+                                    <col style="width:6.8%"><!-- Paid 5 -->
+                                    <col style="width:4.2%"><!-- Correct 5 (wider) -->
+                                </colgroup>
                                 <thead>
                                 <tr>
                                     <th rowspan="2">Loan No</th>
@@ -447,6 +515,7 @@
                 // ===== CSS =====
                 printWindow.document.write('<html><head><title>Repayment Sheet</title><style>');
                 printWindow.document.write(`
+    /* Keep physical page margins compact; reserve top punch space via inner spacer */
     @page { size: ${orientation}; margin: 0.5in; }
     html, body { margin:0; padding:0; }
     body { font-family: Arial, sans-serif; font-size: 11px; }
@@ -457,13 +526,21 @@
     thead { display: table-header-group; }
     tfoot { display: table-footer-group; }
 
-    h2 { margin: 2px 0 4px 0; font-size: 14px; text-align: center; }
+    h2 { margin: 2px 0 4px 0; font-size: 22px !important; text-align: center; line-height: 1.25; }
 
     table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; }
     th, td { border: 1px solid #000; padding: 4px; text-align: center; word-break: break-word; min-height: 20px; }
 
-    /* Name column */
-    th:nth-child(2), td:nth-child(2) { width: 180px !important; }
+    /* Loan No column */
+    th:nth-child(1), td:nth-child(1) { width: 13% !important; }
+
+    /* Name column smaller */
+    th:nth-child(2), td:nth-child(2) { width: 11% !important; }
+
+    /* Amount columns */
+    th:nth-child(3), td:nth-child(3),
+    th:nth-child(4), td:nth-child(4),
+    th:nth-child(5), td:nth-child(5) { width: 7% !important; }
 
     /* Paid columns wider */
     th:nth-child(6), td:nth-child(6),
@@ -471,33 +548,38 @@
     th:nth-child(10), td:nth-child(10),
     th:nth-child(12), td:nth-child(12),
     th:nth-child(14), td:nth-child(14) {
-        width: 120px !important;
+        width: 6.8% !important;
     }
 
-    /* Correct columns narrower */
+    /* Correct columns wider */
     th:nth-child(7), td:nth-child(7),
     th:nth-child(9), td:nth-child(9),
     th:nth-child(11), td:nth-child(11),
     th:nth-child(13), td:nth-child(13),
     th:nth-child(15), td:nth-child(15) {
-        width: 50px !important;
+        width: 4.2% !important;
     }
 
-    .brandline { font-size: 14px; font-weight: 700; text-align: left; }
+    .brandline { font-size: 24px !important; font-weight: 800; text-align: left; line-height: 1.2; letter-spacing: 0.2px; }
     .metaline  { font-size: 10px; font-weight: 500; text-align: right; }
     .thead-bar td { border: none; padding: 0; }
     .print-group-block { page-break-inside: avoid; }
+
+    /* Print-only inner spacer equals 1in; combined with @page 0.5in = 1.5in total top space */
+    .punch-space { height: 1in; }
   `);
                 printWindow.document.write('</style></head><body>');
 
-                // Column header HTML
+                // Column header + colgroup HTML
                 const columnsHeadHTML = document.querySelector('#repaymentTable thead').innerHTML;
+                const colgroupHTML = (document.querySelector('#repaymentTable colgroup')?.outerHTML) || '';
 
                 // Build header
-                const buildRepeatingThead = () => `
+                                const buildRepeatingThead = () => `
     <thead>
       <tr class="thead-bar">
-        <td colspan="15" style="border:none; padding:0 0 2px 0;">
+                <td colspan="15" style="border:none; padding:0 0 2px 0;">
+                    <div class="punch-space"></div>
           <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ccc; padding-bottom:2px; margin-bottom:2px;">
             <div class="brandline">${companyName}</div>
             <div class="metaline">Center No: ${centerNo} | Center Name: ${centerName} | Printed by: ${printedBy} on ${printedAt}</div>
@@ -514,7 +596,7 @@
 
                 // 2 groups per page
                 for (let i = 0; i < groupBlocks.length; i += 2) {
-                    html += '<div class="page"><table>';
+                    html += '<div class="page"><table>' + colgroupHTML;
                     html += buildRepeatingThead();
                     html += '<tbody>';
                     html += groupBlocks[i].outerHTML;
@@ -524,11 +606,13 @@
 
                 // Summary page (NO table header here)
                 html += `
-  <div class="page">
-    <table>
-      <tbody>
-        <tr>
-          <td colspan="15" style="border:none; padding:0 0 2px 0;">
+        <div class="page">
+            <table>
+                ${colgroupHTML}
+                <tbody>
+                <tr>
+                    <td colspan="15" style="border:none; padding:0 0 2px 0;">
+                        <div class="punch-space"></div>
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ccc; padding-bottom:2px; margin-bottom:2px;">
               <div class="brandline">${companyName}</div>
               <div class="metaline">Center No: ${centerNo} | Center Name: ${centerName} | Printed by: ${printedBy} on ${printedAt}</div>
@@ -548,6 +632,8 @@
         <tr><td colspan="15" style="height: 15px;"></td></tr>
         <tr><td colspan="2"><strong>Full Signature</strong></td><td colspan="13"></td></tr>
         <tr><td colspan="2"><strong>Center Manager</strong></td><td colspan="13"></td></tr>
+        <tr><td colspan="2"><strong>Branch Manager</strong></td><td colspan="13"></td></tr>
+
       </tbody>
     </table>
   </div>
