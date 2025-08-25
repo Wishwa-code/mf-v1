@@ -548,6 +548,7 @@
         <tr><td colspan="15" style="height: 15px;"></td></tr>
         <tr><td colspan="2"><strong>Full Signature</strong></td><td colspan="13"></td></tr>
         <tr><td colspan="2"><strong>Center Manager</strong></td><td colspan="13"></td></tr>
+        <tr><td colspan="2"><strong>Branch Manager</strong></td><td colspan="13"></td></tr>
       </tbody>
     </table>
   </div>
