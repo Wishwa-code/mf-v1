@@ -128,8 +128,8 @@
         @media print {
             @page {
                 size: A4 landscape;
-                /* Keep physical page margins compact; we'll add an inner spacer for reliable punch space */
-                margin: 0.5in;
+                /* Remove browser print margins; we'll add an inner spacer for reliable punch space */
+                margin: 0;
                 counter-increment: page;
             }
 
@@ -184,8 +184,8 @@
                 display: none !important;
             }
 
-            /* Ensure 1.0in inner spacer + 0.5in page margin = 1.5in total punch space */
-            .punch-space { display: block; height: 1in; }
+            /* Use a 1.5in inner spacer at the top of each printed page (punch space) */
+            .punch-space { display: block; height: 1.5in; }
 
             /* Larger titles on printed pages */
             .brandline { font-size: 20px !important; font-weight: 800; line-height: 1.2; }
@@ -207,19 +207,11 @@
             }
         }
         @media print {
-            .print-group-block {
-                break-inside: avoid;
-                page-break-after: always;
-            }
-        }
-        @media print {
-            .print-group-block {
-                break-inside: avoid;
-            }
+            /* Allow groups to split across pages if needed; don't force page breaks */
+            .print-group-block { break-inside: auto; page-break-after: auto; }
 
-            div[style*="page-break-after"] {
-                page-break-after: always;
-            }
+            /* Only respect explicit inline page breaks */
+            div[style*="page-break-after"] { page-break-after: always; }
         }
 
 
@@ -515,8 +507,8 @@
                 // ===== CSS =====
                 printWindow.document.write('<html><head><title>Repayment Sheet</title><style>');
                 printWindow.document.write(`
-    /* Keep physical page margins compact; reserve top punch space via inner spacer */
-    @page { size: ${orientation}; margin: 0.5in; }
+    /* Remove browser margins to mimic Chrome's "None"; reserve top punch space via inner spacer */
+    @page { size: ${orientation}; margin: 0; }
     html, body { margin:0; padding:0; }
     body { font-family: Arial, sans-serif; font-size: 11px; }
 
@@ -563,10 +555,11 @@
     .brandline { font-size: 24px !important; font-weight: 800; text-align: left; line-height: 1.2; letter-spacing: 0.2px; }
     .metaline  { font-size: 10px; font-weight: 500; text-align: right; }
     .thead-bar td { border: none; padding: 0; }
-    .print-group-block { page-break-inside: avoid; }
+    /* Let browser paginate naturally; don't block a group from starting on the first page */
+    .print-group-block { page-break-inside: auto; }
 
-    /* Print-only inner spacer equals 1in; combined with @page 0.5in = 1.5in total top space */
-    .punch-space { height: 1in; }
+    /* Print-only inner spacer equals 1.5in (we use zero page margin) */
+    .punch-space { height: 1.5in; }
   `);
                 printWindow.document.write('</style></head><body>');
 
