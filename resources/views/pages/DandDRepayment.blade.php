@@ -131,13 +131,9 @@
             /* Override css for contact no print consistnt */
             .contact-no { max-width: none !important; overflow: visible; text-overflow: clip; }
 
-            .paid-amount {
-                width: 80px;
-            }
-
-            .correct-column {
-                width: 30px;
-            }
+            /* Adjusted Paid/Correct columns to a tighter width for better page usage */
+            .paid-amount { width: 60px; min-width: 60px; }
+            .correct-column { width: 50px; min-width: 50px; }
 
             #repaymentTable {
                 width: 100%;
@@ -281,6 +277,18 @@
                         <!-- Repayment table -->
                         <div class="table-responsive">
                             <table id="repaymentTable">
+                                <colgroup>
+                                    <col style="width:8%">
+                                    <col style="width:18%">
+                                    <col style="width:20%">
+                                    <col style="width:9%">
+                                    <col style="width:9%">
+                                    <col style="width:10%">
+                                    @for ($i = 1; $i < 5; $i++)
+                                        <col class="paid-col" style="width:60px">
+                                        <col class="correct-col" style="width:50px">
+                                    @endfor
+                                </colgroup>
                                 <thead>
                                 <tr>
                                     <th rowspan="2">Loan No</th>
@@ -493,6 +501,7 @@
                 printWindow.document.write('#repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 9%; }');
                 printWindow.document.write('#repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 9%; }');
                 printWindow.document.write('#repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 10%; }');
+                printWindow.document.write('.paid-amount { width: 60px; min-width: 60px; } .correct-column { width: 50px; min-width: 50px; }');
                 printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
                 printWindow.document.write('</style>');
 
