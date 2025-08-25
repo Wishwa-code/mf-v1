@@ -82,14 +82,13 @@
                 padding: 5px;
             }
         }
-        /* Keep 'Correct' header on one line (screen) */
-        #repaymentTable thead th:nth-child(7),
-        #repaymentTable thead th:nth-child(9),
-        #repaymentTable thead th:nth-child(11),
-        #repaymentTable thead th:nth-child(13),
-        #repaymentTable thead th:nth-child(15) {
-            white-space: nowrap;
-            word-break: normal;
+        /* Keep 'Correct' header on one line (screen) - target 2nd header row, even cells */
+        #repaymentTable thead tr:nth-child(2) th:nth-child(2n) {
+            white-space: nowrap !important;
+            word-break: normal !important;
+            padding-left: 4px;
+            padding-right: 4px;
+            font-size: 12px;
         }
         /* Column widths (screen): colgroup is source of truth; keep this in sync if used */
         #repaymentTable {
@@ -97,7 +96,22 @@
         }
         #repaymentTable th:nth-child(1),
         #repaymentTable td:nth-child(1) {
-            width: 17% !important;
+            width: 13% !important;
+        }
+
+        /* Compact the second header row (Paid/Correct) for web view */
+        #repaymentTable thead tr:nth-child(2) th {
+            padding: 4px 6px !important;
+            font-size: 12px !important;
+            line-height: 1.1;
+        }
+
+        /* Prevent Loan No and Name from causing tall rows; show ellipsis */
+        #repaymentTable td:nth-child(1),
+        #repaymentTable td:nth-child(2) {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         @media (max-width: 480px) {
@@ -154,12 +168,8 @@
                 word-break: break-word;
             }
 
-            /* Keep 'Correct' header on one line (print) */
-            #repaymentTable thead th:nth-child(7),
-            #repaymentTable thead th:nth-child(9),
-            #repaymentTable thead th:nth-child(11),
-            #repaymentTable thead th:nth-child(13),
-            #repaymentTable thead th:nth-child(15) {
+            /* Keep 'Correct' header on one line (print) - target 2nd header row, even cells */
+            #repaymentTable thead tr:nth-child(2) th:nth-child(2n) {
                 white-space: nowrap;
                 word-break: normal;
             }
@@ -167,7 +177,7 @@
             /* Loan No width (print) */
             #repaymentTable th:nth-child(1),
             #repaymentTable td:nth-child(1) {
-                width: 17% !important;
+                width: 13% !important;
             }
 
             .btn, form, .select2, .page-title, .no-print {
@@ -295,21 +305,21 @@
                         <div class="table-responsive">
                             <table id="repaymentTable">
                                 <colgroup>
-                                    <col style="width:17%"><!-- Loan No -->
+                                    <col style="width:13%"><!-- Loan No (smaller) -->
                                     <col style="width:11%"><!-- Full Name (smaller) -->
                                     <col style="width:7%"><!-- Loan Amount -->
                                     <col style="width:7%"><!-- Due Installment -->
                                     <col style="width:7%"><!-- New Loan Amount -->
                                     <col style="width:6.8%"><!-- Paid 1 -->
-                                    <col style="width:3.4%"><!-- Correct 1 -->
+                                    <col style="width:4.2%"><!-- Correct 1 (wider) -->
                                     <col style="width:6.8%"><!-- Paid 2 -->
-                                    <col style="width:3.4%"><!-- Correct 2 -->
+                                    <col style="width:4.2%"><!-- Correct 2 (wider) -->
                                     <col style="width:6.8%"><!-- Paid 3 -->
-                                    <col style="width:3.4%"><!-- Correct 3 -->
+                                    <col style="width:4.2%"><!-- Correct 3 (wider) -->
                                     <col style="width:6.8%"><!-- Paid 4 -->
-                                    <col style="width:3.4%"><!-- Correct 4 -->
+                                    <col style="width:4.2%"><!-- Correct 4 (wider) -->
                                     <col style="width:6.8%"><!-- Paid 5 -->
-                                    <col style="width:3.4%"><!-- Correct 5 -->
+                                    <col style="width:4.2%"><!-- Correct 5 (wider) -->
                                 </colgroup>
                                 <thead>
                                 <tr>
@@ -522,7 +532,7 @@
     th, td { border: 1px solid #000; padding: 4px; text-align: center; word-break: break-word; min-height: 20px; }
 
     /* Loan No column */
-    th:nth-child(1), td:nth-child(1) { width: 17% !important; }
+    th:nth-child(1), td:nth-child(1) { width: 13% !important; }
 
     /* Name column smaller */
     th:nth-child(2), td:nth-child(2) { width: 11% !important; }
@@ -547,7 +557,7 @@
     th:nth-child(11), td:nth-child(11),
     th:nth-child(13), td:nth-child(13),
     th:nth-child(15), td:nth-child(15) {
-        width: 3.4% !important;
+        width: 4.2% !important;
     }
 
     .brandline { font-size: 24px !important; font-weight: 800; text-align: left; line-height: 1.2; letter-spacing: 0.2px; }
