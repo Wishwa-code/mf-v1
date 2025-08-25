@@ -498,7 +498,7 @@ Route::get('/changeCollector','\App\Http\Controllers\TodayPaymentController@coll
 Route::post('/changeCollector_filter','\App\Http\Controllers\TodayPaymentController@collector_filter')->name('load.collector_filtor');
 
 
-Route::post('/upload-excel-customer', [\App\Http\Controllers\ExcelController::class, 'uploadExcelCustomer']);
+Route::post('/upload-excel-customer', [\App\Http\Controllers\ExcelController::class, 'uploadExcelWitness']);
 //Route::post('/upload-excel-customer', [\App\Http\Controllers\ExcelController::class, 'edit']);
 Route::post('/upload-excel-product', [\App\Http\Controllers\ExcelController::class, 'uploadExcelProduct']);
 Route::post('/upload-excel-loan', [\App\Http\Controllers\ExcelController::class, 'uploadExcelLoan']);
