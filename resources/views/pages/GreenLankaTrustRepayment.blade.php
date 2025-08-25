@@ -97,6 +97,7 @@
         #repaymentTable th:nth-child(1),
         #repaymentTable td:nth-child(1) {
             width: 12% !important;
+            width: 12% !important;
         }
 
         /* Compact the second header row (Paid/Correct) for web view */
@@ -176,6 +177,7 @@
             /* Loan No width (print) */
             #repaymentTable th:nth-child(1),
             #repaymentTable td:nth-child(1) {
+                width: 12% !important;
                 width: 12% !important;
             }
 
@@ -524,13 +526,16 @@
 
     /* Loan No column */
     th:nth-child(1), td:nth-child(1) { width: 12% !important; }
+    th:nth-child(1), td:nth-child(1) { width: 12% !important; }
 
     /* Name column smaller */
+    th:nth-child(2), td:nth-child(2) { width: 10% !important; }
     th:nth-child(2), td:nth-child(2) { width: 10% !important; }
 
     /* Amount columns */
     th:nth-child(3), td:nth-child(3),
     th:nth-child(4), td:nth-child(4),
+    th:nth-child(5), td:nth-child(5) { width: 6.5% !important; }
     th:nth-child(5), td:nth-child(5) { width: 6.5% !important; }
 
     /* Paid columns wider */
