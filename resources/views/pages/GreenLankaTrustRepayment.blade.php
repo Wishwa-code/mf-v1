@@ -96,7 +96,7 @@
         }
         #repaymentTable th:nth-child(1),
         #repaymentTable td:nth-child(1) {
-            width: 13% !important;
+            width: 12% !important;
         }
 
         /* Compact the second header row (Paid/Correct) for web view */
@@ -176,7 +176,7 @@
             /* Loan No width (print) */
             #repaymentTable th:nth-child(1),
             #repaymentTable td:nth-child(1) {
-                width: 13% !important;
+                width: 12% !important;
             }
 
             .btn, form, .select2, .page-title, .no-print {
@@ -296,21 +296,21 @@
                         <div class="table-responsive">
                             <table id="repaymentTable">
                                 <colgroup>
-                                    <col style="width:13%"><!-- Loan No (smaller) -->
-                                    <col style="width:11%"><!-- Full Name (smaller) -->
-                                    <col style="width:7%"><!-- Loan Amount -->
-                                    <col style="width:7%"><!-- Due Installment -->
-                                    <col style="width:7%"><!-- New Loan Amount -->
-                                    <col style="width:6.8%"><!-- Paid 1 -->
-                                    <col style="width:4.2%"><!-- Correct 1 (wider) -->
-                                    <col style="width:6.8%"><!-- Paid 2 -->
-                                    <col style="width:4.2%"><!-- Correct 2 (wider) -->
-                                    <col style="width:6.8%"><!-- Paid 3 -->
-                                    <col style="width:4.2%"><!-- Correct 3 (wider) -->
-                                    <col style="width:6.8%"><!-- Paid 4 -->
-                                    <col style="width:4.2%"><!-- Correct 4 (wider) -->
-                                    <col style="width:6.8%"><!-- Paid 5 -->
-                                    <col style="width:4.2%"><!-- Correct 5 (wider) -->
+                                    <col style="width:12%">
+                                    <col style="width:10%">
+                                    <col style="width:6.5%">
+                                    <col style="width:6.5%">
+                                    <col style="width:6.5%">
+                                    <col style="width:7%">
+                                    <col style="width:4.5%">
+                                    <col style="width:7%">
+                                    <col style="width:4.5%">
+                                    <col style="width:7%">
+                                    <col style="width:4.5%">
+                                    <col style="width:7%">
+                                    <col style="width:4.5%">
+                                    <col style="width:7%">
+                                    <col style="width:4.5%">
                                 </colgroup>
                                 <thead>
                                 <tr>
@@ -523,15 +523,15 @@
     th, td { border: 1px solid #000; padding: 4px; text-align: center; word-break: break-word; min-height: 20px; }
 
     /* Loan No column */
-    th:nth-child(1), td:nth-child(1) { width: 13% !important; }
+    th:nth-child(1), td:nth-child(1) { width: 12% !important; }
 
     /* Name column smaller */
-    th:nth-child(2), td:nth-child(2) { width: 11% !important; }
+    th:nth-child(2), td:nth-child(2) { width: 10% !important; }
 
     /* Amount columns */
     th:nth-child(3), td:nth-child(3),
     th:nth-child(4), td:nth-child(4),
-    th:nth-child(5), td:nth-child(5) { width: 7% !important; }
+    th:nth-child(5), td:nth-child(5) { width: 6.5% !important; }
 
     /* Paid columns wider */
     th:nth-child(6), td:nth-child(6),
@@ -539,16 +539,16 @@
     th:nth-child(10), td:nth-child(10),
     th:nth-child(12), td:nth-child(12),
     th:nth-child(14), td:nth-child(14) {
-        width: 6.8% !important;
+        width: 7% !important;
     }
 
-    /* Correct columns wider */
+    /* Correct columns smaller */
     th:nth-child(7), td:nth-child(7),
     th:nth-child(9), td:nth-child(9),
     th:nth-child(11), td:nth-child(11),
     th:nth-child(13), td:nth-child(13),
     th:nth-child(15), td:nth-child(15) {
-        width: 4.2% !important;
+        width: 4.5% !important;
     }
 
     .brandline { font-size: 24px !important; font-weight: 800; text-align: left; line-height: 1.2; letter-spacing: 0.2px; }
