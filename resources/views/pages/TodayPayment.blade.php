@@ -1179,7 +1179,31 @@
 
     <script src="../JS/validate.js"></script>
     <script src="../JS/today_payment.js?n=29"></script>
-     <script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const dateInput = document.getElementById("payment_date");
+
+            // Always disallow future dates
+            const today = new Date().toISOString().split("T")[0];
+            dateInput.setAttribute("max", today);
+
+            // Check setting from global APP_SETTINGS
+            const allowBackdate = window.APP_SETTINGS?.payment_backdate === "enabled";
+
+            if (!allowBackdate) {
+                // Disable backdating → min = today
+                dateInput.setAttribute("min", today);
+            } else {
+                // Allow backdating → optional limit (example: 1 year)
+                const lastYear = new Date();
+                lastYear.setFullYear(lastYear.getFullYear() - 1);
+                const minDate = lastYear.toISOString().split("T")[0];
+                dateInput.setAttribute("min", minDate);
+            }
+        });
+    </script>
+
+    <script>
         $(document).ready(function() {
             @if($collector==1 || $cashier==1)
                 togglePaymentSections("Collector");
@@ -1278,6 +1302,8 @@
 
 
         });
+
+
 
         // payment_amount_2
         function load_payment_reciept(id){

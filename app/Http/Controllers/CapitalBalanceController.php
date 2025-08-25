@@ -302,7 +302,7 @@ class CapitalBalanceController extends Controller
     // GET /settings/all
     public function all()
     {
-        $keys = ['payment_member_name','loan_disbursement_policy'];
+        $keys = ['payment_member_name','loan_disbursement_policy','payment_backdate','loan_order'];
 
         $rows = DB::table($this->table)
             ->whereIn('key', $keys)
@@ -316,7 +316,7 @@ class CapitalBalanceController extends Controller
     public function upsert(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'key'   => ['required', 'in:payment_member_name,loan_disbursement_policy'],
+            'key'   => ['required', 'in:payment_member_name,loan_disbursement_policy,payment_backdate,loan_order'],
             'value' => [
                 'required',
                 function ($attribute, $value, $fail) use ($request) {
@@ -328,6 +328,16 @@ class CapitalBalanceController extends Controller
                     if ($request->key === 'loan_disbursement_policy' &&
                         !in_array($value, ['strict', 'flexible'])) {
                         $fail('Invalid value for loan_disbursement_policy.');
+                    }
+
+                    if ($request->key === 'payment_backdate' &&
+                        !in_array($value, ['enabled', 'disabled'])) {
+                        $fail('Invalid value for payment_backdate.');
+                    }
+
+                    if ($request->key === 'loan_order' &&
+                        !in_array($value, ['create_date', 'loan_number', 'issue_date'])) {
+                        $fail('Invalid value for loan_order.');
                     }
                 },
             ],

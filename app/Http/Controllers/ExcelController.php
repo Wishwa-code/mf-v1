@@ -77,9 +77,9 @@ class ExcelController extends Controller
     {
         $data = $request->excelData;
 
-        DB::table('group_has_customer')
-            ->where('branch_id', session('branch_id'))
-            ->delete();
+//        DB::table('group_has_customer')
+//            ->where('branch_id', session('branch_id'))
+//            ->delete();
 
         $route_id = '';
         $insertedCusIds = [];  // 👉 To track already inserted cus_id
@@ -267,9 +267,9 @@ class ExcelController extends Controller
 //
         Log::info("Skipped Customers: ", $skipped);
 
-        DB::table('group_has_customer')
-            ->where('branch_id', session('branch_id'))
-            ->delete();
+//        DB::table('group_has_customer')
+//            ->where('branch_id', session('branch_id'))
+//            ->delete();
 
         $routeData = [
             'name' => session('branch_name'),

@@ -511,10 +511,143 @@ class CustomerController extends Controller
             // Store the file on the public disk
             $documentPath = Storage::disk('public')->putFile($directory, $file);
         }
+
+        // ---------- CUSTOMER NUMBER BUILDER (create/update) ----------
+        $existing = tableWithBranch('customer')
+            ->where('idCustomer', $request->id)
+            ->first();
+
+// Detect route change (for update flows)
+        $newRouteId   = $request->root;
+        $routeChanged = $existing && (string)$existing->route_id !== (string)$newRouteId;
+
+// Company + branch context
+        $company       = tableWithBranch('company')->first();
+        $separator     = (string)($company->customer_seperate_from ?? ''); // e.g. "/"
+        $companyTpl    = (string)($company->customer_format ?? '');
+
+// Branch details for @Branch_No@ / @Branch@
+        $branchId   = session('branch_id') ?? ($existing->branch_id ?? null);
+        $branchRec  = $branchId ? DB::table('branch')->where('branch_id', $branchId)->first() : null;
+        $branchName = (string)($branchRec->Name ?? $company->branch ?? '');
+        $branchCode = (string)(
+            $branchRec->Branch_No
+            ?? $branchRec->branch_code
+            ?? ($branchId ? str_pad((string)$branchId, 3, '0', STR_PAD_LEFT) : '')
+        );
+
+// Choose template: prefer request if it has any @...@ token, else company template
+        $reqTpl         = (string)($request->cus_number ?? '');
+        $hasAnyToken    = fn($s) => is_string($s) && preg_match('/@\w+@/', $s);
+        $templateToUse  = $hasAnyToken($reqTpl) ? $reqTpl : ($hasAnyToken($companyTpl) ? $companyTpl : '');
+
+// If you’re in UPDATE and route did NOT change -> keep number as-is
+        if ($existing && !$routeChanged) {
+            $finalCusNumber = (string)$existing->cus_number;
+        } else {
+            // We will build a number. If UPDATE and you want to **preserve** the current auto id,
+            // we’ll try to extract it from the existing number.
+            $preserveExistingAuto = (bool)$existing; // true for updates by default
+
+            // --- Counters / IDs ---
+            // Global next auto id (used for CREATE or if we can't preserve)
+            $total_customer_count   = tableWithBranch('customer')->count() ?? 0;
+            $next_customer_id       = $total_customer_count + 1;
+            $autoIdPaddedGlobal     = str_pad($next_customer_id, 3, '0', STR_PAD_LEFT);
+
+            // Try to pull the existing last numeric segment (based on separator) for updates
+            $autoIdFromExisting = null;
+            if ($preserveExistingAuto && $separator && $existing) {
+                $parts = explode($separator, (string)$existing->cus_number);
+                for ($i = count($parts) - 1; $i >= 0; $i--) {
+                    if (ctype_digit($parts[$i])) {
+                        $autoIdFromExisting = $parts[$i];
+                        break;
+                    }
+                }
+            }
+            $autoIdFinal = $autoIdFromExisting ?: $autoIdPaddedGlobal;
+
+            // Route code for @Root@
+            $routeCode = '';
+            if ($newRouteId) {
+                $routeRow = DB::table('route')->where('id_route', $newRouteId)->first();
+                $routeCode = (string)($routeRow->root_code ?? $routeRow->name ?? $newRouteId);
+            }
+
+            // Base string
+            $new_type = $templateToUse !== '' ? $templateToUse : (string)$reqTpl;
+
+            // --- Simple replacements ---
+            $replacements = [
+                '@Auto_Id@'    => $autoIdFinal,
+                '@Branch_No@'  => '00001',
+                '@Branch@'     => $branchName,
+                '@Day@'        => date('d'),
+                '@Month@'      => date('m'),
+                '@Year@'       => date('Y'),
+            ];
+            $new_type = strtr($new_type, $replacements);
+
+            // --- Dynamic: @Root@ ---
+            if (Str::contains($new_type, '@Root@') && $newRouteId) {
+                $new_type = str_replace('@Root@', $routeCode, $new_type);
+            }
+
+            // --- Dynamic: @CountMonthly@ ---
+            if (Str::contains($new_type, '@CountMonthly@')) {
+                $monthly_count = tableWithBranch('customer')
+                    ->whereYear('created_at', now()->year)
+                    ->whereMonth('created_at', now()->month)
+                    ->count();
+                $monthly_count++;
+                // pad to 3 digits if you want: str_pad($monthly_count, 3, '0', STR_PAD_LEFT)
+                $new_type = str_replace('@CountMonthly@', $monthly_count, $new_type);
+            }
+
+            // --- Dynamic: @RootlyCount@ ---
+            if (Str::contains($new_type, '@RootlyCount@') && $newRouteId) {
+                $rootly_count = tableWithBranch('customer')
+                    ->where('route_id', $newRouteId)
+                    ->count();
+                $rootly_count++;
+                // pad to 3 digits if you want: str_pad($rootly_count, 3, '0', STR_PAD_LEFT)
+                $new_type = str_replace('@RootlyCount@', $rootly_count, $new_type);
+            }
+
+            // --- If a separator is defined and NO monthly/rootly tokens were used,
+            // replace ONLY the **last numeric** part with the auto id (preserved or global) ---
+            if (!empty($separator)
+                && !Str::contains($templateToUse, '@CountMonthly@')
+                && !Str::contains($templateToUse, '@RootlyCount@')
+                && !Str::contains($templateToUse, '@Auto_Id@') // only apply if @Auto_Id@ not explicitly used
+            ) {
+                $parts = explode($separator, $new_type);
+                for ($i = count($parts) - 1; $i >= 0; $i--) {
+                    if (ctype_digit($parts[$i])) {
+                        $parts[$i] = $autoIdFinal; // replace last numeric segment only
+                        break;
+                    }
+                }
+                $new_cus_number = implode($separator, $parts);
+            } else {
+                $new_cus_number = $new_type;
+            }
+
+            // Optionally update company's last number pointer (only when we actually use a new global id)
+            if (!$existing || !$autoIdFromExisting) {
+                updateWithBranch('company', 'id', $company->id, [
+                    'customer_num_start_from' => $next_customer_id,
+                ]);
+            }
+
+            $finalCusNumber = $new_cus_number;
+        }
+
         // Assuming you have the request object available
         $data = [
             'title' => $request->title,
-            'cus_number' => $request->cus_number,
+            'cus_number' => $finalCusNumber,
             'First_Name' => $request->f_name,
             'Last_Name' => $request->last_name,
             'Email' => $request->email,

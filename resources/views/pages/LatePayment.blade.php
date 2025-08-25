@@ -103,6 +103,18 @@
             background-color: #1A2942; /* Match your bg-purple */
             color: white;
         }
+        #loading-spinner {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 9999;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 30px;
+            border-radius: 8px;
+        }
 
 
     </style>
@@ -236,7 +248,13 @@
                         </div>
 
                         <div class="table-scroll-container">
+                            <div id="loading-spinner" style="display:none; text-align:center; padding:20px;">
+                                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                <p>Loading data, please wait...</p>
+                            </div>
+
                             <table class="table table-centered mb-0" id="loan_table">
+
                                 <thead class="sticky-top bg-purple">
                                 <tr>
                                     <th>Loan No</th>
@@ -468,6 +486,10 @@
             let lending = $("#lending").val();
             let installmentFilter = $("#installment_filter").val();
 
+            // Show spinner and clear table
+            $("#loading-spinner").show();
+            $('#loan_table tbody').empty();
+
             $.ajax({
                 type: "POST",
                 url: `/latePayment_load_check?page=${page}`,
@@ -562,6 +584,10 @@
                 },
                 error: function(xhr, textStatus, errorThrown) {
                     console.log("Error:", errorThrown);
+                },
+                complete: function() {
+                    // Always hide spinner after request finishes
+                    $("#loading-spinner").hide();
                 }
             });
         }

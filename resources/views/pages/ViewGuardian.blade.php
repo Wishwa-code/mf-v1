@@ -56,8 +56,15 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between mb-3">
-                            <h4 class="page-title">Guarantee Details</h4>
+
+                        <div class="d-flex flex-column align-items-start mb-3">
+                            <h4 class="page-title mb-3">Guarantee Details</h4>
+
+
+                            <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="form-control mb-2 w-50" hidden>
+
+                            <!-- Upload button, aligned below the file input -->
+                            <input type="button"  class="btn btn-success mt-2" value="Upload">
                         </div>
 
                         <!-- DataTable -->
@@ -307,7 +314,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         $(document).ready(function() {
             // Initialize Select2 Elements
@@ -731,6 +738,119 @@
                     });
                 }
             });
+        }
+
+    </script>
+    <script>
+        async function upload_excel() {
+            const fileInput = document.getElementById('uploadExcel');
+            const file = fileInput.files[0];
+            if (!file) {
+                Swal.fire('No file', 'Please choose an Excel file.', 'warning');
+                return;
+            }
+
+            // Read Excel in browser
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const data = new Uint8Array(e.target.result);
+                const wb = XLSX.read(data, { type: 'array' });
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+                // Take rows from index 5 (6th row), but don't filter by row[3] (it was dropping valid rows)
+                const dataRows = rows.filter((r, i) => i >= 5);
+
+                if (!dataRows.length) {
+                    Swal.fire('Empty', 'No data rows found after header.', 'warning');
+                    return;
+                }
+
+                const confirm = await Swal.fire({
+                    title: 'Import guarantors?',
+                    html: `This will send <b>${dataRows.length}</b> rows one-by-one.`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, start'
+                });
+                if (!confirm.isConfirmed) return;
+
+                // show progress
+                document.getElementById('excelProgressWrap').style.display = 'block';
+                const bar  = document.getElementById('excelProgressBar');
+                const text = document.getElementById('excelProgressText');
+
+                let ok = 0, fail = 0;
+                const total = dataRows.length;
+
+                // Helper: map your sheet indexes -> controller payload
+                // (based on your commented mapping)
+                const mapToPayload = (row) => ({
+                    Title      : row[4]  || null,
+                    First_Name : row[5]  || null,
+                    Last_Name  : row[6]  || null,
+                    Email      : null,
+                    Contact_No : row[8]  || null,
+                    Nic        : row[10] || null,
+                    Gender     : row[11] || null,
+                    Dob        : row[12] || null,
+                    Address    : row[16] || null,
+                    Address_02 : row[17] || null, // NOTE: your DB column is Address_02 (not Address_2)
+                    Address_03 : row[18] || null, // same here
+                    City       : row[19] || null,
+                    State      : null,
+                    Landline   : null,
+                    Note       : null,
+                    Longitude  : null,
+                    Latitude   : null,
+                    Cus_phto   : null
+                });
+
+                for (let i = 0; i < total; i++) {
+                    const payload = mapToPayload(dataRows[i]);
+
+                    // Skip empty (no name/NIC/phone)
+                    if (!payload.First_Name && !payload.Nic && !payload.Contact_No) {
+                        fail++;
+                        const pct = Math.round(((i+1)/total)*100);
+                        bar.style.width = pct + '%'; bar.textContent = pct + '%';
+                        text.textContent = `Processed ${i+1}/${total} — Success: ${ok}, Failed: ${fail}`;
+                        continue;
+                    }
+
+                    try {
+                        const res = await fetch('/guardian/import-row', {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            },
+                            credentials: 'same-origin',
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!res.ok) throw new Error((await res.text()) || 'HTTP error');
+                        const j = await res.json();
+                        if (j.ok) ok++; else fail++;
+
+                    } catch (err) {
+                        console.warn('Row failed', i+1, err);
+                        fail++;
+                    }
+
+                    const pct = Math.round(((i+1)/total)*100);
+                    bar.style.width = pct + '%'; bar.textContent = pct + '%';
+                    text.textContent = `Processed ${i+1}/${total} — Success: ${ok}, Failed: ${fail}`;
+                }
+
+                Swal.fire({
+                    icon: fail ? 'warning' : 'success',
+                    title: 'Import finished',
+                    html: `<b>Success:</b> ${ok}<br><b>Failed:</b> ${fail}`
+                }).then(() => window.location.reload());
+            };
+            reader.readAsArrayBuffer(file);
         }
 
     </script>
