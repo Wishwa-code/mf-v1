@@ -69,6 +69,18 @@
             font-size: 14px;
         }
 
+    /* Same Column widths for all */
+    #repaymentTable th, #repaymentTable td { white-space: nowrap; }
+    #repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 8%; }
+    #repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 18%; }
+    #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 20%; }
+    #repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 9%; }
+    #repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 9%; }
+    #repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 10%; }
+
+    /* logic for contact no always no wrap */
+    .contact-no { max-width: none !important; white-space: nowrap; overflow: visible; text-overflow: clip; }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             table {
@@ -115,6 +127,9 @@
                 text-overflow: ellipsis;
                 max-width: 150px;
             }
+
+            /* Override css for contact no print consistnt */
+            .contact-no { max-width: none !important; overflow: visible; text-overflow: clip; }
 
             .paid-amount {
                 width: 80px;
@@ -180,7 +195,7 @@
 
             #repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 8%; }   /* Loan No */
             #repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 18%; } /* Full Name */
-            #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 16%; } /* Contact No (wider!) */
+            #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 20%; } /* Contact No (wider for one-line mobile) */
             #repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 9%; }  /* Loan Amount */
             #repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 9%; }  /* Due Installment */
             #repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 10%; } /* New Loan Amount */
@@ -294,7 +309,7 @@
                                             <tr class="group-row">
                                                 <td>{{ $item->Loan_No }}</td>
                                                 <td class="fixed-name">{{ $item->name_with_initials }}</td>
-                                                <td class="fixed-name">{{ $item->Contact_No }}</td>
+                                                <td class="fixed-name contact-no">{{ $item->Contact_No }}</td>
                                                 <td>{{ number_format($item->Loan_Amount, 2) }}</td>
                                                 <td>{{ number_format($item->Installment_Amount, 2) }}</td>
                                                 <td>{{ number_format($item->Balance_Amount, 2) }}</td>
@@ -472,7 +487,12 @@
                 printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 11px; margin: 0.5in; }');
                 printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 10px; }');
                 printWindow.document.write('#repaymentTable th, #repaymentTable td { border: 1px solid black; padding: 4px; text-align: center; word-break: break-word; }');
-                printWindow.document.write('#repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 20%; }');  // 🎯 Full Name wider
+                printWindow.document.write('#repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 8%; }');
+                printWindow.document.write('#repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 18%; }');  // Full Name
+                printWindow.document.write('#repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 20%; }');  // Contact No
+                printWindow.document.write('#repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 9%; }');
+                printWindow.document.write('#repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 9%; }');
+                printWindow.document.write('#repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 10%; }');
                 printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
                 printWindow.document.write('</style>');
 
