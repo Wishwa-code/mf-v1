@@ -44,6 +44,20 @@ function load_payment_table(page = 1) {
 
     $('#selected_filters_content').html(selectedFiltersHtml);
 
+    const today = new Date().toISOString().split('T')[0];
+    const backdateSetting = window.APP_SETTINGS?.payment_backdate; // "enabled" | "disabled"
+
+// if enabled, allow going 1 year back (you can change this window)
+    let minDate;
+    if (backdateSetting === "enabled") {
+        const lastYear = new Date();
+        lastYear.setFullYear(lastYear.getFullYear() - 1);
+        minDate = lastYear.toISOString().split("T")[0];
+    } else {
+        // disable backdating → min is today
+        minDate = today;
+    }
+
 
     $.ajax({
         type: "POST",
@@ -102,7 +116,17 @@ function load_payment_table(page = 1) {
                             <td>${parseFloat(item.Last_Payment_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             <td>${item.Last_Payment_Date}</td>
                             <td>${parseFloat(item.Today_installment).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                            <td><input type="date" name="date_bulk" class="form-control" value="${inputDate || new Date().toISOString().split('T')[0]}" data-loan-id="${item.idCustomer_Loan}" /></td>
+                            <td>
+    <input 
+      type="date" 
+      name="date_bulk" 
+      class="form-control"
+      value="${inputDate || today}" 
+      data-loan-id="${item.idCustomer_Loan}"
+      min="${minDate}"
+      max="${today}"
+    />
+  </td>
                             <td>
                                 ${paymentField}
                                 <input type="hidden" name="loan_id" value="${item.idCustomer_Loan}" />

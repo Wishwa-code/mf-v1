@@ -275,6 +275,39 @@
                             </div>
                             <small class="text-muted">Controls how member names show on the Payment section.</small>
                         </div>
+                        <hr>
+                        <!-- Payment Backdate -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Payment Backdate</label>
+                            <div class="d-flex gap-2">
+                                <select id="payment_backdate" class="form-select" style="max-width: 300px;">
+                                    <option value="disabled">Disable</option>
+                                    <option value="enabled">Enable</option>
+                                </select>
+                                <button id="btnUpdatePaymentBackdate" class="btn btn-primary">
+                                    <i class="fa-solid fa-floppy-disk me-1"></i> Update
+                                </button>
+                            </div>
+                            <small class="text-muted">Allow entering payments with a back-dated date when enabled.</small>
+                        </div>
+
+                        <hr>
+                        <!-- Loan Number Order -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Loan Number Order</label>
+                            <div class="d-flex gap-2">
+                                <select id="loan_order" class="form-select" style="max-width: 300px;">
+                                    <option value="create_date">Create Date</option>
+                                    <option value="loan_number">Loan Number</option>
+                                    <option value="issue_date">Issue Date</option>
+                                </select>
+                                <button id="btnUpdateLoanOrder" class="btn btn-primary">
+                                    <i class="fa-solid fa-floppy-disk me-1"></i> Update
+                                </button>
+                            </div>
+                            <small class="text-muted">Controls the default ordering of loans in lists and dropdowns.</small>
+                        </div>
+
 
                     </div>
                 </div>
@@ -314,6 +347,19 @@
 
                 save_setting('loan_disbursement_policy', value);
             });
+
+            $('#btnUpdatePaymentBackdate').on('click', function (e) {
+                e.preventDefault();
+                const value = $('#payment_backdate').val(); // 'enabled' | 'disabled'
+                save_setting('payment_backdate', value);
+            });
+
+            $('#btnUpdateLoanOrder').on('click', function (e) {
+                e.preventDefault();
+                const value = $('#loan_order').val(); // 'create_date' | 'loan_number' | 'issue_date'
+                save_setting('loan_order', value);
+            });
+
 
         });
 
@@ -480,13 +526,27 @@
                 },
                 success: function (data) {
                     const items = data.items || {};
+
+// Payment Member Name
                     if (items.payment_member_name) {
                         $('#payment_member_name').val(items.payment_member_name);
                     }
-                    // Loan Disbursement Policy
+
+// Loan Disbursement Policy
                     if (items.loan_disbursement_policy) {
                         $(`input[name="loan_policy"][value="${items.loan_disbursement_policy}"]`).prop('checked', true);
                     }
+
+// NEW: Payment Backdate
+                    if (items.payment_backdate) {
+                        $('#payment_backdate').val(items.payment_backdate); // 'enabled' | 'disabled'
+                    }
+
+// NEW: Loan Number Order
+                    if (items.loan_order) {
+                        $('#loan_order').val(items.loan_order); // 'create_date' | 'loan_number' | 'issue_date'
+                    }
+
                 },
                 error: function (xhr) {
                     console.error('Settings load error:', xhr.responseText || xhr.statusText);
