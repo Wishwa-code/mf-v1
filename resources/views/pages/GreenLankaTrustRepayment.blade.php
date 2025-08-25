@@ -566,35 +566,34 @@
                 const columnsHeadHTML = document.querySelector('#repaymentTable thead').innerHTML;
                 const colgroupHTML = (document.querySelector('#repaymentTable colgroup')?.outerHTML) || '';
 
-                // Build header
-                                const buildThead = (isFirstPage = false) => {
-                    const headerTitle = isFirstPage ? `
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ccc; padding-bottom:2px; margin-bottom:2px;">
-              <div class="brandline">${companyName}</div>
-              <div class="metaline">Center No: ${centerNo} | Center Name: ${centerName} | Printed by: ${printedBy} on ${printedAt}</div>
-            </div>
-            <h2>Repayment Sheet (${centerDetails})</h2>
-          ` : '';
-
-                    return `
-            <thead>
-              <tr class="thead-bar">
+                // Build header for the first page
+                const buildFirstPageThead = () => `
+    <thead>
+      <tr class="thead-bar">
                 <td colspan="15" style="border:none; padding:0 0 2px 0;">
-                  ${headerTitle}
-                </td>
-              </tr>
-              ${columnsHeadHTML}
-            </thead>
-          `;
-                };
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ccc; padding-bottom:2px; margin-bottom:2px;">
+            <div class="brandline">${companyName}</div>
+            <div class="metaline">Center No: ${centerNo} | Center Name: ${centerName} | Printed by: ${printedBy} on ${printedAt}</div>
+          </div>
+          <h2>Repayment Sheet (${centerDetails})</h2>
+        </td>
+      </tr>
+      ${columnsHeadHTML}
+    </thead>
+  `;
+
+                // Build header for subsequent pages (table header only)
+                const buildSubsequentPageThead = () => `<thead>${columnsHeadHTML}</thead>`;
 
                 const groupBlocks = Array.from(document.querySelectorAll('.print-group-block'));
                 let html = '';
 
-                // Loop through blocks, creating a page for each.
+                // Each `print-group-block` from PHP contains up to 2 groups.
+                // This loop puts one block (2 groups) per page.
                 for (let i = 0; i < groupBlocks.length; i++) {
                     html += '<div class="page"><table>' + colgroupHTML;
-                    html += buildThead(i === 0); // Only first page gets the main header
+                    // Use full header for first page, minimal header for others
+                    html += (i === 0) ? buildFirstPageThead() : buildSubsequentPageThead();
                     html += '<tbody>';
                     html += groupBlocks[i].outerHTML;
                     html += '</tbody></table></div>';
@@ -605,7 +604,17 @@
         <div class="page">
             <table>
                 ${colgroupHTML}
-                ${buildThead(groupBlocks.length === 0)}
+                <thead>
+                  <tr class="thead-bar">
+                    <td colspan="15" style="border:none; padding:0 0 2px 0;">
+                      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ccc; padding-bottom:2px; margin-bottom:2px;">
+                        <div class="brandline">${companyName}</div>
+                        <div class="metaline">Center No: ${centerNo} | Center Name: ${centerName} | Printed by: ${printedBy} on ${printedAt}</div>
+                      </div>
+                      <h2>Repayment Sheet (${centerDetails})</h2>
+                    </td>
+                  </tr>
+                </thead>
                 <tbody>
         <tr><td colspan="15" style="height: 10px;"></td></tr>
         <tr><td colspan="2"><strong>Cumulative Collection</strong></td><td colspan="13"></td></tr>
