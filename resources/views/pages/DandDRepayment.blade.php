@@ -305,11 +305,14 @@
                                             </tr>
                                         @endforeach
                                         <tr class="group-row" style="font-weight: bold;">
-                                            <td colspan="2">Group Total</td>
+                                            <!-- Span the first three non-numeric columns (Loan No, Full Name, Contact No) -->
+                                            <td colspan="3">Group Total</td>
+                                            <!-- Totals aligned under Loan Amount, Due Installment, New Loan Amount -->
                                             <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
                                             <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
                                             <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
-                                            <td colspan="9"></td>
+                                            <!-- Remaining 8 columns for the four Date (Paid/Correct) pairs -->
+                                            <td colspan="8"></td>
                                         </tr>
                                         {{-- Empty 7 Rows --}}
                                         @for ($j = 0; $j < 2; $j++)
