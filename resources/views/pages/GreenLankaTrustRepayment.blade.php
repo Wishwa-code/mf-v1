@@ -483,7 +483,7 @@
         width: 50px !important;
     }
 
-    .brandline { font-size: 14px; font-weight: 700; text-align: left; }
+    .brandline { font-size: 18px; font-weight: 700; text-align: left; }
     .metaline  { font-size: 10px; font-weight: 500; text-align: right; }
     .thead-bar td { border: none; padding: 0; }
     .print-group-block { page-break-inside: avoid; }
