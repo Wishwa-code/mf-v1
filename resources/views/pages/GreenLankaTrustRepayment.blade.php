@@ -69,7 +69,7 @@
             font-size: 14px;
         }
 
-    /* Hidden by default; shown only for print to reserve punch space */
+    /* Hidden by default */
     .punch-space { display: none; }
 
     /* Responsive adjustments */
@@ -128,8 +128,7 @@
         @media print {
             @page {
                 size: A4 landscape;
-                /* Remove browser print margins; we'll add an inner spacer for reliable punch space */
-                margin: 0;
+                margin: 1in 0 0 0; /* 1 inch top margin, 0 for others */
                 counter-increment: page;
             }
 
@@ -184,8 +183,8 @@
                 display: none !important;
             }
 
-            /* Use a 1.5in inner spacer at the top of each printed page (punch space) */
-            .punch-space { display: block; height: 1.5in; }
+            /* Use a 1.5in inner spacer at the top of each printed page */
+            .punch-space { display: block; height: 0; }
 
             /* Larger titles on printed pages */
             .brandline { font-size: 20px !important; font-weight: 800; line-height: 1.2; }
@@ -223,7 +222,7 @@
 @section('content')
 
     <div class="container-fluid">
-    <!-- Print-only top spacer to create punch space -->
+    <!-- Print-only top spacer -->
     <div class="punch-space"></div>
 
         <!-- start page title -->
@@ -507,8 +506,8 @@
                 // ===== CSS =====
                 printWindow.document.write('<html><head><title>Repayment Sheet</title><style>');
                 printWindow.document.write(`
-    /* Remove browser margins to mimic Chrome's "None"; reserve top punch space via inner spacer */
-    @page { size: ${orientation}; margin: 0; }
+    /* Remove browser margins; reserve top margin via @page */
+    @page { size: ${orientation}; margin: 1in 0 0 0; }
     html, body { margin:0; padding:0; }
     body { font-family: Arial, sans-serif; font-size: 11px; }
 
@@ -558,8 +557,8 @@
     /* Let browser paginate naturally; don't block a group from starting on the first page */
     .print-group-block { page-break-inside: auto; }
 
-    /* Print-only inner spacer equals 1.5in (we use zero page margin) */
-    .punch-space { height: 1.5in; }
+    /* Print-only inner spacer is not needed with @page margin */
+    .punch-space { height: 0; }
   `);
                 printWindow.document.write('</style></head><body>');
 
@@ -568,51 +567,46 @@
                 const colgroupHTML = (document.querySelector('#repaymentTable colgroup')?.outerHTML) || '';
 
                 // Build header
-                                const buildRepeatingThead = () => `
-    <thead>
-      <tr class="thead-bar">
-                <td colspan="15" style="border:none; padding:0 0 2px 0;">
-                    <div class="punch-space"></div>
-          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ccc; padding-bottom:2px; margin-bottom:2px;">
-            <div class="brandline">${companyName}</div>
-            <div class="metaline">Center No: ${centerNo} | Center Name: ${centerName} | Printed by: ${printedBy} on ${printedAt}</div>
-          </div>
-          <h2>Repayment Sheet (${centerDetails})</h2>
-        </td>
-      </tr>
-      ${columnsHeadHTML}
-    </thead>
-  `;
-
-                const groupBlocks = Array.from(document.querySelectorAll('.print-group-block'));
-                let html = '';
-
-                // 2 groups per page
-                for (let i = 0; i < groupBlocks.length; i += 2) {
-                    html += '<div class="page"><table>' + colgroupHTML;
-                    html += buildRepeatingThead();
-                    html += '<tbody>';
-                    html += groupBlocks[i].outerHTML;
-                    if (i + 1 < groupBlocks.length) html += groupBlocks[i + 1].outerHTML;
-                    html += '</tbody></table></div>';
-                }
-
-                // Summary page (NO table header here)
-                html += `
-        <div class="page">
-            <table>
-                ${colgroupHTML}
-                <tbody>
-                <tr>
-                    <td colspan="15" style="border:none; padding:0 0 2px 0;">
-                        <div class="punch-space"></div>
+                                const buildThead = (isFirstPage = false) => {
+                    const headerTitle = isFirstPage ? `
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ccc; padding-bottom:2px; margin-bottom:2px;">
               <div class="brandline">${companyName}</div>
               <div class="metaline">Center No: ${centerNo} | Center Name: ${centerName} | Printed by: ${printedBy} on ${printedAt}</div>
             </div>
             <h2>Repayment Sheet (${centerDetails})</h2>
-          </td>
-        </tr>
+          ` : '';
+
+                    return `
+            <thead>
+              <tr class="thead-bar">
+                <td colspan="15" style="border:none; padding:0 0 2px 0;">
+                  ${headerTitle}
+                </td>
+              </tr>
+              ${columnsHeadHTML}
+            </thead>
+          `;
+                };
+
+                const groupBlocks = Array.from(document.querySelectorAll('.print-group-block'));
+                let html = '';
+
+                // Loop through blocks, creating a page for each.
+                for (let i = 0; i < groupBlocks.length; i++) {
+                    html += '<div class="page"><table>' + colgroupHTML;
+                    html += buildThead(i === 0); // Only first page gets the main header
+                    html += '<tbody>';
+                    html += groupBlocks[i].outerHTML;
+                    html += '</tbody></table></div>';
+                }
+
+                // Summary page
+                html += `
+        <div class="page">
+            <table>
+                ${colgroupHTML}
+                ${buildThead(groupBlocks.length === 0)}
+                <tbody>
         <tr><td colspan="15" style="height: 10px;"></td></tr>
         <tr><td colspan="2"><strong>Cumulative Collection</strong></td><td colspan="13"></td></tr>
         <tr><td colspan="2"><strong>Cumulative Due</strong></td><td colspan="13"></td></tr>
