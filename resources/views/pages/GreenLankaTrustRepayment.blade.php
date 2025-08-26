@@ -609,34 +609,7 @@
     .flexible-name.long-name { font-size: 10px; }
     .flexible-name.very-long-name { font-size: 9px; }
 
-    /* Loan No column - increased for better space usage */
-    th:nth-child(1), td:nth-child(1) { width: 15% !important; }
-
-    /* Name column */
-    th:nth-child(2), td:nth-child(2) { width: 12% !important; }
-
-    /* Amount columns - slightly reduced to accommodate loan no */
-    th:nth-child(3), td:nth-child(3),
-    th:nth-child(4), td:nth-child(4),
-    th:nth-child(5), td:nth-child(5) { width: 5.5% !important; }
-
-    /* Paid columns - slightly reduced */
-    th:nth-child(6), td:nth-child(6),
-    th:nth-child(8), td:nth-child(8),
-    th:nth-child(10), td:nth-child(10),
-    th:nth-child(12), td:nth-child(12),
-    th:nth-child(14), td:nth-child(14) {
-        width: 6% !important;
-    }
-
-    /* Correct columns smaller */
-    th:nth-child(7), td:nth-child(7),
-    th:nth-child(9), td:nth-child(9),
-    th:nth-child(11), td:nth-child(11),
-    th:nth-child(13), td:nth-child(13),
-    th:nth-child(15), td:nth-child(15) {
-        width: 4.5% !important;
-    }
+    /* Column widths are controlled via a fixed <colgroup> injected for each print table */
 
     .brandline { font-size: 24px !important; font-weight: 800; text-align: left; line-height: 1.2; letter-spacing: 0.2px; }
     .metaline  { font-size: 10px; font-weight: 500; text-align: right; }
@@ -650,8 +623,26 @@
                 printWindow.document.write('</style></head><body>');
 
                 // Column header + colgroup HTML
-                const columnsHeadHTML = document.querySelector('#repaymentTable thead').innerHTML;
-                const colgroupHTML = (document.querySelector('#repaymentTable colgroup')?.outerHTML) || '';
+                                const columnsHeadHTML = document.querySelector('#repaymentTable thead').innerHTML;
+                                // Fixed colgroup for print (consistent across all pages)
+                                const printColgroup = `
+                                    <colgroup>
+                                        <col style="width:15%">
+                                        <col style="width:12%">
+                                        <col style="width:5.5%">
+                                        <col style="width:5.5%">
+                                        <col style="width:5.5%">
+                                        <col style="width:6%">
+                                        <col style="width:4.5%">
+                                        <col style="width:6%">
+                                        <col style="width:4.5%">
+                                        <col style="width:6%">
+                                        <col style="width:4.5%">
+                                        <col style="width:6%">
+                                        <col style="width:4.5%">
+                                        <col style="width:6%">
+                                        <col style="width:4.5%">
+                                    </colgroup>`;
 
                 // Build header for the first page
                 const buildFirstPageThead = () => `
@@ -678,7 +669,7 @@
                 // Each `print-group-block` from PHP contains up to 2 groups.
                 // This loop puts one block (2 groups) per page.
                 for (let i = 0; i < groupBlocks.length; i++) {
-                    html += '<div class="page"><table>' + colgroupHTML;
+                    html += '<div class="page"><table>' + printColgroup;
                     // Use full header for first page, minimal header for others
                     html += (i === 0) ? buildFirstPageThead() : buildSubsequentPageThead();
                     html += '<tbody>';
@@ -692,7 +683,7 @@
                                 html += `
                 <div class="page">
                         <table>
-                                ${colgroupHTML}
+                                ${printColgroup}
                                 <thead>
                                     <tr class="thead-bar">
                                         <td colspan="15" style="border:none; padding:0 0 2px 0;">
