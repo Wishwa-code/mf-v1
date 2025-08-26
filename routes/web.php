@@ -498,7 +498,7 @@ Route::get('/changeCollector','\App\Http\Controllers\TodayPaymentController@coll
 Route::post('/changeCollector_filter','\App\Http\Controllers\TodayPaymentController@collector_filter')->name('load.collector_filtor');
 
 
-Route::post('/upload-excel-customer', [\App\Http\Controllers\ExcelController::class, 'uploadExcelWitness']);
+Route::post('/upload-excel-customer', [\App\Http\Controllers\ExcelController::class, 'uploadExcelCenters']);
 //Route::post('/upload-excel-customer', [\App\Http\Controllers\ExcelController::class, 'edit']);
 Route::post('/upload-excel-product', [\App\Http\Controllers\ExcelController::class, 'uploadExcelProduct']);
 Route::post('/upload-excel-loan', [\App\Http\Controllers\ExcelController::class, 'uploadExcelLoan']);
@@ -509,7 +509,7 @@ Route::post('/upload-excel-payment', [\App\Http\Controllers\ExcelController::cla
 Route::post('/upload-excel-category', [\App\Http\Controllers\ExcelController::class, 'uploadExcelCate']);
 Route::post('/upload-excel-guardian', [\App\Http\Controllers\ExcelController::class, 'uploadExcelWitness']);
 //Route::post('/upload-excel-customer-id', [\App\Http\Controllers\ExcelController::class, 'uploadExcelPayment']);
-
+Route::get('/upload', [\App\Http\Controllers\ExcelController::class, 'show']);
 
 Route::get('/LoanChargers','\App\Http\Controllers\ReportController@LoanChargers')->name('LoanChargers');
 
@@ -747,3 +747,5 @@ Route::post('/get-customer-bank-details', [LoanController::class, 'getCustomerBa
 
 Route::get('/settings/all','\App\Http\Controllers\CapitalBalanceController@all')->name('');
 Route::post('/settings/upsert','\App\Http\Controllers\CapitalBalanceController@upsert')->name('upsert');
+
+

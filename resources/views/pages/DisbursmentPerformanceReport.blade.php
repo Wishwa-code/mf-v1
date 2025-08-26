@@ -53,6 +53,12 @@
                                     </select>
                                 </div>
                                 <div class="col-md-2">
+                                    <label>Route</label>
+                                    <select id="route_id" class="form-control select2">
+                                        <option value="">All</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
                                     <label>Center</label>
                                     <select id="center_id" class="form-control select2">
                                         <option value="">All</option>
@@ -212,6 +218,9 @@
                 res.products.forEach(p => {
                     $('#product_id').append(`<option value="${p.idLoan_Category}">${p.Name}-${p.Product_code}</option>`);
                 });
+                res.route.forEach(p => {
+                    $('#route_id').append(`<option value="${p.id_route}">${p.name}-${p.root_code}</option>`);
+                });
             });
         }
 
@@ -222,7 +231,8 @@
                 date_to: $('#date_to').val(),
                 branch_id: $('#branch_id').val(),
                 center_id: $('#center_id').val(),
-                product_id: $('#product_id').val()
+                product_id: $('#product_id').val(),
+                route_id: $('#route_id').val()
             };
 
             $.post("{{ route('loan.report.data') }}", filters, function (data) {

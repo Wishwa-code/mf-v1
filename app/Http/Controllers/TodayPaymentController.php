@@ -281,7 +281,7 @@ class TodayPaymentController extends Controller
                 ->where('customer_loan.Status', '=', '0')
                 ->select(
                     'customer.idCustomer',
-                    DB::raw('IFNULL(center.No, "-") as center_no'),
+                    DB::raw('IFNULL(center.Name, "-") as center_no'),
                     'customer.First_Name as customer_name',
                     'customer.Contact_No as Contact_No',
                     'route.name as routename',
@@ -305,7 +305,7 @@ class TodayPaymentController extends Controller
                 )
                 ->groupBy(
                     'customer.idCustomer',
-                    'center.No',
+                    'center.Name',
                     'route.name',
                     'customer.First_Name',
                     'customer.Last_Name',
@@ -340,7 +340,7 @@ class TodayPaymentController extends Controller
                 ->where('customer_loan.Status', '=', '0')
                 ->select(
                     'customer.idCustomer',
-                    DB::raw('IFNULL(center.No, "-") as center_no'),
+                    DB::raw('IFNULL(center.Name, "-") as center_no'),
                     'customer.First_Name as customer_name',
                     'customer.Contact_No as Contact_No',
                     'route.name as routename',
@@ -363,7 +363,7 @@ class TodayPaymentController extends Controller
                 )
                 ->groupBy(
                     'customer.idCustomer',
-                    'center.No',
+                    'center.Name',
                     'route.name',
                     'customer.First_Name',
                     'customer.Last_Name',
