@@ -532,16 +532,16 @@
             });
 
             $('#nic').on('input', function() {
-                let nic = $('#nic').val().trim();
-                let birthdayInfo = getBirthdayFromNIC(nic);
+                let info = getBirthdayFromNIC($(this).val());
+                if (info) { $('#dob').val(info.dob); $('#gender').val(info.gender); }
+                else { $('#gender').val('-'); $('#dob').val('Invalid NIC number.'); }
+            });
 
-                if (birthdayInfo) {
-                    $('#dob').val('' + birthdayInfo.year + '-' + birthdayInfo.month + '-' + birthdayInfo.day + '');
-                    $('#gender').val(birthdayInfo.gender);
-                } else {
-                    $('#gender').val("-");
-                    $('#dob').val('Invalid NIC number.');
-                }
+            // guardian nic -> gender
+            $('#gua_nic').on('input', function(){
+                let info = getBirthdayFromNIC($(this).val());
+                if (info) { $('#guardian_gender').val(info.gender); }
+                else { $('#guardian_gender').val('-'); }
             });
 
             $('#addDocBtn').on('click', function() {
@@ -581,55 +581,107 @@
         });
 
         function getBirthdayFromNIC(nic) {
-            let year, days, newNic, oldNic;
+            // nic -> dob, gender (using exact HTML logic)
+            nic = (nic||'').toString().trim().toUpperCase();
+            if (!nic) return null;
 
-            // Check if it's an old NIC and convert it to the new NIC format
-            if (nic.length === 10) {
-                // Old NIC format
-                year = '19' + nic.substr(0, 2);  // Extract the year (e.g., '94' -> '1994')
-                days = nic.substr(2, 3);  // Extract the days part (e.g., '287')
+            var NICNo = nic;
+            var dayText = 0;
+            var year = "";
+            var month = "";
+            var day = "";
+            var gender = "";
 
-                // Convert to new NIC format
-                let sequencePart = '0' + nic.substr(5, 4); // Add leading '0' for new NIC format
-                newNic = year + days + sequencePart;
-                $("#new_nic").val(newNic);
-                console.log("Converted Old NIC to New NIC format:", newNic);
-            } else if (nic.length === 12) {
-                // New NIC format
-                year = nic.substr(0, 4);
-                days = parseInt(nic.substr(4, 3), 10);
+            // Validation
+            if (NICNo.length != 10 && NICNo.length != 12) {
+                return null; // Invalid NIC NO
+            } else if (NICNo.length == 10 && !/^\d{9}[VX]$/.test(NICNo)) {
+                return null; // Invalid NIC NO
+            } else if (NICNo.length == 12 && !/^\d{12}$/.test(NICNo)) {
+                return null; // Invalid NIC NO
+            }
 
-                // Convert to Old NIC format
-                let oldYear = nic.substr(2, 2);  // Take the last two digits of the year (e.g., '96')
-                let sequencePart = nic.substr(8, 4);  // Extract the correct last 4 digits (e.g., '0398')
-                oldNic = oldYear + nic.substr(4, 3) + sequencePart + "V"; // Append 'V' at the end
-                console.log("Converted New NIC to Old NIC format:", oldNic);
-                $("#new_nic").val(oldNic);
+            // Year
+            if (NICNo.length == 10) {
+                year = "19" + NICNo.substr(0, 2);
+                dayText = parseInt(NICNo.substr(2, 3));
             } else {
-                return null;
+                year = NICNo.substr(0, 4);
+                dayText = parseInt(NICNo.substr(4, 3));
             }
 
-            // Determine if the person is male or female
-            let gender = 'Male';
-            if (parseInt(days) > 500) {
-                gender = 'Female';
-                days = parseInt(days) - 500; // Adjust days for female
+            // Gender
+            if (dayText > 500) {
+                gender = "Female";
+                dayText = dayText - 500;
+            } else {
+                gender = "Male";
             }
 
-            // Create a date starting from January 1st of the given year
-            let date = new Date(year, 0, 1);
-            date.setDate(days);  // Add the number of days
+            // Day Digit Validation
+            if (dayText < 1 || dayText > 366) {
+                return null; // Invalid NIC NO
+            }
 
-            let month = date.getMonth() + 1; // Months are zero-based in JS
-            let day = date.getDate();
+            // Month calculation (exact HTML logic)
+            if (dayText > 335) {
+                day = dayText - 335;
+                month = "December";
+            }
+            else if (dayText > 305) {
+                day = dayText - 305;
+                month = "November";
+            }
+            else if (dayText > 274) {
+                day = dayText - 274;
+                month = "October";
+            }
+            else if (dayText > 244) {
+                day = dayText - 244;
+                month = "September";
+            }
+            else if (dayText > 213) {
+                day = dayText - 213;
+                month = "August";
+            }
+            else if (dayText > 182) {
+                day = dayText - 182;
+                month = "July";
+            }
+            else if (dayText > 152) {
+                day = dayText - 152;
+                month = "June";
+            }
+            else if (dayText > 121) {
+                day = dayText - 121;
+                month = "May";
+            }
+            else if (dayText > 91) {
+                day = dayText - 91;
+                month = "April";
+            }
+            else if (dayText > 60) {
+                day = dayText - 60;
+                month = "March";
+            }
+            else if (dayText < 32) {
+                month = "January";
+                day = dayText;
+            }
+            else if (dayText > 31) {
+                day = dayText - 31;
+                month = "February";
+            }
 
-            // Return the result
-            return {
-                year: year,
-                month: month < 10 ? '0' + month : month,
-                day: day < 10 ? '0' + day : day,
-                gender: gender
+            // Convert month name to number for consistent format
+            const monthNames = {
+                "January": "01", "February": "02", "March": "03", "April": "04",
+                "May": "05", "June": "06", "July": "07", "August": "08",
+                "September": "09", "October": "10", "November": "11", "December": "12"
             };
+
+            const dob = `${year}-${monthNames[month]}-${String(day).padStart(2,'0')}`;
+            return { dob, gender };
         }
 
 
