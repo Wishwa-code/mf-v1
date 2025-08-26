@@ -159,8 +159,7 @@
             }
 
             .group-row {
-                height: 30px !important;
-                overflow: hidden;
+                min-height: 30px !important;
             }
 
             .fixed-name {
@@ -432,6 +431,37 @@
         $(document).ready(function () {
             $('.select2').select2();
 
+            // Dynamically shrink font so full text fits within the cell width (no wrap)
+        function fitTextCells(rootDoc, selector, maxPx, minPx, stepPx = 0.5) {
+                const nodes = rootDoc.querySelectorAll(selector);
+                nodes.forEach(node => {
+                    // Start from max and shrink until it fits
+                    let size = maxPx;
+                    node.style.fontSize = size + 'px';
+            node.style.whiteSpace = 'nowrap';
+            node.style.overflow = 'hidden';
+                    // Safety: reset word-break to normal
+                    node.style.wordBreak = 'normal';
+
+                    // If there is no width yet (detached), skip
+                    if (!node.clientWidth) return;
+
+                    // Shrink until fits or min reached
+                    // Add a small epsilon to account for border/padding rounding
+                    const epsilon = 0.5;
+                    while (size > minPx && (node.scrollWidth - node.clientWidth) > epsilon) {
+                        size -= stepPx;
+                        node.style.fontSize = size + 'px';
+                    }
+
+                    // Fallback: allow wrap if still overflowing at min size
+                    if ((node.scrollWidth - node.clientWidth) > epsilon) {
+                        node.style.whiteSpace = 'normal';
+                        node.style.wordBreak = 'break-word';
+                    }
+                });
+            }
+
             function calculateTotals() {
                 let totalLoanAmount = 0;
                 let totalLoanBalance = 0;
@@ -490,24 +520,17 @@
 
             calculateTotals();
 
-            // Handle flexible loan no sizing
-            $('.flexible-loan-no').each(function() {
-                const loanNoLength = $(this).text().length;
-                if (loanNoLength > 22) {
-                    $(this).addClass('very-long-loan-no');
-                } else if (loanNoLength > 16) {
-                    $(this).addClass('long-loan-no');
-                }
-            });
+            // Screen/web view: fit Loan No and Full Name after render and on resize
+            function fitScreen() {
+                fitTextCells(document, 'td.flexible-loan-no', 14, 9);
+                fitTextCells(document, 'td.flexible-name', 14, 9);
+            }
+            fitScreen();
 
-            // Handle flexible name sizing
-            $('.flexible-name').each(function() {
-                const nameLength = $(this).text().length;
-                if (nameLength > 28) {
-                    $(this).addClass('very-long-name');
-                } else if (nameLength > 20) {
-                    $(this).addClass('long-name');
-                }
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(fitScreen, 150);
             });
 
             $('#downloadExcel').click(function () {
@@ -566,7 +589,7 @@
     h2 { margin: 2px 0 4px 0; font-size: 22px !important; text-align: center; line-height: 1.25; }
 
     table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; }
-    th, td { border: 1px solid #000; padding: 4px; text-align: center; word-break: break-word; min-height: 20px; }
+    th, td { border: 1px solid #000; padding: 4px; text-align: center; word-break: break-word; min-height: 20px; line-height: 1.2; }
 
     /* Flexible sizing for print */
     .flexible-loan-no { 
@@ -780,30 +803,11 @@
                 printWindow.document.close();
 
                 printWindow.onload = function () {
-                    // Classify font sizes in the print document using actual text lengths
+                    // Fit inside the print window before printing
                     const doc = printWindow.document;
-
-                    // Loan No thresholds tuned for 15% column width
-                    doc.querySelectorAll('td.flexible-loan-no').forEach(td => {
-                        const len = (td.textContent || '').trim().length;
-                        td.classList.remove('long-loan-no', 'very-long-loan-no');
-                        if (len > 24) {
-                            td.classList.add('very-long-loan-no');
-                        } else if (len > 16) {
-                            td.classList.add('long-loan-no');
-                        }
-                    });
-
-                    // Name thresholds (slightly higher)
-                    doc.querySelectorAll('td.flexible-name').forEach(td => {
-                        const len = (td.textContent || '').trim().length;
-                        td.classList.remove('long-name', 'very-long-name');
-                        if (len > 30) {
-                            td.classList.add('very-long-name');
-                        } else if (len > 22) {
-                            td.classList.add('long-name');
-                        }
-                    });
+                    // Base print sizes are smaller; keep readable minimums
+                    fitTextCells(doc, 'td.flexible-loan-no', 11, 8, 0.5);
+                    fitTextCells(doc, 'td.flexible-name', 11, 8, 0.5);
 
                     printWindow.focus();
                     printWindow.print();
