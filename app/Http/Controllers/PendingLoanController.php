@@ -867,10 +867,12 @@ class PendingLoanController extends Controller
         $branches = DB::table('branch')->where('status', 1)->get(['branch_id', 'Name']);
         $centers = DB::table('center')->get(['idCenter', 'Name', 'branch_id']);
         $products = DB::table('loan_category')->get(['idLoan_Category', 'Name', 'branch_id', 'Product_code']);
+        $route = DB::table('route')->get(['id_route', 'name', 'root_code']);
 
         return response()->json([
             'branches' => $branches,
             'centers' => $centers,
+            'route' => $route,
             'products' => $products
         ]);
     }
@@ -910,11 +912,15 @@ class PendingLoanController extends Controller
             $query->where('cl.Loan_Category_idLoan_Category', $request->product_id);
         }
 
+        if ($request->route_id) {
+            $query->where('customer.route_id', $request->route_id);
+        }
+
         $loans = $query->select(
             'cl.idCustomer_Loan',
             'cl.Loan_No',
             DB::raw('IFNULL(center.No, "-") as center_no'),
-            'customer_group.Name as Group_name',
+            DB::raw('IFNULL(customer_group.Name, "-") as Group_name'),
             'customer.cus_number as cus_number',
             'customer.First_Name as customer_fname',
             'customer.Last_Name as customer_lastname',
