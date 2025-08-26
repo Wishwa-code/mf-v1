@@ -665,40 +665,113 @@
                     html += '</tbody></table></div>';
                 }
 
-                // Summary page
-                html += `
-        <div class="page">
-            <table>
-                ${colgroupHTML}
-                <thead>
-                  <tr class="thead-bar">
-                    <td colspan="15" style="border:none; padding:0 0 2px 0;">
-                      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ccc; padding-bottom:2px; margin-bottom:2px;">
-                        <div class="brandline">${companyName}</div>
-                        <div class="metaline">Center No: ${centerNo} | Center Name: ${centerName} | Printed by: ${printedBy} on ${printedAt}</div>
-                      </div>
-                      <h2>Repayment Sheet (${centerDetails})</h2>
-                    </td>
-                  </tr>
-                </thead>
-                <tbody>
-        <tr><td colspan="15" style="height: 10px;"></td></tr>
-        <tr><td colspan="2"><strong>Cumulative Collection</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="2"><strong>Cumulative Due</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="2"><strong>Total</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="2"><strong>No of Under Payment</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="2"><strong>Amount</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="2"><strong>No of Not Paid</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="2"><strong>Amount</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="2"><strong>No of Settlement</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="15" style="height: 15px;"></td></tr>
-        <tr><td colspan="2"><strong>Full Signature</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="2"><strong>Center Manager</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="2"><strong>Branch Manager</strong></td><td colspan="13"></td></tr>
+                                // Summary page
+                                html += `
+                <div class="page">
+                        <table>
+                                ${colgroupHTML}
+                                <thead>
+                                    <tr class="thead-bar">
+                                        <td colspan="15" style="border:none; padding:0 0 2px 0;">
+                                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ccc; padding-bottom:2px; margin-bottom:2px;">
+                                                <div class="brandline">${companyName}</div>
+                                                <div class="metaline">Center No: ${centerNo} | Center Name: ${centerName} | Printed by: ${printedBy} on ${printedAt}</div>
+                                            </div>
+                                            <h2>Repayment Sheet (${centerDetails})</h2>
+                                        </td>
+                                    </tr>
+                                    <!-- Summary table header: Title + 5 x (Paid/Correct) -->
+                                    <tr>
+                                        <th colspan="5">Title</th>
+                                        <th colspan="2">Date</th>
+                                        <th colspan="2">Date</th>
+                                        <th colspan="2">Date</th>
+                                        <th colspan="2">Date</th>
+                                        <th colspan="2">Date</th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="5"></th>
+                                        <th>Paid</th><th>Correct</th>
+                                        <th>Paid</th><th>Correct</th>
+                                        <th>Paid</th><th>Correct</th>
+                                        <th>Paid</th><th>Correct</th>
+                                        <th>Paid</th><th>Correct</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                <tr><td colspan="15" style="height: 10px;"></td></tr>
+                <tr>
+                        <td colspan="5"><strong>Cumulative Collection</strong></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                </tr>
+                <tr>
+                        <td colspan="5"><strong>Cumulative Due</strong></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                </tr>
+                <tr>
+                        <td colspan="5"><strong>Total</strong></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                </tr>
+                <tr>
+                        <td colspan="5"><strong>No of Under Payment</strong></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                </tr>
+                <tr>
+                        <td colspan="5"><strong>Amount</strong></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                </tr>
+                <tr>
+                        <td colspan="5"><strong>No of Not Paid</strong></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                </tr>
+                <tr>
+                        <td colspan="5"><strong>Amount</strong></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                </tr>
+                <tr>
+                        <td colspan="5"><strong>No of Settlement</strong></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                </tr>
+                <tr><td colspan="15" style="height: 15px;"></td></tr>
+                <tr><td colspan="5"><strong>Full Signature</strong></td><td colspan="10"></td></tr>
+                <tr><td colspan="5"><strong>Center Manager</strong></td><td colspan="10"></td></tr>
+                <tr><td colspan="5"><strong>Branch Manager</strong></td><td colspan="10"></td></tr>
 
-      </tbody>
-    </table>
-  </div>
+            </tbody>
+        </table>
+    </div>
 `;
 
 
