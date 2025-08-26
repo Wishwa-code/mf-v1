@@ -765,17 +765,16 @@ class TransactionController extends Controller
             });
         }
 
-        // Group data by 'group_name'
-        $grouped_loans = $loan->groupBy('group_name')->sortKeysUsing(function($a, $b) {
-            // Extract numbers from group names like "Group No: 1"
-            preg_match('/\d+/', $a, $matchA);
-            preg_match('/\d+/', $b, $matchB);
-
-            $numA = isset($matchA[0]) ? (int)$matchA[0] : 0;
-            $numB = isset($matchB[0]) ? (int)$matchB[0] : 0;
-
-            return $numA <=> $numB;
+        $loan = $loan->sortBy(function($item) {
+            // Extract number from "Group No: X"
+            if (preg_match('/\d+/', $item->group_name, $matches)) {
+                return (int)$matches[0];
+            }
+            return PHP_INT_MAX; // put non-number groups (like "-") at the end
         });
+
+        $grouped_loans = $loan->groupBy('group_name');
+
 
 
         $selected_center = $center->firstWhere('idCenter', $center_details);

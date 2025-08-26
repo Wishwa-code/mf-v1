@@ -204,6 +204,7 @@
                                     <select class="form-control select2" id="installment_filter">
                                         <option value="all">All</option>
                                         <option value="more_than_3">More than 3</option>
+                                        <option value="maturity">More than 3 and maturity expired</option>
                                     </select>
                                 </div>
                             </div>

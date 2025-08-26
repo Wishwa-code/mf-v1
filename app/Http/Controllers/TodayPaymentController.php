@@ -415,7 +415,35 @@ class TodayPaymentController extends Controller
 
         if ($installmentFilter === 'more_than_3') {
             $loanQuery->havingRaw('COUNT(installments.idInstallments) > 3');
+        } else if ($installmentFilter === 'maturity') {
+
+            // Add helpful aggregates
+            $loanQuery->selectRaw("
+        MAX(installments.Installment_Date) AS Last_Installment_Date,
+        SUM(CASE
+              WHEN installments.Status = 0
+               AND installments.Installment_Date < CURDATE()
+              THEN 1 ELSE 0
+            END) AS Overdue_Count,
+        ROUND(SUM(CASE
+              WHEN installments.Status = 0
+               AND installments.Installment_Date < CURDATE()
+              THEN installments.Total_Balance ELSE 0
+            END), 2) AS Overdue_Balance
+    ");
+
+            // IMPORTANT: Do NOT add a row-level WHERE on installments.Installment_Date here,
+            // otherwise Last_Installment_Date won't reflect the full schedule.
+
+            // Show loans with >3 overdue OR (matured AND at least 1 overdue)
+            $loanQuery->havingRaw("
+        (Overdue_Count > 3)
+        OR
+        (Overdue_Count >= 1 AND Last_Installment_Date < CURDATE())
+    ");
         }
+
+
 
 
         $loan = $loanQuery->get();
