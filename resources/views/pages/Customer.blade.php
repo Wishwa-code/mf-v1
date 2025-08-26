@@ -581,30 +581,106 @@
         });
 
         function getBirthdayFromNIC(nic) {
-            // nic -> dob, gender
+            // nic -> dob, gender (using exact HTML logic)
             nic = (nic||'').toString().trim().toUpperCase();
             if (!nic) return null;
 
-            let year, dayCode;
-            if (/^\d{9}[VX]$/.test(nic)) { // old
-                const yy = parseInt(nic.substr(0,2),10);
-                const curYY = new Date().getFullYear() % 100;
-                year = (yy <= curYY ? 2000 : 1900) + yy; // guess 20xx vs 19xx
-                dayCode = parseInt(nic.substr(2,3),10);
-            } else if (/^\d{12}$/.test(nic)) { // new
-                year = parseInt(nic.substr(0,4),10);
-                dayCode = parseInt(nic.substr(4,3),10);
-            } else return null;
+            var NICNo = nic;
+            var dayText = 0;
+            var year = "";
+            var month = "";
+            var day = "";
+            var gender = "";
 
-            let gender = 'Male';
-            if (dayCode >= 501 && dayCode <= 866) { gender = 'Female'; dayCode -= 500; }
-            else if (!(dayCode >= 1 && dayCode <= 366)) return null; // bad day
+            // Validation
+            if (NICNo.length != 10 && NICNo.length != 12) {
+                return null; // Invalid NIC NO
+            } else if (NICNo.length == 10 && !/^\d{9}[VX]$/.test(NICNo)) {
+                return null; // Invalid NIC NO
+            } else if (NICNo.length == 12 && !/^\d{12}$/.test(NICNo)) {
+                return null; // Invalid NIC NO
+            }
 
-            const isLeap = (year%4===0 && year%100!==0) || (year%400===0);
-            if (!isLeap && dayCode === 366) return null; // 366 only leap
+            // Year
+            if (NICNo.length == 10) {
+                year = "19" + NICNo.substr(0, 2);
+                dayText = parseInt(NICNo.substr(2, 3));
+            } else {
+                year = NICNo.substr(0, 4);
+                dayText = parseInt(NICNo.substr(4, 3));
+            }
 
-            const dt = new Date(year, 0, dayCode);
-            const dob = `${year}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+            // Gender
+            if (dayText > 500) {
+                gender = "Female";
+                dayText = dayText - 500;
+            } else {
+                gender = "Male";
+            }
+
+            // Day Digit Validation
+            if (dayText < 1 || dayText > 366) {
+                return null; // Invalid NIC NO
+            }
+
+            // Month calculation (exact HTML logic)
+            if (dayText > 335) {
+                day = dayText - 335;
+                month = "December";
+            }
+            else if (dayText > 305) {
+                day = dayText - 305;
+                month = "November";
+            }
+            else if (dayText > 274) {
+                day = dayText - 274;
+                month = "October";
+            }
+            else if (dayText > 244) {
+                day = dayText - 244;
+                month = "September";
+            }
+            else if (dayText > 213) {
+                day = dayText - 213;
+                month = "August";
+            }
+            else if (dayText > 182) {
+                day = dayText - 182;
+                month = "July";
+            }
+            else if (dayText > 152) {
+                day = dayText - 152;
+                month = "June";
+            }
+            else if (dayText > 121) {
+                day = dayText - 121;
+                month = "May";
+            }
+            else if (dayText > 91) {
+                day = dayText - 91;
+                month = "April";
+            }
+            else if (dayText > 60) {
+                day = dayText - 60;
+                month = "March";
+            }
+            else if (dayText < 32) {
+                month = "January";
+                day = dayText;
+            }
+            else if (dayText > 31) {
+                day = dayText - 31;
+                month = "February";
+            }
+
+            // Convert month name to number for consistent format
+            const monthNames = {
+                "January": "01", "February": "02", "March": "03", "April": "04",
+                "May": "05", "June": "06", "July": "07", "August": "08",
+                "September": "09", "October": "10", "November": "11", "December": "12"
+            };
+
+            const dob = `${year}-${monthNames[month]}-${String(day).padStart(2,'0')}`;
             return { dob, gender };
         }
 
