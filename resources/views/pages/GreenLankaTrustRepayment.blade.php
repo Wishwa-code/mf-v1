@@ -159,8 +159,7 @@
             }
 
             .group-row {
-                height: 30px !important;
-                overflow: hidden;
+                min-height: 30px !important;
             }
 
             .fixed-name {
@@ -432,6 +431,37 @@
         $(document).ready(function () {
             $('.select2').select2();
 
+            // Dynamically shrink font so full text fits within the cell width (no wrap)
+        function fitTextCells(rootDoc, selector, maxPx, minPx, stepPx = 0.5) {
+                const nodes = rootDoc.querySelectorAll(selector);
+                nodes.forEach(node => {
+                    // Start from max and shrink until it fits
+                    let size = maxPx;
+                    node.style.fontSize = size + 'px';
+            node.style.whiteSpace = 'nowrap';
+            node.style.overflow = 'hidden';
+                    // Safety: reset word-break to normal
+                    node.style.wordBreak = 'normal';
+
+                    // If there is no width yet (detached), skip
+                    if (!node.clientWidth) return;
+
+                    // Shrink until fits or min reached
+                    // Add a small epsilon to account for border/padding rounding
+                    const epsilon = 0.5;
+                    while (size > minPx && (node.scrollWidth - node.clientWidth) > epsilon) {
+                        size -= stepPx;
+                        node.style.fontSize = size + 'px';
+                    }
+
+                    // Fallback: allow wrap if still overflowing at min size
+                    if ((node.scrollWidth - node.clientWidth) > epsilon) {
+                        node.style.whiteSpace = 'normal';
+                        node.style.wordBreak = 'break-word';
+                    }
+                });
+            }
+
             function calculateTotals() {
                 let totalLoanAmount = 0;
                 let totalLoanBalance = 0;
@@ -490,24 +520,17 @@
 
             calculateTotals();
 
-            // Handle flexible loan no sizing
-            $('.flexible-loan-no').each(function() {
-                const loanNoLength = $(this).text().length;
-                if (loanNoLength > 22) {
-                    $(this).addClass('very-long-loan-no');
-                } else if (loanNoLength > 16) {
-                    $(this).addClass('long-loan-no');
-                }
-            });
+            // Screen/web view: fit Loan No and Full Name after render and on resize
+            function fitScreen() {
+                fitTextCells(document, 'td.flexible-loan-no', 14, 9);
+                fitTextCells(document, 'td.flexible-name', 14, 9);
+            }
+            fitScreen();
 
-            // Handle flexible name sizing
-            $('.flexible-name').each(function() {
-                const nameLength = $(this).text().length;
-                if (nameLength > 28) {
-                    $(this).addClass('very-long-name');
-                } else if (nameLength > 20) {
-                    $(this).addClass('long-name');
-                }
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(fitScreen, 150);
             });
 
             $('#downloadExcel').click(function () {
@@ -566,7 +589,7 @@
     h2 { margin: 2px 0 4px 0; font-size: 22px !important; text-align: center; line-height: 1.25; }
 
     table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; }
-    th, td { border: 1px solid #000; padding: 4px; text-align: center; word-break: break-word; min-height: 20px; }
+    th, td { border: 1px solid #000; padding: 4px; text-align: center; word-break: break-word; min-height: 20px; line-height: 1.2; }
 
     /* Flexible sizing for print */
     .flexible-loan-no { 
@@ -586,34 +609,7 @@
     .flexible-name.long-name { font-size: 10px; }
     .flexible-name.very-long-name { font-size: 9px; }
 
-    /* Loan No column - increased for better space usage */
-    th:nth-child(1), td:nth-child(1) { width: 15% !important; }
-
-    /* Name column */
-    th:nth-child(2), td:nth-child(2) { width: 12% !important; }
-
-    /* Amount columns - slightly reduced to accommodate loan no */
-    th:nth-child(3), td:nth-child(3),
-    th:nth-child(4), td:nth-child(4),
-    th:nth-child(5), td:nth-child(5) { width: 5.5% !important; }
-
-    /* Paid columns - slightly reduced */
-    th:nth-child(6), td:nth-child(6),
-    th:nth-child(8), td:nth-child(8),
-    th:nth-child(10), td:nth-child(10),
-    th:nth-child(12), td:nth-child(12),
-    th:nth-child(14), td:nth-child(14) {
-        width: 6% !important;
-    }
-
-    /* Correct columns smaller */
-    th:nth-child(7), td:nth-child(7),
-    th:nth-child(9), td:nth-child(9),
-    th:nth-child(11), td:nth-child(11),
-    th:nth-child(13), td:nth-child(13),
-    th:nth-child(15), td:nth-child(15) {
-        width: 4.5% !important;
-    }
+    /* Column widths are controlled via a fixed <colgroup> injected for each print table */
 
     .brandline { font-size: 24px !important; font-weight: 800; text-align: left; line-height: 1.2; letter-spacing: 0.2px; }
     .metaline  { font-size: 10px; font-weight: 500; text-align: right; }
@@ -627,8 +623,26 @@
                 printWindow.document.write('</style></head><body>');
 
                 // Column header + colgroup HTML
-                const columnsHeadHTML = document.querySelector('#repaymentTable thead').innerHTML;
-                const colgroupHTML = (document.querySelector('#repaymentTable colgroup')?.outerHTML) || '';
+                                const columnsHeadHTML = document.querySelector('#repaymentTable thead').innerHTML;
+                                // Fixed colgroup for print (consistent across all pages)
+                                const printColgroup = `
+                                    <colgroup>
+                                        <col style="width:15%">
+                                        <col style="width:12%">
+                                        <col style="width:5.5%">
+                                        <col style="width:5.5%">
+                                        <col style="width:5.5%">
+                                        <col style="width:6%">
+                                        <col style="width:4.5%">
+                                        <col style="width:6%">
+                                        <col style="width:4.5%">
+                                        <col style="width:6%">
+                                        <col style="width:4.5%">
+                                        <col style="width:6%">
+                                        <col style="width:4.5%">
+                                        <col style="width:6%">
+                                        <col style="width:4.5%">
+                                    </colgroup>`;
 
                 // Build header for the first page
                 const buildFirstPageThead = () => `
@@ -655,7 +669,7 @@
                 // Each `print-group-block` from PHP contains up to 2 groups.
                 // This loop puts one block (2 groups) per page.
                 for (let i = 0; i < groupBlocks.length; i++) {
-                    html += '<div class="page"><table>' + colgroupHTML;
+                    html += '<div class="page"><table>' + printColgroup;
                     // Use full header for first page, minimal header for others
                     html += (i === 0) ? buildFirstPageThead() : buildSubsequentPageThead();
                     html += '<tbody>';
@@ -665,40 +679,113 @@
                     html += '</tbody></table></div>';
                 }
 
-                // Summary page
-                html += `
-        <div class="page">
-            <table>
-                ${colgroupHTML}
-                <thead>
-                  <tr class="thead-bar">
-                    <td colspan="15" style="border:none; padding:0 0 2px 0;">
-                      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ccc; padding-bottom:2px; margin-bottom:2px;">
-                        <div class="brandline">${companyName}</div>
-                        <div class="metaline">Center No: ${centerNo} | Center Name: ${centerName} | Printed by: ${printedBy} on ${printedAt}</div>
-                      </div>
-                      <h2>Repayment Sheet (${centerDetails})</h2>
-                    </td>
-                  </tr>
-                </thead>
-                <tbody>
-        <tr><td colspan="15" style="height: 10px;"></td></tr>
-        <tr><td colspan="2"><strong>Cumulative Collection</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="2"><strong>Cumulative Due</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="2"><strong>Total</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="2"><strong>No of Under Payment</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="2"><strong>Amount</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="2"><strong>No of Not Paid</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="2"><strong>Amount</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="2"><strong>No of Settlement</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="15" style="height: 15px;"></td></tr>
-        <tr><td colspan="2"><strong>Full Signature</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="2"><strong>Center Manager</strong></td><td colspan="13"></td></tr>
-        <tr><td colspan="2"><strong>Branch Manager</strong></td><td colspan="13"></td></tr>
+                                // Summary page
+                                html += `
+                <div class="page">
+                        <table>
+                                ${printColgroup}
+                                <thead>
+                                    <tr class="thead-bar">
+                                        <td colspan="15" style="border:none; padding:0 0 2px 0;">
+                                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ccc; padding-bottom:2px; margin-bottom:2px;">
+                                                <div class="brandline">${companyName}</div>
+                                                <div class="metaline">Center No: ${centerNo} | Center Name: ${centerName} | Printed by: ${printedBy} on ${printedAt}</div>
+                                            </div>
+                                            <h2>Repayment Sheet (${centerDetails})</h2>
+                                        </td>
+                                    </tr>
+                                    <!-- Summary table header: Title + 5 x (Paid/Correct) -->
+                                    <tr>
+                                        <th colspan="5">Title</th>
+                                        <th colspan="2">Date</th>
+                                        <th colspan="2">Date</th>
+                                        <th colspan="2">Date</th>
+                                        <th colspan="2">Date</th>
+                                        <th colspan="2">Date</th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="5"></th>
+                                        <th>Paid</th><th>Correct</th>
+                                        <th>Paid</th><th>Correct</th>
+                                        <th>Paid</th><th>Correct</th>
+                                        <th>Paid</th><th>Correct</th>
+                                        <th>Paid</th><th>Correct</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                <tr><td colspan="15" style="height: 10px;"></td></tr>
+                <tr>
+                        <td colspan="5"><strong>Cumulative Collection</strong></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                </tr>
+                <tr>
+                        <td colspan="5"><strong>Cumulative Due</strong></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                </tr>
+                <tr>
+                        <td colspan="5"><strong>Total</strong></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                </tr>
+                <tr>
+                        <td colspan="5"><strong>No of Under Payment</strong></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                </tr>
+                <tr>
+                        <td colspan="5"><strong>Amount</strong></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                </tr>
+                <tr>
+                        <td colspan="5"><strong>No of Not Paid</strong></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                </tr>
+                <tr>
+                        <td colspan="5"><strong>Amount</strong></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                </tr>
+                <tr>
+                        <td colspan="5"><strong>No of Settlement</strong></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                </tr>
+                <tr><td colspan="15" style="height: 15px;"></td></tr>
+                <tr><td colspan="5"><strong>Full Signature</strong></td><td colspan="10"></td></tr>
+                <tr><td colspan="5"><strong>Center Manager</strong></td><td colspan="10"></td></tr>
+                <tr><td colspan="5"><strong>Branch Manager</strong></td><td colspan="10"></td></tr>
 
-      </tbody>
-    </table>
-  </div>
+            </tbody>
+        </table>
+    </div>
 `;
 
 
@@ -707,30 +794,11 @@
                 printWindow.document.close();
 
                 printWindow.onload = function () {
-                    // Classify font sizes in the print document using actual text lengths
+                    // Fit inside the print window before printing
                     const doc = printWindow.document;
-
-                    // Loan No thresholds tuned for 15% column width
-                    doc.querySelectorAll('td.flexible-loan-no').forEach(td => {
-                        const len = (td.textContent || '').trim().length;
-                        td.classList.remove('long-loan-no', 'very-long-loan-no');
-                        if (len > 24) {
-                            td.classList.add('very-long-loan-no');
-                        } else if (len > 16) {
-                            td.classList.add('long-loan-no');
-                        }
-                    });
-
-                    // Name thresholds (slightly higher)
-                    doc.querySelectorAll('td.flexible-name').forEach(td => {
-                        const len = (td.textContent || '').trim().length;
-                        td.classList.remove('long-name', 'very-long-name');
-                        if (len > 30) {
-                            td.classList.add('very-long-name');
-                        } else if (len > 22) {
-                            td.classList.add('long-name');
-                        }
-                    });
+                    // Base print sizes are smaller; keep readable minimums
+                    fitTextCells(doc, 'td.flexible-loan-no', 11, 8, 0.5);
+                    fitTextCells(doc, 'td.flexible-name', 11, 8, 0.5);
 
                     printWindow.focus();
                     printWindow.print();
