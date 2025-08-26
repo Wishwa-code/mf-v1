@@ -65,10 +65,24 @@ class ExcelController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Request $request)
     {
-        //
+        $branchId = session('branch_id');
+
+        $orphans = DB::table('customer as c')
+            ->leftJoin('group_has_customer as ghc', function ($join) use ($branchId) {
+                $join->on('ghc.cus_id', '=', 'c.idCustomer')
+                    ->where('ghc.branch_id', '=', $branchId);
+            })
+            ->where('c.branch_id', '=', $branchId)
+            ->whereNull('ghc.cus_id')
+            ->select('c.idCustomer', 'c.cus_number', 'c.First_Name', 'c.Last_Name', 'c.branch_id')
+            ->orderBy('c.cus_number')
+            ->count();
+
+        return response()->json($orphans);
     }
+
 
     /**
      * Show the form for editing the specified resource.
@@ -76,10 +90,6 @@ class ExcelController extends Controller
     public function edit(Request $request)
     {
         $data = $request->excelData;
-
-//        DB::table('group_has_customer')
-//            ->where('branch_id', session('branch_id'))
-//            ->delete();
 
         $route_id = '';
         $insertedCusIds = [];  // 👉 To track already inserted cus_id
@@ -117,7 +127,6 @@ class ExcelController extends Controller
 
                 if (!$customer) {
                     Log::warning("Customer not found after fallback: $customer_name");
-                    $customer = tableWithBranch('customer')->where('First_Name', '=', 'Default')->first();
                 }
             }
 
@@ -1748,6 +1757,135 @@ class ExcelController extends Controller
         }
     }
 
+
+
+    public function uploadExcelCenters(Request $request)
+    {
+        $data = $request->excelData;
+
+        foreach ($data as $key => $row) {
+
+            $branch=$row[0];
+            if ($branch==='Walimada'){
+                $branch_id=8;
+            }else if ($branch==='Gampola'){
+                $branch_id=3;
+            }else if ($branch==='Haputhale'){
+                $branch_id=4;
+            }else if ($branch==='Nuwaraeliya'){
+                $branch_id=5;
+            }else if ($branch==='Ragala'){
+                $branch_id=6;
+            }else if ($branch==='Rikillagaskada'){
+                $branch_id=7;
+            }
+
+
+            if (DB::table('customer')
+                ->where('cus_number', '=', $row[3])
+                ->where('branch_id', '=', $branch_id)
+                ->exists()) {
+                continue;
+            }
+
+
+
+
+            $customer_name = $row[3];
+            $customer_name = strtolower(preg_replace('/\s+/', '', $customer_name));
+
+            $customer = DB::table('customer')
+                ->whereRaw("
+                LOWER(
+                    REPLACE(
+                        REPLACE(
+                            REPLACE(CONCAT(TRIM(`First_Name`), TRIM(`Last_Name`)), ' ', ''),
+                            CHAR(160), ''
+                        ),
+                        '\t', ''
+                    )
+                ) = ?", [$customer_name])->where('branch_id','=',$branch_id)
+                ->first();
+
+            if (!$customer) {
+                $customer = DB::table('customer')
+                    ->whereRaw("
+                    LOWER(
+                        REPLACE(
+                            REPLACE(
+                                REPLACE(TRIM(`First_Name`), ' ', ''),
+                                CHAR(160), ''
+                            ),
+                            '\t', ''
+                        )
+                    ) = ?", [$customer_name])->where('branch_id','=',$branch_id)
+                    ->first();
+
+                if (!$customer) {
+                    Log::warning("Customer not found after fallback: $customer_name");
+                    $customer = DB::table('customer')->where('branch_id','=',$branch_id)->where('First_Name', '=', 'Default')->first();
+                }
+            }
+
+            $member_no = $customer->cus_number;
+
+            $customer = DB::table('customer')
+                ->where('cus_number', '=', $member_no)
+                ->where('branch_id', '=', $branch_id)
+                ->first();
+
+            if ($customer) {
+
+                $center_name = $row[1] ?? "Default";
+                $center_no = $row[1] ?? "Default";
+                $center = DB::table('center')->where('Name', '=', $center_name)->where('branch_id','=',$branch_id)->first();
+                $route_id=DB::table('route')->where('branch_id','=',$branch_id)->first();
+                if (!$center) {
+                    $centerData = [
+                        'No' => $center_no,
+                        'Name' => $center_name,
+                        'Contact_no' => '-',
+                        'Address' => '-',
+                        'Route' => '-',
+                        'Center_incharge' => 1,
+                        'Location' => '-',
+                        'Groups' => "0",
+                        'Members' => "0",
+                        'route_id' => $route_id,
+                    ];
+                    $center_id = insertWithBranch('center', $centerData);
+                } else {
+                    $center_id = $center->idCenter;
+                }
+
+                $group_name = $row[2] ?? "Default";
+                $group = tableWithBranch('customer_group')
+                    ->where('Group_No', '=', $group_name)
+                    ->where('center_id', '=', $center_id)
+                    ->first();
+
+                if (!$group) {
+                    $groupData = [
+                        'Group_No' => $group_name,
+                        'Name' => $group_name,
+                        'Leader_name' => '-',
+                        'Contact_no' => '-',
+                        'center_id' => $center_id,
+                    ];
+                    $group_id = insertWithBranch('customer_group', $groupData);
+                } else {
+                    $group_id = $group->idCustomer_Group;
+                }
+
+                // Link customer to group only if not already linked
+                insertWithBranch('group_has_customer', [
+                    'cus_id' => $customer->idCustomer,
+                    'group_id' => $group_id
+                ]);
+            }
+        }
+        return response()->json(['message' => 'Data processed successfully.'], 200);
+    }
 
 
 

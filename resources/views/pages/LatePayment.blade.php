@@ -258,7 +258,7 @@
                                 <thead class="sticky-top bg-purple">
                                 <tr>
                                     <th>Loan No</th>
-                                    <th>Center No</th>
+                                    <th>Center Name</th>
                                     <th>Group No</th>
                                     <th>Leasing</th>
                                     <th>Member NIC</th>
