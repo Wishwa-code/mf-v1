@@ -114,6 +114,16 @@
             overflow: hidden;
         }
         
+        .flexible-loan-no {
+            font-size: 14px;
+        }
+        .flexible-loan-no.long-loan-no {
+            font-size: 13px;
+        }
+        .flexible-loan-no.very-long-loan-no {
+            font-size: 12px;
+        }
+        
         .flexible-name {
             font-size: 14px;
         }
@@ -121,7 +131,7 @@
             font-size: 13px;
         }
         .flexible-name.very-long-name {
-            font-size: 11px;
+            font-size: 12px;
         }
 
         @media (max-width: 480px) {
@@ -186,13 +196,13 @@
             /* Loan No width (print) */
             #repaymentTable th:nth-child(1),
             #repaymentTable td:nth-child(1) {
-                width: 10% !important;
+                width: 12% !important;
             }
             
             /* Name width (print) */
             #repaymentTable th:nth-child(2),
             #repaymentTable td:nth-child(2) {
-                width: 13% !important;
+                width: 12% !important;
             }
 
             .btn, form, .select2, .page-title, .no-print {
@@ -312,12 +322,12 @@
                         <div class="table-responsive">
                             <table id="repaymentTable">
                                 <colgroup>
-                                    <col style="width:10%">
-                                    <col style="width:13%">
+                                    <col style="width:12%">
+                                    <col style="width:12%">
+                                    <col style="width:6%">
+                                    <col style="width:6%">
+                                    <col style="width:6%">
                                     <col style="width:6.5%">
-                                    <col style="width:6.5%">
-                                    <col style="width:6.5%">
-                                    <col style="width:7%">
                                     <col style="width:4.5%">
                                     <col style="width:6.5%">
                                     <col style="width:4.5%">
@@ -353,7 +363,7 @@
                                         <tr><td colspan="15"><strong>Group No: {{ $group_name }}</strong></td></tr>
                                         @foreach($group as $item)
                                             <tr class="group-row">
-                                                <td>{{ $item->Loan_No }}</td>
+                                                <td class="flexible-loan-no">{{ $item->Loan_No }}</td>
                                                 <td class="flexible-name">{{ $item->name_with_initials }}</td>
                                                 <td>{{ number_format($item->Loan_Amount, 2) }}</td>
                                                 <td>{{ number_format($item->Installment_Amount, 2) }}</td>
@@ -480,12 +490,22 @@
 
             calculateTotals();
 
+            // Handle flexible loan no sizing
+            $('.flexible-loan-no').each(function() {
+                const loanNoLength = $(this).text().length;
+                if (loanNoLength > 22) {
+                    $(this).addClass('very-long-loan-no');
+                } else if (loanNoLength > 16) {
+                    $(this).addClass('long-loan-no');
+                }
+            });
+
             // Handle flexible name sizing
             $('.flexible-name').each(function() {
                 const nameLength = $(this).text().length;
-                if (nameLength > 25) {
+                if (nameLength > 28) {
                     $(this).addClass('very-long-name');
-                } else if (nameLength > 18) {
+                } else if (nameLength > 20) {
                     $(this).addClass('long-name');
                 }
             });
@@ -548,7 +568,16 @@
     table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; }
     th, td { border: 1px solid #000; padding: 4px; text-align: center; word-break: break-word; min-height: 20px; }
 
-    /* Flexible name sizing for print */
+    /* Flexible sizing for print */
+    .flexible-loan-no { 
+        white-space: nowrap; 
+        overflow: hidden; 
+        font-size: 11px; /* default for most cases */
+    }
+    /* Slight reductions only when needed; avoid overly tiny text */
+    .flexible-loan-no.long-loan-no { font-size: 10px; }
+    .flexible-loan-no.very-long-loan-no { font-size: 9px; }
+    
     .flexible-name { 
         white-space: nowrap; 
         overflow: hidden; 
@@ -557,24 +586,24 @@
     .flexible-name.long-name { font-size: 10px; }
     .flexible-name.very-long-name { font-size: 9px; }
 
-    /* Loan No column */
-    th:nth-child(1), td:nth-child(1) { width: 10% !important; }
+    /* Loan No column - increased for better space usage */
+    th:nth-child(1), td:nth-child(1) { width: 15% !important; }
 
-    /* Name column larger */
-    th:nth-child(2), td:nth-child(2) { width: 13% !important; }
+    /* Name column */
+    th:nth-child(2), td:nth-child(2) { width: 12% !important; }
 
-    /* Amount columns */
+    /* Amount columns - slightly reduced to accommodate loan no */
     th:nth-child(3), td:nth-child(3),
     th:nth-child(4), td:nth-child(4),
-    th:nth-child(5), td:nth-child(5) { width: 6.5% !important; }
+    th:nth-child(5), td:nth-child(5) { width: 5.5% !important; }
 
-    /* Paid columns */
+    /* Paid columns - slightly reduced */
     th:nth-child(6), td:nth-child(6),
     th:nth-child(8), td:nth-child(8),
     th:nth-child(10), td:nth-child(10),
     th:nth-child(12), td:nth-child(12),
     th:nth-child(14), td:nth-child(14) {
-        width: 6.5% !important;
+        width: 6% !important;
     }
 
     /* Correct columns smaller */
@@ -631,20 +660,8 @@
                     html += (i === 0) ? buildFirstPageThead() : buildSubsequentPageThead();
                     html += '<tbody>';
                     
-                    // Process flexible names in group block
-                    let groupHTML = groupBlocks[i].outerHTML;
-                    groupHTML = groupHTML.replace(/class="flexible-name"/g, function(match, offset, string) {
-                        const start = string.lastIndexOf('>', offset);
-                        const end = string.indexOf('<', offset);
-                        const nameText = string.substring(start + 1, end);
-                        const nameLength = nameText.length;
-                        
-                        if (nameLength > 25) return 'class="flexible-name very-long-name"';
-                        if (nameLength > 18) return 'class="flexible-name long-name"';
-                        return 'class="flexible-name"';
-                    });
-                    
-                    html += groupHTML;
+                    // Directly append the HTML for the current block; we'll classify sizes using DOM after injection
+                    html += groupBlocks[i].outerHTML;
                     html += '</tbody></table></div>';
                 }
 
@@ -690,6 +707,31 @@
                 printWindow.document.close();
 
                 printWindow.onload = function () {
+                    // Classify font sizes in the print document using actual text lengths
+                    const doc = printWindow.document;
+
+                    // Loan No thresholds tuned for 15% column width
+                    doc.querySelectorAll('td.flexible-loan-no').forEach(td => {
+                        const len = (td.textContent || '').trim().length;
+                        td.classList.remove('long-loan-no', 'very-long-loan-no');
+                        if (len > 24) {
+                            td.classList.add('very-long-loan-no');
+                        } else if (len > 16) {
+                            td.classList.add('long-loan-no');
+                        }
+                    });
+
+                    // Name thresholds (slightly higher)
+                    doc.querySelectorAll('td.flexible-name').forEach(td => {
+                        const len = (td.textContent || '').trim().length;
+                        td.classList.remove('long-name', 'very-long-name');
+                        if (len > 30) {
+                            td.classList.add('very-long-name');
+                        } else if (len > 22) {
+                            td.classList.add('long-name');
+                        }
+                    });
+
                     printWindow.focus();
                     printWindow.print();
                 };
