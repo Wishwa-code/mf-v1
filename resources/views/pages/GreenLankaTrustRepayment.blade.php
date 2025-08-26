@@ -107,12 +107,31 @@
             line-height: 1.1;
         }
 
-        /* Prevent Loan No and Name from causing tall rows; show ellipsis */
+        /* Flexible name sizing */
         #repaymentTable td:nth-child(1),
         #repaymentTable td:nth-child(2) {
             white-space: nowrap;
             overflow: hidden;
-            text-overflow: ellipsis;
+        }
+        
+        .flexible-loan-no {
+            font-size: 14px;
+        }
+        .flexible-loan-no.long-loan-no {
+            font-size: 13px;
+        }
+        .flexible-loan-no.very-long-loan-no {
+            font-size: 12px;
+        }
+        
+        .flexible-name {
+            font-size: 14px;
+        }
+        .flexible-name.long-name {
+            font-size: 13px;
+        }
+        .flexible-name.very-long-name {
+            font-size: 12px;
         }
 
         @media (max-width: 480px) {
@@ -178,6 +197,11 @@
             #repaymentTable th:nth-child(1),
             #repaymentTable td:nth-child(1) {
                 width: 12% !important;
+            }
+            
+            /* Name width (print) */
+            #repaymentTable th:nth-child(2),
+            #repaymentTable td:nth-child(2) {
                 width: 12% !important;
             }
 
@@ -299,19 +323,19 @@
                             <table id="repaymentTable">
                                 <colgroup>
                                     <col style="width:12%">
-                                    <col style="width:10%">
+                                    <col style="width:12%">
+                                    <col style="width:6%">
+                                    <col style="width:6%">
+                                    <col style="width:6%">
                                     <col style="width:6.5%">
+                                    <col style="width:4.5%">
                                     <col style="width:6.5%">
+                                    <col style="width:4.5%">
                                     <col style="width:6.5%">
-                                    <col style="width:7%">
                                     <col style="width:4.5%">
-                                    <col style="width:7%">
+                                    <col style="width:6.5%">
                                     <col style="width:4.5%">
-                                    <col style="width:7%">
-                                    <col style="width:4.5%">
-                                    <col style="width:7%">
-                                    <col style="width:4.5%">
-                                    <col style="width:7%">
+                                    <col style="width:6.5%">
                                     <col style="width:4.5%">
                                 </colgroup>
                                 <thead>
@@ -339,8 +363,8 @@
                                         <tr><td colspan="15"><strong>Group No: {{ $group_name }}</strong></td></tr>
                                         @foreach($group as $item)
                                             <tr class="group-row">
-                                                <td>{{ $item->Loan_No }}</td>
-                                                <td class="fixed-name">{{ $item->name_with_initials }}</td>
+                                                <td class="flexible-loan-no">{{ $item->Loan_No }}</td>
+                                                <td class="flexible-name">{{ $item->name_with_initials }}</td>
                                                 <td>{{ number_format($item->Loan_Amount, 2) }}</td>
                                                 <td>{{ number_format($item->Installment_Amount, 2) }}</td>
                                                 <td>{{ number_format($item->Balance_Amount, 2) }}</td>
@@ -466,6 +490,26 @@
 
             calculateTotals();
 
+            // Handle flexible loan no sizing
+            $('.flexible-loan-no').each(function() {
+                const loanNoLength = $(this).text().length;
+                if (loanNoLength > 22) {
+                    $(this).addClass('very-long-loan-no');
+                } else if (loanNoLength > 16) {
+                    $(this).addClass('long-loan-no');
+                }
+            });
+
+            // Handle flexible name sizing
+            $('.flexible-name').each(function() {
+                const nameLength = $(this).text().length;
+                if (nameLength > 28) {
+                    $(this).addClass('very-long-name');
+                } else if (nameLength > 20) {
+                    $(this).addClass('long-name');
+                }
+            });
+
             $('#downloadExcel').click(function () {
                 const table = document.getElementById('repaymentTable');
                 const ws = XLSX.utils.table_to_sheet(table, { raw: true });
@@ -524,27 +568,42 @@
     table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; }
     th, td { border: 1px solid #000; padding: 4px; text-align: center; word-break: break-word; min-height: 20px; }
 
-    /* Loan No column */
-    th:nth-child(1), td:nth-child(1) { width: 12% !important; }
-    th:nth-child(1), td:nth-child(1) { width: 12% !important; }
+    /* Flexible sizing for print */
+    .flexible-loan-no { 
+        white-space: nowrap; 
+        overflow: hidden; 
+        font-size: 11px; /* default for most cases */
+    }
+    /* Slight reductions only when needed; avoid overly tiny text */
+    .flexible-loan-no.long-loan-no { font-size: 10px; }
+    .flexible-loan-no.very-long-loan-no { font-size: 9px; }
+    
+    .flexible-name { 
+        white-space: nowrap; 
+        overflow: hidden; 
+        font-size: 11px; 
+    }
+    .flexible-name.long-name { font-size: 10px; }
+    .flexible-name.very-long-name { font-size: 9px; }
 
-    /* Name column smaller */
-    th:nth-child(2), td:nth-child(2) { width: 10% !important; }
-    th:nth-child(2), td:nth-child(2) { width: 10% !important; }
+    /* Loan No column - increased for better space usage */
+    th:nth-child(1), td:nth-child(1) { width: 15% !important; }
 
-    /* Amount columns */
+    /* Name column */
+    th:nth-child(2), td:nth-child(2) { width: 12% !important; }
+
+    /* Amount columns - slightly reduced to accommodate loan no */
     th:nth-child(3), td:nth-child(3),
     th:nth-child(4), td:nth-child(4),
-    th:nth-child(5), td:nth-child(5) { width: 6.5% !important; }
-    th:nth-child(5), td:nth-child(5) { width: 6.5% !important; }
+    th:nth-child(5), td:nth-child(5) { width: 5.5% !important; }
 
-    /* Paid columns wider */
+    /* Paid columns - slightly reduced */
     th:nth-child(6), td:nth-child(6),
     th:nth-child(8), td:nth-child(8),
     th:nth-child(10), td:nth-child(10),
     th:nth-child(12), td:nth-child(12),
     th:nth-child(14), td:nth-child(14) {
-        width: 7% !important;
+        width: 6% !important;
     }
 
     /* Correct columns smaller */
@@ -600,6 +659,8 @@
                     // Use full header for first page, minimal header for others
                     html += (i === 0) ? buildFirstPageThead() : buildSubsequentPageThead();
                     html += '<tbody>';
+                    
+                    // Directly append the HTML for the current block; we'll classify sizes using DOM after injection
                     html += groupBlocks[i].outerHTML;
                     html += '</tbody></table></div>';
                 }
@@ -646,6 +707,31 @@
                 printWindow.document.close();
 
                 printWindow.onload = function () {
+                    // Classify font sizes in the print document using actual text lengths
+                    const doc = printWindow.document;
+
+                    // Loan No thresholds tuned for 15% column width
+                    doc.querySelectorAll('td.flexible-loan-no').forEach(td => {
+                        const len = (td.textContent || '').trim().length;
+                        td.classList.remove('long-loan-no', 'very-long-loan-no');
+                        if (len > 24) {
+                            td.classList.add('very-long-loan-no');
+                        } else if (len > 16) {
+                            td.classList.add('long-loan-no');
+                        }
+                    });
+
+                    // Name thresholds (slightly higher)
+                    doc.querySelectorAll('td.flexible-name').forEach(td => {
+                        const len = (td.textContent || '').trim().length;
+                        td.classList.remove('long-name', 'very-long-name');
+                        if (len > 30) {
+                            td.classList.add('very-long-name');
+                        } else if (len > 22) {
+                            td.classList.add('long-name');
+                        }
+                    });
+
                     printWindow.focus();
                     printWindow.print();
                 };
