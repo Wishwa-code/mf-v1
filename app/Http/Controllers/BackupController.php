@@ -52,5 +52,63 @@ class BackupController extends Controller
         }
     }
 
+    public function showBackupPage()
+    {
+        // Check if user is logged in
+        if (!auth()->check()) {
+            return redirect('/login');
+        }
+        
+        // Get existing backup files
+        $backupPath = storage_path('app/backups');
+        $backups = [];
+        
+        if (is_dir($backupPath)) {
+            $files = glob($backupPath . '/backup-*.sql');
+            foreach ($files as $file) {
+                $backups[] = [
+                    'name' => basename($file),
+                    'size' => $this->formatFileSize(filesize($file)),
+                    'date' => date('Y-m-d H:i:s', filemtime($file)),
+                    'path' => $file
+                ];
+            }
+            // Sort by date, newest first
+            usort($backups, function($a, $b) {
+                return strtotime($b['date']) - strtotime($a['date']);
+            });
+        }
+        
+        return view('backup.index', compact('backups'));
+    }
+    
+    private function formatFileSize($bytes)
+    {
+        if ($bytes >= 1073741824) {
+            return number_format($bytes / 1073741824, 2) . ' GB';
+        } elseif ($bytes >= 1048576) {
+            return number_format($bytes / 1048576, 2) . ' MB';
+        } elseif ($bytes >= 1024) {
+            return number_format($bytes / 1024, 2) . ' KB';
+        } else {
+            return $bytes . ' bytes';
+        }
+    }
 
+    public function runBackup()
+    {
+        // Check if user is logged in
+        if (!auth()->check()) {
+            return redirect('/login');
+        }
+
+        try {
+            // Run the artisan command
+            \Artisan::call('db:backup');
+            
+            return back()->with('success', 'Database backup created successfully!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Backup failed: ' . $e->getMessage());
+        }
+    }
 }

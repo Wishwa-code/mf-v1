@@ -341,6 +341,8 @@ Route::post('/updatesmsstatus','\App\Http\Controllers\SmsController@edit')->name
 
 //Backup
 Route::get('/backup', '\App\Http\Controllers\BackupController@createBackup')->name('backup.create');
+Route::get('/backupdb', '\App\Http\Controllers\BackupController@showBackupPage')->name('backup.show');
+Route::post('/backupdb', '\App\Http\Controllers\BackupController@runBackup')->name('backup.run');
 
 
 
