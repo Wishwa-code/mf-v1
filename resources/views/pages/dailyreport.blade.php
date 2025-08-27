@@ -71,18 +71,65 @@
 
     /* Column widths for single-column 7-day structure */
     #repaymentTable th, #repaymentTable td { 
-        white-space: nowrap; 
         font-size: 12px;
         padding: 8px 4px;
         border: 2px solid #333;
+        vertical-align: middle;
+        position: relative;
     }
     
-    /* Main column widths */
-    #repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 10%; }  /* Loan Number */
-    #repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 20%; }  /* Customer Name */
-    #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; }  /* Amount */
-    #repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 10%; }  /* Due */
-    #repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 10%; }  /* Balance */
+    /* Responsive font sizing for long content */
+    #repaymentTable td:nth-child(1) {
+        font-size: clamp(8px, 1.2vw, 12px) !important;
+        line-height: 1.2;
+        word-wrap: break-word;
+        hyphens: auto;
+    }
+    
+    #repaymentTable td:nth-child(2) {
+        font-size: clamp(9px, 1.3vw, 12px) !important;
+        line-height: 1.2;
+        word-wrap: break-word;
+    }
+    
+    /* Main column widths with overflow handling */
+    #repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { 
+        width: 12%; 
+        max-width: 12%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        word-break: break-all;
+        font-size: 10px;
+    }  /* Loan Number */
+    
+    #repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { 
+        width: 18%; 
+        max-width: 18%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        word-break: break-word;
+    }  /* Customer Name */
+    
+    #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { 
+        width: 10%; 
+        max-width: 10%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }  /* Amount */
+    
+    #repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { 
+        width: 10%; 
+        max-width: 10%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }  /* Due */
+    
+    #repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { 
+        width: 10%; 
+        max-width: 10%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }  /* Balance */
     
     /* Force consistent date column widths */
     #repaymentTable {
@@ -90,7 +137,7 @@
         width: 100% !important;
     }
     
-    /* Date columns - exactly 5.71% each for perfect consistency */
+    /* Date columns - exactly 5.71% each for perfect consistency (40% total / 7 columns) */
     .paid-amount,
     .date-col,
     #repaymentTable colgroup .date-col { 
@@ -99,6 +146,8 @@
         max-width: 5.71% !important;
         font-size: 10px;
         text-align: center;
+        overflow: hidden;
+        word-break: break-all;
     }
     
     /* Header styling */
@@ -145,6 +194,12 @@
                 font-size: 11px;
                 padding: 6px;
             }
+            #repaymentTable td:nth-child(1) {
+                font-size: 9px !important;
+            }
+            #repaymentTable td:nth-child(2) {
+                font-size: 10px !important;
+            }
             .empty-date-header {
                 font-size: 12px !important;
                 padding: 12px 3px !important;
@@ -156,6 +211,12 @@
             #repaymentTable th, #repaymentTable td {
                 font-size: 9px;
                 padding: 4px;
+            }
+            #repaymentTable td:nth-child(1) {
+                font-size: 7px !important;
+            }
+            #repaymentTable td:nth-child(2) {
+                font-size: 8px !important;
             }
             .empty-date-header {
                 font-size: 10px !important;
@@ -171,6 +232,12 @@
             #repaymentTable th, #repaymentTable td {
                 font-size: 8px;
                 padding: 2px;
+            }
+            #repaymentTable td:nth-child(1) {
+                font-size: 6px !important;
+            }
+            #repaymentTable td:nth-child(2) {
+                font-size: 7px !important;
             }
             .empty-date-header {
                 font-size: 8px !important;
@@ -269,11 +336,11 @@
                 border: 1px solid #333 !important;
             }
 
-            #repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 10%; }  /* Loan Number */
-            #repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 20%; }  /* Customer Name */
-            #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; }  /* Amount */
-            #repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 10%; }  /* Due */
-            #repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 10%; }  /* Balance */
+            #repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 12%; max-width: 12%; font-size: 8px !important; word-break: break-all; }  /* Loan Number */
+            #repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 18%; max-width: 18%; font-size: 9px !important; word-break: break-word; }  /* Customer Name */
+            #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; max-width: 10%; }  /* Amount */
+            #repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 10%; max-width: 10%; }  /* Due */
+            #repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 10%; max-width: 10%; }  /* Balance */
             
             /* Date columns - 5.71% each for 7 columns - CONSISTENT */
             .paid-amount,
@@ -383,13 +450,13 @@
                         <div class="table-responsive">
                             <table id="repaymentTable">
                                 <colgroup>
-                                    <col style="width:10%">
-                                    <col style="width:20%">
-                                    <col style="width:10%">
-                                    <col style="width:10%">
-                                    <col style="width:10%">
+                                    <col style="width:12%; max-width:12%;">
+                                    <col style="width:18%; max-width:18%;">
+                                    <col style="width:10%; max-width:10%;">
+                                    <col style="width:10%; max-width:10%;">
+                                    <col style="width:10%; max-width:10%;">
                                     @for ($i = 1; $i <= 7; $i++)
-                                        <col class="date-col" style="width:5.71%">
+                                        <col class="date-col" style="width:5.71%; max-width:5.71%;">
                                     @endfor
                                 </colgroup>
                                 <thead>
@@ -589,11 +656,11 @@
                 printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 10px; margin: 0.3in; }');
                 printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px; }');
                 printWindow.document.write('#repaymentTable th, #repaymentTable td { border: 1px solid black; padding: 3px; text-align: center; white-space: nowrap !important; }');
-                printWindow.document.write('#repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 10%; }');   // Loan Number
-                printWindow.document.write('#repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 20%; }');   // Customer Name
-                printWindow.document.write('#repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; }');   // Amount
-                printWindow.document.write('#repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 10%; }');   // Due
-                printWindow.document.write('#repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 10%; }');   // Balance
+                printWindow.document.write('#repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 12%; max-width: 12%; font-size: 7px !important; word-break: break-all; overflow: hidden; }');   // Loan Number
+                printWindow.document.write('#repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 18%; max-width: 18%; font-size: 8px !important; word-break: break-word; overflow: hidden; }');   // Customer Name
+                printWindow.document.write('#repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; max-width: 10%; overflow: hidden; }');   // Amount
+                printWindow.document.write('#repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 10%; max-width: 10%; overflow: hidden; }');   // Due
+                printWindow.document.write('#repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 10%; max-width: 10%; overflow: hidden; }');   // Balance
                 printWindow.document.write('.paid-amount { width: 5.71% !important; min-width: 5.71% !important; max-width: 5.71% !important; font-size: 8px; }'); // Date columns
                 printWindow.document.write('#repaymentTable thead th { font-size: 10px !important; font-weight: bold; text-align: center; }');
                 printWindow.document.write('#repaymentTable thead tr:first-child th:last-child { font-size: 12px !important; background-color: #e9ecef !important; }');
