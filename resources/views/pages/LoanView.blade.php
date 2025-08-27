@@ -376,7 +376,7 @@
                                     <td>{{ number_format($Panalty_Amount-$Panalty_BalanceSum, 2, '.', ',') }}</td>
                                     <td>{{ number_format($Panalty_BalanceSum, 2, '.', ',') }}</td>
                                     <td>{{ number_format($loan->capital_balance, 2, '.', ',') }}</td>
-                                    <td>{{ number_format($loan->Balance_Amount+$Panalty_BalanceSum, 2, '.', ',') }}</td>
+                                    <td>{{ number_format($loan->Total_Loan_Amount-($total_paid_amount-$savingBalanceSum)+$Panalty_BalanceSum, 2, '.', ',') }}</td>
                                     <td>{{ $installments->last()->Installment_Date }}</td>
                                     <td style="color:
     {{ $loan->Status == -1 ? 'orange' : ($loan->Status == 0 ? 'red' : 'green') }};">
@@ -1310,57 +1310,83 @@
 
 
 
-        function approve(id,index){
-            let comment = $("#des_" + index).val();
-
-            if (comment===" "){
+        function approve(id, index, el) {
+            // Read & validate comment
+            var comment = String($("#des_" + index).val() || "").trim();
+            if (!comment) {
                 Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: 'Please Enter Comment !',
-                })
-            }else{
-                Swal.fire({
-                    title: "Are you sure?",
-                    text: "Do you want to approve this Loan ?",
-                    icon: "warning",
-                    showCancelButton: true,
-                    confirmButtonColor: "#3085d6",
-                    cancelButtonColor: "#d33",
-                    confirmButtonText: "Yes, Approve it!",
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        $.ajax({
-                            type: "POST",
-                            url: "/approve_loan",
-                            headers: {
-                                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-                            },
-                            data: {
-                                id:id,
-                                comment:comment
-                            },
-                            success: function (data, textStatus, xhr) {
-                                if (xhr.status === 200) {
-                                    Swal.fire({
-                                        position: "center",
-                                        icon: "success",
-                                        title: "Successfully Updated !",
-                                    }).then(function () {
-                                        window.location.reload();
-                                    });
-                                } else {
-                                    Swal.fire("Error!", "Failed to load data!", "error");
-                                }
-                            },
-                            error: function(xhr, textStatus, errorThrown) {
-                                console.log("Error:", errorThrown);
-                            }
-                        });
-                    }
+                    icon: "error",
+                    title: "Oops...",
+                    text: "Please enter a comment!",
                 });
+                return;
             }
+
+            // Try to infer loan_id
+            // 1) common hidden inputs you already have on the page
+            var loan_id ={{$loan->idCustomer_Loan}};
+
+            Swal.fire({
+                title: "Are you sure?",
+                text: "Do you want to approve this Loan?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, approve it!",
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                $.ajax({
+                    type: "POST",
+                    url: "/approve_loan",
+                    headers: {
+                        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                    },
+                    data: {
+                        id: id,
+                        loan_id: loan_id,     // <-- include loan_id for the backend "all approved" check
+                        comment: comment,
+                    },
+                    success: function (res, _textStatus, xhr) {
+                        if (xhr.status !== 200) {
+                            Swal.fire("Error!", "Failed to update!", "error");
+                            return;
+                        }
+
+                        // If backend says to redirect (all approvals done), go to /loan_disbursement
+                        if (res && res.redirect && res.url) {
+                            Swal.fire({
+                                icon: "success",
+                                title: "Approved!",
+                                text: "All approvals completed. Redirecting...",
+                                timer: 1200,
+                                showConfirmButton: false,
+                            }).then(() => {
+                                window.location.href = res.url;
+                            });
+                            return;
+                        }
+
+                        // Otherwise keep your original behavior (just refresh the current page)
+                        Swal.fire({
+                            position: "center",
+                            icon: "success",
+                            title: "Successfully Updated!",
+                            timer: 1000,
+                            showConfirmButton: false,
+                        }).then(function () {
+                            window.location.reload();
+                        });
+                    },
+                    error: function (_xhr, _textStatus, errorThrown) {
+                        console.error("Error:", errorThrown);
+                        Swal.fire("Error!", "Something went wrong!", "error");
+                    },
+                });
+            });
         }
+
 
         function loadChecklistProgress(levelId,loan_id) {
             $.ajax({

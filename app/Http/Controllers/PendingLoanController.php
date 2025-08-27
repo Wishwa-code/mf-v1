@@ -517,17 +517,42 @@ class PendingLoanController extends Controller
 
     public function approve_loan(Request $request){
         $user_id = (int)session('userid');
+
         $affected = DB::table('loan_has_approval')
             ->where('id', $request->id)
             ->where('branch_id', session('branch_id'))
-            ->update(
-                [
-                    'comment' => $request->comment,
-                    'user_id' => $user_id,
-                    'date' => date('Y-m-d H:i:s'),
-                ]);
-        return response()->json(['item' => $affected],200);
+            ->update([
+                'comment' => $request->comment,
+                'user_id' => $user_id,
+                'date'    => date('Y-m-d H:i:s'),
+            ]);
+
+        $customer_loan_doc = tableWithBranch('loan_has_approval', 'loan_has_approval')
+            ->leftJoin('user', 'loan_has_approval.user_id', '=', 'user.id')
+            ->where('loan_id', '=', $request->loan_id)
+            ->select(
+                'loan_has_approval.*',
+                DB::raw('IF(user.id IS NULL, 0, user.id) as user_id'),
+                DB::raw('IF(user.id IS NULL, "-", user.Full_Name) as Full_Name')
+            )
+            ->get();
+
+        // Check if all are approved
+        $allApproved = $customer_loan_doc->every(function ($item) {
+            return $item->date !== '-' && $item->user_id != 0;
+        });
+
+        if ($allApproved) {
+            return response()->json([
+                'item'     => $affected,
+                'redirect' => true,
+                'url'      => url('/loan_disbursement')
+            ], 200);
+        }
+
+        return response()->json(['item' => $affected, 'redirect' => false],200);
     }
+
 
 
 
