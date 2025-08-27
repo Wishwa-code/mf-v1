@@ -167,8 +167,7 @@ class UserController extends Controller
                 DB::statement("ALTER TABLE loan_category ADD COLUMN status TINYINT DEFAULT 1");
             }
 
-            // Call to the penalty creation function
-            $this->create_panelty();
+
 
 //            $loanLogs = DB::table('Loan_Log')
 //                ->orderBy('Loan_ID')
@@ -379,7 +378,8 @@ class UserController extends Controller
 //            }
 //        }
 
-
+// Call to the penalty creation function
+        $this->create_panelty();
         $loan=tableWithBranch('customer_loan')->where('Status','!=','1')->get();
         $CapitalBalanceController = new CapitalBalanceController();
         foreach ($loan as $loans){

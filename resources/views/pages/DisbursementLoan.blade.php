@@ -634,40 +634,48 @@
                 reverseButtons: true
             }).then((result) => {
                 if (result.isConfirmed) {
-                    exportDisbursementSheetPDF(); // existing function
+                    exportDisbursementSheetPDF();
                 } else if (result.dismiss === Swal.DismissReason.cancel) {
-                    exportDisbursementSheetExcel(); // new function below
+                    exportDisbursementSheetExcel();
                 }
             });
         }
 
         function exportDisbursementSheetExcel() {
             var table = $('#loan_table').DataTable();
-            var rows = table.rows().data();
+            var rows  = table.rows().data();
 
             var wb = XLSX.utils.book_new();
-            var ws_data = [['#', 'Customer Number', 'NIC', 'Customer Name', 'Amount', 'Bank Details', 'Received By']];
+            // Added "Route" after "#"
+            var ws_data = [['#', 'Route', 'Customer Number', 'NIC', 'Customer Name', 'Amount', 'Bank Details', 'Received By']];
             var customerIds = [];
             var rowData = [];
             var totalAmount = 0;
 
             for (var i = 0; i < rows.length; i++) {
                 var row = rows[i];
-                var amount = parseFloat(row[8].replace(/[^0-9.-]+/g, "")) || 0;
+
+                var route        = row[1];                       // Route
+                var customerNo   = row[5];                       // Customer Number
+                var nic          = row[6];                       // NIC
+                var customerName = row[4];                       // Customer Name
+                var amount       = parseFloat(row[8].replace(/[^0-9.-]+/g, "")) || 0; // Amount
+                var idCustomer   = row[16];                      // <-- KEEP using idCustomer for bank details
+
                 totalAmount += amount;
 
                 rowData.push({
                     index: i + 1,
-                    customerNumber: row[5],
-                    nic: row[6],
-                    customerName: row[4],
+                    route: route,
+                    customerNumber: customerNo,
+                    nic: nic,
+                    customerName: customerName,
                     amount: amount,
-                    idCustomer: row[16]
+                    idCustomer: idCustomer
                 });
 
-                customerIds.push(row[16]);
+                customerIds.push(idCustomer); // <-- KEEP ids as idCustomer
             }
-
 
             $.ajax({
                 url: '/get-customer-bank-details',
@@ -682,60 +690,68 @@
                         const key = String(item.idCustomer).trim();
                         const bankDetail = response[key] || '';
                         ws_data.push([
-                            item.index,
-                            item.customerNumber,
-                            item.nic,
-                            item.customerName,
-                            item.amount.toFixed(2),
-                            bankDetail,
-                            ''
+                            item.index,                 // #
+                            item.route,                 // Route
+                            item.customerNumber,        // Customer Number
+                            item.nic,                   // NIC
+                            item.customerName,          // Customer Name
+                            item.amount.toFixed(2),     // Amount
+                            bankDetail,                 // Bank Details
+                            ''                          // Received By
                         ]);
                     });
-                    // Add footer rows
+
+                    // Footer rows (keep 8 data columns after '#', 'Route', etc.)
                     ws_data.push([]);
-                    ws_data.push(['', '', '', 'Total Amount', totalAmount.toFixed(2)]);
+                    ws_data.push(['', '', '', '', 'Total Amount', totalAmount.toFixed(2), '', '']);
 
                     var ws = XLSX.utils.aoa_to_sheet(ws_data);
                     XLSX.utils.book_append_sheet(wb, ws, "Disbursement Sheet");
-
                     XLSX.writeFile(wb, 'Disbursement_Sheet.xlsx');
                 },
-                error: function (xhr) {
+                error: function () {
                     console.error("Error loading bank details for Excel");
                 }
             });
         }
 
-
-
         function exportDisbursementSheetPDF() {
             var table = $('#loan_table').DataTable();
-            var rows = table.rows().data();
+            var rows  = table.rows().data();
 
-            var data = [['#', 'Customer Number', 'NIC', 'Customer Name', 'Amount', 'Bank Details', 'Received By']];
+            // Added "Route" after "#"
+            var data = [['#', 'Route', 'Customer Number', 'NIC', 'Customer Name', 'Amount', 'Bank Details', 'Received By']];
             var totalAmount = 0;
             var customerIds = [];
             var rowData = [];
 
-            // Step 1: Extract data and collect customer IDs
+            // Step 1: Extract data and collect idCustomer (NOT customer number)
             for (var i = 0; i < rows.length; i++) {
                 var row = rows[i];
-                var amount = parseFloat(row[8].replace(/[^0-9.-]+/g, "")) || 0;
+
+                var route        = row[1];                       // Route
+                var customerNo   = row[5];                       // Customer Number
+                var nic          = row[6];                       // NIC
+                var customerName = row[4];                       // Customer Name
+                var amount       = parseFloat(row[8].replace(/[^0-9.-]+/g, "")) || 0; // Amount
+                var idCustomer   = row[16];                      // <-- KEEP using idCustomer
+
                 totalAmount += amount;
 
                 rowData.push({
                     index: i + 1,
-                    customerNumber: row[5],
-                    nic: row[6],
-                    customerName: row[4],
+                    route: route,
+                    customerNumber: customerNo,
+                    nic: nic,
+                    customerName: customerName,
                     amount: amount,
-                    id: row[5] // Assuming customer number is unique ID (adjust if needed)
+                    idCustomer: idCustomer    // <-- store idCustomer
                 });
 
-                customerIds.push(row[5]);
+                customerIds.push(idCustomer); // <-- send idCustomer to API
             }
 
-            // Step 2: Fetch bank details by customer numbers
+            // Step 2: Fetch bank details by idCustomer (unchanged expectation)
             $.ajax({
                 url: '/get-customer-bank-details',
                 type: 'POST',
@@ -744,27 +760,28 @@
                     _token: $('meta[name="csrf-token"]').attr("content")
                 },
                 success: function(response) {
-                    // Step 3: Match and insert into PDF data
+                    // Step 3: Match and insert into PDF data using idCustomer key
                     rowData.forEach(function(item) {
-                        let bankDetail = response[item.id] || '';
+                        let bankDetail = response[String(item.idCustomer).trim()] || '';
                         data.push([
-                            item.index,
-                            item.customerNumber,
-                            item.nic,
-                            item.customerName,
-                            item.amount.toFixed(2),
-                            bankDetail,
-                            ''
+                            item.index,                       // #
+                            item.route,                       // Route
+                            item.customerNumber,              // Customer Number
+                            item.nic,                         // NIC
+                            item.customerName,                // Customer Name
+                            item.amount.toFixed(2),           // Amount
+                            bankDetail,                       // Bank Details
+                            ''                                // Received By
                         ]);
                     });
 
-                    // Step 4: Add total and footer info
-                    data.push(['', '', '', 'Total Amount', totalAmount.toFixed(2), '', '']);
+                    // Step 4: Add total and footer info (pad to 8 columns)
+                    data.push(['', '', '', '', 'Total Amount', totalAmount.toFixed(2), '', '']);
                     data.push([]);
                     var authorizedText = "Prepared By: " + authorizedName;
-                    data.push(['', authorizedText, '', '', 'Authorized 01:', '', '']);
-                    data.push(['', '', '', '', 'Authorized 02:', '', '']);
-                    data.push(['', '', '', '', 'All Cheques Received:', '', '']);
+                    data.push(['', authorizedText, '', '', 'Authorized 01:', '', '', '']);
+                    data.push(['', '', '', '', 'Authorized 02:', '', '', '']);
+                    data.push(['', '', '', '', 'All Cheques Received:', '', '', '']);
 
                     // Step 5: Generate PDF
                     var pdf = new window.jspdf.jsPDF('landscape', 'mm', 'a4');
@@ -788,13 +805,14 @@
                         styles: { halign: 'center', fontSize: 10 },
                         headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
                         columnStyles: {
-                            0: { cellWidth: 10 },
-                            1: { cellWidth: 35 },
-                            2: { cellWidth: 35 },
-                            3: { cellWidth: 60 },
-                            4: { cellWidth: 30 },
-                            5: { cellWidth: 50 },
-                            6: { cellWidth: 45 }
+                            0: { cellWidth: 10 },  // #
+                            1: { cellWidth: 30 },  // Route
+                            2: { cellWidth: 35 },  // Customer Number
+                            3: { cellWidth: 35 },  // NIC
+                            4: { cellWidth: 60 },  // Customer Name
+                            5: { cellWidth: 25 },  // Amount
+                            6: { cellWidth: 55 },  // Bank Details
+                            7: { cellWidth: 35 }   // Received By
                         }
                     });
 
@@ -805,6 +823,7 @@
                 }
             });
         }
+
 
 
 
