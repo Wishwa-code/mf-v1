@@ -228,6 +228,11 @@ class TodayPaymentController extends Controller
         $loanQuery_2 = DB::table('installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
+            ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
             ->select(
                 'Customer_Loan_idCustomer_Loan',
                 DB::raw('COUNT(idInstallments) as Calculated_Installment_Count'),
@@ -240,9 +245,41 @@ class TodayPaymentController extends Controller
             ->where('installments.branch_id','=',session('branch_id'))
             ->where('customer_loan.Status', '=', '0')
             ->groupBy('Customer_Loan_idCustomer_Loan');
+
         if ($collector == 1) {
             $loanQuery_2->join('collector_has_route', 'customer.route_id', '=', 'collector_has_route.route_id')
                 ->where('collector_has_route.collector_id', '=', $user_id);
+        }
+        if ($center_details != '0') {
+            $loanQuery_2->where('center.idCenter', '=', $center_details);
+        }
+        if ($route != '0') {
+            $loanQuery_2->where('route.id_route', '=', $route);
+        }
+        if ($group != '0') {
+            $loanQuery_2->where('customer_group.idCustomer_Group', '=', $group);
+        }
+        if ($customer != '0') {
+            $loanQuery_2->where('customer.idCustomer', '=', $customer);
+        }
+        if ($recovery_officer != '0') {
+            $loanQuery_2->where('customer_loan.collector_id', '=', $recovery_officer);
+        }
+        if ($lending_officer != '0') {
+            $loanQuery_2->where('customer_loan.lending_officer_id', '=', $lending_officer);
+        }
+
+        // Apply status-specific filters (equivalent to main query)
+        if ($status == '0') {
+            $loanQuery_2->havingRaw("SUM(CASE WHEN Installment_Date <= '$today' THEN Total_Balance ELSE 0 END) > 0");
+        } elseif ($status == '2') {
+            $loanQuery_2->havingRaw("SUM(CASE WHEN Installment_Date < '$today' THEN Total_Balance ELSE 0 END) > 0");
+        } elseif ($status == '1') {
+            $loanQuery_2->havingRaw("SUM(CASE WHEN DATE(Installment_Date) = '$today' THEN Total_Balance ELSE 0 END) > 0");
+        }
+
+        if ($loan_number != '0') {
+            $loanQuery_2->where('customer_loan.idCustomer_Loan', '=', $loan_number);
         }
 
         $gettotal = $loanQuery_2->get();

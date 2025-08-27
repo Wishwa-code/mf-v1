@@ -214,6 +214,15 @@
             /* Larger titles on printed pages */
             .brandline { font-size: 20px !important; font-weight: 800; line-height: 1.2; }
             h2 { font-size: 18px !important; }
+
+            /* Make "Due Installment" column header smaller in print to prevent 3-line wrap */
+            #repaymentTable thead th:nth-child(4) {
+                font-size: 9px !important;
+                line-height: 1.0;
+                padding: 2px !important;
+                word-break: keep-all !important;
+                white-space: normal !important;
+            }
         }
         @media print {
             .print-footer {
@@ -591,6 +600,17 @@
     table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; }
     th, td { border: 1px solid #000; padding: 4px; text-align: center; word-break: break-word; min-height: 20px; line-height: 1.2; }
 
+    /* Prevent mid-word break for 'Due Installment' on print; keep to 1-2 lines */
+    .page table thead tr:first-child th:nth-child(4) {
+        word-break: normal !important;
+        overflow-wrap: normal !important;
+        white-space: normal !important;
+        hyphens: none !important;
+        font-size: 10px !important;
+        line-height: 1.05;
+        padding: 2px !important;
+    }
+
     /* Flexible sizing for print */
     .flexible-loan-no { 
         white-space: nowrap; 
@@ -630,7 +650,7 @@
                                         <col style="width:15%">
                                         <col style="width:12%">
                                         <col style="width:5.5%">
-                                        <col style="width:5.5%">
+                                        <col style="width:6.5%">
                                         <col style="width:5.5%">
                                         <col style="width:6%">
                                         <col style="width:4.5%">
