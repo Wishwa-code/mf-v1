@@ -331,8 +331,7 @@
                 case 'guardianDetails':
                     buttons = [
                         {text: 'Guardian Title', value: '@Guardian_Title@'},
-                        {text: 'Guardian First Name', value: '@Guardian_First_Name@'},
-                        {text: 'Guardian Last Name', value: '@Guardian_Last_Name@'},
+                        {text: 'Guardian Name', value: '@Guardian_First_Name@'},
                         {text: 'Guardian Email', value: '@Guardian_Email@'},
                         {text: 'Guardian Relation', value: '@Guardian_Relation@'},
                         {text: 'Guardian NIC', value: '@Guardian_NIC@'},

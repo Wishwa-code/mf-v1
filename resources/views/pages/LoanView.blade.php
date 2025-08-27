@@ -453,7 +453,7 @@
                                         </tr>
                                         <tr>
                                             <td style="text-align: left"><strong>Interest Amount</strong></td>
-                                            <td style="text-align: left">{{ $loan->Interest_Amount }}</td>
+                                            <td style="text-align: left">{{ number_format($loan->Interest_Amount,2,'.',',') }}</td>
                                         </tr>
                                         <tr>
                                             <td style="text-align: left"><strong>Total Other Loan Charges</strong></td>
