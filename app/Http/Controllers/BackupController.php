@@ -52,5 +52,94 @@ class BackupController extends Controller
         }
     }
 
+    public function showBackupPage()
+    {
+        // Check if user is logged in
+        if (!auth()->check()) {
+            return redirect('/login');
+        }
+        
+        // Get existing backup files
+        $backupPath = storage_path('app/backups');
+        $backups = [];
+        
+        if (is_dir($backupPath)) {
+            $files = glob($backupPath . '/backup-*.sql');
+            foreach ($files as $file) {
+                $backups[] = [
+                    'name' => basename($file),
+                    'size' => $this->formatFileSize(filesize($file)),
+                    'date' => date('Y-m-d H:i:s', filemtime($file)),
+                    'path' => $file
+                ];
+            }
+            // Sort by date, newest first
+            usort($backups, function($a, $b) {
+                return strtotime($b['date']) - strtotime($a['date']);
+            });
+        }
+        
+        // Return JSON for AJAX requests
+        if (request()->ajax()) {
+            return response()->json(['backups' => $backups]);
+        }
+        
+        return view('backup.index', compact('backups'));
+    }
+    
+    private function formatFileSize($bytes)
+    {
+        if ($bytes >= 1073741824) {
+            return number_format($bytes / 1073741824, 2) . ' GB';
+        } elseif ($bytes >= 1048576) {
+            return number_format($bytes / 1048576, 2) . ' MB';
+        } elseif ($bytes >= 1024) {
+            return number_format($bytes / 1024, 2) . ' KB';
+        } else {
+            return $bytes . ' bytes';
+        }
+    }
 
+    public function runBackup()
+    {
+        // Check if user is logged in
+        if (!auth()->check()) {
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Authentication required'], 401);
+            }
+            return redirect('/login');
+        }
+
+        try {
+            // Run the artisan command and capture output
+            $exitCode = \Artisan::call('db:backup');
+            $output = \Artisan::output();
+            
+            if ($exitCode === 0 && !str_contains($output, 'Backup failed!')) {
+                $message = 'Database backup created successfully!';
+                
+                if (request()->ajax()) {
+                    return response()->json(['success' => true, 'message' => $message]);
+                }
+                
+                return back()->with('success', $message);
+            } else {
+                $message = 'Backup failed. Please try again.';
+                
+                if (request()->ajax()) {
+                    return response()->json(['success' => false, 'message' => $message]);
+                }
+                
+                return back()->with('error', $message);
+            }
+        } catch (\Exception $e) {
+            $message = 'Backup failed: ' . $e->getMessage();
+            
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => $message]);
+            }
+            
+            return back()->with('error', $message);
+        }
+    }
 }

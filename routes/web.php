@@ -341,6 +341,8 @@ Route::post('/updatesmsstatus','\App\Http\Controllers\SmsController@edit')->name
 
 //Backup
 Route::get('/backup', '\App\Http\Controllers\BackupController@createBackup')->name('backup.create');
+Route::get('/backupdb', '\App\Http\Controllers\BackupController@showBackupPage')->name('backup.show');
+Route::post('/backupdb', '\App\Http\Controllers\BackupController@runBackup')->name('backup.run');
 
 
 
@@ -676,6 +678,7 @@ Route::get('/RightWayDailyRepayment', [TransactionController::class, 'rightway']
 
 Route::get('/GreenLankaTrustRepayment', [TransactionController::class, 'GreenLankaTrustRepayment'])->name('transaction.GreenLankaTrustRepayment');
 Route::get('/DandDRepayment', [TransactionController::class, 'DandDRepayment'])->name('transaction.DandDRepayment');
+Route::get('/dailyreport', [TransactionController::class, 'dailyreport'])->name('transaction.dailyreport');
 
 
 Route::get('/PaymentFullDetailsReport','\App\Http\Controllers\ReportController@payment_report')->name('payment-detail.index');
