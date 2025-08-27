@@ -79,6 +79,11 @@ class BackupController extends Controller
             });
         }
         
+        // Return JSON for AJAX requests
+        if (request()->ajax()) {
+            return response()->json(['backups' => $backups]);
+        }
+        
         return view('backup.index', compact('backups'));
     }
     
@@ -99,16 +104,42 @@ class BackupController extends Controller
     {
         // Check if user is logged in
         if (!auth()->check()) {
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Authentication required'], 401);
+            }
             return redirect('/login');
         }
 
         try {
-            // Run the artisan command
-            \Artisan::call('db:backup');
+            // Run the artisan command and capture output
+            $exitCode = \Artisan::call('db:backup');
+            $output = \Artisan::output();
             
-            return back()->with('success', 'Database backup created successfully!');
+            if ($exitCode === 0 && !str_contains($output, 'Backup failed!')) {
+                $message = 'Database backup created successfully!';
+                
+                if (request()->ajax()) {
+                    return response()->json(['success' => true, 'message' => $message]);
+                }
+                
+                return back()->with('success', $message);
+            } else {
+                $message = 'Backup failed. Please try again.';
+                
+                if (request()->ajax()) {
+                    return response()->json(['success' => false, 'message' => $message]);
+                }
+                
+                return back()->with('error', $message);
+            }
         } catch (\Exception $e) {
-            return back()->with('error', 'Backup failed: ' . $e->getMessage());
+            $message = 'Backup failed: ' . $e->getMessage();
+            
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => $message]);
+            }
+            
+            return back()->with('error', $message);
         }
     }
 }
