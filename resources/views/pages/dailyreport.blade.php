@@ -69,36 +69,113 @@
             font-size: 14px;
         }
 
-    /* Same Column widths for all */
-    #repaymentTable th, #repaymentTable td { white-space: nowrap; }
-    #repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 8%; }
-    #repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 18%; }
-    #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 20%; }
-    #repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 9%; }
-    #repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 9%; }
-    #repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 10%; }
+    /* Column widths for single-column 7-day structure */
+    #repaymentTable th, #repaymentTable td { 
+        white-space: nowrap; 
+        font-size: 12px;
+        padding: 8px 4px;
+        border: 2px solid #333;
+    }
+    
+    /* Main column widths */
+    #repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 10%; }  /* Loan Number */
+    #repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 20%; }  /* Customer Name */
+    #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; }  /* Amount */
+    #repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 10%; }  /* Due */
+    #repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 10%; }  /* Balance */
+    
+    /* Force consistent date column widths */
+    #repaymentTable {
+        table-layout: fixed !important;
+        width: 100% !important;
+    }
+    
+    /* Date columns - exactly 5.71% each for perfect consistency */
+    .paid-amount,
+    .date-col,
+    #repaymentTable colgroup .date-col { 
+        width: 5.71% !important; 
+        min-width: 5.71% !important; 
+        max-width: 5.71% !important;
+        font-size: 10px;
+        text-align: center;
+    }
+    
+    /* Header styling */
+    #repaymentTable thead th {
+        font-size: 14px !important;
+        font-weight: bold;
+        padding: 12px 4px;
+        background-color: #f8f9fa;
+        border: 2px solid #333;
+        text-align: center;
+    }
+
+    /* Main "Paid Date" header styling */
+    #repaymentTable thead tr:first-child th:last-child {
+        font-size: 16px !important;
+        font-weight: bold;
+        text-align: center;
+        background-color: #e9ecef !important;
+        border: 2px solid #333 !important;
+    }
+
+    /* Empty sub-date headers for manual writing - CONSISTENT SIZING */
+    .empty-date-header {
+        font-size: 14px !important;
+        font-weight: normal !important;
+        text-align: center;
+        vertical-align: middle;
+        background-color: #fff !important;
+        border: 2px solid #333 !important;
+        padding: 15px 2px !important;
+        height: 40px !important;
+        width: 5.71% !important;
+        min-width: 5.71% !important;
+        max-width: 5.71% !important;
+        writing-mode: horizontal-tb;
+    }
 
     /* logic for contact no always no wrap */
     .contact-no { max-width: none !important; white-space: nowrap; overflow: visible; text-overflow: clip; }
 
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            table {
-                font-size: 12px;
+        /* Responsive adjustments for single-column 7-day table */
+        @media (max-width: 1200px) {
+            #repaymentTable th, #repaymentTable td {
+                font-size: 11px;
+                padding: 6px;
             }
+            .empty-date-header {
+                font-size: 12px !important;
+                padding: 12px 3px !important;
+                height: 35px !important;
+            }
+        }
 
-            th, td {
-                padding: 5px;
+        @media (max-width: 768px) {
+            #repaymentTable th, #repaymentTable td {
+                font-size: 9px;
+                padding: 4px;
+            }
+            .empty-date-header {
+                font-size: 10px !important;
+                padding: 8px 2px !important;
+                height: 30px !important;
+            }
+            .table-responsive {
+                overflow-x: auto;
             }
         }
 
         @media (max-width: 480px) {
-            table {
-                font-size: 10px;
+            #repaymentTable th, #repaymentTable td {
+                font-size: 8px;
+                padding: 2px;
             }
-
-            th, td {
-                padding: 3px;
+            .empty-date-header {
+                font-size: 8px !important;
+                padding: 6px 1px !important;
+                height: 25px !important;
             }
         }
     </style>
@@ -184,17 +261,45 @@
         }
         @media print {
             #repaymentTable th, #repaymentTable td {
-                white-space: nowrap;
+                white-space: nowrap !important;
                 overflow: hidden;
-                text-overflow: ellipsis;
+                text-overflow: clip;
+                font-size: 10px !important;
+                padding: 3px !important;
+                border: 1px solid #333 !important;
             }
 
-            #repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 8%; }   /* Loan No */
-            #repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 18%; } /* Full Name */
-            #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 20%; } /* Contact No (wider for one-line mobile) */
-            #repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 9%; }  /* Loan Amount */
-            #repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 9%; }  /* Due Installment */
-            #repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 10%; } /* New Loan Amount */
+            #repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 10%; }  /* Loan Number */
+            #repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 20%; }  /* Customer Name */
+            #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; }  /* Amount */
+            #repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 10%; }  /* Due */
+            #repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 10%; }  /* Balance */
+            
+            /* Date columns - 5.71% each for 7 columns - CONSISTENT */
+            .paid-amount,
+            .empty-date-header { width: 5.71% !important; min-width: 5.71% !important; max-width: 5.71% !important; }
+            
+            /* Print header styles */
+            #repaymentTable thead th {
+                font-size: 10px !important;
+                font-weight: bold;
+                text-align: center;
+            }
+            
+            /* Main "Paid Date" header for print */
+            #repaymentTable thead tr:first-child th:last-child {
+                font-size: 12px !important;
+                background-color: #e9ecef !important;
+            }
+            
+            /* Empty sub-headers for print */
+            .empty-date-header {
+                font-size: 12px !important;
+                background-color: #fff !important;
+                padding: 10px 2px !important;
+                height: 30px !important;
+                font-weight: normal !important;
+            }
         }
 
 
@@ -278,33 +383,27 @@
                         <div class="table-responsive">
                             <table id="repaymentTable">
                                 <colgroup>
-                                    <col style="width:8%">
-                                    <col style="width:18%">
-                                    <col style="width:20%">
-                                    <col style="width:9%">
-                                    <col style="width:9%">
                                     <col style="width:10%">
-                                    @for ($i = 1; $i < 5; $i++)
-                                        <col class="paid-col" style="width:60px">
-                                        <col class="correct-col" style="width:50px">
+                                    <col style="width:20%">
+                                    <col style="width:10%">
+                                    <col style="width:10%">
+                                    <col style="width:10%">
+                                    @for ($i = 1; $i <= 7; $i++)
+                                        <col class="date-col" style="width:5.71%">
                                     @endfor
                                 </colgroup>
                                 <thead>
                                 <tr>
-                                    <th rowspan="2">Loan No</th>
-                                    <th rowspan="2">Full Name</th>
-                                    <th rowspan="2">Contact No</th>
-                                    <th rowspan="2">Loan Amount</th>
-                                    <th rowspan="2">Due Installment</th>
-                                    <th rowspan="2">New Loan Amount</th>
-                                    @for ($i = 1; $i < 5; $i++)
-                                        <th colspan="2">Date</th>
-                                    @endfor
+                                    <th rowspan="2">Loan Number</th>
+                                    <th rowspan="2">Customer Name</th>
+                                    <th rowspan="2">Amount</th>
+                                    <th rowspan="2">Due</th>
+                                    <th rowspan="2">Balance</th>
+                                    <th colspan="7">Paid Date</th>
                                 </tr>
                                 <tr>
-                                    @for ($i = 1; $i < 5; $i++)
-                                        <th>Paid</th>
-                                        <th>Correct</th>
+                                    @for ($i = 1; $i <= 7; $i++)
+                                        <th class="empty-date-header">_______</th>
                                     @endfor
                                 </tr>
                                 </thead>
@@ -312,35 +411,30 @@
                                 @foreach($grouped_loans->chunk(2) as $groupPair)
                                     <tbody class="page-break">
                                     @foreach($groupPair as $group_name => $group)
-                                        <tr><td colspan="14"><strong>Group No: {{ $group_name }}</strong></td></tr>
+                                        <tr><td colspan="12"><strong>Group No: {{ $group_name }}</strong></td></tr>
                                         @foreach($group as $item)
                                             <tr class="group-row">
                                                 <td>{{ $item->Loan_No }}</td>
                                                 <td class="fixed-name">{{ $item->name_with_initials }}</td>
-                                                <td class="fixed-name contact-no">{{ $item->Contact_No }}</td>
                                                 <td>{{ number_format($item->Loan_Amount, 2) }}</td>
                                                 <td>{{ number_format($item->Installment_Amount, 2) }}</td>
                                                 <td>{{ number_format($item->Balance_Amount, 2) }}</td>
-                                                @for ($i = 1; $i < 5; $i++)
+                                                @for ($i = 1; $i <= 7; $i++)
                                                     <td class="paid-amount"></td>
-                                                    <td class="correct-column"></td>
                                                 @endfor
                                             </tr>
                                         @endforeach
                                         <tr class="group-row" style="font-weight: bold;">
-                                            <!-- Span the first three non-numeric columns (Loan No, Full Name, Contact No) -->
-                                            <td colspan="3">Group Total</td>
-                                            <!-- Totals aligned under Loan Amount, Due Installment, New Loan Amount -->
+                                            <td colspan="2">Group Total</td>
                                             <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
                                             <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
                                             <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
-                                            <!-- Remaining 8 columns for the four Date (Paid/Correct) pairs -->
-                                            <td colspan="8"></td>
+                                            <td colspan="7"></td>
                                         </tr>
-                                        {{-- Empty 7 Rows --}}
-                                        @for ($j = 0; $j < 2; $j++)
+                                        {{-- Empty Rows for manual entries --}}
+                                        @for ($j = 0; $j < 3; $j++)
                                             <tr class="group-row">
-                                                @for ($k = 0; $k < 14; $k++)
+                                                @for ($k = 0; $k < 12; $k++)
                                                     <td>&nbsp;</td>
                                                 @endfor
                                             </tr>
@@ -492,17 +586,19 @@
 
                 printWindow.document.write('<html><head><title>Daily Report Template</title>');
                 printWindow.document.write('<style>');
-                printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 11px; margin: 0.5in; }');
-                printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 10px; }');
-                printWindow.document.write('#repaymentTable th, #repaymentTable td { border: 1px solid black; padding: 4px; text-align: center; word-break: break-word; }');
-                printWindow.document.write('#repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 8%; }');
-                printWindow.document.write('#repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 18%; }');  // Full Name
-                printWindow.document.write('#repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 20%; }');  // Contact No
-                printWindow.document.write('#repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 9%; }');
-                printWindow.document.write('#repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 9%; }');
-                printWindow.document.write('#repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 10%; }');
-                printWindow.document.write('.paid-amount { width: 60px; min-width: 60px; } .correct-column { width: 50px; min-width: 50px; }');
-                printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
+                printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 10px; margin: 0.3in; }');
+                printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px; }');
+                printWindow.document.write('#repaymentTable th, #repaymentTable td { border: 1px solid black; padding: 3px; text-align: center; white-space: nowrap !important; }');
+                printWindow.document.write('#repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 10%; }');   // Loan Number
+                printWindow.document.write('#repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 20%; }');   // Customer Name
+                printWindow.document.write('#repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; }');   // Amount
+                printWindow.document.write('#repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 10%; }');   // Due
+                printWindow.document.write('#repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 10%; }');   // Balance
+                printWindow.document.write('.paid-amount { width: 5.71% !important; min-width: 5.71% !important; max-width: 5.71% !important; font-size: 8px; }'); // Date columns
+                printWindow.document.write('#repaymentTable thead th { font-size: 10px !important; font-weight: bold; text-align: center; }');
+                printWindow.document.write('#repaymentTable thead tr:first-child th:last-child { font-size: 12px !important; background-color: #e9ecef !important; }');
+                printWindow.document.write('.empty-date-header { width: 5.71% !important; min-width: 5.71% !important; max-width: 5.71% !important; font-size: 10px !important; background-color: #fff !important; padding: 8px 2px !important; height: 25px !important; font-weight: normal !important; }');
+                printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } .signature-section { page-break-before: always; } }');
                 printWindow.document.write('</style>');
 
 
@@ -512,7 +608,7 @@
 // Append signature section
                 printWindow.document.write(`
    <br><br>
-<table style="width: 100%; font-size: 12px; border: none; line-height: 2;">
+<table class="signature-section" style="width: 100%; font-size: 12px; border: none; line-height: 2; page-break-before: always; margin-top: 50px;">
     <tr>
         <td style="width: 35%;"><strong>EXECUTIVE SIGNATURE</strong></td>
         <td style="width: 65%;"><div style="border-bottom: 2px solid black; width: 100%;"></div></td>
