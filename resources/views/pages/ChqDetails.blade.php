@@ -28,7 +28,69 @@
             border-radius: 50%;
             border: 5px solid white;
         }
+    </style>
+    <style>
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 0.5in;
+                counter-increment: page;
+            }
 
+            .page-break {
+                page-break-after: always;
+            }
+
+            #bank_table {
+                width: 100%;
+                border-collapse: collapse;
+                table-layout: fixed;
+            }
+
+            #bank_table th,
+            #bank_table td {
+                border: 1px solid black;
+                padding: 4px;
+                text-align: center;
+                word-break: break-word;
+            }
+
+            .btn, form, .page-title, .no-print, .d-flex {
+                display: none !important;
+            }
+        }
+        @media print {
+            .print-footer {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                font-size: 11px;
+                color: black;
+                display: flex;
+                justify-content: space-between;
+                padding: 5px 30px;
+                background-color: white;
+                border-top: 1px solid #000;
+            }
+        }
+        @media print {
+            body {
+                font-size: 12px !important;
+            }
+
+            #bank_table {
+                font-size: 11px !important;
+            }
+
+            #bank_table th,
+            #bank_table td {
+                padding: 6px !important;
+                font-size: 10px !important;
+                border: 1px solid #333 !important;
+                vertical-align: middle !important;
+            }
+        }
     </style>
 @endsection
 
@@ -55,6 +117,19 @@
                                 <a href="{{ route('bank.chq') }}" class="btn btn-secondary">
                                     <i class="fas fa-refresh me-1"></i>Show All
                                 </a>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row mb-3">
+                            <div class="col-12 d-flex align-items-center gap-2">
+                                <label for="pageOrientation" style="margin-right: 10px;">Print Orientation:</label>
+                                <select id="pageOrientation" class="form-select w-auto">
+                                    <option value="landscape" selected>Landscape</option>
+                                    <option value="portrait">Portrait</option>
+                                </select>
+
+                                <button id="printButton" class="btn btn-primary"><i class="bi bi-printer"></i> Print</button>
+                                <button id="downloadExcel" class="btn btn-success"><i class="bi bi-file-earmark-excel"></i> Download Excel</button>
                             </div>
                         </div>
 
@@ -200,12 +275,27 @@
 
 
     </div>
+    <div class="print-footer">
+        <div class="left">
+            Company: Asipiya Holdings | Cheque Details Report
+        </div>
+        <div class="right">
+            Printed by: {{ session('Full_Name') ?? 'System' }} on {{ now()->format('Y-m-d h:i A') }} | Page <span class="page-number"></span>
+        </div>
+    </div>
+
+    @php
+        $printedBy = session('Full_Name');
+        $printedAt = now()->format('Y-m-d h:i A');
+    @endphp
+
 @endsection
 
 @section('script')
     <!-- jQuery and Bootstrap 5 JS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="../JS/validate.js"></script>
     <script>
         function process(id,cus_id,payment_amount,file,loan_id,payment_date,payment_type,bank_account_company,cheque_issue_bank,name_on_cheque,chq_number,chq_date,chq_type) {
@@ -370,9 +460,83 @@
             }
         }
 
+        // Excel download functionality
+        $('#downloadExcel').click(function () {
+            const table = document.getElementById('bank_table');
+            const ws = XLSX.utils.table_to_sheet(table, { raw: true });
+
+            // Auto width for each column
+            const columnWidths = [];
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                let maxWidth = 10;
+                for (let R = range.s.r; R <= range.e.r; ++R) {
+                    const cell_address = { c: C, r: R };
+                    const cell_ref = XLSX.utils.encode_cell(cell_address);
+                    const cell = ws[cell_ref];
+                    if (cell && cell.v) {
+                        const cellValue = cell.v.toString();
+                        if (cellValue.length > maxWidth) maxWidth = cellValue.length;
+                    }
+                }
+                columnWidths.push({ wch: maxWidth + 2 });
+            }
+            ws['!cols'] = columnWidths;
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Cheque Details");
+            XLSX.writeFile(wb, `Cheque_Details_${new Date().toLocaleString('default', { month: 'long' })}.xlsx`);
+        });
+
+        // Print functionality
+        $('#printButton').click(function () {
+            const orientation = $('#pageOrientation').val();
+
+            const printWindow = window.open('', '', 'height=800,width=1200');
+            const printContent = document.getElementById('bank_table').outerHTML;
+
+            printWindow.document.write('<html><head><title>Cheque Details Report</title>');
+            printWindow.document.write('<style>');
+            printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 10px; margin: 0.3in; }');
+            printWindow.document.write('#bank_table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px; }');
+            printWindow.document.write('#bank_table th, #bank_table td { border: 1px solid black; padding: 3px; text-align: center; white-space: normal !important; line-height: 1.2 !important; vertical-align: middle !important; }');
+            printWindow.document.write('#bank_table thead th { font-size: 10px !important; font-weight: bold; text-align: center; }');
+            printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
+            printWindow.document.write('</style>');
+            printWindow.document.write('</head><body>');
+
+            printWindow.document.write('<h2 style="text-align:center;">Cheque Details Report</h2>');
+            printWindow.document.write(printContent);
+
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+        });
 
     </script>
 
+    <script>
+        window.addEventListener('beforeprint', function () {
+            const existing = document.querySelectorAll('.print-footer');
+            existing.forEach(e => e.remove());
 
+            const footer = document.createElement('div');
+            footer.className = 'print-footer';
+
+            const left = document.createElement('div');
+            left.className = 'left';
+            left.innerHTML = "Company: Asipiya Holdings | Cheque Details Report";
+
+            const right = document.createElement('div');
+            right.className = 'right';
+            right.innerHTML = "Printed by: {{ $printedBy }} on {{ $printedAt }} | Page 1";
+
+            footer.appendChild(left);
+            footer.appendChild(right);
+
+            document.body.appendChild(footer);
+        });
+    </script>
 
 @endsection
