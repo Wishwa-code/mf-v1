@@ -710,7 +710,29 @@ class CustomerController extends Controller
         return response()->json(['message' => 'Customer updated successfully'], 200);
     }
 
+    public function updateCustomerLocation(Request $request) {
+        try {
+            // Validate the request
+            $request->validate([
+                'customer_id' => 'required|integer',
+                'latitude' => 'required|numeric',
+                'longitude' => 'required|numeric'
+            ]);
 
+            // Update only latitude and longitude
+            $data = [
+                'Latitude' => $request->latitude,
+                'Longitude' => $request->longitude,
+            ];
+
+            // Use the same helper function as the main update method
+            updateWithBranch('customer', 'idCustomer', $request->customer_id, $data);
+
+            return response()->json(['message' => 'Location updated successfully'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to update location: ' . $e->getMessage()], 500);
+        }
+    }
 
     public function load(){
         $center= tableWithBranch('center')->get();

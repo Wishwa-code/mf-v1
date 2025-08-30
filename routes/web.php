@@ -77,6 +77,7 @@ Route::post('/customers/status','\App\Http\Controllers\CustomerController@change
 Route::get('/viewcustomer','\App\Http\Controllers\CustomerController@edit')->name('customers.edit');
 Route::post('/customers','\App\Http\Controllers\CustomerController@store')->name('customers.store');
 Route::post('/update-customer','\App\Http\Controllers\CustomerController@updateCustomer')->name('customers.updateCustomer');
+Route::post('/update-customer-location','\App\Http\Controllers\CustomerController@updateCustomerLocation')->name('customers.updateCustomerLocation');
 Route::get('/customers/{id}','\App\Http\Controllers\CustomerController@index')->name('customers.index');
 Route::post('/savecustomerdocument','\App\Http\Controllers\CustomerController@create')->name('customers.create');
 Route::get('/customerdoc/{id}','\App\Http\Controllers\CustomerController@show')->name('customers.show');
