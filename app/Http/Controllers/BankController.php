@@ -226,7 +226,8 @@ class BankController extends Controller
     public function chq(Request $request){
         $query = tableWithBranch('Cheque_payment','Cheque_payment')
             ->join('company_bank_accounts', 'Cheque_payment.bank_account_company', '=', 'company_bank_accounts.Idbank')
-            ->join('customer_loan', 'Cheque_payment.loan_id', '=', 'customer_loan.idCustomer_Loan');
+            ->join('customer_loan', 'Cheque_payment.loan_id', '=', 'customer_loan.idCustomer_Loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer');
 
         if ($request->has('date')) {
             $query->whereDate('Cheque_payment.date', $request->date);
@@ -241,7 +242,14 @@ class BankController extends Controller
             $query->whereDate('Cheque_payment.date', '<=', $request->end_date);
         }
 
-        $chq = $query->orderBy('Cheque_payment.date', 'desc')->get();
+        $chq = $query->select(
+                'Cheque_payment.*',
+                'company_bank_accounts.Bank_Name',
+                'company_bank_accounts.Account_No',
+                'customer_loan.Loan_No',
+                'customer.cus_number'
+            )
+            ->orderBy('Cheque_payment.date', 'desc')->get();
 
         return view('pages.ChqDetails',compact('chq'));
     }

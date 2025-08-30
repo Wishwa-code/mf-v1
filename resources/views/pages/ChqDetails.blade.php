@@ -143,6 +143,7 @@
                                     <tr>
                                         <th>Date Time</th>
                                         <th>Loan No</th>
+                                        <th>Customer No</th>
                                         <th>Cheque No</th>
                                         <th>Name Of Cheque</th>
                                         <th>Cheque Type</th>
@@ -158,6 +159,7 @@
                                         <tr>
                                             <td>{{$item->date}} {{$item->time}}</td>
                                             <td>{{$item->Loan_No}}</td>
+                                            <td>{{$item->cus_number}}</td>
                                             <td>{{$item->chq_number}}</td>
                                             <td>{{$item->name_on_cheque}}</td>
                                             <td>{{$item->chq_type}}</td>
@@ -488,7 +490,7 @@
                 const row = $(this);
                 const cells = row.find('td');
                 if (cells.length > 0) {
-                    const statusText = cells.eq(8).find('span').text();
+                    const statusText = cells.eq(9).find('span').text();
                     let status = statusText;
                     let statusOrder = 0;
                     
@@ -499,19 +501,19 @@
                     tableRows.push({
                         order: statusOrder,
                         data: [
-                            cells.eq(2).text(), // Cheque Number
-                            cells.eq(5).text(), // Cheque Date
+                            cells.eq(3).text(), // Cheque Number
+                            cells.eq(6).text(), // Cheque Date
                             cells.eq(0).text(), // Received Date (Date Time)
-                            cells.eq(3).text(), // Customer Name (Name Of Cheque)
-                            '', // Customer Number (empty)
+                            cells.eq(4).text(), // Customer Name (Name Of Cheque)
+                            cells.eq(2).text(), // Customer Number
                             cells.eq(1).text(), // Loan Number
-                            (cells.eq(6).text().split('-')[0] || '') + ' (to do with backend)', // Bank Name
+                            (cells.eq(7).text().split('-')[0] || '') + ' (to do with backend)', // Bank Name
                             '', // Branch Name (empty)
-                            cells.eq(7).text(), // Cheque Amount
+                            cells.eq(8).text(), // Cheque Amount
                             status, // Status
                             statusText === 'Proceeded' ? cells.eq(0).text() : '', // Deposited Date
                             '', // Collector (empty)
-                            cells.eq(4).text() // Remarks (Cheque Type)
+                            cells.eq(5).text() // Remarks (Cheque Type)
                         ]
                     });
                 }
@@ -559,7 +561,7 @@
                 const row = $(this);
                 const cells = row.find('td');
                 if (cells.length > 0) {
-                    const statusText = cells.eq(8).find('span').text();
+                    const statusText = cells.eq(9).find('span').text();
                     let status = statusText;
                     let statusOrder = 0;
                     
@@ -569,19 +571,19 @@
                     
                     printRows.push({
                         order: statusOrder,
-                        chequeNumber: cells.eq(2).text(),
-                        chequeDate: cells.eq(5).text(),
+                        chequeNumber: cells.eq(3).text(),
+                        chequeDate: cells.eq(6).text(),
                         receivedDate: cells.eq(0).text(),
-                        customerName: cells.eq(3).text(),
-                        customerNumber: '',
+                        customerName: cells.eq(4).text(),
+                        customerNumber: cells.eq(2).text(),
                         loanNumber: cells.eq(1).text(),
-                        bankName: (cells.eq(6).text().split('-')[0] || '') + ' (to do with backend)',
+                        bankName: (cells.eq(7).text().split('-')[0] || '') + ' (to do with backend)',
                         branchName: '',
-                        chequeAmount: cells.eq(7).text(),
+                        chequeAmount: cells.eq(8).text(),
                         status: status,
                         depositedDate: statusText === 'Proceeded' ? cells.eq(0).text() : '',
                         collector: '',
-                        remarks: cells.eq(4).text()
+                        remarks: cells.eq(5).text()
                     });
                 }
             });
