@@ -913,6 +913,7 @@ class PendingLoanController extends Controller
             ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
             ->leftJoin('loan_category as lc', 'lc.idLoan_Category', '=', 'cl.Loan_Category_idLoan_Category')
             ->whereIn('cl.Status', [0, 1]);
 
@@ -953,6 +954,7 @@ class PendingLoanController extends Controller
             'cl.Date_Time as disburse_date',
             'lc.Name as product_name',
             'lc.Product_code as Product_code',
+            'route.name as route_name',
             'cl.Amount',
             'cl.Interest_Amount',
             'cl.Total_Loan_Amount',
@@ -1030,6 +1032,7 @@ class PendingLoanController extends Controller
                 'customer_lastname' => $loan->customer_lastname,
                 'center_no' => $loan->center_no,
                 'Group_name' => $loan->Group_name,
+                'route_name' => $loan->route_name ?? '-',
             ];
         });
 
