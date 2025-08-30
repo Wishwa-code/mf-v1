@@ -80,6 +80,7 @@
 
         table.dataTable {
             width: 100%;  /* Ensures table uses full width */
+            min-width: 1200px; /* add width to reduce column cutout */
         }
 
         @media (max-width: 768px) {
@@ -91,7 +92,7 @@
         .table-scroll-container {
             max-height: 700px; /* Change height as needed */
             overflow-y: auto;
-            overflow-x: hidden;
+            overflow-x: auto;
             border: 1px solid #ccc;
         }
 
