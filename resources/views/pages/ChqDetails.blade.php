@@ -40,11 +40,21 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between mb-3">
                             <h4 class="page-title">Cheque Details</h4>
-                            <div class="d-flex gap-2">
-                                <input type="date" id="filter_date" value="{{ request('date') }}" class="form-control" style="width: 200px;">
-                                <input type="date" id="date" value="{{ date('Y-m-d') }}" class="form-control" style="width: 200px;" hidden>
-                                <button class="btn btn-primary" onclick="applyDateFilter()">Filter</button>
-                                <a href="{{ route('bank.chq') }}" class="btn btn-secondary">Show All</a>
+                            <div class="d-flex gap-2 align-items-center">
+                                <div class="d-flex gap-2 align-items-center">
+                                    <label class="form-label mb-0" style="min-width: 60px; font-weight: 500;">From:</label>
+                                    <input type="date" id="start_date" value="{{ request('start_date') }}" class="form-control" style="width: 150px;">
+                                </div>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <label class="form-label mb-0" style="min-width: 40px; font-weight: 500;">To:</label>
+                                    <input type="date" id="end_date" value="{{ request('end_date') }}" class="form-control" style="width: 150px;">
+                                </div>
+                                <button class="btn btn-primary" onclick="applyDateRangeFilter()">
+                                    <i class="fas fa-filter me-1"></i>Filter
+                                </button>
+                                <a href="{{ route('bank.chq') }}" class="btn btn-secondary">
+                                    <i class="fas fa-refresh me-1"></i>Show All
+                                </a>
                             </div>
                         </div>
 
@@ -321,10 +331,42 @@
                 }
             });
         }
-        function applyDateFilter() {
-            const selectedDate = document.getElementById('filter_date').value;
-            if (selectedDate) {
-                window.location.href = `?date=${selectedDate}`;
+        function applyDateRangeFilter() {
+            const startDate = document.getElementById('start_date').value;
+            const endDate = document.getElementById('end_date').value;
+            
+            // make request 
+            let queryParams = new URLSearchParams();
+            
+            if (startDate) {
+                queryParams.append('start_date', startDate);
+            }
+            
+            if (endDate) {
+                queryParams.append('end_date', endDate);
+            }
+            
+            // Validate date range
+            if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Invalid Date Range',
+                    text: 'Start date cannot be later than end date.',
+                    confirmButtonColor: '#3085d6'
+                });
+                return;
+            }
+            
+            // Error handling
+            if (queryParams.toString()) {
+                window.location.href = `?${queryParams.toString()}`;
+            } else {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'No Date Selected',
+                    text: 'Please select at least one date to filter.',
+                    confirmButtonColor: '#3085d6'
+                });
             }
         }
 
