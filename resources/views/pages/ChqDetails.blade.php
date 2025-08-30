@@ -462,26 +462,85 @@
 
         // Excel download functionality
         $('#downloadExcel').click(function () {
-            const table = document.getElementById('bank_table');
-            const ws = XLSX.utils.table_to_sheet(table, { raw: true });
+            // Create custom data structure
+            const customData = [];
+            
+            // Headers
+            customData.push([
+                'Cheque Number',
+                'Cheque Date', 
+                'Received Date',
+                'Customer Name',
+                'Customer Number',
+                'Loan Number',
+                'Bank Name',
+                'Branch Name',
+                'Cheque Amount',
+                'Status',
+                'Deposited Date',
+                'Collector / Received By',
+                'Remarks'
+            ]);
 
-            // Auto width for each column
-            const columnWidths = [];
-            const range = XLSX.utils.decode_range(ws['!ref']);
-            for (let C = range.s.c; C <= range.e.c; ++C) {
-                let maxWidth = 10;
-                for (let R = range.s.r; R <= range.e.r; ++R) {
-                    const cell_address = { c: C, r: R };
-                    const cell_ref = XLSX.utils.encode_cell(cell_address);
-                    const cell = ws[cell_ref];
-                    if (cell && cell.v) {
-                        const cellValue = cell.v.toString();
-                        if (cellValue.length > maxWidth) maxWidth = cellValue.length;
-                    }
+            // Process table rows and sort by status
+            const tableRows = [];
+            $('#bank_table tbody tr').each(function() {
+                const row = $(this);
+                const cells = row.find('td');
+                if (cells.length > 0) {
+                    const statusText = cells.eq(8).find('span').text();
+                    let status = statusText;
+                    let statusOrder = 0;
+                    
+                    if (statusText === 'Pending') { status = 'Pending'; statusOrder = 1; }
+                    else if (statusText === 'Proceeded') { status = 'Deposited'; statusOrder = 2; }
+                    else if (statusText === 'Returned') { status = 'Returned'; statusOrder = 3; }
+                    
+                    tableRows.push({
+                        order: statusOrder,
+                        data: [
+                            cells.eq(2).text(), // Cheque Number
+                            cells.eq(5).text(), // Cheque Date
+                            cells.eq(0).text(), // Received Date (Date Time)
+                            cells.eq(3).text(), // Customer Name (Name Of Cheque)
+                            '', // Customer Number (empty)
+                            cells.eq(1).text(), // Loan Number
+                            cells.eq(6).text().split('-')[0] || '', // Bank Name
+                            '', // Branch Name (empty)
+                            cells.eq(7).text(), // Cheque Amount
+                            status, // Status
+                            statusText === 'Proceeded' ? cells.eq(0).text() : '', // Deposited Date
+                            '', // Collector (empty)
+                            cells.eq(4).text() // Remarks (Cheque Type)
+                        ]
+                    });
                 }
-                columnWidths.push({ wch: maxWidth + 2 });
-            }
-            ws['!cols'] = columnWidths;
+            });
+            
+            // Sort by status order
+            tableRows.sort((a, b) => a.order - b.order);
+            
+            // Add sorted data
+            tableRows.forEach(row => customData.push(row.data));
+
+            const ws = XLSX.utils.aoa_to_sheet(customData);
+            
+            // Set column widths
+            ws['!cols'] = [
+                {wch: 15}, // Cheque Number
+                {wch: 12}, // Cheque Date
+                {wch: 15}, // Received Date
+                {wch: 25}, // Customer Name
+                {wch: 15}, // Customer Number
+                {wch: 15}, // Loan Number
+                {wch: 20}, // Bank Name
+                {wch: 20}, // Branch Name
+                {wch: 15}, // Cheque Amount
+                {wch: 12}, // Status
+                {wch: 15}, // Deposited Date
+                {wch: 20}, // Collector
+                {wch: 15}  // Remarks
+            ];
 
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Cheque Details");
@@ -492,15 +551,90 @@
         $('#printButton').click(function () {
             const orientation = $('#pageOrientation').val();
 
+            // Create custom print data
+            const printRows = [];
+            
+            // Process table rows and sort by status
+            $('#bank_table tbody tr').each(function() {
+                const row = $(this);
+                const cells = row.find('td');
+                if (cells.length > 0) {
+                    const statusText = cells.eq(8).find('span').text();
+                    let status = statusText;
+                    let statusOrder = 0;
+                    
+                    if (statusText === 'Pending') { status = 'Pending'; statusOrder = 1; }
+                    else if (statusText === 'Proceeded') { status = 'Deposited'; statusOrder = 2; }
+                    else if (statusText === 'Returned') { status = 'Returned'; statusOrder = 3; }
+                    
+                    printRows.push({
+                        order: statusOrder,
+                        chequeNumber: cells.eq(2).text(),
+                        chequeDate: cells.eq(5).text(),
+                        receivedDate: cells.eq(0).text(),
+                        customerName: cells.eq(3).text(),
+                        customerNumber: '',
+                        loanNumber: cells.eq(1).text(),
+                        bankName: cells.eq(6).text().split('-')[0] || '',
+                        branchName: '',
+                        chequeAmount: cells.eq(7).text(),
+                        status: status,
+                        depositedDate: statusText === 'Proceeded' ? cells.eq(0).text() : '',
+                        collector: '',
+                        remarks: cells.eq(4).text()
+                    });
+                }
+            });
+            
+            // Sort by status
+            printRows.sort((a, b) => a.order - b.order);
+
+            // Build custom table
+            let printContent = '<table id="customTable" style="width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px;">';
+            printContent += '<thead><tr>';
+            printContent += '<th style="border: 1px solid black; padding: 4px; font-weight: bold;">Cheque Number</th>';
+            printContent += '<th style="border: 1px solid black; padding: 4px; font-weight: bold;">Cheque Date</th>';
+            printContent += '<th style="border: 1px solid black; padding: 4px; font-weight: bold;">Received Date</th>';
+            printContent += '<th style="border: 1px solid black; padding: 4px; font-weight: bold;">Customer Name</th>';
+            printContent += '<th style="border: 1px solid black; padding: 4px; font-weight: bold;">Customer Number</th>';
+            printContent += '<th style="border: 1px solid black; padding: 4px; font-weight: bold;">Loan Number</th>';
+            printContent += '<th style="border: 1px solid black; padding: 4px; font-weight: bold;">Bank Name</th>';
+            printContent += '<th style="border: 1px solid black; padding: 4px; font-weight: bold;">Branch Name</th>';
+            printContent += '<th style="border: 1px solid black; padding: 4px; font-weight: bold;">Cheque Amount</th>';
+            printContent += '<th style="border: 1px solid black; padding: 4px; font-weight: bold;">Status</th>';
+            printContent += '<th style="border: 1px solid black; padding: 4px; font-weight: bold;">Deposited Date</th>';
+            printContent += '<th style="border: 1px solid black; padding: 4px; font-weight: bold;">Collector</th>';
+            printContent += '<th style="border: 1px solid black; padding: 4px; font-weight: bold;">Remarks</th>';
+            printContent += '</tr></thead><tbody>';
+            
+            printRows.forEach(row => {
+                printContent += '<tr>';
+                printContent += '<td style="border: 1px solid black; padding: 3px;">' + row.chequeNumber + '</td>';
+                printContent += '<td style="border: 1px solid black; padding: 3px;">' + row.chequeDate + '</td>';
+                printContent += '<td style="border: 1px solid black; padding: 3px;">' + row.receivedDate + '</td>';
+                printContent += '<td style="border: 1px solid black; padding: 3px;">' + row.customerName + '</td>';
+                printContent += '<td style="border: 1px solid black; padding: 3px;">' + row.customerNumber + '</td>';
+                printContent += '<td style="border: 1px solid black; padding: 3px;">' + row.loanNumber + '</td>';
+                printContent += '<td style="border: 1px solid black; padding: 3px;">' + row.bankName + '</td>';
+                printContent += '<td style="border: 1px solid black; padding: 3px;">' + row.branchName + '</td>';
+                printContent += '<td style="border: 1px solid black; padding: 3px;">' + row.chequeAmount + '</td>';
+                printContent += '<td style="border: 1px solid black; padding: 3px;">' + row.status + '</td>';
+                printContent += '<td style="border: 1px solid black; padding: 3px;">' + row.depositedDate + '</td>';
+                printContent += '<td style="border: 1px solid black; padding: 3px;">' + row.collector + '</td>';
+                printContent += '<td style="border: 1px solid black; padding: 3px;">' + row.remarks + '</td>';
+                printContent += '</tr>';
+            });
+            
+            printContent += '</tbody></table>';
+
             const printWindow = window.open('', '', 'height=800,width=1200');
-            const printContent = document.getElementById('bank_table').outerHTML;
 
             printWindow.document.write('<html><head><title>Cheque Details Report</title>');
             printWindow.document.write('<style>');
             printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 10px; margin: 0.3in; }');
-            printWindow.document.write('#bank_table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px; }');
-            printWindow.document.write('#bank_table th, #bank_table td { border: 1px solid black; padding: 3px; text-align: center; white-space: normal !important; line-height: 1.2 !important; vertical-align: middle !important; }');
-            printWindow.document.write('#bank_table thead th { font-size: 10px !important; font-weight: bold; text-align: center; }');
+            printWindow.document.write('#customTable { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8px; }');
+            printWindow.document.write('#customTable th, #customTable td { border: 1px solid black; padding: 3px; text-align: center; white-space: normal !important; line-height: 1.2 !important; vertical-align: middle !important; }');
+            printWindow.document.write('#customTable thead th { font-size: 9px !important; font-weight: bold; text-align: center; }');
             printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
             printWindow.document.write('</style>');
             printWindow.document.write('</head><body>');
