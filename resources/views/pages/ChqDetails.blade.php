@@ -505,7 +505,7 @@
                             cells.eq(3).text(), // Customer Name (Name Of Cheque)
                             '', // Customer Number (empty)
                             cells.eq(1).text(), // Loan Number
-                            cells.eq(6).text().split('-')[0] || '', // Bank Name
+                            (cells.eq(6).text().split('-')[0] || '') + ' (to do with backend)', // Bank Name
                             '', // Branch Name (empty)
                             cells.eq(7).text(), // Cheque Amount
                             status, // Status
@@ -575,7 +575,7 @@
                         customerName: cells.eq(3).text(),
                         customerNumber: '',
                         loanNumber: cells.eq(1).text(),
-                        bankName: cells.eq(6).text().split('-')[0] || '',
+                        bankName: (cells.eq(6).text().split('-')[0] || '') + ' (to do with backend)',
                         branchName: '',
                         chequeAmount: cells.eq(7).text(),
                         status: status,
