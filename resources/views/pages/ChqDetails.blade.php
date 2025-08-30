@@ -513,7 +513,7 @@
                             status, // Status
                             statusText === 'Proceeded' ? cells.eq(0).text() : '', // Deposited Date
                             '', // Collector (empty)
-                            cells.eq(5).text() // Remarks (Cheque Type)
+                            '' // Remarks (empty)
                         ]
                     });
                 }
@@ -583,7 +583,7 @@
                         status: status,
                         depositedDate: statusText === 'Proceeded' ? cells.eq(0).text() : '',
                         collector: '',
-                        remarks: cells.eq(5).text()
+                        remarks: ''
                     });
                 }
             });
@@ -635,8 +635,21 @@
             printWindow.document.write('<style>');
             printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 10px; margin: 0.3in; }');
             printWindow.document.write('#customTable { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8px; }');
-            printWindow.document.write('#customTable th, #customTable td { border: 1px solid black; padding: 3px; text-align: center; white-space: normal !important; line-height: 1.2 !important; vertical-align: middle !important; }');
+            printWindow.document.write('#customTable th, #customTable td { border: 1px solid black; padding: 3px; text-align: center; white-space: normal !important; word-wrap: break-word !important; word-break: break-word !important; line-height: 1.2 !important; vertical-align: middle !important; overflow: hidden !important; }');
             printWindow.document.write('#customTable thead th { font-size: 9px !important; font-weight: bold; text-align: center; }');
+            printWindow.document.write('#customTable th:nth-child(1), #customTable td:nth-child(1) { width: 10%; }'); // Cheque Number
+            printWindow.document.write('#customTable th:nth-child(2), #customTable td:nth-child(2) { width: 8%; }'); // Cheque Date  
+            printWindow.document.write('#customTable th:nth-child(3), #customTable td:nth-child(3) { width: 10%; }'); // Received Date
+            printWindow.document.write('#customTable th:nth-child(4), #customTable td:nth-child(4) { width: 15%; }'); // Customer Name
+            printWindow.document.write('#customTable th:nth-child(5), #customTable td:nth-child(5) { width: 8%; }'); // Customer Number
+            printWindow.document.write('#customTable th:nth-child(6), #customTable td:nth-child(6) { width: 8%; }'); // Loan Number
+            printWindow.document.write('#customTable th:nth-child(7), #customTable td:nth-child(7) { width: 15%; font-size: 7px !important; }'); // Bank Name
+            printWindow.document.write('#customTable th:nth-child(8), #customTable td:nth-child(8) { width: 8%; }'); // Branch Name
+            printWindow.document.write('#customTable th:nth-child(9), #customTable td:nth-child(9) { width: 8%; }'); // Amount
+            printWindow.document.write('#customTable th:nth-child(10), #customTable td:nth-child(10) { width: 6%; }'); // Status
+            printWindow.document.write('#customTable th:nth-child(11), #customTable td:nth-child(11) { width: 8%; }'); // Deposited Date
+            printWindow.document.write('#customTable th:nth-child(12), #customTable td:nth-child(12) { width: 8%; }'); // Collector
+            printWindow.document.write('#customTable th:nth-child(13), #customTable td:nth-child(13) { width: 8%; }'); // Remarks
             printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
             printWindow.document.write('</style>');
             printWindow.document.write('</head><body>');
