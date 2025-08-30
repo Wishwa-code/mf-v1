@@ -271,6 +271,7 @@
                                     <th>Penalty Total</th>
                                     <th>Loan Balance</th>
                                     <th>Capital Balance</th>
+                                    <th>Arrears</th>
                                     <th>Total Balance</th>
                                     <th>Status</th>
                                     <th>Action</th>
@@ -547,6 +548,7 @@
                             <td>${parseFloat(item.Panalty_Balance).toFixed(2)}</td>
                             <td>${parseFloat(item.Balance_Amount).toFixed(2)}</td>
                             <td>${parseFloat(item.capital_balance).toFixed(2)}</td>
+                            <td>${parseFloat(item.arrears ?? 0).toFixed(2)}</td>
 <td>${(
                                 (parseFloat(item.Balance_Amount) || 0) +
                                 (parseFloat(item.Panalty_Balance) || 0)
@@ -579,7 +581,7 @@
                         $('#pagination').html(paginationControls);
 
                     } else {
-                        tbody.append('<tr><td colspan="12" class="text-center">No records found</td></tr>');
+                        tbody.append('<tr><td colspan="13" class="text-center">No records found</td></tr>');
                         $("#tot_amount").text("0.00");
                         $('#pagination').html('');
                     }
@@ -621,7 +623,8 @@
                 'Penalty Total',
                 'Pending Total',
                 'Loan Balance',
-                'Capital Balance'
+                'Capital Balance',
+                'Arrears'
             ]);
 
             // Build a map of column index -> numeric (true/false)
