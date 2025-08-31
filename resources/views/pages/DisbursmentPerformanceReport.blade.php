@@ -97,6 +97,7 @@
                                     <th>Cus Name</th>
                                     <th>Center</th>
                                     <th>Group</th>
+                                    <th>Route</th>
                                     <th>Loan Create Date</th>
                                     <th>Loan Disbursement Date</th>
                                     <th>Approval Time</th>
@@ -113,11 +114,11 @@
                                 </tr>
                                 </thead>
                                 <tbody id="loanTableBody">
-                                    <tr><td colspan="13" class="text-center">Please run a search to view results.</td></tr>
+                                    <tr><td colspan="14" class="text-center">Please run a search to view results.</td></tr>
                                 </tbody>
                                 <tfoot class="bg-light fw-bold text-white">
                                 <tr>
-                                    <td colspan="9" class="text-end">Totals:</td>
+                                    <td colspan="10" class="text-end">Totals:</td>
                                     <td id="total_amount">0.00</td>
                                     <td id="total_interest">0.00</td>
                                     <td id="total_total_loan">0.00</td>
@@ -240,7 +241,7 @@
                 tbody.empty();
 
                 if (data.length === 0) {
-                    tbody.append('<tr><td colspan="13" class="text-center">No data found</td></tr>');
+                    tbody.append('<tr><td colspan="14" class="text-center">No data found</td></tr>');
                     return;
                 }
 
@@ -252,6 +253,7 @@
 <td>${row.customer_fname} ${row.customer_lastname}</td>
 <td>${row.center_no}</td>
 <td>${row.Group_name}</td>
+<td>${row.route_name || ''}</td>
             <td>${row.create_date}</td>
             <td>${row.disburse_date}</td>
             <td>${row.time}</td>

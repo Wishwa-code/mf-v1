@@ -338,6 +338,7 @@ class TodayPaymentController extends Controller
                     DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
                     DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date <= CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as Installment_Balance'),
                     DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date <= CURDATE() THEN installments.Panalty_Balance ELSE 0 END), 2) as Panalty_Balance'),
+                    DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date < CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as arrears'),
                     DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date <= CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as Total_Balance')
                 )
                 ->groupBy(
@@ -396,6 +397,7 @@ class TodayPaymentController extends Controller
                     DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
                     DB::raw('ROUND(SUM(installments.Total_Balance), 2) as Installment_Balance'),
                     DB::raw('ROUND(SUM(installments.Panalty_Balance), 2) as Panalty_Balance'),
+                    DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date < CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as arrears'),
                     DB::raw('ROUND(SUM(installments.Total_Balance), 2) as Total_Balance')
                 )
                 ->groupBy(

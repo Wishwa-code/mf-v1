@@ -160,14 +160,6 @@
         text-align: center;
     }
 
-    /* Main "Paid Date" header styling */
-    #repaymentTable thead tr:first-child th:last-child {
-        font-size: 16px !important;
-        font-weight: bold;
-        text-align: center;
-        background-color: #e9ecef !important;
-        border: 2px solid #333 !important;
-    }
 
     /* Empty sub-date headers for manual writing - CONSISTENT SIZING */
     .empty-date-header {
@@ -177,12 +169,14 @@
         vertical-align: middle;
         background-color: #fff !important;
         border: 2px solid #333 !important;
-        padding: 15px 2px !important;
+        padding: 12px 2px !important;
         height: 40px !important;
         width: 5.71% !important;
         min-width: 5.71% !important;
         max-width: 5.71% !important;
         writing-mode: horizontal-tb;
+        white-space: nowrap !important;
+        line-height: 1.1 !important;
     }
 
     /* logic for contact no always no wrap */
@@ -328,12 +322,21 @@
         }
         @media print {
             #repaymentTable th, #repaymentTable td {
-                white-space: nowrap !important;
+                white-space: normal !important;
+                line-height: 1.2 !important;
                 overflow: hidden;
                 text-overflow: clip;
                 font-size: 10px !important;
-                padding: 3px !important;
+                padding: 4px 3px !important;
                 border: 1px solid #333 !important;
+                vertical-align: middle !important;
+            }
+
+            /* add data colmn spacing */
+            #repaymentTable thead th.empty-date-header {
+                white-space: nowrap !important;
+                line-height: 1.1 !important;
+                font-size: 9px !important;
             }
 
             #repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 12%; max-width: 12%; font-size: 8px !important; word-break: break-all; }  /* Loan Number */
@@ -353,18 +356,17 @@
                 text-align: center;
             }
             
-            /* Main "Paid Date" header for print */
-            #repaymentTable thead tr:first-child th:last-child {
-                font-size: 12px !important;
-                background-color: #e9ecef !important;
-            }
             
             /* Empty sub-headers for print */
             .empty-date-header {
-                font-size: 12px !important;
+                font-size: 9px !important;
                 background-color: #fff !important;
-                padding: 10px 2px !important;
-                height: 30px !important;
+                padding: 6px 2px !important;
+                height: auto !important;
+                min-height: 20px !important;
+                line-height: 1.1 !important;
+                white-space: nowrap !important;
+                vertical-align: middle !important;
                 font-weight: normal !important;
             }
         }
@@ -466,11 +468,13 @@
                                     <th rowspan="2">Amount</th>
                                     <th rowspan="2">Due</th>
                                     <th rowspan="2">Balance</th>
-                                    <th colspan="7">Paid Date</th>
+                                    @for ($i = 1; $i <= 7; $i++)
+                                        <th class="empty-date-header"></th>
+                                    @endfor
                                 </tr>
                                 <tr>
                                     @for ($i = 1; $i <= 7; $i++)
-                                        <th class="empty-date-header">_______</th>
+                                        <th class="empty-date-header">paid amount</th>
                                     @endfor
                                 </tr>
                                 </thead>
@@ -655,7 +659,8 @@
                 printWindow.document.write('<style>');
                 printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 10px; margin: 0.3in; }');
                 printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px; }');
-                printWindow.document.write('#repaymentTable th, #repaymentTable td { border: 1px solid black; padding: 3px; text-align: center; white-space: nowrap !important; }');
+                printWindow.document.write('#repaymentTable th, #repaymentTable td { border: 1px solid black; padding: 3px 3px; text-align: center; white-space: normal !important; line-height: 1.2 !important; vertical-align: middle !important; }');
+                printWindow.document.write('#repaymentTable thead th.empty-date-header { white-space: nowrap !important; line-height: 1.1 !important; font-size: 9px !important; }');
                 printWindow.document.write('#repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 12%; max-width: 12%; font-size: 7px !important; word-break: break-all; overflow: hidden; }');   // Loan Number
                 printWindow.document.write('#repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 18%; max-width: 18%; font-size: 8px !important; word-break: break-word; overflow: hidden; }');   // Customer Name
                 printWindow.document.write('#repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; max-width: 10%; overflow: hidden; }');   // Amount
@@ -663,8 +668,8 @@
                 printWindow.document.write('#repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 10%; max-width: 10%; overflow: hidden; }');   // Balance
                 printWindow.document.write('.paid-amount { width: 5.71% !important; min-width: 5.71% !important; max-width: 5.71% !important; font-size: 8px; }'); // Date columns
                 printWindow.document.write('#repaymentTable thead th { font-size: 10px !important; font-weight: bold; text-align: center; }');
-                printWindow.document.write('#repaymentTable thead tr:first-child th:last-child { font-size: 12px !important; background-color: #e9ecef !important; }');
-                printWindow.document.write('.empty-date-header { width: 5.71% !important; min-width: 5.71% !important; max-width: 5.71% !important; font-size: 10px !important; background-color: #fff !important; padding: 8px 2px !important; height: 25px !important; font-weight: normal !important; }');
+                // Removed old "Paid Date" header styling from print
+                printWindow.document.write('.empty-date-header { width: 5.71% !important; min-width: 5.71% !important; max-width: 5.71% !important; font-size: 9px !important; background-color: #fff !important; padding: 6px 2px !important; height: auto !important; min-height: 20px !important; line-height: 1.1 !important; white-space: nowrap !important; vertical-align: middle !important; font-weight: normal !important; }');
                 printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } .signature-section { page-break-before: always; } }');
                 printWindow.document.write('</style>');
 
