@@ -520,30 +520,11 @@
                                 <label for="payment_type" class="form-label fw-bold">Payment Type</label>
                             </div>
                             <div class="col-sm-8">
-                                @if($collector==1)
-                                    <select class="form-control" id="payment_type" onchange="togglePaymentSections(this.value)">
-                                        <option value="Cash" >Cash</option>
-                                        <option value="Bank Deposit">Bank Deposit</option>
-                                        <option value="Cheque">Cheque</option>
-                                        <option value="Collector" selected>Collector</option>
-                                    </select>
-                                @elseif($cashier==1)
-                                    <select class="form-control" id="payment_type" onchange="togglePaymentSections(this.value)">
-                                        <option value="Cash">Cash</option>
-                                        <option value="Bank Deposit">Bank Deposit</option>
-                                        <option value="Cheque">Cheque</option>
-                                        <option value="Cashier" selected>Cashier</option>
-                                    </select>
-                                @else
-                                    <select class="form-control" id="payment_type" onchange="togglePaymentSections(this.value)">
-                                        <option value="Cash" selected>Cash</option>
-                                        <option value="Bank Deposit">Bank Deposit</option>
-                                        <option value="Cheque">Cheque</option>
-                                    </select>
-                                @endif
+                                <select class="form-control" id="payment_type"></select>
                             </div>
                         </div>
-<hr>
+
+                        <hr>
                         <!-- Bank Account Section -->
                         <div class="row mb-3" id="bank_account_section" style="display: none;">
                             <div class="col-sm-4">
@@ -553,7 +534,7 @@
                                 <select class="form-control" id="bank_account_company">
                                     @foreach($banks as $bank)
                                         @if($bank->Account_No!="Cash")
-                                            <option value="{{ $bank->Idbank }}">{{ $bank->Account_No }} - {{ $bank->Account_Name }}</option>
+                                            <option value="{{ $bank->Idbank }}" data-account-no="{{ $bank->Account_No }}">{{ $bank->Account_No }} - {{ $bank->Account_Name }}</option>
                                         @endif
                                     @endforeach
                                 </select>
@@ -782,7 +763,7 @@
                                 <select class="form-control" id="bank_account_company_2">
                                     @foreach($banks as $bank)
                                         @if($bank->Account_No!="Cash")
-                                            <option value="{{ $bank->Idbank }}">{{ $bank->Account_No }} - {{ $bank->Account_Name }}</option>
+                                            <option value="{{ $bank->Idbank }}" data-account-no="{{ $bank->Account_No }}">{{ $bank->Account_No }} - {{ $bank->Account_Name }}</option>
                                         @endif
                                     @endforeach
                                 </select>
@@ -1174,50 +1155,240 @@
 
 @section('script')
 
-
+    {{-- Vendor / app scripts you already use --}}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
     <script src="../JS/validate.js"></script>
     <script src="../JS/today_payment.js?n=29"></script>
+
     <script>
+        /*** Payment Date Limits (respects APP_SETTINGS.payment_backdate) ***/
         document.addEventListener("DOMContentLoaded", function() {
-            const dateInput = document.getElementById("payment_date");
-
-            // Always disallow future dates
-            const today = new Date().toISOString().split("T")[0];
-            dateInput.setAttribute("max", today);
-
-            // Check setting from global APP_SETTINGS
+            const ids = ["payment_date", "payment_date_2"];
             const allowBackdate = window.APP_SETTINGS?.payment_backdate === "enabled";
 
-            if (!allowBackdate) {
-                // Disable backdating → min = today
-                dateInput.setAttribute("min", today);
-            } else {
-                // Allow backdating → optional limit (example: 1 year)
+            const today = new Date().toISOString().split("T")[0];
+            let minDate = today;
+
+            if (allowBackdate) {
                 const lastYear = new Date();
                 lastYear.setFullYear(lastYear.getFullYear() - 1);
-                const minDate = lastYear.toISOString().split("T")[0];
-                dateInput.setAttribute("min", minDate);
+                minDate = lastYear.toISOString().split("T")[0];
             }
+
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.setAttribute("max", today);
+                el.setAttribute("min", minDate);
+            });
         });
     </script>
 
     <script>
+        // collectorId from session
+        const COLLECTOR_ID = {{ (int) session('userid') }};
+
+        function selectCollectorBankByAccountNo(suffix) {
+            const sel = document.getElementById(`bank_account_company${suffix}`);
+            if (!sel) return;
+
+            const wanted = String(COLLECTOR_ID);
+            for (const opt of sel.options) {
+                if (String(opt.dataset.accountNo) === wanted) {
+                    sel.value = opt.value;
+                    break;
+                }
+            }
+        }
+
+        function setBankSelectDisabled(suffix, disabled) {
+            const sel = document.getElementById(`bank_account_company${suffix}`);
+            if (sel) sel.disabled = !!disabled;
+        }
+
+        // Generic toggler used by both
+        function togglePaymentSectionsGeneric(value, suffix) {
+            const bankAccountSection        = document.getElementById(`bank_account_section${suffix}`);
+            const chequeDetailsSection      = document.getElementById(`cheque_details_section${suffix}`);
+            const chequeNumberSection       = document.getElementById(`cheque_number_section${suffix}`);
+            const chequeDateSection         = document.getElementById(`cheque_date_section${suffix}`);
+            const chequeTypeSection         = document.getElementById(`cheque_type_section${suffix}`);
+            const chequeIssueBankSection    = document.getElementById(`cheque_issue_bank_section${suffix}`);
+
+            [bankAccountSection, chequeDetailsSection, chequeNumberSection,
+                chequeDateSection, chequeTypeSection, chequeIssueBankSection]
+                .forEach(el => { if (el) el.style.display = 'none'; });
+
+            // Reset disable state by default
+            setBankSelectDisabled(suffix, false);
+
+            if (value === 'Bank Deposit' || value === 'Collector' || value === 'Cashier') {
+                if (bankAccountSection) bankAccountSection.style.display = 'block';
+
+                if (value === 'Collector') {
+                    selectCollectorBankByAccountNo(suffix);
+                    setBankSelectDisabled(suffix, true);   // 🔒 disable when Collector
+                }
+            } else if (value === 'Cheque') {
+                if (chequeDetailsSection)   chequeDetailsSection.style.display   = 'block';
+                if (chequeNumberSection)    chequeNumberSection.style.display    = 'block';
+                if (chequeDateSection)      chequeDateSection.style.display      = 'block';
+                if (chequeTypeSection)      chequeTypeSection.style.display      = 'block';
+                if (chequeIssueBankSection) chequeIssueBankSection.style.display = 'block';
+            }
+        }
+
+        // Keep your original names
+        function togglePaymentSections(value)   { togglePaymentSectionsGeneric(value, ""); }
+        function togglePaymentSections_2(value) { togglePaymentSectionsGeneric(value, "_2"); }
+
+        // If default is already Collector on load, auto-pick & disable
+        document.addEventListener("DOMContentLoaded", function () {
+            const s1 = document.getElementById("payment_type");
+            const s2 = document.getElementById("payment_type_2");
+
+            if (s1?.value === "Collector") {
+                selectCollectorBankByAccountNo("");
+                setBankSelectDisabled("", true);
+            }
+            if (s2?.value === "Collector") {
+                selectCollectorBankByAccountNo("_2");
+                setBankSelectDisabled("_2", true);
+            }
+        });
+    </script>
+
+
+
+    <script>
+        /*** Build Payment Type <select> from APP_SETTINGS + user role ***/
+        function buildPaymentTypeSelect(selectId, isCollector, isCashier, onChangeFnName) {
+            const sel = document.getElementById(selectId);
+            if (!sel) return;
+
+            const modesRaw = window.APP_SETTINGS?.collector_txn_modes || "[]";
+            let modes = [];
+            try {
+                const parsed = JSON.parse(modesRaw);
+                modes = Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                modes = String(modesRaw).split(',').map(s => s.trim()).filter(Boolean);
+            }
+
+            // Allow list
+            let allowed = [];
+            if (modes.includes("cash_bank"))    allowed.push("Cash");
+            if (modes.includes("bank_deposit")) allowed.push("Bank Deposit");
+            if (modes.includes("cheques"))      allowed.push("Cheque");
+            if (modes.includes("collector_account") && Number(isCollector) === 1) {
+                allowed.push("Collector");
+            }
+            if (Number(isCashier) === 1) {
+                allowed.push("Cashier");
+            }
+            if (!allowed.length) allowed = ["Cash"];
+
+            // Fill options
+            sel.innerHTML = "";
+            allowed.forEach(type => {
+                const opt = document.createElement("option");
+                opt.value = type;
+                opt.textContent = type;
+                sel.appendChild(opt);
+            });
+
+            // Default: Collector > Cashier > first
+            if (allowed.includes("Collector")) {
+                sel.value = "Collector";
+            } else if (allowed.includes("Cashier")) {
+                sel.value = "Cashier";
+            } else {
+                sel.value = allowed[0];
+            }
+
+            // Bind change + trigger once
+            if (onChangeFnName && typeof window[onChangeFnName] === "function") {
+                sel.onchange = function() { window[onChangeFnName](this.value); };
+                window[onChangeFnName](sel.value);
+            }
+        }
+
+        // Build both selects on DOM ready (single source of truth)
+        document.addEventListener("DOMContentLoaded", function() {
+            buildPaymentTypeSelect("payment_type",   {{ (int) $collector }}, {{ (int) $cashier }}, "togglePaymentSections");
+            buildPaymentTypeSelect("payment_type_2", {{ (int) $collector }}, {{ (int) $cashier }}, "togglePaymentSections_2");
+        });
+    </script>
+
+    <script>
+        /*** Client-side validation before Pay ***/
+        function validatePaymentTypeBlock(suffix) {
+            const type = document.getElementById(`payment_type${suffix}`)?.value || "Cash";
+
+            // Bank/Collector/Cashier require a company bank account
+            if (type === "Bank Deposit" || type === "Collector" || type === "Cashier") {
+                const bankSel = document.getElementById(`bank_account_company${suffix}`);
+                if (!bankSel || !bankSel.value) {
+                    Swal.fire("Missing Bank Account", "Please select a bank account.", "warning");
+                    return false;
+                }
+            }
+
+            // Cheque requires all fields
+            if (type === "Cheque") {
+                const bank   = document.getElementById(`cheque_issue_bank${suffix}`);
+                const nameOn = document.getElementById(`name_on_cheque${suffix}`);
+                const no     = document.getElementById(`chq_number${suffix}`);
+                const date   = document.getElementById(`chq_date${suffix}`);
+                const chqT   = document.getElementById(`chq_type${suffix}`);
+
+                if (!bank?.value)   { Swal.fire("Cheque", "Please select Cheque Issue Bank.", "warning"); return false; }
+                if (!nameOn?.value) { Swal.fire("Cheque", "Please enter Name on the Cheque.", "warning"); return false; }
+                if (!no?.value)     { Swal.fire("Cheque", "Please enter Cheque Number.", "warning"); return false; }
+                if (!date?.value)   { Swal.fire("Cheque", "Please select Cheque Date.", "warning"); return false; }
+                if (!chqT?.value)   { Swal.fire("Cheque", "Please select Cheque Type.", "warning"); return false; }
+            }
+
+            return true;
+        }
+
+        // Hook into your existing functions from today_payment.js (if present)
+        (function hookPayments() {
+            const makeHook = (fnName, suffix) => {
+                const orig = window[fnName];
+                window[fnName] = function() {
+                    if (!validatePaymentTypeBlock(suffix)) return;
+                    if (typeof orig === "function") {
+                        return orig.apply(this, arguments);
+                    } else {
+                        console.warn(fnName + " is not defined yet.");
+                    }
+                };
+            };
+            makeHook('payment',  '');
+            makeHook('payment_2','_2');
+        })();
+    </script>
+
+    <script>
+        /*** Comments, spinner, Select2, receipt printing, etc. ***/
         $(document).ready(function() {
-            @if($collector==1 || $cashier==1)
-                togglePaymentSections("Collector");
-                togglePaymentSections_2("Collector")
-            @else
-                togglePaymentSections("Cash");
-                togglePaymentSections_2("Cash")
-            @endif
+            // Hide loyalty section by default
+            $('#loyalty_section').hide();
 
+            // Number formatting helper for amount fields
+            decimalFormat(["#payment_amount"]);
+
+            // Initialize Select2
+            $('.select2').select2();
+            $('.select2bs4').select2({ theme: 'bootstrap4' });
+
+            // Submit loan comment
             $('#submitComment').click(function() {
-                let comment = $('#commentText').val();
-                let loanId = $("#loan_id_comment").val(); // Loan ID from Blade
+                const comment = $('#commentText').val();
+                const loanId  = $("#loan_id_comment").val();
 
-                if (comment === '') {
+                if (!comment) {
                     Swal.fire('Error', 'Comment cannot be empty', 'error');
                     return;
                 }
@@ -1231,290 +1402,79 @@
                     cancelButtonColor: '#d33',
                     confirmButtonText: 'Yes, submit it!'
                 }).then((result) => {
-                    if (result.isConfirmed) {
-                        $.ajax({
-                            url: "{{ route('loan.comment.store') }}", // Your route here
-                            type: "POST",
-                            data: {
-                                _token: '{{ csrf_token() }}',
-                                comment: comment,
-                                loan_id: loanId
-                            },
-                            success: function(response) {
-                                Swal.fire({
-                                    position: "center",
-                                    icon: "success",
-                                    title: "Comment has been submitted!",
-                                }).then(function () {
-                                    window.location.reload();
-                                });
-                            },
-                            error: function(xhr) {
-                                Swal.fire('Error', 'Something went wrong', 'error');
-                            }
-                        });
-                    }
+                    if (!result.isConfirmed) return;
+
+                    $.ajax({
+                        url: "{{ route('loan.comment.store') }}",
+                        type: "POST",
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            comment: comment,
+                            loan_id: loanId
+                        },
+                        success: function() {
+                            Swal.fire({
+                                position: "center",
+                                icon: "success",
+                                title: "Comment has been submitted!",
+                            }).then(function () {
+                                window.location.reload();
+                            });
+                        },
+                        error: function() {
+                            Swal.fire('Error', 'Something went wrong', 'error');
+                        }
+                    });
                 });
             });
 
-            // Trigger the modal open event
+            // Load comments when modal opens
             $('#loanCommentModal').on('show.bs.modal', function() {
-                let loanId = $("#loan_id_comment").val(); // Loan ID from Blade
-
-
-                // Clear previous table content
+                const loanId = $("#loan_id_comment").val();
                 $('#loanCommentTable tbody').empty();
 
-                // Make an AJAX request to fetch comments
                 $.ajax({
-                    url: "{{ route('loan.comment.fetch') }}", // Route to fetch comments
+                    url: "{{ route('loan.comment.fetch') }}",
                     type: "GET",
-                    data: {
-                        loan_id: loanId
-                    },
+                    data: { loan_id: loanId },
                     success: function(response) {
-                        if (response.comments.length > 0) {
-                            // Append fetched comments to the table
-                            $.each(response.comments, function(index, comment) {
+                        if ((response.comments || []).length) {
+                            response.comments.forEach(comment => {
                                 $('#loanCommentTable tbody').append(`
-                                <tr>
-                                    <td>${comment.date}</td>
-                                    <td>${comment.time}</td>
-                                    <td>${comment.comment}</td>
-                                </tr>
-                            `);
+                                    <tr>
+                                        <td>${comment.date}</td>
+                                        <td>${comment.time}</td>
+                                        <td>${comment.comment}</td>
+                                    </tr>
+                                `);
                             });
                         } else {
                             $('#loanCommentTable tbody').append(`
-                            <tr>
-                                <td colspan="3" class="text-center">No comments available</td>
-                            </tr>
-                        `);
+                                <tr>
+                                    <td colspan="3" class="text-center">No comments available</td>
+                                </tr>
+                            `);
                         }
                     },
-                    error: function(xhr) {
+                    error: function() {
                         console.log('Error fetching data');
                     }
                 });
             });
-
-
-
-
         });
 
-
-
-        // payment_amount_2
-        function load_payment_reciept(id){
-            // document.getElementById('issue-loan-modal').style.display = 'none';
-            // document.getElementById('issue-loan-modal_2').style.display = 'none';
-            openModal();
-            $('.btn-success').prop('disabled', true);
-
-            // 🔽 Show loading spinner
-            document.getElementById('loadingSpinner').style.display = 'flex';
-
-            $.ajax({
-                type: "POST",
-                url: "/view_payment_load_reciept/" + id+"/1",
-                headers: {
-                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-                },
-                success: function (data, textStatus, xhr) {
-                    console.log(data);
-                    let customer = data.customer;
-                    let payment = data.payment;
-                    let loan = data.loan;
-                    let user = data.user;
-                    let chequeDetails = data.cheque_details;
-                    let saving_on = data.saving_on;
-                    let saving_amount = data.saving_amount;
-
-                    if (xhr.status === 200) {
-                        if (data.point_check==="1"){
-                            $('#loyalty_section').show();
-                        }else{
-                            $('#loyalty_section').hide();
-                        }
-                        $("#Inv_number").text("Receipt No."+payment.idCustomer_Payments);
-                        $("#customer_name").text(customer.First_Name+" "+customer.Last_Name);
-                        $("#customer_number").text(customer.cus_number);
-                        $("#loyalty_points").text(parseFloat(data.points_to_add).toFixed(2));
-                        $("#loan_number").text(loan.Loan_No);
-                        $("#payment_date_view").text(payment.Date);
-                        if (parseFloat(data.panelty_balance) > 0) {
-                            $("#panelty_balance").text(data.panelty_balance);
-                            $("#tot_balance").text(data.tot_balance);
-
-                            // Show the relevant sections if they are hidden
-                            $(".payment-info.balance").show();
-                        } else {
-                            // Optionally hide the sections if no penalty balance exists
-                            $(".payment-info.balance").hide();
-                        }
-
-                        if (saving_on === "1") {
-                            let saving_amounts = parseFloat(saving_amount) || 0; // Ensures it's a valid number
-                            document.getElementById("saving_amount_container").innerHTML = `
-        <table width="100%">
-            <tr>
-                <td><strong>Saving Amount</strong></td>
-                <td align="right">${saving_amounts.toFixed(2)}</td>
-            </tr>
-        </table>
-    `;
-                            // document.querySelector('.description[for="payed_amount"]').textContent = "Installment Amount";
-                        } else {
-                            document.getElementById("saving_amount_container").style.display = "none";
-                            // document.querySelector('.description[for="payed_amount"]').textContent = "Payed Amount";
-                        }
-
-
-
-
-
-                        if (payment.Payment_type === "Cheque") {
-
-                            // Show the cheque section
-                            $('#cheque_section').show();
-
-                            // // Populate the cheque details
-                            $("#cheque_no").text(chequeDetails.Cheque_No);
-                            $("#cheque_date").text(chequeDetails.Cheque_Date);
-                            $("#cheque_name").text(chequeDetails.Name_On_The_Cheque);
-                            $("#cheque_type").text(chequeDetails.Cheque_Type);
-                        } else {
-                            $('#cheque_section').hide(); // Hide the cheque section if payment type is not "Cheque"
-                        }
-
-
-                        $("#payment_time").text(payment.time);
-
-                        $("#loan_amount").text(parseFloat(loan.Amount).toFixed(2));
-                        $("#full_loan_amount").text(parseFloat(loan.Total_Loan_Amount).toFixed(2));
-
-                        if(saving_on === "1"){
-                            $("#payed_amount").text(parseFloat(payment.Amount-saving_amount).toFixed(2));
-                        }else{
-                            $("#payed_amount").text(parseFloat(payment.Amount).toFixed(2));
-                        }
-                        $("#capital_balance").text(parseFloat(loan.Balance_Amount).toFixed(2));
-                        $("#payment_type_view").text(payment.Payment_type);
-                        <?php
-                        $user_id = session('userid');
-                        $cashier = DB::table('user')
-                            ->where('id', $user_id)
-                            ->where('cashier','=','1')
-                            ->first();
-                        ?>
-                        @if($cashier)
-                            $("#payment_type_view").text("Cashier");
-                        @endif
-
-
-                        $("#signature").text(user.Full_Name);
-                    }
-                },
-                complete: function () {
-                    // ✅ Always hide spinner when request is done
-                    document.getElementById('loadingSpinner').style.display = 'none';
-                },
-                error: function () {
-                    // 🛑 Hide spinner on error too
-                    document.getElementById('loadingSpinner').style.display = 'none';
-                    alert('Failed to load payment details.');
-                }
-            });
-        }
-
+        /*** Receipt view / spinner helpers ***/
         function openModal() {
             $('#issue-loan-modal').modal('hide');
             $('#issue-loan-modal_2').modal('hide');
             $("#printerModal").fadeIn();
         }
 
-        // Function to print receipt (assuming it's defined elsewhere)
-        function printReceipt_view() {
-            const modal = document.querySelector('#printerModal .printer-design');
-
-            // Create a new window
-            const printWindow = window.open('', '_blank', 'width=600,height=800');
-            printWindow.document.open();
-
-            // Clone styles from your current page
-            let styles = '';
-            Array.from(document.styleSheets).forEach(styleSheet => {
-                try {
-                    if (styleSheet.cssRules) {
-                        Array.from(styleSheet.cssRules).forEach(rule => {
-                            styles += rule.cssText;
-                        });
-                    }
-                } catch (e) {
-                    // Cross-origin stylesheet — skip
-                }
-            });
-
-            // Clone the modal's HTML
-            const receiptHTML = modal.outerHTML;
-
-            // Write to new window
-            printWindow.document.write(`
-        <html>
-        <head>
-            <title>Print Receipt</title>
-            <style>
-                ${styles}
-                @page {
-                    size: 80mm auto;
-                    margin: 0;
-                }
-                body {
-                    margin: 0;
-                    padding: 0;
-                    font-family: Arial, sans-serif;
-                }
-                .printer-design {
-                    width: 80mm;
-                    margin: auto;
-                    padding: 10px;
-                    background: white;
-                }
-            </style>
-        </head>
-        <body onload="window.print(); window.close();">
-            ${receiptHTML}
-        </body>
-        </html>
-    `);
-
-            printWindow.document.close();
-        }
-
-
-        // Event listener for the close button within the modal
-        document.querySelector('.close_2').addEventListener('click', function() {
-            closeModal();
-        });
-
-        // Close the modal if the overlay is clicked
-        document.getElementById('overlay').addEventListener('click', function(event) {
-            if (event.target === this) {
-                closeModal();
-            }
-        });
-
-        // Optional: Close the modal on ESC key press
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeModal();
-            }
-        });
-
         function closeModal() {
-            // $('.modal').modal('hide');
-            load_payment_table(currentLoadedPage);
+            // Refresh table page after close
+            if (typeof currentLoadedPage !== 'undefined') {
+                load_payment_table(currentLoadedPage);
+            }
             $("#printerModal").fadeOut();
             $("#issue-loan-modal").fadeOut();
             $("#issue-loan-modal_2").fadeOut();
@@ -1523,46 +1483,158 @@
             $('.btn-success').prop('disabled', false);
         }
 
-        $(function() {
-            $('#loyalty_section').hide();
-            let x = ["#payment_amount"];
-            decimalFormat(x);
-            //Initialize Select2 Elements
-            $('.select2').select2()
+        document.querySelector('.close_2')?.addEventListener('click', closeModal);
+        document.getElementById('overlay')?.addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+        });
 
-            //Initialize Select2 Elements
-            $('.select2bs4').select2({
-                theme: 'bootstrap4'
-            })
+        function printReceipt_view() {
+            const modal = document.querySelector('#printerModal .printer-design');
+            const printWindow = window.open('', '_blank', 'width=600,height=800');
+            printWindow.document.open();
 
-        })
+            let styles = '';
+            Array.from(document.styleSheets).forEach(styleSheet => {
+                try {
+                    if (styleSheet.cssRules) {
+                        Array.from(styleSheet.cssRules).forEach(rule => {
+                            styles += rule.cssText;
+                        });
+                    }
+                } catch (e) {}
+            });
 
-        function check_reduce(){
-            let pending_amount = parseFloat($("#pending_amount").text());
-            let next_payment_date = $("#next_payment_date").text();
-            let days_from_last_payment_date = $("#days_from_last_payment_date").text();
-            let ins_capital = $("#ins_capital").text();
-            let installment_interest = $("#installment_interest").text();
-            let installment_interest_today = $("#installment_interest_today").text();
-            let required_payment_before_capital = $("#required_payment_before_capital").text();
-            let reduce_balance_loan_id = $("#reduce_balance_loan_id").val();
+            const receiptHTML = modal.outerHTML;
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Print Receipt</title>
+                    <style>
+                        ${styles}
+                        @page { size: 80mm auto; margin: 0; }
+                        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+                        .printer-design { width: 80mm; margin: auto; padding: 10px; background: white; }
+                    </style>
+                </head>
+                <body onload="window.print(); window.close();">
+                    ${receiptHTML}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        /*** Load payment receipt (shows spinner, fills fields, shows cheque block if needed) ***/
+        function load_payment_reciept(id) {
+            openModal();
+            $('.btn-success').prop('disabled', true);
+            document.getElementById('loadingSpinner').style.display = 'flex';
+
+            $.ajax({
+                type: "POST",
+                url: "/view_payment_load_reciept/" + id + "/1",
+                headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") },
+                success: function (data, textStatus, xhr) {
+                    const { customer, payment, loan, user, cheque_details: chq, saving_on, saving_amount } = data;
+
+                    if (xhr.status === 200) {
+                        if (data.point_check === "1") $('#loyalty_section').show(); else $('#loyalty_section').hide();
+
+                        $("#Inv_number").text("Receipt No." + payment.idCustomer_Payments);
+                        $("#customer_name").text((customer.First_Name || '') + " " + (customer.Last_Name || ''));
+                        $("#customer_number").text(customer.cus_number || '');
+                        $("#loyalty_points").text(parseFloat(data.points_to_add || 0).toFixed(2));
+                        $("#loan_number").text(loan.Loan_No || '');
+                        $("#payment_date_view").text(payment.Date || '');
+                        $("#payment_time").text(payment.time || '');
+
+                        const hasPenalty = parseFloat(data.panelty_balance || 0) > 0;
+                        if (hasPenalty) {
+                            $("#panelty_balance").text(data.panelty_balance);
+                            $("#tot_balance").text(data.tot_balance);
+                            $(".payment-info.balance").show();
+                        } else {
+                            $(".payment-info.balance").hide();
+                        }
+
+                        // Savings line
+                        if (saving_on === "1") {
+                            const sv = parseFloat(saving_amount || 0);
+                            document.getElementById("saving_amount_container").style.display = "block";
+                            document.getElementById("saving_amount_container").innerHTML = `
+                                <table width="100%">
+                                    <tr>
+                                        <td><strong>Saving Amount</strong></td>
+                                        <td align="right">${sv.toFixed(2)}</td>
+                                    </tr>
+                                </table>`;
+                        } else {
+                            document.getElementById("saving_amount_container").style.display = "none";
+                        }
+
+                        // Cheque section
+                        if (payment.Payment_type === "Cheque") {
+                            $('#cheque_section').show();
+                            $("#cheque_no").text(chq?.Cheque_No || '-');
+                            $("#cheque_date").text(chq?.Cheque_Date || '-');
+                            $("#cheque_name").text(chq?.Name_On_The_Cheque || '-');
+                            $("#cheque_type").text(chq?.Cheque_Type || '-');
+                        } else {
+                            $('#cheque_section').hide();
+                        }
+
+                        $("#loan_amount").text(parseFloat(loan.Amount || 0).toFixed(2));
+                        $("#full_loan_amount").text(parseFloat(loan.Total_Loan_Amount || 0).toFixed(2));
+                        const paid = parseFloat(payment.Amount || 0) - (saving_on === "1" ? parseFloat(saving_amount || 0) : 0);
+                        $("#payed_amount").text(paid.toFixed(2));
+                        $("#capital_balance").text(parseFloat(loan.Balance_Amount || 0).toFixed(2));
+
+                        let paymentTypeLabel = payment.Payment_type || '-';
+                        // If the logged-in user is cashier, show Cashier label
+                        if ({{ (int) $cashier }} === 1) paymentTypeLabel = "Cashier";
+                        $("#payment_type_view").text(paymentTypeLabel);
+
+                        $("#signature").text(user.Full_Name || '');
+                    }
+                },
+                complete: function () {
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                },
+                error: function () {
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    alert('Failed to load payment details.');
+                }
+            });
+        }
+
+        /*** Reduce capital action ***/
+        function check_reduce() {
+            const pending_amount = parseFloat($("#pending_amount").text() || 0);
+            const next_payment_date = $("#next_payment_date").text();
+            const days_from_last_payment_date = $("#days_from_last_payment_date").text();
+            const ins_capital = $("#ins_capital").text();
+            const installment_interest = $("#installment_interest").text();
+            const installment_interest_today = $("#installment_interest_today").text();
+            const required_payment_before_capital = $("#required_payment_before_capital").text();
+            const reduce_balance_loan_id = $("#reduce_balance_loan_id").val();
 
             if (pending_amount === 0) {
                 $.ajax({
                     type: "POST",
                     url: "/reduce_capital",
-                    headers: {
-                        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-                    },
+                    headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") },
                     data: {
-                        reduce_balance_loan_id: reduce_balance_loan_id,
-                        pending_amount: pending_amount,
-                        next_payment_date: next_payment_date,
-                        days_from_last_payment_date: days_from_last_payment_date,
-                        ins_capital: ins_capital,
-                        installment_interest: installment_interest,
-                        installment_interest_today: installment_interest_today,
-                        required_payment_before_capital: required_payment_before_capital,
+                        reduce_balance_loan_id,
+                        pending_amount,
+                        next_payment_date,
+                        days_from_last_payment_date,
+                        ins_capital,
+                        installment_interest,
+                        installment_interest_today,
+                        required_payment_before_capital,
                     },
                     success: function (response) {
                         if (response.status === 'success') {
@@ -1571,7 +1643,7 @@
                             Swal.fire("Error!", response.message, "error");
                         }
                     },
-                    error: function (xhr, status, error) {
+                    error: function () {
                         Swal.fire("Error!", "Something went wrong!", "error");
                     }
                 });
@@ -1580,76 +1652,14 @@
             }
         }
 
-
-
-    </script>
-
-    <script>
-
-        function togglePaymentSections(value) {
-            // Get references to the sections
-            const bankAccountSection = document.getElementById('bank_account_section');
-            const chequeDetailsSection = document.getElementById('cheque_details_section');
-            const chequeNumberSection = document.getElementById('cheque_number_section');
-            const chequeDateSection = document.getElementById('cheque_date_section');
-            const chequeTypeSection = document.getElementById('cheque_type_section');
-            const cheque_issue_bank_section = document.getElementById('cheque_issue_bank_section');
-
-            // Hide all sections by default
-            bankAccountSection.style.display = 'none';
-            chequeDetailsSection.style.display = 'none';
-            chequeNumberSection.style.display = 'none';
-            chequeDateSection.style.display = 'none';
-            chequeTypeSection.style.display = 'none';
-            cheque_issue_bank_section.style.display = 'none';
-
-
-
-            // Show relevant sections based on the selected payment type
-            if (value === 'Bank Deposit' || value === 'Collector' || value === 'Cashier') {
-                bankAccountSection.style.display = 'block';
-            } else if (value === 'Cheque') {
-                chequeDetailsSection.style.display = 'block';
-                chequeNumberSection.style.display = 'block';
-                chequeDateSection.style.display = 'block';
-                chequeTypeSection.style.display = 'block';
-                cheque_issue_bank_section.style.display = 'block';
+        // Small guard for duplicate IDs (dev hint)
+        document.addEventListener("DOMContentLoaded", function () {
+            const dup = document.querySelectorAll('#ins_id');
+            if (dup.length > 1) {
+                console.warn('Duplicate id="ins_id" found in DOM. Consider renaming one (e.g., ins_id_2).');
             }
-        }
-
-        function togglePaymentSections_2(value) {
-            // Get references to the sections
-            const bankAccountSection = document.getElementById('bank_account_section_2');
-            const chequeDetailsSection = document.getElementById('cheque_details_section_2');
-            const chequeNumberSection = document.getElementById('cheque_number_section_2');
-            const chequeDateSection = document.getElementById('cheque_date_section_2');
-            const chequeTypeSection = document.getElementById('cheque_type_section_2');
-            const cheque_issue_bank_section = document.getElementById('cheque_issue_bank_section_2');
-
-            // Hide all sections by default
-            bankAccountSection.style.display = 'none';
-            chequeDetailsSection.style.display = 'none';
-            chequeNumberSection.style.display = 'none';
-            chequeDateSection.style.display = 'none';
-            chequeTypeSection.style.display = 'none';
-            cheque_issue_bank_section.style.display = 'none';
-
-            // Show relevant sections based on the selected payment type
-            if (value === 'Bank Deposit' || value === 'Collector' || value === 'Cashier') {
-                bankAccountSection.style.display = 'block';
-            } else if (value === 'Cheque') {
-                chequeDetailsSection.style.display = 'block';
-                chequeNumberSection.style.display = 'block';
-                chequeDateSection.style.display = 'block';
-                chequeTypeSection.style.display = 'block';
-                cheque_issue_bank_section.style.display = 'block';
-            }
-        }
+        });
     </script>
-
-
-
-
 
 @endsection
 
