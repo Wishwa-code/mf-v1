@@ -131,6 +131,9 @@
                                                     data-customer-id="{{$customer->idCustomer}}" data-longitude="{{$customer->Longitude}}" data-latitude="{{$customer->Latitude}}" data-root="{{$customer->route_id}}"
                                             >
                                                 <i class="bi bi-pencil fs-4"></i></button>
+                                            <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#location-modal" onclick="setLocationId({{$customer->idCustomer}}, '{{$customer->Latitude}}', '{{$customer->Longitude}}')">
+                                                <i class="bi bi-geo-alt fs-4"></i>
+                                            </button>
                                             <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#standard-modal_2" onclick="set_cus({{$customer->idCustomer}})">
                                                 <i class="bi bi-envelope-paper fs-4"></i>
                                             </button>
@@ -561,6 +564,45 @@
 
             </div><!-- /.modal-content -->
         </div><!-- /.modal-dialog -->
+    </div>
+
+    <!-- Location Update Modal -->
+    <div class="modal fade" id="location-modal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4>Update Location</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <input type="hidden" id="location_customer_id">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label for="location_longitude" class="form-label">Longitude</label>
+                                    <input type="text" id="location_longitude" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label for="location_latitude" class="form-label">Latitude</label>
+                                    <input type="text" id="location_latitude" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center mb-3">
+                            <input type="button" class="btn btn-danger" onclick="getCurrentLocation();" value="Get Current Location">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" onclick="updateLocation()">Update Location</button>
+                </div>
+            </div>
+        </div>
     </div>
 
 @endsection
@@ -1504,6 +1546,81 @@
             reader.readAsArrayBuffer(file);
         }
 
+    </script>
+
+    <script>
+        // Location update functions
+        function setLocationId(customerId, latitude, longitude) {
+            $('#location_customer_id').val(customerId);
+            $('#location_latitude').val(latitude);
+            $('#location_longitude').val(longitude);
+        }
+
+        function getCurrentLocation() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var latitude = position.coords.latitude;
+                    var longitude = position.coords.longitude;
+
+                    $('#location_latitude').val(latitude);
+                    $('#location_longitude').val(longitude);
+                }, function(error) {
+                    console.error("Error getting location:", error);
+                    Swal.fire("Error!", "Failed to get current location!", "error");
+                });
+            } else {
+                Swal.fire("Error!", "Geolocation is not supported by this browser!", "error");
+            }
+        }
+
+        function updateLocation() {
+            var customerId = $('#location_customer_id').val();
+            var latitude = $('#location_latitude').val();
+            var longitude = $('#location_longitude').val();
+
+            if (!latitude || !longitude) {
+                Swal.fire("Error!", "Please provide both latitude and longitude!", "error");
+                return;
+            }
+
+            Swal.fire({
+                title: "Are you sure?",
+                text: "Do you want to update the location?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, Update it!",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '/update-customer-location',
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        data: {
+                            customer_id: customerId,
+                            latitude: latitude,
+                            longitude: longitude
+                        },
+                        success: function(response) {
+                            Swal.fire({
+                                position: "center",
+                                icon: "success",
+                                title: "Location updated successfully!",
+                            }).then(function () {
+                                window.location.reload();
+                            });
+                        },
+                        error: function(xhr, status, error) {
+                            console.error(error);
+                            Swal.fire("Error!", "Failed to update location!", "error");
+                        }
+                    });
+                }
+            });
+        }
     </script>
 
 @endsection

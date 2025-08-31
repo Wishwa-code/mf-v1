@@ -144,6 +144,153 @@
         padding: 10px; /* Add spacing for options */
     }
 
+    /* Modern Branch Switcher Styles */
+    .modern-branch-switcher {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .modern-dropdown-toggle {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 12px;
+        padding: 12px 20px;
+        color: white;
+        font-weight: 500;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        min-width: 180px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .modern-dropdown-toggle::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+        transition: left 1.2s ease-in-out;
+    }
+    
+    .modern-dropdown-toggle:hover::before {
+        left: 100%;
+    }
+    
+    .modern-dropdown-toggle:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        background: linear-gradient(135deg, #5a6fd8 0%, #6b4190 100%);
+    }
+    
+    .modern-dropdown-toggle:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+    }
+    
+    .modern-dropdown-toggle .dropdown-arrow {
+        transition: transform 0.3s ease;
+        margin-left: auto;
+    }
+    
+    .modern-dropdown-toggle[aria-expanded="true"] .dropdown-arrow {
+        transform: rotate(180deg);
+    }
+    
+    .modern-dropdown-toggle[aria-expanded="true"] {
+        background: linear-gradient(135deg, #5a6fd8 0%, #6b4190 100%) !important;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .modern-dropdown-toggle[aria-expanded="true"] .branch-text {
+        color: #ffffff !important;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        font-weight: 700;
+    }
+    
+    .modern-dropdown-menu {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        padding: 8px;
+        margin-top: 8px;
+        background: white;
+        backdrop-filter: blur(10px);
+        min-width: 180px;
+    }
+    
+    .modern-dropdown-item {
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin: 2px 0;
+        display: flex;
+        align-items: center;
+        transition: all 0.2s ease;
+        color: #4a5568;
+        text-decoration: none;
+        font-weight: 500;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .modern-dropdown-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 0;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        transition: width 0.3s ease;
+        z-index: -1;
+    }
+    
+    .modern-dropdown-item:hover::before {
+        width: 100%;
+    }
+    
+    .modern-dropdown-item:hover {
+        color: white;
+        transform: translateX(4px);
+        background: transparent;
+    }
+    
+    .modern-dropdown-item i {
+        transition: all 0.2s ease;
+    }
+    
+    .modern-dropdown-item:hover i {
+        color: white;
+    }
+    
+    .branch-text {
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        color: #ffffff;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        font-size: 14px;
+        display: inline-block;
+        min-width: 100px;
+        text-align: left;
+    }
+    
+    .modern-dropdown-toggle i {
+        color: #ffffff;
+        opacity: 0.9;
+    }
+    
+    .modern-dropdown-toggle:hover i,
+    .modern-dropdown-toggle[aria-expanded="true"] i {
+        opacity: 1;
+        color: #ffffff;
+    }
+
 </style>
 
 <div class="modal fade" id="cashierStartModal" tabindex="-1" aria-labelledby="cashierStartLabel" aria-hidden="true">
@@ -504,14 +651,37 @@ $banner = DB::select($query);
         ?>
         <div class="date-time">
             @if(session('branch_access')===1)
-                <select class="form-control branch-select enhanced-select">
-                    @foreach($branch as $item)
-                        <option value="{{$item->branch_id}}" {{ session('branch_id') == $item->branch_id ? 'selected' : '' }}>
-                            {{$item->Name}} Branch
-                        </option>
-                    @endforeach
-                </select>
-
+                <div class="modern-branch-switcher">
+                    <div class="dropdown">
+                        <button type="button" class="btn modern-dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="ri-building-2-line me-2"></i>
+                            <span class="branch-text">
+                                @foreach($branch as $item)
+                                    @if(session('branch_id') == $item->branch_id)
+                                        {{$item->Name}} Branch
+                                    @endif
+                                @endforeach
+                            </span>
+                            <i class="ri-arrow-down-s-line ms-2 dropdown-arrow"></i>
+                        </button>
+                        <ul class="dropdown-menu modern-dropdown-menu">
+                            @foreach($branch as $item)
+                                <li>
+                                    <a class="dropdown-item modern-dropdown-item branch-option" 
+                                       href="#" 
+                                       data-branch-id="{{$item->branch_id}}"
+                                       data-branch-name="{{$item->Name}} Branch">
+                                        <i class="ri-building-2-line me-2"></i>
+                                        {{$item->Name}} Branch
+                                        @if(session('branch_id') == $item->branch_id)
+                                            <i class="ri-check-line ms-auto text-success"></i>
+                                        @endif
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
             @else
                 <h2 id="date">{{ session('branch_name').' Branch' }}</h2>
             @endif
