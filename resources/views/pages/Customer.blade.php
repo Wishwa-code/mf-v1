@@ -94,11 +94,11 @@
                                     </div>
                                     <div class="mb-3">
                                         <label for="simpleinput" class="form-label">Mobile No <span class="required-asterisk">*</span></label>
-                                        <input type="tel" id="contact_number" name="contact_number" class="form-control"  onkeypress="validateContactNumber(event)">
+                                        <input type="tel" id="contact_number" name="contact_number" class="form-control" oninput="validateMobileNumber(this)" maxlength="10">
                                     </div>
                                     <div class="mb-3">
                                         <label for="simpleinput" class="form-label">Mobile No 02</label>
-                                        <input type="tel" id="contact_number_2" name="contact_number_2" class="form-control"  onkeypress="validateContactNumber(event)">
+                                        <input type="tel" id="contact_number_2" name="contact_number_2" class="form-control" oninput="validateMobileNumber(this)" maxlength="10">
                                     </div>
                                     <div class="mb-3" hidden>
                                         <label for="simpleinput" class="form-label">Business Registration Number</label>
@@ -106,7 +106,7 @@
                                     </div>
                                     <div class="mb-3">
                                         <label for="simpleinput" class="form-label">NIC <span class="required-asterisk">*</span></label>
-                                        <input type="text" id="nic" name="nic" class="form-control">
+                                        <input type="text" id="nic" name="nic" class="form-control" oninput="validateNIC(this)" maxlength="12">
                                         <input type="hidden" id="new_nic" name="new_nic" class="form-control">
                                     </div>
                                     <div class="mb-3">
@@ -256,7 +256,7 @@
                                             <div class="row mb-3">
                                                 <div class="col-md-6">
                                                     <label for="occu_contact_no" class="form-label">Working Place Contact Number</label>
-                                                    <input type="text" id="occu_contact_no" class="form-control">
+                                                    <input type="tel" id="occu_contact_no" class="form-control" oninput="validateMobileNumber(this)" maxlength="10">
                                                 </div>
                                             </div>
                                             <div class="row mb-3">
@@ -385,7 +385,7 @@
                                                     </div>
                                                     <div class="mb-3">
                                                         <label for="simpleinput" class="form-label">NIC <span class="required-asterisk">*</span></label>
-                                                        <input type="text" id="gua_nic" name="gua_nic" class="form-control">
+                                                        <input type="text" id="gua_nic" name="gua_nic" class="form-control" oninput="validateNIC(this)" maxlength="12">
                                                     </div>
                                                     <div class="mb-3">
                                                         <label for="simpleinput" class="form-label">Gender</label>
@@ -405,7 +405,7 @@
                                                     </div>
                                                     <div class="mb-3">
                                                         <label for="simpleinput" class="form-label">Contact No</label>
-                                                        <input type="text" id="gua_contact" name="gua_contact" class="form-control">
+                                                        <input type="tel" id="gua_contact" name="gua_contact" class="form-control" oninput="validateMobileNumber(this)" maxlength="10">
                                                     </div>
                                                     <div class="row mb-3">
                                                         <label for="bank_name" class="form-label">Address</label>
@@ -488,6 +488,16 @@
     <!-- Select2 JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
     <script>
+        function validateNIC(input) {
+            // Allow only digits, x, and v (case insensitive)
+            input.value = input.value.replace(/[^0-9xvXV]/g, '').toUpperCase();
+        }
+
+        function validateMobileNumber(input) {
+            // Allow only 10 digits
+            input.value = input.value.replace(/[^0-9]/g, '');
+        }
+
         function create_id(value){
 
 
