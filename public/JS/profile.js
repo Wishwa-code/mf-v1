@@ -248,7 +248,7 @@ const saveProfile = (e) => {
     // ---- if the customer format section CHANGED and no scope chosen yet, ask now
     if (hasCustomerFormatChanged() && !$("#customer_format_scope").val()) {
         Swal.fire({
-            title: 'Apply number-format change?',
+            title: 'Apply customer number-format change?',
             icon: 'warning',
             input: 'select',
             inputOptions: {
