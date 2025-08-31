@@ -46,14 +46,26 @@ class BankController extends Controller
             ->where('user.collector','=','1')
             ->get();
 
-        $company_banks = tableWithBranch('company_bank_accounts')
-            ->where('company_bank_accounts.Bank_Type','=','Bank')
+        $company_banks = DB::table('company_bank_accounts as c2')
+            ->leftJoin('user', 'c2.User', '=', 'user.id')
+            ->where(function ($q) {
+                $q->where('c2.Bank_Type', 'Bank')
+                    ->orWhere(function ($q2) {
+                        $q2->where('c2.Bank_Type', 'Collector')
+                            ->where('user.cashier', '1');
+                    });
+            })
+            ->where('c2.branch_id','=',session('branch_id'))
+            ->select([
+                'c2.*',
+                DB::raw("CASE WHEN c2.Bank_Type='Collector' AND user.cashier='1' THEN 'Bank' ELSE c2.Bank_Type END AS display_bank_type"),
+            ])
+            ->orderByRaw("display_bank_type ASC")   // 👈 order by your alias
             ->get();
+
+
         $user = DB::table('user')->where('id', session('userid'))->first();
-        $collector=0;
-        if($user){
-            $collector=$user->collector;
-        }
+        $collector = $user ? $user->collector : 0;
 
         return view('pages.CollectorAccount',compact('banks','company_banks','collector'));
     }

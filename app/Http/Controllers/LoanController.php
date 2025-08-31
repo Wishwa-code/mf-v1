@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Session;
 use App\Models\Reschedule;
@@ -198,6 +199,26 @@ class LoanController extends Controller
             }
         }
 
+
+        if (!Schema::hasColumn('customer_loan', 'panelty_method')) {
+            DB::statement(
+                "ALTER TABLE `customer_loan`
+         ADD COLUMN `panelty_method` VARCHAR(45) NOT NULL
+         DEFAULT 'every_installment'"
+            );
+        }
+
+        if (!Schema::hasColumn('customer_loan', 'Panelty_period')) {
+            DB::statement(
+                "ALTER TABLE `customer_loan`
+         ADD COLUMN `Panelty_period` VARCHAR(45) NOT NULL
+         DEFAULT 'Daily'"
+            );
+        }
+
+
+
+
         Log::info($loan_number_txt);
         $loan->Loan_No = $loan_number_txt;
         $loan->Loan_Category_idLoan_Category = $request->loan_cate_id;
@@ -232,6 +253,13 @@ class LoanController extends Controller
         $loan->loan_broker_commission = $request->loan_broker_commission;
         $loan->saving_amount = $request->saving_amount ?? '0.00';
         $loan->branch_id = session('branch_id');
+
+        $product = tableWithBranch('loan_category')->where('idLoan_Category', '=' ,$request->loan_cate_id)->first();
+        if ($product){
+            $loan->panelty_method = $product->panelty_method;
+            $loan->Panelty_period = $product->Panelty_period;
+        }
+
 
         $loan->save();
 

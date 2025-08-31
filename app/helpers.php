@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Controllers\CustomerLogController;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 function numberToWords($number) {
     $hyphen      = '-';
@@ -291,6 +294,202 @@ function processDaySkip($loan, $installment, $holidayDate, $companySetting,$bran
         'Panelty_date' => $newPaneltyDate,
     ]);
 }
+
+
+function customer_number($cus_id){
+    // Load customer & company
+    $customer = tableWithBranch('customer')->where('idCustomer', $cus_id)->first();
+    if (!$customer) { return; }
+
+    $old_cus_number = $customer->cus_number ?? null;
+
+    $company = tableWithBranch('company')->first();
+    if (!$company) { return; }
+
+    $type = $company->customer_num_type;
+
+    if ($type === "Format") {
+
+        $Branch_No = (string) ($company->branch ?? 'B00');
+
+        // ---- Customer Registration log (may be null) ----
+        $customer_log = tableWithBranch('customer_log')
+            ->where('customer_id', $cus_id)
+            ->where('type', 'Customer Registration')
+            ->first();
+
+        // Defaults (used if no log / any failure)
+        $Auto_Id       = str_pad((int)($company->customer_num_start_from ?? 0), 3, '0', STR_PAD_LEFT);
+        $Day           = date('d');
+        $Month         = date('m');
+        $Year          = date('Y');
+        $MonthlyCount  = '00';
+        $RootlyCount   = '00';
+
+        if ($customer_log) {
+            try {
+                // Global seq per branch (starting offset from company setting)
+                $last_logs_count = DB::table(DB::raw("
+                    (
+                        SELECT id, branch_id,
+                               ROW_NUMBER() OVER (ORDER BY `date`, `time`, `id`) AS seq
+                        FROM customer_log
+                        WHERE type = 'Customer Registration'
+                          AND branch_id = ".(int)session('branch_id')."
+                    ) AS t
+                "))
+                    ->where('id', $customer_log->id)
+                    ->where('branch_id', session('branch_id'))
+                    ->value('seq');
+
+                $customer_num_start_from = (int)($company->customer_num_start_from ?? 0);
+                $next_customer_id        = $customer_num_start_from + (int)($last_logs_count ?? 0);
+                $Auto_Id                 = str_pad($next_customer_id, 3, '0', STR_PAD_LEFT);
+
+                // Date parts from registration log date
+                $date  = $customer_log->date;
+                $Day   = date('d', strtotime($date));
+                $Month = date('m', strtotime($date));
+                $Year  = date('Y', strtotime($date));
+
+                // Monthly sequence (per branch)
+                $logDateYear  = (int)date('Y', strtotime($customer_log->date));
+                $logDateMonth = (int)date('m', strtotime($customer_log->date));
+
+                $MonthlyCount = DB::table(DB::raw("
+                    (
+                        SELECT id, branch_id,
+                               ROW_NUMBER() OVER (ORDER BY `date`, `time`, `id`) AS seq
+                        FROM customer_log
+                        WHERE type = 'Customer Registration'
+                          AND YEAR(`date`) = {$logDateYear}
+                          AND MONTH(`date`) = {$logDateMonth}
+                          AND branch_id = ".(int)session('branch_id')."
+                    ) AS t
+                "))
+                    ->where('id', $customer_log->id)
+                    ->value('seq');
+
+                $MonthlyCount = str_pad((string)($MonthlyCount ?? 0), 2, '0', STR_PAD_LEFT);
+
+                // Route-wise sequence (per branch)
+                $RootlyCount = DB::table(DB::raw("
+                    (
+                        SELECT cl.id, cl.branch_id, r.id_route, c.idCustomer,
+                               ROW_NUMBER() OVER (ORDER BY cl.date, cl.time, cl.id) AS seq
+                        FROM customer_log cl
+                        INNER JOIN customer c ON c.idCustomer = cl.customer_id
+                        INNER JOIN route r    ON r.id_route   = c.route_id
+                        WHERE cl.type = 'Customer Registration'
+                          AND r.id_route = ".(int)$customer->route_id."
+                          AND cl.branch_id = ".(int)session('branch_id')."
+                    ) AS t
+                "))
+                    ->where('id', $customer_log->id)
+                    ->value('seq');
+
+                $RootlyCount = str_pad((string)($RootlyCount ?? 0), 2, '0', STR_PAD_LEFT);
+
+            } catch (\Throwable $e) {
+                \Log::warning('customer_number: seq calculations failed', [
+                    'cus_id' => $cus_id,
+                    'error'  => $e->getMessage(),
+                ]);
+                // keep defaults
+            }
+        }
+
+        // Route code
+        $root_code = tableWithBranch('route')
+            ->where('id_route', $customer->route_id)
+            ->value('root_code') ?? 'R00';
+
+        // ---- Group/Center (guard nulls) ----
+        $Group_No               = 'G00';
+        $Center_No              = 'C00';
+        $center_customer_count  = '00';
+
+        $customer_group = tableWithBranch('group_has_customer')
+            ->where('cus_id', $customer->idCustomer)
+            ->first();
+
+        if ($customer_group) {
+            $Group = tableWithBranch('customer_group')
+                ->where('idCustomer_Group', $customer_group->group_id)
+                ->first();
+
+            if ($Group) {
+                $Group_No = $Group->Group_No ?? 'G00';
+
+                $center = tableWithBranch('center')
+                    ->where('idCenter', $Group->center_id)
+                    ->first();
+
+                $Center_No = $center->No ?? 'C00';
+
+                $centerId = $Group->center_id;
+
+                try {
+                    $branch_id=session('branch_id');
+                    $center_customer_count = DB::table(DB::raw(" ( SELECT cl.id, cl.branch_id, c.idCustomer, ROW_NUMBER() OVER ( PARTITION BY cg.center_id ORDER BY cl.date, cl.time, cl.id ) AS seq FROM customer_log cl INNER JOIN customer c ON c.idCustomer = cl.customer_id INNER JOIN group_has_customer ghc ON ghc.cus_id = c.idCustomer INNER JOIN customer_group cg ON cg.idCustomer_Group = ghc.group_id WHERE cl.type = 'Assign To A Group' AND cg.center_id = {$centerId} AND cl.branch_id = {$branch_id} ) AS t ")) ->where('idCustomer', $cus_id) ->value('seq') ?? '0'; $center_customer_count = str_pad($center_customer_count, 2, '0', STR_PAD_LEFT);
+                } catch (\Throwable $e) {
+                    \Log::warning('center_customer_count failed', [
+                        'center_id' => $centerId,
+                        'branch_id' => session('branch_id'),
+                        'cus_id'    => $cus_id,
+                        'error'     => $e->getMessage(),
+                    ]);
+                    // default already set
+                }
+            }
+        }
+
+        // ---- Build number from placeholders ----
+        $placeholders = [
+            '@Branch_No@'        => $Branch_No,
+            '@Root@'             => $root_code,
+            '@Center_No@'        => $Center_No,
+            '@Group_No@'         => $Group_No,
+            '@Auto_Id@'          => $Auto_Id,
+            '@Day@'              => $Day,
+            '@Month@'            => $Month,
+            '@Year@'             => $Year,
+            '@CountMonthly@'     => $MonthlyCount,
+            '@RootlyCount@'      => $RootlyCount,
+            '@Center_Cus_Count@' => $center_customer_count,
+        ];
+
+        $customer_number_txt = $company->customer_format;
+        foreach ($placeholders as $placeholder => $value) {
+            $customer_number_txt = str_replace($placeholder, (string)$value, $customer_number_txt);
+        }
+
+        // Update customer
+        updateWithBranch('customer', 'idCustomer', $cus_id, ['cus_number' => $customer_number_txt]);
+        $new_cus_number = $customer_number_txt;
+
+        // Log the change
+        try {
+            $CapitalBalanceController = new CustomerLogController();
+            $request = new Request([
+                'customer_id'    => $cus_id,
+                'description'    => "Customer Number Changed From ".$old_cus_number." To ".$new_cus_number,
+                'description_id' => $cus_id,
+                'comment'        => 'Change Customer Number',
+                'type'           => 'Customer Update',
+            ]);
+            $CapitalBalanceController->store($request);
+        } catch (\Throwable $e) {
+            \Log::warning('customer_number: log store failed', [
+                'cus_id' => $cus_id,
+                'error'  => $e->getMessage(),
+            ]);
+        }
+    }
+}
+
+
+
 
 
 

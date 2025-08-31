@@ -100,6 +100,8 @@
                                                             <option value="Customize" {{ $company->customer_num_type === 'Customize' ? 'selected' : '' }}>Customize</option>
                                                             <option value="Format" {{ $company->customer_num_type === 'Format' ? 'selected' : '' }}>Format</option>
                                                         </select>
+                                                        <input type="hidden" id="customer_format_scope" name="customer_format_scope" value="">
+
                                                     </div>
                                                 </div>
                                                 <div class="mb-3">
@@ -255,10 +257,9 @@
                     <div class="row mb-3">
                         <div class="col">
                             <button type="button" class="btn btn-primary" onclick="addToField('@Branch_No@','Branch_No')">Branch Number</button>
-                            <button type="button" class="btn btn-primary" onclick="addToField('@Root@','Root')">Root Name</button>
+                            <button type="button" class="btn btn-primary" onclick="addToField('@Root@','Root')">Root Number</button>
                             <button type="button" class="btn btn-primary" onclick="addToField('@Center_No@','Center_No')">Center Number</button>
                             <button type="button" class="btn btn-primary" onclick="addToField('@Group_No@','Group_No')">Group Number</button>
-                            <button type="button" class="btn btn-primary" onclick="addToField('@Customize_No@','Customize_No')">Customize Number</button>
                             <button type="button" class="btn btn-primary" onclick="addToField('@Auto_Id@','Auto_Id')">Auto Create Number</button>
                             <button type="button" class="btn btn-primary" onclick="addToField('@Day@','Day')">Day</button>
                             <button type="button" class="btn btn-primary" onclick="addToField('@Month@','Month_Number')">Month</button>
@@ -552,4 +553,6 @@
 
 
     </script>
+
+
 @endsection

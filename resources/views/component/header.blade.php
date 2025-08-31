@@ -1078,7 +1078,7 @@ $banner = DB::select($query);
                                     <ul class="side-nav-second-level">
                                         @if(optional($privilege)->create_user == 1)
                                             <li>
-                                                <a href="/user" class="active">Create User</a>
+                                                <a href="/user" class="active">Manage User</a>
                                             </li>
                                         @endif
                                         @if(optional($privilege)->user_privileges == 1)
@@ -1143,6 +1143,12 @@ $banner = DB::select($query);
                                                                 <a href="/loanStatus">Loan Status</a>
                                                             </li>
                                                     @endif
+
+                                                        <li>
+                                                            <a href="/depletion">Depletion Report Executive Summary</a>
+                                                        </li>
+
+
 
                                                 </ul>
                                             </div>
