@@ -302,7 +302,7 @@ class CapitalBalanceController extends Controller
     // GET /settings/all
     public function all()
     {
-        $keys = ['payment_member_name','loan_disbursement_policy','payment_backdate','loan_order','max_allowed_loans'];
+        $keys = ['payment_member_name','loan_disbursement_policy','payment_backdate','loan_order','max_allowed_loans','document_types'];
 
         $rows = DB::table($this->table)
             ->whereIn('key', $keys)
@@ -316,7 +316,7 @@ class CapitalBalanceController extends Controller
     public function upsert(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'key'   => ['required', 'in:payment_member_name,loan_disbursement_policy,payment_backdate,loan_order,max_allowed_loans'],
+            'key'   => ['required', 'in:payment_member_name,loan_disbursement_policy,payment_backdate,loan_order,max_allowed_loans,document_types'],
             'value' => [
                 'required',
                 function ($attribute, $value, $fail) use ($request) {
@@ -343,6 +343,17 @@ class CapitalBalanceController extends Controller
                     if ($request->key === 'max_allowed_loans' &&
                         (!is_numeric($value) || $value < 1 || $value > 50)) {
                         $fail('Max allowed loans must be between 1 and 50.');
+                    }
+
+                    if ($request->key === 'document_types') {
+                        $decoded = json_decode($value, true);
+                        if (json_last_error() !== JSON_ERROR_NONE) {
+                            $fail('Document types must be valid JSON.');
+                        } elseif (!is_array($decoded)) {
+                            $fail('Document types must be a JSON array.');
+                        } elseif (count($decoded) === 0) {
+                            $fail('At least one document type is required.');
+                        }
                     }
                 },
             ],

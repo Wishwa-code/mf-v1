@@ -289,9 +289,11 @@
                                             <div class="row">
                                                 <div class="col-lg-6">
                                                     <div class="mb-3">
-                                                        <label for="otherChargesDescription"
-                                                               class="form-label">Description</label>
-                                                        <input type="text" class="form-control" id="otherDocDescription">
+                                                        <label for="otherDocDescription" class="form-label">Document Type</label>
+                                                        <select class="form-control" id="otherDocDescription">
+                                                            <option value="">Select Document Type</option>
+                                                            <!-- Options will be loaded dynamically -->
+                                                        </select>
                                                     </div>
                                                 </div>
                                             </div>
@@ -522,6 +524,8 @@
     </script>
     <script>
         $(document).ready(function() {
+            // Load document types on page load
+            loadDocumentTypes();
 
             $('#state').select2({
                 placeholder: "Select Province", // Optional placeholder
@@ -555,10 +559,10 @@
             });
 
             $('#addDocBtn').on('click', function() {
-                var description = $('#otherDocDescription').val().trim();
+                var description = $('#otherDocDescription').val();
 
-                if (description === '') {
-                    Swal.fire("Error!", "Description cannot be empty !", "error");
+                if (!description || description === '') {
+                    Swal.fire("Error!", "Please select a document type!", "error");
                     return;
                 }
 
@@ -580,7 +584,7 @@
 
                 $('#documenttable tbody').append(newRow);
 
-                // Clear the input field after adding
+                // Clear the select field after adding
                 $('#otherDocDescription').val('');
             });
 
@@ -817,6 +821,61 @@
                 $(this).closest('tr').remove();
             });
         });
+
+        // Load document types from settings
+        function loadDocumentTypes() {
+            $.ajax({
+                type: "GET",
+                url: "/settings/all",
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                },
+                success: function (data) {
+                    const items = data.items || {};
+                    let documentTypes = [];
+
+                    // Try to get document types from settings
+                    if (items.document_types) {
+                        try {
+                            documentTypes = JSON.parse(items.document_types);
+                        } catch (e) {
+                            console.error('Error parsing document types:', e);
+                            documentTypes = getDefaultDocumentTypes();
+                        }
+                    } else {
+                        documentTypes = getDefaultDocumentTypes();
+                    }
+
+                    // Populate dropdown
+                    const dropdown = $('#otherDocDescription');
+                    dropdown.empty();
+                    dropdown.append('<option value="">Select Document Type</option>');
+                    
+                    documentTypes.forEach(function(type) {
+                        dropdown.append(`<option value="${type}">${type}</option>`);
+                    });
+                },
+                error: function (xhr) {
+                    console.error('Error loading document types:', xhr.responseText || xhr.statusText);
+                    // Load default types on error
+                    const dropdown = $('#otherDocDescription');
+                    dropdown.empty();
+                    dropdown.append('<option value="">Select Document Type</option>');
+                    
+                    getDefaultDocumentTypes().forEach(function(type) {
+                        dropdown.append(`<option value="${type}">${type}</option>`);
+                    });
+                }
+            });
+        }
+
+        // Get default document types (same as in Settings page)
+        function getDefaultDocumentTypes() {
+            return [
+                'NIC Copy',
+                'Income Certificate'
+            ];
+        }
 
     </script>
 @endsection

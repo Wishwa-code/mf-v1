@@ -321,6 +321,30 @@
                             <small class="text-muted">Maximum number of loans a customer can have at once (pending + current).</small>
                         </div>
 
+                        <hr>
+                        <!-- Document Types -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Document Types</label>
+                            <small class="text-muted d-block mb-3">Manage predefined document types for customer registration.</small>
+                            
+                            <div class="mb-3">
+                                <div class="input-group mb-2">
+                                    <input type="text" id="new_document_type" class="form-control" placeholder="Enter document type" maxlength="100">
+                                    <button id="btnAddDocumentType" class="btn btn-outline-success">
+                                        <i class="fa-solid fa-plus me-1"></i> Add
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="document_types_list" class="mb-3">
+                                <!-- Document types will be loaded here -->
+                            </div>
+                            
+                            <button id="btnUpdateDocumentTypes" class="btn btn-primary">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+                            </button>
+                        </div>
+
 
                     </div>
                 </div>
@@ -383,6 +407,23 @@
                 save_setting('max_allowed_loans', value);
             });
 
+            // Document Types Management
+            $('#btnAddDocumentType').on('click', function (e) {
+                e.preventDefault();
+                addDocumentType();
+            });
+
+            $('#new_document_type').on('keypress', function (e) {
+                if (e.which === 13) { // Enter key
+                    e.preventDefault();
+                    addDocumentType();
+                }
+            });
+
+            $('#btnUpdateDocumentTypes').on('click', function (e) {
+                e.preventDefault();
+                saveDocumentTypes();
+            });
 
         });
 
@@ -575,6 +616,19 @@
                         $('#max_allowed_loans').val(items.max_allowed_loans);
                     }
 
+// Document Types
+                    if (items.document_types) {
+                        try {
+                            const documentTypes = JSON.parse(items.document_types);
+                            loadDocumentTypesList(documentTypes);
+                        } catch (e) {
+                            console.error('Error parsing document types:', e);
+                            loadDocumentTypesList(getDefaultDocumentTypes());
+                        }
+                    } else {
+                        loadDocumentTypesList(getDefaultDocumentTypes());
+                    }
+
                 },
                 error: function (xhr) {
                     console.error('Settings load error:', xhr.responseText || xhr.statusText);
@@ -613,6 +667,140 @@
                     },
                     error: function (xhr) {
                         Swal.fire("Error", xhr.responseJSON?.message || "Failed to update setting", "error");
+                    }
+                });
+            });
+        };
+
+        // ========== DOCUMENT TYPES MANAGEMENT ==========
+
+        // Get default document types
+        const getDefaultDocumentTypes = () => {
+            return [
+                'NIC Copy',
+                'Income Certificate'
+            ];
+        };
+
+        // Load document types list in UI
+        const loadDocumentTypesList = (documentTypes) => {
+            const container = $('#document_types_list');
+            container.empty();
+
+            if (!documentTypes || documentTypes.length === 0) {
+                container.html('<p class="text-muted">No document types added yet.</p>');
+                return;
+            }
+
+            documentTypes.forEach((type, index) => {
+                const item = $(`
+                    <div class="d-flex align-items-center mb-2 document-type-item" data-index="${index}">
+                        <div class="badge bg-light text-dark me-2 flex-grow-1 text-start py-2 px-3">
+                            ${type}
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-doc-type" data-index="${index}">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                `);
+                container.append(item);
+            });
+
+            // Attach remove handlers
+            $('.remove-doc-type').on('click', function() {
+                const index = $(this).data('index');
+                removeDocumentType(index);
+            });
+        };
+
+        // Add new document type
+        const addDocumentType = () => {
+            const newType = $('#new_document_type').val().trim();
+            
+            if (!newType) {
+                Swal.fire("Warning", "Please enter a document type.", "warning");
+                return;
+            }
+
+            // Get current types
+            const currentTypes = getCurrentDocumentTypes();
+            
+            // Check for duplicates (case insensitive)
+            if (currentTypes.some(type => type.toLowerCase() === newType.toLowerCase())) {
+                Swal.fire("Warning", "This document type already exists.", "warning");
+                return;
+            }
+
+            // Add new type
+            currentTypes.push(newType);
+            loadDocumentTypesList(currentTypes);
+            
+            // Clear input
+            $('#new_document_type').val('');
+        };
+
+        // Remove document type
+        const removeDocumentType = (index) => {
+            const currentTypes = getCurrentDocumentTypes();
+            currentTypes.splice(index, 1);
+            loadDocumentTypesList(currentTypes);
+        };
+
+        // Get current document types from UI
+        const getCurrentDocumentTypes = () => {
+            const types = [];
+            $('.document-type-item').each(function() {
+                const type = $(this).find('.badge').text().trim();
+                if (type) {
+                    types.push(type);
+                }
+            });
+            return types;
+        };
+
+        // Save document types to database
+        const saveDocumentTypes = () => {
+            const documentTypes = getCurrentDocumentTypes();
+            
+            if (documentTypes.length === 0) {
+                Swal.fire("Warning", "Please add at least one document type.", "warning");
+                return;
+            }
+
+            const jsonValue = JSON.stringify(documentTypes);
+            
+            Swal.fire({
+                title: "Are you sure?",
+                text: "Update document types?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, Update",
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                $.ajax({
+                    type: "POST",
+                    url: "/settings/upsert",
+                    headers: {
+                        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                    },
+                    data: { 
+                        key: 'document_types', 
+                        value: jsonValue 
+                    },
+                    success: function () {
+                        Swal.fire({
+                            position: "center",
+                            icon: "success",
+                            title: "Document types updated!",
+                            timer: 1400,
+                            showConfirmButton: false
+                        });
+                    },
+                    error: function (xhr) {
+                        Swal.fire("Error", xhr.responseJSON?.message || "Failed to update document types", "error");
                     }
                 });
             });
