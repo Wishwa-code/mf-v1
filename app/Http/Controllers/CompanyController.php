@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class CompanyController extends Controller
@@ -35,6 +36,15 @@ class CompanyController extends Controller
         // Fetch the existing company record
         $company = DB::table('company')->first();
 
+
+        if (!Schema::hasColumn('company', 'customer_format_scope')) {
+            DB::statement(
+                "ALTER TABLE `company`
+         ADD COLUMN `customer_format_scope` VARCHAR(45) NOT NULL
+         DEFAULT '0'"
+            );
+        }
+
 // Initialize an array to store the fields to be updated
         $updateData = [
             'company_name' => isset($request->company_name) ? $request->company_name : '',
@@ -57,6 +67,7 @@ class CompanyController extends Controller
             'inv_loan_num_type' => isset($request->inv_loan_format_selection) ? $request->inv_loan_format_selection : '',
             'inv_loan_seperate_from' => isset($request->separate_from_inv_loan) ? $request->separate_from_inv_loan : '',
             'inv_loan_format' => isset($request->field_output_inv_loan) ? $request->field_output_inv_loan : '',
+            'customer_format_scope' => isset($request->customer_format_scope) ? $request->customer_format_scope : '',
         ];
 
 
@@ -82,6 +93,16 @@ class CompanyController extends Controller
 
 // Update the database with the constructed $updateData array
         DB::table('company')->where('branch_id','=',session('branch_id'))->update($updateData);
+
+
+        if ($request->customer_format_scope=="all"){
+            $cus=tableWithBranch('customer')->get();
+            foreach ($cus as $item){
+                customer_number($item->idCustomer);
+            }
+        }
+
+
 
         return response()->json(['message' => 'Data saved successfully', 'id' => '1'], 200);
 

@@ -20,6 +20,14 @@ class LoanCategoryController extends Controller
         if (!Schema::hasColumn('loan_category', 'status')) {
             DB::statement("ALTER TABLE loan_category ADD COLUMN status TINYINT DEFAULT 1");
         }
+        if (!Schema::hasColumn('loan_category', 'panelty_method')) {
+            DB::statement(
+                "ALTER TABLE `loan_category`
+         ADD COLUMN `panelty_method` VARCHAR(45) NOT NULL
+         DEFAULT 'every_installment'"
+            );
+        }
+
         $loan_category = tableWithBranch('loan_category')->get();
         return view('pages.Product', compact('loan_category'));
     }
@@ -42,6 +50,14 @@ class LoanCategoryController extends Controller
         if (!Schema::hasColumn('loan_category', 'status')) {
             DB::statement("ALTER TABLE loan_category ADD COLUMN status TINYINT DEFAULT 1");
         }
+        if (!Schema::hasColumn('loan_category', 'panelty_method')) {
+            DB::statement(
+                "ALTER TABLE `loan_category`
+         ADD COLUMN `panelty_method` VARCHAR(45) NOT NULL
+         DEFAULT 'every_installment'"
+            );
+        }
+
         // Save LoanCategory
         $loancategory = new LoanCategory();
         $loancategory->Name = $request->product_name;
@@ -66,6 +82,7 @@ class LoanCategoryController extends Controller
         $loancategory->saving_amount = $request->saving_amount;
         $loancategory->saving_payment = $request->saving_payment;
         $loancategory->default_loan_duration_period = $request->default_loan_duration_period;
+        $loancategory->panelty_method = $request->penalty_method;
         $loancategory->branch_id = session('branch_id');
 
 
@@ -343,6 +360,7 @@ class LoanCategoryController extends Controller
                 'saving_payment' => $request->saving_payment,
                 'default_loan_duration_period' => $request->default_loan_duration_period,
                 'updated_at' => now(),
+                'panelty_method' => $request->penalty_method,
             ]);
 
             // Delete existing related data

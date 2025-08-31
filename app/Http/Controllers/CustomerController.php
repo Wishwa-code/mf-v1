@@ -84,28 +84,14 @@ class CustomerController extends Controller
      */
     public function store(Request $request)
     {
-        // Validate the request
-        $validatedData = $request->validate([
-            'f_name' => 'required',
-            'last_name' => 'required',
-            'contact_number' => 'required',
-            'nic' => 'required',
-        ]);
-
-
 
         if (DB::table('customer')
             ->Where('Nic', '=', $request->new_nic)
             ->where('branch_id', '=', session('branch_id')) // Check within the same branch
             ->exists()) {
-            return response()->json(['message' => 'This customer number already exists!', 'id' => '0'], 200);
+            return response()->json(['message' => 'This customer nic already exists!', 'id' => '0'], 200);
         }  else if (DB::table('customer')
             ->where('cus_number', '=', $request->cus_number)
-            ->where('branch_id', '=', session('branch_id')) // Check within the same branch
-            ->exists()) {
-            return response()->json(['message' => 'This customer number already exists!', 'id' => '0'], 200);
-        }  else if (DB::table('customer')
-            ->Where('Nic', '=', $request->nic)
             ->where('branch_id', '=', session('branch_id')) // Check within the same branch
             ->exists()) {
             return response()->json(['message' => 'This customer number already exists!', 'id' => '0'], 200);
@@ -113,7 +99,7 @@ class CustomerController extends Controller
             ->Where('Contact_No', '=', $request->contact_number)
             ->where('branch_id', '=', session('branch_id')) // Check within the same branch
             ->exists()) {
-            return response()->json(['message' => 'This customer number already exists!', 'id' => '0'], 200);
+            return response()->json(['message' => 'This customer contact number already exists!', 'id' => '0'], 200);
         }else{
 
             // Instantiate a new Customer object
@@ -121,116 +107,11 @@ class CustomerController extends Controller
             $customer->Title = $request->title;
             $customer->Customer_Group_idCustomer_Group = 1;
 
-            // Step 1: Fetch company and related branch info
-            $company = tableWithBranch('company')->first();
-            $branch_name = (string) ($company->branch ?? '');
-
-
-
-// Step 2: Get customer number template from request
-            $cus_number_template = $request->cus_number;
-
-
-// Step 3: Generate next customer ID
-            $total_customer_count = tableWithBranch('customer')->count() ?? 0;
-
-// Increment by 1
-            $next_customer_id = $total_customer_count + 1;
-
-// Format as 3-digit string (001, 002, etc.)
-            $formatted_customer_id = str_pad($next_customer_id, 3, '0', STR_PAD_LEFT);
-
-
-// Step 4: Start building new customer number from template
-            $new_type = $cus_number_template;
-
-// Step 5: Define static replacements
-            $replacements = [
-                '@Auto_Id@' => $formatted_customer_id,
-                '@Branch_No@' => $branch_name,
-                '@Day@' => date('d'),
-                '@Month@' => date('m'),
-                '@Year@' => date('Y'),
-            ];
-
-// Replace simple placeholders
-            foreach ($replacements as $placeholder => $value) {
-                if (Str::contains($new_type, $placeholder)) {
-                    $new_type = str_replace($placeholder, $value, $new_type);
-                }
-            }
-
-
-
-// Step 6: Handle dynamic placeholder: @Root@
-            if (Str::contains($new_type, '@Root@') && $request->root) {
-                $root_code = tableWithBranch('route')
-                    ->where('id_route', $request->root)
-                    ->value('root_code');
-
-                $new_type = str_replace('@Root@', $root_code ?? '', $new_type);
-            }
-
-// Step 7: Handle @CountMonthly@
-            if (Str::contains($new_type, '@CountMonthly@')) {
-                $monthly_count = tableWithBranch('customer')
-                    ->whereYear('created_at', now()->year)
-                    ->whereMonth('created_at', now()->month)
-                    ->count();
-
-                $monthly_count++;
-                $new_type = str_replace('@CountMonthly@', $monthly_count, $new_type);
-            }
-
-// Step 8: Handle @RootlyCount@
-            if (Str::contains($new_type, '@RootlyCount@') && $request->root) {
-                $rootly_count = tableWithBranch('customer')
-                    ->where('route_id', $request->root)
-                    ->count();
-
-                $rootly_count++;
-                $new_type = str_replace('@RootlyCount@', $rootly_count, $new_type);
-            }
-
-// Step 9: Update company with latest customer number (for future use)
-            updateWithBranch('company', 'id', $company->id, [
-                'customer_num_start_from' => $next_customer_id,
-            ]);
-
-// ❌ Step 10: BUG — this block replaces the first numeric part (e.g. '1') with the customer ID
-            $separator = $company->customer_seperate_from;
-
-            if (!empty($separator) &&
-                !Str::contains($cus_number_template, '@CountMonthly@') &&
-                !Str::contains($cus_number_template, '@RootlyCount@')) {
-
-                $parts = explode($separator, $new_type); // ['1', 'C000', '279']
-
-                // Replace ONLY the last numeric part
-                $lastIndex = count($parts) - 1;
-
-                if (is_numeric($parts[$lastIndex])) {
-                    $parts[$lastIndex] = $formatted_customer_id;
-                }
-
-                $new_cus_number = implode($separator, $parts);
-            } else {
-                $new_cus_number = $new_type;
-            }
-
-
 
 
 
 // Set final customer number with branch prefix
-            $customer->cus_number =  $new_cus_number;
-
-            $sms_cus_number =  $new_cus_number;
-
-
-
-
-
+            $customer->cus_number =  '-';
             $customer->First_Name = $request->f_name;
             $customer->Last_Name = $request->last_name;
             $customer->Email = $request->email;
@@ -317,7 +198,7 @@ class CustomerController extends Controller
                 $this->customerLogController->store($request);
                 // If the data is saved successfully, return a success response
 
-
+                customer_number($id);
 
                 $sms_template = tableWithBranch('sms_template')->where('type', '=', 'customer_registration')->where('status', '=', '1')->first();
                 if ($sms_template) {
@@ -325,7 +206,7 @@ class CustomerController extends Controller
                     $customer_table = tableWithBranch('customer')->where('idCustomer', '=', $id)->first();
 
                     $placeholders = [
-                        '@Member_No@' => $sms_cus_number,  // Example: Member number
+                        '@Member_No@' => $customer_table->cus_number,  // Example: Member number
                         '@Member_Name@' => $customer_table->First_Name.' '.$customer_table->Last_Name,  // Example: First and last name
                     ];
 
@@ -512,142 +393,9 @@ class CustomerController extends Controller
             $documentPath = Storage::disk('public')->putFile($directory, $file);
         }
 
-        // ---------- CUSTOMER NUMBER BUILDER (create/update) ----------
-        $existing = tableWithBranch('customer')
-            ->where('idCustomer', $request->id)
-            ->first();
-
-// Detect route change (for update flows)
-        $newRouteId   = $request->root;
-        $routeChanged = $existing && (string)$existing->route_id !== (string)$newRouteId;
-
-// Company + branch context
-        $company       = tableWithBranch('company')->first();
-        $separator     = (string)($company->customer_seperate_from ?? ''); // e.g. "/"
-        $companyTpl    = (string)($company->customer_format ?? '');
-
-// Branch details for @Branch_No@ / @Branch@
-        $branchId   = session('branch_id') ?? ($existing->branch_id ?? null);
-        $branchRec  = $branchId ? DB::table('branch')->where('branch_id', $branchId)->first() : null;
-        $branchName = (string)($branchRec->Name ?? $company->branch ?? '');
-        $branchCode = (string)(
-            $branchRec->Branch_No
-            ?? $branchRec->branch_code
-            ?? ($branchId ? str_pad((string)$branchId, 3, '0', STR_PAD_LEFT) : '')
-        );
-
-// Choose template: prefer request if it has any @...@ token, else company template
-        $reqTpl         = (string)($request->cus_number ?? '');
-        $hasAnyToken    = fn($s) => is_string($s) && preg_match('/@\w+@/', $s);
-        $templateToUse  = $hasAnyToken($reqTpl) ? $reqTpl : ($hasAnyToken($companyTpl) ? $companyTpl : '');
-
-// If you’re in UPDATE and route did NOT change -> keep number as-is
-        if ($existing && !$routeChanged) {
-            $finalCusNumber = (string)$existing->cus_number;
-        } else {
-            // We will build a number. If UPDATE and you want to **preserve** the current auto id,
-            // we’ll try to extract it from the existing number.
-            $preserveExistingAuto = (bool)$existing; // true for updates by default
-
-            // --- Counters / IDs ---
-            // Global next auto id (used for CREATE or if we can't preserve)
-            $total_customer_count   = tableWithBranch('customer')->count() ?? 0;
-            $next_customer_id       = $total_customer_count + 1;
-            $autoIdPaddedGlobal     = str_pad($next_customer_id, 3, '0', STR_PAD_LEFT);
-
-            // Try to pull the existing last numeric segment (based on separator) for updates
-            $autoIdFromExisting = null;
-            if ($preserveExistingAuto && $separator && $existing) {
-                $parts = explode($separator, (string)$existing->cus_number);
-                for ($i = count($parts) - 1; $i >= 0; $i--) {
-                    if (ctype_digit($parts[$i])) {
-                        $autoIdFromExisting = $parts[$i];
-                        break;
-                    }
-                }
-            }
-            $autoIdFinal = $autoIdFromExisting ?: $autoIdPaddedGlobal;
-
-            // Route code for @Root@
-            $routeCode = '';
-            if ($newRouteId) {
-                $routeRow = DB::table('route')->where('id_route', $newRouteId)->first();
-                $routeCode = (string)($routeRow->root_code ?? $routeRow->name ?? $newRouteId);
-            }
-
-            // Base string
-            $new_type = $templateToUse !== '' ? $templateToUse : (string)$reqTpl;
-
-            // --- Simple replacements ---
-            $replacements = [
-                '@Auto_Id@'    => $autoIdFinal,
-                '@Branch_No@'  => '00001',
-                '@Branch@'     => $branchName,
-                '@Day@'        => date('d'),
-                '@Month@'      => date('m'),
-                '@Year@'       => date('Y'),
-            ];
-            $new_type = strtr($new_type, $replacements);
-
-            // --- Dynamic: @Root@ ---
-            if (Str::contains($new_type, '@Root@') && $newRouteId) {
-                $new_type = str_replace('@Root@', $routeCode, $new_type);
-            }
-
-            // --- Dynamic: @CountMonthly@ ---
-            if (Str::contains($new_type, '@CountMonthly@')) {
-                $monthly_count = tableWithBranch('customer')
-                    ->whereYear('created_at', now()->year)
-                    ->whereMonth('created_at', now()->month)
-                    ->count();
-                $monthly_count++;
-                // pad to 3 digits if you want: str_pad($monthly_count, 3, '0', STR_PAD_LEFT)
-                $new_type = str_replace('@CountMonthly@', $monthly_count, $new_type);
-            }
-
-            // --- Dynamic: @RootlyCount@ ---
-            if (Str::contains($new_type, '@RootlyCount@') && $newRouteId) {
-                $rootly_count = tableWithBranch('customer')
-                    ->where('route_id', $newRouteId)
-                    ->count();
-                $rootly_count++;
-                // pad to 3 digits if you want: str_pad($rootly_count, 3, '0', STR_PAD_LEFT)
-                $new_type = str_replace('@RootlyCount@', $rootly_count, $new_type);
-            }
-
-            // --- If a separator is defined and NO monthly/rootly tokens were used,
-            // replace ONLY the **last numeric** part with the auto id (preserved or global) ---
-            if (!empty($separator)
-                && !Str::contains($templateToUse, '@CountMonthly@')
-                && !Str::contains($templateToUse, '@RootlyCount@')
-                && !Str::contains($templateToUse, '@Auto_Id@') // only apply if @Auto_Id@ not explicitly used
-            ) {
-                $parts = explode($separator, $new_type);
-                for ($i = count($parts) - 1; $i >= 0; $i--) {
-                    if (ctype_digit($parts[$i])) {
-                        $parts[$i] = $autoIdFinal; // replace last numeric segment only
-                        break;
-                    }
-                }
-                $new_cus_number = implode($separator, $parts);
-            } else {
-                $new_cus_number = $new_type;
-            }
-
-            // Optionally update company's last number pointer (only when we actually use a new global id)
-            if (!$existing || !$autoIdFromExisting) {
-                updateWithBranch('company', 'id', $company->id, [
-                    'customer_num_start_from' => $next_customer_id,
-                ]);
-            }
-
-            $finalCusNumber = $new_cus_number;
-        }
-
         // Assuming you have the request object available
         $data = [
             'title' => $request->title,
-            'cus_number' => $finalCusNumber,
             'First_Name' => $request->f_name,
             'Last_Name' => $request->last_name,
             'Email' => $request->email,
@@ -694,6 +442,8 @@ class CustomerController extends Controller
 // Use the new helper function to update the customer record
         updateWithBranch('customer', 'idCustomer', $request->id, $data);
 
+
+        customer_number($request->id);
 
         $request = new Request([
             'customer_id' =>  $request->id,

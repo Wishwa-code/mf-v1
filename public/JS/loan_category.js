@@ -144,6 +144,7 @@ const saveLoanCategory = (e) => {
     }else{
         saving_amount=0.00;
     }
+    let penalty_method = $("#penalty_method").val();
 
 
 
@@ -243,7 +244,8 @@ const saveLoanCategory = (e) => {
                             saving_account_amount_type:saving_account_amount_type,
                             saving_amount:saving_amount,
                             saving_payment:saving_payment,
-                            default_loan_duration_period:default_loan_duration_period
+                            default_loan_duration_period:default_loan_duration_period,
+                            penalty_method:penalty_method
                         },
                         success: function (data, textStatus, xhr) {
                             if (xhr.status === 200) {

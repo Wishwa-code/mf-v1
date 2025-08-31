@@ -1011,5 +1011,270 @@ class ReportController extends Controller
         ]);
     }
 
+    public function depletion(){
+        $branch = tableWithBranch('branch')->where('status','=','1')->get();
+        $product = tableWithBranch('loan_category')->where('status','=','1')->get();
+        $officer = tableWithBranch('user')->where('Status','=','1')->get();
+        $branch_access=session('branch_access');
+        return view('pages.Depletion',compact('branch','branch_access','product','officer'));
+    }
+
+
+    public function depletionData(\Illuminate\Http\Request $request)
+    {
+        // Filters ("" => null = All)
+        $productId   = $request->filled('product') ? $request->input('product') : null;      // loan_category id
+        $collectorId = $request->filled('loan_officer') ? $request->input('loan_officer') : null;
+
+        // Dates (defaults to current month)
+        $startInput = $request->input('from');
+        $endInput   = $request->input('to');
+        $start  = $startInput ? \Carbon\Carbon::parse($startInput)->startOfDay() : now()->startOfMonth()->startOfDay();
+        $end    = $endInput   ? \Carbon\Carbon::parse($endInput)->endOfDay()   : now()->endOfMonth()->endOfDay();
+
+        $today = now()->toDateString();                 // maturity cutoff for OC
+        $customerIdCol = 'Customer_idCustomer';         // FK column in customer_loan (adjust if different)
+
+        // 1) Beginning stock per loan (latest log before $start)
+        $beginningOne = DB::query()->fromSub(function ($q) use ($start) {
+            $q->from('loan_log as ll')
+                ->selectRaw("
+              ll.Loan_ID,
+              ll.Capital_Balance,
+              ll.Date_Time,
+              ll.Loan_Log_ID,
+              ROW_NUMBER() OVER (
+                  PARTITION BY ll.Loan_ID
+                  ORDER BY ll.Date_Time DESC, ll.Loan_Log_ID DESC
+              ) rn
+          ")
+                ->where('ll.Date_Time', '<', $start);
+        }, 'x')->where('rn', 1);
+
+        // 2) Investment sum per loan in [start, end]
+        $investment = DB::query()->fromSub(function ($q) use ($start, $end) {
+            $q->from('customer_loan as cl')
+                ->selectRaw('cl.idCustomer_Loan as Loan_ID, SUM(cl.Amount) as Investment_Sum')
+                ->whereBetween('cl.Date_Time', [$start, $end])
+                ->groupBy('cl.idCustomer_Loan');
+        }, 'inv');
+
+        // 3) Depletion (capital payments) per loan in [start, end]
+        $depletion = DB::query()->fromSub(function ($q) use ($start, $end) {
+            $q->from('loan_log as ll')
+                ->selectRaw('ll.Loan_ID, SUM(ll.Capital_Payment) as Depletion_Sum')
+                ->whereBetween('ll.Date_Time', [$start, $end])
+                ->where('ll.Type', '=', 'Customer Payment')
+                ->groupBy('ll.Loan_ID');
+        }, 'dep');
+
+        // 4) Collections (customer_payments) per collector user in [start, end]
+        $collections = DB::query()->fromSub(function ($q) use ($start, $end) {
+            $q->from('customer_payments as cp')
+                ->whereBetween('cp.Date', [$start->toDateString(), $end->toDateString()])
+                ->selectRaw('cp.User_idUser as collector_user_id, SUM(cp.Amount) as Collection_Sum')
+                ->groupBy('cp.User_idUser');
+        }, 'col');
+
+        // A) Installments sum by assigned collector within [start, end]
+        $installmentSum = DB::query()->fromSub(function ($q) use ($start, $end) {
+            $q->from('installments as ins')
+                ->join('customer_loan as cl', 'cl.idCustomer_Loan', '=', 'ins.Customer_Loan_idCustomer_Loan')
+                ->whereBetween('ins.Installment_Date', [$start->toDateString(), $end->toDateString()])
+                ->selectRaw('cl.collector_id as collector_id, SUM(ins.Installment_Amount) as Installment_Sum')
+                ->groupBy('cl.collector_id');
+        }, 'insx');
+
+        // B) Payments sum by assigned collector within [start, end]
+        $paymentsAssigned = DB::query()->fromSub(function ($q) use ($start, $end) {
+            $q->from('customer_payments as cp')
+                ->join('customer_loan as cl', 'cl.idCustomer_Loan', '=', 'cp.Customer_Loan_idCustomer_Loan')
+                ->whereBetween('cp.Date', [$start->toDateString(), $end->toDateString()])
+                ->selectRaw('cl.collector_id as collector_id, SUM(cp.Amount) as Pay_Sum')
+                ->groupBy('cl.collector_id');
+        }, 'payx');
+
+        // TOTAL LOANS per collector (optional product filter)
+        $collectorLoanTotals = DB::query()->fromSub(function ($q) use ($productId) {
+            $q->from('customer_loan as cl')
+                ->selectRaw('cl.collector_id as collector_id,
+                       COUNT(*) as Loans_Count_Total,
+                       SUM(cl.Amount) as Loans_Amount_Total')
+                ->groupBy('cl.collector_id');
+        }, 'lt');
+
+        // PENALTY ARREARS per collector (date range over loan_log)
+        $penaltyArrears = DB::query()->fromSub(function ($q) use ($start, $end) {
+            $q->from('loan_log as ll')
+                ->join('customer_loan as cl', 'cl.idCustomer_Loan', '=', 'll.Loan_ID')
+                ->whereBetween('ll.Date_Time', [$start, $end])
+                ->selectRaw('cl.collector_id as collector_id, SUM(ll.Panelty_Payment) as Penalty_Sum')
+                ->groupBy('cl.collector_id');
+        }, 'pnlx');
+
+        // OC loans per collector (maturity < today)
+        $ocLoans = DB::query()->fromSub(function ($q) {
+            $q->from('installments as ins')
+                ->selectRaw('ins.Customer_Loan_idCustomer_Loan as Loan_ID, MAX(ins.Installment_Date) as maturity_date')
+                ->groupBy('ins.Customer_Loan_idCustomer_Loan');
+        }, 'm')
+            ->join('customer_loan as cl', 'cl.idCustomer_Loan', '=', 'm.Loan_ID')
+            ->where('m.maturity_date', '<', $today)
+            ->selectRaw('cl.collector_id as collector_id, COUNT(*) as oc_count')
+            ->groupBy('cl.collector_id');
+
+        // TOTAL CLIENTS per collector (optional product filter)
+        $totalClients = DB::query()->fromSub(function ($q) use ($productId, $customerIdCol) {
+            $q->from('customer_loan as cl')
+                ->when($productId, fn($qq) => $qq->where('cl.Loan_Category_idLoan_Category', $productId))
+                ->selectRaw("cl.collector_id as collector_id, COUNT(DISTINCT cl.`$customerIdCol`) as Clients_Total")
+                ->groupBy('cl.collector_id');
+        }, 'ct');
+
+        // OC CLIENTS per collector (maturity < today)
+        $ocClients = DB::query()->fromSub(function ($q) {
+            $q->from('installments as ins')
+                ->selectRaw('ins.Customer_Loan_idCustomer_Loan as Loan_ID, MAX(ins.Installment_Date) as maturity_date')
+                ->groupBy('ins.Customer_Loan_idCustomer_Loan');
+        }, 'm')
+            ->join('customer_loan as cl', 'cl.idCustomer_Loan', '=', 'm.Loan_ID')
+            ->where('m.maturity_date', '<', $today)
+            ->selectRaw("cl.collector_id as collector_id, COUNT(DISTINCT cl.`$customerIdCol`) as OC_Clients")
+            ->groupBy('cl.collector_id');
+
+        /*
+         * NEW: Collector ↔ Product loan counts, folded into one row per collector via GROUP_CONCAT.
+         * (No date/product filter so you see the full distribution per collector.)
+         */
+        $collectorProductCounts = DB::query()->fromSub(function ($q) {
+            $q->from('customer_loan as cl')
+                ->selectRaw('cl.collector_id,
+                       cl.Loan_Category_idLoan_Category as product_id,
+                       COUNT(*) as cnt')
+                ->groupBy('cl.collector_id', 'cl.Loan_Category_idLoan_Category');
+        }, 'pp')
+            ->selectRaw('pp.collector_id,
+                 GROUP_CONCAT(CONCAT(pp.product_id, ":", pp.cnt)
+                              ORDER BY pp.product_id SEPARATOR ",") as product_kv')
+            ->groupBy('pp.collector_id');
+
+        // ---------- Main rollup per collector ----------
+        $collectorRows = DB::table('customer_loan as cl')
+            ->join('loan_category as lc', 'lc.idLoan_Category', '=', 'cl.Loan_Category_idLoan_Category')
+            ->leftJoin('user as u', 'u.id', '=', 'cl.collector_id')
+
+            ->leftJoinSub($beginningOne, 'bs', fn($j) => $j->on('bs.Loan_ID', '=', 'cl.idCustomer_Loan'))
+            ->leftJoinSub($investment,   'inv',   fn($j) => $j->on('inv.Loan_ID', '=', 'cl.idCustomer_Loan'))
+            ->leftJoinSub($depletion,    'dep',   fn($j) => $j->on('dep.Loan_ID', '=', 'cl.idCustomer_Loan'))
+            ->leftJoinSub($collections,  'col',   fn($j) => $j->on('col.collector_user_id', '=', 'u.id'))
+            ->leftJoinSub($installmentSum,'insx', fn($j) => $j->on('insx.collector_id', '=', 'u.id'))
+            ->leftJoinSub($paymentsAssigned,'payx',fn($j) => $j->on('payx.collector_id', '=', 'u.id'))
+            ->leftJoinSub($collectorLoanTotals,'lt', fn($j) => $j->on('lt.collector_id', '=', 'u.id'))
+            ->leftJoinSub($penaltyArrears, 'pnlx', fn($j) => $j->on('pnlx.collector_id', '=', 'u.id'))
+            ->leftJoinSub($ocLoans, 'ocx', fn($j) => $j->on('ocx.collector_id', '=', 'u.id'))
+            ->leftJoinSub($totalClients, 'ct', fn($j) => $j->on('ct.collector_id', '=', 'u.id'))
+            ->leftJoinSub($ocClients, 'occt', fn($j) => $j->on('occt.collector_id', '=', 'u.id'))
+
+            // NEW: join collector ↔ product counts
+            ->leftJoinSub($collectorProductCounts, 'pc', fn($j) => $j->on('pc.collector_id', '=', 'u.id'))
+
+            // optional filters
+            ->when($productId,   fn($q) => $q->where('lc.idLoan_Category', $productId))
+            ->when($collectorId, fn($q) => $q->where('cl.collector_id', $collectorId))
+
+            // group by collector
+            ->groupBy('u.id', 'u.Full_Name')
+
+            ->selectRaw('
+            COALESCE(u.id, 0)                      as collector_id,
+            COALESCE(u.Full_Name, "—")             as collector,
+            COUNT(DISTINCT cl.idCustomer_Loan)     as loan_count,
+
+            SUM(COALESCE(bs.Capital_Balance, 0))   as beginning_total,
+            SUM(COALESCE(inv.Investment_Sum, 0))   as investment_total,
+            SUM(COALESCE(dep.Depletion_Sum, 0))    as depletion_total,
+
+            COALESCE(MAX(col.Collection_Sum), 0)   as collection_total,
+            COALESCE(MAX(insx.Installment_Sum), 0) as installment_total,
+            COALESCE(MAX(payx.Pay_Sum), 0)         as payment_total_assigned,
+
+            GREATEST(0,
+                COALESCE(MAX(insx.Installment_Sum), 0) - COALESCE(MAX(payx.Pay_Sum), 0)
+            ) as arrears_total,
+
+            COALESCE(MAX(lt.Loans_Count_Total), 0)  as total_loans,
+            COALESCE(MAX(lt.Loans_Amount_Total), 0) as total_loans_amount,
+
+            COALESCE(MAX(pnlx.Penalty_Sum), 0)      as penalty_arrears_total,
+            COALESCE(MAX(ocx.oc_count), 0)          as oc_loan_count,
+
+            COALESCE(MAX(ct.Clients_Total), 0)      as total_clients,
+            COALESCE(MAX(occt.OC_Clients), 0)       as oc_clients,
+
+            /* NEW: flattened product counts like "12:34,15:7" */
+            COALESCE(MAX(pc.product_kv), "")        as product_kv
+        ')
+            ->orderBy('collector')
+            ->get();
+
+        // Shape response
+        $data = collect($collectorRows)->map(function($r) {
+            $begin   = (float) ($r->beginning_total ?? 0);
+            $invest  = (float) ($r->investment_total ?? 0);
+            $deplete = (float) ($r->depletion_total ?? 0);
+
+            $endStock    = $begin + $invest - $deplete;
+            $portfolio   = $endStock;
+            $arrears     = (float) ($r->arrears_total ?? 0);
+            $debtorRatio = $endStock > 0 ? ($arrears / $endStock) * 100 : 0;
+
+            $totalClients  = (int) ($r->total_clients ?? 0);
+            $ocClients     = (int) ($r->oc_clients ?? 0);
+            $activeClients = max(0, $totalClients - $ocClients);
+
+            // Parse pc.product_kv → { product_id: count, ... }
+            $perProduct = [];
+            $kv = (string)($r->product_kv ?? '');
+            if ($kv !== '') {
+                foreach (explode(',', $kv) as $pair) {
+                    [$pid, $cnt] = array_pad(explode(':', $pair, 2), 2, null);
+                    if ($pid !== null && $cnt !== null) {
+                        $perProduct[(string)(int)$pid] = (int)$cnt; // string keys play nice in JSON/JS
+                    }
+                }
+            }
+
+            return [
+                'Loan_Officer'               => $r->collector ?? '—',
+                'Beginning_Stock'            => round($begin, 2),
+                'Current_End_Stock'          => round($endStock, 2),
+                'Investment'                 => round($invest, 2),
+                'Depletion'                  => round($deplete, 2),
+                'Collection'                 => round((float) ($r->collection_total ?? 0), 2),
+                'Arrears'                    => round($arrears, 2),
+                'Portfolio'                  => round($portfolio, 2),
+                'Debtor_Ratio'               => round($debtorRatio, 2),
+                'Penalty_Arrears'            => round((float) ($r->penalty_arrears_total ?? 0), 2),
+                'Total_Loans'                => (int)   ($r->total_loans ?? 0),
+                'OC_Loans'                   => (int)   ($r->oc_loan_count ?? 0),
+                'Total_Clients'              => $totalClients,
+                'OC_Clients'                 => $ocClients,
+                'Active_Clients'             => $activeClients,
+                'Total_Outstanding_Balance'  => round($endStock, 2),
+
+                // per-collector product counts map
+                'product_counts'             => (object)$perProduct,
+            ];
+        });
+
+        return response()->json(['data' => $data], 200);
+    }
+
+
+
+
+
+
+
 
 }
