@@ -308,6 +308,19 @@
                             <small class="text-muted">Controls the default ordering of loans in lists and dropdowns.</small>
                         </div>
 
+                        <hr>
+                        <!-- Maximum Allowed Loans -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Maximum Allowed Loans</label>
+                            <div class="d-flex gap-2">
+                                <input type="number" id="max_allowed_loans" class="form-control" min="1" max="50" value="3" style="max-width: 300px;">
+                                <button id="btnUpdateMaxLoans" class="btn btn-primary">
+                                    <i class="fa-solid fa-floppy-disk me-1"></i> Update
+                                </button>
+                            </div>
+                            <small class="text-muted">Maximum number of loans a customer can have at once (pending + current).</small>
+                        </div>
+
 
                     </div>
                 </div>
@@ -358,6 +371,16 @@
                 e.preventDefault();
                 const value = $('#loan_order').val(); // 'create_date' | 'loan_number' | 'issue_date'
                 save_setting('loan_order', value);
+            });
+
+            $('#btnUpdateMaxLoans').on('click', function (e) {
+                e.preventDefault();
+                const value = $('#max_allowed_loans').val();
+                if (!value || value < 1 || value > 50) {
+                    Swal.fire("Warning", "Max allowed loans must be between 1 and 50.", "warning");
+                    return;
+                }
+                save_setting('max_allowed_loans', value);
             });
 
 
@@ -545,6 +568,11 @@
 // NEW: Loan Number Order
                     if (items.loan_order) {
                         $('#loan_order').val(items.loan_order); // 'create_date' | 'loan_number' | 'issue_date'
+                    }
+
+// NEW: Max Allowed Loans
+                    if (items.max_allowed_loans) {
+                        $('#max_allowed_loans').val(items.max_allowed_loans);
                     }
 
                 },

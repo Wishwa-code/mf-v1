@@ -302,7 +302,7 @@ class CapitalBalanceController extends Controller
     // GET /settings/all
     public function all()
     {
-        $keys = ['payment_member_name','loan_disbursement_policy','payment_backdate','loan_order'];
+        $keys = ['payment_member_name','loan_disbursement_policy','payment_backdate','loan_order','max_allowed_loans'];
 
         $rows = DB::table($this->table)
             ->whereIn('key', $keys)
@@ -316,7 +316,7 @@ class CapitalBalanceController extends Controller
     public function upsert(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'key'   => ['required', 'in:payment_member_name,loan_disbursement_policy,payment_backdate,loan_order'],
+            'key'   => ['required', 'in:payment_member_name,loan_disbursement_policy,payment_backdate,loan_order,max_allowed_loans'],
             'value' => [
                 'required',
                 function ($attribute, $value, $fail) use ($request) {
@@ -338,6 +338,11 @@ class CapitalBalanceController extends Controller
                     if ($request->key === 'loan_order' &&
                         !in_array($value, ['create_date', 'loan_number', 'issue_date'])) {
                         $fail('Invalid value for loan_order.');
+                    }
+
+                    if ($request->key === 'max_allowed_loans' &&
+                        (!is_numeric($value) || $value < 1 || $value > 50)) {
+                        $fail('Max allowed loans must be between 1 and 50.');
                     }
                 },
             ],

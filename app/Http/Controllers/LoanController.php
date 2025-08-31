@@ -93,6 +93,18 @@ class LoanController extends Controller
         $cus_loan_count=tableWithBranch('customer_loan')
             ->where('Customer_idCustomer','=',$customer_id)
             ->count();
+
+        // Check max allowed loans limit
+        $maxAllowedLoans = DB::table('app_settings')->where('key', 'max_allowed_loans')->value('value') ?? 5;
+        $currentActiveLoans = tableWithBranch('customer_loan')
+            ->where('Customer_idCustomer', $customer_id)
+            ->whereIn('Status', ['0', '-1']) // Current loans (0) + Pending loans (-1)
+            ->count();
+
+        if ($currentActiveLoans >= $maxAllowedLoans) {
+            return response()->json(['message' => "Customer already has maximum allowed loans ({$maxAllowedLoans}). Current active loans: {$currentActiveLoans}"], 422);
+        }
+
         if ($type_loan_number==""){
             if ($loan_num_type === "Customize") {
                 $branch_no_txt=$branch_no . '/';
