@@ -351,9 +351,11 @@ class ReportController extends Controller
     }
 
     public function viewexpenses(){
+        // Show only Expense type + show null categorries too
         $expenses = tableWithBranch('expences','expences')
             ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'expences.category_id')
-            ->where('company_bank_accounts.Bank_Type', 'Expenses')
+            ->where('expences.type', 'Expense')
+            ->select('expences.*', 'company_bank_accounts.Bank_Name')
             ->get();
         return view('pages.ViewExpenses', compact('expenses'));
     }
@@ -372,10 +374,13 @@ class ReportController extends Controller
             ->where('id', $id)
             ->where('branch_id', session('branch_id'))
             ->delete();
+        // Reload the list with the same logic as viewexpenses()
         $expenses = DB::table('expences')
-            ->join('expences_category', 'expences_category.id', '=', 'expences.category_id')
-            ->where('type', 'Expense')
+            ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'expences.category_id')
+            ->where('company_bank_accounts.acc_type_group', 'Expenses')
+            ->where('expences.type', 'Expense')
             ->where('expences.branch_id', session('branch_id'))
+            ->select('expences.*', 'company_bank_accounts.Bank_Name')
             ->get();
         return view('pages.ViewExpenses', compact('expenses'));
     }
