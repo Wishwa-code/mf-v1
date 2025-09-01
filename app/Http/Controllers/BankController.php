@@ -240,7 +240,10 @@ class BankController extends Controller
             ->join('company_bank_accounts', 'Cheque_payment.bank_account_company', '=', 'company_bank_accounts.Idbank')
             ->join('customer_loan', 'Cheque_payment.loan_id', '=', 'customer_loan.idCustomer_Loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
-            ->leftJoin('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category');
+            ->leftJoin('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category')
+            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter');
 
         if ($request->has('date')) {
             $query->whereDate('Cheque_payment.date', $request->date);
@@ -268,21 +271,28 @@ class BankController extends Controller
             $query->where('Cheque_payment.chq_number', 'LIKE', '%'.$request->chq_number.'%');
         }
 
+        if ($request->has('center_id') && !empty($request->center_id)) {
+            $query->where('center.idCenter', $request->center_id);
+        }
+
         $chq = $query->select(
                 'Cheque_payment.*',
                 'company_bank_accounts.Bank_Name',
                 'company_bank_accounts.Account_No',
                 'customer_loan.Loan_No',
                 'customer.cus_number',
-                'loan_category.Name as product_name'
+                'loan_category.Name as product_name',
+                'center.No as center_no',
+                'center.Name as center_name'
             )
             ->orderBy('Cheque_payment.date', 'desc')->get();
 
         // options for dropdowns
         $loan_categories = tableWithBranch('loan_category')->get();
         $customers = tableWithBranch('customer')->select('idCustomer', 'First_Name', 'Last_Name', 'cus_number')->get();
+        $centers = tableWithBranch('center')->select('idCenter', 'No', 'Name')->get();
 
-        return view('pages.ChqDetails', compact('chq','loan_categories','customers'));
+        return view('pages.ChqDetails', compact('chq','loan_categories','customers','centers'));
     }
 
     public function chq_process(string $id){

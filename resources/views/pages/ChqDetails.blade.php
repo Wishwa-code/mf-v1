@@ -161,6 +161,19 @@
                             </div>
                             <div class="col-lg-3">
                                 <div class="mb-3">
+                                    <label for="center_id" class="form-label">Center</label>
+                                    <select class="form-control select2" id="center_id">
+                                        <option value="">All</option>
+                                        @foreach($centers as $center)
+                                            <option value="{{ $center->idCenter }}" {{ request('center_id') == $center->idCenter ? 'selected' : '' }}>
+                                                {{ $center->No }} - {{ $center->Name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="mb-3">
                                     <button type="button" class="btn btn-danger" onclick="applyFilters()"><i class="bi bi-search"></i> </button>
                                 </div>
                             </div>
@@ -480,6 +493,7 @@
             const loanNumber = document.getElementById('loan_number').value;
             const customerId = document.getElementById('customer_id').value;
             const chqNumber = document.getElementById('chq_number').value;
+            const centerId = document.getElementById('center_id').value;
             
             // make request 
             let queryParams = new URLSearchParams();
@@ -506,6 +520,10 @@
             
             if (chqNumber) {
                 queryParams.append('chq_number', chqNumber);
+            }
+            
+            if (centerId) {
+                queryParams.append('center_id', centerId);
             }
             
             // Validate date range
