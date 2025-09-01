@@ -814,6 +814,13 @@ function save_loan(){
                             Swal.fire("Error!", "Failed to save data!", "error");
                         }
                     },
+                    error: function(xhr, status, error) {
+                        if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.message) {
+                            Swal.fire("Error!", xhr.responseJSON.message, "error");
+                        } else {
+                            Swal.fire("Error!", "Failed to save data!", "error");
+                        }
+                    },
                 });
             }
         });
