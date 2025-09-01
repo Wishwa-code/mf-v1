@@ -396,6 +396,11 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
+                        @php
+                            // Make sure we always have a Collection (even if controller sent an array or null)
+                            $grouped_loans = collect($grouped_loans ?? []);
+                            $center = collect($center ?? []);
+                        @endphp
                         <div class="row">
                             <form action="{{ route('transaction.dailyreport') }}" method="GET">
                                 @csrf
@@ -412,6 +417,7 @@
                                         </select>
                                     </div>
                                 </div>
+
 
                                 <div class="col-lg-3">
                                     <label for="group_filter" class="form-label">Group</label>
@@ -528,10 +534,10 @@
     </div> <!-- end container-fluid -->
     <div class="print-footer">
         <div class="left">
-            Company: Asipiya Holdings | Center No: {{ $center_no }} | Center Name: {{ $center_name }}
+            Company: Asipiya Holdings | Center No: {{ $center_no ?? '-' }} | Center Name: {{ $center_name ?? '-'  }}
         </div>
         <div class="right">
-            Printed by: {{ $printedBy }} on {{ $printedAt }} | Page <span class="page-number"></span>
+            Printed by: {{ $printedBy ?? '-' }} on {{ $printedAt ?? '-' }} | Page <span class="page-number"></span>
         </div>
     </div>
 
@@ -723,7 +729,7 @@
 
             const left = document.createElement('div');
             left.className = 'left';
-            left.innerHTML = "Company: Asipiya Holdings | Center No: {{ $center_no }} | Center Name: {{ $center_name }}";
+            left.innerHTML = "Company: Asipiya Holdings | Center No: {{ $center_no ?? '-' }} | Center Name: {{ $center_name ?? '-' }}";
 
             const right = document.createElement('div');
             right.className = 'right';
