@@ -370,10 +370,26 @@ class ReportController extends Controller
     }
 
     public function deleteexpenses(string $id){
-        DB::table('expences')
-            ->where('id', $id)
-            ->where('branch_id', session('branch_id'))
-            ->delete();
+
+
+        $last_expenses=tableWithBranch('expences')->where('id','=',$id)->first();
+
+        if ($last_expenses){
+            $bank_id=tableWithBranch('company_bank_accounts')
+                ->where('acc_type_group','=','Expenses')
+                ->where('Idbank','=',$last_expenses->category_id)
+                ->first();
+            $reason='Delete Expense : ('.$last_expenses->reason.')';
+            $this->bankLogController->index($last_expenses->bank_id,"Expenses",$reason,"-","debit",$last_expenses->amount,$bank_id->Idbank);
+            $this->bankLogController->index($bank_id->Idbank,"Expenses",$reason,"-","credit",$last_expenses->amount,$last_expenses->bank_id);
+
+            DB::table('expences')
+                ->where('id', $id)
+                ->where('branch_id', session('branch_id'))
+                ->delete();
+        }
+
+
         // Reload the list with the same logic as viewexpenses()
         $expenses = DB::table('expences')
             ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'expences.category_id')
@@ -390,10 +406,10 @@ class ReportController extends Controller
             ->where('id', $id)
             ->where('branch_id', session('branch_id'))
             ->delete();
-        $expenses = DB::table('expences')
-            ->join('income_category', 'income_category.id', '=', 'expences.category_id')
-            ->where('type', 'Income')
-            ->where('expences.branch_id', session('branch_id'))
+        $expenses = tableWithBranch('expences','expences')
+            ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'expences.category_id')
+            ->where('expences.type', 'Expense')
+            ->select('expences.*', 'company_bank_accounts.Bank_Name')
             ->get();
         return view('pages.ViewIncome', compact('expenses'));
     }

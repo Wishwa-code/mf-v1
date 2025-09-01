@@ -44,53 +44,58 @@
         <div class="row">
             <div class="col-12">
                 <div class="card"><div class="card-body">
-                        <form id="filterForm">
+                        <form id="filterForm" class="p-3 border rounded shadow-sm bg-white">
                             @csrf
-                            <div class="row g-2">
-                                <div class="col-lg-3">
-                                    <div class="mb-2">
-                                        <label class="form-label">From</label>
-                                        <input type="date" id="from" name="from" class="form-control" value="{{ now()->startOfMonth()->toDateString() }}">
-                                    </div>
+                            <div class="row g-3 align-items-end">
+                                <!-- From Date -->
+                                <div class="col-lg-3 col-md-6">
+                                    <label for="from" class="form-label fw-bold">From</label>
+                                    <input type="date" id="from" name="from" class="form-control"
+                                           value="{{ now()->startOfMonth()->toDateString() }}">
                                 </div>
-                                <div class="col-lg-3">
-                                    <div class="mb-2">
-                                        <label class="form-label">To</label>
-                                        <input type="date" id="to" name="to" class="form-control" value="{{ now()->endOfMonth()->toDateString() }}">
-                                    </div>
+
+                                <!-- To Date -->
+                                <div class="col-lg-3 col-md-6">
+                                    <label for="to" class="form-label fw-bold">To</label>
+                                    <input type="date" id="to" name="to" class="form-control"
+                                           value="{{ now()->endOfMonth()->toDateString() }}">
                                 </div>
-                                <div class="col-lg-3">
-                                    <div class="mb-2">
-                                        <label class="form-label">Product</label>
-                                        <select class="form-control select2" id="product" name="product" data-allow-clear="1">
-                                            <option value="">All Products</option>
-                                            @foreach($product as $item)
-                                                <option value="{{ $item->idLoan_Category }}">
-                                                    {{ $item->Product_code }} - {{ $item->Name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+
+                                <!-- Product (hidden) -->
+                                <div class="col-lg-3 col-md-6" hidden>
+                                    <label for="product" class="form-label fw-bold">Product</label>
+                                    <select class="form-control select2" id="product" name="product" data-allow-clear="1">
+                                        <option value="" selected>All Products</option>
+                                    </select>
                                 </div>
-                                <div class="col-lg-3">
-                                    <div class="mb-2">
-                                        <label class="form-label">Loan Officer</label>
-                                        <select class="form-control select2" id="loan_officer" name="loan_officer" data-allow-clear="1">
-                                            <option value="">All Officers</option>
-                                            @foreach($officer as $item)
-                                                <option value="{{ $item->id }}">{{ $item->Full_Name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+
+                                <!-- Loan Officer -->
+                                <div class="col-lg-3 col-md-6">
+                                    <label for="loan_officer" class="form-label fw-bold">Loan Officer</label>
+                                    <select class="form-control select2" id="loan_officer" name="loan_officer" data-allow-clear="1">
+                                        <option value="">All Officers</option>
+                                        @foreach($officer as $item)
+                                            <option value="{{ $item->id }}">{{ $item->Full_Name }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
-                                <div class="col-lg-3 d-flex align-items-end">
-                                    <button type="submit" class="btn btn-danger w-100">Search</button>
+
+                                <!-- Search Button -->
+                                <div class="col-lg-3 col-md-6">
+                                    <button type="submit" class="btn btn-danger w-100">
+                                        <i class="bi bi-search me-1"></i> Search
+                                    </button>
                                 </div>
-                                <div class="col-lg-3 d-flex align-items-end">
-                                    <button id="exportExcel" type="button" class="btn btn-success w-100">Export to Excel (CSV)</button>
+
+                                <!-- Export Button -->
+                                <div class="col-lg-3 col-md-6">
+                                    <button id="exportExcel" type="button" class="btn btn-success w-100">
+                                        <i class="bi bi-file-earmark-excel me-1"></i> Export to Excel (CSV)
+                                    </button>
                                 </div>
                             </div>
                         </form>
+
 
                         <hr>
 
@@ -274,17 +279,17 @@
             cells.eq(2).html(fmt(totals.Current_End_Stock));
             cells.eq(3).html(fmt(totals.Investment));
             cells.eq(4).html(fmt(totals.Depletion));
-            cells.eq(6).html(fmt(totals.Collection));
-            cells.eq(7).html(fmt(totals.Arrears));
-            cells.eq(8).html(fmt(totals.Portfolio));
-            cells.eq(9).html(fmt(debtorRatioTotal) + '%');
-            cells.eq(10).html(fmt(totals.Penalty_Arrears));
-            cells.eq(11).html(fmt(totals.Total_Loans, 0));
-            cells.eq(12).html(fmt(totals.OC_Loans, 0));
-            cells.eq(13).html(fmt(totals.Total_Clients, 0));
-            cells.eq(14).html(fmt(totals.OC_Clients, 0));
-            cells.eq(15).html(fmt(totals.Active_Clients, 0));
-            cells.eq(16).html(fmt(totals.Total_Outstanding_Balance));
+            cells.eq(5).html(fmt(totals.Collection));
+            cells.eq(6).html(fmt(totals.Arrears));
+            cells.eq(7).html(fmt(totals.Portfolio));
+            cells.eq(8).html(fmt(debtorRatioTotal) + '%');
+            cells.eq(9).html(fmt(totals.Penalty_Arrears));
+            cells.eq(10).html(fmt(totals.Total_Loans, 0));
+            cells.eq(11).html(fmt(totals.OC_Loans, 0));
+            cells.eq(12).html(fmt(totals.Total_Clients, 0));
+            cells.eq(13).html(fmt(totals.OC_Clients, 0));
+            cells.eq(14).html(fmt(totals.Active_Clients, 0));
+            cells.eq(15).html(fmt(totals.Total_Outstanding_Balance));
 
             var startIdx = 16; // first product footer cell
             PRODUCT_IDS.forEach(function(pid, i){
