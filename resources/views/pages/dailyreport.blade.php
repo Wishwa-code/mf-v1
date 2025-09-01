@@ -420,6 +420,16 @@
 
 
                                 <div class="col-lg-3">
+                                    <label for="product_filter" class="form-label">Product</label>
+                                    <select class="form-control select2" id="product_filter" name="product_filter">
+                                        <option value="">All</option>
+                                        @foreach(($products ?? []) as $product)
+                                            <option value="{{ $product }}" {{ ($product_filter ?? '') == $product ? 'selected' : '' }}>{{ $product }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="col-lg-3">
                                     <label for="group_filter" class="form-label">Group</label>
                                     <select class="form-control select2" id="group_filter" name="group_filter">
                                         <option value="">All</option>
