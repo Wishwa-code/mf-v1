@@ -1058,7 +1058,7 @@ class ReportController extends Controller
 
         // 1) Beginning stock per loan (latest log before $start)
         $beginningOne = DB::query()->fromSub(function ($q) use ($start) {
-            $q->from('loan_log as ll')
+            $q->from('Loan_Log as ll')  
                 ->selectRaw("
               ll.Loan_ID,
               ll.Capital_Balance,
@@ -1082,7 +1082,7 @@ class ReportController extends Controller
 
         // 3) Depletion (capital payments) per loan in [start, end]
         $depletion = DB::query()->fromSub(function ($q) use ($start, $end) {
-            $q->from('loan_log as ll')
+            $q->from('Loan_Log as ll')
                 ->selectRaw('ll.Loan_ID, SUM(ll.Capital_Payment) as Depletion_Sum')
                 ->whereBetween('ll.Date_Time', [$start, $end])
                 ->where('ll.Type', '=', 'Customer Payment')
@@ -1124,9 +1124,9 @@ class ReportController extends Controller
                 ->groupBy('cl.collector_id');
         }, 'lt');
 
-        // PENALTY ARREARS per collector (date range over loan_log)
+        // PENALTY ARREARS per collector (date range over Loan_Log)
         $penaltyArrears = DB::query()->fromSub(function ($q) use ($start, $end) {
-            $q->from('loan_log as ll')
+            $q->from('Loan_Log as ll')
                 ->join('customer_loan as cl', 'cl.idCustomer_Loan', '=', 'll.Loan_ID')
                 ->whereBetween('ll.Date_Time', [$start, $end])
                 ->selectRaw('cl.collector_id as collector_id, SUM(ll.Panelty_Payment) as Penalty_Sum')

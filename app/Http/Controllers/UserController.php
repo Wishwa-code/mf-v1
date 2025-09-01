@@ -328,7 +328,7 @@ class UserController extends Controller
         }
 
 
-        $CapitalBalanceController->panelty_remove();
+//        $CapitalBalanceController->panelty_remove();
 
 
         // Call to the penalty creation function
