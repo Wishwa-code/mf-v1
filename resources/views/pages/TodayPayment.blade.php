@@ -1261,32 +1261,44 @@
 
 
     <script>
-        /*** Build Payment Type <select> from APP_SETTINGS + user role ***/
+        /*** Build Payment Type <select>
+         *  - If isCollector==1 => use APP_SETTINGS.collector_txn_modes
+         *  - Else               => show ALL options
+         ***/
         function buildPaymentTypeSelect(selectId, isCollector, isCashier, onChangeFnName) {
             const sel = document.getElementById(selectId);
             if (!sel) return;
 
-            const modesRaw = window.APP_SETTINGS?.collector_txn_modes || "[]";
-            let modes = [];
-            try {
-                const parsed = JSON.parse(modesRaw);
-                modes = Array.isArray(parsed) ? parsed : [];
-            } catch (e) {
-                modes = String(modesRaw).split(',').map(s => s.trim()).filter(Boolean);
-            }
+            const ALL = ["Cash", "Bank Deposit", "Cheque", "Collector", "Cashier"];
 
-            // Allow list
             let allowed = [];
-            if (modes.includes("cash_bank"))    allowed.push("Cash");
-            if (modes.includes("bank_deposit")) allowed.push("Bank Deposit");
-            if (modes.includes("cheques"))      allowed.push("Cheque");
-            if (modes.includes("collector_account") && Number(isCollector) === 1) {
-                allowed.push("Collector");
+
+            if (Number(isCollector) === 1) {
+                // Respect APP_SETTINGS when the logged user is a collector
+                const modesRaw = window.APP_SETTINGS?.collector_txn_modes || "[]";
+                let modes = [];
+                try {
+                    const parsed = JSON.parse(modesRaw);
+                    modes = Array.isArray(parsed) ? parsed : [];
+                } catch (e) {
+                    modes = String(modesRaw).split(',').map(s => s.trim()).filter(Boolean);
+                }
+
+                // Map config booleans to concrete options
+                if (modes.includes("cash_bank"))    allowed.push("Cash");
+                if (modes.includes("bank_deposit")) allowed.push("Bank Deposit");
+                if (modes.includes("cheques"))      allowed.push("Cheque");
+                if (modes.includes("collector_account")) allowed.push("Collector");
+
+                // If cashier role is present, allow Cashier explicitly
+                if (Number(isCashier) === 1) allowed.push("Cashier");
+
+                // Fallback: if config empty/bad, allow Cash at least
+                if (!allowed.length) allowed = ["Cash"];
+            } else {
+                // NOT a collector → show ALL options, regardless of APP_SETTINGS
+                allowed = ALL.slice();
             }
-            if (Number(isCashier) === 1) {
-                allowed.push("Cashier");
-            }
-            if (!allowed.length) allowed = ["Cash"];
 
             // Fill options
             sel.innerHTML = "";
@@ -1297,28 +1309,29 @@
                 sel.appendChild(opt);
             });
 
-            // Default: Collector > Cashier > first
-            if (allowed.includes("Collector")) {
-                sel.value = "Collector";
-            } else if (allowed.includes("Cashier")) {
-                sel.value = "Cashier";
+            // Default selection:
+            if (Number(isCollector) === 1) {
+                // For collectors prefer "Collector" if allowed, else first option
+                sel.value = allowed.includes("Collector") ? "Collector" : allowed[0];
             } else {
-                sel.value = allowed[0];
+                // Non-collectors default to Cash
+                sel.value = allowed.includes("Cash") ? "Cash" : allowed[0];
             }
 
             // Bind change + trigger once
             if (onChangeFnName && typeof window[onChangeFnName] === "function") {
-                sel.onchange = function() { window[onChangeFnName](this.value); };
+                sel.onchange = function () { window[onChangeFnName](this.value); };
                 window[onChangeFnName](sel.value);
             }
         }
 
-        // Build both selects on DOM ready (single source of truth)
+        // Build both selects on DOM ready
         document.addEventListener("DOMContentLoaded", function() {
             buildPaymentTypeSelect("payment_type",   {{ (int) $collector }}, {{ (int) $cashier }}, "togglePaymentSections");
             buildPaymentTypeSelect("payment_type_2", {{ (int) $collector }}, {{ (int) $cashier }}, "togglePaymentSections_2");
         });
     </script>
+
 
     <script>
         /*** Client-side validation before Pay ***/
