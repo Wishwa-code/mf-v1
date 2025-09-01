@@ -188,6 +188,7 @@
     <script src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.2.3/js/buttons.html5.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.2.3/js/buttons.print.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 
 
@@ -220,6 +221,13 @@
                         }
                     },
                     {
+                        text: 'Summary Report',
+                        className: 'btn btn-warning',
+                        action: function (e, dt, button, config) {
+                            exportCenterTotals();
+                        }
+                    },
+                    {
                         extend: 'print',
                         title: 'Center Wise Collection Detail',
                         text: 'Print Report',
@@ -236,6 +244,69 @@
                 order: [[2, 'asc']],
                 pageLength: 25
             });
+
+            // Function to export center totals
+            function exportCenterTotals() {
+                // Get table data
+                var table = $('#customerTable').DataTable();
+                var data = table.rows({ search: 'applied' }).data();
+                
+                // Calculate center totals
+                var centerTotals = {};
+                
+                for (var i = 0; i < data.length; i++) {
+                    var centerName = data[i][0]; // Center column
+                    var amount = parseFloat(data[i][6].replace(/,/g, '')); // Amount column, remove commas
+                    
+                    if (centerTotals[centerName]) {
+                        centerTotals[centerName] += amount;
+                    } else {
+                        centerTotals[centerName] = amount;
+                    }
+                }
+                
+                // Create workbook
+                var wb = XLSX.utils.book_new();
+                
+                // Create worksheet data
+                var wsData = [
+                    [companyName + ' - Center Wise Collection Totals'],
+                    ['Date: ' + selectedDate],
+                    ['Center: ' + selectedCenter],
+                    ['Collector: ' + selectedCollector],
+                    [''], // Empty row
+                    ['Center Name', 'Total Amount'] // Headers
+                ];
+                
+                // Add center totals
+                Object.keys(centerTotals).forEach(function(centerName) {
+                    wsData.push([centerName, centerTotals[centerName].toFixed(2)]);
+                });
+                
+                // Calculate grand total
+                var grandTotal = Object.values(centerTotals).reduce(function(sum, amount) {
+                    return sum + amount;
+                }, 0);
+                
+                wsData.push(['', '']); // Empty row
+                wsData.push(['Grand Total', grandTotal.toFixed(2)]);
+                
+                // Create worksheet
+                var ws = XLSX.utils.aoa_to_sheet(wsData);
+                
+                // Style the headers
+                if (!ws['!merges']) ws['!merges'] = [];
+                ws['!merges'].push({s: {r: 0, c: 0}, e: {r: 0, c: 1}}); // Merge title row
+                
+                // Add worksheet to workbook
+                XLSX.utils.book_append_sheet(wb, ws, 'Center Totals');
+                
+                // Generate filename
+                var filename = companyName + '_Center_Totals_' + selectedDate.replace(/-/g, '') + '.xlsx';
+                
+                // Save file
+                XLSX.writeFile(wb, filename);
+            }
         });
 
     </script>
