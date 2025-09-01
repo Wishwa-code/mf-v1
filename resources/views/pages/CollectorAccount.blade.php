@@ -172,7 +172,11 @@
                                 <select id="routeSelect" class="form-control mb-3">
                                     <option value="0">Select Bank</option>
                                     @foreach($company_banks as $r)
-                                        <option value="{{ $r->Idbank }}">{{ $r->Bank_Name }}-{{ $r->Account_Name }}-{{ $r->Account_No }}</option>
+                                        @if($r->Bank_Type=='Collector')
+                                            <option value="{{ $r->Idbank }}">Cashier-{{ $r->Account_Name }}</option>
+                                        @else
+                                            <option value="{{ $r->Idbank }}">{{ $r->Bank_Name }}-{{ $r->Account_Name }}-{{ $r->Account_No }}</option>
+                                        @endif
                                     @endforeach
                                 </select>
                                 <input type="number" id="transferAmount" class="form-control mb-3" placeholder="Enter Amount" min="1">

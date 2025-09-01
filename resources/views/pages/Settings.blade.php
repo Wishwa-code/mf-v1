@@ -346,6 +346,37 @@
                         </div>
 
 
+                        <hr>
+                        <!-- Collector Account Transaction Modes -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Collector Account Transaction Modes</label>
+                            <div class="d-flex flex-column gap-2">
+                                <div class="form-check">
+                                    <input class="form-check-input collector-mode" type="checkbox" id="mode_cash_bank" value="cash_bank">
+                                    <label class="form-check-label" for="mode_cash_bank">Cash</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input collector-mode" type="checkbox" id="mode_bank_deposit" value="bank_deposit">
+                                    <label class="form-check-label" for="mode_bank_deposit">Bank Deposit</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input collector-mode" type="checkbox" id="mode_cheques" value="cheques">
+                                    <label class="form-check-label" for="mode_cheques">Cheques</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input collector-mode" type="checkbox" id="mode_collector_account" value="collector_account">
+                                    <label class="form-check-label" for="mode_collector_account">Collector Account</label>
+                                </div>
+
+                                <button id="btnUpdateCollectorModes" class="btn btn-primary mt-2" style="max-width: 220px;">
+                                    <i class="fa-solid fa-floppy-disk me-1"></i> Update Modes
+                                </button>
+                            </div>
+                            <small class="text-muted">Select which transaction modes are available when recording collector account transactions.</small>
+                        </div>
+
+
+
                     </div>
                 </div>
             </div>
@@ -391,7 +422,7 @@
                 save_setting('payment_backdate', value);
             });
 
-            $('#btnUpdateLoanOrder').on('click', function (e) {
+                        $('#btnUpdateLoanOrder').on('click', function (e) {
                 e.preventDefault();
                 const value = $('#loan_order').val(); // 'create_date' | 'loan_number' | 'issue_date'
                 save_setting('loan_order', value);
@@ -423,6 +454,20 @@
             $('#btnUpdateDocumentTypes').on('click', function (e) {
                 e.preventDefault();
                 saveDocumentTypes();
+            });
+
+            $('#btnUpdateCollectorModes').on('click', function (e) {
+                e.preventDefault();
+                const selected = $('.collector-mode:checked').map(function(){ return $(this).val(); }).get();
+
+                // Optional: prevent empty selection
+                if (selected.length === 0) {
+                    Swal.fire("Warning", "Select at least one mode.", "warning");
+                    return;
+                }
+
+                // Save as JSON string
+                save_setting('collector_txn_modes', JSON.stringify(selected));
             });
 
         });
@@ -611,12 +656,12 @@
                         $('#loan_order').val(items.loan_order); // 'create_date' | 'loan_number' | 'issue_date'
                     }
 
-// NEW: Max Allowed Loans
+                    // Max Allowed Loans
                     if (items.max_allowed_loans) {
                         $('#max_allowed_loans').val(items.max_allowed_loans);
                     }
 
-// Document Types
+                    // Document Types
                     if (items.document_types) {
                         try {
                             const documentTypes = JSON.parse(items.document_types);
@@ -629,6 +674,22 @@
                         loadDocumentTypesList(getDefaultDocumentTypes());
                     }
 
+                    // Collector Transaction Modes
+                    if (items.collector_txn_modes) {
+                        let modes = [];
+                        try {
+                            // expected to be a JSON array
+                            modes = JSON.parse(items.collector_txn_modes);
+                            if (!Array.isArray(modes)) modes = [];
+                        } catch (e) {
+                            // fallback if stored as comma-separated
+                            modes = String(items.collector_txn_modes).split(',').map(s => s.trim()).filter(Boolean);
+                        }
+
+                        // Uncheck all first, then check the ones present
+                        $('.collector-mode').prop('checked', false);
+                        modes.forEach(v => $(`.collector-mode[value="${v}"]`).prop('checked', true));
+                    }
                 },
                 error: function (xhr) {
                     console.error('Settings load error:', xhr.responseText || xhr.statusText);

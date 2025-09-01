@@ -275,40 +275,52 @@
                                 <div class="row mb-3">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="panelty_rate" class="form-label">Penalty Percentage (%)<span
-                                                    class="required-asterisk">*</span></label>
-                                            <input type="text" id="panelty_rate" class="form-control">
+                                            <label for="penalty_period" class="form-label">Penalty Method<span
+                                                        class="required-asterisk">*</span></label>
+                                            <select class="form-select" id="penalty_method">
+                                                <option value="every_installment">Apply Penalty For Every Installment</option>
+                                                <option value="loan_after_maturity">Apply Penalty For Loan After Maturity</option>
+                                            </select>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="penalty_period" class="form-label">Penalty Period<span
-                                                    class="required-asterisk">*</span></label>
-                                            <select class="form-select" id="penalty_period">
-                                                <option value="Daily">Per Day</option>
-                                                <option value="Weekly">Per Week</option>
-                                                <option value="Per Month">Per Month</option>
-                                                <option value="Per Installment">Per Installment</option>
-                                            </select>
+                                            <label for="panelty_rate" class="form-label">Penalty Percentage (%)<span
+                                                        class="required-asterisk">*</span></label>
+                                            <input type="text" id="panelty_rate" class="form-control">
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="row mb-3">
 
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="penalty_period" class="form-label">Penalty Period<span
+                                                        class="required-asterisk">*</span></label>
+                                            <select class="form-select" id="penalty_period">
+                                                <option value="Daily">Per Day</option>
+                                                <option value="Weekly">Per Week</option>
+                                                <option value="Per Month">Per Month</option>
+                                                <option value="Per Installment">Per Installment / Per Loan</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                     <div class="col-md-2">
                                         <div class="mb-3">
                                             <label for="panelty_rate_date" class="form-label">Penalty Start After<span
-                                                    class="required-asterisk">*</span></label>
+                                                        class="required-asterisk">*</span></label>
                                             <input type="number" id="panelty_rate_date" class="form-control">
                                         </div>
                                     </div>
                                     <div class="col-md-2">
                                         <div class="mb-3">
                                             <label for="loan_duration" class="form-label">Type<span
-                                                    class="required-asterisk">*</span></label>
+                                                        class="required-asterisk">*</span></label>
                                             <select class="form-select" id="duration_period_panelty">
                                                 <option value="Days">Days</option>
+                                                {{--                                                <option value="Weeks">Weeks</option>--}}
+                                                {{--                                                <option value="Months">Months</option>--}}
                                             </select>
                                         </div>
                                     </div>
@@ -884,6 +896,7 @@
             const saving_account_amount_type = $("#saving_account_amount_type").val();
             let saving_amount = $("#saving_amount").val();
             let saving_payment = $("#saving_payment").val();
+            let penalty_method = $("#penalty_method").val();
 
             if (enable_saving === "No") {
                 saving_amount = 0.00;
@@ -997,6 +1010,7 @@
                             saving_account_amount_type,
                             saving_amount,
                             saving_payment,
+                            penalty_method,
                         },
                         success: function (res, status, xhr) {
                             if (xhr.status === 200) {

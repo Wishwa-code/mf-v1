@@ -753,3 +753,10 @@ Route::get('/settings/all','\App\Http\Controllers\CapitalBalanceController@all')
 Route::post('/settings/upsert','\App\Http\Controllers\CapitalBalanceController@upsert')->name('upsert');
 
 
+
+//depletion
+Route::get('/depletion','\App\Http\Controllers\ReportController@depletion')->name('report.depletion');
+Route::post('/depletion/data', [\App\Http\Controllers\ReportController::class, 'depletionData'])
+    ->name('depletion.data');
+
+

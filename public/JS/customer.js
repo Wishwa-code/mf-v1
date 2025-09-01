@@ -212,7 +212,7 @@ const saveCustomer = (e) => {
                 success: function (data, textStatus, xhr) {
                     if (xhr.status === 200) {
                         if (data.id === "0") {
-                            Swal.fire("Error!", "This customer already exists!", "error");
+                            Swal.fire("Error!", data.message, "error");
                         } else {
                             // Proceed to document and bank saving
                             save_doc(data.id, function () {

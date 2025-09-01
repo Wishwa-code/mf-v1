@@ -302,42 +302,77 @@ class CapitalBalanceController extends Controller
     // GET /settings/all
     public function all()
     {
-        $keys = ['payment_member_name','loan_disbursement_policy','payment_backdate','loan_order','max_allowed_loans','document_types'];
+        $keys = [
+            'payment_member_name',
+            'loan_disbursement_policy',
+            'payment_backdate',
+            'loan_order',
+            'max_allowed_loans',
+            'document_types',
+            'collector_txn_modes',
+        ];
 
         $rows = DB::table($this->table)
             ->whereIn('key', $keys)
             ->pluck('value', 'key');
 
-        // return as { items: { payment_member_name: "full_name" } }
         return response()->json(['items' => $rows], 200);
     }
+
 
     // POST /settings/upsert
     public function upsert(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'key'   => ['required', 'in:payment_member_name,loan_disbursement_policy,payment_backdate,loan_order,max_allowed_loans,document_types'],
+            'key'   => ['required', 'in:payment_member_name,loan_disbursement_policy,payment_backdate,loan_order,max_allowed_loans,document_types,collector_txn_modes'],
             'value' => [
                 'required',
                 function ($attribute, $value, $fail) use ($request) {
+                    // Existing validators
                     if ($request->key === 'payment_member_name' &&
                         !in_array($value, ['full_name', 'with_initial', 'only_first_name', 'only_last_name'])) {
-                        $fail('Invalid value for payment_member_name.');
+                        return $fail('Invalid value for payment_member_name.');
                     }
 
                     if ($request->key === 'loan_disbursement_policy' &&
                         !in_array($value, ['strict', 'flexible'])) {
-                        $fail('Invalid value for loan_disbursement_policy.');
+                        return $fail('Invalid value for loan_disbursement_policy.');
                     }
 
                     if ($request->key === 'payment_backdate' &&
                         !in_array($value, ['enabled', 'disabled'])) {
-                        $fail('Invalid value for payment_backdate.');
+                        return $fail('Invalid value for payment_backdate.');
                     }
 
                     if ($request->key === 'loan_order' &&
                         !in_array($value, ['create_date', 'loan_number', 'issue_date'])) {
-                        $fail('Invalid value for loan_order.');
+                        return $fail('Invalid value for loan_order.');
+                    }
+
+                    // NEW: collector_txn_modes validator
+                    if ($request->key === 'collector_txn_modes') {
+                        $allowed = ['cash_bank', 'bank_deposit', 'cheques', 'collector_account'];
+
+                        // Accept JSON array or comma-separated string
+                        $modes = [];
+                        try {
+                            $decoded = json_decode($value, true);
+                            if (is_array($decoded)) {
+                                $modes = $decoded;
+                            } else {
+                                // not JSON array → fallback to CSV
+                                $modes = array_filter(array_map('trim', explode(',', (string)$value)));
+                            }
+                        } catch (\Throwable $e) {
+                            $modes = array_filter(array_map('trim', explode(',', (string)$value)));
+                        }
+
+                        // Ensure all are allowed
+                        foreach ($modes as $mode) {
+                            if (!in_array($mode, $allowed, true)) {
+                                return $fail("Invalid mode '{$mode}' for collector_txn_modes.");
+                            }
+                        }
                     }
 
                     if ($request->key === 'max_allowed_loans' &&
@@ -358,6 +393,7 @@ class CapitalBalanceController extends Controller
                 },
             ],
         ]);
+
 
         if ($validator->fails()) {
             return response()->json(['message' => $validator->errors()->first()], 422);
@@ -432,6 +468,137 @@ class CapitalBalanceController extends Controller
         }
     }
 
+
+
+    public function panelty_remove(){
+
+        $rows = DB::table('installments as i')
+            ->join('customer_loan as c', 'c.idCustomer_Loan', '=', 'i.Customer_Loan_idCustomer_Loan')
+            ->where('i.Status', 0)
+            ->where('i.Paid_Amount', '>', 0)
+            ->where('i.Panalty_Amount', '!=', 0)
+            ->where('i.Total_Balance', '>', 1)
+            ->where('c.Collection_Type', 'Weekly')
+            ->get();
+
+        DB::table('Loan_Log')->where('Type','=','Adjustment- Asipiya')->delete();
+        foreach ($rows as $item){
+            $ins_amount=$item->Installment_Amount;
+
+            $panelty=$ins_amount/100*3;
+
+
+            DB::table('installments')
+                ->where('idInstallments', $item->idInstallments)
+                ->update([
+                    'Panalty_Amount'=>$panelty,
+                    'Panelty_count'    => '1',
+                ]);
+        }
+
+        $loans=DB::table('customer_loan')->where('Status','=','0')->get();
+        foreach ($loans as $loan){
+
+            $installment=DB::table('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan->idCustomer_Loan)->get();
+            foreach ($installment as $ins){
+
+                $installment_amount=$ins->Installment_Amount;
+                $Panalty_Amount=$ins->Panalty_Amount;
+                $Paid_Amount=$ins->Paid_Amount;
+                $Paid_Amount_2=$ins->Paid_Amount;
+                $capital_amount=$ins->capital_amount;
+                $interest_amount=$ins->interest_amount;
+
+
+
+                $interest_balance=$interest_amount;
+                $capital_balance=$capital_amount;
+
+                if ($Paid_Amount<=$Panalty_Amount){
+                    $panelty_balance=$Panalty_Amount-$Paid_Amount;
+                }else{
+                    $panelty_balance=0;
+                    $Paid_Amount=$Paid_Amount-$Panalty_Amount;
+                    if ($Paid_Amount<=$interest_amount){
+                        $interest_balance=$interest_amount-$Paid_Amount;
+                    }else{
+                        $interest_balance=0;
+                        $Paid_Amount=$Paid_Amount-$interest_amount;
+
+                        if ($Paid_Amount<=$capital_amount){
+                            $capital_balance=$capital_amount-$Paid_Amount;
+                        }else{
+                            $capital_balance=0;
+                            $Paid_Amount_2=$capital_amount+$interest_amount+$Panalty_Amount;
+                        }
+                    }
+                }
+
+
+                $installmentAmount = (float) $installment_amount;  // cap+interest for this installment
+                $penaltyAmount     = (float) $Panalty_Amount;       // newly computed penalty
+                $penaltyBalance    = (float) $panelty_balance;
+                $interestBalance   = (float) $interest_balance;
+                $capitalBalance    = (float) $capital_balance;
+
+                $totalAmount  = round($installmentAmount + $penaltyAmount, 2);
+                $totalBalance = round($capitalBalance + $interestBalance + $penaltyBalance, 2);
+
+                DB::table('installments')
+                    ->where('idInstallments', $ins->idInstallments)
+                    ->update([
+                        'Total_Amount'     => $totalAmount,
+                        'Panalty_Balance'  => round($penaltyBalance, 2),
+                        'Interest_Balance' => round($interestBalance, 2),
+                        'capital_balance'  => round($capitalBalance, 2),
+                        'Paid_Amount'  => round($Paid_Amount_2, 2),
+                        'Total_Balance'    => $totalBalance,
+
+                    ]);
+            }
+
+            $Interest_Balance_sum=DB::table('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan->idCustomer_Loan)->sum('Interest_Balance');
+            $capital_balance_sum=DB::table('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan->idCustomer_Loan)->sum('capital_balance');
+            $Total_Balance_sum=DB::table('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan->idCustomer_Loan)->sum('Total_Balance');
+            $Panalty_Balance_sum=DB::table('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan->idCustomer_Loan)->sum('Panalty_Balance');
+
+            DB::table('customer_loan')
+                ->where('idCustomer_Loan', $loan->idCustomer_Loan)
+                ->update([
+                    'Balance_Amount'=>$Total_Balance_sum,
+                    'capital_balance'=>$capital_balance_sum,
+                    'installment_balance'=>$Interest_Balance_sum,
+                ]);
+
+
+            $user_id = (int)session('userid');
+
+
+
+            DB::table('Loan_Log')->insert([
+                'Loan_ID' => $loan->idCustomer_Loan,
+                'Date_Time' => date('Y-m-d H:i:s'),
+                'Type' => 'Adjustment- Asipiya',
+                'Type_ID' => '0',
+                'Description' => 'Adjustment- Asipiya',
+                'Amount' => '0.00',
+                'Panelty_Payment' => '0.00',
+                'Interest_Payment' => '0.00',
+                'Capital_Payment' => '0.00',
+                'Savings_Payment' => '0.00',
+                'Panelty_Balance' => $Panalty_Balance_sum,
+                'Interest_Balance' => $Interest_Balance_sum,
+                'Capital_Balance' => $capital_balance_sum,
+                'Total_Pending_Balance' => $Total_Balance_sum,
+                'Saving_Account_Balance' => '0.00',
+                'User_idUser' => $user_id,
+                'branch_id' => session('branch_id')
+            ]);
+
+
+
+        }
+    }
 
 
 }
