@@ -928,6 +928,9 @@ class TransactionController extends Controller
             $center_details = $request->center_details ?? $center[0]->idCenter;
         }
 
+        // selected product
+        $product_filter = $request->get('product_filter');
+
         // Loan Query
         $loanQuery = tableWithBranch('installments','installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
@@ -998,6 +1001,11 @@ class TransactionController extends Controller
             $loanQuery->where('center.idCenter', '=', $center_details);
         }
 
+        // filter by product
+        if (!empty($product_filter)) {
+            $loanQuery->where('loan_category.Product_code', $product_filter);
+        }
+
         $loan = $loanQuery->get();
         $loan = $loan->transform(function ($item) {
             $parts = explode(' ', trim($item->customer_name));
@@ -1020,6 +1028,9 @@ class TransactionController extends Controller
 
         $grouped_loans = $loan->groupBy('group_name')->sortKeys();
 
+        // products list for filter
+        $products = tableWithBranch('loan_category')->select('Product_code')->whereNotNull('Product_code')->distinct()->pluck('Product_code');
+
 
         $selected_center = $center->firstWhere('idCenter', $center_details);
 
@@ -1030,7 +1041,8 @@ class TransactionController extends Controller
 
         return view('pages.dailyreport', compact(
             'center', 'grouped_loans', 'center_details',
-            'center_no', 'center_name', 'printedBy', 'printedAt'
+            'center_no', 'center_name', 'printedBy', 'printedAt',
+            'products', 'product_filter'
         ));
     }
 
