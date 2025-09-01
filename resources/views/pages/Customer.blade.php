@@ -94,11 +94,11 @@
                                     </div>
                                     <div class="mb-3">
                                         <label for="simpleinput" class="form-label">Mobile No <span class="required-asterisk">*</span></label>
-                                        <input type="tel" id="contact_number" name="contact_number" class="form-control"  onkeypress="validateContactNumber(event)">
+                                        <input type="tel" id="contact_number" name="contact_number" class="form-control" oninput="validateMobileNumber(this)" maxlength="10">
                                     </div>
                                     <div class="mb-3">
                                         <label for="simpleinput" class="form-label">Mobile No 02</label>
-                                        <input type="tel" id="contact_number_2" name="contact_number_2" class="form-control"  onkeypress="validateContactNumber(event)">
+                                        <input type="tel" id="contact_number_2" name="contact_number_2" class="form-control" oninput="validateMobileNumber(this)" maxlength="10">
                                     </div>
                                     <div class="mb-3" hidden>
                                         <label for="simpleinput" class="form-label">Business Registration Number</label>
@@ -106,7 +106,7 @@
                                     </div>
                                     <div class="mb-3">
                                         <label for="simpleinput" class="form-label">NIC <span class="required-asterisk">*</span></label>
-                                        <input type="text" id="nic" name="nic" class="form-control">
+                                        <input type="text" id="nic" name="nic" class="form-control" oninput="validateNIC(this)" maxlength="12">
                                         <input type="hidden" id="new_nic" name="new_nic" class="form-control">
                                     </div>
                                     <div class="mb-3">
@@ -256,7 +256,7 @@
                                             <div class="row mb-3">
                                                 <div class="col-md-6">
                                                     <label for="occu_contact_no" class="form-label">Working Place Contact Number</label>
-                                                    <input type="text" id="occu_contact_no" class="form-control">
+                                                    <input type="tel" id="occu_contact_no" class="form-control" oninput="validateMobileNumber(this)" maxlength="10">
                                                 </div>
                                             </div>
                                             <div class="row mb-3">
@@ -289,9 +289,11 @@
                                             <div class="row">
                                                 <div class="col-lg-6">
                                                     <div class="mb-3">
-                                                        <label for="otherChargesDescription"
-                                                               class="form-label">Description</label>
-                                                        <input type="text" class="form-control" id="otherDocDescription">
+                                                        <label for="otherDocDescription" class="form-label">Document Type</label>
+                                                        <select class="form-control" id="otherDocDescription">
+                                                            <option value="">Select Document Type</option>
+                                                            <!-- Options will be loaded dynamically -->
+                                                        </select>
                                                     </div>
                                                 </div>
                                             </div>
@@ -385,7 +387,7 @@
                                                     </div>
                                                     <div class="mb-3">
                                                         <label for="simpleinput" class="form-label">NIC <span class="required-asterisk">*</span></label>
-                                                        <input type="text" id="gua_nic" name="gua_nic" class="form-control">
+                                                        <input type="text" id="gua_nic" name="gua_nic" class="form-control" oninput="validateNIC(this)" maxlength="12">
                                                     </div>
                                                     <div class="mb-3">
                                                         <label for="simpleinput" class="form-label">Gender</label>
@@ -405,7 +407,7 @@
                                                     </div>
                                                     <div class="mb-3">
                                                         <label for="simpleinput" class="form-label">Contact No</label>
-                                                        <input type="text" id="gua_contact" name="gua_contact" class="form-control">
+                                                        <input type="tel" id="gua_contact" name="gua_contact" class="form-control" oninput="validateMobileNumber(this)" maxlength="10">
                                                     </div>
                                                     <div class="row mb-3">
                                                         <label for="bank_name" class="form-label">Address</label>
@@ -488,6 +490,16 @@
     <!-- Select2 JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
     <script>
+        function validateNIC(input) {
+            // Allow only digits, x, and v (case insensitive)
+            input.value = input.value.replace(/[^0-9xvXV]/g, '').toUpperCase();
+        }
+
+        function validateMobileNumber(input) {
+            // Allow only 10 digits
+            input.value = input.value.replace(/[^0-9]/g, '');
+        }
+
         function create_id(value){
 
 
@@ -512,6 +524,8 @@
     </script>
     <script>
         $(document).ready(function() {
+            // Load document types on page load
+            loadDocumentTypes();
 
             $('#state').select2({
                 placeholder: "Select Province", // Optional placeholder
@@ -545,10 +559,10 @@
             });
 
             $('#addDocBtn').on('click', function() {
-                var description = $('#otherDocDescription').val().trim();
+                var description = $('#otherDocDescription').val();
 
-                if (description === '') {
-                    Swal.fire("Error!", "Description cannot be empty !", "error");
+                if (!description || description === '') {
+                    Swal.fire("Error!", "Please select a document type!", "error");
                     return;
                 }
 
@@ -570,7 +584,7 @@
 
                 $('#documenttable tbody').append(newRow);
 
-                // Clear the input field after adding
+                // Clear the select field after adding
                 $('#otherDocDescription').val('');
             });
 
@@ -807,6 +821,61 @@
                 $(this).closest('tr').remove();
             });
         });
+
+        // Load document types from settings
+        function loadDocumentTypes() {
+            $.ajax({
+                type: "GET",
+                url: "/settings/all",
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                },
+                success: function (data) {
+                    const items = data.items || {};
+                    let documentTypes = [];
+
+                    // Try to get document types from settings
+                    if (items.document_types) {
+                        try {
+                            documentTypes = JSON.parse(items.document_types);
+                        } catch (e) {
+                            console.error('Error parsing document types:', e);
+                            documentTypes = getDefaultDocumentTypes();
+                        }
+                    } else {
+                        documentTypes = getDefaultDocumentTypes();
+                    }
+
+                    // Populate dropdown
+                    const dropdown = $('#otherDocDescription');
+                    dropdown.empty();
+                    dropdown.append('<option value="">Select Document Type</option>');
+                    
+                    documentTypes.forEach(function(type) {
+                        dropdown.append(`<option value="${type}">${type}</option>`);
+                    });
+                },
+                error: function (xhr) {
+                    console.error('Error loading document types:', xhr.responseText || xhr.statusText);
+                    // Load default types on error
+                    const dropdown = $('#otherDocDescription');
+                    dropdown.empty();
+                    dropdown.append('<option value="">Select Document Type</option>');
+                    
+                    getDefaultDocumentTypes().forEach(function(type) {
+                        dropdown.append(`<option value="${type}">${type}</option>`);
+                    });
+                }
+            });
+        }
+
+        // Get default document types (same as in Settings page)
+        function getDefaultDocumentTypes() {
+            return [
+                'NIC Copy',
+                'Income Certificate'
+            ];
+        }
 
     </script>
 @endsection
