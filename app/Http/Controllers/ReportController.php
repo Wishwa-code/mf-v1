@@ -370,10 +370,26 @@ class ReportController extends Controller
     }
 
     public function deleteexpenses(string $id){
-        DB::table('expences')
-            ->where('id', $id)
-            ->where('branch_id', session('branch_id'))
-            ->delete();
+
+
+        $last_expenses=tableWithBranch('expences')->where('id','=',$id)->first();
+
+        if ($last_expenses){
+            $bank_id=tableWithBranch('company_bank_accounts')
+                ->where('acc_type_group','=','Expenses')
+                ->where('Idbank','=',$last_expenses->category_id)
+                ->first();
+            $reason='Delete Expense : ('.$last_expenses->reason.')';
+            $this->bankLogController->index($last_expenses->bank_id,"Expenses",$reason,"-","debit",$last_expenses->amount,$bank_id->Idbank);
+            $this->bankLogController->index($bank_id->Idbank,"Expenses",$reason,"-","credit",$last_expenses->amount,$last_expenses->bank_id);
+
+            DB::table('expences')
+                ->where('id', $id)
+                ->where('branch_id', session('branch_id'))
+                ->delete();
+        }
+
+
         // Reload the list with the same logic as viewexpenses()
         $expenses = DB::table('expences')
             ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'expences.category_id')
@@ -390,10 +406,10 @@ class ReportController extends Controller
             ->where('id', $id)
             ->where('branch_id', session('branch_id'))
             ->delete();
-        $expenses = DB::table('expences')
-            ->join('income_category', 'income_category.id', '=', 'expences.category_id')
-            ->where('type', 'Income')
-            ->where('expences.branch_id', session('branch_id'))
+        $expenses = tableWithBranch('expences','expences')
+            ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'expences.category_id')
+            ->where('expences.type', 'Expense')
+            ->select('expences.*', 'company_bank_accounts.Bank_Name')
             ->get();
         return view('pages.ViewIncome', compact('expenses'));
     }
@@ -1042,7 +1058,7 @@ class ReportController extends Controller
 
         // 1) Beginning stock per loan (latest log before $start)
         $beginningOne = DB::query()->fromSub(function ($q) use ($start) {
-            $q->from('loan_log as ll')
+            $q->from('Loan_Log as ll')  
                 ->selectRaw("
               ll.Loan_ID,
               ll.Capital_Balance,
@@ -1066,7 +1082,7 @@ class ReportController extends Controller
 
         // 3) Depletion (capital payments) per loan in [start, end]
         $depletion = DB::query()->fromSub(function ($q) use ($start, $end) {
-            $q->from('loan_log as ll')
+            $q->from('Loan_Log as ll')
                 ->selectRaw('ll.Loan_ID, SUM(ll.Capital_Payment) as Depletion_Sum')
                 ->whereBetween('ll.Date_Time', [$start, $end])
                 ->where('ll.Type', '=', 'Customer Payment')
@@ -1108,9 +1124,9 @@ class ReportController extends Controller
                 ->groupBy('cl.collector_id');
         }, 'lt');
 
-        // PENALTY ARREARS per collector (date range over loan_log)
+        // PENALTY ARREARS per collector (date range over Loan_Log)
         $penaltyArrears = DB::query()->fromSub(function ($q) use ($start, $end) {
-            $q->from('loan_log as ll')
+            $q->from('Loan_Log as ll')
                 ->join('customer_loan as cl', 'cl.idCustomer_Loan', '=', 'll.Loan_ID')
                 ->whereBetween('ll.Date_Time', [$start, $end])
                 ->selectRaw('cl.collector_id as collector_id, SUM(ll.Panelty_Payment) as Penalty_Sum')
