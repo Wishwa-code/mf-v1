@@ -111,12 +111,58 @@
                                     <label class="form-label mb-0" style="min-width: 40px; font-weight: 500;">To:</label>
                                     <input type="date" id="end_date" value="{{ request('end_date') }}" class="form-control" style="width: 150px;">
                                 </div>
-                                <button class="btn btn-primary" onclick="applyDateRangeFilter()">
+                                <button class="btn btn-primary" onclick="applyFilters()">
                                     <i class="fas fa-filter me-1"></i>Filter
                                 </button>
                                 <a href="{{ route('bank.chq') }}" class="btn btn-secondary">
                                     <i class="fas fa-refresh me-1"></i>Show All
                                 </a>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="product_id" class="form-label">Product</label>
+                                    <select class="form-control select2" id="product_id">
+                                        <option value="">All</option>
+                                        @foreach($loan_categories as $category)
+                                            <option value="{{ $category->idLoan_Category }}" {{ request('product_id') == $category->idLoan_Category ? 'selected' : '' }}>
+                                                {{ $category->Name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="loan_number" class="form-label">Loan Number</label>
+                                    <input type="text" id="loan_number" value="{{ request('loan_number') }}" class="form-control" placeholder="Enter loan number">
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="customer_id" class="form-label">Customer</label>
+                                    <select class="form-control select2" id="customer_id">
+                                        <option value="">All</option>
+                                        @foreach($customers as $customer)
+                                            <option value="{{ $customer->idCustomer }}" {{ request('customer_id') == $customer->idCustomer ? 'selected' : '' }}>
+                                                {{ $customer->cus_number }} - {{ $customer->First_Name }} {{ $customer->Last_Name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="chq_number" class="form-label">Cheque Number</label>
+                                    <input type="text" id="chq_number" value="{{ request('chq_number') }}" class="form-control" placeholder="Enter cheque number">
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <button type="button" class="btn btn-danger" onclick="applyFilters()"><i class="bi bi-search"></i> </button>
+                                </div>
                             </div>
                         </div>
                         <hr>
@@ -294,11 +340,15 @@
 @endsection
 
 @section('script')
-    <!-- jQuery and Bootstrap 5 JS -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <!-- Use global jQuery/Bootstrap from layout to avoid duplicate instances -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="../JS/validate.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            $('.select2').select2();
+        });
+    </script>
     <script>
         function process(id,cus_id,payment_amount,file,loan_id,payment_date,payment_type,bank_account_company,cheque_issue_bank,name_on_cheque,chq_number,chq_date,chq_type) {
             let date = new Date().toISOString().slice(0, 10); // "2025-08-19"
@@ -423,9 +473,13 @@
                 }
             });
         }
-        function applyDateRangeFilter() {
+        function applyFilters() {
             const startDate = document.getElementById('start_date').value;
             const endDate = document.getElementById('end_date').value;
+            const productId = document.getElementById('product_id').value;
+            const loanNumber = document.getElementById('loan_number').value;
+            const customerId = document.getElementById('customer_id').value;
+            const chqNumber = document.getElementById('chq_number').value;
             
             // make request 
             let queryParams = new URLSearchParams();
@@ -436,6 +490,22 @@
             
             if (endDate) {
                 queryParams.append('end_date', endDate);
+            }
+            
+            if (productId) {
+                queryParams.append('product_id', productId);
+            }
+            
+            if (loanNumber) {
+                queryParams.append('loan_number', loanNumber);
+            }
+            
+            if (customerId) {
+                queryParams.append('customer_id', customerId);
+            }
+            
+            if (chqNumber) {
+                queryParams.append('chq_number', chqNumber);
             }
             
             // Validate date range
@@ -449,18 +519,11 @@
                 return;
             }
             
-            // Error handling
-            if (queryParams.toString()) {
-                window.location.href = `?${queryParams.toString()}`;
-            } else {
-                Swal.fire({
-                    icon: 'info',
-                    title: 'No Date Selected',
-                    text: 'Please select at least one date to filter.',
-                    confirmButtonColor: '#3085d6'
-                });
-            }
+            // Apply filters
+            window.location.href = `?${queryParams.toString()}`;
         }
+
+
 
         // Excel download functionality
         $('#downloadExcel').click(function () {

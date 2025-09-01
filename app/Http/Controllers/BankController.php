@@ -239,19 +239,33 @@ class BankController extends Controller
         $query = tableWithBranch('Cheque_payment','Cheque_payment')
             ->join('company_bank_accounts', 'Cheque_payment.bank_account_company', '=', 'company_bank_accounts.Idbank')
             ->join('customer_loan', 'Cheque_payment.loan_id', '=', 'customer_loan.idCustomer_Loan')
-            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer');
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category');
 
         if ($request->has('date')) {
             $query->whereDate('Cheque_payment.date', $request->date);
         }
         
-        // Logic for date range
+        // date range
         if ($request->has('start_date') && !empty($request->start_date)) {
             $query->whereDate('Cheque_payment.date', '>=', $request->start_date);
         }
-        
         if ($request->has('end_date') && !empty($request->end_date)) {
             $query->whereDate('Cheque_payment.date', '<=', $request->end_date);
+        }
+
+        // filters
+        if ($request->has('product_id') && !empty($request->product_id)) {
+            $query->where('loan_category.idLoan_Category', $request->product_id);
+        }
+        if ($request->has('loan_number') && !empty($request->loan_number)) {
+            $query->where('customer_loan.Loan_No', 'LIKE', '%'.$request->loan_number.'%');
+        }
+        if ($request->has('customer_id') && !empty($request->customer_id)) {
+            $query->where('customer.idCustomer', $request->customer_id);
+        }
+        if ($request->has('chq_number') && !empty($request->chq_number)) {
+            $query->where('Cheque_payment.chq_number', 'LIKE', '%'.$request->chq_number.'%');
         }
 
         $chq = $query->select(
@@ -259,11 +273,16 @@ class BankController extends Controller
                 'company_bank_accounts.Bank_Name',
                 'company_bank_accounts.Account_No',
                 'customer_loan.Loan_No',
-                'customer.cus_number'
+                'customer.cus_number',
+                'loan_category.Name as product_name'
             )
             ->orderBy('Cheque_payment.date', 'desc')->get();
 
-        return view('pages.ChqDetails',compact('chq'));
+        // options for dropdowns
+        $loan_categories = tableWithBranch('loan_category')->get();
+        $customers = tableWithBranch('customer')->select('idCustomer', 'First_Name', 'Last_Name', 'cus_number')->get();
+
+        return view('pages.ChqDetails', compact('chq','loan_categories','customers'));
     }
 
     public function chq_process(string $id){
