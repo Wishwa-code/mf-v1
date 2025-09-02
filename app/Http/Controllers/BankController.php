@@ -275,7 +275,7 @@ class BankController extends Controller
             $query->where('center.idCenter', $request->center_id);
         }
 
-        // NEW: status filter ("0" Pending, "1" Proceeded, "-1" Returned)
+        // NEW: status filter ("0" Pending, "1" Proceeded, "-1" Returned "-2" Cancelled)
         if ($request->has('status') && $request->status !== null && $request->status !== '') {
             $query->where('Cheque_payment.chq_status', (string)$request->status);
         }
@@ -340,6 +340,42 @@ class BankController extends Controller
             $request = new Request([
                 'customer_id' => $loan->Customer_idCustomer,
                 'description' => 'Payment Rejected ('.$customer->First_Name.' '.$customer->Last_Name.')',
+                'description_id' => $comment_id,
+                'comment' =>$chq_comment,
+                'type' => 'Loan Comment',
+            ]);
+            $this->customerLogController->store($request);
+            return response()->json(['id' => '1'], 200);
+        }
+
+    }
+
+    public function cancel_chq(string $id){
+
+        $chq = tableWithBranch('Cheque_payment')
+            ->where('idChq', '=', $id)
+            ->first();
+        $user_id = (int)session('userid');
+        if ($chq) {
+            updateWithBranch('Cheque_payment', 'idChq', $id, ['chq_status' => '-2']);
+            $chq_comment='Cheque Cancelled ! Cheque No : '.$chq->chq_number.' Cheque Date : '.$chq->chq_date.' Cheque Type : '.$chq->chq_type.' Amount : '.$chq->payment_amount;
+            $comment_id=insertWithBranch('loan_comment',[
+                'comment' => $chq_comment,
+                'loan_id' => $chq->loan_id,
+                'user_id' => $user_id,
+                'date' => now()->toDateString(),
+                'time' => now()->toTimeString(),
+            ]);
+            $loan = tableWithBranch('customer_loan')
+                ->where('idCustomer_Loan', '=', $chq->loan_id)
+                ->first();
+            $customer = tableWithBranch('customer')
+                ->where('idCustomer', '=', $loan->Customer_idCustomer)
+                ->first();
+
+            $request = new Request([
+                'customer_id' => $loan->Customer_idCustomer,
+                'description' => 'Payment Cancelled ('.$customer->First_Name.' '.$customer->Last_Name.')',
                 'description_id' => $comment_id,
                 'comment' =>$chq_comment,
                 'type' => 'Loan Comment',

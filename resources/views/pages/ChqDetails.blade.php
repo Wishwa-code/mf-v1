@@ -180,6 +180,7 @@
                                         <option value="0" {{ request('status') == '0' ? 'selected' : '' }}>Pending</option>
                                         <option value="1" {{ request('status') == '1' ? 'selected' : '' }}>Proceeded</option>
                                         <option value="-1" {{ request('status') == '-1' ? 'selected' : '' }}>Returned</option>
+                                        <option value="-2" {{ request('status') == '-2' ? 'selected' : '' }}>Cancelled</option>
                                     </select>
                                 </div>
                             </div>
@@ -240,6 +241,8 @@
                                                 <td><span style="color: red">Proceeded</span></td>
                                             @elseif($item->chq_status==="-1")
                                                 <td><span style="color: #ffab00">Returned</span></td>
+                                            @elseif($item->chq_status==="-2")
+                                                <td><span style="color: #6c757d">Cancelled</span></td>
                                             @else
                                                 <td><span style="color: green">Pending</span></td>
                                             @endif
@@ -269,6 +272,11 @@
                                                             style="background-color: white; color: #f51515;" onclick="decline({{ $item->idChq }})">Return
                                                         <i class="fas fa-spinner fa-spin fs-4" style="display:none;" id="return_icon_{{ $item->idChq }}"></i>
                                                     </button>
+
+                                                    <button type="button" class="btn btn-secondary"
+                                                            style="background-color: white; color: #6c757d;" onclick="cancel({{ $item->idChq }})">Cancel
+                                                        <i class="fas fa-spinner fa-spin fs-4" style="display:none;" id="cancel_icon_{{ $item->idChq }}"></i>
+                                                    </button>
                                                 @else
                                                     <button type="button" class="btn btn-success"
                                                             style="background-color: white; color: #5691FF;" disabled>Process
@@ -277,6 +285,10 @@
                                                     <button type="button" class="btn btn-danger"
                                                             style="background-color: white; color: #f51515;" disabled>Return
                                                         <i class="fas fa-spinner fa-spin fs-4" style="display:none;" id="return_icon_{{ $item->idChq }}"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-secondary"
+                                                            style="background-color: white; color: #6c757d;" disabled>Cancel
+                                                        <i class="fas fa-spinner fa-spin fs-4" style="display:none;" id="cancel_icon_{{ $item->idChq }}"></i>
                                                     </button>
                                                 @endif
 
@@ -497,6 +509,53 @@
                 }
             });
         }
+
+        function cancel(id) {
+            // Show the cancel icon before making the AJAX request
+            document.getElementById('cancel_icon_' + id).style.display = 'inline-block';
+            Swal.fire({
+                title: "Are you sure?",
+                text: "Do you want to cancel this cheque?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, Cancel it!",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        type: "GET",
+                        url: "/cancel_chq/" + id,
+                        headers: {
+                            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                        },
+                        success: function (data, textStatus, xhr) {
+                            // Hide the cancel icon after the AJAX request completes
+                            document.getElementById('cancel_icon_' + id).style.display = 'none';
+
+                            if (xhr.status === 200) {
+                                Swal.fire({
+                                    position: "center",
+                                    icon: "success",
+                                    title: "Cheque cancelled successfully!",
+                                }).then(function () {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire("Error!", "Failed to cancel cheque!", "error");
+                            }
+                        },
+                        error: function() {
+                            // Hide the cancel icon in case of an error
+                            document.getElementById('cancel_icon_' + id).style.display = 'none';
+                            Swal.fire("Error!", "An error occurred during the process!", "error");
+                        }
+                    });
+                }else{
+                    document.getElementById('cancel_icon_' + id).style.display = 'none';
+                }
+            });
+        }
         function applyFilters() {
             const startDate = document.getElementById('start_date').value;
             const endDate = document.getElementById('end_date').value;
@@ -594,6 +653,7 @@
                     if (statusText === 'Pending') { status = 'Pending'; statusOrder = 1; }
                     else if (statusText === 'Proceeded') { status = 'Deposited'; statusOrder = 2; }
                     else if (statusText === 'Returned') { status = 'Returned'; statusOrder = 3; }
+                    else if (statusText === 'Cancelled') { status = 'Cancelled'; statusOrder = 4; }
                     
                     tableRows.push({
                         order: statusOrder,
@@ -665,6 +725,7 @@
                     if (statusText === 'Pending') { status = 'Pending'; statusOrder = 1; }
                     else if (statusText === 'Proceeded') { status = 'Deposited'; statusOrder = 2; }
                     else if (statusText === 'Returned') { status = 'Returned'; statusOrder = 3; }
+                    else if (statusText === 'Cancelled') { status = 'Cancelled'; statusOrder = 4; }
                     
                     printRows.push({
                         order: statusOrder,
