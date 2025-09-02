@@ -408,9 +408,10 @@
                                     <div class="mb-3">
                                         <label for="center_details" class="form-label">Center</label>
                                         <select class="form-control select2" id="center_details" name="center_details">
+                                            <option value="" {{ (!isset($center_details) || $center_details === '' || $center_details === null) ? 'selected' : '' }}>All</option>
                                             @foreach ($center as $item)
                                                 <option value="{{ $item->idCenter }}"
-                                                        {{ $item->idCenter == $center_details ? 'selected' : '' }}>
+                                                        {{ (isset($center_details) && $center_details !== '' && $center_details !== null && $item->idCenter == $center_details) ? 'selected' : '' }}>
                                                     {{ $item->Name }}-{{ $item->Route }}
                                                 </option>
                                             @endforeach

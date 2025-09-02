@@ -925,8 +925,8 @@ class TransactionController extends Controller
             $grouped_loans = array(); // Or any default value you want to assign
             return view('pages.dailyreport', compact('center', 'grouped_loans','center_details'));
         } else {
-            // If $center is not empty, set the default center value
-            $center_details = $request->center_details ?? $center[0]->idCenter;
+            // Get center_details from request, default to null (All) if not provided
+            $center_details = $request->center_details;
         }
 
     // selected product
@@ -1001,7 +1001,7 @@ class TransactionController extends Controller
             );
 
         // Filter by center, group, and customer if provided
-        if ($center_details != '0') {
+        if (!empty($center_details)) {
             $loanQuery->where('center.idCenter', '=', $center_details);
         }
 
