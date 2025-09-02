@@ -223,7 +223,7 @@
                                             <td>{{$item->name_on_cheque}}</td>
                                             <td>{{$item->chq_type}}</td>
                                             <td>{{$item->chq_date}}</td>
-                                            <td>{{$item->Bank_Name}}-{{$item->Account_No}}</td>
+                                            <td></td>
                                             <td>{{ number_format(str_replace(',', '', $item->payment_amount), 2, '.', ',') }}</td>
                                             @if($item->chq_status==="1")
                                                 <td><span style="color: red">Proceeded</span></td>
@@ -588,7 +588,7 @@
                             cells.eq(4).text(), // Customer Name (Name Of Cheque)
                             cells.eq(2).text(), // Customer Number
                             cells.eq(1).text(), // Loan Number
-                            (cells.eq(7).text().split('-')[0] || '') + ' (to do with backend)', // Bank Name
+                            '', // Bank Name (empty)
                             '', // Branch Name (empty)
                             cells.eq(8).text(), // Cheque Amount
                             status, // Status
@@ -658,7 +658,7 @@
                         customerName: cells.eq(4).text(),
                         customerNumber: cells.eq(2).text(),
                         loanNumber: cells.eq(1).text(),
-                        bankName: (cells.eq(7).text().split('-')[0] || '') + ' (to do with backend)',
+                        bankName: '',
                         branchName: '',
                         chequeAmount: cells.eq(8).text(),
                         status: status,
