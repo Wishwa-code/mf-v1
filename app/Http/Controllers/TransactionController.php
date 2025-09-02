@@ -952,6 +952,7 @@ class TransactionController extends Controller
             ->select(
                 'customer.idCustomer',
                 DB::raw('IFNULL(center.No, "-") as center_no'),
+                DB::raw('IFNULL(center.Name, "-") as center_name'),
                 DB::raw("CONCAT(customer.First_Name, ' ', customer.Last_Name) as customer_name"),
                 'customer.cus_number as cus_number',
                 'customer.Contact_No as Contact_No',
@@ -981,6 +982,7 @@ class TransactionController extends Controller
             ->groupBy(
                 'customer.idCustomer',
                 'center.No',
+                'center.Name',
                 'customer.First_Name',
                 'customer.Contact_No',
                 'loan_category.Product_code',
@@ -1035,7 +1037,12 @@ class TransactionController extends Controller
             });
         }
 
-        $grouped_loans = $loan->groupBy('group_name')->sortKeys();
+        // Group by center first, then by groups within each center
+        $grouped_loans = $loan->groupBy(function($item) {
+            return $item->center_name . ' (' . $item->center_no . ')';
+        })->map(function($centerGroup) {
+            return $centerGroup->groupBy('group_name')->sortKeys();
+        })->sortKeys();
 
         // products list for filter
         $products = tableWithBranch('loan_category')->select('Product_code')->whereNotNull('Product_code')->distinct()->pluck('Product_code');

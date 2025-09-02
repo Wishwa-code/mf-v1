@@ -49,6 +49,19 @@
             background-color: #f1f1f1;
         }
 
+        /* Center header styling */
+        .center-header {
+            background-color: #e3f2fd !important;
+            font-weight: bold;
+            color: #1976d2;
+        }
+
+        .center-total {
+            background-color: #f3e5f5 !important;
+            font-weight: bold;
+            color: #7b1fa2;
+        }
+
         button {
             padding: 8px 16px;
             background-color: #f44336;
@@ -451,7 +464,7 @@
                                         <label for="group_filter" class="form-label">Group</label>
                                         <select class="form-control select2" id="group_filter" name="group_filter">
                                             <option value="">All</option>
-                                            @foreach($grouped_loans->keys() as $groupKey)
+                                            @foreach($grouped_loans->flatMap(function($centerGroups) { return $centerGroups->keys(); })->unique()->sort() as $groupKey)
                                                 <option value="{{ $groupKey }}" {{ request('group_filter') == $groupKey ? 'selected' : '' }}>
                                                     {{ $groupKey }}
                                                 </option>
@@ -513,41 +526,56 @@
                                 </tr>
                                 </thead>
                                 <tbody>
-                                @foreach($grouped_loans->chunk(2) as $groupPair)
+                                @foreach($grouped_loans->chunk(2) as $centerPair)
                                     <tbody class="page-break">
-                                    @foreach($groupPair as $group_name => $group)
-                                        <tr><td colspan="12"><strong>Group No: {{ $group_name }}</strong></td></tr>
-                                        @foreach($group as $item)
-                                            <tr class="group-row">
-                                                <td>{{ $item->Loan_No }}</td>
-                                                <td class="fixed-name">{{ $item->name_with_initials }}</td>
-                                                <td>{{ number_format($item->Loan_Amount, 2) }}</td>
-                                                <td>{{ number_format($item->Installment_Amount, 2) }}</td>
-                                                <td>{{ number_format($item->Balance_Amount, 2) }}</td>
-                                                @for ($i = 1; $i <= 7; $i++)
-                                                    <td class="paid-amount"></td>
-                                                @endfor
+                                    @foreach($centerPair as $center_name => $centerGroups)
+                                        {{-- Center Header --}}
+                                        <tr class="center-header">
+                                            <td colspan="12"><strong>Center: {{ $center_name }}</strong></td>
+                                        </tr>
+                                        @foreach($centerGroups as $group_name => $group)
+                                            {{-- Group Header --}}
+                                            <tr><td colspan="12"><strong>Group No: {{ $group_name }}</strong></td></tr>
+                                            @foreach($group as $item)
+                                                <tr class="group-row">
+                                                    <td>{{ $item->Loan_No }}</td>
+                                                    <td class="fixed-name">{{ $item->name_with_initials }}</td>
+                                                    <td>{{ number_format($item->Loan_Amount, 2) }}</td>
+                                                    <td>{{ number_format($item->Installment_Amount, 2) }}</td>
+                                                    <td>{{ number_format($item->Balance_Amount, 2) }}</td>
+                                                    @for ($i = 1; $i <= 7; $i++)
+                                                        <td class="paid-amount"></td>
+                                                    @endfor
+                                                </tr>
+                                            @endforeach
+                                            <tr class="group-row" style="font-weight: bold;">
+                                                <td colspan="2">Group Total</td>
+                                                <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
+                                                <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
+                                                <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
+                                                <td colspan="7"></td>
                                             </tr>
+                                            {{-- Empty Rows for manual entries --}}
+                                            @for ($j = 0; $j < 3; $j++)
+                                                <tr class="group-row">
+                                                    @for ($k = 0; $k < 12; $k++)
+                                                        <td>&nbsp;</td>
+                                                    @endfor
+                                                </tr>
+                                            @endfor
                                         @endforeach
-                                        <tr class="group-row" style="font-weight: bold;">
-                                            <td colspan="2">Group Total</td>
-                                            <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
-                                            <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
-                                            <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
+                                        {{-- Center Total Row --}}
+                                        <tr class="center-total">
+                                            <td colspan="2">Center Total</td>
+                                            <td>{{ number_format($centerGroups->flatten()->sum('Loan_Amount'), 2) }}</td>
+                                            <td>{{ number_format($centerGroups->flatten()->sum('Installment_Amount'), 2) }}</td>
+                                            <td>{{ number_format($centerGroups->flatten()->sum('Balance_Amount'), 2) }}</td>
                                             <td colspan="7"></td>
                                         </tr>
-                                        {{-- Empty Rows for manual entries --}}
-                                        @for ($j = 0; $j < 3; $j++)
-                                            <tr class="group-row">
-                                                @for ($k = 0; $k < 12; $k++)
-                                                    <td>&nbsp;</td>
-                                                @endfor
-                                            </tr>
-                                        @endfor
                                     @endforeach
                                     </tbody>
-                                    @endforeach
-                                    </tbody>
+                                @endforeach
+                                </tbody>
                             </table>
 
 
