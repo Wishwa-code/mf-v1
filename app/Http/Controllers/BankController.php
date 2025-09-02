@@ -275,6 +275,11 @@ class BankController extends Controller
             $query->where('center.idCenter', $request->center_id);
         }
 
+        // NEW: status filter ("0" Pending, "1" Proceeded, "-1" Returned)
+        if ($request->has('status') && $request->status !== null && $request->status !== '') {
+            $query->where('Cheque_payment.chq_status', (string)$request->status);
+        }
+
         $chq = $query->select(
                 'Cheque_payment.*',
                 'company_bank_accounts.Bank_Name',
@@ -820,8 +825,6 @@ class BankController extends Controller
             'fully_paid_total_payment'
         ));
     }
-
-
 
 
 

@@ -174,6 +174,17 @@
                             </div>
                             <div class="col-lg-3">
                                 <div class="mb-3">
+                                    <label for="status" class="form-label">Status</label>
+                                    <select class="form-control select2" id="status">
+                                        <option value="">All</option>
+                                        <option value="0" {{ request('status') == '0' ? 'selected' : '' }}>Pending</option>
+                                        <option value="1" {{ request('status') == '1' ? 'selected' : '' }}>Proceeded</option>
+                                        <option value="-1" {{ request('status') == '-1' ? 'selected' : '' }}>Returned</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="mb-3">
                                     <button type="button" class="btn btn-danger" onclick="applyFilters()"><i class="bi bi-search"></i> </button>
                                 </div>
                             </div>
@@ -494,6 +505,7 @@
             const customerId = document.getElementById('customer_id').value;
             const chqNumber = document.getElementById('chq_number').value;
             const centerId = document.getElementById('center_id').value;
+            const status = document.getElementById('status') ? document.getElementById('status').value : '';
             
             // make request 
             let queryParams = new URLSearchParams();
@@ -524,6 +536,10 @@
             
             if (centerId) {
                 queryParams.append('center_id', centerId);
+            }
+
+            if (status !== '') {
+                queryParams.append('status', status);
             }
             
             // Validate date range
