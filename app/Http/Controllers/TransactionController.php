@@ -916,6 +916,7 @@ class TransactionController extends Controller
 
     public function dailyreport(Request $request){
         $center = tableWithBranch('center')->get();
+    $routes = tableWithBranch('route')->get(); // route list
 
         // Check if $center is empty
         if ($center->isEmpty()) {
@@ -928,8 +929,10 @@ class TransactionController extends Controller
             $center_details = $request->center_details ?? $center[0]->idCenter;
         }
 
-        // selected product
+    // selected product
         $product_filter = $request->get('product_filter');
+    // selected route
+    $route_filter = $request->get('route_filter');
 
         // Loan Query
         $loanQuery = tableWithBranch('installments','installments')
@@ -943,6 +946,7 @@ class TransactionController extends Controller
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->leftJoin('route', 'route.id_route', '=', 'center.route_id') // join route
             ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
             ->where('customer_loan.Status', '=', '0')
             ->select(
@@ -1006,6 +1010,11 @@ class TransactionController extends Controller
             $loanQuery->where('loan_category.Product_code', $product_filter);
         }
 
+        // filter by route
+        if (!empty($route_filter)) {
+            $loanQuery->where('route.id_route', $route_filter);
+        }
+
         $loan = $loanQuery->get();
         $loan = $loan->transform(function ($item) {
             $parts = explode(' ', trim($item->customer_name));
@@ -1042,7 +1051,8 @@ class TransactionController extends Controller
         return view('pages.dailyreport', compact(
             'center', 'grouped_loans', 'center_details',
             'center_no', 'center_name', 'printedBy', 'printedAt',
-            'products', 'product_filter'
+            'products', 'product_filter',
+            'routes', 'route_filter'
         ));
     }
 
