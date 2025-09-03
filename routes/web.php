@@ -367,6 +367,7 @@ Route::get('/bank/view_log/{id}','\App\Http\Controllers\BankController@create')-
 Route::get('/chq','\App\Http\Controllers\BankController@chq')->name('bank.chq');
 Route::get('/process_chq/{id}','\App\Http\Controllers\BankController@chq_process')->name('bank.chq_process');
 Route::get('/return_chq/{id}','\App\Http\Controllers\BankController@return_chq')->name('bank.return_chq');
+Route::get('/cancel_chq/{id}','\App\Http\Controllers\BankController@cancel_chq')->name('bank.cancel_chq');
 
 
 //loan document
