@@ -133,6 +133,17 @@
         .flexible-name.very-long-name {
             font-size: 12px;
         }
+        
+        /* Group total auto font sizing */
+        .flexible-group-total {
+            font-size: 14px;
+        }
+        .flexible-group-total.long-group-total {
+            font-size: 13px;
+        }
+        .flexible-group-total.very-long-group-total {
+            font-size: 12px;
+        }
 
         @media (max-width: 480px) {
             table {
@@ -395,10 +406,10 @@
                                             </tr>
                                         @endfor
                                         <tr class="group-row" style="font-weight: bold;">
-                                            <td colspan="2">Group Total</td>
-                                            <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
-                                            <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
-                                            <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
+                                            <td colspan="2" class="flexible-group-total">Group Total</td>
+                                            <td class="flexible-group-total">{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
+                                            <td class="flexible-group-total">{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
+                                            <td class="flexible-group-total">{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
                                             <td colspan="10"></td>
                                         </tr>
                                     @endforeach
@@ -535,6 +546,7 @@
             function fitScreen() {
                 fitTextCells(document, 'td.flexible-loan-no', 14, 9);
                 fitTextCells(document, 'td.flexible-name', 14, 9);
+                fitTextCells(document, 'td.flexible-group-total', 14, 9); // Group total auto size
             }
             fitScreen();
 
@@ -630,6 +642,15 @@
     }
     .flexible-name.long-name { font-size: 10px; }
     .flexible-name.very-long-name { font-size: 9px; }
+    
+    /* Group total print sizing */
+    .flexible-group-total { 
+        white-space: nowrap; 
+        overflow: hidden; 
+        font-size: 11px; 
+    }
+    .flexible-group-total.long-group-total { font-size: 10px; }
+    .flexible-group-total.very-long-group-total { font-size: 9px; }
 
     /* Column widths are controlled via a fixed <colgroup> injected for each print table */
 
@@ -842,6 +863,7 @@
                     // Base print sizes are smaller; keep readable minimums
                     fitTextCells(doc, 'td.flexible-loan-no', 11, 8, 0.5);
                     fitTextCells(doc, 'td.flexible-name', 11, 8, 0.5);
+                    fitTextCells(doc, 'td.flexible-group-total', 11, 8, 0.5); // Group total print auto size
 
                     printWindow.focus();
                     printWindow.print();
