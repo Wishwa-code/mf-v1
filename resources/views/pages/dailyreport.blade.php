@@ -480,8 +480,8 @@
                                         <select class="form-control select2" id="collector_filter" name="collector_filter">
                                             <option value="">All</option>
                                             @foreach($collectors as $collector)
-                                                <option value="{{ $collector->collector_id }}" {{ ($collector_filter ?? '') == $collector->collector_id ? 'selected' : '' }}>
-                                                    {{ $collector->collector_name }}
+                                                <option value="{{ $collector->id }}" {{ ($collector_filter ?? '') == $collector->id ? 'selected' : '' }}>
+                                                    {{ $collector->Full_Name }}
                                                 </option>
                                             @endforeach
                                         </select>
