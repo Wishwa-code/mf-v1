@@ -133,6 +133,17 @@
         .flexible-name.very-long-name {
             font-size: 12px;
         }
+        
+        /* Group total auto font sizing */
+        .flexible-group-total {
+            font-size: 14px;
+        }
+        .flexible-group-total.long-group-total {
+            font-size: 13px;
+        }
+        .flexible-group-total.very-long-group-total {
+            font-size: 12px;
+        }
 
         @media (max-width: 480px) {
             table {
@@ -234,9 +245,15 @@
                 color: black;
                 display: flex;
                 justify-content: space-between;
-                padding: 5px 30px;
+                padding: 2px 20px;
                 background-color: white;
-                border-top: 1px solid #000;
+                border-top: none;
+            }
+            .print-footer .center {
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                text-align: center;
             }
         }
         @media print {
@@ -383,9 +400,11 @@
                                             </tr>
                                         @endforeach
 
+                                        @php
+                                            $emptyRows = 10 - count($group);
+                                        @endphp
 
-
-                                        @for ($j = 0; $j < 7; $j++)
+                                        @for ($j = 0; $j < $emptyRows; $j++)
                                             <tr class="group-row">
                                                 @for ($k = 0; $k < 15; $k++)
                                                     <td>&nbsp;</td>
@@ -393,10 +412,10 @@
                                             </tr>
                                         @endfor
                                         <tr class="group-row" style="font-weight: bold;">
-                                            <td colspan="2">Group Total</td>
-                                            <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
-                                            <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
-                                            <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
+                                            <td colspan="2" class="flexible-group-total">Group Total</td>
+                                            <td class="flexible-group-total">{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
+                                            <td class="flexible-group-total">{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
+                                            <td class="flexible-group-total">{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
                                             <td colspan="10"></td>
                                         </tr>
                                     @endforeach
@@ -533,6 +552,7 @@
             function fitScreen() {
                 fitTextCells(document, 'td.flexible-loan-no', 14, 9);
                 fitTextCells(document, 'td.flexible-name', 14, 9);
+                fitTextCells(document, 'td.flexible-group-total', 14, 9); // Group total auto size
             }
             fitScreen();
 
@@ -585,7 +605,7 @@
                 printWindow.document.write('<html><head><title>Repayment Sheet</title><style>');
                 printWindow.document.write(`
     /* Remove browser margins; reserve top margin via @page */
-    @page { size: ${orientation}; margin: 1in 0 0 0; }
+    @page { size: ${orientation}; margin: 1in 0 0.1in 0; }
     html, body { margin:0; padding:0; }
     body { font-family: Arial, sans-serif; font-size: 11px; }
 
@@ -628,6 +648,15 @@
     }
     .flexible-name.long-name { font-size: 10px; }
     .flexible-name.very-long-name { font-size: 9px; }
+    
+    /* Group total print sizing */
+    .flexible-group-total { 
+        white-space: nowrap; 
+        overflow: hidden; 
+        font-size: 11px; 
+    }
+    .flexible-group-total.long-group-total { font-size: 10px; }
+    .flexible-group-total.very-long-group-total { font-size: 9px; }
 
     /* Column widths are controlled via a fixed <colgroup> injected for each print table */
 
@@ -639,6 +668,20 @@
 
     /* Print-only inner spacer is not needed with @page margin */
     .punch-space { height: 0; }
+    
+    /* Fixed footer on each printed page (bottom center) */
+    .print-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 11px;
+        color: #000;
+        padding: 2px 0;
+        background: #fff;
+        border-top: none;
+    }
   `);
                 printWindow.document.write('</style></head><body>');
 
@@ -831,6 +874,8 @@
 
 
                 printWindow.document.write(html);
+                // Add bottom-centered footer text on every printed page
+                printWindow.document.write('<div class="print-footer">malith</div>');
                 printWindow.document.write('</body></html>');
                 printWindow.document.close();
 
@@ -840,6 +885,7 @@
                     // Base print sizes are smaller; keep readable minimums
                     fitTextCells(doc, 'td.flexible-loan-no', 11, 8, 0.5);
                     fitTextCells(doc, 'td.flexible-name', 11, 8, 0.5);
+                    fitTextCells(doc, 'td.flexible-group-total', 11, 8, 0.5); // Group total print auto size
 
                     printWindow.focus();
                     printWindow.print();
@@ -864,11 +910,16 @@
             left.className = 'left';
             left.innerHTML = "Company: Asipiya Holdings | Center No: {{ $center_no }} | Center Name: {{ $center_name }}";
 
+            const center = document.createElement('div');
+            center.className = 'center';
+            center.textContent = 'malith';
+
             const right = document.createElement('div');
             right.className = 'right';
             right.innerHTML = "Printed by: {{ $printedBy }} on {{ $printedAt }} | Page 1";
 
             footer.appendChild(left);
+            footer.appendChild(center);
             footer.appendChild(right);
 
             document.body.appendChild(footer);

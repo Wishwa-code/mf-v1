@@ -413,6 +413,7 @@
                             // Make sure we always have a Collection (even if controller sent an array or null)
                             $grouped_loans = collect($grouped_loans ?? []);
                             $center = collect($center ?? []);
+                            $collectors = collect($collectors ?? []);
                         @endphp
                         <div class="row">
                             <form action="{{ route('transaction.dailyreport') }}" method="GET" class="row align-items-end g-2">
@@ -467,6 +468,20 @@
                                             @foreach($grouped_loans->flatMap(function($centerGroups) { return $centerGroups->keys(); })->unique()->sort() as $groupKey)
                                                 <option value="{{ $groupKey }}" {{ request('group_filter') == $groupKey ? 'selected' : '' }}>
                                                     {{ $groupKey }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="mb-3">
+                                        <label for="collector_filter" class="form-label">Collector</label>
+                                        <select class="form-control select2" id="collector_filter" name="collector_filter">
+                                            <option value="">All</option>
+                                            @foreach($collectors as $collector)
+                                                <option value="{{ $collector->collector_id }}" {{ ($collector_filter ?? '') == $collector->collector_id ? 'selected' : '' }}>
+                                                    {{ $collector->collector_name }}
                                                 </option>
                                             @endforeach
                                         </select>
