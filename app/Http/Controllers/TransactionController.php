@@ -949,7 +949,6 @@ class TransactionController extends Controller
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
             ->leftJoin('route', 'route.id_route', '=', 'center.route_id') // join route
-            ->leftJoin('collector_data', 'customer_loan.Loan_No', '=', 'collector_data.Loan_no') // join collector data by loan number
             ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
             ->where('customer_loan.Status', '=', '0')
             ->select(
@@ -981,8 +980,7 @@ class TransactionController extends Controller
                 DB::raw('(SELECT Saving_Account_Balance FROM Loan_Log 
           WHERE Loan_Log.Loan_ID = customer_loan.idCustomer_Loan 
           ORDER BY Loan_Log.Loan_Log_ID DESC LIMIT 1) as last_saving_balance'),
-                DB::raw('IFNULL(collector_data.collector_name, "-") as collector_name'),
-                DB::raw('IFNULL(collector_data.collector_id, "-") as collector_id')
+                'customer.route_id as customer_route_id'
             )
             ->groupBy(
                 'customer.idCustomer',
@@ -1005,8 +1003,7 @@ class TransactionController extends Controller
                 'customer_loan.capital_balance',
                 'customer_loan.Installment_Amount',
                 'subquery.group_name',
-                'collector_data.collector_name',
-                'collector_data.collector_id'
+                'customer.route_id'
             );
 
         // Filter by center, group, and customer if provided
@@ -1024,9 +1021,20 @@ class TransactionController extends Controller
             $loanQuery->where('route.id_route', $route_filter);
         }
 
-        // filter by collector - using collector_id from collector_data table
+        // filter by collector - get routes assigned to collector, then filter customers by those routes
         if (!empty($collector_filter)) {
-            $loanQuery->where('collector_data.collector_id', $collector_filter);
+            // Get route IDs assigned to this collector
+            $collectorRoutes = DB::table('collector_has_route')
+                ->where('collector_id', $collector_filter)
+                ->pluck('route_id');
+            
+            // Filter customers by those routes
+            if ($collectorRoutes->isNotEmpty()) {
+                $loanQuery->whereIn('customer.route_id', $collectorRoutes);
+            } else {
+                // If collector has no routes assigned, return no results
+                $loanQuery->where('customer.route_id', -1);
+            }
         }
 
         $loan = $loanQuery->get();
@@ -1059,13 +1067,12 @@ class TransactionController extends Controller
         // products list for filter
         $products = tableWithBranch('loan_category')->select('Product_code')->whereNotNull('Product_code')->distinct()->pluck('Product_code');
 
-        // collectors list for filter - get unique collectors from collector_data table
-        $collectors = DB::table('collector_data')
-            ->select('collector_name', 'collector_id')
-            ->distinct()
-            ->whereNotNull('collector_name')
-            ->whereNotNull('collector_id')
-            ->orderBy('collector_name')
+        // collectors list for filter - get users where collector = 1
+        $collectors = DB::table('user')
+            ->select('id', 'Full_Name')
+            ->where('collector', 1)
+            ->where('Status', 1)
+            ->orderBy('Full_Name')
             ->get();
 
 
