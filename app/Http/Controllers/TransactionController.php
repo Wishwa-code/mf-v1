@@ -916,6 +916,7 @@ class TransactionController extends Controller
 
     public function dailyreport(Request $request){
         $center = tableWithBranch('center')->get();
+    $routes = tableWithBranch('route')->get(); // route list
 
         // Check if $center is empty
         if ($center->isEmpty()) {
@@ -924,12 +925,14 @@ class TransactionController extends Controller
             $grouped_loans = array(); // Or any default value you want to assign
             return view('pages.dailyreport', compact('center', 'grouped_loans','center_details'));
         } else {
-            // If $center is not empty, set the default center value
-            $center_details = $request->center_details ?? $center[0]->idCenter;
+            // Get center_details from request, default to null (All) if not provided
+            $center_details = $request->center_details;
         }
 
-        // selected product
+    // selected product
         $product_filter = $request->get('product_filter');
+    // selected route
+    $route_filter = $request->get('route_filter');
 
         // Loan Query
         $loanQuery = tableWithBranch('installments','installments')
@@ -943,11 +946,13 @@ class TransactionController extends Controller
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->leftJoin('route', 'route.id_route', '=', 'center.route_id') // join route
             ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
             ->where('customer_loan.Status', '=', '0')
             ->select(
                 'customer.idCustomer',
                 DB::raw('IFNULL(center.No, "-") as center_no'),
+                DB::raw('IFNULL(center.Name, "-") as center_name'),
                 DB::raw("CONCAT(customer.First_Name, ' ', customer.Last_Name) as customer_name"),
                 'customer.cus_number as cus_number',
                 'customer.Contact_No as Contact_No',
@@ -977,6 +982,7 @@ class TransactionController extends Controller
             ->groupBy(
                 'customer.idCustomer',
                 'center.No',
+                'center.Name',
                 'customer.First_Name',
                 'customer.Contact_No',
                 'loan_category.Product_code',
@@ -997,13 +1003,18 @@ class TransactionController extends Controller
             );
 
         // Filter by center, group, and customer if provided
-        if ($center_details != '0') {
+        if (!empty($center_details)) {
             $loanQuery->where('center.idCenter', '=', $center_details);
         }
 
         // filter by product
         if (!empty($product_filter)) {
             $loanQuery->where('loan_category.Product_code', $product_filter);
+        }
+
+        // filter by route
+        if (!empty($route_filter)) {
+            $loanQuery->where('route.id_route', $route_filter);
         }
 
         $loan = $loanQuery->get();
@@ -1026,7 +1037,12 @@ class TransactionController extends Controller
             });
         }
 
-        $grouped_loans = $loan->groupBy('group_name')->sortKeys();
+        // Group by center first, then by groups within each center
+        $grouped_loans = $loan->groupBy(function($item) {
+            return $item->center_name . ' (' . $item->center_no . ')';
+        })->map(function($centerGroup) {
+            return $centerGroup->groupBy('group_name')->sortKeys();
+        })->sortKeys();
 
         // products list for filter
         $products = tableWithBranch('loan_category')->select('Product_code')->whereNotNull('Product_code')->distinct()->pluck('Product_code');
@@ -1042,7 +1058,8 @@ class TransactionController extends Controller
         return view('pages.dailyreport', compact(
             'center', 'grouped_loans', 'center_details',
             'center_no', 'center_name', 'printedBy', 'printedAt',
-            'products', 'product_filter'
+            'products', 'product_filter',
+            'routes', 'route_filter'
         ));
     }
 

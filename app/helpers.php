@@ -5,6 +5,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Schema;
 
 function numberToWords($number) {
     $hyphen      = '-';
@@ -121,54 +122,68 @@ function tableWithBranch($table, $useBranchIdFromTable = null)
 {
     $query = DB::table($table);
 
-    // Check if we need to use a specific table's branch_id for filtering
-    if ($useBranchIdFromTable) {
+    // If a specific table alias/name is given for branch scoping and it has branch_id
+    if ($useBranchIdFromTable && Schema::hasColumn($useBranchIdFromTable, 'branch_id')) {
         return $query->where("$useBranchIdFromTable.branch_id", session('branch_id'));
     }
 
-    // If table is loan_category, also apply status = 1 filter
+    // Apply status filter for loan_category if present
     if ($table === 'loan_category') {
         $query->where('status', 1);
     }
 
-    return $query->where('branch_id', session('branch_id'));
+    // Only scope by branch if this table actually has a branch_id column
+    if (Schema::hasColumn($table, 'branch_id')) {
+        return $query->where('branch_id', session('branch_id'));
+    }
+
+    // Fallback: no branch column, return unscoped query
+    return $query;
 }
 
 
 function insertWithBranch($table, $data)
 {
-    // Add the branch_id from the session to the data
-    $data['branch_id'] = session('branch_id');
+    // Add branch_id if the table has that column
+    if (Schema::hasColumn($table, 'branch_id')) {
+        $data['branch_id'] = session('branch_id');
+    }
 
-    // Insert into the table and return the inserted ID
     return DB::table($table)->insertGetId($data);
 }
 
 function updateWithBranch($table, $idField, $idValue, $data)
 {
-    // Update the row where idField matches and the branch_id from the session
-    return DB::table($table)
-        ->where($idField, $idValue)
-        ->where('branch_id', session('branch_id')) // Ensure it's scoped by branch
-        ->update($data);
+    $builder = DB::table($table)->where($idField, $idValue);
+
+    // Scope by branch only if applicable
+    if (Schema::hasColumn($table, 'branch_id')) {
+        $builder->where('branch_id', session('branch_id'));
+    }
+
+    return $builder->update($data);
 }
 
 
 function deleteWithBranch($table, $idField, $idValue)
 {
-    return DB::table($table)
-        ->where($idField, $idValue)
-        ->where('branch_id', session('branch_id')) // Ensure it's scoped by branch
-        ->delete();
+    $builder = DB::table($table)->where($idField, $idValue);
+
+    if (Schema::hasColumn($table, 'branch_id')) {
+        $builder->where('branch_id', session('branch_id'));
+    }
+
+    return $builder->delete();
 }
 
 
 function updateOrInsertWithBranch($table, $conditions, $data)
 {
-    // Ensure branch_id is included in the conditions
-    $conditions['branch_id'] = session('branch_id');
+    // Ensure branch_id is included in the conditions if column exists
+    if (Schema::hasColumn($table, 'branch_id')) {
+        $conditions['branch_id'] = session('branch_id');
+    }
 
-    // Use updateOrInsert
     return DB::table($table)->updateOrInsert($conditions, $data);
 }
 

@@ -799,9 +799,30 @@
                         <td></td><td></td>
                 </tr>
                 <tr><td colspan="15" style="height: 15px;"></td></tr>
-                <tr><td colspan="5"><strong>Full Signature</strong></td><td colspan="10"></td></tr>
-                <tr><td colspan="5"><strong>Center Manager</strong></td><td colspan="10"></td></tr>
-                <tr><td colspan="5"><strong>Branch Manager</strong></td><td colspan="10"></td></tr>
+                <tr>
+                        <td colspan="5"><strong>Full Signature</strong></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                </tr>
+                <tr>
+                        <td colspan="5"><strong>Center Manager</strong></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                </tr>
+                <tr>
+                        <td colspan="5"><strong>Branch Manager</strong></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                        <td></td><td></td>
+                </tr>
 
             </tbody>
         </table>
