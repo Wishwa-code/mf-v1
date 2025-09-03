@@ -933,6 +933,8 @@ class TransactionController extends Controller
         $product_filter = $request->get('product_filter');
     // selected route
     $route_filter = $request->get('route_filter');
+    // selected collector
+    $collector_filter = $request->get('collector_filter');
 
         // Loan Query
         $loanQuery = tableWithBranch('installments','installments')
@@ -947,6 +949,7 @@ class TransactionController extends Controller
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
             ->leftJoin('route', 'route.id_route', '=', 'center.route_id') // join route
+            ->leftJoin('collector_data', 'customer_loan.Loan_No', '=', 'collector_data.Loan_no') // join collector data by loan number
             ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
             ->where('customer_loan.Status', '=', '0')
             ->select(
@@ -977,7 +980,9 @@ class TransactionController extends Controller
                 DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date < CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as arrease'),
                 DB::raw('(SELECT Saving_Account_Balance FROM Loan_Log 
           WHERE Loan_Log.Loan_ID = customer_loan.idCustomer_Loan 
-          ORDER BY Loan_Log.Loan_Log_ID DESC LIMIT 1) as last_saving_balance')
+          ORDER BY Loan_Log.Loan_Log_ID DESC LIMIT 1) as last_saving_balance'),
+                DB::raw('IFNULL(collector_data.collector_name, "-") as collector_name'),
+                DB::raw('IFNULL(collector_data.collector_id, "-") as collector_id')
             )
             ->groupBy(
                 'customer.idCustomer',
@@ -999,7 +1004,9 @@ class TransactionController extends Controller
                 'customer_loan.idCustomer_Loan',
                 'customer_loan.capital_balance',
                 'customer_loan.Installment_Amount',
-                'subquery.group_name'
+                'subquery.group_name',
+                'collector_data.collector_name',
+                'collector_data.collector_id'
             );
 
         // Filter by center, group, and customer if provided
@@ -1015,6 +1022,11 @@ class TransactionController extends Controller
         // filter by route
         if (!empty($route_filter)) {
             $loanQuery->where('route.id_route', $route_filter);
+        }
+
+        // filter by collector - using collector_id from collector_data table
+        if (!empty($collector_filter)) {
+            $loanQuery->where('collector_data.collector_id', $collector_filter);
         }
 
         $loan = $loanQuery->get();
@@ -1047,6 +1059,15 @@ class TransactionController extends Controller
         // products list for filter
         $products = tableWithBranch('loan_category')->select('Product_code')->whereNotNull('Product_code')->distinct()->pluck('Product_code');
 
+        // collectors list for filter - get unique collectors from collector_data table
+        $collectors = DB::table('collector_data')
+            ->select('collector_name', 'collector_id')
+            ->distinct()
+            ->whereNotNull('collector_name')
+            ->whereNotNull('collector_id')
+            ->orderBy('collector_name')
+            ->get();
+
 
         $selected_center = $center->firstWhere('idCenter', $center_details);
 
@@ -1059,7 +1080,8 @@ class TransactionController extends Controller
             'center', 'grouped_loans', 'center_details',
             'center_no', 'center_name', 'printedBy', 'printedAt',
             'products', 'product_filter',
-            'routes', 'route_filter'
+            'routes', 'route_filter',
+            'collectors', 'collector_filter'
         ));
     }
 
