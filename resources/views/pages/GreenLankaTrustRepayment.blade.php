@@ -245,9 +245,15 @@
                 color: black;
                 display: flex;
                 justify-content: space-between;
-                padding: 5px 30px;
+                padding: 2px 20px;
                 background-color: white;
-                border-top: 1px solid #000;
+                border-top: none;
+            }
+            .print-footer .center {
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                text-align: center;
             }
         }
         @media print {
@@ -599,7 +605,7 @@
                 printWindow.document.write('<html><head><title>Repayment Sheet</title><style>');
                 printWindow.document.write(`
     /* Remove browser margins; reserve top margin via @page */
-    @page { size: ${orientation}; margin: 1in 0 0 0; }
+    @page { size: ${orientation}; margin: 1in 0 0.1in 0; }
     html, body { margin:0; padding:0; }
     body { font-family: Arial, sans-serif; font-size: 11px; }
 
@@ -662,6 +668,20 @@
 
     /* Print-only inner spacer is not needed with @page margin */
     .punch-space { height: 0; }
+    
+    /* Fixed footer on each printed page (bottom center) */
+    .print-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 11px;
+        color: #000;
+        padding: 2px 0;
+        background: #fff;
+        border-top: none;
+    }
   `);
                 printWindow.document.write('</style></head><body>');
 
@@ -854,6 +874,8 @@
 
 
                 printWindow.document.write(html);
+                // Add bottom-centered footer text on every printed page
+                printWindow.document.write('<div class="print-footer">malith</div>');
                 printWindow.document.write('</body></html>');
                 printWindow.document.close();
 
@@ -888,11 +910,16 @@
             left.className = 'left';
             left.innerHTML = "Company: Asipiya Holdings | Center No: {{ $center_no }} | Center Name: {{ $center_name }}";
 
+            const center = document.createElement('div');
+            center.className = 'center';
+            center.textContent = 'malith';
+
             const right = document.createElement('div');
             right.className = 'right';
             right.innerHTML = "Printed by: {{ $printedBy }} on {{ $printedAt }} | Page 1";
 
             footer.appendChild(left);
+            footer.appendChild(center);
             footer.appendChild(right);
 
             document.body.appendChild(footer);
