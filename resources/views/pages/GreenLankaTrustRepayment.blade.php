@@ -875,7 +875,7 @@
 
                 printWindow.document.write(html);
                 // Add bottom-centered footer text on every printed page
-                printWindow.document.write('<div class="print-footer">malith</div>');
+//                printWindow.document.write('<div class="print-footer">malith</div>');
                 printWindow.document.write('</body></html>');
                 printWindow.document.close();
 
