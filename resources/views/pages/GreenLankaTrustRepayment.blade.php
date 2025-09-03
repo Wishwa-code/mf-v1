@@ -383,9 +383,11 @@
                                             </tr>
                                         @endforeach
 
+                                        @php
+                                            $emptyRows = 10 - count($group);
+                                        @endphp
 
-
-                                        @for ($j = 0; $j < 7; $j++)
+                                        @for ($j = 0; $j < $emptyRows; $j++)
                                             <tr class="group-row">
                                                 @for ($k = 0; $k < 15; $k++)
                                                     <td>&nbsp;</td>
