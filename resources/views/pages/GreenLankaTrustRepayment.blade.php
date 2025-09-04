@@ -159,8 +159,17 @@
         @media print {
             @page {
                 size: A4 landscape;
-                margin: 1in 0 0 0; /* 1 inch top margin, 0 for others */
+                margin: 1in 0 0.5in 0;
                 counter-increment: page;
+                @bottom-center {
+                    content: "Page " counter(page);
+                    font-size: 11px;
+                    font-family: Arial, sans-serif;
+                }
+            }
+
+            body {
+                counter-reset: page;
             }
 
 
@@ -236,25 +245,7 @@
             }
         }
         @media print {
-            .print-footer {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                font-size: 11px;
-                color: black;
-                display: flex;
-                justify-content: space-between;
-                padding: 2px 20px;
-                background-color: white;
-                border-top: none;
-            }
-            .print-footer .center {
-                position: absolute;
-                left: 50%;
-                transform: translateX(-50%);
-                text-align: center;
-            }
+            /* Remove old print footer styles - using CSS page counters now */
         }
         @media print {
             /* Allow groups to split across pages if needed; don't force page breaks */
@@ -435,14 +426,7 @@
             </div> <!-- end col -->
         </div> <!-- end row -->
     </div> <!-- end container-fluid -->
-    <div class="print-footer">
-        <div class="left">
-            Company: Asipiya Holdings | Center No: {{ $center_no }} | Center Name: {{ $center_name }}
-        </div>
-        <div class="right">
-            Printed by: {{ $printedBy }} on {{ $printedAt }} | Page <span class="page-number"></span>
-        </div>
-    </div>
+    <!-- Removed print-footer div - using CSS page counters now -->
 
     @php
         $printedBy = session('Full_Name');
@@ -605,9 +589,18 @@
                 printWindow.document.write('<html><head><title>Repayment Sheet</title><style>');
                 printWindow.document.write(`
     /* Remove browser margins; reserve top margin via @page */
-    @page { size: ${orientation}; margin: 1in 0 0.1in 0; }
+    @page { 
+        size: ${orientation}; 
+        margin: 1in 0 0.5in 0; 
+        counter-increment: page;
+        @bottom-center {
+            content: "Page " counter(page);
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+    }
     html, body { margin:0; padding:0; }
-    body { font-family: Arial, sans-serif; font-size: 11px; }
+    body { font-family: Arial, sans-serif; font-size: 11px; counter-reset: page; }
 
     .page { page-break-after: always; }
     .page:last-child { page-break-after: auto; }
@@ -668,20 +661,6 @@
 
     /* Print-only inner spacer is not needed with @page margin */
     .punch-space { height: 0; }
-    
-    /* Fixed footer on each printed page (bottom center) */
-    .print-footer {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        text-align: center;
-        font-size: 11px;
-        color: #000;
-        padding: 2px 0;
-        background: #fff;
-        border-top: none;
-    }
   `);
                 printWindow.document.write('</style></head><body>');
 
@@ -874,8 +853,6 @@
 
 
                 printWindow.document.write(html);
-                // Add bottom-centered footer text on every printed page
-//                printWindow.document.write('<div class="print-footer">malith</div>');
                 printWindow.document.write('</body></html>');
                 printWindow.document.close();
 
@@ -898,33 +875,7 @@
 
 
     </script>
-    <script>
-        window.addEventListener('beforeprint', function () {
-            const existing = document.querySelectorAll('.print-footer');
-            existing.forEach(e => e.remove());
 
-            const footer = document.createElement('div');
-            footer.className = 'print-footer';
-
-            const left = document.createElement('div');
-            left.className = 'left';
-            left.innerHTML = "Company: Asipiya Holdings | Center No: {{ $center_no }} | Center Name: {{ $center_name }}";
-
-            const center = document.createElement('div');
-            center.className = 'center';
-            center.textContent = 'malith';
-
-            const right = document.createElement('div');
-            right.className = 'right';
-            right.innerHTML = "Printed by: {{ $printedBy }} on {{ $printedAt }} | Page 1";
-
-            footer.appendChild(left);
-            footer.appendChild(center);
-            footer.appendChild(right);
-
-            document.body.appendChild(footer);
-        });
-    </script>
 
 
 @endsection
