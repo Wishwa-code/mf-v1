@@ -567,9 +567,18 @@
                                                     <td class="fixed-name">{{ $item->name_with_initials }}</td>
                                                     <td>{{ number_format($item->Loan_Amount, 2) }}</td>
                                                     <td>{{ number_format($item->Installment_Amount, 2) }}</td>
-                                                    <td>{{ number_format($item->Balance_Amount, 2) }}</td>
-                                                    {{-- Fix: Use available fields for Total Paid calculation --}}
-                                                    <td>{{ number_format( max(0, ($item->Loan_Amount ?? 0) - ($item->Balance_Amount ?? 0)), 2) }}</td>
+                                                    @php
+                                                        // same rule as repayment sheet
+                                                        $outstanding = $item->Total_Balance
+                                                            ?? (($item->capital_balance ?? 0) + ($item->installment_balance ?? 0) + ($item->Other_Amount_Balance ?? 0))
+                                                            ?? ($item->Balance_Amount ?? 0);
+                                                        $loanTotal = $item->Total_Loan_Amount
+                                                            ?? (($item->Amount ?? 0) + ($item->Interest_Amount ?? 0) + ($item->Total_Other_Amount ?? 0))
+                                                            ?? ($item->Loan_Amount ?? 0);
+                                                        $paidTotal = max(0, $loanTotal - $outstanding);
+                                                    @endphp
+                                                    <td>{{ number_format($outstanding, 2) }}</td>
+                                                    <td>{{ number_format($paidTotal, 2) }}</td>
                                                     @for ($i = 1; $i <= 7; $i++)
                                                         <td class="paid-amount"></td>
                                                     @endfor
@@ -579,9 +588,22 @@
                                                 <td colspan="2">Group Total</td>
                                                 <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
                                                 <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
-                                                <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
-                                                {{-- Fix: Use available fields for Group Total --}}
-                                                <td>{{ number_format(max(0, $group->sum('Loan_Amount') - $group->sum('Balance_Amount')), 2) }}</td>
+                                                @php
+                                                    // group sums with penalty logic
+                                                    $grpOutstanding = $group->sum(function($x){
+                                                        return ($x->Total_Balance)
+                                                            ?? (($x->capital_balance ?? 0) + ($x->installment_balance ?? 0) + ($x->Other_Amount_Balance ?? 0))
+                                                            ?? ($x->Balance_Amount ?? 0);
+                                                    });
+                                                    $grpLoanTotal = $group->sum(function($x){
+                                                        return ($x->Total_Loan_Amount)
+                                                            ?? (($x->Amount ?? 0) + ($x->Interest_Amount ?? 0) + ($x->Total_Other_Amount ?? 0))
+                                                            ?? ($x->Loan_Amount ?? 0);
+                                                    });
+                                                    $grpPaid = max(0, $grpLoanTotal - $grpOutstanding);
+                                                @endphp
+                                                <td>{{ number_format($grpOutstanding, 2) }}</td>
+                                                <td>{{ number_format($grpPaid, 2) }}</td>
                                                 <td colspan="7"></td>
                                             </tr>
                                             {{-- Empty Rows for manual entries --}}
@@ -598,9 +620,23 @@
                                             <td colspan="2">Center Total</td>
                                             <td>{{ number_format($centerGroups->flatten()->sum('Loan_Amount'), 2) }}</td>
                                             <td>{{ number_format($centerGroups->flatten()->sum('Installment_Amount'), 2) }}</td>
-                                            <td>{{ number_format($centerGroups->flatten()->sum('Balance_Amount'), 2) }}</td>
-                                            {{-- Fix: Use available fields for Center Total --}}
-                                            <td>{{ number_format(max(0, $centerGroups->flatten()->sum('Loan_Amount') - $centerGroups->flatten()->sum('Balance_Amount')), 2) }}</td>
+                                            @php
+                                                // center sums with penalty logic
+                                                $flat = $centerGroups->flatten();
+                                                $ctrOutstanding = $flat->sum(function($x){
+                                                    return ($x->Total_Balance)
+                                                        ?? (($x->capital_balance ?? 0) + ($x->installment_balance ?? 0) + ($x->Other_Amount_Balance ?? 0))
+                                                        ?? ($x->Balance_Amount ?? 0);
+                                                });
+                                                $ctrLoanTotal = $flat->sum(function($x){
+                                                    return ($x->Total_Loan_Amount)
+                                                        ?? (($x->Amount ?? 0) + ($x->Interest_Amount ?? 0) + ($x->Total_Other_Amount ?? 0))
+                                                        ?? ($x->Loan_Amount ?? 0);
+                                                });
+                                                $ctrPaid = max(0, $ctrLoanTotal - $ctrOutstanding);
+                                            @endphp
+                                            <td>{{ number_format($ctrOutstanding, 2) }}</td>
+                                            <td>{{ number_format($ctrPaid, 2) }}</td>
                                             <td colspan="7"></td>
                                         </tr>
                                     @endforeach
