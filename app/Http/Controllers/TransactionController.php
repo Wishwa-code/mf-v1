@@ -918,16 +918,9 @@ class TransactionController extends Controller
         $center = tableWithBranch('center')->get();
     $routes = tableWithBranch('route')->get(); // route list
 
-        // Check if $center is empty
-        if ($center->isEmpty()) {
-            // Handle the case when the center table has no values
-            $center_details = null; // Or any default value you want to assign
-            $grouped_loans = array(); // Or any default value you want to assign
-            return view('pages.dailyreport', compact('center', 'grouped_loans','center_details'));
-        } else {
-            // Get center_details from request, default to null (All) if not provided
-            $center_details = $request->center_details;
-        }
+        // NOTE: Don't early-return when center table is empty. Keep going with LEFT JOINs so data still loads.
+        // Get center_details from request; can be null (means "All").
+        $center_details = $request->center_details;
 
     // selected product
         $product_filter = $request->get('product_filter');
@@ -1061,6 +1054,7 @@ class TransactionController extends Controller
             ->select('id', 'Full_Name')
             ->where('collector', 1)
             ->where('Status', 1)
+            ->where('branch_id', session('branch_id'))
             ->orderBy('Full_Name')
             ->get();
 
