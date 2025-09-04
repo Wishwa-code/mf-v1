@@ -423,6 +423,7 @@
                         <div class="row">
                             <form action="{{ route('transaction.dailyreport') }}" method="GET" class="row align-items-end g-2">
                                 @csrf
+                                @if(($center ?? collect())->count() > 0)
                                 <div class="col-lg-3">
                                     <div class="mb-3">
                                         <label for="center_details" class="form-label">Center</label>
@@ -437,6 +438,7 @@
                                         </select>
                                     </div>
                                 </div>
+                                @endif {{-- hide if no centers --}}
 
 
                                 <div class="col-lg-3">
