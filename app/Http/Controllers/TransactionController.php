@@ -1021,20 +1021,9 @@ class TransactionController extends Controller
             $loanQuery->where('route.id_route', $route_filter);
         }
 
-        // filter by collector - get routes assigned to collector, then filter customers by those routes
+        // filter by collector - directly filter loans by collector_id
         if (!empty($collector_filter)) {
-            // Get route IDs assigned to this collector
-            $collectorRoutes = DB::table('collector_has_route')
-                ->where('collector_id', $collector_filter)
-                ->pluck('route_id');
-            
-            // Filter customers by those routes
-            if ($collectorRoutes->isNotEmpty()) {
-                $loanQuery->whereIn('customer.route_id', $collectorRoutes);
-            } else {
-                // If collector has no routes assigned, return no results
-                $loanQuery->where('customer.route_id', -1);
-            }
+            $loanQuery->where('customer_loan.collector_id', $collector_filter);
         }
 
         $loan = $loanQuery->get();

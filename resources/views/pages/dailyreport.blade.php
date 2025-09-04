@@ -188,7 +188,9 @@
         min-width: 5.71% !important;
         max-width: 5.71% !important;
         writing-mode: horizontal-tb;
-        white-space: nowrap !important;
+        /* paid amount for 2 lines */
+        white-space: normal !important;
+        word-break: break-word !important;
         line-height: 1.1 !important;
     }
 
@@ -347,9 +349,11 @@
 
             /* add data colmn spacing */
             #repaymentTable thead th.empty-date-header {
-                white-space: nowrap !important;
+                /* paid amount 2 lines */
+                white-space: normal !important;
                 line-height: 1.1 !important;
                 font-size: 9px !important;
+                word-break: break-word !important;
             }
 
             #repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 12%; max-width: 12%; font-size: 8px !important; word-break: break-all; }  /* Loan Number */
@@ -378,7 +382,8 @@
                 height: auto !important;
                 min-height: 20px !important;
                 line-height: 1.1 !important;
-                white-space: nowrap !important;
+                white-space: normal !important;
+                word-break: break-word !important;
                 vertical-align: middle !important;
                 font-weight: normal !important;
             }
@@ -446,7 +451,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-lg-3">
+                                {{-- <div class="col-lg-3">
                                     <div class="mb-3">
                                         <label for="route_filter" class="form-label">Route</label>
                                         <select class="form-control select2" id="route_filter" name="route_filter">
@@ -458,7 +463,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                </div>
+                                </div> --}}
 
                                 <div class="col-lg-3">
                                     <div class="mb-3">
@@ -519,6 +524,7 @@
                                     <col style="width:10%; max-width:10%;">
                                     <col style="width:10%; max-width:10%;">
                                     <col style="width:10%; max-width:10%;">
+                                    <col style="width:8%; max-width:8%;"> {{-- Total Paid column --}}
                                     @for ($i = 1; $i <= 7; $i++)
                                         <col class="date-col" style="width:5.71%; max-width:5.71%;">
                                     @endfor
@@ -528,15 +534,17 @@
                                     <th rowspan="2">Loan Number</th>
                                     <th rowspan="2">Customer Name</th>
                                     <th rowspan="2">Amount</th>
-                                    <th rowspan="2">Due</th>
+                                    {{-- Renamed 'Due' to 'Installment Amount' --}}
+                                    <th rowspan="2">Installment Amount</th>
                                     <th rowspan="2">Balance</th>
+                                    <th rowspan="2">Total Paid</th>
                                     @for ($i = 1; $i <= 7; $i++)
                                         <th class="empty-date-header"></th>
                                     @endfor
                                 </tr>
                                 <tr>
                                     @for ($i = 1; $i <= 7; $i++)
-                                        <th class="empty-date-header">paid amount</th>
+                                        <th class="empty-date-header">paid<br>amount</th>
                                     @endfor
                                 </tr>
                                 </thead>
@@ -546,7 +554,7 @@
                                     @foreach($centerPair as $center_name => $centerGroups)
                                         {{-- Center Header --}}
                                         <tr class="center-header">
-                                            <td colspan="12"><strong>Center: {{ $center_name }}</strong></td>
+                                            <td colspan="13"><strong>Center: {{ $center_name }}</strong></td>
                                         </tr>
                                         @foreach($centerGroups as $group_name => $group)
                                             {{-- Group Header --}}
@@ -558,6 +566,8 @@
                                                     <td>{{ number_format($item->Loan_Amount, 2) }}</td>
                                                     <td>{{ number_format($item->Installment_Amount, 2) }}</td>
                                                     <td>{{ number_format($item->Balance_Amount, 2) }}</td>
+                                                    {{-- Fix: Use available fields for Total Paid calculation --}}
+                                                    <td>{{ number_format( max(0, ($item->Loan_Amount ?? 0) - ($item->Balance_Amount ?? 0)), 2) }}</td>
                                                     @for ($i = 1; $i <= 7; $i++)
                                                         <td class="paid-amount"></td>
                                                     @endfor
@@ -568,12 +578,14 @@
                                                 <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
                                                 <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
                                                 <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
+                                                {{-- Fix: Use available fields for Group Total --}}
+                                                <td>{{ number_format(max(0, $group->sum('Loan_Amount') - $group->sum('Balance_Amount')), 2) }}</td>
                                                 <td colspan="7"></td>
                                             </tr>
                                             {{-- Empty Rows for manual entries --}}
                                             @for ($j = 0; $j < 3; $j++)
                                                 <tr class="group-row">
-                                                    @for ($k = 0; $k < 12; $k++)
+                                                    @for ($k = 0; $k < 13; $k++)
                                                         <td>&nbsp;</td>
                                                     @endfor
                                                 </tr>
@@ -585,6 +597,8 @@
                                             <td>{{ number_format($centerGroups->flatten()->sum('Loan_Amount'), 2) }}</td>
                                             <td>{{ number_format($centerGroups->flatten()->sum('Installment_Amount'), 2) }}</td>
                                             <td>{{ number_format($centerGroups->flatten()->sum('Balance_Amount'), 2) }}</td>
+                                            {{-- Fix: Use available fields for Center Total --}}
+                                            <td>{{ number_format(max(0, $centerGroups->flatten()->sum('Loan_Amount') - $centerGroups->flatten()->sum('Balance_Amount')), 2) }}</td>
                                             <td colspan="7"></td>
                                         </tr>
                                     @endforeach
@@ -713,7 +727,30 @@
             });
 
             $('#pdfButton').click(function () {
-                const element = document.getElementById('repaymentTable');
+                // gather selected filters
+                const centerText = $('#center_details option:selected').text() || '-';
+                const productText = $('#product_filter option:selected').text() || '-';
+                const routeText = $('#route_filter option:selected').text() || '-';
+                const groupText = $('#group_filter option:selected').text() || '-';
+                const collectorText = $('#collector_filter option:selected').text() || '-';
+                const currentMonth = new Date().toLocaleString('default', {month: 'long'});
+
+                // build header html
+                const headerHtml = `
+                    <div style="text-align:center; margin-bottom:8px;">
+                        <h2 style=\"margin:4px; font-size:16px;\">Daily Report Template for ${currentMonth}</h2>
+                        <div style=\"font-size:12px; color:#333; margin-top:2px;\">Filters: Center: ${centerText} | Product: ${productText} | Route: ${routeText} | Group: ${groupText} | Collector: ${collectorText}</div>
+                    </div>
+                `;
+
+                // prepare temporary container with header + table
+                const tableEl = document.getElementById('repaymentTable');
+                const wrapper = document.createElement('div');
+                wrapper.style.background = '#fff';
+                wrapper.appendChild(document.createElement('div'));
+                wrapper.firstChild.innerHTML = headerHtml;
+                wrapper.appendChild(tableEl.cloneNode(true));
+
                 const opt = {
                     margin: [0.5, 0.5, 0.5, 0.5],
                     filename: `Daily_Report_${new Date().toLocaleString('default', {month: 'long'})}.pdf`,
@@ -721,12 +758,17 @@
                     html2canvas: {scale: 2, useCORS: true},
                     jsPDF: {unit: 'in', format: [11, 8.5], orientation: 'landscape'}
                 };
-                html2pdf().from(element).set(opt).save();
+
+                html2pdf().from(wrapper).set(opt).save();
             });
 
             $('#printButton').click(function () {
                 const currentMonth = new Date().toLocaleString('default', {month: 'long'});
-                const center_details = $('#center_details').find('option:selected').text();
+                const centerText = $('#center_details option:selected').text() || '-';
+                const productText = $('#product_filter option:selected').text() || '-';
+                const routeText = $('#route_filter option:selected').text() || '-';
+                const groupText = $('#group_filter option:selected').text() || '-';
+                const collectorText = $('#collector_filter option:selected').text() || '-';
                 const orientation = $('#pageOrientation').val();
 
                 const printWindow = window.open('', '', 'height=800,width=1200');
@@ -751,7 +793,13 @@
                 printWindow.document.write('</style>');
 
 
-                printWindow.document.write('<h2 style="text-align:center;">Daily Report Template for ' + currentMonth + ' (' + center_details + ')</h2>');
+                // header with filters
+                const headerHtml = '<div style="text-align:center; margin-bottom:8px;">'
+                    + '<h2 style="margin:4px; font-size:16px;">Daily Report Template for ' + currentMonth + '</h2>'
+                    + '<div style="font-size:12px; color:#333; margin-top:2px;">Filters: Center: ' + centerText + ' | Product: ' + productText + ' | Route: ' + routeText + ' | Group: ' + groupText + ' | Collector: ' + collectorText + '</div>'
+                    + '</div>';
+
+                printWindow.document.write(headerHtml);
                 printWindow.document.write(printContent);
 
 // Append signature section
