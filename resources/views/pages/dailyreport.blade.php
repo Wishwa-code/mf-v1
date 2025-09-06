@@ -811,10 +811,13 @@
                 const currentMonth = new Date().toLocaleString('default', {month: 'long'});
 
                 // build header html
+                // include print date in header
+                const printDate = new Date().toLocaleString();
                 const headerHtml = `
                     <div style="text-align:center; margin-bottom:8px;">
                         <h2 style=\"margin:4px; font-size:16px;\">Daily Report Template for ${currentMonth}</h2>
                         <div style=\"font-size:12px; color:#333; margin-top:2px;\">Filters: Center: ${centerText} | Product: ${productText} | Route: ${routeText} | Group: ${groupText} | Collector: ${collectorText}</div>
+                        <div style=\"font-size:12px; color:#333; margin-top:2px;\">Print Date: ${printDate}</div>
                     </div>
                 `;
 
@@ -869,9 +872,11 @@
 
 
                 // header with filters
+                const printDate = new Date().toLocaleString();
                 const headerHtml = '<div style="text-align:center; margin-bottom:8px;">'
                     + '<h2 style="margin:4px; font-size:16px;">Daily Report Template for ' + currentMonth + '</h2>'
                     + '<div style="font-size:12px; color:#333; margin-top:2px;">Filters: Center: ' + centerText + ' | Product: ' + productText + ' | Route: ' + routeText + ' | Group: ' + groupText + ' | Collector: ' + collectorText + '</div>'
+                    + '<div style="font-size:12px; color:#333; margin-top:2px;">Print Date: ' + printDate + '</div>'
                     + '</div>';
 
                 printWindow.document.write(headerHtml);
