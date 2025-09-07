@@ -472,132 +472,132 @@ class CapitalBalanceController extends Controller
 
     public function panelty_remove(){
 
-        $rows = DB::table('installments as i')
-            ->join('customer_loan as c', 'c.idCustomer_Loan', '=', 'i.Customer_Loan_idCustomer_Loan')
-            ->where('i.Status', 0)
-            ->where('i.Paid_Amount', '>', 0)
-            ->where('i.Panalty_Amount', '!=', 0)
-            ->where('i.Total_Balance', '>', 1)
-            ->where('c.Collection_Type', 'Weekly')
-            ->get();
-
-        DB::table('Loan_Log')->where('Type','=','Adjustment- Asipiya')->delete();
-        foreach ($rows as $item){
-            $ins_amount=$item->Installment_Amount;
-
-            $panelty=$ins_amount/100*3;
-
-
-            DB::table('installments')
-                ->where('idInstallments', $item->idInstallments)
-                ->update([
-                    'Panalty_Amount'=>$panelty,
-                    'Panelty_count'    => '1',
-                ]);
-        }
-
-        $loans=DB::table('customer_loan')->where('Status','=','0')->get();
-        foreach ($loans as $loan){
-
-            $installment=DB::table('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan->idCustomer_Loan)->get();
-            foreach ($installment as $ins){
-
-                $installment_amount=$ins->Installment_Amount;
-                $Panalty_Amount=$ins->Panalty_Amount;
-                $Paid_Amount=$ins->Paid_Amount;
-                $Paid_Amount_2=$ins->Paid_Amount;
-                $capital_amount=$ins->capital_amount;
-                $interest_amount=$ins->interest_amount;
-
-
-
-                $interest_balance=$interest_amount;
-                $capital_balance=$capital_amount;
-
-                if ($Paid_Amount<=$Panalty_Amount){
-                    $panelty_balance=$Panalty_Amount-$Paid_Amount;
-                }else{
-                    $panelty_balance=0;
-                    $Paid_Amount=$Paid_Amount-$Panalty_Amount;
-                    if ($Paid_Amount<=$interest_amount){
-                        $interest_balance=$interest_amount-$Paid_Amount;
-                    }else{
-                        $interest_balance=0;
-                        $Paid_Amount=$Paid_Amount-$interest_amount;
-
-                        if ($Paid_Amount<=$capital_amount){
-                            $capital_balance=$capital_amount-$Paid_Amount;
-                        }else{
-                            $capital_balance=0;
-                            $Paid_Amount_2=$capital_amount+$interest_amount+$Panalty_Amount;
-                        }
-                    }
-                }
-
-
-                $installmentAmount = (float) $installment_amount;  // cap+interest for this installment
-                $penaltyAmount     = (float) $Panalty_Amount;       // newly computed penalty
-                $penaltyBalance    = (float) $panelty_balance;
-                $interestBalance   = (float) $interest_balance;
-                $capitalBalance    = (float) $capital_balance;
-
-                $totalAmount  = round($installmentAmount + $penaltyAmount, 2);
-                $totalBalance = round($capitalBalance + $interestBalance + $penaltyBalance, 2);
-
-                DB::table('installments')
-                    ->where('idInstallments', $ins->idInstallments)
-                    ->update([
-                        'Total_Amount'     => $totalAmount,
-                        'Panalty_Balance'  => round($penaltyBalance, 2),
-                        'Interest_Balance' => round($interestBalance, 2),
-                        'capital_balance'  => round($capitalBalance, 2),
-                        'Paid_Amount'  => round($Paid_Amount_2, 2),
-                        'Total_Balance'    => $totalBalance,
-
-                    ]);
-            }
-
-            $Interest_Balance_sum=DB::table('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan->idCustomer_Loan)->sum('Interest_Balance');
-            $capital_balance_sum=DB::table('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan->idCustomer_Loan)->sum('capital_balance');
-            $Total_Balance_sum=DB::table('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan->idCustomer_Loan)->sum('Total_Balance');
-            $Panalty_Balance_sum=DB::table('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan->idCustomer_Loan)->sum('Panalty_Balance');
-
-            DB::table('customer_loan')
-                ->where('idCustomer_Loan', $loan->idCustomer_Loan)
-                ->update([
-                    'Balance_Amount'=>$Total_Balance_sum,
-                    'capital_balance'=>$capital_balance_sum,
-                    'installment_balance'=>$Interest_Balance_sum,
-                ]);
-
-
-            $user_id = (int)session('userid');
-
-
-
-            DB::table('Loan_Log')->insert([
-                'Loan_ID' => $loan->idCustomer_Loan,
-                'Date_Time' => date('Y-m-d H:i:s'),
-                'Type' => 'Adjustment- Asipiya',
-                'Type_ID' => '0',
-                'Description' => 'Adjustment- Asipiya',
-                'Amount' => '0.00',
-                'Panelty_Payment' => '0.00',
-                'Interest_Payment' => '0.00',
-                'Capital_Payment' => '0.00',
-                'Savings_Payment' => '0.00',
-                'Panelty_Balance' => $Panalty_Balance_sum,
-                'Interest_Balance' => $Interest_Balance_sum,
-                'Capital_Balance' => $capital_balance_sum,
-                'Total_Pending_Balance' => $Total_Balance_sum,
-                'Saving_Account_Balance' => '0.00',
-                'User_idUser' => $user_id,
-                'branch_id' => session('branch_id')
-            ]);
-
-
-
-        }
+//        $rows = DB::table('installments as i')
+//            ->join('customer_loan as c', 'c.idCustomer_Loan', '=', 'i.Customer_Loan_idCustomer_Loan')
+//            ->where('i.Status', 0)
+//            ->where('i.Paid_Amount', '>', 0)
+//            ->where('i.Panalty_Amount', '!=', 0)
+//            ->where('i.Total_Balance', '>', 1)
+//            ->where('c.Collection_Type', 'Weekly')
+//            ->get();
+//
+//        DB::table('Loan_Log')->where('Type','=','Adjustment- Asipiya')->delete();
+//        foreach ($rows as $item){
+//            $ins_amount=$item->Installment_Amount;
+//
+//            $panelty=$ins_amount/100*3;
+//
+//
+//            DB::table('installments')
+//                ->where('idInstallments', $item->idInstallments)
+//                ->update([
+//                    'Panalty_Amount'=>$panelty,
+//                    'Panelty_count'    => '1',
+//                ]);
+//        }
+//
+//        $loans=DB::table('customer_loan')->where('Status','=','0')->get();
+//        foreach ($loans as $loan){
+//
+//            $installment=DB::table('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan->idCustomer_Loan)->get();
+//            foreach ($installment as $ins){
+//
+//                $installment_amount=$ins->Installment_Amount;
+//                $Panalty_Amount=$ins->Panalty_Amount;
+//                $Paid_Amount=$ins->Paid_Amount;
+//                $Paid_Amount_2=$ins->Paid_Amount;
+//                $capital_amount=$ins->capital_amount;
+//                $interest_amount=$ins->interest_amount;
+//
+//
+//
+//                $interest_balance=$interest_amount;
+//                $capital_balance=$capital_amount;
+//
+//                if ($Paid_Amount<=$Panalty_Amount){
+//                    $panelty_balance=$Panalty_Amount-$Paid_Amount;
+//                }else{
+//                    $panelty_balance=0;
+//                    $Paid_Amount=$Paid_Amount-$Panalty_Amount;
+//                    if ($Paid_Amount<=$interest_amount){
+//                        $interest_balance=$interest_amount-$Paid_Amount;
+//                    }else{
+//                        $interest_balance=0;
+//                        $Paid_Amount=$Paid_Amount-$interest_amount;
+//
+//                        if ($Paid_Amount<=$capital_amount){
+//                            $capital_balance=$capital_amount-$Paid_Amount;
+//                        }else{
+//                            $capital_balance=0;
+//                            $Paid_Amount_2=$capital_amount+$interest_amount+$Panalty_Amount;
+//                        }
+//                    }
+//                }
+//
+//
+//                $installmentAmount = (float) $installment_amount;  // cap+interest for this installment
+//                $penaltyAmount     = (float) $Panalty_Amount;       // newly computed penalty
+//                $penaltyBalance    = (float) $panelty_balance;
+//                $interestBalance   = (float) $interest_balance;
+//                $capitalBalance    = (float) $capital_balance;
+//
+//                $totalAmount  = round($installmentAmount + $penaltyAmount, 2);
+//                $totalBalance = round($capitalBalance + $interestBalance + $penaltyBalance, 2);
+//
+//                DB::table('installments')
+//                    ->where('idInstallments', $ins->idInstallments)
+//                    ->update([
+//                        'Total_Amount'     => $totalAmount,
+//                        'Panalty_Balance'  => round($penaltyBalance, 2),
+//                        'Interest_Balance' => round($interestBalance, 2),
+//                        'capital_balance'  => round($capitalBalance, 2),
+//                        'Paid_Amount'  => round($Paid_Amount_2, 2),
+//                        'Total_Balance'    => $totalBalance,
+//
+//                    ]);
+//            }
+//
+//            $Interest_Balance_sum=DB::table('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan->idCustomer_Loan)->sum('Interest_Balance');
+//            $capital_balance_sum=DB::table('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan->idCustomer_Loan)->sum('capital_balance');
+//            $Total_Balance_sum=DB::table('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan->idCustomer_Loan)->sum('Total_Balance');
+//            $Panalty_Balance_sum=DB::table('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan->idCustomer_Loan)->sum('Panalty_Balance');
+//
+//            DB::table('customer_loan')
+//                ->where('idCustomer_Loan', $loan->idCustomer_Loan)
+//                ->update([
+//                    'Balance_Amount'=>$Total_Balance_sum,
+//                    'capital_balance'=>$capital_balance_sum,
+//                    'installment_balance'=>$Interest_Balance_sum,
+//                ]);
+//
+//
+//            $user_id = (int)session('userid');
+//
+//
+//
+//            DB::table('Loan_Log')->insert([
+//                'Loan_ID' => $loan->idCustomer_Loan,
+//                'Date_Time' => date('Y-m-d H:i:s'),
+//                'Type' => 'Adjustment- Asipiya',
+//                'Type_ID' => '0',
+//                'Description' => 'Adjustment- Asipiya',
+//                'Amount' => '0.00',
+//                'Panelty_Payment' => '0.00',
+//                'Interest_Payment' => '0.00',
+//                'Capital_Payment' => '0.00',
+//                'Savings_Payment' => '0.00',
+//                'Panelty_Balance' => $Panalty_Balance_sum,
+//                'Interest_Balance' => $Interest_Balance_sum,
+//                'Capital_Balance' => $capital_balance_sum,
+//                'Total_Pending_Balance' => $Total_Balance_sum,
+//                'Saving_Account_Balance' => '0.00',
+//                'User_idUser' => $user_id,
+//                'branch_id' => session('branch_id')
+//            ]);
+//
+//
+//
+//        }
     }
 
 
