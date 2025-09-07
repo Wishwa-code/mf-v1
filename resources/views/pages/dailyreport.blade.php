@@ -567,9 +567,39 @@
                                                     <td class="fixed-name">{{ $item->name_with_initials }}</td>
                                                     <td>{{ number_format($item->Loan_Amount, 2) }}</td>
                                                     <td>{{ number_format($item->Installment_Amount, 2) }}</td>
-                                                    <td>{{ number_format($item->Balance_Amount, 2) }}</td>
-                                                    {{-- Fix: Use available fields for Total Paid calculation --}}
-                                                    <td>{{ number_format( max(0, ($item->Loan_Amount ?? 0) - ($item->Balance_Amount ?? 0)), 2) }}</td>
+                                                    @php
+                                                        // Get remaining balance
+                                                        $outstanding = $item->Total_Balance;
+                                                        if(is_null($outstanding)) {
+                                                            // try other balance fields
+                                                            $outstanding = ($item->capital_balance ?? 0)
+                                                                + ($item->installment_balance ?? 0)
+                                                                + ($item->Other_Amount_Balance ?? 0);
+                                                            if($outstanding <= 0){
+                                                                $outstanding = $item->Balance_Amount ?? 0;
+                                                            }
+                                                        }
+
+                                                        // Calculate total loan with interest
+                                                        $loanTotal = 0;
+                                                        if(!is_null($item->Total_Loan_Amount) && $item->Total_Loan_Amount > 0){
+                                                            $loanTotal = $item->Total_Loan_Amount;
+                                                        } else {
+                                                            $loanTotal = ($item->Loan_Amount ?? $item->Amount ?? 0)
+                                                                + ($item->Interest_Amount ?? 0)
+                                                                + ($item->Total_Other_Amount ?? 0);
+                                                        }
+
+                                                        // Make sure no negative values
+                                                        if($loanTotal < 0){ $loanTotal = 0; }
+                                                        if($outstanding < 0){ $outstanding = 0; }
+
+                                                        // Calculate paid amount
+                                                        $paidTotal = $loanTotal - $outstanding;
+                                                        if($paidTotal < 0){ $paidTotal = 0; }
+                                                    @endphp
+                                                    <td>{{ number_format($outstanding, 2) }}</td>
+                                                    <td>{{ number_format($paidTotal, 2) }}</td>
                                                     @for ($i = 1; $i <= 7; $i++)
                                                         <td class="paid-amount"></td>
                                                     @endfor
@@ -579,9 +609,30 @@
                                                 <td colspan="2">Group Total</td>
                                                 <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
                                                 <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
-                                                <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
-                                                {{-- Fix: Use available fields for Group Total --}}
-                                                <td>{{ number_format(max(0, $group->sum('Loan_Amount') - $group->sum('Balance_Amount')), 2) }}</td>
+                                                @php
+                                                    $grpOutstanding = 0; $grpLoanTotal = 0;
+                                                    // Calculate group totals
+                                                    foreach($group as $x){
+                                                        $o = $x->Total_Balance;
+                                                        if(is_null($o)){
+                                                            $o = ($x->capital_balance ?? 0) + ($x->installment_balance ?? 0) + ($x->Other_Amount_Balance ?? 0);
+                                                            if($o <= 0){ $o = $x->Balance_Amount ?? 0; }
+                                                        }
+                                                        if($o < 0){ $o = 0; }
+                                                        $grpOutstanding += $o;
+
+                                                        if(!is_null($x->Total_Loan_Amount) && $x->Total_Loan_Amount > 0){
+                                                            $lt = $x->Total_Loan_Amount;
+                                                        }else{
+                                                            $lt = ($x->Loan_Amount ?? $x->Amount ?? 0) + ($x->Interest_Amount ?? 0) + ($x->Total_Other_Amount ?? 0);
+                                                        }
+                                                        if($lt < 0){ $lt = 0; }
+                                                        $grpLoanTotal += $lt;
+                                                    }
+                                                    $grpPaid = $grpLoanTotal - $grpOutstanding; if($grpPaid < 0){ $grpPaid = 0; }
+                                                @endphp
+                                                <td>{{ number_format($grpOutstanding, 2) }}</td>
+                                                <td>{{ number_format($grpPaid, 2) }}</td>
                                                 <td colspan="7"></td>
                                             </tr>
                                             {{-- Empty Rows for manual entries --}}
@@ -598,9 +649,31 @@
                                             <td colspan="2">Center Total</td>
                                             <td>{{ number_format($centerGroups->flatten()->sum('Loan_Amount'), 2) }}</td>
                                             <td>{{ number_format($centerGroups->flatten()->sum('Installment_Amount'), 2) }}</td>
-                                            <td>{{ number_format($centerGroups->flatten()->sum('Balance_Amount'), 2) }}</td>
-                                            {{-- Fix: Use available fields for Center Total --}}
-                                            <td>{{ number_format(max(0, $centerGroups->flatten()->sum('Loan_Amount') - $centerGroups->flatten()->sum('Balance_Amount')), 2) }}</td>
+                                            @php
+                                                // Calculate center totals
+                                                $flat = $centerGroups->flatten();
+                                                $ctrOutstanding = 0; $ctrLoanTotal = 0;
+                                                foreach($flat as $x){
+                                                    $o = $x->Total_Balance;
+                                                    if(is_null($o)){
+                                                        $o = ($x->capital_balance ?? 0) + ($x->installment_balance ?? 0) + ($x->Other_Amount_Balance ?? 0);
+                                                        if($o <= 0){ $o = $x->Balance_Amount ?? 0; }
+                                                    }
+                                                    if($o < 0){ $o = 0; }
+                                                    $ctrOutstanding += $o;
+
+                                                    if(!is_null($x->Total_Loan_Amount) && $x->Total_Loan_Amount > 0){
+                                                        $lt = $x->Total_Loan_Amount;
+                                                    }else{
+                                                        $lt = ($x->Loan_Amount ?? $x->Amount ?? 0) + ($x->Interest_Amount ?? 0) + ($x->Total_Other_Amount ?? 0);
+                                                    }
+                                                    if($lt < 0){ $lt = 0; }
+                                                    $ctrLoanTotal += $lt;
+                                                }
+                                                $ctrPaid = $ctrLoanTotal - $ctrOutstanding; if($ctrPaid < 0){ $ctrPaid = 0; }
+                                            @endphp
+                                            <td>{{ number_format($ctrOutstanding, 2) }}</td>
+                                            <td>{{ number_format($ctrPaid, 2) }}</td>
                                             <td colspan="7"></td>
                                         </tr>
                                     @endforeach
@@ -738,10 +811,13 @@
                 const currentMonth = new Date().toLocaleString('default', {month: 'long'});
 
                 // build header html
+                // include print date in header
+                const printDate = new Date().toLocaleString();
                 const headerHtml = `
                     <div style="text-align:center; margin-bottom:8px;">
                         <h2 style=\"margin:4px; font-size:16px;\">Daily Report Template for ${currentMonth}</h2>
                         <div style=\"font-size:12px; color:#333; margin-top:2px;\">Filters: Center: ${centerText} | Product: ${productText} | Route: ${routeText} | Group: ${groupText} | Collector: ${collectorText}</div>
+                        <div style=\"font-size:12px; color:#333; margin-top:2px;\">Print Date: ${printDate}</div>
                     </div>
                 `;
 
@@ -796,9 +872,11 @@
 
 
                 // header with filters
+                const printDate = new Date().toLocaleString();
                 const headerHtml = '<div style="text-align:center; margin-bottom:8px;">'
                     + '<h2 style="margin:4px; font-size:16px;">Daily Report Template for ' + currentMonth + '</h2>'
                     + '<div style="font-size:12px; color:#333; margin-top:2px;">Filters: Center: ' + centerText + ' | Product: ' + productText + ' | Route: ' + routeText + ' | Group: ' + groupText + ' | Collector: ' + collectorText + '</div>'
+                    + '<div style="font-size:12px; color:#333; margin-top:2px;">Print Date: ' + printDate + '</div>'
                     + '</div>';
 
                 printWindow.document.write(headerHtml);
