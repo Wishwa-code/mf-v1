@@ -918,21 +918,16 @@ class TransactionController extends Controller
         $center = tableWithBranch('center')->get();
     $routes = tableWithBranch('route')->get(); // route list
 
-        // Check if $center is empty
-        if ($center->isEmpty()) {
-            // Handle the case when the center table has no values
-            $center_details = null; // Or any default value you want to assign
-            $grouped_loans = array(); // Or any default value you want to assign
-            return view('pages.dailyreport', compact('center', 'grouped_loans','center_details'));
-        } else {
-            // Get center_details from request, default to null (All) if not provided
-            $center_details = $request->center_details;
-        }
+        // NOTE: Don't early-return when center table is empty. Keep going with LEFT JOINs so data still loads.
+        // Get center_details from request; can be null (means "All").
+        $center_details = $request->center_details;
 
     // selected product
         $product_filter = $request->get('product_filter');
     // selected route
     $route_filter = $request->get('route_filter');
+    // selected collector
+    $collector_filter = $request->get('collector_filter');
 
         // Loan Query
         $loanQuery = tableWithBranch('installments','installments')
@@ -963,6 +958,10 @@ class TransactionController extends Controller
                 'customer_loan.Loan_No as Loan_No',
                 'customer_loan.Balance_Amount as Balance_Amount',
                 'customer_loan.Amount as Loan_Amount',
+                // Added fields to properly calculate Total Paid Amount in dailyreport
+                'customer_loan.Total_Loan_Amount as Total_Loan_Amount',
+                'customer_loan.Interest_Amount as Interest_Amount',
+                'customer_loan.Total_Other_Amount as Total_Other_Amount',
                 'customer_loan.idCustomer_Loan as idCustomer_Loan',
                 'customer_loan.type as type',
                 'customer_loan.Installment_Count as Installment_Count',
@@ -977,7 +976,8 @@ class TransactionController extends Controller
                 DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date < CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as arrease'),
                 DB::raw('(SELECT Saving_Account_Balance FROM Loan_Log 
           WHERE Loan_Log.Loan_ID = customer_loan.idCustomer_Loan 
-          ORDER BY Loan_Log.Loan_Log_ID DESC LIMIT 1) as last_saving_balance')
+          ORDER BY Loan_Log.Loan_Log_ID DESC LIMIT 1) as last_saving_balance'),
+                'customer.route_id as customer_route_id'
             )
             ->groupBy(
                 'customer.idCustomer',
@@ -993,13 +993,17 @@ class TransactionController extends Controller
                 'customer_loan.Loan_No',
                 'customer_loan.Balance_Amount',
                 'customer_loan.Amount',
+                'customer_loan.Total_Loan_Amount',
+                'customer_loan.Interest_Amount',
+                'customer_loan.Total_Other_Amount',
                 'customer_loan.type',
                 'customer_loan.Installment_Count',
                 'customer_loan.Vehicle_No',
                 'customer_loan.idCustomer_Loan',
                 'customer_loan.capital_balance',
                 'customer_loan.Installment_Amount',
-                'subquery.group_name'
+                'subquery.group_name',
+                'customer.route_id'
             );
 
         // Filter by center, group, and customer if provided
@@ -1015,6 +1019,11 @@ class TransactionController extends Controller
         // filter by route
         if (!empty($route_filter)) {
             $loanQuery->where('route.id_route', $route_filter);
+        }
+
+        // filter by collector - directly filter loans by collector_id
+        if (!empty($collector_filter)) {
+            $loanQuery->where('customer_loan.collector_id', $collector_filter);
         }
 
         $loan = $loanQuery->get();
@@ -1047,6 +1056,15 @@ class TransactionController extends Controller
         // products list for filter
         $products = tableWithBranch('loan_category')->select('Product_code')->whereNotNull('Product_code')->distinct()->pluck('Product_code');
 
+        // collectors list for filter - get users where collector = 1
+        $collectors = DB::table('user')
+            ->select('id', 'Full_Name')
+            ->where('collector', 1)
+            ->where('Status', 1)
+            ->where('branch_id', session('branch_id'))
+            ->orderBy('Full_Name')
+            ->get();
+
 
         $selected_center = $center->firstWhere('idCenter', $center_details);
 
@@ -1059,7 +1077,8 @@ class TransactionController extends Controller
             'center', 'grouped_loans', 'center_details',
             'center_no', 'center_name', 'printedBy', 'printedAt',
             'products', 'product_filter',
-            'routes', 'route_filter'
+            'routes', 'route_filter',
+            'collectors', 'collector_filter'
         ));
     }
 

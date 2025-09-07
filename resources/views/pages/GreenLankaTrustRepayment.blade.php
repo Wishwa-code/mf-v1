@@ -133,6 +133,17 @@
         .flexible-name.very-long-name {
             font-size: 12px;
         }
+        
+        /* Group total auto font sizing */
+        .flexible-group-total {
+            font-size: 14px;
+        }
+        .flexible-group-total.long-group-total {
+            font-size: 13px;
+        }
+        .flexible-group-total.very-long-group-total {
+            font-size: 12px;
+        }
 
         @media (max-width: 480px) {
             table {
@@ -148,8 +159,17 @@
         @media print {
             @page {
                 size: A4 landscape;
-                margin: 1in 0 0 0; /* 1 inch top margin, 0 for others */
+                margin: 1in 0 0.5in 0;
                 counter-increment: page;
+                @bottom-center {
+                    content: "Page " counter(page);
+                    font-size: 11px;
+                    font-family: Arial, sans-serif;
+                }
+            }
+
+            body {
+                counter-reset: page;
             }
 
 
@@ -225,19 +245,7 @@
             }
         }
         @media print {
-            .print-footer {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                font-size: 11px;
-                color: black;
-                display: flex;
-                justify-content: space-between;
-                padding: 5px 30px;
-                background-color: white;
-                border-top: 1px solid #000;
-            }
+            /* Remove old print footer styles - using CSS page counters now */
         }
         @media print {
             /* Allow groups to split across pages if needed; don't force page breaks */
@@ -383,9 +391,11 @@
                                             </tr>
                                         @endforeach
 
+                                        @php
+                                            $emptyRows = 10 - count($group);
+                                        @endphp
 
-
-                                        @for ($j = 0; $j < 7; $j++)
+                                        @for ($j = 0; $j < $emptyRows; $j++)
                                             <tr class="group-row">
                                                 @for ($k = 0; $k < 15; $k++)
                                                     <td>&nbsp;</td>
@@ -393,10 +403,10 @@
                                             </tr>
                                         @endfor
                                         <tr class="group-row" style="font-weight: bold;">
-                                            <td colspan="2">Group Total</td>
-                                            <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
-                                            <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
-                                            <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
+                                            <td colspan="2" class="flexible-group-total">Group Total</td>
+                                            <td class="flexible-group-total">{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
+                                            <td class="flexible-group-total">{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
+                                            <td class="flexible-group-total">{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
                                             <td colspan="10"></td>
                                         </tr>
                                     @endforeach
@@ -416,14 +426,7 @@
             </div> <!-- end col -->
         </div> <!-- end row -->
     </div> <!-- end container-fluid -->
-    <div class="print-footer">
-        <div class="left">
-            Company: Asipiya Holdings | Center No: {{ $center_no }} | Center Name: {{ $center_name }}
-        </div>
-        <div class="right">
-            Printed by: {{ $printedBy }} on {{ $printedAt }} | Page <span class="page-number"></span>
-        </div>
-    </div>
+    <!-- Removed print-footer div - using CSS page counters now -->
 
     @php
         $printedBy = session('Full_Name');
@@ -533,6 +536,7 @@
             function fitScreen() {
                 fitTextCells(document, 'td.flexible-loan-no', 14, 9);
                 fitTextCells(document, 'td.flexible-name', 14, 9);
+                fitTextCells(document, 'td.flexible-group-total', 14, 9); // Group total auto size
             }
             fitScreen();
 
@@ -585,9 +589,18 @@
                 printWindow.document.write('<html><head><title>Repayment Sheet</title><style>');
                 printWindow.document.write(`
     /* Remove browser margins; reserve top margin via @page */
-    @page { size: ${orientation}; margin: 1in 0 0 0; }
+    @page { 
+        size: ${orientation}; 
+        margin: 1in 0 0.5in 0; 
+        counter-increment: page;
+        @bottom-center {
+            content: "Page " counter(page);
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+    }
     html, body { margin:0; padding:0; }
-    body { font-family: Arial, sans-serif; font-size: 11px; }
+    body { font-family: Arial, sans-serif; font-size: 11px; counter-reset: page; }
 
     .page { page-break-after: always; }
     .page:last-child { page-break-after: auto; }
@@ -628,6 +641,15 @@
     }
     .flexible-name.long-name { font-size: 10px; }
     .flexible-name.very-long-name { font-size: 9px; }
+    
+    /* Group total print sizing */
+    .flexible-group-total { 
+        white-space: nowrap; 
+        overflow: hidden; 
+        font-size: 11px; 
+    }
+    .flexible-group-total.long-group-total { font-size: 10px; }
+    .flexible-group-total.very-long-group-total { font-size: 9px; }
 
     /* Column widths are controlled via a fixed <colgroup> injected for each print table */
 
@@ -840,6 +862,7 @@
                     // Base print sizes are smaller; keep readable minimums
                     fitTextCells(doc, 'td.flexible-loan-no', 11, 8, 0.5);
                     fitTextCells(doc, 'td.flexible-name', 11, 8, 0.5);
+                    fitTextCells(doc, 'td.flexible-group-total', 11, 8, 0.5); // Group total print auto size
 
                     printWindow.focus();
                     printWindow.print();
@@ -852,28 +875,7 @@
 
 
     </script>
-    <script>
-        window.addEventListener('beforeprint', function () {
-            const existing = document.querySelectorAll('.print-footer');
-            existing.forEach(e => e.remove());
 
-            const footer = document.createElement('div');
-            footer.className = 'print-footer';
-
-            const left = document.createElement('div');
-            left.className = 'left';
-            left.innerHTML = "Company: Asipiya Holdings | Center No: {{ $center_no }} | Center Name: {{ $center_name }}";
-
-            const right = document.createElement('div');
-            right.className = 'right';
-            right.innerHTML = "Printed by: {{ $printedBy }} on {{ $printedAt }} | Page 1";
-
-            footer.appendChild(left);
-            footer.appendChild(right);
-
-            document.body.appendChild(footer);
-        });
-    </script>
 
 
 @endsection
