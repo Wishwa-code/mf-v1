@@ -597,7 +597,8 @@
             var authorizedText = "Authorized 01: " + authorizedName;
             data.push([authorizedText, '', '', '', 'Authorized 02:']);
 
-            var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+            // switch to landscape for wider table layout
+            var pdf = new window.jspdf.jsPDF('landscape', 'mm', 'a4');
             var dateTime = getColomboDateTime();
             var pageWidth = pdf.internal.pageSize.getWidth();
 
