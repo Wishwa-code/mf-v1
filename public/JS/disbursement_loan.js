@@ -54,6 +54,7 @@ function load_table() {
                     // Add row data to DataTable
                     $('#loan_table').DataTable().row.add([
                         item.Loan_No,
+                        item.route_code,
                         item.route_name,
                         item.center_no,
                         item.center_name,
