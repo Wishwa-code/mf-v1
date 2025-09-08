@@ -786,7 +786,7 @@
             {k:'route_code',l:'Route Code'},
             {k:'group_no',l:'Group'},
             {k:'product',l:'Product'},
-            {k:'date',l:'Date'},
+            // {k:'date',l:'Date'},
             {k:'reason',l:'Reason'},
             {k:'lending_officer',l:'Lending Officer'},
             {k:'user',l:'User'},
