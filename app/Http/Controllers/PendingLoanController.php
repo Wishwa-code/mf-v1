@@ -600,6 +600,11 @@ class PendingLoanController extends Controller
             ->join('user as u2', 'customer_loan.lending_officer_id', '=', 'u2.id')
             ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
             ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
+            ->leftJoin('collector_has_route', 'route.id_route', '=', 'collector_has_route.route_id')
+            ->leftJoin('user as collector', function($join) {
+                $join->on('collector_has_route.collector_id', '=', 'collector.id')
+                     ->where('collector.collector', '=', 1);
+            })
             ->leftJoin(DB::raw('(SELECT loan_id, COUNT(*) as approval_count, 
                 SUM(CASE WHEN date = "-" THEN 1 ELSE 0 END) as pending_approvals 
             FROM loan_has_approval 
@@ -621,6 +626,8 @@ class PendingLoanController extends Controller
                 DB::raw('IFNULL(center.Name, "-") as center_name'),
                 DB::raw('IFNULL(route.name, "-") as route_name'),
                 DB::raw('IFNULL(route.root_code, "-") as route_code'),
+                DB::raw('IFNULL(collector.id, "-") as collector_id'),
+                DB::raw('IFNULL(collector.Full_Name, "-") as collector_name'),
                 'u1.Full_Name as user_name',
                 'u2.Full_Name as lending_officer',
                 DB::raw('IFNULL(approval_subquery.approval_count, 0) as approval_count'),

@@ -56,6 +56,8 @@ function load_table() {
                         item.Loan_No,
                         item.route_code,
                         item.route_name,
+                        item.collector_id,
+                        item.collector_name,
                         item.center_no,
                         item.center_name,
                         item.group_name,
