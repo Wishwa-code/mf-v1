@@ -123,22 +123,23 @@
 
                             <div class="row mt-4">
                                 <div class="col-lg-4">
-                                    <button class="btn btn-primary w-100" onclick="exportFundRequestPDF();">FUND REQUEST</button>
+                                    <div class="btn-group w-100" role="group">
+                                        <button class="btn btn-primary" onclick="exportFundRequestPDF();" style="width: 85%;">FUND REQUEST</button>
+                                        <button type="button" class="btn btn-primary" onclick="openFundRequestConfig()" title="Configure Fund Request Columns" style="width: 15%;">
+                                            <i class="bi bi-gear"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="col-lg-4">
-                                    <button class="btn btn-success w-100" onclick="promptDisbursementExport();">DISBURSEMENT SHEET</button>
+                                    <div class="btn-group w-100" role="group">
+                                        <button class="btn btn-success" onclick="promptDisbursementExport();" style="width: 85%;">DISBURSEMENT SHEET</button>
+                                        <button type="button" class="btn btn-success" onclick="openDisbursementConfig()" title="Configure Disbursement Columns" style="width: 15%;">
+                                            <i class="bi bi-gear"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="col-lg-4">
                                     <button class="btn btn-info w-100" onclick="exportDocumentChargesPDF();">Document Charges Register</button>
-                                </div>
-                                <div class="col-12 mt-2">
-                                    <!-- Minimal settings button -->
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="openFundRequestConfig()">
-                                        Configure Fund Request Columns
-                                    </button>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm ms-2" onclick="openDisbursementConfig()">
-                                        Configure Disbursement Columns
-                                    </button>
                                 </div>
                             </div>
 
