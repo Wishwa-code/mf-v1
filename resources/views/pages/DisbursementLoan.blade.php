@@ -553,8 +553,9 @@
 
         })
 
-        var authorizedName = "{{ session('Full_Name') }}";
-        var companyName = {!! json_encode(session('company_name')) !!};
+    var authorizedName = "{{ session('Full_Name') }}";
+    var companyName = {!! json_encode(session('company_name')) !!};
+    var branchName = {!! json_encode(session('branch_name')) !!} || '';
 
 
         // Function to get the current date and time in Asia/Colombo timezone
@@ -610,14 +611,20 @@
             var title = "Fund Request";
             pdf.text(title, (pageWidth - pdf.getTextWidth(title)) / 2, 24);
 
+            // Branch name line
+            pdf.setFontSize(11);
+            var branchText = "Branch: " + branchName;
+            pdf.text(branchText, (pageWidth - pdf.getTextWidth(branchText)) / 2, 30);
+
+            // Date line moved down to avoid overlap
             pdf.setFontSize(10);
             var dateTimeText = "Date: " + dateTime;
-            pdf.text(dateTimeText, (pageWidth - pdf.getTextWidth(dateTimeText)) / 2, 32);
+            pdf.text(dateTimeText, (pageWidth - pdf.getTextWidth(dateTimeText)) / 2, 36);
 
             pdf.autoTable({
                 head: [data[0]],
                 body: data.slice(1),
-                startY: 40,
+                startY: 44,
                 theme: 'grid',
                 styles: { halign: 'center', lineWidth: 0.5, lineColor: [0, 0, 0] },
                 headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
