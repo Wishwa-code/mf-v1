@@ -209,6 +209,33 @@ if (!function_exists('formatName')) {
     }
 }
 
+// Format member display name according to app setting
+if (!function_exists('format_member_name')) {
+    /**
+     * @param string|null $first First name(s)
+     * @param string|null $last  Last name(s)
+     * @param string $mode one of: full_name | with_initial | only_first_name | only_last_name
+     * @return string
+     */
+    function format_member_name(?string $first, ?string $last, string $mode = 'with_initial'): string
+    {
+        $first = trim((string)($first ?? ''));
+        $last  = trim((string)($last ?? ''));
+
+        switch ($mode) {
+            case 'full_name':
+                return trim($first . ' ' . $last);
+            case 'only_first_name':
+                return $first;
+            case 'only_last_name':
+                return $last;
+            case 'with_initial':
+            default:
+                return formatName($first, $last);
+        }
+    }
+}
+
 
 function getTargetLoans($skipFor, $targetId)
 {

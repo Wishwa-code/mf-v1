@@ -23,6 +23,8 @@
             background-color: #fff;
             box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
         }
+            /* Keep table layout stable */
+            #repaymentTable { table-layout: fixed; }
 
         th, td {
             padding: 10px;
@@ -38,12 +40,18 @@
 
         tfoot td {
             font-weight: bold;
-            background-color: #f2f2f2;
         }
 
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
+        .attendance-cell {
+            border: 1px solid black;
+            width: 18px; /* single digit */
+            height: 25px;
+            text-align: center;
         }
+
+        /* Column widths via colgroup */
+        #repaymentTable col.att-col { width: 18px; }
+        #repaymentTable col.name-col { width: 220px; }
 
         tr:hover {
             background-color: #f1f1f1;
@@ -109,18 +117,30 @@
                 word-break: break-word;
             }
 
-            #repaymentTable th,
-            #repaymentTable td {
-                border: 1px solid #000;
-                padding: 5px;
-                word-wrap: break-word;
+                #repaymentTable th,
+                #repaymentTable td {
+                    border: 1px solid #000;
+                    padding: 5px;
+                    word-wrap: break-word;
 
-            }
+                }
 
             .attendance-cell {
-                width: 20px;
+                width: 18px;
                 height: 20px;
             }
+
+                /* Ensure print respects column widths */
+                #repaymentTable col.att-col { width: 18px !important; }
+                #repaymentTable col.name-col { width: 220px !important; }
+            /* Customer name column styling for print */
+            #repaymentTable th:first-child:not([colspan]),
+            #repaymentTable td:first-child {
+                width: 220px !important;
+                text-align: left;
+                padding-left: 5px;
+            }
+            #repaymentTable th[colspan] { text-align: center !important; }
 
             @page {
                 size: auto; /* let the browser decide: supports both portrait & landscape */
@@ -135,9 +155,22 @@
 
         .attendance-cell {
             border: 1px solid black;
-            width: 25px;
+            width: 18px;
             height: 25px;
+            text-align: center;
         }
+
+        /* Customer name column styling */
+        /* Left-align only normal first column cells (no colspan) */
+        #repaymentTable th:first-child:not([colspan]),
+        #repaymentTable td:first-child {
+            width: 220px;
+            text-align: left;
+            padding-left: 8px;
+        }
+
+        /* Ensure group header rows (th with colspan) stay centered */
+        #repaymentTable th[colspan] { text-align: center !important; }
 
     </style>
 
@@ -205,6 +238,28 @@
                         <!-- Repayment table -->
                         <div class="table-responsive">
                             <table id="repaymentTable">
+                                <colgroup>
+                                    <col class="name-col" />
+                                    <col /> <!-- Phone No -->
+                                    <col /> <!-- Loan No -->
+                                    <col /> <!-- Loan Amount -->
+                                    <col /> <!-- Loan Balance -->
+                                    <col /> <!-- Loan Rental -->
+                                    <col /> <!-- Loan Arrears -->
+                                    <col /> <!-- R.R.P Balance -->
+                                    <col /> <!-- Rs Rent W1 -->
+                                    <col /> <!-- Rs RRP W1 -->
+                                    <col /> <!-- Rs Rent W2 -->
+                                    <col /> <!-- Rs RRP W2 -->
+                                    <col /> <!-- Rs Rent W3 -->
+                                    <col /> <!-- Rs RRP W3 -->
+                                    <col /> <!-- Rs Rent W4 -->
+                                    <col /> <!-- Rs RRP W4 -->
+                                    <col class="att-col" />
+                                    <col class="att-col" />
+                                    <col class="att-col" />
+                                    <col class="att-col" />
+                                </colgroup>
                                 <thead>
                                 <tr>
 {{--                                    <th rowspan="2">Customer Code</th>--}}
@@ -245,18 +300,9 @@
                                         <th colspan="20">Group No: {{ $group_name }}</th>
                                     </tr>
                                     @foreach ($group as $item)
-                                        @php
-                                            // Format customer name abbreviation
-                                            $nameParts = explode(' ', $item->customer_name . ' ' . $item->customer_lastname);
-                                            if (count($nameParts) >= 2) {
-                                                $shortName = strtoupper(substr($nameParts[0], 0, 1)) . '.' . strtoupper(substr($nameParts[1], 0, 1)) . '.' . end($nameParts);
-                                            } else {
-                                                $shortName = $item->customer_name . ' ' . $item->customer_lastname;
-                                            }
-                                        @endphp
                                         <tr>
 {{--                                            <td>{{ $item->cus_number }}</td>--}}
-                                            <td>{{ $shortName }}</td>
+                                            <td>{{ format_member_name($item->customer_name, $item->customer_lastname, $name_mode ?? 'with_initial') }}</td>
                                             <td>{{ $item->Contact_No }}</td>
 {{--                                            <td>{{ $item->Product_code }}</td>--}}
                                             <td>{{ $item->Loan_No }}</td>
@@ -434,6 +480,11 @@
                 printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 9px; zoom: 80%; margin: 0.5in; }');
                 printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8px; }');
                 printWindow.document.write('#repaymentTable th, #repaymentTable td { border: 1px solid black; padding: 4px; text-align: center; word-break: break-word; }');
+                printWindow.document.write('#repaymentTable col.name-col { width: 220px !important; }');
+                printWindow.document.write('#repaymentTable col.att-col { width: 18px !important; }');
+                printWindow.document.write('#repaymentTable th:first-child:not([colspan]), #repaymentTable td:first-child { text-align: left; padding-left: 5px; }');
+                printWindow.document.write('#repaymentTable th[colspan] { text-align: center !important; }');
+                printWindow.document.write('.attendance-cell { width: 18px !important; height: 20px; text-align: center; }');
                 printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
                 printWindow.document.write('</style></head><body>');
                 printWindow.document.write('<h2 style="text-align:center;">Repayment Sheet for ' + currentMonth + ' (' + center_details + ')</h2>');

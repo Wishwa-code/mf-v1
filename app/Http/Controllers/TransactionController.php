@@ -637,7 +637,10 @@ class TransactionController extends Controller
             $loanQuery->where('center.idCenter', '=', $center_details);
         }
 
-        $loan = $loanQuery->get();
+    $loan = $loanQuery->get();
+
+    // Read app setting for how to display member names
+    $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
 
         // Group data by 'group_name'
         $grouped_loans = $loan->groupBy('group_name')->sortKeysUsing(function($a, $b) {
@@ -652,7 +655,7 @@ class TransactionController extends Controller
         });
 
 
-        return view('pages.RightWayDailyRepayment', compact('center', 'grouped_loans','center_details'));
+        return view('pages.RightWayDailyRepayment', compact('center', 'grouped_loans','center_details', 'name_mode'));
     }
 
     public function GreenLankaTrustRepayment(Request $request){

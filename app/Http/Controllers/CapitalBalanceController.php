@@ -310,6 +310,8 @@ class CapitalBalanceController extends Controller
             'max_allowed_loans',
             'document_types',
             'collector_txn_modes',
+            'fund_request_columns',
+            'disbursement_columns',
         ];
 
         $rows = DB::table($this->table)
@@ -324,7 +326,7 @@ class CapitalBalanceController extends Controller
     public function upsert(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'key'   => ['required', 'in:payment_member_name,loan_disbursement_policy,payment_backdate,loan_order,max_allowed_loans,document_types,collector_txn_modes'],
+            'key'   => ['required', 'in:payment_member_name,loan_disbursement_policy,payment_backdate,loan_order,max_allowed_loans,document_types,collector_txn_modes,fund_request_columns,disbursement_columns'],
             'value' => [
                 'required',
                 function ($attribute, $value, $fail) use ($request) {
@@ -388,6 +390,28 @@ class CapitalBalanceController extends Controller
                             $fail('Document types must be a JSON array.');
                         } elseif (count($decoded) === 0) {
                             $fail('At least one document type is required.');
+                        }
+                    }
+
+                    if ($request->key === 'fund_request_columns') {
+                        $decoded = json_decode($value, true);
+                        if (json_last_error() !== JSON_ERROR_NONE) {
+                            $fail('Fund request columns must be valid JSON.');
+                        } elseif (!is_array($decoded)) {
+                            $fail('Fund request columns must be a JSON array.');
+                        } elseif (count($decoded) === 0) {
+                            $fail('At least one column is required for fund request.');
+                        }
+                    }
+
+                    if ($request->key === 'disbursement_columns') {
+                        $decoded = json_decode($value, true);
+                        if (json_last_error() !== JSON_ERROR_NONE) {
+                            $fail('Disbursement columns must be valid JSON.');
+                        } elseif (!is_array($decoded)) {
+                            $fail('Disbursement columns must be a JSON array.');
+                        } elseif (count($decoded) === 0) {
+                            $fail('At least one column is required for disbursement.');
                         }
                     }
                 },

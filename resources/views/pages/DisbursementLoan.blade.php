@@ -123,22 +123,23 @@
 
                             <div class="row mt-4">
                                 <div class="col-lg-4">
-                                    <button class="btn btn-primary w-100" onclick="exportFundRequestPDF();">FUND REQUEST</button>
+                                    <div class="btn-group w-100" role="group">
+                                        <button class="btn btn-primary" onclick="exportFundRequestPDF();" style="width: 85%;">FUND REQUEST</button>
+                                        <button type="button" class="btn btn-primary" onclick="openFundRequestConfig()" title="Configure Fund Request Columns" style="width: 15%;">
+                                            <i class="bi bi-gear"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="col-lg-4">
-                                    <button class="btn btn-success w-100" onclick="promptDisbursementExport();">DISBURSEMENT SHEET</button>
+                                    <div class="btn-group w-100" role="group">
+                                        <button class="btn btn-success" onclick="promptDisbursementExport();" style="width: 85%;">DISBURSEMENT SHEET</button>
+                                        <button type="button" class="btn btn-success" onclick="openDisbursementConfig()" title="Configure Disbursement Columns" style="width: 15%;">
+                                            <i class="bi bi-gear"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="col-lg-4">
                                     <button class="btn btn-info w-100" onclick="exportDocumentChargesPDF();">Document Charges Register</button>
-                                </div>
-                                <div class="col-12 mt-2">
-                                    <!-- Minimal settings button -->
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="openFundRequestConfig()">
-                                        Configure Fund Request Columns
-                                    </button>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm ms-2" onclick="openDisbursementConfig()">
-                                        Configure Disbursement Columns
-                                    </button>
                                 </div>
                             </div>
 
@@ -233,7 +234,6 @@
                     <div id="fund-request-col-list" class="row g-2">
                         <!-- checkboxes injected by JS -->
                     </div>
-                    <small class="text-muted d-block mt-2">Your selection is saved in this browser.</small>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -253,7 +253,6 @@
                 </div>
                 <div class="modal-body">
                     <div id="disbursement-col-list" class="row g-2"></div>
-                    <small class="text-muted d-block mt-2">Saved in this browser.</small>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -576,6 +575,9 @@
 
             $('#twice_a_month').hide(); // Hide the div
 
+            // Load column settings from database
+            loadColumnSettings();
+
             // Initialize DataTable
             let table = $('#loan_table').DataTable({
                 responsive: true, // Enable responsiveness
@@ -721,10 +723,115 @@
             });
             pdf.save('Fund_Request.pdf');
         }
+        
+        // ========== COLUMN SETTINGS MANAGEMENT (Database-based) ==========
+
+        let currentFundRequestColumns = [];
+        let currentDisbursementColumns = [];
+
+        // Load column settings from database
+        function loadColumnSettings() {
+            $.ajax({
+                type: "GET",
+                url: "/settings/all",
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                },
+                success: function (data) {
+                    const items = data.items || {};
+
+                    // Load Fund Request Columns
+                    if (items.fund_request_columns) {
+                        try {
+                            currentFundRequestColumns = JSON.parse(items.fund_request_columns);
+                        } catch (e) {
+                            console.error('Error parsing fund request columns:', e);
+                            currentFundRequestColumns = getDefaultFundRequestColumns();
+                        }
+                    } else {
+                        currentFundRequestColumns = getDefaultFundRequestColumns();
+                    }
+
+                    // Load Disbursement Columns
+                    if (items.disbursement_columns) {
+                        try {
+                            currentDisbursementColumns = JSON.parse(items.disbursement_columns);
+                        } catch (e) {
+                            console.error('Error parsing disbursement columns:', e);
+                            currentDisbursementColumns = getDefaultDisbursementColumns();
+                        }
+                    } else {
+                        currentDisbursementColumns = getDefaultDisbursementColumns();
+                    }
+                },
+                error: function (xhr) {
+                    console.error('Settings load error:', xhr.responseText || xhr.statusText);
+                    // Use defaults on error
+                    currentFundRequestColumns = getDefaultFundRequestColumns();
+                    currentDisbursementColumns = getDefaultDisbursementColumns();
+                }
+            });
+        }
+
+        // Get default fund request columns
+        function getDefaultFundRequestColumns() {
+            return ['loan_no','customer_name','nic','amount','branch_name','center_name','route_name','collector_name','group_no','interest','weeks'];
+        }
+
+        // Get default disbursement columns
+        function getDefaultDisbursementColumns() {
+            return ['loan_no','nic','customer_name','amount','received_by','center_name','interest','weeks','doc_charge','collector_name','route_name'];
+        }
+
+        // Save column setting to database
+        function saveColumnSetting(key, columns) {
+            const jsonValue = JSON.stringify(columns);
+            
+            Swal.fire({
+                title: "Are you sure?",
+                text: "Update setting?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, Update",
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                $.ajax({
+                    type: "POST",
+                    url: "/settings/upsert",
+                    headers: {
+                        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                    },
+                    data: { 
+                        key: key, 
+                        value: jsonValue 
+                    },
+                    success: function () {
+                        Swal.fire({
+                            position: "center",
+                            icon: "success",
+                            title: "Setting updated!",
+                            timer: 1400,
+                            showConfirmButton: false
+                        }).then(() => {
+                            // Refresh page to apply changes
+                            window.location.reload();
+                        });
+                    },
+                    error: function (xhr) {
+                        Swal.fire("Error", xhr.responseJSON?.message || "Failed to update setting", "error");
+                    }
+                });
+            });
+        }
+
         // --- minimal config logic (localStorage) ---
         const FUND_REQ_KEY = 'fund_request_cols_v1';
         function getFundRequestConfig(){
-            try { return JSON.parse(localStorage.getItem(FUND_REQ_KEY)) || []; } catch(e){ return []; }
+            // Use database-loaded settings instead of localStorage
+            return currentFundRequestColumns.length ? currentFundRequestColumns : getDefaultFundRequestColumns();
         }
         function openFundRequestConfig(){
             const holder = document.getElementById('fund-request-col-list');
@@ -752,47 +859,81 @@
                 {k:'user',l:'User'},
                 {k:'status',l:'Status'}
             ];
-            const saved = getFundRequestConfig();
-            const defaults = ['loan_no','customer_name','nic','amount','branch_name','center_name','route_name','collector_name','group_no','interest','weeks'];
-            const activeSet = new Set(saved.length? saved : defaults);
+            const activeSet = new Set(currentFundRequestColumns.length ? currentFundRequestColumns : getDefaultFundRequestColumns());
             allDefs.forEach(d=>{ const div=document.createElement('div'); div.className='col-6'; div.innerHTML=`<div class="form-check"><input class="form-check-input" type="checkbox" value="${d.k}" id="fr_${d.k}" ${activeSet.has(d.k)?'checked':''}><label class="form-check-label" for="fr_${d.k}">${d.l}</label></div>`; holder.appendChild(div); });
             new bootstrap.Modal(document.getElementById('fundRequestConfigModal')).show();
         }
         function saveFundRequestConfig(){
             const checks = document.querySelectorAll('#fund-request-col-list input[type=checkbox]');
-            const sel = Array.from(checks).filter(c=>c.checked).map(c=>c.value);
-            localStorage.setItem(FUND_REQ_KEY, JSON.stringify(sel));
-            // close modal
+            const selectedColumns = Array.from(checks).filter(c=>c.checked).map(c=>c.value);
+            
+            if (selectedColumns.length === 0) {
+                Swal.fire("Warning", "Please select at least one column.", "warning");
+                return;
+            }
+            
+            // Close modal first
             bootstrap.Modal.getInstance(document.getElementById('fundRequestConfigModal')).hide();
+            
+            // Save to database
+            saveColumnSetting('fund_request_columns', selectedColumns);
         }
         // Disbursement config helpers
         const DISBURSE_KEY='disbursement_cols_v1';
-        function getDisbursementConfig(){ try{return JSON.parse(localStorage.getItem(DISBURSE_KEY))||[];}catch(e){return [];} }
-        function openDisbursementConfig(){ const holder=document.getElementById('disbursement-col-list'); if(!holder)return; holder.innerHTML=''; const defs=[
-            {k:'loan_no',l:'Loan Number'},
-            {k:'nic',l:'NIC'},
-            {k:'customer_name',l:'Customer Name'},
-            {k:'amount',l:'Amount'},
-            {k:'received_by',l:'Received By'},
-            {k:'center_name',l:'Center Name'},
-            {k:'interest',l:'Loan Interest'},
-            {k:'weeks',l:'Number Of Weeks'},
-            {k:'doc_charge',l:'Document Charge'},
-            {k:'collector_name',l:'Collector Name'},
-            {k:'route_name',l:'Route'},
-            // extras
-            {k:'bank_details',l:'Bank Details'},
-            {k:'customer_code',l:'Customer Code'},
-            {k:'route_code',l:'Route Code'},
-            {k:'group_no',l:'Group'},
-            {k:'product',l:'Product'},
-            {k:'date',l:'Date'},
-            {k:'reason',l:'Reason'},
-            {k:'lending_officer',l:'Lending Officer'},
-            {k:'user',l:'User'},
-            {k:'status',l:'Status'}
-        ]; const saved=getDisbursementConfig(); const defaults=['loan_no','nic','customer_name','amount','received_by','center_name','interest','weeks','doc_charge','collector_name','route_name']; const active=new Set(saved.length?saved:defaults); defs.forEach(d=>{ const div=document.createElement('div'); div.className='col-6'; div.innerHTML=`<div class="form-check"><input class="form-check-input" type="checkbox" value="${d.k}" id="ds_${d.k}" ${active.has(d.k)?'checked':''}><label class="form-check-label" for="ds_${d.k}">${d.l}</label></div>`; holder.appendChild(div);}); new bootstrap.Modal(document.getElementById('disbursementConfigModal')).show(); }
-        function saveDisbursementConfig(){ const checks=document.querySelectorAll('#disbursement-col-list input[type=checkbox]'); const sel=Array.from(checks).filter(c=>c.checked).map(c=>c.value); localStorage.setItem(DISBURSE_KEY, JSON.stringify(sel)); bootstrap.Modal.getInstance(document.getElementById('disbursementConfigModal')).hide(); }
+        function getDisbursementConfig(){ 
+            // Use database-loaded settings instead of localStorage
+            return currentDisbursementColumns.length ? currentDisbursementColumns : getDefaultDisbursementColumns();
+        }
+        function openDisbursementConfig(){ 
+            const holder=document.getElementById('disbursement-col-list'); 
+            if(!holder)return; holder.innerHTML=''; 
+            const defs=[
+                {k:'loan_no',l:'Loan Number'},
+                {k:'nic',l:'NIC'},
+                {k:'customer_name',l:'Customer Name'},
+                {k:'amount',l:'Amount'},
+                {k:'received_by',l:'Received By'},
+                {k:'center_name',l:'Center Name'},
+                {k:'interest',l:'Loan Interest'},
+                {k:'weeks',l:'Number Of Weeks'},
+                {k:'doc_charge',l:'Document Charge'},
+                {k:'collector_name',l:'Collector Name'},
+                {k:'route_name',l:'Route'},
+                // extras
+                {k:'bank_details',l:'Bank Details'},
+                {k:'customer_code',l:'Customer Code'},
+                {k:'route_code',l:'Route Code'},
+                {k:'group_no',l:'Group'},
+                {k:'product',l:'Product'},
+                {k:'date',l:'Date'},
+                {k:'reason',l:'Reason'},
+                {k:'lending_officer',l:'Lending Officer'},
+                {k:'user',l:'User'},
+                {k:'status',l:'Status'}
+            ]; 
+            const active=new Set(currentDisbursementColumns.length ? currentDisbursementColumns : getDefaultDisbursementColumns()); 
+            defs.forEach(d=>{ 
+                const div=document.createElement('div'); 
+                div.className='col-6'; 
+                div.innerHTML=`<div class="form-check"><input class="form-check-input" type="checkbox" value="${d.k}" id="ds_${d.k}" ${active.has(d.k)?'checked':''}><label class="form-check-label" for="ds_${d.k}">${d.l}</label></div>`; 
+                holder.appendChild(div);
+            }); 
+            new bootstrap.Modal(document.getElementById('disbursementConfigModal')).show(); 
+        }
+        function saveDisbursementConfig(){ 
+            const checks=document.querySelectorAll('#disbursement-col-list input[type=checkbox]'); 
+            const selectedColumns=Array.from(checks).filter(c=>c.checked).map(c=>c.value); 
+            
+            if (selectedColumns.length === 0) {
+                Swal.fire("Warning", "Please select at least one column.", "warning");
+                return;
+            }
+            
+            // Close modal first
+            bootstrap.Modal.getInstance(document.getElementById('disbursementConfigModal')).hide();
+            
+            // Save to database
+            saveColumnSetting('disbursement_columns', selectedColumns); }
         function promptDisbursementExport() {
             Swal.fire({
                 title: 'Choose Export Format',
@@ -838,8 +979,7 @@
                 user:{label:'User', fn:r=>r[19]},
                 status:{label:'Status', fn:r=>r[20]}
             };
-            const defaultDisCols=['loan_no','nic','customer_name','amount','received_by','center_name','interest','weeks','doc_charge','collector_name','route_name'];
-            const activeKeys = (cfg.length?cfg:defaultDisCols);
+            const activeKeys = cfg.length ? cfg : getDefaultDisbursementColumns();
             let header=['#']; activeKeys.forEach(k=> header.push(colDefs[k].label));
             let dataRows=[header]; let rowData=[]; let customerIds=[]; let totalAmount=0;
             for(let i=0;i<rows.length;i++){ const row=rows[i]; const idCustomer=row[22]; rowData.push({idCustomer,row}); customerIds.push(idCustomer);}            
@@ -888,8 +1028,7 @@
                 user:{label:'User', fn:r=>r[19]},
                 status:{label:'Status', fn:r=>stripHtml(r[20])}
             };
-            const defaultDisCols=['loan_no','nic','customer_name','amount','received_by','center_name','interest','weeks','doc_charge','collector_name','route_name'];
-            const activeKeys = (cfg.length?cfg:defaultDisCols);
+            const activeKeys = cfg.length ? cfg : getDefaultDisbursementColumns();
             let header=['#']; activeKeys.forEach(k=> header.push(colDefs[k].label));
             let bodyRows=[]; let rowData=[]; let customerIds=[]; let totalAmount=0;
             for(let i=0;i<rows.length;i++){ const row=rows[i]; const idCustomer=row[22]; rowData.push({idCustomer,row}); customerIds.push(idCustomer);}            
