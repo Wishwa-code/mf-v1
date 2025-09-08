@@ -246,43 +246,15 @@
 
 <script>
     $(document).ready(function () {
-        // Handle modern branch switcher
-        $('.branch-option').on('click', function (e) {
+        $(document).on('click', '.branch-option', function (e) {
             e.preventDefault();
-            
-            let branchId = $(this).data('branch-id');
-            let branchName = $(this).data('branch-name');
-            
-            // Update button text
-            $('.modern-dropdown-toggle .branch-text').text(branchName);
-            
-            // Send AJAX request to update the session
-            $.ajax({
-                url: "{{ route('update.branch') }}",
-                type: "POST",
-                data: {
-                    branch_id: branchId,
-                    _token: "{{ csrf_token() }}"
-                },
-                success: function (response) {
-                    if (response.success) {
-                        location.reload(); // Reload the page to apply changes if necessary
-                    }
-                },
-                error: function (xhr) {
-                    Swal.fire(
-                        'Error!',
-                        'Failed to update branch.',
-                        'error'
-                    );
-                }
-            });
-        });
 
-        // old branch-select class
-        $('.branch-select').on('change', function () {
-            let branchId = $(this).val();
-            
+            const branchId   = $(this).data('branch-id');
+            const branchName = $(this).data('branch-name');
+
+            // Optional: update UI immediately
+            $('.branch-text').text(branchName);
+
             $.ajax({
                 url: "{{ route('update.branch') }}",
                 type: "POST",
@@ -292,20 +264,19 @@
                 },
                 success: function (response) {
                     if (response.success) {
-                        location.reload();
+                        location.reload(); // apply server-side session changes
+                    } else {
+                        Swal?.fire?.('Oops', response.message || 'Failed to update branch.', 'error');
                     }
                 },
                 error: function (xhr) {
-                    Swal.fire(
-                        'Error!',
-                        'Failed to update branch.',
-                        'error'
-                    );
+                    Swal?.fire?.('Error!', 'Failed to update branch.', 'error');
                 }
             });
         });
     });
 </script>
+
 
 
 </body>
