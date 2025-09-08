@@ -131,6 +131,15 @@
                                 <div class="col-lg-4">
                                     <button class="btn btn-info w-100" onclick="exportDocumentChargesPDF();">Document Charges Register</button>
                                 </div>
+                                <div class="col-12 mt-2">
+                                    <!-- Minimal settings button -->
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="openFundRequestConfig()">
+                                        Configure Fund Request Columns
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm ms-2" onclick="openDisbursementConfig()">
+                                        Configure Disbursement Columns
+                                    </button>
+                                </div>
                             </div>
 
                         </div>
@@ -210,6 +219,48 @@
 
         </div> <!-- container -->
 
+    </div>
+
+    <!-- Fund Request Column Config Modal -->
+    <div class="modal fade" id="fundRequestConfigModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Fund Request Columns</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="fund-request-col-list" class="row g-2">
+                        <!-- checkboxes injected by JS -->
+                    </div>
+                    <small class="text-muted d-block mt-2">Your selection is saved in this browser.</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveFundRequestConfig()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Disbursement Sheet Column Config Modal -->
+    <div class="modal fade" id="disbursementConfigModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Disbursement Sheet Columns</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="disbursement-col-list" class="row g-2"></div>
+                    <small class="text-muted d-block mt-2">Saved in this browser.</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveDisbursementConfig()">Save</button>
+                </div>
+            </div>
+        </div>
     </div>
 
 
@@ -591,65 +642,129 @@
         }
 
         function exportFundRequestPDF() {
+            // minimal dynamic column export using cached selection
+            const cfg = getFundRequestConfig();
             var table = $('#loan_table').DataTable();
             var rows = table.rows().data();
 
-            var data = [['#', 'Customer No', 'Customer Name', 'NIC', 'Amount', 'Interest Rate', 'No of Weeks']];
-            var totalAmount = 0;
+            // map for available columns (label + extractor) keep indices consistent with table
+            const colDefs = {
+                customer_no: { label: 'Customer No', fn: r => r[9] },
+                customer_name: { label: 'Customer Name', fn: r => r[8] },
+                nic: { label: 'NIC', fn: r => r[10] },
+                amount: { label: 'Amount', fn: r => (parseFloat(r[12].replace(/[^0-9.-]+/g, "")) || 0).toFixed(2) },
+                interest: { label: 'Interest Rate', fn: r => r[14] },
+                weeks: { label: 'No of Weeks', fn: r => r[15] },
+            };
 
-            for (var i = 0; i < rows.length; i++) {
-                var row = rows[i];
-                var index = i + 1;
-                var cus_no = row[9]; // Customer Code
-                var cus_name = row[8]; // Customer Name (formatted)
-                var nic = row[10]; // NIC
-                var amount = parseFloat(row[12].replace(/[^0-9.-]+/g, "")) || 0; // Amount
-                var interestRate = row[14]; // Interest Rate
-                var noOfWeeks = row[15]; // No of Weeks
+            // fallback if nothing selected
+            const activeKeys = cfg.length ? cfg : Object.keys(colDefs);
 
-                totalAmount += amount;
-                data.push([index, cus_no, cus_name, nic, amount.toFixed(2), interestRate, noOfWeeks]);
+            let header = ['#'];
+            activeKeys.forEach(k => header.push(colDefs[k].label));
+            let body = [];
+            let totalAmount = 0;
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                let line = [i + 1];
+                activeKeys.forEach(k => {
+                    let val = colDefs[k].fn(row);
+                    line.push(val);
+                });
+                // track total if amount column included
+                if (activeKeys.includes('amount')) {
+                    totalAmount += parseFloat(colDefs.amount.fn(row));
+                }
+                body.push(line);
             }
 
-            data.push(['', '', '', '', 'Total Amount', totalAmount.toFixed(2), '']);
-            data.push(['', '', '', '', '', '', '']);
-            var authorizedText = "Authorized 01: " + authorizedName;
-            data.push([authorizedText, '', '', '', '', 'Authorized 02:', '']);
+            // footer total row only if amount selected
+            if (activeKeys.includes('amount')) {
+                const totalRow = new Array(header.length).fill('');
+                totalRow[header.indexOf('Amount') - 0] = 'Total Amount';
+                totalRow[header.indexOf('Amount') + 1] = totalAmount.toFixed(2); // position after label
+                body.push(totalRow);
+            }
 
-            // switch to landscape for wider table layout
+            // signature rows
+            body.push(new Array(header.length).fill(''));
+            body.push([`Authorized 01: ${authorizedName}`].concat(new Array(header.length -1).fill('')));
+            body.push(['Authorized 02:'].concat(new Array(header.length -1).fill('')));
+
             var pdf = new window.jspdf.jsPDF('landscape', 'mm', 'a4');
             var dateTime = getColomboDateTime();
             var pageWidth = pdf.internal.pageSize.getWidth();
-
             pdf.setFontSize(14);
-            var textWidth = pdf.getTextWidth(companyName);
-            pdf.text(companyName, (pageWidth - textWidth) / 2, 16);
-
+            pdf.text(companyName, (pageWidth - pdf.getTextWidth(companyName)) / 2, 16);
             pdf.setFontSize(12);
-            var title = "Fund Request";
-            pdf.text(title, (pageWidth - pdf.getTextWidth(title)) / 2, 24);
-
-            // Branch name line
+            pdf.text('Fund Request', (pageWidth - pdf.getTextWidth('Fund Request')) / 2, 24);
             pdf.setFontSize(11);
-            var branchText = "Branch: " + branchName;
+            var branchText = 'Branch: ' + branchName;
             pdf.text(branchText, (pageWidth - pdf.getTextWidth(branchText)) / 2, 30);
-
-            // Date line moved down to avoid overlap
             pdf.setFontSize(10);
-            var dateTimeText = "Date: " + dateTime;
+            var dateTimeText = 'Date: ' + dateTime;
             pdf.text(dateTimeText, (pageWidth - pdf.getTextWidth(dateTimeText)) / 2, 36);
 
             pdf.autoTable({
-                head: [data[0]],
-                body: data.slice(1),
+                head: [header],
+                body: body,
                 startY: 44,
                 theme: 'grid',
-                styles: { halign: 'center', lineWidth: 0.5, lineColor: [0, 0, 0] },
-                headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
+                styles: { halign: 'center', lineWidth: 0.5, lineColor: [0,0,0], fontSize: 9 },
+                headStyles: { fillColor: [0,0,0], textColor: [255,255,255] }
             });
-
             pdf.save('Fund_Request.pdf');
         }
+        // --- minimal config logic (localStorage) ---
+        const FUND_REQ_KEY = 'fund_request_cols_v1';
+        function getFundRequestConfig(){
+            try { return JSON.parse(localStorage.getItem(FUND_REQ_KEY)) || []; } catch(e){ return []; }
+        }
+        function openFundRequestConfig(){
+            const holder = document.getElementById('fund-request-col-list');
+            if(!holder) return;
+            holder.innerHTML='';
+            const defs = [
+                {k:'customer_no', l:'Customer No'},
+                {k:'customer_name', l:'Customer Name'},
+                {k:'nic', l:'NIC'},
+                {k:'amount', l:'Amount'},
+                {k:'interest', l:'Interest Rate'},
+                {k:'weeks', l:'No of Weeks'}
+            ];
+            const active = new Set(getFundRequestConfig());
+            defs.forEach(d=>{
+                const div = document.createElement('div');
+                div.className='col-6';
+                div.innerHTML = `<div class="form-check"><input class="form-check-input" type="checkbox" value="${d.k}" id="fr_${d.k}" ${active.size===0 || active.has(d.k)?'checked':''}><label class="form-check-label" for="fr_${d.k}">${d.l}</label></div>`;
+                holder.appendChild(div);
+            });
+            const modal = new bootstrap.Modal(document.getElementById('fundRequestConfigModal'));
+            modal.show();
+        }
+        function saveFundRequestConfig(){
+            const checks = document.querySelectorAll('#fund-request-col-list input[type=checkbox]');
+            const sel = Array.from(checks).filter(c=>c.checked).map(c=>c.value);
+            localStorage.setItem(FUND_REQ_KEY, JSON.stringify(sel));
+            // close modal
+            bootstrap.Modal.getInstance(document.getElementById('fundRequestConfigModal')).hide();
+        }
+        // Disbursement config helpers
+        const DISBURSE_KEY='disbursement_cols_v1';
+        function getDisbursementConfig(){ try{return JSON.parse(localStorage.getItem(DISBURSE_KEY))||[];}catch(e){return [];} }
+        function openDisbursementConfig(){ const holder=document.getElementById('disbursement-col-list'); if(!holder)return; holder.innerHTML=''; const defs=[
+            {k:'route',l:'Route'},
+            {k:'customer_no',l:'Customer Number'},
+            {k:'nic',l:'NIC'},
+            {k:'customer_name',l:'Customer Name'},
+            {k:'amount',l:'Amount'},
+            {k:'interest',l:'Interest Rate'},
+            {k:'weeks',l:'No of Weeks'},
+            {k:'bank',l:'Bank Details'},
+            {k:'received',l:'Received By'}
+        ]; const active=new Set(getDisbursementConfig()); defs.forEach(d=>{ const div=document.createElement('div'); div.className='col-6'; div.innerHTML=`<div class="form-check"><input class="form-check-input" type="checkbox" value="${d.k}" id="ds_${d.k}" ${active.size===0||active.has(d.k)?'checked':''}><label class="form-check-label" for="ds_${d.k}">${d.l}</label></div>`; holder.appendChild(div);}); new bootstrap.Modal(document.getElementById('disbursementConfigModal')).show(); }
+        function saveDisbursementConfig(){ const checks=document.querySelectorAll('#disbursement-col-list input[type=checkbox]'); const sel=Array.from(checks).filter(c=>c.checked).map(c=>c.value); localStorage.setItem(DISBURSE_KEY, JSON.stringify(sel)); bootstrap.Modal.getInstance(document.getElementById('disbursementConfigModal')).hide(); }
         function promptDisbursementExport() {
             Swal.fire({
                 title: 'Choose Export Format',
@@ -668,199 +783,81 @@
         }
 
         function exportDisbursementSheetExcel() {
-            var table = $('#loan_table').DataTable();
-            var rows  = table.rows().data();
-
-            var wb = XLSX.utils.book_new();
-            // Added "Route" after "#"
-            var ws_data = [['#', 'Route', 'Customer Number', 'NIC', 'Customer Name', 'Amount', 'Interest Rate', 'No of Weeks', 'Bank Details', 'Received By']];
-            var customerIds = [];
-            var rowData = [];
-            var totalAmount = 0;
-
-            for (var i = 0; i < rows.length; i++) {
-                var row = rows[i];
-
-                var route        = row[1];                       // Route
-                var customerNo   = row[9];                       // Customer Number
-                var nic          = row[10];                      // NIC
-                var customerName = row[8];                       // Customer Name (formatted)
-                var amount       = parseFloat(row[12].replace(/[^0-9.-]+/g, "")) || 0; // Amount
-                var interestRate = row[14];                      // Interest Rate
-                var noOfWeeks    = row[15];                      // No of Weeks
-                var idCustomer   = row[22];                      // <-- KEEP using idCustomer for bank details
-
-                totalAmount += amount;
-
-                rowData.push({
-                    index: i + 1,
-                    route: route,
-                    customerNumber: customerNo,
-                    nic: nic,
-                    customerName: customerName,
-                    amount: amount,
-                    interestRate: interestRate,
-                    noOfWeeks: noOfWeeks,
-                    idCustomer: idCustomer
-                });
-
-                customerIds.push(idCustomer); // <-- KEEP ids as idCustomer
-            }
-
+            const cfg = getDisbursementConfig();
+            const table = $('#loan_table').DataTable();
+            const rows  = table.rows().data();
+            const wb = XLSX.utils.book_new();
+            const colDefs = {
+                route: {label:'Route', fn:r=>r[1]},
+                customer_no:{label:'Customer Number', fn:r=>r[9]},
+                nic:{label:'NIC', fn:r=>r[10]},
+                customer_name:{label:'Customer Name', fn:r=>r[8]},
+                amount:{label:'Amount', fn:r=> (parseFloat(r[12].replace(/[^0-9.-]+/g,''))||0)},
+                interest:{label:'Interest Rate', fn:r=>r[14]},
+                weeks:{label:'No of Weeks', fn:r=>r[15]},
+                bank:{label:'Bank Details', fn:()=>''},
+                received:{label:'Received By', fn:()=>''}
+            };
+            const activeKeys = (cfg.length?cfg:Object.keys(colDefs));
+            let header = ['#']; activeKeys.forEach(k=> header.push(colDefs[k].label));
+            let dataRows=[header]; let rowData=[]; let customerIds=[]; let totalAmount=0;
+            for(let i=0;i<rows.length;i++){ const row=rows[i]; const idCustomer=row[22]; rowData.push({idCustomer,row}); customerIds.push(idCustomer);}            
             $.ajax({
-                url: '/get-customer-bank-details',
-                type: 'POST',
-                dataType: 'json',
-                data: {
-                    customer_ids: customerIds,
-                    _token: $('meta[name="csrf-token"]').attr("content")
-                },
-                success: function (response) {
-                    rowData.forEach(item => {
-                        const key = String(item.idCustomer).trim();
-                        const bankDetail = response[key] || '';
-                        ws_data.push([
-                            item.index,                 // #
-                            item.route,                 // Route
-                            item.customerNumber,        // Customer Number
-                            item.nic,                   // NIC
-                            item.customerName,          // Customer Name
-                            item.amount.toFixed(2),     // Amount
-                            item.interestRate,          // Interest Rate
-                            item.noOfWeeks,             // No of Weeks
-                            bankDetail,                 // Bank Details
-                            ''                          // Received By
-                        ]);
+                url:'/get-customer-bank-details', type:'POST', dataType:'json',
+                data:{ customer_ids: customerIds, _token:$('meta[name="csrf-token"]').attr('content')},
+                success:function(resp){
+                    rowData.forEach((rec,idx)=>{
+                        let line=[idx+1];
+                        activeKeys.forEach(k=>{
+                            if(k==='bank') line.push(resp[String(rec.idCustomer).trim()]||'');
+                            else if(k==='amount'){ const amt=colDefs.amount.fn(rec.row); totalAmount+=amt; line.push(amt.toFixed(2)); }
+                            else line.push(colDefs[k].fn(rec.row));
+                        });
+                        dataRows.push(line);
                     });
-
-                    // Footer rows (keep 10 data columns after '#', 'Route', etc.)
-                    ws_data.push([]);
-                    ws_data.push(['', '', '', '', 'Total Amount', totalAmount.toFixed(2), '', '', '', '']);
-
-                    var ws = XLSX.utils.aoa_to_sheet(ws_data);
-                    XLSX.utils.book_append_sheet(wb, ws, "Disbursement Sheet");
+                    if(activeKeys.includes('amount')){ dataRows.push([]); const totalRow=new Array(header.length).fill(''); const aI=header.indexOf('Amount'); if(aI>-1){ totalRow[aI-1]='Total Amount'; totalRow[aI]=totalAmount.toFixed(2);} dataRows.push(totalRow);}                    
+                    const ws = XLSX.utils.aoa_to_sheet(dataRows);
+                    XLSX.utils.book_append_sheet(wb, ws, 'Disbursement Sheet');
                     XLSX.writeFile(wb, 'Disbursement_Sheet.xlsx');
                 },
-                error: function () {
-                    console.error("Error loading bank details for Excel");
-                }
+                error:()=> console.error('Error loading bank details for Excel')
             });
         }
 
         function exportDisbursementSheetPDF() {
-            var table = $('#loan_table').DataTable();
-            var rows  = table.rows().data();
-
-            // Added "Route" after "#"
-            var data = [['#', 'Route', 'Customer Number', 'NIC', 'Customer Name', 'Amount', 'Interest Rate', 'No of Weeks', 'Bank Details', 'Received By']];
-            var totalAmount = 0;
-            var customerIds = [];
-            var rowData = [];
-
-            // Step 1: Extract data and collect idCustomer (NOT customer number)
-            for (var i = 0; i < rows.length; i++) {
-                var row = rows[i];
-
-                var route        = row[1];                       // Route
-                var customerNo   = row[9];                       // Customer Number
-                var nic          = row[10];                      // NIC
-                var customerName = row[8];                       // Customer Name (formatted)
-                var amount       = parseFloat(row[12].replace(/[^0-9.-]+/g, "")) || 0; // Amount
-                var interestRate = row[14];                      // Interest Rate
-                var noOfWeeks    = row[15];                      // No of Weeks
-                var idCustomer   = row[22];                      // <-- KEEP using idCustomer
-
-                totalAmount += amount;
-
-                rowData.push({
-                    index: i + 1,
-                    route: route,
-                    customerNumber: customerNo,
-                    nic: nic,
-                    customerName: customerName,
-                    amount: amount,
-                    interestRate: interestRate,
-                    noOfWeeks: noOfWeeks,
-                    idCustomer: idCustomer    // <-- store idCustomer
-                });
-
-                customerIds.push(idCustomer); // <-- send idCustomer to API
-            }
-
-            // Step 2: Fetch bank details by idCustomer (unchanged expectation)
+            const cfg = getDisbursementConfig();
+            const table = $('#loan_table').DataTable();
+            const rows  = table.rows().data();
+            const colDefs = {
+                route: {label:'Route', fn:r=>r[1], w:25},
+                customer_no:{label:'Customer Number', fn:r=>r[9], w:30},
+                nic:{label:'NIC', fn:r=>r[10], w:25},
+                customer_name:{label:'Customer Name', fn:r=>r[8], w:50},
+                amount:{label:'Amount', fn:r=> (parseFloat(r[12].replace(/[^0-9.-]+/g,''))||0), w:20},
+                interest:{label:'Interest Rate', fn:r=>r[14], w:20},
+                weeks:{label:'No of Weeks', fn:r=>r[15], w:15},
+                bank:{label:'Bank Details', fn:()=>'', w:45},
+                received:{label:'Received By', fn:()=>'', w:30}
+            };
+            const activeKeys = (cfg.length?cfg:Object.keys(colDefs));
+            let header=['#']; activeKeys.forEach(k=> header.push(colDefs[k].label));
+            let bodyRows=[]; let rowData=[]; let customerIds=[]; let totalAmount=0;
+            for(let i=0;i<rows.length;i++){ const row=rows[i]; const idCustomer=row[22]; rowData.push({idCustomer,row}); customerIds.push(idCustomer);}            
             $.ajax({
-                url: '/get-customer-bank-details',
-                type: 'POST',
-                data: {
-                    customer_ids: customerIds,
-                    _token: $('meta[name="csrf-token"]').attr("content")
-                },
-                success: function(response) {
-                    // Step 3: Match and insert into PDF data using idCustomer key
-                    rowData.forEach(function(item) {
-                        let bankDetail = response[String(item.idCustomer).trim()] || '';
-                        data.push([
-                            item.index,                       // #
-                            item.route,                       // Route
-                            item.customerNumber,              // Customer Number
-                            item.nic,                         // NIC
-                            item.customerName,                // Customer Name
-                            item.amount.toFixed(2),           // Amount
-                            item.interestRate,                // Interest Rate
-                            item.noOfWeeks,                   // No of Weeks
-                            bankDetail,                       // Bank Details
-                            ''                                // Received By
-                        ]);
-                    });
-
-                    // Step 4: Add total and footer info (pad to 10 columns)
-                    data.push(['', '', '', '', 'Total Amount', totalAmount.toFixed(2), '', '', '', '']);
-                    data.push([]);
-                    var authorizedText = "Prepared By: " + authorizedName;
-                    data.push(['', authorizedText, '', '', 'Authorized 01:', '', '', '', '', '']);
-                    data.push(['', '', '', '', 'Authorized 02:', '', '', '', '', '']);
-                    data.push(['', '', '', '', 'All Cheques Received:', '', '', '', '', '']);
-
-                    // Step 5: Generate PDF
-                    var pdf = new window.jspdf.jsPDF('landscape', 'mm', 'a4');
-                    var dateTime = getColomboDateTime();
-                    var pageWidth = pdf.internal.pageSize.getWidth();
-
-                    pdf.setFontSize(14);
-                    pdf.text(companyName, (pageWidth - pdf.getTextWidth(companyName)) / 2, 16);
-
-                    pdf.setFontSize(12);
-                    pdf.text("Disbursement Sheet", (pageWidth - pdf.getTextWidth("Disbursement Sheet")) / 2, 24);
-
-                    pdf.setFontSize(10);
-                    pdf.text("Date: " + dateTime, (pageWidth - pdf.getTextWidth("Date: " + dateTime)) / 2, 32);
-
-                    pdf.autoTable({
-                        head: [data[0]],
-                        body: data.slice(1),
-                        startY: 40,
-                        theme: 'grid',
-                        styles: { halign: 'center', fontSize: 8 },
-                        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
-                        columnStyles: {
-                            0: { cellWidth: 10 },  // #
-                            1: { cellWidth: 25 },  // Route
-                            2: { cellWidth: 30 },  // Customer Number
-                            3: { cellWidth: 30 },  // NIC
-                            4: { cellWidth: 50 },  // Customer Name
-                            5: { cellWidth: 20 },  // Amount
-                            6: { cellWidth: 20 },  // Interest Rate
-                            7: { cellWidth: 15 },  // No of Weeks
-                            8: { cellWidth: 45 },  // Bank Details
-                            9: { cellWidth: 30 }   // Received By
-                        }
-                    });
-
+                url:'/get-customer-bank-details', type:'POST', data:{customer_ids:customerIds,_token:$('meta[name="csrf-token"]').attr('content')},
+                success:function(resp){
+                    rowData.forEach((rec,idx)=>{ let line=[idx+1]; activeKeys.forEach(k=>{ if(k==='bank') line.push(resp[String(rec.idCustomer).trim()]||''); else if(k==='amount'){ const amt=colDefs.amount.fn(rec.row); totalAmount+=amt; line.push(amt.toFixed(2)); } else line.push(colDefs[k].fn(rec.row));}); bodyRows.push(line); });
+                    if(activeKeys.includes('amount')){ bodyRows.push([]); const totalRow=new Array(header.length).fill(''); const aI=header.indexOf('Amount'); if(aI>-1){ totalRow[aI-1]='Total Amount'; totalRow[aI]=totalAmount.toFixed(2);} bodyRows.push(totalRow);}                    
+                    var pdf = new window.jspdf.jsPDF('landscape','mm','a4');
+                    var dateTime = getColomboDateTime(); var pageWidth=pdf.internal.pageSize.getWidth();
+                    pdf.setFontSize(14); pdf.text(companyName,(pageWidth-pdf.getTextWidth(companyName))/2,16);
+                    pdf.setFontSize(12); pdf.text('Disbursement Sheet',(pageWidth-pdf.getTextWidth('Disbursement Sheet'))/2,24);
+                    pdf.setFontSize(10); pdf.text('Date: '+dateTime,(pageWidth-pdf.getTextWidth('Date: '+dateTime))/2,32);
+                    const colStyles={}; header.forEach((h,i)=>{ if(i===0){colStyles[0]={cellWidth:10}; return;} const key=activeKeys[i-1]; colStyles[i]={cellWidth: (colDefs[key].w||20)}; });
+                    pdf.autoTable({ head:[header], body:bodyRows, startY:40, theme:'grid', styles:{halign:'center', fontSize:8}, headStyles:{fillColor:[0,0,0], textColor:[255,255,255]}, columnStyles: colStyles});
                     pdf.save('Disbursement_Sheet.pdf');
                 },
-                error: function(xhr) {
-                    console.error("Error loading bank details");
-                }
+                error:()=> console.error('Error loading bank details')
             });
         }
 
