@@ -642,55 +642,60 @@
         }
 
         function exportFundRequestPDF() {
-            // minimal dynamic column export using cached selection
+            // dynamic column export with new required default ordering
             const cfg = getFundRequestConfig();
-            var table = $('#loan_table').DataTable();
-            var rows = table.rows().data();
+            const table = $('#loan_table').DataTable();
+            const rows = table.rows().data();
 
-            // map for available columns (label + extractor) keep indices consistent with table
+            // ALL available (optional) columns
             const colDefs = {
-                customer_no: { label: 'Customer No', fn: r => r[9] },
-                customer_name: { label: 'Customer Name', fn: r => r[8] },
-                nic: { label: 'NIC', fn: r => r[10] },
-                amount: { label: 'Amount', fn: r => (parseFloat(r[12].replace(/[^0-9.-]+/g, "")) || 0).toFixed(2) },
-                interest: { label: 'Interest Rate', fn: r => r[14] },
-                weeks: { label: 'No of Weeks', fn: r => r[15] },
+                loan_no:        { label: 'Loan Number',   fn: r => r[0] },
+                customer_name:  { label: 'Customer Name', fn: r => r[8] },
+                nic:            { label: 'NIC',           fn: r => r[10] },
+                amount:         { label: 'Amount',        fn: r => (parseFloat(r[12].replace(/[^0-9.-]+/g,''))||0).toFixed(2) },
+                branch_name:    { label: 'Branch Name',   fn: _ => branchName || '' },
+                center_name:    { label: 'Center Name',   fn: r => r[6] },
+                route_name:     { label: 'Route',         fn: r => r[2] },
+                collector_name: { label: 'Collector Name',fn: r => r[4] },
+                group_no:       { label: 'Group Number',  fn: r => r[7] },
+                interest:       { label: 'Interest Rate', fn: r => r[14] },
+                weeks:          { label: 'No of Weeks',   fn: r => r[15] },
+                // extra optional columns below
+                customer_code:  { label: 'Customer Code', fn: r => r[9] },
+                route_code:     { label: 'Route Code',    fn: r => r[1] },
+                product:        { label: 'Product',       fn: r => r[11] },
+                doc_charge:     { label: 'Doc Charge',    fn: r => r[13] },
+                date:           { label: 'Date',          fn: r => r[16] },
+                reason:         { label: 'Reason',        fn: r => r[17] },
+                lending_officer:{ label: 'Lending Officer', fn: r => r[18] },
+                user:           { label: 'User',          fn: r => r[19] },
+                status:         { label: 'Status',        fn: r => r[20] }
             };
 
-            // fallback if nothing selected
-            const activeKeys = cfg.length ? cfg : Object.keys(colDefs);
+            // Required default order if nothing saved
+            const defaultFundCols = [
+                'loan_no','customer_name','nic','amount','branch_name','center_name','route_name','collector_name','group_no','interest','weeks'
+            ];
+            const activeKeys = cfg.length ? cfg : defaultFundCols;
 
-            let header = ['#'];
-            activeKeys.forEach(k => header.push(colDefs[k].label));
-            let body = [];
-            let totalAmount = 0;
-
-            for (let i = 0; i < rows.length; i++) {
+            let header=['#']; activeKeys.forEach(k=> header.push(colDefs[k]?.label||k));
+            let body=[]; let totalAmount=0; const amountIncluded = activeKeys.includes('amount');
+            for(let i=0;i<rows.length;i++){
                 const row = rows[i];
-                let line = [i + 1];
-                activeKeys.forEach(k => {
-                    let val = colDefs[k].fn(row);
-                    line.push(val);
-                });
-                // track total if amount column included
-                if (activeKeys.includes('amount')) {
-                    totalAmount += parseFloat(colDefs.amount.fn(row));
-                }
+                const line=[i+1];
+                activeKeys.forEach(k=>{ const def=colDefs[k]; line.push(def?def.fn(row):''); });
+                if(amountIncluded){ totalAmount += parseFloat(colDefs.amount.fn(row)); }
                 body.push(line);
             }
-
-            // footer total row only if amount selected
-            if (activeKeys.includes('amount')) {
+            if(amountIncluded){
                 const totalRow = new Array(header.length).fill('');
-                totalRow[header.indexOf('Amount') - 0] = 'Total Amount';
-                totalRow[header.indexOf('Amount') + 1] = totalAmount.toFixed(2); // position after label
+                const amtIdx = header.indexOf('Amount');
+                if(amtIdx>-1){ totalRow[amtIdx] = totalAmount.toFixed(2); totalRow[Math.max(1,amtIdx-1)] = 'Total Amount'; }
                 body.push(totalRow);
             }
-
-            // signature rows
             body.push(new Array(header.length).fill(''));
-            body.push([`Authorized 01: ${authorizedName}`].concat(new Array(header.length -1).fill('')));
-            body.push(['Authorized 02:'].concat(new Array(header.length -1).fill('')));
+            body.push([`Authorized 01: ${authorizedName}`].concat(new Array(header.length-1).fill('')));
+            body.push(['Authorized 02:'].concat(new Array(header.length-1).fill('')));
 
             var pdf = new window.jspdf.jsPDF('landscape', 'mm', 'a4');
             var dateTime = getColomboDateTime();
@@ -723,25 +728,35 @@
         }
         function openFundRequestConfig(){
             const holder = document.getElementById('fund-request-col-list');
-            if(!holder) return;
-            holder.innerHTML='';
-            const defs = [
-                {k:'customer_no', l:'Customer No'},
-                {k:'customer_name', l:'Customer Name'},
-                {k:'nic', l:'NIC'},
-                {k:'amount', l:'Amount'},
-                {k:'interest', l:'Interest Rate'},
-                {k:'weeks', l:'No of Weeks'}
+            if(!holder) return; holder.innerHTML='';
+            const allDefs = [
+                {k:'loan_no',l:'Loan Number'},
+                {k:'customer_name',l:'Customer Name'},
+                {k:'nic',l:'NIC'},
+                {k:'amount',l:'Amount'},
+                {k:'branch_name',l:'Branch Name'},
+                {k:'center_name',l:'Center Name'},
+                {k:'route_name',l:'Route'},
+                {k:'collector_name',l:'Collector Name'},
+                {k:'group_no',l:'Group Number'},
+                {k:'interest',l:'Interest Rate'},
+                {k:'weeks',l:'No of Weeks'},
+                // optional extras
+                {k:'customer_code',l:'Customer Code'},
+                {k:'route_code',l:'Route Code'},
+                {k:'product',l:'Product'},
+                {k:'doc_charge',l:'Doc Charge'},
+                {k:'date',l:'Date'},
+                {k:'reason',l:'Reason'},
+                {k:'lending_officer',l:'Lending Officer'},
+                {k:'user',l:'User'},
+                {k:'status',l:'Status'}
             ];
-            const active = new Set(getFundRequestConfig());
-            defs.forEach(d=>{
-                const div = document.createElement('div');
-                div.className='col-6';
-                div.innerHTML = `<div class="form-check"><input class="form-check-input" type="checkbox" value="${d.k}" id="fr_${d.k}" ${active.size===0 || active.has(d.k)?'checked':''}><label class="form-check-label" for="fr_${d.k}">${d.l}</label></div>`;
-                holder.appendChild(div);
-            });
-            const modal = new bootstrap.Modal(document.getElementById('fundRequestConfigModal'));
-            modal.show();
+            const saved = getFundRequestConfig();
+            const defaults = ['loan_no','customer_name','nic','amount','branch_name','center_name','route_name','collector_name','group_no','interest','weeks'];
+            const activeSet = new Set(saved.length? saved : defaults);
+            allDefs.forEach(d=>{ const div=document.createElement('div'); div.className='col-6'; div.innerHTML=`<div class="form-check"><input class="form-check-input" type="checkbox" value="${d.k}" id="fr_${d.k}" ${activeSet.has(d.k)?'checked':''}><label class="form-check-label" for="fr_${d.k}">${d.l}</label></div>`; holder.appendChild(div); });
+            new bootstrap.Modal(document.getElementById('fundRequestConfigModal')).show();
         }
         function saveFundRequestConfig(){
             const checks = document.querySelectorAll('#fund-request-col-list input[type=checkbox]');
