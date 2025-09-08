@@ -669,7 +669,7 @@
                 reason:         { label: 'Reason',        fn: r => r[17] },
                 lending_officer:{ label: 'Lending Officer', fn: r => r[18] },
                 user:           { label: 'User',          fn: r => r[19] },
-                status:         { label: 'Status',        fn: r => r[20] }
+                status:         { label: 'Status',        fn: r => stripHtml(r[20]) }
             };
 
             // Required default order if nothing saved
@@ -852,6 +852,14 @@
                 }, error:()=> console.error('Error loading bank details for Excel') });
         }
 
+        // Helper function to strip HTML tags and get clean text
+        function stripHtml(html) {
+            if (!html) return '';
+            const temp = document.createElement('div');
+            temp.innerHTML = html;
+            return temp.textContent || temp.innerText || '';
+        }
+
         function exportDisbursementSheetPDF() {
             const cfg = getDisbursementConfig();
             const table = $('#loan_table').DataTable();
@@ -878,7 +886,7 @@
                 reason:{label:'Reason', fn:r=>r[17]},
                 lending_officer:{label:'Lending Officer', fn:r=>r[18]},
                 user:{label:'User', fn:r=>r[19]},
-                status:{label:'Status', fn:r=>r[20]}
+                status:{label:'Status', fn:r=>stripHtml(r[20])}
             };
             const defaultDisCols=['loan_no','nic','customer_name','amount','received_by','center_name','interest','weeks','doc_charge','collector_name','route_name'];
             const activeKeys = (cfg.length?cfg:defaultDisCols);
