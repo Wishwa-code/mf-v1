@@ -790,7 +790,7 @@
             {k:'reason',l:'Reason'},
             {k:'lending_officer',l:'Lending Officer'},
             {k:'user',l:'User'},
-            {k:'status',l:'Status'}
+            // {k:'status',l:'Status'}
         ]; const saved=getDisbursementConfig(); const defaults=['loan_no','nic','customer_name','amount','received_by','center_name','interest','weeks','doc_charge','collector_name','route_name']; const active=new Set(saved.length?saved:defaults); defs.forEach(d=>{ const div=document.createElement('div'); div.className='col-6'; div.innerHTML=`<div class="form-check"><input class="form-check-input" type="checkbox" value="${d.k}" id="ds_${d.k}" ${active.has(d.k)?'checked':''}><label class="form-check-label" for="ds_${d.k}">${d.l}</label></div>`; holder.appendChild(div);}); new bootstrap.Modal(document.getElementById('disbursementConfigModal')).show(); }
         function saveDisbursementConfig(){ const checks=document.querySelectorAll('#disbursement-col-list input[type=checkbox]'); const sel=Array.from(checks).filter(c=>c.checked).map(c=>c.value); localStorage.setItem(DISBURSE_KEY, JSON.stringify(sel)); bootstrap.Modal.getInstance(document.getElementById('disbursementConfigModal')).hide(); }
         function promptDisbursementExport() {
