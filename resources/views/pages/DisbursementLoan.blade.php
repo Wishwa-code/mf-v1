@@ -145,7 +145,8 @@
                                 <tr>
                                     <th>Loan No</th>
                                     <th>Route</th>
-                                    <th>Center</th>
+                                    <th>Center ID</th>
+                                    <th>Center Name</th>
                                     <th>Group</th>
                                     <th>Customer</th>
                                     <th>Customer Code</th>
@@ -524,18 +525,23 @@
                 responsive: true, // Enable responsiveness
                 columnDefs: [
                     { width: '8%', targets: 0 }, // Loan No
-                    { width: '5%', targets: 1 }, // Group
-                    { width: '15%', targets: 2 }, // Customer
-                    { width: '15%', targets: 3 }, // Loan Category
-                    // Add more targets as needed
-                    { width: '5%', targets: 4 }, // Total Amount
-                    { width: '8%', targets: 5 }, // Created Date Time
-                    { width: '3%', targets: 6 }, // Reason
-                    { width: '15%', targets: 7 }, // Lending Officer
-                    { width: '7%', targets: 8 }, // User
-                    { width: '5%', targets: 9 }, // Status
-                    { width: '50%', targets: 10 }, // Action
-                    { targets: [16], visible: false } // Hide the idCustomer column
+                    { width: '5%', targets: 1 }, // Route
+                    { width: '5%', targets: 2 }, // Center ID
+                    { width: '10%', targets: 3 }, // Center Name
+                    { width: '10%', targets: 4 }, // Group
+                    { width: '15%', targets: 5 }, // Customer
+                    { width: '8%', targets: 6 }, // Customer Code
+                    { width: '8%', targets: 7 }, // NIC
+                    { width: '8%', targets: 8 }, // Product
+                    { width: '5%', targets: 9 }, // Amount
+                    { width: '5%', targets: 10 }, // Doc Charge
+                    { width: '8%', targets: 11 }, // Date
+                    { width: '3%', targets: 12 }, // Reason
+                    { width: '10%', targets: 13 }, // Lending Officer
+                    { width: '7%', targets: 14 }, // User
+                    { width: '5%', targets: 15 }, // Status
+                    { width: '50%', targets: 16 }, // Action
+                    { targets: [17], visible: false } // Hide the idCustomer column
                 ],
 
                 // Additional DataTables options and initialization here

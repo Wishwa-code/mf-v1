@@ -56,6 +56,7 @@ function load_table() {
                         item.Loan_No,
                         item.route_name,
                         item.center_no,
+                        item.center_name,
                         item.group_name,
                         formatName(item.First_Name, item.Last_Name), // Use formatted name here
                         item.cus_number,

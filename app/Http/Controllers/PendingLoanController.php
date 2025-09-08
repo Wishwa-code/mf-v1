@@ -618,6 +618,7 @@ class PendingLoanController extends Controller
                 'customer.*',
                 DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
                 DB::raw('IFNULL(center.No, "-") as center_no'),
+                DB::raw('IFNULL(center.Name, "-") as center_name'),
                 DB::raw('IFNULL(route.name, "-") as route_name'),
                 'u1.Full_Name as user_name',
                 'u2.Full_Name as lending_officer',
