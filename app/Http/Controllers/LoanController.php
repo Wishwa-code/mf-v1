@@ -230,8 +230,66 @@ class LoanController extends Controller
 
 
 
+        if (($request->interest_method ?? '') === 'Reducing Balance') {
+            $sumCapital = 0.0;
+            $sumInterest = 0.0;
+            $sumTotalAmount = 0.0;
 
-        Log::info($loan_number_txt);
+            $firstTotalBalance = null;
+            $maxTotalBalance   = 0.0;
+            $lastNonZero       = 0.0;
+
+            foreach (($request->installment ?? []) as $row) {
+                $installmentAmount = (float) data_get($row, 'installmentAmount', 0); // per-row installment
+                $totalAmount       = (float) data_get($row, 'totalAmount', 0);       // if you have a "total" column per row
+                $totalBalance      = (float) data_get($row, 'totalBalance', 0);      // running balance column
+
+                // interest: prefer explicit, else fall back to installmentBalance if that's your interest column
+                $interestPerRow = (float) (
+                    data_get($row, 'interestAmount') ??
+                    data_get($row, 'installmentBalance', 0)
+                );
+
+                // capital: prefer explicit, else derive
+                $capitalPerRow = (float) (
+                    data_get($row, 'capitalAmount') ??
+                    max(0, $installmentAmount - $interestPerRow)
+                );
+
+                $sumCapital     += $capitalPerRow;
+                $sumInterest    += $interestPerRow;
+                $sumTotalAmount += $totalAmount;
+
+                if ($totalBalance > 0) {
+                    if ($firstTotalBalance === null) $firstTotalBalance = $totalBalance;
+                    if ($totalBalance > $maxTotalBalance) $maxTotalBalance = $totalBalance;
+                    $lastNonZero = $totalBalance;
+                }
+            }
+
+            // Prefer an explicit aggregated total if you send one; else use MAX running balance (initial balance).
+            $providedGrand = (float) ($request->input('total_balance_total') ?? $request->input('grand_total_balance') ?? 0);
+            $grandTotal = $sumCapital+$sumInterest;
+
+            // Overwrite the four fields from table totals
+            $loan->Total_Loan_Amount   = round($grandTotal, 2);
+            $loan->Balance_Amount      = round($grandTotal, 2);
+            $loan->capital_balance     = round($sumCapital, 2);
+            $loan->installment_balance = round($sumInterest, 2);
+            $loan->Interest_Amount = round($sumInterest, 2);
+            // (Optional) quick debug to verify what was used:
+            // \Log::info('RB totals', compact('sumCapital','sumInterest','sumTotalAmount','firstTotalBalance','maxTotalBalance','lastNonZero','providedGrand','grandTotal'));
+        }else{
+            $loan->Total_Loan_Amount = $request->total_loan_amount;
+            $loan->Balance_Amount = $request->total_loan_amount;
+            $loan->capital_balance = $request->total_capital_amount;
+            $loan->installment_balance = $request->total_interest_amount;
+            $loan->Interest_Amount = $request->interest_amount;
+        }
+
+
+
+
         $loan->Loan_No = $loan_number_txt;
         $loan->Loan_Category_idLoan_Category = $request->loan_cate_id;
         $loan->Customer_idCustomer = $request->customer_id;
@@ -242,19 +300,19 @@ class LoanController extends Controller
         $loan->Interest_Rate = $request->interest;
         $loan->Panalty_Rate = $request->panelty_amount;
         $loan->Installment_Count = $request->ins_count;
-        $loan->Interest_Amount = $request->interest_amount;
+
         $loan->Total_Other_Amount = $request->total_loan_charge;
         $loan->Other_Amount_Balance = $request->loan_charge_balance;
-        $loan->Total_Loan_Amount = $request->total_loan_amount;
+
         $loan->Installment_Amount = $request->new_interest_amount;
         $loan->Collection_Type = $request->collection_type;
         $loan->Collection_Date = $request->installment_date_txt;
         $loan->Panalty_Date = $request->panelty_date;
-        $loan->Balance_Amount = $request->total_loan_amount;
+
         $loan->Status = "-1";
         $loan->User_idUser = $user_id;
-        $loan->capital_balance = $request->total_capital_amount;
-        $loan->installment_balance = $request->total_interest_amount;
+
+
         $loan->type = $request->interest_method;
         $loan->Interest_period = $request->Interest_period;
         $loan->lending_officer_id = $request->lending_officer;

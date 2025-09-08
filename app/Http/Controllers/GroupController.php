@@ -211,7 +211,7 @@ class GroupController extends Controller
                 ->where('idCustomer_Group', $id)->first();
 
 
-            customer_number($customer);
+
 
             $request = new Request([
                 'customer_id' => $customer,
@@ -223,7 +223,7 @@ class GroupController extends Controller
 
             // Call the store method of CustomerLogController
             $this->customerLogController->store($request);
-
+            customer_number($customer);
 
             return response()->json(['message' => 'Customer assigned to group successfully', 'id' => '1'], 200);
         }
