@@ -54,8 +54,12 @@ function load_table() {
                     // Add row data to DataTable
                     $('#loan_table').DataTable().row.add([
                         item.Loan_No,
+                        item.route_code,
                         item.route_name,
+                        item.collector_id,
+                        item.collector_name,
                         item.center_no,
+                        item.center_name,
                         item.group_name,
                         formatName(item.First_Name, item.Last_Name), // Use formatted name here
                         item.cus_number,
@@ -63,6 +67,8 @@ function load_table() {
                         item.loan_name,
                         parseFloat(item.Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                         parseFloat(item.total_other_charges).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                        item.Interest_Rate + '%',
+                        item.Installment_Count,
                         item.Date_Time,
                         item.reason,
                         item.lending_officer,
