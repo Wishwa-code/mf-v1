@@ -134,12 +134,13 @@
                 #repaymentTable col.att-col { width: 18px !important; }
                 #repaymentTable col.name-col { width: 220px !important; }
             /* Customer name column styling for print */
-            #repaymentTable th:first-child,
+            #repaymentTable th:first-child:not([colspan]),
             #repaymentTable td:first-child {
                 width: 220px !important;
                 text-align: left;
                 padding-left: 5px;
             }
+            #repaymentTable th[colspan] { text-align: center !important; }
 
             @page {
                 size: auto; /* let the browser decide: supports both portrait & landscape */
@@ -160,12 +161,16 @@
         }
 
         /* Customer name column styling */
-        #repaymentTable th:first-child,
+        /* Left-align only normal first column cells (no colspan) */
+        #repaymentTable th:first-child:not([colspan]),
         #repaymentTable td:first-child {
             width: 220px;
             text-align: left;
             padding-left: 8px;
         }
+
+        /* Ensure group header rows (th with colspan) stay centered */
+        #repaymentTable th[colspan] { text-align: center !important; }
 
     </style>
 
@@ -477,7 +482,8 @@
                 printWindow.document.write('#repaymentTable th, #repaymentTable td { border: 1px solid black; padding: 4px; text-align: center; word-break: break-word; }');
                 printWindow.document.write('#repaymentTable col.name-col { width: 220px !important; }');
                 printWindow.document.write('#repaymentTable col.att-col { width: 18px !important; }');
-                printWindow.document.write('#repaymentTable th:first-child, #repaymentTable td:first-child { text-align: left; padding-left: 5px; }');
+                printWindow.document.write('#repaymentTable th:first-child:not([colspan]), #repaymentTable td:first-child { text-align: left; padding-left: 5px; }');
+                printWindow.document.write('#repaymentTable th[colspan] { text-align: center !important; }');
                 printWindow.document.write('.attendance-cell { width: 18px !important; height: 20px; text-align: center; }');
                 printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
                 printWindow.document.write('</style></head><body>');
