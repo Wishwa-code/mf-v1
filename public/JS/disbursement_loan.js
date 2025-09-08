@@ -67,6 +67,8 @@ function load_table() {
                         item.loan_name,
                         parseFloat(item.Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                         parseFloat(item.total_other_charges).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                        item.Interest_Rate + '%',
+                        item.Installment_Count,
                         item.Date_Time,
                         item.reason,
                         item.lending_officer,

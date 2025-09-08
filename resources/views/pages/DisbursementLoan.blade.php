@@ -157,6 +157,8 @@
                                     <th>Product</th>
                                     <th>Amount</th>
                                     <th>Doc Charge</th>
+                                    <th>Interest Rate</th>
+                                    <th>No of Weeks</th>
                                     <th>Date</th>
                                     <th>Reason</th>
                                     <th>Lending Officer</th>
@@ -541,13 +543,15 @@
                     { width: '6%', targets: 11 }, // Product
                     { width: '5%', targets: 12 }, // Amount
                     { width: '5%', targets: 13 }, // Doc Charge
-                    { width: '7%', targets: 14 }, // Date
-                    { width: '3%', targets: 15 }, // Reason
-                    { width: '8%', targets: 16 }, // Lending Officer
-                    { width: '6%', targets: 17 }, // User
-                    { width: '4%', targets: 18 }, // Status
-                    { width: '45%', targets: 19 }, // Action
-                    { targets: [20], visible: false } // Hide the idCustomer column
+                    { width: '6%', targets: 14 }, // Interest Rate
+                    { width: '6%', targets: 15 }, // No of Weeks
+                    { width: '7%', targets: 16 }, // Date
+                    { width: '3%', targets: 17 }, // Reason
+                    { width: '8%', targets: 18 }, // Lending Officer
+                    { width: '6%', targets: 19 }, // User
+                    { width: '4%', targets: 20 }, // Status
+                    { width: '45%', targets: 21 }, // Action
+                    { targets: [22], visible: false } // Hide the idCustomer column
                 ],
 
                 // Additional DataTables options and initialization here
@@ -590,25 +594,27 @@
             var table = $('#loan_table').DataTable();
             var rows = table.rows().data();
 
-            var data = [['#', 'Customer No', 'Customer Name', 'NIC', 'Amount']];
+            var data = [['#', 'Customer No', 'Customer Name', 'NIC', 'Amount', 'Interest Rate', 'No of Weeks']];
             var totalAmount = 0;
 
             for (var i = 0; i < rows.length; i++) {
                 var row = rows[i];
                 var index = i + 1;
-                var cus_no = row[5];
-                var cus_name = row[4];
-                var nic = row[6];
-                var amount = parseFloat(row[8].replace(/[^0-9.-]+/g, "")) || 0;
+                var cus_no = row[9]; // Customer Code
+                var cus_name = row[8]; // Customer Name (formatted)
+                var nic = row[10]; // NIC
+                var amount = parseFloat(row[12].replace(/[^0-9.-]+/g, "")) || 0; // Amount
+                var interestRate = row[14]; // Interest Rate
+                var noOfWeeks = row[15]; // No of Weeks
 
                 totalAmount += amount;
-                data.push([index, cus_no, cus_name, nic, amount.toFixed(2)]);
+                data.push([index, cus_no, cus_name, nic, amount.toFixed(2), interestRate, noOfWeeks]);
             }
 
-            data.push(['', '', '', 'Total Amount', totalAmount.toFixed(2)]);
-            data.push(['', '', '', '', '']);
+            data.push(['', '', '', '', 'Total Amount', totalAmount.toFixed(2), '']);
+            data.push(['', '', '', '', '', '', '']);
             var authorizedText = "Authorized 01: " + authorizedName;
-            data.push([authorizedText, '', '', '', 'Authorized 02:']);
+            data.push([authorizedText, '', '', '', '', 'Authorized 02:', '']);
 
             // switch to landscape for wider table layout
             var pdf = new window.jspdf.jsPDF('landscape', 'mm', 'a4');
@@ -667,7 +673,7 @@
 
             var wb = XLSX.utils.book_new();
             // Added "Route" after "#"
-            var ws_data = [['#', 'Route', 'Customer Number', 'NIC', 'Customer Name', 'Amount', 'Bank Details', 'Received By']];
+            var ws_data = [['#', 'Route', 'Customer Number', 'NIC', 'Customer Name', 'Amount', 'Interest Rate', 'No of Weeks', 'Bank Details', 'Received By']];
             var customerIds = [];
             var rowData = [];
             var totalAmount = 0;
@@ -676,11 +682,13 @@
                 var row = rows[i];
 
                 var route        = row[1];                       // Route
-                var customerNo   = row[5];                       // Customer Number
-                var nic          = row[6];                       // NIC
-                var customerName = row[4];                       // Customer Name
-                var amount       = parseFloat(row[8].replace(/[^0-9.-]+/g, "")) || 0; // Amount
-                var idCustomer   = row[16];                      // <-- KEEP using idCustomer for bank details
+                var customerNo   = row[9];                       // Customer Number
+                var nic          = row[10];                      // NIC
+                var customerName = row[8];                       // Customer Name (formatted)
+                var amount       = parseFloat(row[12].replace(/[^0-9.-]+/g, "")) || 0; // Amount
+                var interestRate = row[14];                      // Interest Rate
+                var noOfWeeks    = row[15];                      // No of Weeks
+                var idCustomer   = row[22];                      // <-- KEEP using idCustomer for bank details
 
                 totalAmount += amount;
 
@@ -691,6 +699,8 @@
                     nic: nic,
                     customerName: customerName,
                     amount: amount,
+                    interestRate: interestRate,
+                    noOfWeeks: noOfWeeks,
                     idCustomer: idCustomer
                 });
 
@@ -716,14 +726,16 @@
                             item.nic,                   // NIC
                             item.customerName,          // Customer Name
                             item.amount.toFixed(2),     // Amount
+                            item.interestRate,          // Interest Rate
+                            item.noOfWeeks,             // No of Weeks
                             bankDetail,                 // Bank Details
                             ''                          // Received By
                         ]);
                     });
 
-                    // Footer rows (keep 8 data columns after '#', 'Route', etc.)
+                    // Footer rows (keep 10 data columns after '#', 'Route', etc.)
                     ws_data.push([]);
-                    ws_data.push(['', '', '', '', 'Total Amount', totalAmount.toFixed(2), '', '']);
+                    ws_data.push(['', '', '', '', 'Total Amount', totalAmount.toFixed(2), '', '', '', '']);
 
                     var ws = XLSX.utils.aoa_to_sheet(ws_data);
                     XLSX.utils.book_append_sheet(wb, ws, "Disbursement Sheet");
@@ -740,7 +752,7 @@
             var rows  = table.rows().data();
 
             // Added "Route" after "#"
-            var data = [['#', 'Route', 'Customer Number', 'NIC', 'Customer Name', 'Amount', 'Bank Details', 'Received By']];
+            var data = [['#', 'Route', 'Customer Number', 'NIC', 'Customer Name', 'Amount', 'Interest Rate', 'No of Weeks', 'Bank Details', 'Received By']];
             var totalAmount = 0;
             var customerIds = [];
             var rowData = [];
@@ -750,11 +762,13 @@
                 var row = rows[i];
 
                 var route        = row[1];                       // Route
-                var customerNo   = row[5];                       // Customer Number
-                var nic          = row[6];                       // NIC
-                var customerName = row[4];                       // Customer Name
-                var amount       = parseFloat(row[8].replace(/[^0-9.-]+/g, "")) || 0; // Amount
-                var idCustomer   = row[16];                      // <-- KEEP using idCustomer
+                var customerNo   = row[9];                       // Customer Number
+                var nic          = row[10];                      // NIC
+                var customerName = row[8];                       // Customer Name (formatted)
+                var amount       = parseFloat(row[12].replace(/[^0-9.-]+/g, "")) || 0; // Amount
+                var interestRate = row[14];                      // Interest Rate
+                var noOfWeeks    = row[15];                      // No of Weeks
+                var idCustomer   = row[22];                      // <-- KEEP using idCustomer
 
                 totalAmount += amount;
 
@@ -765,6 +779,8 @@
                     nic: nic,
                     customerName: customerName,
                     amount: amount,
+                    interestRate: interestRate,
+                    noOfWeeks: noOfWeeks,
                     idCustomer: idCustomer    // <-- store idCustomer
                 });
 
@@ -790,18 +806,20 @@
                             item.nic,                         // NIC
                             item.customerName,                // Customer Name
                             item.amount.toFixed(2),           // Amount
+                            item.interestRate,                // Interest Rate
+                            item.noOfWeeks,                   // No of Weeks
                             bankDetail,                       // Bank Details
                             ''                                // Received By
                         ]);
                     });
 
-                    // Step 4: Add total and footer info (pad to 8 columns)
-                    data.push(['', '', '', '', 'Total Amount', totalAmount.toFixed(2), '', '']);
+                    // Step 4: Add total and footer info (pad to 10 columns)
+                    data.push(['', '', '', '', 'Total Amount', totalAmount.toFixed(2), '', '', '', '']);
                     data.push([]);
                     var authorizedText = "Prepared By: " + authorizedName;
-                    data.push(['', authorizedText, '', '', 'Authorized 01:', '', '', '']);
-                    data.push(['', '', '', '', 'Authorized 02:', '', '', '']);
-                    data.push(['', '', '', '', 'All Cheques Received:', '', '', '']);
+                    data.push(['', authorizedText, '', '', 'Authorized 01:', '', '', '', '', '']);
+                    data.push(['', '', '', '', 'Authorized 02:', '', '', '', '', '']);
+                    data.push(['', '', '', '', 'All Cheques Received:', '', '', '', '', '']);
 
                     // Step 5: Generate PDF
                     var pdf = new window.jspdf.jsPDF('landscape', 'mm', 'a4');
@@ -822,17 +840,19 @@
                         body: data.slice(1),
                         startY: 40,
                         theme: 'grid',
-                        styles: { halign: 'center', fontSize: 10 },
+                        styles: { halign: 'center', fontSize: 8 },
                         headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
                         columnStyles: {
                             0: { cellWidth: 10 },  // #
-                            1: { cellWidth: 30 },  // Route
-                            2: { cellWidth: 35 },  // Customer Number
-                            3: { cellWidth: 35 },  // NIC
-                            4: { cellWidth: 60 },  // Customer Name
-                            5: { cellWidth: 25 },  // Amount
-                            6: { cellWidth: 55 },  // Bank Details
-                            7: { cellWidth: 35 }   // Received By
+                            1: { cellWidth: 25 },  // Route
+                            2: { cellWidth: 30 },  // Customer Number
+                            3: { cellWidth: 30 },  // NIC
+                            4: { cellWidth: 50 },  // Customer Name
+                            5: { cellWidth: 20 },  // Amount
+                            6: { cellWidth: 20 },  // Interest Rate
+                            7: { cellWidth: 15 },  // No of Weeks
+                            8: { cellWidth: 45 },  // Bank Details
+                            9: { cellWidth: 30 }   // Received By
                         }
                     });
 
