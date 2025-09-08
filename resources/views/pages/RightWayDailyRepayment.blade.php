@@ -245,18 +245,9 @@
                                         <th colspan="20">Group No: {{ $group_name }}</th>
                                     </tr>
                                     @foreach ($group as $item)
-                                        @php
-                                            // Format customer name abbreviation
-                                            $nameParts = explode(' ', $item->customer_name . ' ' . $item->customer_lastname);
-                                            if (count($nameParts) >= 2) {
-                                                $shortName = strtoupper(substr($nameParts[0], 0, 1)) . '.' . strtoupper(substr($nameParts[1], 0, 1)) . '.' . end($nameParts);
-                                            } else {
-                                                $shortName = $item->customer_name . ' ' . $item->customer_lastname;
-                                            }
-                                        @endphp
                                         <tr>
 {{--                                            <td>{{ $item->cus_number }}</td>--}}
-                                            <td>{{ $shortName }}</td>
+                                            <td>{{ format_member_name($item->customer_name, $item->customer_lastname, $name_mode ?? 'with_initial') }}</td>
                                             <td>{{ $item->Contact_No }}</td>
 {{--                                            <td>{{ $item->Product_code }}</td>--}}
                                             <td>{{ $item->Loan_No }}</td>
