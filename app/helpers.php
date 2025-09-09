@@ -120,6 +120,11 @@ function numberToWords($number) {
 
 function tableWithBranch($table, $useBranchIdFromTable = null)
 {
+
+    if (!auth()->check()) {
+        return redirect()->route('login')->with("error", "Session expired! Please Login");
+    }
+
     $query = DB::table($table);
 
     // If a specific table alias/name is given for branch scoping and it has branch_id
