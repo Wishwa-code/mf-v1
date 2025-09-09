@@ -798,9 +798,12 @@ class TransactionController extends Controller
         $printedBy = session('Full_Name') ?? 'System';
         $printedAt = now()->format('Y-m-d h:i A');
 
+        // Read app setting for how to display member names (align with other reports)
+        $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
+
         return view('pages.GreenLankaTrustRepayment', compact(
             'center', 'grouped_loans', 'center_details',
-            'center_no', 'center_name', 'printedBy', 'printedAt'
+            'center_no', 'center_name', 'printedBy', 'printedAt', 'name_mode'
         ));
 
 
