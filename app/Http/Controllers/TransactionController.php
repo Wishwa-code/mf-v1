@@ -36,7 +36,9 @@ class TransactionController extends Controller
             $center_details = null; // Or any default value you want to assign
             $group_details = null; // Or any default value you want to assign
             $grouped_loans = array(); // Or any default value you want to assign
-            return view('pages.DailyRepayment', compact('center', 'grouped_loans','center_details'));
+            // Read app setting for how to display member names (same as dailyreport)
+            $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
+            return view('pages.DailyRepayment', compact('center', 'grouped_loans','center_details','name_mode'));
         } else {
             // If $center is not empty, set the default center value
             $group_details = $request->group_details ?? $group[0]->idCustomer_Group;
@@ -138,7 +140,10 @@ class TransactionController extends Controller
 
 
 
-        return view('pages.DailyRepayment', compact('center','group', 'grouped_loans','center_details','group_details'));
+        // Read app setting for how to display member names (same as dailyreport)
+        $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
+
+        return view('pages.DailyRepayment', compact('center','group', 'grouped_loans','center_details','group_details','name_mode'));
     }
 
 
@@ -225,7 +230,7 @@ class TransactionController extends Controller
         $loan = $loanQuery->get();
 
         // Group data by 'group_name'
-        $grouped_loans = $loan->groupBy('group_name');
+    $grouped_loans = $loan->groupBy('group_name');
 
         // Convert the grouped loans array to an array (if not already)
         $grouped_loans = is_array($grouped_loans) ? $grouped_loans : $grouped_loans->toArray();
@@ -244,7 +249,10 @@ class TransactionController extends Controller
 
 
 
-        return view('pages.DailyRepaymentFinwin', compact('center','group', 'grouped_loans','center_details','group_details'));
+        // Read app setting for how to display member names (same as other reports)
+        $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
+
+        return view('pages.DailyRepaymentFinwin', compact('center','group', 'grouped_loans','center_details','group_details','name_mode'));
     }
 
     public function getGroupsByCenter($centerId)
@@ -348,8 +356,10 @@ class TransactionController extends Controller
             return $numA <=> $numB;
         });
 
+        // Read app setting for how to display member names (same as other reports)
+        $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
 
-        return view('pages.DailyRepaymentLasantha', compact('center','route', 'grouped_loans','center_details'));
+        return view('pages.DailyRepaymentLasantha', compact('center','route', 'grouped_loans','center_details','name_mode'));
     }
 
 
@@ -546,7 +556,10 @@ class TransactionController extends Controller
         });
 
 
-        return view('pages.DailyRepaymentNoble', compact('center', 'grouped_loans', 'center_details', 'from_date'));
+    // Read app setting for how to display member names (same as other reports)
+    $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
+
+    return view('pages.DailyRepaymentNoble', compact('center', 'grouped_loans', 'center_details', 'from_date', 'name_mode'));
 
     }
 
@@ -787,9 +800,12 @@ class TransactionController extends Controller
         $printedBy = session('Full_Name') ?? 'System';
         $printedAt = now()->format('Y-m-d h:i A');
 
+        // Read app setting for how to display member names (align with other reports)
+        $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
+
         return view('pages.GreenLankaTrustRepayment', compact(
             'center', 'grouped_loans', 'center_details',
-            'center_no', 'center_name', 'printedBy', 'printedAt'
+            'center_no', 'center_name', 'printedBy', 'printedAt', 'name_mode'
         ));
 
 
@@ -829,6 +845,8 @@ class TransactionController extends Controller
                 'customer.idCustomer',
                 DB::raw('IFNULL(center.No, "-") as center_no'),
                 DB::raw("CONCAT(customer.First_Name, ' ', customer.Last_Name) as customer_name"),
+                // Add separate first name to support helper-based formatting
+                DB::raw('customer.First_Name as customer_first'),
                 'customer.cus_number as cus_number',
                 'customer.Contact_No as Contact_No',
                 'loan_category.Product_code as Product_code',
@@ -904,16 +922,19 @@ class TransactionController extends Controller
         $grouped_loans = $loan->groupBy('group_name')->sortKeys();
 
 
-        $selected_center = $center->firstWhere('idCenter', $center_details);
+    $selected_center = $center->firstWhere('idCenter', $center_details);
 
         $center_no = $selected_center->No ?? 'N/A';
         $center_name = $selected_center->Name ?? 'N/A';
         $printedBy = session('Full_Name') ?? 'System';
         $printedAt = now()->format('Y-m-d h:i A');
 
+        // Read app setting for how to display member names
+        $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
+
         return view('pages.DandDRepayment', compact(
             'center', 'grouped_loans', 'center_details',
-            'center_no', 'center_name', 'printedBy', 'printedAt'
+            'center_no', 'center_name', 'printedBy', 'printedAt', 'name_mode'
         ));
     }
 
@@ -951,7 +972,8 @@ class TransactionController extends Controller
                 'customer.idCustomer',
                 DB::raw('IFNULL(center.No, "-") as center_no'),
                 DB::raw('IFNULL(center.Name, "-") as center_name'),
-                DB::raw("CONCAT(customer.First_Name, ' ', customer.Last_Name) as customer_name"),
+                // keep first name separate to support helper-based formatting
+                'customer.First_Name as customer_name',
                 'customer.cus_number as cus_number',
                 'customer.Contact_No as Contact_No',
                 'loan_category.Product_code as Product_code',
@@ -1030,16 +1052,9 @@ class TransactionController extends Controller
         }
 
         $loan = $loanQuery->get();
-        $loan = $loan->transform(function ($item) {
-            $parts = explode(' ', trim($item->customer_name));
-            $lastName = array_pop($parts); // Take last part as surname
-            $initials = '';
-            foreach ($parts as $part) {
-                $initials .= strtoupper(substr($part, 0, 1)) . '.';
-            }
-            $item->name_with_initials = $initials . strtoupper($lastName);
-            return $item;
-        });
+
+        // Use app setting to control member name display (same as RightWay report)
+        $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
 
 
         $group_filter = $request->group_filter;
@@ -1081,7 +1096,8 @@ class TransactionController extends Controller
             'center_no', 'center_name', 'printedBy', 'printedAt',
             'products', 'product_filter',
             'routes', 'route_filter',
-            'collectors', 'collector_filter'
+            'collectors', 'collector_filter',
+            'name_mode'
         ));
     }
 

@@ -228,7 +228,7 @@
 
                                     @foreach ($group as $item)
                                         <tr>
-                                            <td>{{ formatName($item->customer_name, $item->customer_lastname) }}</td>
+                                            <td>{{ format_member_name($item->customer_name, $item->customer_lastname, $name_mode ?? 'with_initial') }}</td>
                                             <td>{{ $item->Loan_No }}</td>
                                             <td>{{ $item->Contact_No }}</td>
                                             <td class="loan-amount">{{ number_format($item->Loan_Amount, 2) }}</td>
