@@ -473,7 +473,63 @@
                 const orientation = $('#pageOrientation').val();
 
                 const printWindow = window.open('', '', 'height=800,width=1200');
-                const printContent = document.getElementById('repaymentTable').outerHTML;
+                
+                // Clone the table and add dummy groups for printing
+                const tableClone = document.getElementById('repaymentTable').cloneNode(true);
+                const tbody = tableClone.querySelector('tbody');
+                
+                // Add 2 dummy groups with empty rows for manual writing
+                for (let groupNum = 1; groupNum <= 2; groupNum++) {
+                    // Group header
+                    const groupHeader = document.createElement('tr');
+                    groupHeader.innerHTML = '<th colspan="20">Group No: ____________</th>';
+                    tbody.appendChild(groupHeader);
+
+                    // Add 4 empty rows for each dummy group
+                    for (let rowNum = 1; rowNum <= 4; rowNum++) {
+                        const emptyRow = document.createElement('tr');
+                        emptyRow.innerHTML = `
+                            <td style="height: 30px;"></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td class="attendance-cell"></td>
+                            <td class="attendance-cell"></td>
+                            <td class="attendance-cell"></td>
+                            <td class="attendance-cell"></td>
+                        `;
+                        tbody.appendChild(emptyRow);
+                    }
+                    
+                    // Group total row
+                    const groupTotal = document.createElement('tr');
+                    groupTotal.className = 'group-total';
+                    groupTotal.innerHTML = `
+                        <td><strong>Group Total</strong></td>
+                        <td colspan="2"></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td colspan="12"></td>
+                    `;
+                    tbody.appendChild(groupTotal);
+                }
+                
+                const printContent = tableClone.outerHTML;
 
                 printWindow.document.write('<html><head><title>Repayment Sheet</title>');
                 printWindow.document.write('<style>');
