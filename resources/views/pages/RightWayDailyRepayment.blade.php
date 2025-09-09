@@ -473,7 +473,52 @@
                 const orientation = $('#pageOrientation').val();
 
                 const printWindow = window.open('', '', 'height=800,width=1200');
-                const printContent = document.getElementById('repaymentTable').outerHTML;
+                
+                // Clone the table and add 2 empty rows to each group for printing
+                const tableClone = document.getElementById('repaymentTable').cloneNode(true);
+                const tbody = tableClone.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                
+                // Clear tbody and rebuild with empty rows added to each group
+                tbody.innerHTML = '';
+                
+                for (let i = 0; i < rows.length; i++) {
+                    const row = rows[i];
+                    
+                    // If this is a group total row, add 2 empty rows before it
+                    if (row.classList.contains('group-total')) {
+                        for (let emptyRowNum = 1; emptyRowNum <= 2; emptyRowNum++) {
+                            const emptyRow = document.createElement('tr');
+                            emptyRow.innerHTML = `
+                                <td style="height: 30px;"></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td class="attendance-cell"></td>
+                                <td class="attendance-cell"></td>
+                                <td class="attendance-cell"></td>
+                                <td class="attendance-cell"></td>
+                            `;
+                            tbody.appendChild(emptyRow);
+                        }
+                    }
+                    
+                    tbody.appendChild(row);
+                }
+                
+                const printContent = tableClone.outerHTML;
 
                 printWindow.document.write('<html><head><title>Repayment Sheet</title>');
                 printWindow.document.write('<style>');

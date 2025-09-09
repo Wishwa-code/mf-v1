@@ -216,16 +216,7 @@
                                             </td>
                                             @endif
 
-                                            @php
-                                                // Short name logic as before
-                                                $nameParts = explode(' ', $item->customer_name . ' ' . $item->customer_lastname);
-                                                if (count($nameParts) >= 2) {
-                                                    $shortName = strtoupper(substr($nameParts[0], 0, 1)) . '.' . strtoupper(substr($nameParts[1], 0, 1)) . '.' . end($nameParts);
-                                                } else {
-                                                    $shortName = $item->customer_name . ' ' . $item->customer_lastname;
-                                                }
-                                            @endphp
-                                            <td>{{ $shortName }}</td>
+                                            <td>{{ format_member_name($item->customer_name, $item->customer_lastname, $name_mode ?? 'with_initial') }}</td>
                                             <td>{{ $item->Contact_No }}</td>
                                             <td class="loan-amount">{{ number_format($item->Installment_Amount, 2) }}</td>
                                             <td class="loan-amount">{{ number_format($item->Loan_Amount, 2) }}</td>
