@@ -156,18 +156,18 @@
     }  /* Due */
     
     #repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { 
-        width: 9%; 
-        max-width: 9%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }  /* Balance */
-    
-    #repaymentTable th:nth-child(7), #repaymentTable td:nth-child(7) { 
         width: 8%; 
         max-width: 8%;
         overflow: hidden;
         text-overflow: ellipsis;
     }  /* Total Paid */
+    
+    #repaymentTable th:nth-child(7), #repaymentTable td:nth-child(7) { 
+        width: 9%; 
+        max-width: 9%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }  /* Balance */
     
     /* Force consistent date column widths */
     #repaymentTable {
@@ -387,8 +387,8 @@
             #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; max-width: 10%; white-space: nowrap; font-size: 8px !important; }  /* Contact No */
             #repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 9%; max-width: 9%; }  /* Amount */
             #repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 9%; max-width: 9%; }  /* Due */
-            #repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 9%; max-width: 9%; }  /* Balance */
-            #repaymentTable th:nth-child(7), #repaymentTable td:nth-child(7) { width: 8%; max-width: 8%; }  /* Total Paid */
+            #repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 8%; max-width: 8%; }  /* Total Paid */
+            #repaymentTable th:nth-child(7), #repaymentTable td:nth-child(7) { width: 9%; max-width: 9%; }  /* Balance */
             
             /* Date columns - 4.29% each for 7 columns - CONSISTENT */
             .paid-amount,
@@ -557,8 +557,8 @@
                                     <col style="width:10%; max-width:10%;"> {{-- Contact No column --}}
                                     <col style="width:9%; max-width:9%;">
                                     <col style="width:9%; max-width:9%;">
-                                    <col style="width:9%; max-width:9%;">
                                     <col style="width:8%; max-width:8%;"> {{-- Total Paid column --}}
+                                    <col style="width:9%; max-width:9%;">
                                     @for ($i = 1; $i <= 7; $i++)
                                         <col class="date-col" style="width:4.29%; max-width:4.29%;">
                                     @endfor
@@ -571,8 +571,8 @@
                                     <th rowspan="2">Amount</th>
                                     {{-- Renamed 'Due' to 'Installment Amount' --}}
                                     <th rowspan="2">Installment Amount</th>
-                                    <th rowspan="2">Balance</th>
                                     <th rowspan="2">Total Paid</th>
+                                    <th rowspan="2">Balance</th>
                                     @for ($i = 1; $i <= 7; $i++)
                                         <th class="empty-date-header"></th>
                                     @endfor
@@ -632,8 +632,8 @@
                                                         $paidTotal = $loanTotal - $outstanding;
                                                         if($paidTotal < 0){ $paidTotal = 0; }
                                                     @endphp
-                                                    <td>{{ number_format($outstanding, 2) }}</td>
                                                     <td>{{ number_format($paidTotal, 2) }}</td>
+                                                    <td>{{ number_format($outstanding, 2) }}</td>
                                                     @for ($i = 1; $i <= 7; $i++)
                                                         <td class="paid-amount"></td>
                                                     @endfor
@@ -666,8 +666,8 @@
                                                     }
                                                     $grpPaid = $grpLoanTotal - $grpOutstanding; if($grpPaid < 0){ $grpPaid = 0; }
                                                 @endphp
-                                                <td>{{ number_format($grpOutstanding, 2) }}</td>
                                                 <td>{{ number_format($grpPaid, 2) }}</td>
+                                                <td>{{ number_format($grpOutstanding, 2) }}</td>
                                                 <td colspan="7"></td>
                                             </tr>
                                             {{-- Empty Rows for manual entries --}}
@@ -708,8 +708,8 @@
                                                 }
                                                 $ctrPaid = $ctrLoanTotal - $ctrOutstanding; if($ctrPaid < 0){ $ctrPaid = 0; }
                                             @endphp
-                                            <td>{{ number_format($ctrOutstanding, 2) }}</td>
                                             <td>{{ number_format($ctrPaid, 2) }}</td>
+                                            <td>{{ number_format($ctrOutstanding, 2) }}</td>
                                             <td colspan="7"></td>
                                         </tr>
                                     @endforeach
@@ -900,8 +900,8 @@
                 printWindow.document.write('#repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; max-width: 10%; font-size: 7px !important; white-space: nowrap; overflow: hidden; }');   // Contact No
                 printWindow.document.write('#repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 9%; max-width: 9%; overflow: hidden; }');   // Amount
                 printWindow.document.write('#repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 9%; max-width: 9%; overflow: hidden; }');   // Due
-                printWindow.document.write('#repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 9%; max-width: 9%; overflow: hidden; }');   // Balance
-                printWindow.document.write('#repaymentTable th:nth-child(7), #repaymentTable td:nth-child(7) { width: 8%; max-width: 8%; overflow: hidden; }');   // Total Paid
+                printWindow.document.write('#repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 8%; max-width: 8%; overflow: hidden; }');   // Total Paid
+                printWindow.document.write('#repaymentTable th:nth-child(7), #repaymentTable td:nth-child(7) { width: 9%; max-width: 9%; overflow: hidden; }');   // Balance
                 printWindow.document.write('.paid-amount { width: 4.29% !important; min-width: 4.29% !important; max-width: 4.29% !important; font-size: 8px; }'); // Date columns
                 printWindow.document.write('#repaymentTable thead th { font-size: 10px !important; font-weight: bold; text-align: center; }');
                 // Removed old "Paid Date" header styling from print
