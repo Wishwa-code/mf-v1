@@ -564,7 +564,7 @@
                                             @foreach($group as $item)
                                                 <tr class="group-row">
                                                     <td>{{ $item->Loan_No }}</td>
-                                                    <td class="fixed-name">{{ $item->name_with_initials }}</td>
+                                                    <td class="fixed-name">{{ format_member_name($item->customer_name, $item->customer_lastname, $name_mode ?? 'with_initial') }}</td>
                                                     <td>{{ number_format($item->Loan_Amount, 2) }}</td>
                                                     <td>{{ number_format($item->Installment_Amount, 2) }}</td>
                                                     @php

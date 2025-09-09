@@ -951,7 +951,8 @@ class TransactionController extends Controller
                 'customer.idCustomer',
                 DB::raw('IFNULL(center.No, "-") as center_no'),
                 DB::raw('IFNULL(center.Name, "-") as center_name'),
-                DB::raw("CONCAT(customer.First_Name, ' ', customer.Last_Name) as customer_name"),
+                // keep first name separate to support helper-based formatting
+                'customer.First_Name as customer_name',
                 'customer.cus_number as cus_number',
                 'customer.Contact_No as Contact_No',
                 'loan_category.Product_code as Product_code',
@@ -1030,16 +1031,9 @@ class TransactionController extends Controller
         }
 
         $loan = $loanQuery->get();
-        $loan = $loan->transform(function ($item) {
-            $parts = explode(' ', trim($item->customer_name));
-            $lastName = array_pop($parts); // Take last part as surname
-            $initials = '';
-            foreach ($parts as $part) {
-                $initials .= strtoupper(substr($part, 0, 1)) . '.';
-            }
-            $item->name_with_initials = $initials . strtoupper($lastName);
-            return $item;
-        });
+
+        // Use app setting to control member name display (same as RightWay report)
+        $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
 
 
         $group_filter = $request->group_filter;
@@ -1081,7 +1075,8 @@ class TransactionController extends Controller
             'center_no', 'center_name', 'printedBy', 'printedAt',
             'products', 'product_filter',
             'routes', 'route_filter',
-            'collectors', 'collector_filter'
+            'collectors', 'collector_filter',
+            'name_mode'
         ));
     }
 
