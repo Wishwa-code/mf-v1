@@ -160,9 +160,16 @@
         max-width: 8%;
         overflow: hidden;
         text-overflow: ellipsis;
-    }  /* Total Paid */
+    }  /* Total Saving Amount */
     
     #repaymentTable th:nth-child(7), #repaymentTable td:nth-child(7) { 
+        width: 8%; 
+        max-width: 8%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }  /* Total Paid */
+    
+    #repaymentTable th:nth-child(8), #repaymentTable td:nth-child(8) { 
         width: 9%; 
         max-width: 9%;
         overflow: hidden;
@@ -387,8 +394,9 @@
             #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; max-width: 10%; white-space: nowrap; font-size: 8px !important; }  /* Contact No */
             #repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 9%; max-width: 9%; }  /* Amount */
             #repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 9%; max-width: 9%; }  /* Due */
-            #repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 8%; max-width: 8%; }  /* Total Paid */
-            #repaymentTable th:nth-child(7), #repaymentTable td:nth-child(7) { width: 9%; max-width: 9%; }  /* Balance */
+            #repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 8%; max-width: 8%; }  /* Total Saving Amount */
+            #repaymentTable th:nth-child(7), #repaymentTable td:nth-child(7) { width: 8%; max-width: 8%; }  /* Total Paid */
+            #repaymentTable th:nth-child(8), #repaymentTable td:nth-child(8) { width: 9%; max-width: 9%; }  /* Balance */
             
             /* Date columns - 4.29% each for 7 columns - CONSISTENT */
             .paid-amount,
@@ -557,6 +565,7 @@
                                     <col style="width:10%; max-width:10%;"> {{-- Contact No column --}}
                                     <col style="width:9%; max-width:9%;">
                                     <col style="width:9%; max-width:9%;">
+                                    <col style="width:8%; max-width:8%;"> {{-- Total Saving Amount column --}}
                                     <col style="width:8%; max-width:8%;"> {{-- Total Paid column --}}
                                     <col style="width:9%; max-width:9%;">
                                     @for ($i = 1; $i <= 7; $i++)
@@ -571,6 +580,7 @@
                                     <th rowspan="2">Amount</th>
                                     {{-- Renamed 'Due' to 'Installment Amount' --}}
                                     <th rowspan="2">Installment Amount</th>
+                                    <th rowspan="2">Total Saving Amount</th>
                                     <th rowspan="2">Total Paid</th>
                                     <th rowspan="2">Balance</th>
                                     @for ($i = 1; $i <= 7; $i++)
@@ -589,11 +599,11 @@
                                     @foreach($centerPair as $center_name => $centerGroups)
                                         {{-- Center Header --}}
                                         <tr class="center-header">
-                                            <td colspan="14"><strong>Center: {{ $center_name }}</strong></td>
+                                            <td colspan="15"><strong>Center: {{ $center_name }}</strong></td>
                                         </tr>
                                         @foreach($centerGroups as $group_name => $group)
                                             {{-- Group Header --}}
-                                            <tr><td colspan="13"><strong>Group No: {{ $group_name }}</strong></td></tr>
+                                            <tr><td colspan="14"><strong>Group No: {{ $group_name }}</strong></td></tr>
                                             @foreach($group as $item)
                                                 <tr class="group-row">
                                                     <td>{{ $item->Loan_No }}</td>
@@ -632,6 +642,12 @@
                                                         $paidTotal = $loanTotal - $outstanding;
                                                         if($paidTotal < 0){ $paidTotal = 0; }
                                                     @endphp
+                                                    @php
+                                                        // Calculate saving balance for individual loan
+                                                        $savingBalance = $item->last_saving_balance ?? 0;
+                                                        if($savingBalance < 0){ $savingBalance = 0; }
+                                                    @endphp
+                                                    <td>{{ number_format($savingBalance, 2) }}</td>
                                                     <td>{{ number_format($paidTotal, 2) }}</td>
                                                     <td>{{ number_format($outstanding, 2) }}</td>
                                                     @for ($i = 1; $i <= 7; $i++)
@@ -645,7 +661,7 @@
                                                 <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
                                                 <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
                                                 @php
-                                                    $grpOutstanding = 0; $grpLoanTotal = 0;
+                                                    $grpOutstanding = 0; $grpLoanTotal = 0; $grpSaving = 0;
                                                     // Calculate group totals
                                                     foreach($group as $x){
                                                         $o = $x->Total_Balance;
@@ -663,9 +679,15 @@
                                                         }
                                                         if($lt < 0){ $lt = 0; }
                                                         $grpLoanTotal += $lt;
+
+                                                        // Add saving balance calculation
+                                                        $sb = $x->last_saving_balance ?? 0;
+                                                        if($sb < 0){ $sb = 0; }
+                                                        $grpSaving += $sb;
                                                     }
                                                     $grpPaid = $grpLoanTotal - $grpOutstanding; if($grpPaid < 0){ $grpPaid = 0; }
                                                 @endphp
+                                                <td>{{ number_format($grpSaving, 2) }}</td>
                                                 <td>{{ number_format($grpPaid, 2) }}</td>
                                                 <td>{{ number_format($grpOutstanding, 2) }}</td>
                                                 <td colspan="7"></td>
@@ -673,7 +695,7 @@
                                             {{-- Empty Rows for manual entries --}}
                                             @for ($j = 0; $j < 3; $j++)
                                                 <tr class="group-row">
-                                                    @for ($k = 0; $k < 14; $k++)
+                                                    @for ($k = 0; $k < 15; $k++)
                                                         <td>&nbsp;</td>
                                                     @endfor
                                                 </tr>
@@ -688,7 +710,7 @@
                                             @php
                                                 // Calculate center totals
                                                 $flat = $centerGroups->flatten();
-                                                $ctrOutstanding = 0; $ctrLoanTotal = 0;
+                                                $ctrOutstanding = 0; $ctrLoanTotal = 0; $ctrSaving = 0;
                                                 foreach($flat as $x){
                                                     $o = $x->Total_Balance;
                                                     if(is_null($o)){
@@ -705,9 +727,15 @@
                                                     }
                                                     if($lt < 0){ $lt = 0; }
                                                     $ctrLoanTotal += $lt;
+
+                                                    // Add saving balance calculation
+                                                    $sb = $x->last_saving_balance ?? 0;
+                                                    if($sb < 0){ $sb = 0; }
+                                                    $ctrSaving += $sb;
                                                 }
                                                 $ctrPaid = $ctrLoanTotal - $ctrOutstanding; if($ctrPaid < 0){ $ctrPaid = 0; }
                                             @endphp
+                                            <td>{{ number_format($ctrSaving, 2) }}</td>
                                             <td>{{ number_format($ctrPaid, 2) }}</td>
                                             <td>{{ number_format($ctrOutstanding, 2) }}</td>
                                             <td colspan="7"></td>
@@ -900,8 +928,9 @@
                 printWindow.document.write('#repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; max-width: 10%; font-size: 7px !important; white-space: nowrap; overflow: hidden; }');   // Contact No
                 printWindow.document.write('#repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 9%; max-width: 9%; overflow: hidden; }');   // Amount
                 printWindow.document.write('#repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 9%; max-width: 9%; overflow: hidden; }');   // Due
-                printWindow.document.write('#repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 8%; max-width: 8%; overflow: hidden; }');   // Total Paid
-                printWindow.document.write('#repaymentTable th:nth-child(7), #repaymentTable td:nth-child(7) { width: 9%; max-width: 9%; overflow: hidden; }');   // Balance
+                printWindow.document.write('#repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 8%; max-width: 8%; overflow: hidden; }');   // Total Saving Amount
+                printWindow.document.write('#repaymentTable th:nth-child(7), #repaymentTable td:nth-child(7) { width: 8%; max-width: 8%; overflow: hidden; }');   // Total Paid
+                printWindow.document.write('#repaymentTable th:nth-child(8), #repaymentTable td:nth-child(8) { width: 9%; max-width: 9%; overflow: hidden; }');   // Balance
                 printWindow.document.write('.paid-amount { width: 4.29% !important; min-width: 4.29% !important; max-width: 4.29% !important; font-size: 8px; }'); // Date columns
                 printWindow.document.write('#repaymentTable thead th { font-size: 10px !important; font-weight: bold; text-align: center; }');
                 // Removed old "Paid Date" header styling from print
