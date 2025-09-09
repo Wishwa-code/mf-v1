@@ -843,6 +843,8 @@ class TransactionController extends Controller
                 'customer.idCustomer',
                 DB::raw('IFNULL(center.No, "-") as center_no'),
                 DB::raw("CONCAT(customer.First_Name, ' ', customer.Last_Name) as customer_name"),
+                // Add separate first name to support helper-based formatting
+                DB::raw('customer.First_Name as customer_first'),
                 'customer.cus_number as cus_number',
                 'customer.Contact_No as Contact_No',
                 'loan_category.Product_code as Product_code',
@@ -918,16 +920,19 @@ class TransactionController extends Controller
         $grouped_loans = $loan->groupBy('group_name')->sortKeys();
 
 
-        $selected_center = $center->firstWhere('idCenter', $center_details);
+    $selected_center = $center->firstWhere('idCenter', $center_details);
 
         $center_no = $selected_center->No ?? 'N/A';
         $center_name = $selected_center->Name ?? 'N/A';
         $printedBy = session('Full_Name') ?? 'System';
         $printedAt = now()->format('Y-m-d h:i A');
 
+        // Read app setting for how to display member names
+        $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
+
         return view('pages.DandDRepayment', compact(
             'center', 'grouped_loans', 'center_details',
-            'center_no', 'center_name', 'printedBy', 'printedAt'
+            'center_no', 'center_name', 'printedBy', 'printedAt', 'name_mode'
         ));
     }
 
