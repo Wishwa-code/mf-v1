@@ -388,10 +388,15 @@
                 word-break: break-word !important;
             }
 
-            #repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 10%; max-width: 10%; font-size: 8px !important; word-break: break-all; }  /* Loan Number */
-            #repaymentTable th:nth-child(2) { width: 15%; max-width: 15%; font-size: 9px !important; word-break: break-word; text-align: center; }  /* Customer Name Header */
+            #repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 10%; max-width: 10%; word-break: break-all; }  /* Loan Number */
+            #repaymentTable th:nth-child(2) { width: 15%; max-width: 15%; word-break: break-word; text-align: center; }  /* Customer Name Header */
             #repaymentTable td:nth-child(2) { width: 15%; max-width: 15%; font-size: 9px !important; word-break: break-word; text-align: left; }  /* Customer Name Data */
-            #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; max-width: 10%; white-space: nowrap; font-size: 8px !important; }  /* Contact No */
+            #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; max-width: 10%; white-space: nowrap; }  /* Contact No */
+
+            /* Force same font size for headers of columns 1-3 in print/PDF */
+            #repaymentTable thead th:nth-child(1),
+            #repaymentTable thead th:nth-child(2),
+            #repaymentTable thead th:nth-child(3) { font-size: 10px !important; }
             #repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 9%; max-width: 9%; }  /* Amount */
             #repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 9%; max-width: 9%; }  /* Due */
             #repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 8%; max-width: 8%; }  /* Total Saving Amount */
@@ -922,10 +927,10 @@
                 printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px; }');
                 printWindow.document.write('#repaymentTable th, #repaymentTable td { border: 1px solid black; padding: 3px 3px; text-align: center; white-space: normal !important; line-height: 1.2 !important; vertical-align: middle !important; }');
                 printWindow.document.write('#repaymentTable thead th.empty-date-header { white-space: nowrap !important; line-height: 1.1 !important; font-size: 9px !important; }');
-                printWindow.document.write('#repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 10%; max-width: 10%; font-size: 7px !important; word-break: break-all; overflow: hidden; }');   // Loan Number
-                printWindow.document.write('#repaymentTable th:nth-child(2) { width: 15%; max-width: 15%; font-size: 8px !important; word-break: break-word; overflow: hidden; text-align: center; }');   // Customer Name Header
+                printWindow.document.write('#repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 10%; max-width: 10%; word-break: break-all; overflow: hidden; }');   // Loan Number
+                printWindow.document.write('#repaymentTable th:nth-child(2) { width: 15%; max-width: 15%; word-break: break-word; overflow: hidden; text-align: center; }');   // Customer Name Header
                 printWindow.document.write('#repaymentTable td:nth-child(2) { width: 15%; max-width: 15%; font-size: 8px !important; word-break: break-word; overflow: hidden; text-align: left; }');   // Customer Name Data
-                printWindow.document.write('#repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; max-width: 10%; font-size: 7px !important; white-space: nowrap; overflow: hidden; }');   // Contact No
+                printWindow.document.write('#repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; max-width: 10%; white-space: nowrap; overflow: hidden; }');   // Contact No
                 printWindow.document.write('#repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 9%; max-width: 9%; overflow: hidden; }');   // Amount
                 printWindow.document.write('#repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 9%; max-width: 9%; overflow: hidden; }');   // Due
                 printWindow.document.write('#repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 8%; max-width: 8%; overflow: hidden; }');   // Total Saving Amount
@@ -933,6 +938,8 @@
                 printWindow.document.write('#repaymentTable th:nth-child(8), #repaymentTable td:nth-child(8) { width: 9%; max-width: 9%; overflow: hidden; }');   // Balance
                 printWindow.document.write('.paid-amount { width: 4.29% !important; min-width: 4.29% !important; max-width: 4.29% !important; font-size: 8px; }'); // Date columns
                 printWindow.document.write('#repaymentTable thead th { font-size: 10px !important; font-weight: bold; text-align: center; }');
+                // Ensure the first three headers share the same font size
+                printWindow.document.write('#repaymentTable thead th:nth-child(1), #repaymentTable thead th:nth-child(2), #repaymentTable thead th:nth-child(3) { font-size: 10px !important; }');
                 // Removed old "Paid Date" header styling from print
                 printWindow.document.write('.empty-date-header { width: 4.29% !important; min-width: 4.29% !important; max-width: 4.29% !important; font-size: 9px !important; background-color: #fff !important; padding: 6px 2px !important; height: auto !important; min-height: 20px !important; line-height: 1.1 !important; white-space: nowrap !important; vertical-align: middle !important; font-weight: normal !important; }');
                 printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } .signature-section { page-break-before: always; } }');
