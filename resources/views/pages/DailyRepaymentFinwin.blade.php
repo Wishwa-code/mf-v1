@@ -208,18 +208,6 @@
                                     </tr>
                                     @foreach ($group as $item)
                                         @php
-                                            // Split the full name into parts
-                                            $nameParts = explode(' ', $item->customer_name . ' ' . $item->customer_lastname);
-
-                                            // Handle name abbreviation logic
-                                            if (count($nameParts) >= 2) {
-                                                $shortName = strtoupper(substr($nameParts[0], 0, 1)) . '.' . strtoupper(substr($nameParts[1], 0, 1)) . '.' . end($nameParts);
-                                            } else {
-                                                // Fallback if there are fewer than two parts in the name
-                                                $shortName = $item->customer_name . ' ' . $item->customer_lastname;
-                                            }
-                                        @endphp
-                                        @php
                                             // Calculate penalty from database for this specific loan
                                             $penalty_balance = \Illuminate\Support\Facades\DB::table('installments')
                                                 ->where('Customer_Loan_idCustomer_Loan', $item->idCustomer_Loan)
@@ -229,7 +217,7 @@
                                             $total_balance_with_penalty = $item->Total_Balance + $penalty_balance;
                                         @endphp
                                         <tr>
-                                            <td>{{ $shortName }}</td>
+                                            <td>{{ format_member_name($item->customer_name, $item->customer_lastname, $name_mode ?? 'with_initial') }}</td>
                                             <td>{{ $item->Loan_No }}</td>
                                             <td>{{ $item->Contact_No }}</td>
                                             <td class="loan-amount">{{ number_format($item->Loan_Amount, 2) }}</td>

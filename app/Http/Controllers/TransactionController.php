@@ -230,7 +230,7 @@ class TransactionController extends Controller
         $loan = $loanQuery->get();
 
         // Group data by 'group_name'
-        $grouped_loans = $loan->groupBy('group_name');
+    $grouped_loans = $loan->groupBy('group_name');
 
         // Convert the grouped loans array to an array (if not already)
         $grouped_loans = is_array($grouped_loans) ? $grouped_loans : $grouped_loans->toArray();
@@ -249,7 +249,10 @@ class TransactionController extends Controller
 
 
 
-        return view('pages.DailyRepaymentFinwin', compact('center','group', 'grouped_loans','center_details','group_details'));
+        // Read app setting for how to display member names (same as other reports)
+        $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
+
+        return view('pages.DailyRepaymentFinwin', compact('center','group', 'grouped_loans','center_details','group_details','name_mode'));
     }
 
     public function getGroupsByCenter($centerId)
