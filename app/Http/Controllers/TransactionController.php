@@ -356,8 +356,10 @@ class TransactionController extends Controller
             return $numA <=> $numB;
         });
 
+        // Read app setting for how to display member names (same as other reports)
+        $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
 
-        return view('pages.DailyRepaymentLasantha', compact('center','route', 'grouped_loans','center_details'));
+        return view('pages.DailyRepaymentLasantha', compact('center','route', 'grouped_loans','center_details','name_mode'));
     }
 
 
