@@ -219,13 +219,22 @@
                                                 $shortName = $item->customer_name . ' ' . $item->customer_lastname;
                                             }
                                         @endphp
+                                        @php
+                                            // Calculate penalty from database for this specific loan
+                                            $penalty_balance = \Illuminate\Support\Facades\DB::table('installments')
+                                                ->where('Customer_Loan_idCustomer_Loan', $item->idCustomer_Loan)
+                                                ->where('branch_id', session('branch_id'))
+                                                ->sum('Panalty_Balance');
+                                            
+                                            $total_balance_with_penalty = $item->Total_Balance + $penalty_balance;
+                                        @endphp
                                         <tr>
                                             <td>{{ $shortName }}</td>
                                             <td>{{ $item->Loan_No }}</td>
                                             <td>{{ $item->Contact_No }}</td>
                                             <td class="loan-amount">{{ number_format($item->Loan_Amount, 2) }}</td>
                                             <td class="due-amount">{{ number_format($item->Installment_Amount, 2) }}</td>
-                                            <td class="total-balance">{{ number_format($item->Total_Balance, 2) }}</td>
+                                            <td class="total-balance" data-penalty="{{ $penalty_balance }}">{{ number_format($total_balance_with_penalty, 2) }}</td>
                                             <td class="arrears">{{ number_format($item->arrease, 2) }}</td>
                                             <td></td>
                                             <td></td>
