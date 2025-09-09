@@ -474,59 +474,48 @@
 
                 const printWindow = window.open('', '', 'height=800,width=1200');
                 
-                // Clone the table and add dummy groups for printing
+                // Clone the table and add 2 empty rows to each group for printing
                 const tableClone = document.getElementById('repaymentTable').cloneNode(true);
                 const tbody = tableClone.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
                 
-                // Add 2 dummy groups with empty rows for manual writing
-                for (let groupNum = 1; groupNum <= 2; groupNum++) {
-                    // Group header
-                    const groupHeader = document.createElement('tr');
-                    groupHeader.innerHTML = '<th colspan="20">Group No: ____________</th>';
-                    tbody.appendChild(groupHeader);
-
-                    // Add 4 empty rows for each dummy group
-                    for (let rowNum = 1; rowNum <= 4; rowNum++) {
-                        const emptyRow = document.createElement('tr');
-                        emptyRow.innerHTML = `
-                            <td style="height: 30px;"></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td class="attendance-cell"></td>
-                            <td class="attendance-cell"></td>
-                            <td class="attendance-cell"></td>
-                            <td class="attendance-cell"></td>
-                        `;
-                        tbody.appendChild(emptyRow);
+                // Clear tbody and rebuild with empty rows added to each group
+                tbody.innerHTML = '';
+                
+                for (let i = 0; i < rows.length; i++) {
+                    const row = rows[i];
+                    
+                    // If this is a group total row, add 2 empty rows before it
+                    if (row.classList.contains('group-total')) {
+                        for (let emptyRowNum = 1; emptyRowNum <= 2; emptyRowNum++) {
+                            const emptyRow = document.createElement('tr');
+                            emptyRow.innerHTML = `
+                                <td style="height: 30px;"></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td class="attendance-cell"></td>
+                                <td class="attendance-cell"></td>
+                                <td class="attendance-cell"></td>
+                                <td class="attendance-cell"></td>
+                            `;
+                            tbody.appendChild(emptyRow);
+                        }
                     }
                     
-                    // Group total row
-                    const groupTotal = document.createElement('tr');
-                    groupTotal.className = 'group-total';
-                    groupTotal.innerHTML = `
-                        <td><strong>Group Total</strong></td>
-                        <td colspan="2"></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td colspan="12"></td>
-                    `;
-                    tbody.appendChild(groupTotal);
+                    tbody.appendChild(row);
                 }
                 
                 const printContent = tableClone.outerHTML;
