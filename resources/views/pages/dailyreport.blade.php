@@ -121,6 +121,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         word-break: break-word;
+        text-align: left;
     }  /* Customer Name */
     
     #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { 
@@ -357,7 +358,7 @@
             }
 
             #repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 12%; max-width: 12%; font-size: 8px !important; word-break: break-all; }  /* Loan Number */
-            #repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 18%; max-width: 18%; font-size: 9px !important; word-break: break-word; }  /* Customer Name */
+            #repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 18%; max-width: 18%; font-size: 9px !important; word-break: break-word; text-align: left; }  /* Customer Name */
             #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; max-width: 10%; }  /* Amount */
             #repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 10%; max-width: 10%; }  /* Due */
             #repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 10%; max-width: 10%; }  /* Balance */
@@ -859,7 +860,7 @@
                 printWindow.document.write('#repaymentTable th, #repaymentTable td { border: 1px solid black; padding: 3px 3px; text-align: center; white-space: normal !important; line-height: 1.2 !important; vertical-align: middle !important; }');
                 printWindow.document.write('#repaymentTable thead th.empty-date-header { white-space: nowrap !important; line-height: 1.1 !important; font-size: 9px !important; }');
                 printWindow.document.write('#repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 12%; max-width: 12%; font-size: 7px !important; word-break: break-all; overflow: hidden; }');   // Loan Number
-                printWindow.document.write('#repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 18%; max-width: 18%; font-size: 8px !important; word-break: break-word; overflow: hidden; }');   // Customer Name
+                printWindow.document.write('#repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 18%; max-width: 18%; font-size: 8px !important; word-break: break-word; overflow: hidden; text-align: left; }');   // Customer Name
                 printWindow.document.write('#repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; max-width: 10%; overflow: hidden; }');   // Amount
                 printWindow.document.write('#repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 10%; max-width: 10%; overflow: hidden; }');   // Due
                 printWindow.document.write('#repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 10%; max-width: 10%; overflow: hidden; }');   // Balance
