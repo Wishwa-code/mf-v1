@@ -115,14 +115,23 @@
         font-size: 10px;
     }  /* Loan Number */
     
-    #repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { 
+    #repaymentTable th:nth-child(2) { 
+        width: 15%; 
+        max-width: 15%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        word-break: break-word;
+        text-align: center;
+    }  /* Customer Name Header */
+    
+    #repaymentTable td:nth-child(2) { 
         width: 15%; 
         max-width: 15%;
         overflow: hidden;
         text-overflow: ellipsis;
         word-break: break-word;
         text-align: left;
-    }  /* Customer Name */
+    }  /* Customer Name Data */
     
     #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { 
         width: 10%; 
@@ -373,7 +382,8 @@
             }
 
             #repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 10%; max-width: 10%; font-size: 8px !important; word-break: break-all; }  /* Loan Number */
-            #repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 15%; max-width: 15%; font-size: 9px !important; word-break: break-word; text-align: left; }  /* Customer Name */
+            #repaymentTable th:nth-child(2) { width: 15%; max-width: 15%; font-size: 9px !important; word-break: break-word; text-align: center; }  /* Customer Name Header */
+            #repaymentTable td:nth-child(2) { width: 15%; max-width: 15%; font-size: 9px !important; word-break: break-word; text-align: left; }  /* Customer Name Data */
             #repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; max-width: 10%; white-space: nowrap; font-size: 8px !important; }  /* Contact No */
             #repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 9%; max-width: 9%; }  /* Amount */
             #repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 9%; max-width: 9%; }  /* Due */
@@ -587,7 +597,7 @@
                                             @foreach($group as $item)
                                                 <tr class="group-row">
                                                     <td>{{ $item->Loan_No }}</td>
-                                                    <td class="fixed-name">{{ format_member_name($item->customer_name, $item->customer_lastname, $name_mode ?? 'with_initial') }}</td>
+                                                    <td>{{ format_member_name($item->customer_name, $item->customer_lastname, $name_mode ?? 'with_initial') }}</td>
                                                     <td class="contact-no">{{ $item->Contact_No ?? '-' }}</td>
                                                     <td>{{ number_format($item->Loan_Amount, 2) }}</td>
                                                     <td>{{ number_format($item->Installment_Amount, 2) }}</td>
@@ -885,7 +895,8 @@
                 printWindow.document.write('#repaymentTable th, #repaymentTable td { border: 1px solid black; padding: 3px 3px; text-align: center; white-space: normal !important; line-height: 1.2 !important; vertical-align: middle !important; }');
                 printWindow.document.write('#repaymentTable thead th.empty-date-header { white-space: nowrap !important; line-height: 1.1 !important; font-size: 9px !important; }');
                 printWindow.document.write('#repaymentTable th:nth-child(1), #repaymentTable td:nth-child(1) { width: 10%; max-width: 10%; font-size: 7px !important; word-break: break-all; overflow: hidden; }');   // Loan Number
-                printWindow.document.write('#repaymentTable th:nth-child(2), #repaymentTable td:nth-child(2) { width: 15%; max-width: 15%; font-size: 8px !important; word-break: break-word; overflow: hidden; text-align: left; }');   // Customer Name
+                printWindow.document.write('#repaymentTable th:nth-child(2) { width: 15%; max-width: 15%; font-size: 8px !important; word-break: break-word; overflow: hidden; text-align: center; }');   // Customer Name Header
+                printWindow.document.write('#repaymentTable td:nth-child(2) { width: 15%; max-width: 15%; font-size: 8px !important; word-break: break-word; overflow: hidden; text-align: left; }');   // Customer Name Data
                 printWindow.document.write('#repaymentTable th:nth-child(3), #repaymentTable td:nth-child(3) { width: 10%; max-width: 10%; font-size: 7px !important; white-space: nowrap; overflow: hidden; }');   // Contact No
                 printWindow.document.write('#repaymentTable th:nth-child(4), #repaymentTable td:nth-child(4) { width: 9%; max-width: 9%; overflow: hidden; }');   // Amount
                 printWindow.document.write('#repaymentTable th:nth-child(5), #repaymentTable td:nth-child(5) { width: 9%; max-width: 9%; overflow: hidden; }');   // Due
