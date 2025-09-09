@@ -36,7 +36,9 @@ class TransactionController extends Controller
             $center_details = null; // Or any default value you want to assign
             $group_details = null; // Or any default value you want to assign
             $grouped_loans = array(); // Or any default value you want to assign
-            return view('pages.DailyRepayment', compact('center', 'grouped_loans','center_details'));
+            // Read app setting for how to display member names (same as dailyreport)
+            $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
+            return view('pages.DailyRepayment', compact('center', 'grouped_loans','center_details','name_mode'));
         } else {
             // If $center is not empty, set the default center value
             $group_details = $request->group_details ?? $group[0]->idCustomer_Group;
@@ -138,7 +140,10 @@ class TransactionController extends Controller
 
 
 
-        return view('pages.DailyRepayment', compact('center','group', 'grouped_loans','center_details','group_details'));
+        // Read app setting for how to display member names (same as dailyreport)
+        $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
+
+        return view('pages.DailyRepayment', compact('center','group', 'grouped_loans','center_details','group_details','name_mode'));
     }
 
 
@@ -546,7 +551,10 @@ class TransactionController extends Controller
         });
 
 
-        return view('pages.DailyRepaymentNoble', compact('center', 'grouped_loans', 'center_details', 'from_date'));
+    // Read app setting for how to display member names (same as other reports)
+    $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
+
+    return view('pages.DailyRepaymentNoble', compact('center', 'grouped_loans', 'center_details', 'from_date', 'name_mode'));
 
     }
 
