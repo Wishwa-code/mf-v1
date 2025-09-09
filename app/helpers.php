@@ -125,6 +125,22 @@ function tableWithBranch($table, $useBranchIdFromTable = null)
         return redirect()->route('login')->with("error", "Session expired! Please Login");
     }
 
+    if (!Schema::hasColumn('customer_loan', 'panelty_method')) {
+        DB::statement(
+            "ALTER TABLE `customer_loan`
+         ADD COLUMN `panelty_method` VARCHAR(45) NOT NULL
+         DEFAULT 'every_installment'"
+        );
+    }
+
+    if (!Schema::hasColumn('customer_loan', 'Panelty_period')) {
+        DB::statement(
+            "ALTER TABLE `customer_loan`
+         ADD COLUMN `Panelty_period` VARCHAR(45) NOT NULL
+         DEFAULT 'Daily'"
+        );
+    }
+
     $query = DB::table($table);
 
     // If a specific table alias/name is given for branch scoping and it has branch_id
