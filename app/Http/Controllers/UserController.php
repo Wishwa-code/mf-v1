@@ -308,7 +308,7 @@ class UserController extends Controller
 
 
         if (!auth()->check()) {
-            return redirect()->route('login')->with("error", "Please Login");
+            return redirect()->route('login')->with("error", "Session expired! Please Login");
         }
 
         if (!Schema::hasColumn('installments', 'Panelty_count')) {
