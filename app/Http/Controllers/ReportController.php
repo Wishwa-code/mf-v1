@@ -1080,14 +1080,14 @@ class ReportController extends Controller
                 ->groupBy('cl.idCustomer_Loan');
         }, 'inv');
 
-        // 3) Depletion (capital payments) per loan in [start, end]
-        $depletion = DB::query()->fromSub(function ($q) use ($start, $end) {
-            $q->from('Loan_Log as ll')
-                ->selectRaw('ll.Loan_ID, SUM(ll.Capital_Payment) as Depletion_Sum')
-                ->whereBetween('ll.Date_Time', [$start, $end])
-                ->where('ll.Type', '=', 'Customer Payment')
-                ->groupBy('ll.Loan_ID');
+        // 3) Depletion (capital payments) per loan before $end using installments
+        $depletion = DB::query()->fromSub(function ($q) use ($start,$end) {
+            $q->from('installments as i')
+                ->selectRaw('i.Customer_Loan_idCustomer_Loan as Loan_ID, SUM(COALESCE(i.capital_amount, 0)) as Depletion_Sum')
+                ->whereBetween('i.Installment_Date', [$start, $end])
+                ->groupBy('i.Customer_Loan_idCustomer_Loan');
         }, 'dep');
+
 
         // 4) Collections (customer_payments) per collector user in [start, end]
         $collections = DB::query()->fromSub(function ($q) use ($start, $end) {
@@ -1234,7 +1234,7 @@ class ReportController extends Controller
 
             /* NEW: flattened product counts like "12:34,15:7" */
             COALESCE(MAX(pc.product_kv), "")        as product_kv
-        ')
+        ')->where('cl.branch_id', session('branch_id'))   // keep branch scoping
             ->orderBy('collector')
             ->get();
 

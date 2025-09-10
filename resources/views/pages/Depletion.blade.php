@@ -16,6 +16,17 @@
         #loaderOverlay { position: fixed; inset: 0; background: rgba(255,255,255,0.7); display: none; align-items: center; justify-content: center; z-index: 2000; }
         .loader { width: 56px; height: 56px; border-radius: 50%; border: 6px solid #1A2942; border-top-color: transparent; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+
+        #loan_table th {
+            white-space: normal !important;   /* allow wrapping */
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+        #loan_table td {
+            white-space: nowrap !important;   /* keep values in one line */
+        }
+
     </style>
 
     {{-- Expose products to JS for dynamic columns --}}
@@ -32,6 +43,8 @@
     <script>
         window.PRODUCT_COLUMNS = @json($PRODUCT_COLUMNS);
     </script>
+
+
 
 @endsection
 
@@ -295,6 +308,7 @@
             PRODUCT_IDS.forEach(function(pid, i){
                 cells.eq(startIdx + i).html(fmt(productTotals[String(pid)], 0));
             });
+            adjustColumnWidths();
         }
 
 
@@ -399,4 +413,59 @@
             $('#filterForm').trigger('submit');
         });
     </script>
+
+    <script>
+        function adjustColumnWidths() {
+            var table = document.getElementById('loan_table');
+            if (!table) return;
+
+            var tbody = table.tBodies && table.tBodies[0];
+            var thead = table.tHead;
+            if (!tbody || !thead) return;
+
+            var rows = Array.from(tbody.rows);
+            if (!rows.length) return;
+
+            // Measure based on TDs only (data), ignore header width.
+            var colCount = thead.rows[0].cells.length;
+            var widths = new Array(colCount).fill(0);
+
+            // Temporarily let the browser auto-size so we can measure true scrollWidth
+            var prevLayout = table.style.tableLayout;
+            table.style.tableLayout = 'auto';
+
+            // Ensure table isn't artificially constrained while measuring
+            var prevWidth = table.style.width;
+            table.style.width = 'max-content';
+
+            // Include horizontal cell padding (you use 8px 10px) → ~20px extra per column
+            var paddingAllowance = 20;
+
+            rows.forEach(function (tr) {
+                var tds = tr.cells;
+                for (var i = 0; i < colCount && i < tds.length; i++) {
+                    var td = tds[i];
+                    // Use scrollWidth to capture the unwrapped content width
+                    var w = Math.ceil(td.scrollWidth);
+                    if (w > widths[i]) widths[i] = w;
+                }
+            });
+
+            // Build/replace a <colgroup> so header will wrap within these widths
+            var colgroup = table.querySelector('colgroup#autoWidths');
+            if (!colgroup) {
+                colgroup = document.createElement('colgroup');
+                colgroup.id = 'autoWidths';
+                table.insertBefore(colgroup, table.firstChild);
+            }
+            colgroup.innerHTML = widths.map(function (w) {
+                return '<col style="width:' + (w + paddingAllowance) + 'px">';
+            }).join('');
+
+            // Lock layout so THs wrap inside the col widths we just set
+            table.style.tableLayout = 'fixed';
+            table.style.width = ''; // restore
+        }
+    </script>
+
 @endsection
