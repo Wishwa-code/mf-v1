@@ -457,7 +457,7 @@
 
             printWindow.document.write('<style>');
             printWindow.document.write('body { font-family: Arial, sans-serif; margin: 10px; font-size: 9px; }');
-            printWindow.document.write('table { width: 100%; border-collapse: collapse; font-size: 8px; table-layout: auto; }');
+            printWindow.document.write('table { width: 100%; border-collapse: collapse; font-size: 8px; table-layout: auto; border: 1px solid #000; }');
             printWindow.document.write('th, td { border: 1px solid #000; padding: 4px; text-align: center; word-wrap: break-word; }');
             printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
             printWindow.document.write('</style>');
