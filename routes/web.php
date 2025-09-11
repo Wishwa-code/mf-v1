@@ -52,6 +52,9 @@ Route::get('/privileges', function () {
 Route::post('/privileges', [UserController::class, 'privileges'])->name('privileges.save');
 Route::get('/privileges/load/{id}', [UserController::class, 'showprivileges'])->name('privileges.load');
 
+Route::get('/designation-privileges', function () {
+    return view('pages.DesignationPrivileges');
+});
 
 //designation
 Route::post('/user/designation','\App\Http\Controllers\UserController@designation')->name('privileges.designation');

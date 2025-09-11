@@ -1257,6 +1257,11 @@ $banner = DB::select($query);
                                                 <a href="/privileges">User Privileges</a>
                                             </li>
                                         @endif
+                                        @if(optional($privilege)->user_privileges == 1)
+                                            <li>
+                                                <a href="/designation-privileges">Designation Privileges</a>
+                                            </li>
+                                        @endif
                                     </ul>
                                 </div>
                             </li>
