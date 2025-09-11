@@ -1445,11 +1445,12 @@ $banner = DB::select($query);
                                                             </li>
                                                         @endif
 
-                                                        @if(optional($privilege)->repayment_sheet_09== 1)
+                                                        {{-- TEMPORARY: Show Repayment Sheet 09 without permission check for testing --}}
+                                                        {{-- @if(optional($privilege)->repayment_sheet_09== 1) --}}
                                                             <li>
                                                                 <a href="/repaymntseet9">Repayment Sheet 09</a>
                                                             </li>
-                                                        @endif
+                                                        {{-- @endif --}}
                                                 </ul>
                                             </div>
                                         </li>
