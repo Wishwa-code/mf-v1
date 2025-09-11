@@ -162,7 +162,9 @@ class TransactionController extends Controller
             $grouped_loans = array(); // Or any default value you want to assign
             // Read app setting for how to display member names (same as dailyreport)
             $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
-            return view('pages.repaymntseet9', compact('center', 'grouped_loans','center_details','name_mode'));
+            // Read app setting for empty rows per group on Repayment Sheet 09
+            $empty_row_count = (int) (DB::table('app_settings')->where('key', 'empty_row_count')->value('value') ?? 5);
+            return view('pages.repaymntseet9', compact('center', 'grouped_loans','center_details','name_mode','empty_row_count'));
         } else {
             // If $center is not empty, set the default center value
             $group_details = $request->group_details ?? $group[0]->idCustomer_Group;
@@ -269,8 +271,10 @@ class TransactionController extends Controller
 
         // Read app setting for how to display member names (same as dailyreport)
         $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
+    // Read app setting for empty rows per group on Repayment Sheet 09
+    $empty_row_count = (int) (DB::table('app_settings')->where('key', 'empty_row_count')->value('value') ?? 5);
 
-        return view('pages.repaymntseet9', compact('center','group', 'grouped_loans','center_details','group_details','name_mode'));
+    return view('pages.repaymntseet9', compact('center','group', 'grouped_loans','center_details','group_details','name_mode','empty_row_count'));
     }
 
 

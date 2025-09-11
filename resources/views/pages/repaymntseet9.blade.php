@@ -197,11 +197,8 @@
                                 <button id="portraitPrint" class="btn btn-primary"><i class="bi bi-printer"></i> Portrait Print</button>
                                 <button id="landscapePrint" class="btn btn-secondary"><i class="bi bi-printer"></i> Landscape Print</button>
                                 <button id="downloadExcel" class="btn btn-success"><i class="bi bi-file-earmark-excel"></i> Download Excel</button>
-                                <div class="d-inline-flex align-items-center gap-2 flex-wrap ms-2 mt-2">
-                                    <label for="emptyRowsPerGroup" class="form-label mb-0">Empty rows per group:</label>
-                                    <input type="number" id="emptyRowsPerGroup" class="form-control" style="width: 100px;" min="0" max="30" value="5" />
-                                    <button type="button" id="applyEmptyRows" class="btn btn-outline-secondary">Apply</button>
-                                </div>
+                                {{-- Using server-defined empty_row_count; client-side control removed --}}
+                                <span class="text-muted ms-2"><i class="bi bi-info-circle"></i> Empty rows per group: {{ $empty_row_count ?? 5 }} (from Settings)</span>
                             </div>
                         </div>
 
@@ -278,7 +275,8 @@
                                     </tr>
                                     <!-- Free empty rows after group -->
                                     @php
-                                        $emptyRowCount = $group_rules[$group_name] ?? 5;
+                                        // Use global app setting for empty rows per group
+                                        $emptyRowCount = isset($empty_row_count) ? intval($empty_row_count) : 5;
                                     @endphp
                                     @for ($i = 0; $i < $emptyRowCount; $i++)
                                         <tr class="group-empty-rule">
@@ -420,67 +418,8 @@
             // Calculate totals when the document is ready
             calculateTotals();
 
-            // Initialize the "empty rows per group" input based on current table
-            function getCurrentEmptyRowsPerGroup() {
-                const $firstGroupTotal = $('#repaymentTable tbody tr.group-total').first();
-                if ($firstGroupTotal.length === 0) return 5;
-                let count = 0;
-                let $ptr = $firstGroupTotal.next();
-                while ($ptr.length && $ptr.find('th[colspan]').length === 0 && !$ptr.hasClass('group-total')) {
-                    if ($ptr.hasClass('group-empty-rule')) count++;
-                    else break; // stop at first non-empty-rule row
-                    $ptr = $ptr.next();
-                }
-                return count || 5;
-            }
-
-            function updateGroupEmptyRows(targetCount) {
-                targetCount = Math.max(0, Math.min(30, Number(targetCount) || 0));
-
-                $('#repaymentTable tbody tr.group-total').each(function() {
-                    const $groupTotal = $(this);
-                    // collect contiguous empty-rule rows immediately after this group total
-                    let empties = [];
-                    let $ptr = $groupTotal.next();
-                    while ($ptr.length && $ptr.find('th[colspan]').length === 0 && !$ptr.hasClass('group-total')) {
-                        if ($ptr.hasClass('group-empty-rule')) {
-                            empties.push($ptr);
-                            $ptr = $ptr.next();
-                        } else {
-                            break;
-                        }
-                    }
-
-                    const current = empties.length;
-                    if (current > targetCount) {
-                        // remove extra rows (from the end)
-                        for (let i = current - 1; i >= targetCount; i--) {
-                            empties[i].remove();
-                        }
-                    } else if (current < targetCount) {
-                        // add missing rows after the last existing empty row (or after group total if none)
-                        const toAdd = targetCount - current;
-                        let $insertAfter = empties.length ? empties[empties.length - 1] : $groupTotal;
-                        for (let i = 0; i < toAdd; i++) {
-                            const $row = $('<tr class="group-empty-rule"></tr>');
-                            for (let c = 0; c < 18; c++) {
-                                $row.append('<td>&nbsp;</td>');
-                            }
-                            $insertAfter.after($row);
-                            $insertAfter = $row;
-                        }
-                    }
-                });
-            }
-
-            // Set default value from current table
-            $('#emptyRowsPerGroup').val(getCurrentEmptyRowsPerGroup());
-
-            // Apply button handler
-            $('#applyEmptyRows').on('click', function() {
-                const n = parseInt($('#emptyRowsPerGroup').val(), 10);
-                updateGroupEmptyRows(n);
-            });
+            // Empty rows per group controlled by server setting (app_settings.empty_row_count).
+            // Frontend manipulation removed to avoid drift from configured value.
 
             // Download Excel functionality
             $('#downloadExcel').click(function() {
