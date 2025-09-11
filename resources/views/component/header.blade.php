@@ -545,7 +545,7 @@ $banner = DB::select($query);
                 'reports','main_reports_dashboard','prediction_report', 'loan_disbursement_performance', 'payment_detail_report', 'full_loan_detail', 'loan_summary',
                 'par_monthly', 'par_weekly', 'loan_status', 'cashflow_accumulated', 'cashflow_monthly', 'profit_loss', 'balance_sheet',
                 'trial_balance', 'daily_collection_sheet', 'center_collection_detail', 'center_collection_summary', 'route_collections',
-                'repayment_sheet_01', 'repayment_sheet_02', 'repayment_sheet_03', 'repayment_sheet_04', 'repayment_sheet_05','repayment_sheet_06','repayment_sheet_07','repayment_sheet_08', 'other_charges_report',
+                'repayment_sheet_01', 'repayment_sheet_02', 'repayment_sheet_03', 'repayment_sheet_04', 'repayment_sheet_05','repayment_sheet_06','repayment_sheet_07','repayment_sheet_08','repayment_sheet_09', 'other_charges_report',
                 'center_dashboard', 'repayment_summary', 'savings_report', 'arrears_report', 'arrears_overview', 'datewise_cashflow',
                 'loan_detail_report', 'collector_report', 'sms_history', 'customer_detail_report', 'officer_customer_detail', 'guardian_detail_report'
             ]
@@ -1442,6 +1442,12 @@ $banner = DB::select($query);
                                                         @if(optional($privilege)->repayment_sheet_08== 1)
                                                             <li>
                                                                 <a href="/dailyreport">Repayment Sheet 08</a>
+                                                            </li>
+                                                        @endif
+
+                                                        @if(optional($privilege)->repayment_sheet_09== 1)
+                                                            <li>
+                                                                <a href="/repaymntseet9">Repayment Sheet 09</a>
                                                             </li>
                                                         @endif
                                                 </ul>

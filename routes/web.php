@@ -456,6 +456,9 @@ Route::get('/daily_repayment_sheet', [TransactionController::class, 'create'])->
 Route::post('/daily_repayment_sheet_filter', [TransactionController::class, 'create'])->name('transaction.daily_repayment_sheet_filter');
 Route::get('/get-groups-by-center/{center_id}', [TransactionController::class, 'getGroupsByCenter']);
 
+Route::get('/repaymntseet9', [TransactionController::class, 'repaymntseet9'])->name('transaction.repaymntseet9');
+Route::post('/repaymntseet9_filter', [TransactionController::class, 'repaymntseet9'])->name('transaction.repaymntseet9_filter');
+
 Route::get('/daily_repayment_sheet_finwin', [TransactionController::class, 'create_for_finwin'])->name('transaction.finwin');
 Route::post('/daily_repayment_sheet_filter_finwin', [TransactionController::class, 'create_for_finwin'])->name('transaction.daily_repayment_sheet_filter_finwin');
 
