@@ -526,17 +526,17 @@
                     if (result.isConfirmed) {
                         $.ajax({
                             method: 'POST',
-                            url: '/create-designation',
+                            url: '/user/designation',
                             headers: {
                                 "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                             },
                             data: {
                                 designation: designation,
-                                desiLevel: desiLevel,
-                                loanCreate: loanCreate,
-                                loanApprove: loanApprove,
-                                maxCreateAmount: maxCreateAmount,
-                                maxIssueAmount: maxIssueAmount
+                                desi_level: desiLevel,
+                                loan_create: loanCreate,
+                                loan_approve: loanApprove,
+                                max_amount_create: maxCreateAmount,
+                                max_amount_approve: maxIssueAmount
                             },
                             success: function(response) {
                                 Swal.fire({
