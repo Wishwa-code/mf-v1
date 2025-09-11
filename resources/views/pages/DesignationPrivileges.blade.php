@@ -49,7 +49,10 @@
         <div class="permission-wrapper">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>Designation Privileges</h2>
-                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#standard-modal">Create Designation</button>
+                <div>
+                    <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#create-modal">Create Designation</button>
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#update-modal">Update Designations</button>
+                </div>
             </div>
             <form id="updatePermissionForm">
                 <div class="mb-4">
@@ -213,11 +216,11 @@
     </div>
 
     <!-- Create Designation Modal -->
-    <div class="modal fade" id="standard-modal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal fade" id="create-modal" tabindex="-1" role="dialog" aria-labelledby="createModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4>Create Designation</h4>
+                    <h4>Create New Designation</h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -226,12 +229,12 @@
                             <div class="col-lg-12">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <label for="designation1" class="form-label">Designation<span class="required-asterisk">*</span></label>
-                                        <input type="text" id="designation" class="form-control">
+                                        <label for="new_designation" class="form-label">Designation<span class="required-asterisk">*</span></label>
+                                        <input type="text" id="new_designation" class="form-control" placeholder="Enter designation name">
                                     </div>
                                     <div class="col-md-6 mb-3" hidden>
-                                        <label for="designation1" class="form-label">Designation Level<span class="required-asterisk">*</span></label>
-                                        <select class="form-control" id="desi_level">
+                                        <label for="new_desi_level" class="form-label">Designation Level<span class="required-asterisk">*</span></label>
+                                        <select class="form-control" id="new_desi_level">
                                             <option>1</option>
                                             <option>2</option>
                                             <option>3</option>
@@ -245,101 +248,115 @@
                                         </select>
                                     </div>
                                 </div>
-                                <br>
                                 <div class="row" hidden>
                                     <div class="col-md-6 mb-3">
-                                        <label for="loan_create" class="form-label">Loan Create (Issue Loan)<span class="required-asterisk">*</span></label>
+                                        <label for="new_loan_create" class="form-label">Loan Create (Issue Loan)<span class="required-asterisk">*</span></label>
                                         <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" id="loan_create">
-                                            <label class="form-check-label" for="loan_create">Allow</label>
+                                            <input type="checkbox" class="form-check-input" id="new_loan_create">
+                                            <label class="form-check-label" for="new_loan_create">Allow</label>
                                         </div>
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <label for="loan_approve" class="form-label">Loan Approve<span class="required-asterisk">*</span></label>
+                                        <label for="new_loan_approve" class="form-label">Loan Approve<span class="required-asterisk">*</span></label>
                                         <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" id="loan_approve">
-                                            <label class="form-check-label" for="loan_approve">Allow</label>
+                                            <input type="checkbox" class="form-check-input" id="new_loan_approve">
+                                            <label class="form-check-label" for="new_loan_approve">Allow</label>
                                         </div>
                                     </div>
                                 </div>
-
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <label for="max_amount_create" class="form-label">Maximum Amount for Create Loan<span class="required-asterisk">*</span></label>
-                                        <input type="text" id="max_amount_create" class="form-control">
+                                        <label for="new_max_amount_create" class="form-label">Maximum Amount for Create Loan<span class="required-asterisk">*</span></label>
+                                        <input type="text" id="new_max_amount_create" class="form-control" placeholder="0.00">
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <label for="max_amount_approve" class="form-label">Maximum Amount for Approve Loan<span class="required-asterisk">*</span></label>
-                                        <input type="text" id="max_amount_approve" class="form-control">
+                                        <label for="new_max_amount_approve" class="form-label">Maximum Amount for Approve Loan<span class="required-asterisk">*</span></label>
+                                        <input type="text" id="new_max_amount_approve" class="form-control" placeholder="0.00">
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-success" style="float: right" onclick="saveUserDesignation()">Update Designation</button>
                     </div>
                 </div>
-                <hr>
-                <div class="card card-shadow-new border-primary">
-                    <div class="card-body less-padding">
-                        <div class="table-responsive">
-                            <table id="designationTable" class="table table-bordered dash-table dash-table-d table-hover">
-                                <thead>
-                                <tr>
-                                    <th class="text-center">Designation</th>
-                                    <th class="text-center" hidden>Level</th>
-                                    <th class="text-center" hidden>Create</th>
-                                    <th class="text-center" hidden>Approve</th>
-                                    <th class="text-center">Max for Create Loan</th>
-                                    <th class="text-center">Max for Approve Loan</th>
-                                    <th class="text-center">Change Status</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                @php
-                                    $branch = session('branch_id');
-                                    $designation_list = DB::select("SELECT * FROM designation WHERE branch_id = ?", [$branch]);
-                                @endphp
-                                @foreach ($designation_list as $item)
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="createNewDesignation()">Create Designation</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Designations Modal -->
+    <div class="modal fade" id="update-modal" tabindex="-1" role="dialog" aria-labelledby="updateModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4>Update Designations</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="card card-shadow-new border-primary">
+                        <div class="card-body less-padding">
+                            <div class="table-responsive">
+                                <table id="designationTable" class="table table-bordered dash-table dash-table-d table-hover">
+                                    <thead>
                                     <tr>
-                                        <td class="align-middle text-center"><input type="text" class="form-control" data-item-id="{{ $item->idDesignation }}" id="" value="{{ $item->name }}"></td>
-                                        <td class="align-middle text-center" hidden>
-                                            <select class="form-control desi-level" data-item-id="{{ $item->idDesignation }}">
-                                                @for ($i = 1; $i <= 10; $i++)
-                                                    <option value="{{ $i }}" @if ($i == $item->desi_level) selected @endif>{{ $i }}</option>
-                                                @endfor
-                                            </select>
-                                        </td>
-                                        <td class="align-middle text-center" hidden>
-                                            <div class="form-check">
-                                                <input type="checkbox" class="form-check-input loan-create" id="loan_create_{{ $item->idDesignation }}" @if ($item->loan_creat == 1) checked @endif>
-                                                <label class="form-check-label" for="loan_create_{{ $item->idDesignation }}"></label>
-                                            </div>
-                                        </td>
-                                        <td class="align-middle text-center" hidden>
-                                            <div class="form-check">
-                                                <input type="checkbox" class="form-check-input loan-approve" id="loan_approve_{{ $item->idDesignation }}" @if ($item->loan_issue == 1) checked @endif>
-                                                <label class="form-check-label" for="loan_approve_{{ $item->idDesignation }}"></label>
-                                            </div>
-                                        </td>
-                                        <td class="align-middle text-center">
-                                            <input type="text" class="form-control max-create-amount" data-item-id="{{ $item->idDesignation }}" value="{{ number_format($item->max_create_amount, 2, '.', '') }}">
-                                        </td>
-                                        <td class="align-middle text-center">
-                                            <input type="text" class="form-control max-issue-amount" data-item-id="{{ $item->idDesignation }}" value="{{ number_format($item->max_issue_amount, 2, '.', '') }}">
-                                        </td>
-                                        <td class="align-middle text-center">
-                                            <button type="button" class="btn btn-warning btn-update" data-item-id="{{ $item->idDesignation }}">Update</button>
-                                        </td>
+                                        <th class="text-center">Designation</th>
+                                        <th class="text-center" hidden>Level</th>
+                                        <th class="text-center" hidden>Create</th>
+                                        <th class="text-center" hidden>Approve</th>
+                                        <th class="text-center">Max for Create Loan</th>
+                                        <th class="text-center">Max for Approve Loan</th>
+                                        <th class="text-center">Change Status</th>
                                     </tr>
-                                @endforeach
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                    @php
+                                        $branch = session('branch_id');
+                                        $designation_list = DB::select("SELECT * FROM designation WHERE branch_id = ?", [$branch]);
+                                    @endphp
+                                    @foreach ($designation_list as $item)
+                                        <tr>
+                                            <td class="align-middle text-center"><input type="text" class="form-control" data-item-id="{{ $item->idDesignation }}" id="" value="{{ $item->name }}"></td>
+                                            <td class="align-middle text-center" hidden>
+                                                <select class="form-control desi-level" data-item-id="{{ $item->idDesignation }}">
+                                                    @for ($i = 1; $i <= 10; $i++)
+                                                        <option value="{{ $i }}" @if ($i == $item->desi_level) selected @endif>{{ $i }}</option>
+                                                    @endfor
+                                                </select>
+                                            </td>
+                                            <td class="align-middle text-center" hidden>
+                                                <div class="form-check">
+                                                    <input type="checkbox" class="form-check-input loan-create" id="loan_create_{{ $item->idDesignation }}" @if ($item->loan_creat == 1) checked @endif>
+                                                    <label class="form-check-label" for="loan_create_{{ $item->idDesignation }}"></label>
+                                                </div>
+                                            </td>
+                                            <td class="align-middle text-center" hidden>
+                                                <div class="form-check">
+                                                    <input type="checkbox" class="form-check-input loan-approve" id="loan_approve_{{ $item->idDesignation }}" @if ($item->loan_issue == 1) checked @endif>
+                                                    <label class="form-check-label" for="loan_approve_{{ $item->idDesignation }}"></label>
+                                                </div>
+                                            </td>
+                                            <td class="align-middle text-center">
+                                                <input type="text" class="form-control max-create-amount" data-item-id="{{ $item->idDesignation }}" value="{{ number_format($item->max_create_amount, 2, '.', '') }}">
+                                            </td>
+                                            <td class="align-middle text-center">
+                                                <input type="text" class="form-control max-issue-amount" data-item-id="{{ $item->idDesignation }}" value="{{ number_format($item->max_issue_amount, 2, '.', '') }}">
+                                            </td>
+                                            <td class="align-middle text-center">
+                                                <button type="button" class="btn btn-warning btn-update" data-item-id="{{ $item->idDesignation }}">Update</button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div><!-- /.modal-content -->
-        </div><!-- /.modal-dialog -->
-    </div><!-- /.modal -->
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('script')
@@ -392,7 +409,7 @@
 
     <script>
         $(document).ready(function() {
-            let x = ["#max_amount_create","#max_amount_approve"];
+            let x = ["#new_max_amount_create","#new_max_amount_approve"];
             if (typeof decimalFormat === 'function') {
                 decimalFormat(x);
             }
@@ -456,6 +473,82 @@
                     });
                 }
             });
+        });
+
+        // Function to create new designation
+        function createNewDesignation() {
+            var designation = $('#new_designation').val();
+            var desiLevel = $('#new_desi_level').val();
+            var loanCreate = $('#new_loan_create').prop('checked') ? 1 : 0;
+            var loanApprove = $('#new_loan_approve').prop('checked') ? 1 : 0;
+            var maxCreateAmount = $('#new_max_amount_create').val();
+            var maxIssueAmount = $('#new_max_amount_approve').val();
+
+            if(designation==="" || maxCreateAmount==="" || maxIssueAmount===""){
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: 'Please fill all required fields!'
+                })
+            } else {
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "Do you want to create this designation?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, Create it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            method: 'POST',
+                            url: '/create-designation',
+                            headers: {
+                                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                            },
+                            data: {
+                                designation: designation,
+                                desiLevel: desiLevel,
+                                loanCreate: loanCreate,
+                                loanApprove: loanApprove,
+                                maxCreateAmount: maxCreateAmount,
+                                maxIssueAmount: maxIssueAmount
+                            },
+                            success: function(response) {
+                                Swal.fire({
+                                    position: "center",
+                                    icon: "success",
+                                    title: "Successfully created!",
+                                }).then(function () {
+                                    $('#create-modal').modal('hide');
+                                    clearCreateForm();
+                                    window.location.reload();
+                                });
+                            },
+                            error: function(xhr, status, error) {
+                                console.error('Error creating designation:', error);
+                                Swal.fire('Error', 'Something went wrong!', 'error');
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        // Function to clear create form
+        function clearCreateForm() {
+            $('#new_designation').val('');
+            $('#new_desi_level').val('1');
+            $('#new_loan_create').prop('checked', false);
+            $('#new_loan_approve').prop('checked', false);
+            $('#new_max_amount_create').val('');
+            $('#new_max_amount_approve').val('');
+        }
+
+        // Clear form when modal is closed
+        $('#create-modal').on('hidden.bs.modal', function () {
+            clearCreateForm();
         });
     </script>
 
