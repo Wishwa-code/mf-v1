@@ -217,8 +217,11 @@
                                     <th colspan="2"></th>
                                     <th colspan="2"></th>
                                     <th colspan="2"></th>
+                                    <th colspan="2"></th>
                                 </tr>
                                 <tr>
+                                    <th class="portrait-hide">Collection</th>
+                                    <th class="portrait-hide">Other</th>
                                     <th class="portrait-hide">Collection</th>
                                     <th class="portrait-hide">Other</th>
                                     <th class="portrait-hide">Collection</th>
@@ -232,7 +235,7 @@
                                 <tbody>
                                 @foreach ($grouped_loans as $group_name => $group)
                                     <tr>
-                                        <th colspan="16">Group No :- {{ $group_name }}</th>
+                                        <th colspan="18">Group No :- {{ $group_name }}</th>
                                     </tr>
                                     @foreach ($group as $item)
                                         <tr>
@@ -253,6 +256,8 @@
                                             <td></td>
                                             <td></td>
                                             <td></td>
+                                            <td></td>
+                                            <td></td>
                                         </tr>
                                     @endforeach
                                     <tr class="group-total">
@@ -264,7 +269,7 @@
                                         <td class="group-due-amount"></td>
                                         <td class="group-total-balance"></td>
                                         <td class="group-arrears"></td>
-                                        <td colspan="11"></td>
+                                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
                                     </tr>
                                     <!-- Free empty rows after group -->
                                     @php
@@ -272,7 +277,7 @@
                                     @endphp
                                     @for ($i = 0; $i < $emptyRowCount; $i++)
                                         <tr class="group-empty-rule">
-                                            <td colspan="16">&nbsp;</td>
+                                            <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
                                         </tr>
                                     @endfor
                                 @endforeach
@@ -287,16 +292,16 @@
                                     <td id="total-due-amount"></td>
                                     <td id="total-balance"></td>
                                     <td id="total-arrears"></td>
-                                    <td colspan="11"></td>
+                                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
                                 </tr>
-                                <tr><td><strong>Present</strong></td><td colspan="15"></td></tr>
-                                <tr><td><strong>Late</strong></td><td colspan="15"></td></tr>
-                                <tr><td><strong>Informed</strong></td><td colspan="15"></td></tr>
-                                <tr><td><strong>Absent</strong></td><td colspan="15"></td></tr>
-                                <tr><td><strong>%</strong></td><td colspan="15"></td></tr>
-                                <tr><td><strong>Executive</strong></td><td colspan="15"></td></tr>
-                                <tr><td><strong>Cashier</strong></td><td colspan="15"></td></tr>
-                                <tr><td><strong>Manager</strong></td><td colspan="15"></td></tr>
+                                <tr><td><strong>Present</strong></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr><td><strong>Late</strong></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr><td><strong>Informed</strong></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr><td><strong>Absent</strong></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr><td><strong>%</strong></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr><td><strong>Executive</strong></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr><td><strong>Cashier</strong></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr><td><strong>Manager</strong></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
                                 </tfoot>
                             </table>
                         </div>
@@ -410,11 +415,6 @@
             // Calculate totals when the document is ready
             calculateTotals();
 
-            // Print button functionality
-            $('#printButton').click(function() {
-                window.print();
-            });
-
             // Download Excel functionality
             $('#downloadExcel').click(function() {
                 // Convert HTML table to a workbook object
@@ -424,44 +424,6 @@
                 XLSX.writeFile(wb, `Repayment_Report_${new Date().toLocaleString('default', { month: 'long' })}.xlsx`);
             });
 
-            $('#pdfButton').click(function() {
-                const element = document.getElementById('repaymentTable');
-                const opt = {
-                    margin: [0.5, 0.5, 0.5, 0.5], // Margins: top, right, bottom, left
-                    filename: `Repayment_Report_${new Date().toLocaleString('default', { month: 'long' })}.pdf`,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true },
-                    jsPDF: { unit: 'in', format: [11, 8.5], orientation: 'landscape' } // Landscape orientation with A4 dimensions
-                };
-                html2pdf().from(element).set(opt).save();
-            });
-
-
-        });
-
-
-        $('#printButton').click(function() {
-            // Get the current month name
-            const currentMonth = new Date().toLocaleString('default', { month: 'long' });
-            let center_details = $('#center_details').find('option:selected').text();
-            // Create a new window for printing
-            let printWindow = window.open('', '', 'height=800,width=600');
-            let printContent = document.getElementById('repaymentTable').outerHTML;
-
-            printWindow.document.write('<html><head><title>Repayment Sheet</title>');
-            printWindow.document.write('<style>');
-            printWindow.document.write('body { font-family: Arial, sans-serif; margin: 0; padding: 0; }');
-            printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; }');
-            printWindow.document.write('#repaymentTable th, #repaymentTable td { padding: 5px; border: 2px solid #000; text-align: center; }'); // Thicker, bold borders
-            printWindow.document.write('@page { size: landscape; margin: 0.5in; }');
-            printWindow.document.write('</style></head><body>');
-            printWindow.document.write('<h1>Repayment Sheet for ' + currentMonth + '('+center_details+')</h1>');
-            printWindow.document.write(printContent);
-            printWindow.document.write('</body></html>');
-
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
         });
 
         function customPrint(orientation = 'portrait') {
@@ -469,9 +431,25 @@
             const centerDetails = $('#center_details').find('option:selected').text();
             const table = document.getElementById('repaymentTable').cloneNode(true);
 
-            // Hide extra columns in portrait mode
+            // Hide extra columns in portrait mode - keep only first 2 weeks (4 columns)
             if (orientation === 'portrait') {
-                table.querySelectorAll('.portrait-hide').forEach(col => col.style.display = 'none');
+                // Hide columns 13, 14, 15, 16, 17, 18 (3rd, 4th, 5th weeks)
+                const rows = table.querySelectorAll('tr');
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('th, td');
+                    // Remove last 6 columns (weeks 3, 4, 5) to keep only weeks 1, 2
+                    for (let i = cells.length - 1; i >= 12; i--) {
+                        if (cells[i] && cells[i].classList.contains('portrait-hide')) {
+                            cells[i].remove();
+                        }
+                    }
+                });
+                
+                // Adjust colspans for portrait mode
+                table.querySelectorAll('th[colspan="18"]').forEach(cell => cell.setAttribute('colspan', '12'));
+                table.querySelectorAll('td[colspan="18"]').forEach(cell => cell.setAttribute('colspan', '12'));
+                table.querySelectorAll('td[colspan="17"]').forEach(cell => cell.setAttribute('colspan', '11'));
+                table.querySelectorAll('td[colspan="10"]').forEach(cell => cell.setAttribute('colspan', '4'));
             }
 
             const printWindow = window.open('', '', 'height=1000,width=1200');
