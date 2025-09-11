@@ -81,6 +81,9 @@ class UserController extends Controller
                 return redirect()->intended(route('pages.user'))->with("error","Registration Failed !");
             }
 
+            // Apply designation privileges to new user
+            $this->applyDesignationPrivilegesToUser($user->id, $request->desi);
+
             $Bank = [
                 'Bank_Type' => "Collector",
                 'code' => $user->id.'/Collector',
@@ -936,6 +939,58 @@ class UserController extends Controller
         return response()->json(['data' => $designation], 404);
     }
 
+    // Save designation privileges JSON
+    public function saveDesignationPrivileges(Request $request)
+    {
+        $designationId = $request->input('designationId');
+        $privileges = $request->input('privileges', []);
+
+        if(!$designationId){
+            return response()->json(['error' => 'Invalid designation id'], 422);
+        }
+
+        // ensure designation belongs to current branch
+        $designation = DB::table('designation')
+            ->where('idDesignation', $designationId)
+            ->where('branch_id', session('branch_id'))
+            ->first();
+
+        if(!$designation){
+            return response()->json(['error' => 'Designation not found'], 404);
+        }
+
+        DB::table('designation')
+            ->where('idDesignation', $designationId)
+            ->update([
+                'privileges' => json_encode($privileges)
+            ]);
+
+        return response()->json(['status' => 'success']);
+    }
+
+    // Load designation privileges JSON
+    public function loadDesignationPrivileges($id)
+    {
+        $designation = DB::table('designation')
+            ->where('idDesignation', $id)
+            ->where('branch_id', session('branch_id'))
+            ->select('privileges')
+            ->first();
+
+        if(!$designation){
+            return response()->json(['privileges' => (object)[]]);
+        }
+
+        $privileges = [];
+        if($designation->privileges){
+            $decoded = json_decode($designation->privileges, true);
+            if(is_array($decoded)){
+                $privileges = $decoded;
+            }
+        }
+        return response()->json(['privileges' => $privileges]);
+    }
+
 
 
     public function holidays(){
@@ -1121,6 +1176,46 @@ class UserController extends Controller
             ->toArray(); // Convert the collection to an array
 
         return response()->json($holidays); // Return the dates as JSON
+    }
+
+    /**
+     * Apply designation privileges to a new user
+     */
+    private function applyDesignationPrivilegesToUser($userId, $designationIdentifier)
+    {
+        if (!$designationIdentifier) {
+            return; // No designation provided
+        }
+
+        // Try to find designation by name first, then by ID as fallback
+        $designation = DB::table('designation')
+            ->where('branch_id', session('branch_id'))
+            ->where(function($query) use ($designationIdentifier) {
+                $query->where('name', $designationIdentifier)
+                      ->orWhere('idDesignation', $designationIdentifier);
+            })
+            ->first();
+
+        if (!$designation || !$designation->privileges) {
+            return; // No designation found or no privileges set
+        }
+
+        // Parse the JSON privileges
+        $privileges = json_decode($designation->privileges, true);
+        
+        if (!is_array($privileges)) {
+            return; // Invalid JSON or not an array
+        }
+
+        // Insert each privilege for the user
+        foreach ($privileges as $permissionKey => $value) {
+            DB::table('user_privileges_has_user')->updateOrInsert(
+                ['user_id' => $userId, 'permission_key' => $permissionKey],
+                ['value' => $value]
+            );
+        }
+
+        Log::info("Applied designation privileges for user {$userId} from designation '{$designation->name}': " . count($privileges) . " permissions applied");
     }
 
 
