@@ -51,20 +51,25 @@
                 <h2>Designation Privileges</h2>
                 <div>
                     <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#create-modal">Create Designation</button>
-                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#update-modal">Update Designations</button>
+                    {{-- <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#update-modal">Update Designations</button> --}}
                 </div>
             </div>
             <form id="updatePermissionForm">
                 <div class="mb-4">
                     <label for="userid" class="form-label">Select Designation</label>
-                    <select class="form-control select2bs4" id="userid" name="userid" onchange="load_to_table(this.value)">
+                    <select class="form-control select2bs4" id="userid" name="userid" onchange="load_to_table(this.value); showDesignationOverview(this)">
                         <option value="0">-- Select Designation --</option>
                         @php
                             $branch = session('branch_id');
                             $designation_details = DB::select("SELECT * FROM designation WHERE branch_id = ?", [$branch]);
                         @endphp
                         @foreach ($designation_details as $designation)
-                            <option value="{{ $designation->idDesignation }}">{{ $designation->name }}</option>
+                            <option value="{{ $designation->idDesignation }}" 
+                                    data-name="{{ $designation->name }}" 
+                                    data-max-create="{{ number_format($designation->max_create_amount, 2) }}" 
+                                    data-max-approve="{{ number_format($designation->max_issue_amount, 2) }}">
+                                {{ $designation->name }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -77,6 +82,24 @@
                     Want to update sub-topic access? Just click on the related topic checkbox.
                 </label>
                 <br><br>
+                
+                <!-- Current Designation Overview Table -->
+                <div class="table-responsive mb-4" id="designation-overview-container" style="display: none;">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-secondary">
+                        <tr>
+                            <th class="text-center">Designation</th>
+                            <th class="text-center">Max for Create Loan</th>
+                            <th class="text-center">Max for Approve Loan</th>
+                            <th class="text-center">Change Status</th>
+                        </tr>
+                        </thead>
+                        <tbody id="designation-overview">
+                            <!-- Content will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
                 <div class="table-responsive">
                     <table class="table table-bordered table-hover permission-table w-100">
                         <thead class="table-dark">
@@ -550,6 +573,115 @@
         $('#create-modal').on('hidden.bs.modal', function () {
             clearCreateForm();
         });
+
+        // Function to show designation overview
+        function showDesignationOverview(selectElement) {
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            const overviewContainer = document.getElementById('designation-overview-container');
+            const overviewBody = document.getElementById('designation-overview');
+            
+            if (selectElement.value == "0") {
+                overviewContainer.style.display = 'none';
+            } else {
+                const designationId = selectElement.value;
+                const name = selectedOption.getAttribute('data-name');
+                const maxCreate = selectedOption.getAttribute('data-max-create').replace(/,/g, '');
+                const maxApprove = selectedOption.getAttribute('data-max-approve').replace(/,/g, '');
+                
+                overviewBody.innerHTML = `
+                    <tr>
+                        <td class="text-center">
+                            <input type="text" class="form-control text-center" 
+                                   id="overview-name" value="${name}" data-id="${designationId}">
+                        </td>
+                        <td class="text-center">
+                            <input type="text" class="form-control text-center" 
+                                   id="overview-max-create" value="${maxCreate}" data-id="${designationId}">
+                        </td>
+                        <td class="text-center">
+                            <input type="text" class="form-control text-center" 
+                                   id="overview-max-approve" value="${maxApprove}" data-id="${designationId}">
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-primary btn-sm" 
+                                    onclick="updateDesignationFromOverview(${designationId})">Update</button>
+                        </td>
+                    </tr>
+                `;
+                
+                // Apply decimal formatting to the amount fields
+                if (typeof decimalFormat === 'function') {
+                    decimalFormat(['#overview-max-create', '#overview-max-approve']);
+                }
+                
+                overviewContainer.style.display = 'block';
+            }
+        }
+
+        // Function to update designation from overview table
+        function updateDesignationFromOverview(designationId) {
+            var designation = $('#overview-name').val();
+            var maxCreateAmount = $('#overview-max-create').val();
+            var maxIssueAmount = $('#overview-max-approve').val();
+
+            if(designation==="" || maxCreateAmount==="" || maxIssueAmount===""){
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: 'Please fill all required fields!'
+                })
+            } else {
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "Do you want to update this designation?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, Update it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            method: 'POST',
+                            url: '/update-designation',
+                            headers: {
+                                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                            },
+                            data: {
+                                id: designationId,
+                                designation: designation,
+                                desiLevel: 1, // Default value
+                                loanCreate: 1, // Default value
+                                loanApprove: 1, // Default value
+                                maxCreateAmount: maxCreateAmount,
+                                maxIssueAmount: maxIssueAmount
+                            },
+                            success: function(response) {
+                                Swal.fire({
+                                    position: "center",
+                                    icon: "success",
+                                    title: "Successfully updated!",
+                                }).then(function () {
+                                    // Update the dropdown option data
+                                    const option = $(`#userid option[value="${designationId}"]`);
+                                    option.attr('data-name', designation);
+                                    option.attr('data-max-create', parseFloat(maxCreateAmount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+                                    option.attr('data-max-approve', parseFloat(maxIssueAmount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+                                    option.text(designation);
+                                    
+                                    // Refresh the overview display
+                                    showDesignationOverview(document.getElementById('userid'));
+                                });
+                            },
+                            error: function(xhr, status, error) {
+                                console.error('Error updating data:', error);
+                                Swal.fire('Error', 'Something went wrong!', 'error');
+                            }
+                        });
+                    }
+                });
+            }
+        }
     </script>
 
 @endsection
