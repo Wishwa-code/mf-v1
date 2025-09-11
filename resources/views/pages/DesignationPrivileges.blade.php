@@ -52,13 +52,13 @@
                 <div class="mb-4">
                     <label for="userid" class="form-label">Select Designation</label>
                     <select class="form-control select2bs4" id="userid" name="userid" onchange="load_to_table(this.value)">
-                        <option value="0">-- Select User --</option>
+                        <option value="0">-- Select Designation --</option>
                         @php
                             $branch = session('branch_id');
-                            $user_details = DB::select("SELECT * FROM user WHERE Status='1' AND branch_id = ?", [$branch]);
+                            $designation_details = DB::select("SELECT * FROM designation WHERE branch_id = ?", [$branch]);
                         @endphp
-                        @foreach ($user_details as $user)
-                            <option value="{{ $user->id }}">{{ $user->Full_Name }}</option>
+                        @foreach ($designation_details as $designation)
+                            <option value="{{ $designation->idDesignation }}">{{ $designation->name }}</option>
                         @endforeach
                     </select>
                 </div>
