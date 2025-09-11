@@ -262,6 +262,11 @@ class TransactionController extends Controller
             return $numA <=> $numB; // Ascending order
         });
 
+        // Sort customers within each group by customer number
+        foreach ($grouped_loans as $groupName => $customers) {
+            $grouped_loans[$groupName] = collect($customers)->sortBy('cus_number')->values()->all();
+        }
+
         // Read app setting for how to display member names (same as dailyreport)
         $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
 
