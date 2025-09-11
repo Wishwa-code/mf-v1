@@ -835,6 +835,58 @@ class UserController extends Controller
         return response()->json(['data' => $designation], 404);
     }
 
+    // Save designation privileges JSON
+    public function saveDesignationPrivileges(Request $request)
+    {
+        $designationId = $request->input('designationId');
+        $privileges = $request->input('privileges', []);
+
+        if(!$designationId){
+            return response()->json(['error' => 'Invalid designation id'], 422);
+        }
+
+        // ensure designation belongs to current branch
+        $designation = DB::table('designation')
+            ->where('idDesignation', $designationId)
+            ->where('branch_id', session('branch_id'))
+            ->first();
+
+        if(!$designation){
+            return response()->json(['error' => 'Designation not found'], 404);
+        }
+
+        DB::table('designation')
+            ->where('idDesignation', $designationId)
+            ->update([
+                'privileges' => json_encode($privileges)
+            ]);
+
+        return response()->json(['status' => 'success']);
+    }
+
+    // Load designation privileges JSON
+    public function loadDesignationPrivileges($id)
+    {
+        $designation = DB::table('designation')
+            ->where('idDesignation', $id)
+            ->where('branch_id', session('branch_id'))
+            ->select('privileges')
+            ->first();
+
+        if(!$designation){
+            return response()->json(['privileges' => (object)[]]);
+        }
+
+        $privileges = [];
+        if($designation->privileges){
+            $decoded = json_decode($designation->privileges, true);
+            if(is_array($decoded)){
+                $privileges = $decoded;
+            }
+        }
+        return response()->json(['privileges' => $privileges]);
+    }
+
 
 
     public function holidays(){

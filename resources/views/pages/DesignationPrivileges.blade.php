@@ -344,7 +344,8 @@
 
 @section('script')
     <script src="../JS/validate.js"></script>
-    <script src="../JS/privilages.js?n=50"></script>
+    <!-- Page specific privileges handling (designation JSON) -->
+    <script src="../JS/designation_privileges.js?n=1"></script>
     <script>
         $(document).ready(function () {
             // Toggle all when "Full Access" is checked
