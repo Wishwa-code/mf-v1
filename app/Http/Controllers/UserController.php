@@ -81,6 +81,9 @@ class UserController extends Controller
                 return redirect()->intended(route('pages.user'))->with("error","Registration Failed !");
             }
 
+            // Apply designation privileges to new user
+            $this->applyDesignationPrivilegesToUser($user->id, $request->desi);
+
             $Bank = [
                 'Bank_Type' => "Collector",
                 'code' => $user->id.'/Collector',
@@ -1072,6 +1075,46 @@ class UserController extends Controller
             ->toArray(); // Convert the collection to an array
 
         return response()->json($holidays); // Return the dates as JSON
+    }
+
+    /**
+     * Apply designation privileges to a new user
+     */
+    private function applyDesignationPrivilegesToUser($userId, $designationIdentifier)
+    {
+        if (!$designationIdentifier) {
+            return; // No designation provided
+        }
+
+        // Try to find designation by name first, then by ID as fallback
+        $designation = DB::table('designation')
+            ->where('branch_id', session('branch_id'))
+            ->where(function($query) use ($designationIdentifier) {
+                $query->where('name', $designationIdentifier)
+                      ->orWhere('idDesignation', $designationIdentifier);
+            })
+            ->first();
+
+        if (!$designation || !$designation->privileges) {
+            return; // No designation found or no privileges set
+        }
+
+        // Parse the JSON privileges
+        $privileges = json_decode($designation->privileges, true);
+        
+        if (!is_array($privileges)) {
+            return; // Invalid JSON or not an array
+        }
+
+        // Insert each privilege for the user
+        foreach ($privileges as $permissionKey => $value) {
+            DB::table('user_privileges_has_user')->updateOrInsert(
+                ['user_id' => $userId, 'permission_key' => $permissionKey],
+                ['value' => $value]
+            );
+        }
+
+        Log::info("Applied designation privileges for user {$userId} from designation '{$designation->name}': " . count($privileges) . " permissions applied");
     }
 
 
