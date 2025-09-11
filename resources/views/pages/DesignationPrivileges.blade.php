@@ -47,7 +47,10 @@
 @section('content')
     <div class="permission-container">
         <div class="permission-wrapper">
-            <h2 class="mb-4">Designation Privileges</h2>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Designation Privileges</h2>
+                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#standard-modal">Create Designation</button>
+            </div>
             <form id="updatePermissionForm">
                 <div class="mb-4">
                     <label for="userid" class="form-label">Select Designation</label>
@@ -208,6 +211,135 @@
             </form>
         </div>
     </div>
+
+    <!-- Create Designation Modal -->
+    <div class="modal fade" id="standard-modal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4>Create Designation</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="container">
+                        <div class="row mb-3">
+                            <div class="col-lg-12">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="designation1" class="form-label">Designation<span class="required-asterisk">*</span></label>
+                                        <input type="text" id="designation" class="form-control">
+                                    </div>
+                                    <div class="col-md-6 mb-3" hidden>
+                                        <label for="designation1" class="form-label">Designation Level<span class="required-asterisk">*</span></label>
+                                        <select class="form-control" id="desi_level">
+                                            <option>1</option>
+                                            <option>2</option>
+                                            <option>3</option>
+                                            <option>4</option>
+                                            <option>5</option>
+                                            <option>6</option>
+                                            <option>7</option>
+                                            <option>8</option>
+                                            <option>9</option>
+                                            <option>10</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <br>
+                                <div class="row" hidden>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="loan_create" class="form-label">Loan Create (Issue Loan)<span class="required-asterisk">*</span></label>
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="loan_create">
+                                            <label class="form-check-label" for="loan_create">Allow</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="loan_approve" class="form-label">Loan Approve<span class="required-asterisk">*</span></label>
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="loan_approve">
+                                            <label class="form-check-label" for="loan_approve">Allow</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="max_amount_create" class="form-label">Maximum Amount for Create Loan<span class="required-asterisk">*</span></label>
+                                        <input type="text" id="max_amount_create" class="form-control">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="max_amount_approve" class="form-label">Maximum Amount for Approve Loan<span class="required-asterisk">*</span></label>
+                                        <input type="text" id="max_amount_approve" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-success" style="float: right" onclick="saveUserDesignation()">Update Designation</button>
+                    </div>
+                </div>
+                <hr>
+                <div class="card card-shadow-new border-primary">
+                    <div class="card-body less-padding">
+                        <div class="table-responsive">
+                            <table id="designationTable" class="table table-bordered dash-table dash-table-d table-hover">
+                                <thead>
+                                <tr>
+                                    <th class="text-center">Designation</th>
+                                    <th class="text-center" hidden>Level</th>
+                                    <th class="text-center" hidden>Create</th>
+                                    <th class="text-center" hidden>Approve</th>
+                                    <th class="text-center">Max for Create Loan</th>
+                                    <th class="text-center">Max for Approve Loan</th>
+                                    <th class="text-center">Change Status</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                @php
+                                    $branch = session('branch_id');
+                                    $designation_list = DB::select("SELECT * FROM designation WHERE branch_id = ?", [$branch]);
+                                @endphp
+                                @foreach ($designation_list as $item)
+                                    <tr>
+                                        <td class="align-middle text-center"><input type="text" class="form-control" data-item-id="{{ $item->idDesignation }}" id="" value="{{ $item->name }}"></td>
+                                        <td class="align-middle text-center" hidden>
+                                            <select class="form-control desi-level" data-item-id="{{ $item->idDesignation }}">
+                                                @for ($i = 1; $i <= 10; $i++)
+                                                    <option value="{{ $i }}" @if ($i == $item->desi_level) selected @endif>{{ $i }}</option>
+                                                @endfor
+                                            </select>
+                                        </td>
+                                        <td class="align-middle text-center" hidden>
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input loan-create" id="loan_create_{{ $item->idDesignation }}" @if ($item->loan_creat == 1) checked @endif>
+                                                <label class="form-check-label" for="loan_create_{{ $item->idDesignation }}"></label>
+                                            </div>
+                                        </td>
+                                        <td class="align-middle text-center" hidden>
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input loan-approve" id="loan_approve_{{ $item->idDesignation }}" @if ($item->loan_issue == 1) checked @endif>
+                                                <label class="form-check-label" for="loan_approve_{{ $item->idDesignation }}"></label>
+                                            </div>
+                                        </td>
+                                        <td class="align-middle text-center">
+                                            <input type="text" class="form-control max-create-amount" data-item-id="{{ $item->idDesignation }}" value="{{ number_format($item->max_create_amount, 2, '.', '') }}">
+                                        </td>
+                                        <td class="align-middle text-center">
+                                            <input type="text" class="form-control max-issue-amount" data-item-id="{{ $item->idDesignation }}" value="{{ number_format($item->max_issue_amount, 2, '.', '') }}">
+                                        </td>
+                                        <td class="align-middle text-center">
+                                            <button type="button" class="btn btn-warning btn-update" data-item-id="{{ $item->idDesignation }}">Update</button>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
 @endsection
 
 @section('script')
@@ -254,6 +386,75 @@
                     }
                 });
             }
+        });
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            let x = ["#max_amount_create","#max_amount_approve"];
+            if (typeof decimalFormat === 'function') {
+                decimalFormat(x);
+            }
+
+            $('.btn-update').click(function() {
+                var itemId = $(this).data('item-id');
+                var designation = $(`#designationTable input[data-item-id="${itemId}"]`).val();
+                var desiLevel = $(`#designationTable select[data-item-id="${itemId}"]`).val();
+                var loanCreate = $(`#loan_create_${itemId}`).prop('checked') ? 1 : 0;
+                var loanApprove = $(`#loan_approve_${itemId}`).prop('checked') ? 1 : 0;
+                var maxCreateAmount = $(`#designationTable .max-create-amount[data-item-id="${itemId}"]`).val();
+                var maxIssueAmount = $(`#designationTable .max-issue-amount[data-item-id="${itemId}"]`).val();
+
+                if(itemId==="" || designation==="" || desiLevel==="" || maxCreateAmount==="" || maxIssueAmount===""){
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'Please fill all required fields!'
+                    })
+                }else{
+                    Swal.fire({
+                        title: 'Are you sure?',
+                        text: "Do you want to save this designation?",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Yes, Update it!'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            $.ajax({
+                                method: 'POST',
+                                url: '/update-designation',
+                                headers: {
+                                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                                },
+                                data: {
+                                    id: itemId,
+                                    designation: designation,
+                                    desiLevel: desiLevel,
+                                    loanCreate: loanCreate,
+                                    loanApprove: loanApprove,
+                                    maxCreateAmount: maxCreateAmount,
+                                    maxIssueAmount: maxIssueAmount
+                                },
+                                success: function(response) {
+                                    Swal.fire({
+                                        position: "center",
+                                        icon: "success",
+                                        title: "Successfully updated!",
+                                    }).then(function () {
+                                        window.location.reload();
+                                    });
+                                },
+                                error: function(xhr, status, error) {
+                                    console.error('Error updating data:', error);
+                                    Swal.fire('Error', 'Something went wrong!', 'error');
+                                }
+                            });
+                        }
+                    });
+                }
+            });
         });
     </script>
 
