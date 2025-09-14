@@ -50,24 +50,32 @@ function savePrivileges(e){
 function load_to_table(designationId){
     resetAllPrivilegeChecks();
     if(!designationId || designationId === '0') return;
+    
     $.ajax({
         type:'GET',
         url:'/designation/privileges/load/'+designationId,
         success:function(res){
             if(res && res.privileges){
                 const data = res.privileges; // object map key=>1/0
+                
+                // Set all checkboxes based on saved data without triggering events
                 Object.keys(data).forEach(k=>{
                     const val = data[k];
                     const $cb = $(".access_module[data-key='"+k+"']");
                     if($cb.length){
+                        // Use prop without triggering change events
                         $cb.prop("checked", parseInt(val) === 1);
-                        // ensure parent row visible if sub
-                        const wrapperKey = $cb.closest('tbody.sub-topic-wrapper').data('wrapper');
-                        if(wrapperKey){
-                            // show its main section
-                            $(".access_module[data-key='"+wrapperKey+"']").prop('checked', true);
-                            $(".sub-topic-wrapper[data-wrapper='"+wrapperKey+"']").show();
-                        }
+                    }
+                });
+                
+                // Show sub-sections for permissions that have enabled sub-items
+                $('.sub-topic-wrapper').each(function(){
+                    const wrapperKey = $(this).data('wrapper');
+                    const hasEnabledSubs = $(this).find('.access_module:checked').length > 0;
+                    if(hasEnabledSubs){
+                        $(this).show();
+                    } else {
+                        $(this).hide();
                     }
                 });
             }

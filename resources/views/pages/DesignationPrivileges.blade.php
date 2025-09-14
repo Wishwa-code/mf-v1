@@ -395,8 +395,11 @@
                 $('.sub-topic-wrapper').toggle(isChecked);
             });
 
-            // Toggle each sub-topic group when main topic is checked
-            $('.access_module').change(function () {
+            // Toggle each sub-topic group when main topic is checked (only for user interactions, not programmatic)
+            $('.access_module').on('change', function (e) {
+                // Skip if this change was triggered programmatically during load
+                if (e.originalEvent === undefined) return;
+                
                 var key = $(this).data('key');
                 var $target = $(`.sub-topic-wrapper[data-wrapper="${key}"]`);
                 if ($target.length) {
@@ -404,6 +407,8 @@
                         $target.slideDown();
                     } else {
                         $target.slideUp();
+                        // Also uncheck all sub-permissions when main permission is unchecked
+                        $target.find('.access_module').prop('checked', false);
                     }
                 }
             });
