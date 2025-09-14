@@ -3,6 +3,7 @@
 @section('head')
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.4.1/font/bootstrap-icons.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <style>
         .style-tr > td {
             padding: 2px 15px;
@@ -173,14 +174,14 @@
                                             <div class="col-md-6">
 
                                                 @if (session('branch_access')==1)
-                                                    <label for="tp" class="form-label">Branch</label>
-                                                    <select class="form-control" id="branch" name="branch">
+                                                    <label for="branches" class="form-label">Branches</label>
+                                                    <select class="form-control select2" id="branches" name="branches[]" multiple="multiple" required>
                                                         @foreach($branch as $item)
                                                             <option value="{{$item->branch_id}}">{{$item->Name}}</option>
                                                         @endforeach
                                                     </select>
                                                 @else
-                                                    <label for="tp" class="form-label" hidden>Branch</label>
+                                                    <label for="branch" class="form-label" hidden>Branch</label>
                                                     <select class="form-control" id="branch" name="branch" hidden>
                                                         @foreach($branch as $item)
                                                             <option value="{{$item->branch_id}}">{{$item->Name}}</option>
@@ -350,9 +351,9 @@
                                             </div>
 
                                             <!-- Branch -->
-                                            <div class="form-group" hidden>
-                                                <label for="editBranch">Branch</label>
-                                                <select class="form-control" id="editBranch" name="branch">
+                                            <div class="form-group">
+                                                <label for="editBranches">Branches</label>
+                                                <select class="form-control select2" id="editBranches" name="branches[]" multiple="multiple" style="width: 100%;">
                                                     @foreach($branch as $item)
                                                         <option value="{{ $item->branch_id }}">{{ $item->Name }}</option>
                                                     @endforeach
@@ -415,6 +416,7 @@
     <script src="../JS/user.js"></script>
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 
     <!-- Bootstrap JS (make sure to include both JS and CSS for modals) -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
@@ -460,6 +462,11 @@
         }
 
         $(document).ready(function() {
+            $('.select2').select2();
+            $('#editBranches').select2();
+        });
+
+        $(document).ready(function() {
 
             $('.btn-edit').on('click', function () {
                 const userId = $(this).data('id');
@@ -479,7 +486,7 @@
                         $('#editTP').val(response.TP);
                         $('#editLendingOfficer').prop('checked', response.lending_officer == 1);
                         $('#editCollectingOfficer').prop('checked', response.collector == 1);
-                        $('#editBranch').val(response.branch_id);
+                        $('#editBranches').val(response.branches).trigger('change');
                         $('#editBranchAccess').prop('checked', response.branch_access == 1);
                         $('#editcashier').prop('checked', response.cashier == 1);
                     },
@@ -492,7 +499,21 @@
 // Handle Edit User Form Submission
             $('#updateUserBtn').on('click', function () {
                 // Gather form data
-                const formData = $('#editUserForm').serialize();
+                const userId = $('#userId').val();
+                const formData = {
+                    id: userId,
+                    epf_no: $('#editEpfNo').val(),
+                    desi: $('#editDesignation').val(),
+                    nic: $('#editNic').val(),
+                    full_name: $('#editFullName').val(),
+                    email: $('#editEmail').val(),
+                    tp: $('#editTP').val(),
+                    editLendingOfficer: $('#editLendingOfficer').is(':checked'),
+                    editCollectingOfficer: $('#editCollectingOfficer').is(':checked'),
+                    branches: $('#editBranches').val(),
+                    branch_access: $('#editBranchAccess').is(':checked'),
+                    editcashier: $('#editcashier').is(':checked'),
+                };
 
                 console.log('Form Data:', formData);  // For debugging
 
@@ -503,7 +524,7 @@
                     showCancelButton: true,
                     confirmButtonColor: '#3085d6',
                     cancelButtonColor: '#d33',
-                    confirmButtonText: 'Yes, reset it!'
+                    confirmButtonText: 'Yes, update it!'
                 }).then((result) => {
                     if (result.isConfirmed) {
                         $.ajax({

@@ -72,11 +72,21 @@ class UserController extends Controller
             $data['Nic']=$request->nic;
             $data['lending_officer']=$request->has('lending_officer') ? 1 : 0;
             $data['otp']=$otp;
-            $data['branch_id']=$request->branch;
+            $data['branch_id']=$request->branches[0] ?? session('branch_id');
             $data['branch_access']=$request->has('branch_access') ? 1 : 0;
             $data['cashier']=$request->has('cashier') ? 1 : 0;
             $data['collector']=$request->has('collecting_officer') ? 1 : 0;
             $user=User::create($data);
+
+            if ($request->has('branches')) {
+                foreach ($request->branches as $branch_id) {
+                    DB::table('user_has_branches')->insert([
+                        'user_id' => $user->id,
+                        'branch_id' => $branch_id
+                    ]);
+                }
+            }
+
             if (!$user){
                 return redirect()->intended(route('pages.user'))->with("error","Registration Failed !");
             }
@@ -1112,6 +1122,7 @@ class UserController extends Controller
     public function getUserDetails($id)
     {
         $user = DB::table('user')->where('id', $id)->first();
+        $user->branches = DB::table('user_has_branches')->where('user_id', $id)->pluck('branch_id')->toArray();
         return response()->json($user);
     }
 
@@ -1139,10 +1150,21 @@ class UserController extends Controller
                 'TP' => $request->tp,
                 'lending_officer' => $request->editLendingOfficer ? 1 : 0,
                 'collector' => $request->editCollectingOfficer ? 1 : 0,
-                'branch_id' => $request->branch,
+                'branch_id' => $request->branches[0] ?? session('branch_id'),
                 'branch_access' => $request->branch_access ? 1 : 0,
                 'cashier' => $request->editcashier ? 1 : 0,
             ]);
+
+        $user = DB::table('user')->where('email', $request->email)->first();
+        DB::table('user_has_branches')->where('user_id', $user->id)->delete();
+        if ($request->has('branches')) {
+            foreach ($request->branches as $branch_id) {
+                DB::table('user_has_branches')->insert([
+                    'user_id' => $user->id,
+                    'branch_id' => $branch_id
+                ]);
+            }
+        }
 
         // Check if the update was successful and return response
         if ($updated) {
