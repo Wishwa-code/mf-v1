@@ -42,6 +42,20 @@
         .password-wrapper {
             position: relative;
         }
+
+        /* Fix: prevent Select2 multi-select tag text being overlapped by the × icon */
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            /* add space to left of remove (×) button */
+            padding: 2px 8px 2px 26px !important;
+            position: relative; 
+        }
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            position: absolute;
+            left: 6px; /* sit before the label */
+            top: 50%;
+            transform: translateY(-50%);
+            margin: 0 !important; /* avoid shifting label */
+        }
     </style>
 @endsection
 
