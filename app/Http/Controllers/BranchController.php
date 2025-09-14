@@ -399,15 +399,29 @@ class BranchController extends Controller
             'branch_id' => 'required|integer',
         ]);
 
+        // Authorization: Only allow super access or users assigned to the branch
+        $userId = session('userid');
+        $isSuper = session('branch_access') === 1;
+
+        if (!$isSuper) {
+            $assigned = DB::table('user_has_branches')
+                ->where('user_id', $userId)
+                ->where('branch_id', $request->branch_id)
+                ->exists();
+
+            if (!$assigned) {
+                return response()->json(['success' => false, 'message' => 'You are not assigned to this branch'], 403);
+            }
+        }
+
         // Update the session with the new branch ID
         session(['branch_id' => $request->branch_id]);
 
-        $branch=DB::table('branch')->where('branch_id','=',$request->branch_id)->first();
-
+        $branch = DB::table('branch')->where('branch_id', '=', $request->branch_id)->first();
 
         session(['branch_name' => $branch->Name]);
 
-        $userController = new UserController();
+    $userController = new UserController();
 
         // Call the create_panelty function
         $userController->create_panelty();
