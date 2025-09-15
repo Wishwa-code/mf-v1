@@ -1139,39 +1139,63 @@ class UserController extends Controller
             'tp' => 'required',
         ]);
 
-        // Use DB::table to update the user record in the 'users' table
+        // Load existing user and branches
+        $user = DB::table('user')->where('email', $request->email)->first();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'User not found']);
+        }
+
+        $existingBranches = DB::table('user_has_branches')
+            ->where('user_id', $user->id)
+            ->pluck('branch_id')
+            ->map(fn($v) => (string)$v)
+            ->toArray();
+
+        $newBranches = collect($request->input('branches', []))
+            ->map(fn($v) => (string)$v)
+            ->toArray();
+
+        // Determine if branches actually changed (order-insensitive)
+        sort($existingBranches);
+        sort($newBranches);
+        $branchesChanged = ($existingBranches !== $newBranches);
+
+        // Determine primary branch: first of new list if present, else keep current
+        $primaryBranch = count($newBranches) > 0 ? (int)$newBranches[0] : (int)$user->branch_id;
+
+        // Update main user record
         $updated = DB::table('user')
-            ->where('email', $request->email) // Find the user by id
+            ->where('email', $request->email)
             ->update([
                 'Epf_no' => $request->epf_no,
                 'Designation' => $request->desi,
                 'Nic' => $request->nic,
                 'Full_Name' => $request->full_name,
                 'TP' => $request->tp,
-                'lending_officer' => $request->editLendingOfficer ? 1 : 0,
-                'collector' => $request->editCollectingOfficer ? 1 : 0,
-                'branch_id' => $request->branches[0] ?? session('branch_id'),
-                'branch_access' => $request->branch_access ? 1 : 0,
-                'cashier' => $request->editcashier ? 1 : 0,
+                'lending_officer' => $request->boolean('editLendingOfficer') ? 1 : 0,
+                'collector' => $request->boolean('editCollectingOfficer') ? 1 : 0,
+                'branch_id' => $primaryBranch,
+                'branch_access' => $request->boolean('branch_access') ? 1 : 0,
+                'cashier' => $request->boolean('editcashier') ? 1 : 0,
             ]);
 
-        $user = DB::table('user')->where('email', $request->email)->first();
-        DB::table('user_has_branches')->where('user_id', $user->id)->delete();
-        if ($request->has('branches')) {
-            foreach ($request->branches as $branch_id) {
+        // Sync branches only if changed
+        if ($branchesChanged) {
+            DB::table('user_has_branches')->where('user_id', $user->id)->delete();
+            foreach ($newBranches as $branch_id) {
                 DB::table('user_has_branches')->insert([
                     'user_id' => $user->id,
-                    'branch_id' => $branch_id
+                    'branch_id' => (int)$branch_id,
                 ]);
             }
         }
 
-        // Check if the update was successful and return response
-        if ($updated) {
+        // Consider operation successful if either main record updated or branches changed
+        if ($updated > 0 || $branchesChanged) {
             return response()->json(['success' => true]);
-        } else {
-            return response()->json(['success' => false, 'message' => 'No changes made or user not found']);
         }
+
+        return response()->json(['success' => false, 'message' => 'No changes detected']);
     }
 
     public function resetPassword($id,Request $request)
