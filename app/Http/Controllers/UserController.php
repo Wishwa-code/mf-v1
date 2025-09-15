@@ -320,7 +320,7 @@ class UserController extends Controller
     public function showdashboard(Store $session){
 
 
-        if (!auth()->check()) {
+        if (!Auth::check()) {
             return redirect()->route('login')->with("error", "Session expired! Please Login");
         }
 
@@ -739,38 +739,12 @@ class UserController extends Controller
     {
         $userId = $request->input('userId');
         $privileges = $request->input('privileges', []);
+        // Apply updates via helper to keep behavior consistent
+        $this->applyPrivilegeKeysToUser((int)$userId, is_array($privileges) ? $privileges : []);
 
-        foreach ($privileges as $key => $value) {
-            DB::table('user_privileges_has_user')->updateOrInsert(
-                ['user_id' => $userId, 'permission_key' => $key],
-                ['value' => $value]
-            );
-            if ($key=="payment_delete"){
-                DB::table('user')->where('id', $userId)->update([
-                    'payment_delete' => $value
-                ]);
-            }
-
-            if ($key=="branch_access"){
-                DB::table('user')->where('id', $userId)->update([
-                    'branch_access' => $value
-                ]);
-                $session->put('branch_access',(int) $value);
-            }
-
-
-            if ($key=="collector_access"){
-                DB::table('user')->where('id', $userId)->update([
-                    'collector' => $value
-                ]);
-            }
-
-            if ($key=="cashier_access"){
-                DB::table('user')->where('id', $userId)->update([
-                    'cashier' => $value
-                ]);
-            }
-
+        // keep current behavior: update session branch_access if present
+        if (is_array($privileges) && array_key_exists('branch_access', $privileges)) {
+            $session->put('branch_access', (int) $privileges['branch_access']);
         }
 
         return response()->json(['status' => 'success']);
@@ -954,6 +928,7 @@ class UserController extends Controller
     {
         $designationId = $request->input('designationId');
         $privileges = $request->input('privileges', []);
+        $propagate = (int) $request->input('propagate', 0);
 
         if(!$designationId){
             return response()->json(['error' => 'Invalid designation id'], 422);
@@ -974,6 +949,33 @@ class UserController extends Controller
             ->update([
                 'privileges' => json_encode($privileges)
             ]);
+
+        if ($propagate === 1) {
+            $updatedUsers = 0;
+            $des = DB::table('designation')
+                ->where('idDesignation', $designationId)
+                ->where('branch_id', session('branch_id'))
+                ->first();
+
+            if ($des) {
+                $query = DB::table('user')
+                    ->where('branch_id', session('branch_id'))
+                    ->where(function ($q) use ($des) {
+                        $q->where('Designation', '=', $des->name)
+                          ->orWhere('Designation', '=', $des->idDesignation);
+                    })
+                    ->orderBy('id');
+
+                $query->chunk(200, function ($users) use (&$updatedUsers, $privileges) {
+                    foreach ($users as $u) {
+                        $this->applyPrivilegeKeysToUser((int)$u->id, $privileges);
+                        $updatedUsers++;
+                    }
+                });
+            }
+
+            return response()->json(['status' => 'success', 'updated_users' => $updatedUsers]);
+        }
 
         return response()->json(['status' => 'success']);
     }
@@ -1253,15 +1255,41 @@ class UserController extends Controller
             return; // Invalid JSON or not an array
         }
 
-        // Insert each privilege for the user
-        foreach ($privileges as $permissionKey => $value) {
+        // Apply all privileges to the user using helper
+        $this->applyPrivilegeKeysToUser((int)$userId, $privileges);
+
+        Log::info("Applied designation privileges for user {$userId} from designation '{$designation->name}': " . count($privileges) . " permissions applied");
+    }
+
+
+    // Apply a map of permission_key => value for a single user and update special flags
+    private function applyPrivilegeKeysToUser(int $userId, array $privileges): void
+    {
+        foreach ($privileges as $key => $value) {
             DB::table('user_privileges_has_user')->updateOrInsert(
-                ['user_id' => $userId, 'permission_key' => $permissionKey],
+                ['user_id' => $userId, 'permission_key' => $key],
                 ['value' => $value]
             );
         }
 
-        Log::info("Applied designation privileges for user {$userId} from designation '{$designation->name}': " . count($privileges) . " permissions applied");
+        // Update special columns on user table when present
+        $updates = [];
+        if (array_key_exists('payment_delete', $privileges)) {
+            $updates['payment_delete'] = (int) $privileges['payment_delete'];
+        }
+        if (array_key_exists('branch_access', $privileges)) {
+            $updates['branch_access'] = (int) $privileges['branch_access'];
+        }
+        if (array_key_exists('collector_access', $privileges)) {
+            $updates['collector'] = (int) $privileges['collector_access'];
+        }
+        if (array_key_exists('cashier_access', $privileges)) {
+            $updates['cashier'] = (int) $privileges['cashier_access'];
+        }
+
+        if (!empty($updates)) {
+            DB::table('user')->where('id', $userId)->update($updates);
+        }
     }
 
 

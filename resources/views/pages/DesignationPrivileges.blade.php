@@ -232,6 +232,10 @@
                 </div>
 
                 <div class="text-center mt-4">
+                    <div class="form-check d-inline-flex align-items-center me-3">
+                        <input class="form-check-input" type="checkbox" id="propagate-users">
+                        <label class="form-check-label ms-2" for="propagate-users">Also update existing users in this designation</label>
+                    </div>
                     <button class="btn btn-primary btn-lg px-5" type="button" onclick="savePrivileges(event)">Update Designation Privileges</button>
                 </div>
             </form>

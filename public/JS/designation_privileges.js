@@ -17,6 +17,7 @@ const resetAllPrivilegeChecks = () => {
 function savePrivileges(e){
     e.preventDefault();
     const designationId = $("#userid").val();
+    const propagate = $("#propagate-users").is(":checked") ? 1 : 0;
     if(designationId === "0"){
         Swal.fire("Please select Designation!", "", "error");
         return;
@@ -35,9 +36,13 @@ function savePrivileges(e){
                 headers:{
                     "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                 },
-                data:{ designationId: designationId, privileges: privileges },
-                success:function(){
-                    Swal.fire("Updated!","Designation privileges updated.","success");
+                data:{ designationId: designationId, privileges: privileges, propagate: propagate },
+                success:function(res){
+                    if (propagate === 1 && res && typeof res.updated_users !== 'undefined') {
+                        Swal.fire("Updated!", `Designation privileges updated and applied to ${res.updated_users} user(s).`, "success");
+                    } else {
+                        Swal.fire("Updated!", "Designation privileges updated.", "success");
+                    }
                 },
                 error:function(){
                     Swal.fire("Error","Unable to update privileges","error");
