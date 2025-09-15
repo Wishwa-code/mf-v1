@@ -367,7 +367,7 @@
                                             <!-- Branch -->
                                             <div class="form-group">
                                                 <label for="editBranches">Branches</label>
-                                                <select class="form-control select2" id="editBranches" name="branches[]" multiple="multiple" style="width: 100%;">
+                                                <select class="form-control select2" id="editBranches" name="branches[]" multiple="multiple" style="width: 100%;" data-placeholder="Select branches">
                                                     @foreach($branch as $item)
                                                         <option value="{{ $item->branch_id }}">{{ $item->Name }}</option>
                                                     @endforeach
@@ -476,8 +476,17 @@
         }
 
         $(document).ready(function() {
-            $('.select2').select2();
-            $('#editBranches').select2();
+            // Initialize global select2
+            $('.select2').select2({ width: '100%' });
+
+            // Ensure Select2 inside the Edit modal renders above the modal
+            $('#editUserModal').on('shown.bs.modal', function () {
+                $('#editBranches').select2({
+                    width: '100%',
+                    dropdownParent: $('#editUserModal'),
+                    placeholder: $('#editBranches').data('placeholder') || 'Select branches'
+                });
+            });
         });
 
         $(document).ready(function() {
