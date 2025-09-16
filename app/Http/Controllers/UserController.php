@@ -1319,8 +1319,67 @@ class UserController extends Controller
         Log::info("Applied designation privileges for user {$userId} from designation '{$designation->name}': " . count($privileges) . " permissions applied");
     }
 
+    /**
+     * Delete a designation
+     */
+    public function deleteDesignation(Request $request)
+    {
+        try {
+            $designationId = $request->id;
+            $branchId = session('branch_id');
+            
+            // Check if designation exists in current branch
+            $designation = DB::table('designation')
+                ->where('idDesignation', $designationId)
+                ->where('branch_id', $branchId)
+                ->first();
 
+            if (!$designation) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Designation not found in current branch'
+                ], 404);
+            }
 
+            // Check if any users are using this designation
+            $usersCount = DB::table('user')
+                ->where('Designation', $designation->name)
+                ->where('branch_id', $branchId)
+                ->count();
+
+            if ($usersCount > 0) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => "Cannot delete designation '{$designation->name}'. It is currently assigned to {$usersCount} user(s). Please reassign users before deleting."
+                ], 400);
+            }
+
+            // Delete the designation
+            $deleted = DB::table('designation')
+                ->where('idDesignation', $designationId)
+                ->where('branch_id', $branchId)
+                ->delete();
+
+            if ($deleted) {
+                return response()->json([
+                    'success' => true, 
+                    'message' => "Designation '{$designation->name}' has been successfully deleted."
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Failed to delete designation.'
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error deleting designation: ' . $e->getMessage());
+            return response()->json([
+                'success' => false, 
+                'message' => 'An error occurred while deleting the designation.'
+            ], 500);
+        }
+    }
 
 
 }

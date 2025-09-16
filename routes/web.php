@@ -67,6 +67,7 @@ Route::post('/designation/create-for-branch', [UserController::class, 'createDes
 //designation
 Route::post('/user/designation','\App\Http\Controllers\UserController@designation')->name('privileges.designation');
 Route::post('/update-designation','\App\Http\Controllers\UserController@updatedesignation')->name('privileges.updatedesignation');
+Route::post('/designation/delete','\App\Http\Controllers\UserController@deleteDesignation')->name('designation.delete');
 
 
 //Group
