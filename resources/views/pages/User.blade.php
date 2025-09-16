@@ -520,7 +520,7 @@
             });
 
 // Handle Edit User Form Submission
-            $('#updateUserBtn').on('click', function () {
+            $('#updateUserBtn').on('click', async function () {
                 // Gather form data
                 const userId = $('#userId').val();
                 const formData = {
@@ -539,6 +539,51 @@
                 };
 
                 console.log('Form Data:', formData);  // For debugging
+
+                // 1) Mandatory check: ensure designation exists on each selected branch
+                const branches = formData.branches || [];
+                const designationName = formData.desi;
+
+                try {
+                    // Helper to check a single branch
+                    const ensureDesignationForBranch = async (branchId) => {
+                        const existsResp = await $.get('/designation/exists', { name: designationName, branch_id: branchId });
+                        if (!existsResp.exists) {
+                            const confirmCreate = await Swal.fire({
+                                title: 'Designation missing',
+                                text: `"${designationName}" does not exist in the selected branch. Do you want to create it now?`,
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonText: 'Yes, create',
+                                cancelButtonText: 'No, cancel'
+                            });
+                            if (!confirmCreate.isConfirmed) {
+                                throw new Error('Designation missing and user declined to create');
+                            }
+                            // Create the designation for that branch (clone from current session branch if available)
+                            const createResp = await $.post('/designation/create-for-branch', {
+                                name: designationName,
+                                branch_id: branchId,
+                                _token: $('meta[name="csrf-token"]').attr('content')
+                            });
+                            if (!createResp.success) {
+                                throw new Error('Failed to create designation on branch ' + branchId);
+                            }
+                        }
+                    };
+
+                    // If no branches provided, still ensure current primary (session) branch has designation
+                    if (branches.length === 0) {
+                        // We can't read session('branch_id') here, so skip. Backend keeps primary unchanged.
+                    } else {
+                        for (const b of branches) {
+                            await ensureDesignationForBranch(b);
+                        }
+                    }
+                } catch (e) {
+                    Swal.fire('Error', e.message || 'Designation validation failed', 'error');
+                    return; // Block update
+                }
 
                 Swal.fire({
                     title: 'Are you sure?',

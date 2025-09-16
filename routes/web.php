@@ -60,6 +60,10 @@ Route::get('/designation-privileges', function () {
 Route::post('/designation/privileges/save', [UserController::class, 'saveDesignationPrivileges']);
 Route::get('/designation/privileges/load/{id}', [UserController::class, 'loadDesignationPrivileges']);
 
+// designation utility
+Route::get('/designation/exists', [UserController::class, 'designationExists']);
+Route::post('/designation/create-for-branch', [UserController::class, 'createDesignationForBranch']);
+
 //designation
 Route::post('/user/designation','\App\Http\Controllers\UserController@designation')->name('privileges.designation');
 Route::post('/update-designation','\App\Http\Controllers\UserController@updatedesignation')->name('privileges.updatedesignation');
