@@ -76,6 +76,11 @@ function load_payment_table(page = 1) {
                         <td>${formatName(item.customer_name, item.customer_lastname,currentType)}</td>
                         <td>${item.cus_number}</td>
                         <td>${parseFloat(item.Loan_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td>${(function(){
+                            const due = (item.Installment_Amount ?? item.Today_installment ?? item.due_amount ?? 0);
+                            const n = parseFloat(due) || 0;
+                            return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        })()}</td>
                         <td>${parseFloat(item.Today_installment).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td>
                             <div class="d-flex align-items-center">
