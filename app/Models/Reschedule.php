@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -8,12 +9,13 @@ class Reschedule extends Model
 {
     use HasFactory;
 
-    protected $table = 'reshedule'; // The table name
-    public $timestamps = false; // Disable timestamps if your table doesn't have them
-    protected $primaryKey = 'idCustomer_Loan'; // Assuming the primary key for `reschedule` table is `idReschedule`
+    protected $table = 'reschedule';        // exact table name
+    protected $primaryKey = 'idReschedule'; // PK of reschedule table
+    public $timestamps = false;
 
-    // Specify which fields can be mass-assigned
+    // columns you allow to be mass assigned
     protected $fillable = [
+        'original_loan_id',
         'Loan_No',
         'Loan_Category_idLoan_Category',
         'Customer_idCustomer',
@@ -44,6 +46,15 @@ class Reschedule extends Model
         'company_bank_account',
         'lending_officer_id',
         'collector_id',
+        'repayment_duration',
+        'loan_broker',
+        'loan_broker_commission',
+        'saving_amount',
+        'branch_id',
+
+        // audit
+        'rescheduled_by',
+        'rescheduled_at',
+        'reschedule_type',
     ];
 }
-

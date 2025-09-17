@@ -1,8 +1,7 @@
 ### Login to API
-POST https://finance.asipiya.lk/api/login
+GET http://127.0.0.1:8000/api/me
 Content-Type: application/json
 
-{
-  "email": "admin@gmail.com",
-  "password": "Asipiya@#$123"
-}
+
+
+

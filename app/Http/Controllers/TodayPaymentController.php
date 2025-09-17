@@ -2756,6 +2756,9 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             $loanQuery->where('user.id', '=', $user);
         }
         $loanQuery->whereBetween('customer_payments.date', [$date, $date_to]);
+
+        $loanQuery->orderBy('idCustomer_Payments', 'asc');
+
         // Fetch the results
         $loan = $loanQuery->get();
 

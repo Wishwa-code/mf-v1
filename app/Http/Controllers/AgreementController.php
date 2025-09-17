@@ -251,7 +251,7 @@ class AgreementController extends Controller
         $placeholders['@Guarantee_Address_Line_02@'] = "";
         $placeholders['@Guarantee_Address_Line_03@'] = "";
 
-        for ($i = 1; $i <= 3; $i++) {
+        for ($i = 1; $i <= 4; $i++) {
             $suffix = $i === 1 ? '' : "_$i";
             $placeholders["@Guarantee_First_Name$suffix@"] = '';
             $placeholders["@Guarantee_Last_Name$suffix@"] = '';
