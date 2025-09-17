@@ -63,4 +63,49 @@ class AuthController
             'sms_token' => $smsToken
         ]);
     }
+
+
+
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+        return response()->json(['status' => 'success', 'message' => 'Logged out']);
+    }
+
+    public function me(Request $request)
+    {
+        $user = $request->user(); // comes from auth:sanctum
+
+        if (!$user) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthenticated'], 401);
+        }
+
+        if (($user->Status ?? null) === "0") {
+            return response()->json(['status' => 'error', 'message' => 'Account is inactive'], 403);
+        }
+
+        $company = DB::table('company')->first();
+        $branch  = DB::table('branch')->where('branch_id', $user->branch_id)->first();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Authenticated user',
+            'user' => [
+                'id'           => $user->id,
+                'email'        => $user->email,
+                'name'         => $user->Full_Name,
+                'designation'  => $user->Designation,
+                'branch_id'    => $user->branch_id,
+                'branch_name'  => $branch->Name ?? '',
+                'company_name' => $company->company_name ?? '',
+                'phone'        => $user->Contact_No ?? null,
+                'created_at'   => $user->created_at,
+                'updated_at'   => $user->updated_at,
+            ],
+        ]);
+    }
+
+
+
+
 }

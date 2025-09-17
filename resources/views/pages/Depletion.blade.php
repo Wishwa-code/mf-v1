@@ -3,31 +3,93 @@
 @section('head')
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <style>
-        thead { background-color: #d9edf7; color: #31708f; }
-        .bg-purple th { color: #e1e1e1 !important; }
-        .bg-purple { background-color: #1A2942 !important; color: white !important; }
-        #loan_table { width: 100% !important; border-collapse: separate; border-spacing: 0; font-size: 0.92rem; }
-        #loan_table th, #loan_table td { padding: 8px 10px !important; vertical-align: middle !important; white-space: nowrap; }
-        #loan_table tbody tr:nth-child(even) { background: #fafafa; }
-        #loan_table tfoot th, #loan_table tfoot td { font-weight: 700; background: #f3f6fb; border-top: 2px solid #cdd8ea; }
-        .text-end { text-align: right !important; }
-        .table-container { max-height: 70vh; overflow: auto; border: 1px solid #e5e9f2; border-radius: 8px; }
-        thead.sticky-top { position: sticky; top: 0; z-index: 5; }
-        #loaderOverlay { position: fixed; inset: 0; background: rgba(255,255,255,0.7); display: none; align-items: center; justify-content: center; z-index: 2000; }
-        .loader { width: 56px; height: 56px; border-radius: 50%; border: 6px solid #1A2942; border-top-color: transparent; animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-
-        #loan_table th {
-            white-space: normal !important;   /* allow wrapping */
-            overflow-wrap: anywhere;
-            word-break: break-word;
-        }
-        #loan_table td {
-            white-space: nowrap !important;   /* keep values in one line */
+        /* base */
+        :root{
+            --ink:#1A2942;             /* header/nav color you use */
+            --ink-2:#2a3c5e;
+            --ink-3:#3c4d6f;
+            --line:#e6ebf3;
+            --line-2:#d7dfea;
+            --bg:#ffffff;
+            --bg-soft:#f7f9fc;
+            --accent:#0ea5e9;          /* light blue accents */
+            --success:#16a34a;
         }
 
+        thead { background-color:#d9edf7; color:#31708f; }
+        .bg-purple th { color:#e1e1e1!important; }
+        .bg-purple { background-color:var(--ink)!important; color:#fff!important; }
+
+        /* container & scroll */
+        .table-container{
+            max-height:70vh; overflow:auto;
+            border:1px solid var(--line); border-radius:12px;
+            background:var(--bg); box-shadow:0 6px 18px rgba(26,41,66,.05);
+            position:relative;
+        }
+        /* subtle scroll “edges” */
+        .table-container:before,
+        .table-container:after{
+            content:""; position:sticky; left:0; right:0; height:16px; display:block; z-index:4;
+            pointer-events:none;
+        }
+        .table-container:before{ top:0; background:linear-gradient(#ffffff,rgba(255,255,255,0)); }
+        .table-container:after{ bottom:0; background:linear-gradient(rgba(255,255,255,0),#ffffff); }
+
+        /* table */
+        #loan_table{
+            width:100%!important; border-collapse:separate; border-spacing:0;
+            font-size:.92rem; table-layout:fixed; /* locked by your JS after measuring */
+        }
+        #loan_table th, #loan_table td{
+            padding:10px 12px!important; vertical-align:middle!important;
+            border-bottom:1px solid var(--line);
+        }
+        #loan_table tbody tr:nth-child(even){ background:var(--bg-soft); }
+        #loan_table tbody tr:hover{ background:#eef5ff; }
+
+        /* header */
+        thead.sticky-top{ position:sticky; top:0; z-index:5; }
+        #loan_table thead th{
+            white-space:normal!important; overflow-wrap:anywhere; word-break:break-word;
+            font-weight:700; letter-spacing:.02em;
+            border-bottom:2px solid var(--ink-3);
+        }
+
+        /* sticky first column (Loan Officer) */
+        #loan_table thead th:first-child,
+        #loan_table tbody td:first-child,
+        #loan_table tfoot th:first-child{
+            position:sticky; left:0; z-index:6; /* above rows */
+            background:linear-gradient(90deg, var(--ink), var(--ink-2));
+            color:#fff;
+            border-right:1px solid var(--ink-3);
+        }
+        #loan_table tbody td:first-child{ background:#f0f4ff; color:#0f172a; font-weight:600; }
+        #loan_table tfoot th:first-child{ background:#eaf2ff; color:#0f172a; }
+
+        /* numbers look aligned & crisp */
+        .text-end{ text-align:right!important; }
+        #loan_table td, #loan_table th{
+            font-variant-numeric: tabular-nums; /* keeps columns perfectly aligned */
+        }
+
+        /* footer (TOTAL row) */
+        #loan_table tfoot th, #loan_table tfoot td{
+            font-weight:700; background:#f3f6fb; border-top:2px solid var(--line-2);
+        }
+        #loan_table tfoot tr{ box-shadow:inset 0 1px 0 var(--line-2); }
+
+        /* product columns get a reasonable min-width so counts don’t jump */
+        #loan_table thead th:nth-last-child(n+1),
+        #loan_table tbody td:nth-last-child(n+1){ min-width:72px; }
+
+        /* keep header visible above scrollbars on Windows */
+        .table-container::-webkit-scrollbar{ height:10px; width:10px; }
+        .table-container::-webkit-scrollbar-thumb{ background:#c8d3e6; border-radius:10px; }
+        .table-container::-webkit-scrollbar-track{ background:#f0f4ff; }
     </style>
+
 
     {{-- Expose products to JS for dynamic columns --}}
     @php
@@ -132,7 +194,6 @@
                                     <th>Total Clients</th>
                                     <th>OC Clients</th>
                                     <th>Active Clients</th>
-                                    <th>Total Outstanding Balance</th>
 
                                     {{-- Dynamic product-wise loan counts --}}
                                     @foreach($product as $p)
@@ -251,7 +312,7 @@
                     + '<td class="text-end">'+Number(r.Total_Clients || 0)+'</td>'
                     + '<td class="text-end">'+Number(r.OC_Clients || 0)+'</td>'
                     + '<td class="text-end">'+Number(r.Active_Clients || 0)+'</td>'
-                    + '<td class="text-end">'+fmt((r.Total_Outstanding_Balance != null ? r.Total_Outstanding_Balance : r.Current_End_Stock))+'</td>';
+
 
                 PRODUCT_IDS.forEach(function(pid){
                     var key = String(pid);
@@ -277,7 +338,6 @@
                 totals.Total_Clients             += Number(r.Total_Clients || 0);
                 totals.OC_Clients                += Number(r.OC_Clients || 0);
                 totals.Active_Clients            += Number(r.Active_Clients || 0);
-                totals.Total_Outstanding_Balance += Number((r.Total_Outstanding_Balance != null ? r.Total_Outstanding_Balance : r.Current_End_Stock) || 0);
             });
 
             // Debtor Ratio total
@@ -302,9 +362,8 @@
             cells.eq(12).html(fmt(totals.Total_Clients, 0));
             cells.eq(13).html(fmt(totals.OC_Clients, 0));
             cells.eq(14).html(fmt(totals.Active_Clients, 0));
-            cells.eq(15).html(fmt(totals.Total_Outstanding_Balance));
 
-            var startIdx = 16; // first product footer cell
+            var startIdx = 15; // first product footer cell
             PRODUCT_IDS.forEach(function(pid, i){
                 cells.eq(startIdx + i).html(fmt(productTotals[String(pid)], 0));
             });
@@ -349,7 +408,6 @@
                     toRaw(r.Total_Clients || 0),
                     toRaw(r.OC_Clients || 0),
                     toRaw(r.Active_Clients || 0),
-                    toRaw(r.Total_Outstanding_Balance != null ? r.Total_Outstanding_Balance : r.Current_End_Stock)
                 ];
 
                 var pc = r.product_counts || {};

@@ -120,9 +120,9 @@ function numberToWords($number) {
 
 function tableWithBranch($table, $useBranchIdFromTable = null)
 {
-
-    if (!auth()->check()) {
-        return redirect()->route('login')->with("error", "Session expired! Please Login");
+    // Check if branch_id session exists, otherwise redirect to login
+    if (!session()->has('branch_id')) {
+        return redirect()->route('login'); // <-- use your login route name here
     }
 
     if (!Schema::hasColumn('customer_loan', 'panelty_method')) {
