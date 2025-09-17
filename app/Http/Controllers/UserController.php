@@ -72,11 +72,21 @@ class UserController extends Controller
             $data['Nic']=$request->nic;
             $data['lending_officer']=$request->has('lending_officer') ? 1 : 0;
             $data['otp']=$otp;
-            $data['branch_id']=$request->branch;
+            $data['branch_id']=$request->branches[0] ?? session('branch_id');
             $data['branch_access']=$request->has('branch_access') ? 1 : 0;
             $data['cashier']=$request->has('cashier') ? 1 : 0;
             $data['collector']=$request->has('collecting_officer') ? 1 : 0;
             $user=User::create($data);
+
+            if ($request->has('branches')) {
+                foreach ($request->branches as $branch_id) {
+                    DB::table('user_has_branches')->insert([
+                        'user_id' => $user->id,
+                        'branch_id' => $branch_id
+                    ]);
+                }
+            }
+
             if (!$user){
                 return redirect()->intended(route('pages.user'))->with("error","Registration Failed !");
             }
@@ -991,6 +1001,61 @@ class UserController extends Controller
         return response()->json(['privileges' => $privileges]);
     }
 
+    // Check if a designation exists in a specific branch
+    public function designationExists(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string',
+            'branch_id' => 'required|integer',
+        ]);
+
+        $exists = DB::table('designation')
+            ->where('branch_id', $request->branch_id)
+            ->where('name', $request->name)
+            ->exists();
+
+        return response()->json(['exists' => $exists]);
+    }
+
+    // Create designation in a specific branch (optionally clone privileges from same-name in current branch)
+    public function createDesignationForBranch(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string',
+            'branch_id' => 'required|integer',
+        ]);
+
+        // If already exists, return success
+        $exists = DB::table('designation')
+            ->where('branch_id', $request->branch_id)
+            ->where('name', $request->name)
+            ->exists();
+        if ($exists) {
+            return response()->json(['success' => true, 'message' => 'Designation already exists']);
+        }
+
+        // Try to clone privileges from same-name designation in current session branch if available
+        $source = DB::table('designation')
+            ->where('branch_id', session('branch_id'))
+            ->where('name', $request->name)
+            ->first();
+
+        $data = [
+            'name' => $request->name,
+            'desi_level' => $source->desi_level ?? 1,
+            'loan_creat' => $source->loan_creat ?? 0,
+            'loan_issue' => $source->loan_issue ?? 0,
+            'max_create_amount' => $source->max_create_amount ?? 0,
+            'max_issue_amount' => $source->max_issue_amount ?? 0,
+            'privileges' => $source->privileges ?? null,
+            'branch_id' => $request->branch_id,
+        ];
+
+        DB::table('designation')->insert($data);
+
+        return response()->json(['success' => true]);
+    }
+
 
 
     public function holidays(){
@@ -1112,6 +1177,7 @@ class UserController extends Controller
     public function getUserDetails($id)
     {
         $user = DB::table('user')->where('id', $id)->first();
+        $user->branches = DB::table('user_has_branches')->where('user_id', $id)->pluck('branch_id')->toArray();
         return response()->json($user);
     }
 
@@ -1128,28 +1194,63 @@ class UserController extends Controller
             'tp' => 'required',
         ]);
 
-        // Use DB::table to update the user record in the 'users' table
+        // Load existing user and branches
+        $user = DB::table('user')->where('email', $request->email)->first();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'User not found']);
+        }
+
+        $existingBranches = DB::table('user_has_branches')
+            ->where('user_id', $user->id)
+            ->pluck('branch_id')
+            ->map(fn($v) => (string)$v)
+            ->toArray();
+
+        $newBranches = collect($request->input('branches', []))
+            ->map(fn($v) => (string)$v)
+            ->toArray();
+
+        // Determine if branches actually changed (order-insensitive)
+        sort($existingBranches);
+        sort($newBranches);
+        $branchesChanged = ($existingBranches !== $newBranches);
+
+        // Determine primary branch: first of new list if present, else keep current
+        $primaryBranch = count($newBranches) > 0 ? (int)$newBranches[0] : (int)$user->branch_id;
+
+        // Update main user record
         $updated = DB::table('user')
-            ->where('email', $request->email) // Find the user by id
+            ->where('email', $request->email)
             ->update([
                 'Epf_no' => $request->epf_no,
                 'Designation' => $request->desi,
                 'Nic' => $request->nic,
                 'Full_Name' => $request->full_name,
                 'TP' => $request->tp,
-                'lending_officer' => $request->editLendingOfficer ? 1 : 0,
-                'collector' => $request->editCollectingOfficer ? 1 : 0,
-                'branch_id' => $request->branch,
-                'branch_access' => $request->branch_access ? 1 : 0,
-                'cashier' => $request->editcashier ? 1 : 0,
+                'lending_officer' => $request->boolean('editLendingOfficer') ? 1 : 0,
+                'collector' => $request->boolean('editCollectingOfficer') ? 1 : 0,
+                'branch_id' => $primaryBranch,
+                'branch_access' => $request->boolean('branch_access') ? 1 : 0,
+                'cashier' => $request->boolean('editcashier') ? 1 : 0,
             ]);
 
-        // Check if the update was successful and return response
-        if ($updated) {
-            return response()->json(['success' => true]);
-        } else {
-            return response()->json(['success' => false, 'message' => 'No changes made or user not found']);
+        // Sync branches only if changed
+        if ($branchesChanged) {
+            DB::table('user_has_branches')->where('user_id', $user->id)->delete();
+            foreach ($newBranches as $branch_id) {
+                DB::table('user_has_branches')->insert([
+                    'user_id' => $user->id,
+                    'branch_id' => (int)$branch_id,
+                ]);
+            }
         }
+
+        // Consider operation successful if either main record updated or branches changed
+        if ($updated > 0 || $branchesChanged) {
+            return response()->json(['success' => true]);
+        }
+
+        return response()->json(['success' => false, 'message' => 'No changes detected']);
     }
 
     public function resetPassword($id,Request $request)
@@ -1218,8 +1319,67 @@ class UserController extends Controller
         Log::info("Applied designation privileges for user {$userId} from designation '{$designation->name}': " . count($privileges) . " permissions applied");
     }
 
+    /**
+     * Delete a designation
+     */
+    public function deleteDesignation(Request $request)
+    {
+        try {
+            $designationId = $request->id;
+            $branchId = session('branch_id');
+            
+            // Check if designation exists in current branch
+            $designation = DB::table('designation')
+                ->where('idDesignation', $designationId)
+                ->where('branch_id', $branchId)
+                ->first();
 
+            if (!$designation) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Designation not found in current branch'
+                ], 404);
+            }
 
+            // Check if any users are using this designation
+            $usersCount = DB::table('user')
+                ->where('Designation', $designation->name)
+                ->where('branch_id', $branchId)
+                ->count();
+
+            if ($usersCount > 0) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => "Cannot delete designation '{$designation->name}'. It is currently assigned to {$usersCount} user(s). Please reassign users before deleting."
+                ], 400);
+            }
+
+            // Delete the designation
+            $deleted = DB::table('designation')
+                ->where('idDesignation', $designationId)
+                ->where('branch_id', $branchId)
+                ->delete();
+
+            if ($deleted) {
+                return response()->json([
+                    'success' => true, 
+                    'message' => "Designation '{$designation->name}' has been successfully deleted."
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Failed to delete designation.'
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error deleting designation: ' . $e->getMessage());
+            return response()->json([
+                'success' => false, 
+                'message' => 'An error occurred while deleting the designation.'
+            ], 500);
+        }
+    }
 
 
 }

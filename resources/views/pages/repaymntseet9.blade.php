@@ -197,8 +197,12 @@
                                 <button id="portraitPrint" class="btn btn-primary"><i class="bi bi-printer"></i> Portrait Print</button>
                                 <button id="landscapePrint" class="btn btn-secondary"><i class="bi bi-printer"></i> Landscape Print</button>
                                 <button id="downloadExcel" class="btn btn-success"><i class="bi bi-file-earmark-excel"></i> Download Excel</button>
-                                {{-- Using server-defined empty_row_count; client-side control removed --}}
-                                <span class="text-muted ms-2"><i class="bi bi-info-circle"></i> Empty rows per group: {{ $empty_row_count ?? 5 }} (from Settings)</span>
+                                <div class="d-inline-flex align-items-center gap-2 flex-wrap ms-2 mt-2">
+                                    <label for="empty_row_count_local" class="form-label mb-0">Empty rows per group:</label>
+                                    <input type="number" id="empty_row_count_local" class="form-control" style="width: 100px;" min="0" max="100" value="{{ $empty_row_count ?? 5 }}" />
+                                    <button type="button" id="btnUpdateEmptyRowCountLocal" class="btn btn-outline-secondary">Update</button>
+                                    <small class="text-muted">(saved to Settings)</small>
+                                </div>
                             </div>
                         </div>
 
@@ -428,6 +432,32 @@
 
                 // Generate and download the Excel file
                 XLSX.writeFile(wb, `Repayment_Report_${new Date().toLocaleString('default', { month: 'long' })}.xlsx`);
+            });
+
+            // Update empty_row_count setting from this page
+            $('#btnUpdateEmptyRowCountLocal').on('click', function () {
+                const value = parseInt($('#empty_row_count_local').val(), 10);
+                if (isNaN(value) || value < 0 || value > 100) {
+                    alert('Empty row count must be between 0 and 100.');
+                    return;
+                }
+
+                const token = $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').first().val();
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/settings/upsert',
+                    headers: { 'X-CSRF-TOKEN': token },
+                    data: { key: 'empty_row_count', value: value },
+                    success: function () {
+                        // Reload to re-render with new number of empty rows
+                        location.reload();
+                    },
+                    error: function (xhr) {
+                        const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to update setting';
+                        alert(msg);
+                    }
+                });
             });
 
         });

@@ -222,11 +222,22 @@ if (!function_exists('formatNegativeInParentheses')) {
 
 if (!function_exists('formatName')) {
     function formatName($firstName, $lastName) {
-        $firstInitial = strtoupper(substr(explode(' ', trim($firstName))[0], 0, 1)) . '.';
-        $lastNameParts = explode(' ', trim($lastName));
-        $lastInitial = count($lastNameParts) > 1 ? strtoupper(substr($lastNameParts[0], 0, 1)) . '.' : '';
-        $formattedLastName = end($lastNameParts);
-        return trim(($lastInitial ? $firstInitial . $lastInitial : $firstInitial) . ' ' . $formattedLastName);
+        $firstName = trim((string)$firstName);
+        $lastName = trim((string)$lastName);
+
+        if (empty($firstName)) {
+            return $lastName;
+        }
+
+        $firstNameParts = explode(' ', $firstName);
+        $initials = [];
+        foreach ($firstNameParts as $part) {
+            if (!empty($part)) {
+                $initials[] = strtoupper(substr($part, 0, 1)) . '.';
+            }
+        }
+
+        return trim(implode('', $initials) . ' ' . $lastName);
     }
 }
 

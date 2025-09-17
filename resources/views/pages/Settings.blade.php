@@ -322,7 +322,8 @@
                         </div>
 
                         <hr>
-                        <!-- Empty Row Count -->
+                        {{-- Hidden: Empty Row Count moved to Repayment Sheet 09 page UI --}}
+                        {{--
                         <div class="mb-3">
                             <label class="form-label fw-bold">Empty Row Count</label>
                             <div class="d-flex gap-2">
@@ -333,6 +334,7 @@
                             </div>
                             <small class="text-muted">Number of empty rows to display (0-100).</small>
                         </div>
+                        --}}
 
                         <hr>
                         <!-- Document Types -->
@@ -451,15 +453,16 @@
                 save_setting('max_allowed_loans', value);
             });
 
-            $('#btnUpdateEmptyRowCount').on('click', function (e) {
-                e.preventDefault();
-                const value = $('#empty_row_count').val();
-                if (!value || value < 0 || value > 100) {
-                    Swal.fire("Warning", "Empty row count must be between 0 and 100.", "warning");
-                    return;
-                }
-                save_setting('empty_row_count', value);
-            });
+            // Hidden: empty_row_count moved to Repayment Sheet 09 page
+            // $('#btnUpdateEmptyRowCount').on('click', function (e) {
+            //     e.preventDefault();
+            //     const value = $('#empty_row_count').val();
+            //     if (!value || value < 0 || value > 100) {
+            //         Swal.fire("Warning", "Empty row count must be between 0 and 100.", "warning");
+            //         return;
+            //     }
+            //     save_setting('empty_row_count', value);
+            // });
 
             // Document Types Management
             $('#btnAddDocumentType').on('click', function (e) {
@@ -684,10 +687,10 @@
                         $('#max_allowed_loans').val(items.max_allowed_loans);
                     }
 
-                    // Empty Row Count
-                    if (items.empty_row_count) {
-                        $('#empty_row_count').val(items.empty_row_count);
-                    }
+                    // Hidden: Empty Row Count (handled in Repayment Sheet 09)
+                    // if (items.empty_row_count) {
+                    //     $('#empty_row_count').val(items.empty_row_count);
+                    // }
 
                     // Document Types
                     if (items.document_types) {

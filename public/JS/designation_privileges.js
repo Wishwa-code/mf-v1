@@ -17,6 +17,7 @@ const resetAllPrivilegeChecks = () => {
 function savePrivileges(e){
     e.preventDefault();
     const designationId = $("#userid").val();
+    const propagate = $("#propagate-users").is(":checked") ? 1 : 0;
     if(designationId === "0"){
         Swal.fire("Please select Designation!", "", "error");
         return;
@@ -35,9 +36,13 @@ function savePrivileges(e){
                 headers:{
                     "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                 },
-                data:{ designationId: designationId, privileges: privileges },
-                success:function(){
-                    Swal.fire("Updated!","Designation privileges updated.","success");
+                data:{ designationId: designationId, privileges: privileges, propagate: propagate },
+                success:function(res){
+                    if (propagate === 1 && res && typeof res.updated_users !== 'undefined') {
+                        Swal.fire("Updated!", `Designation privileges updated and applied to ${res.updated_users} user(s).`, "success");
+                    } else {
+                        Swal.fire("Updated!", "Designation privileges updated.", "success");
+                    }
                 },
                 error:function(){
                     Swal.fire("Error","Unable to update privileges","error");
@@ -50,24 +55,32 @@ function savePrivileges(e){
 function load_to_table(designationId){
     resetAllPrivilegeChecks();
     if(!designationId || designationId === '0') return;
+    
     $.ajax({
         type:'GET',
         url:'/designation/privileges/load/'+designationId,
         success:function(res){
             if(res && res.privileges){
                 const data = res.privileges; // object map key=>1/0
+                
+                // Set all checkboxes based on saved data without triggering events
                 Object.keys(data).forEach(k=>{
                     const val = data[k];
                     const $cb = $(".access_module[data-key='"+k+"']");
                     if($cb.length){
+                        // Use prop without triggering change events
                         $cb.prop("checked", parseInt(val) === 1);
-                        // ensure parent row visible if sub
-                        const wrapperKey = $cb.closest('tbody.sub-topic-wrapper').data('wrapper');
-                        if(wrapperKey){
-                            // show its main section
-                            $(".access_module[data-key='"+wrapperKey+"']").prop('checked', true);
-                            $(".sub-topic-wrapper[data-wrapper='"+wrapperKey+"']").show();
-                        }
+                    }
+                });
+                
+                // Show sub-sections for permissions that have enabled sub-items
+                $('.sub-topic-wrapper').each(function(){
+                    const wrapperKey = $(this).data('wrapper');
+                    const hasEnabledSubs = $(this).find('.access_module:checked').length > 0;
+                    if(hasEnabledSubs){
+                        $(this).show();
+                    } else {
+                        $(this).hide();
                     }
                 });
             }

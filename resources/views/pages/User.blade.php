@@ -3,6 +3,7 @@
 @section('head')
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.4.1/font/bootstrap-icons.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <style>
         .style-tr > td {
             padding: 2px 15px;
@@ -40,6 +41,20 @@
 
         .password-wrapper {
             position: relative;
+        }
+
+        /* Fix: prevent Select2 multi-select tag text being overlapped by the × icon */
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            /* add space to left of remove (×) button */
+            padding: 2px 8px 2px 26px !important;
+            position: relative; 
+        }
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            position: absolute;
+            left: 6px; /* sit before the label */
+            top: 50%;
+            transform: translateY(-50%);
+            margin: 0 !important; /* avoid shifting label */
         }
     </style>
 @endsection
@@ -173,14 +188,14 @@
                                             <div class="col-md-6">
 
                                                 @if (session('branch_access')==1)
-                                                    <label for="tp" class="form-label">Branch</label>
-                                                    <select class="form-control" id="branch" name="branch">
+                                                    <label for="branches" class="form-label">Branches</label>
+                                                    <select class="form-control select2" id="branches" name="branches[]" multiple="multiple" required>
                                                         @foreach($branch as $item)
                                                             <option value="{{$item->branch_id}}">{{$item->Name}}</option>
                                                         @endforeach
                                                     </select>
                                                 @else
-                                                    <label for="tp" class="form-label" hidden>Branch</label>
+                                                    <label for="branch" class="form-label" hidden>Branch</label>
                                                     <select class="form-control" id="branch" name="branch" hidden>
                                                         @foreach($branch as $item)
                                                             <option value="{{$item->branch_id}}">{{$item->Name}}</option>
@@ -350,9 +365,9 @@
                                             </div>
 
                                             <!-- Branch -->
-                                            <div class="form-group" hidden>
-                                                <label for="editBranch">Branch</label>
-                                                <select class="form-control" id="editBranch" name="branch">
+                                            <div class="form-group">
+                                                <label for="editBranches">Branches</label>
+                                                <select class="form-control select2" id="editBranches" name="branches[]" multiple="multiple" style="width: 100%;" data-placeholder="Select branches">
                                                     @foreach($branch as $item)
                                                         <option value="{{ $item->branch_id }}">{{ $item->Name }}</option>
                                                     @endforeach
@@ -415,6 +430,7 @@
     <script src="../JS/user.js"></script>
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 
     <!-- Bootstrap JS (make sure to include both JS and CSS for modals) -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
@@ -460,6 +476,20 @@
         }
 
         $(document).ready(function() {
+            // Initialize global select2
+            $('.select2').select2({ width: '100%' });
+
+            // Ensure Select2 inside the Edit modal renders above the modal
+            $('#editUserModal').on('shown.bs.modal', function () {
+                $('#editBranches').select2({
+                    width: '100%',
+                    dropdownParent: $('#editUserModal'),
+                    placeholder: $('#editBranches').data('placeholder') || 'Select branches'
+                });
+            });
+        });
+
+        $(document).ready(function() {
 
             $('.btn-edit').on('click', function () {
                 const userId = $(this).data('id');
@@ -479,7 +509,7 @@
                         $('#editTP').val(response.TP);
                         $('#editLendingOfficer').prop('checked', response.lending_officer == 1);
                         $('#editCollectingOfficer').prop('checked', response.collector == 1);
-                        $('#editBranch').val(response.branch_id);
+                        $('#editBranches').val(response.branches).trigger('change');
                         $('#editBranchAccess').prop('checked', response.branch_access == 1);
                         $('#editcashier').prop('checked', response.cashier == 1);
                     },
@@ -490,11 +520,70 @@
             });
 
 // Handle Edit User Form Submission
-            $('#updateUserBtn').on('click', function () {
+            $('#updateUserBtn').on('click', async function () {
                 // Gather form data
-                const formData = $('#editUserForm').serialize();
+                const userId = $('#userId').val();
+                const formData = {
+                    id: userId,
+                    epf_no: $('#editEpfNo').val(),
+                    desi: $('#editDesignation').val(),
+                    nic: $('#editNic').val(),
+                    full_name: $('#editFullName').val(),
+                    email: $('#editEmail').val(),
+                    tp: $('#editTP').val(),
+                    editLendingOfficer: $('#editLendingOfficer').is(':checked'),
+                    editCollectingOfficer: $('#editCollectingOfficer').is(':checked'),
+                    branches: $('#editBranches').val(),
+                    branch_access: $('#editBranchAccess').is(':checked'),
+                    editcashier: $('#editcashier').is(':checked'),
+                };
 
                 console.log('Form Data:', formData);  // For debugging
+
+                // 1) Mandatory check: ensure designation exists on each selected branch
+                const branches = formData.branches || [];
+                const designationName = formData.desi;
+
+                try {
+                    // Helper to check a single branch
+                    const ensureDesignationForBranch = async (branchId) => {
+                        const existsResp = await $.get('/designation/exists', { name: designationName, branch_id: branchId });
+                        if (!existsResp.exists) {
+                            const confirmCreate = await Swal.fire({
+                                title: 'Designation missing',
+                                text: `"${designationName}" does not exist in the selected branch. Do you want to create it now?`,
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonText: 'Yes, create',
+                                cancelButtonText: 'No, cancel'
+                            });
+                            if (!confirmCreate.isConfirmed) {
+                                throw new Error('Designation missing and user declined to create');
+                            }
+                            // Create the designation for that branch (clone from current session branch if available)
+                            const createResp = await $.post('/designation/create-for-branch', {
+                                name: designationName,
+                                branch_id: branchId,
+                                _token: $('meta[name="csrf-token"]').attr('content')
+                            });
+                            if (!createResp.success) {
+                                throw new Error('Failed to create designation on branch ' + branchId);
+                            }
+                        }
+                    };
+
+                    // If no branches provided, still ensure current primary (session) branch has designation
+                    if (branches.length === 0) {
+                        // We can't read session('branch_id') here, so skip. Backend keeps primary unchanged.
+                    } else {
+                        for (const b of branches) {
+                            await ensureDesignationForBranch(b);
+                        }
+                    }
+                } catch (e) {
+                    Swal.fire('Error', e.message || 'Designation validation failed', 'error');
+                    return; // Block update
+                }
 
                 Swal.fire({
                     title: 'Are you sure?',
@@ -503,7 +592,7 @@
                     showCancelButton: true,
                     confirmButtonColor: '#3085d6',
                     cancelButtonColor: '#d33',
-                    confirmButtonText: 'Yes, reset it!'
+                    confirmButtonText: 'Yes, update it!'
                 }).then((result) => {
                     if (result.isConfirmed) {
                         $.ajax({

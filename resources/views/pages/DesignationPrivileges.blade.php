@@ -51,7 +51,7 @@
                 <h2>Designation Privileges</h2>
                 <div>
                     <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#create-modal">Create Designation</button>
-                    {{-- <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#update-modal">Update Designations</button> --}}
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#view-designations-modal">View All Designations</button>
                 </div>
             </div>
             <form id="updatePermissionForm">
@@ -232,6 +232,10 @@
                 </div>
 
                 <div class="text-center mt-4">
+                    <div class="form-check d-inline-flex align-items-center me-3">
+                        <input class="form-check-input" type="checkbox" id="propagate-users">
+                        <label class="form-check-label ms-2" for="propagate-users">Also update existing users in this designation</label>
+                    </div>
                     <button class="btn btn-primary btn-lg px-5" type="button" onclick="savePrivileges(event)">Update Designation Privileges</button>
                 </div>
             </form>
@@ -309,28 +313,25 @@
         </div>
     </div>
 
-    <!-- Update Designations Modal -->
-    <div class="modal fade" id="update-modal" tabindex="-1" role="dialog" aria-labelledby="updateModalLabel" aria-hidden="true">
+    <!-- View All Designations Modal -->
+    <div class="modal fade" id="view-designations-modal" tabindex="-1" role="dialog" aria-labelledby="viewDesignationsModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4>Update Designations</h4>
+                    <h4>View All Designations</h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="card card-shadow-new border-primary">
                         <div class="card-body less-padding">
                             <div class="table-responsive">
-                                <table id="designationTable" class="table table-bordered dash-table dash-table-d table-hover">
+                                <table id="designationViewTable" class="table table-bordered dash-table dash-table-d table-hover">
                                     <thead>
                                     <tr>
                                         <th class="text-center">Designation</th>
-                                        <th class="text-center" hidden>Level</th>
-                                        <th class="text-center" hidden>Create</th>
-                                        <th class="text-center" hidden>Approve</th>
                                         <th class="text-center">Max for Create Loan</th>
                                         <th class="text-center">Max for Approve Loan</th>
-                                        <th class="text-center">Change Status</th>
+                                        <th class="text-center">Delete</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -340,34 +341,11 @@
                                     @endphp
                                     @foreach ($designation_list as $item)
                                         <tr>
-                                            <td class="align-middle text-center"><input type="text" class="form-control" data-item-id="{{ $item->idDesignation }}" id="" value="{{ $item->name }}"></td>
-                                            <td class="align-middle text-center" hidden>
-                                                <select class="form-control desi-level" data-item-id="{{ $item->idDesignation }}">
-                                                    @for ($i = 1; $i <= 10; $i++)
-                                                        <option value="{{ $i }}" @if ($i == $item->desi_level) selected @endif>{{ $i }}</option>
-                                                    @endfor
-                                                </select>
-                                            </td>
-                                            <td class="align-middle text-center" hidden>
-                                                <div class="form-check">
-                                                    <input type="checkbox" class="form-check-input loan-create" id="loan_create_{{ $item->idDesignation }}" @if ($item->loan_creat == 1) checked @endif>
-                                                    <label class="form-check-label" for="loan_create_{{ $item->idDesignation }}"></label>
-                                                </div>
-                                            </td>
-                                            <td class="align-middle text-center" hidden>
-                                                <div class="form-check">
-                                                    <input type="checkbox" class="form-check-input loan-approve" id="loan_approve_{{ $item->idDesignation }}" @if ($item->loan_issue == 1) checked @endif>
-                                                    <label class="form-check-label" for="loan_approve_{{ $item->idDesignation }}"></label>
-                                                </div>
-                                            </td>
+                                            <td class="align-middle text-center">{{ $item->name }}</td>
+                                            <td class="align-middle text-center">{{ number_format($item->max_create_amount, 2) }}</td>
+                                            <td class="align-middle text-center">{{ number_format($item->max_issue_amount, 2) }}</td>
                                             <td class="align-middle text-center">
-                                                <input type="text" class="form-control max-create-amount" data-item-id="{{ $item->idDesignation }}" value="{{ number_format($item->max_create_amount, 2, '.', '') }}">
-                                            </td>
-                                            <td class="align-middle text-center">
-                                                <input type="text" class="form-control max-issue-amount" data-item-id="{{ $item->idDesignation }}" value="{{ number_format($item->max_issue_amount, 2, '.', '') }}">
-                                            </td>
-                                            <td class="align-middle text-center">
-                                                <button type="button" class="btn btn-warning btn-update" data-item-id="{{ $item->idDesignation }}">Update</button>
+                                                <button type="button" class="btn btn-danger btn-sm btn-delete-designation" data-id="{{ $item->idDesignation }}" data-name="{{ $item->name }}">Delete</button>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -395,8 +373,11 @@
                 $('.sub-topic-wrapper').toggle(isChecked);
             });
 
-            // Toggle each sub-topic group when main topic is checked
-            $('.access_module').change(function () {
+            // Toggle each sub-topic group when main topic is checked (only for user interactions, not programmatic)
+            $('.access_module').on('change', function (e) {
+                // Skip if this change was triggered programmatically during load
+                if (e.originalEvent === undefined) return;
+                
                 var key = $(this).data('key');
                 var $target = $(`.sub-topic-wrapper[data-wrapper="${key}"]`);
                 if ($target.length) {
@@ -404,6 +385,8 @@
                         $target.slideDown();
                     } else {
                         $target.slideUp();
+                        // Also uncheck all sub-permissions when main permission is unchecked
+                        $target.find('.access_module').prop('checked', false);
                     }
                 }
             });
@@ -436,6 +419,57 @@
             if (typeof decimalFormat === 'function') {
                 decimalFormat(x);
             }
+
+            // Handle designation deletion
+            $('.btn-delete-designation').click(function() {
+                var designationId = $(this).data('id');
+                var designationName = $(this).data('name');
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: `Do you want to delete "${designationName}" designation? This action cannot be undone!`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            method: 'POST',
+                            url: '/designation/delete',
+                            headers: {
+                                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                            },
+                            data: {
+                                id: designationId
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        position: "center",
+                                        icon: "success",
+                                        title: "Successfully deleted!",
+                                    }).then(function () {
+                                        window.location.reload();
+                                    });
+                                } else {
+                                    Swal.fire('Error', response.message || 'Failed to delete designation', 'error');
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                console.error('Error deleting designation:', error);
+                                let errorMessage = 'Something went wrong!';
+                                if (xhr.responseJSON && xhr.responseJSON.message) {
+                                    errorMessage = xhr.responseJSON.message;
+                                }
+                                Swal.fire('Error', errorMessage, 'error');
+                            }
+                        });
+                    }
+                });
+            });
 
             $('.btn-update').click(function() {
                 var itemId = $(this).data('item-id');
