@@ -360,6 +360,7 @@
                                     <th scope="col">Total Paid Penalty</th>
                                     <th scope="col">Total Penalty Balance</th>
                                     <th scope="col">Capital Balance</th>
+                                    <th scope="col">Interest Balance</th>
                                     <th scope="col">Total Outstanding</th>
                                     <th scope="col">Loan Maturity Date</th>
                                     <th>Loan Status</th>
@@ -376,6 +377,7 @@
                                     <td>{{ number_format($Panalty_Amount-$Panalty_BalanceSum, 2, '.', ',') }}</td>
                                     <td>{{ number_format($Panalty_BalanceSum, 2, '.', ',') }}</td>
                                     <td>{{ number_format($loan->capital_balance, 2, '.', ',') }}</td>
+                                    <td>{{ number_format($loan->installment_balance, 2, '.', ',') }}</td>
                                     <td>{{ number_format($loan->Total_Loan_Amount-($total_paid_amount-$savingBalanceSum)+$Panalty_BalanceSum+($Panalty_Amount-$Panalty_BalanceSum), 2, '.', ',') }}</td>
                                     <td>{{ $installments->last()->Installment_Date }}</td>
                                     <td style="color:
@@ -482,6 +484,10 @@
                                         <tr>
                                             <td style="text-align: left"><strong>Capital Balance</strong></td>
                                             <td style="text-align: left">{{ $loan->capital_balance }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="text-align: left"><strong>Interest Balance</strong></td>
+                                            <td style="text-align: left">{{ $loan->installment_balance }}</td>
                                         </tr>
 
                                         <tr>
