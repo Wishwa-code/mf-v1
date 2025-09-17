@@ -18,6 +18,16 @@
             background-color: #1A2942 !important;
             color: white !important;
         }
+    /* spacing for config rows */
+    #fund-request-col-list .col-12 + .col-12,
+    #disbursement-col-list .col-12 + .col-12 { margin-top: 6px; }
+        /* highlight last moved item */
+        #fund-request-col-list .config-moved > .d-flex,
+        #disbursement-col-list .config-moved > .d-flex {
+            background-color: #f1f3f5; /* light gray */
+            border-color: #aeb4ba !important;
+            transition: background-color .2s ease, border-color .2s ease;
+        }
     </style>
 @endsection
 
@@ -859,13 +869,44 @@
                 {k:'user',l:'User'},
                 {k:'status',l:'Status'}
             ];
-            const activeSet = new Set(currentFundRequestColumns.length ? currentFundRequestColumns : getDefaultFundRequestColumns());
-            allDefs.forEach(d=>{ const div=document.createElement('div'); div.className='col-6'; div.innerHTML=`<div class="form-check"><input class="form-check-input" type="checkbox" value="${d.k}" id="fr_${d.k}" ${activeSet.has(d.k)?'checked':''}><label class="form-check-label" for="fr_${d.k}">${d.l}</label></div>`; holder.appendChild(div); });
+            const activeOrder = currentFundRequestColumns.length ? currentFundRequestColumns : getDefaultFundRequestColumns();
+            const activeSet = new Set(activeOrder);
+            // sort so selected come first in saved order
+            const byKey = Object.fromEntries(allDefs.map(x=>[x.k,x]));
+            const ordered = [];
+            activeOrder.forEach(k=>{ if(byKey[k]) { ordered.push(byKey[k]); delete byKey[k]; } });
+            allDefs.forEach(x=>{ if(byKey[x.k]) ordered.push(x); });
+
+            // build items with up/down arrows
+            ordered.forEach((d)=>{
+                const div=document.createElement('div');
+                div.className='col-12';
+                div.id = `fr_item_${d.k}`;
+                div.innerHTML = `
+                    <div class="d-flex align-items-center justify-content-between border rounded p-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="${d.k}" id="fr_${d.k}" ${activeSet.has(d.k)?'checked':''}>
+                            <label class="form-check-label" for="fr_${d.k}">${d.l}</label>
+                        </div>
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Reorder">
+                            <button type="button" class="btn btn-outline-secondary" title="Move up" onclick="moveConfigItemUp('fund-request-col-list','fr_item_${d.k}')"><i class="bi bi-arrow-up"></i></button>
+                            <button type="button" class="btn btn-outline-secondary" title="Move down" onclick="moveConfigItemDown('fund-request-col-list','fr_item_${d.k}')"><i class="bi bi-arrow-down"></i></button>
+                        </div>
+                    </div>`;
+                holder.appendChild(div);
+            });
             new bootstrap.Modal(document.getElementById('fundRequestConfigModal')).show();
         }
         function saveFundRequestConfig(){
-            const checks = document.querySelectorAll('#fund-request-col-list input[type=checkbox]');
-            const selectedColumns = Array.from(checks).filter(c=>c.checked).map(c=>c.value);
+            // read in DOM order and only keep checked
+            const container = document.getElementById('fund-request-col-list');
+            const items = container ? Array.from(container.children) : [];
+            const selectedColumns = items
+                .map(div => {
+                    const input = div.querySelector('input[type=checkbox]');
+                    return input && input.checked ? input.value : null;
+                })
+                .filter(Boolean);
             
             if (selectedColumns.length === 0) {
                 Swal.fire("Warning", "Please select at least one column.", "warning");
@@ -911,18 +952,42 @@
                 {k:'user',l:'User'},
                 {k:'status',l:'Status'}
             ]; 
-            const active=new Set(currentDisbursementColumns.length ? currentDisbursementColumns : getDefaultDisbursementColumns()); 
-            defs.forEach(d=>{ 
+            const activeOrder = currentDisbursementColumns.length ? currentDisbursementColumns : getDefaultDisbursementColumns();
+            const active = new Set(activeOrder);
+            const byKey = Object.fromEntries(defs.map(x=>[x.k,x]));
+            const ordered = [];
+            activeOrder.forEach(k=>{ if(byKey[k]) { ordered.push(byKey[k]); delete byKey[k]; } });
+            defs.forEach(x=>{ if(byKey[x.k]) ordered.push(x); });
+
+            ordered.forEach(d=>{ 
                 const div=document.createElement('div'); 
-                div.className='col-6'; 
-                div.innerHTML=`<div class="form-check"><input class="form-check-input" type="checkbox" value="${d.k}" id="ds_${d.k}" ${active.has(d.k)?'checked':''}><label class="form-check-label" for="ds_${d.k}">${d.l}</label></div>`; 
+                div.className='col-12'; 
+                div.id = `ds_item_${d.k}`;
+                div.innerHTML=`
+                    <div class="d-flex align-items-center justify-content-between border rounded p-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="${d.k}" id="ds_${d.k}" ${active.has(d.k)?'checked':''}>
+                            <label class="form-check-label" for="ds_${d.k}">${d.l}</label>
+                        </div>
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Reorder">
+                            <button type="button" class="btn btn-outline-secondary" title="Move up" onclick="moveConfigItemUp('disbursement-col-list','ds_item_${d.k}')"><i class="bi bi-arrow-up"></i></button>
+                            <button type="button" class="btn btn-outline-secondary" title="Move down" onclick="moveConfigItemDown('disbursement-col-list','ds_item_${d.k}')"><i class="bi bi-arrow-down"></i></button>
+                        </div>
+                    </div>`; 
                 holder.appendChild(div);
             }); 
             new bootstrap.Modal(document.getElementById('disbursementConfigModal')).show(); 
         }
         function saveDisbursementConfig(){ 
-            const checks=document.querySelectorAll('#disbursement-col-list input[type=checkbox]'); 
-            const selectedColumns=Array.from(checks).filter(c=>c.checked).map(c=>c.value); 
+            // read in DOM order and only keep checked
+            const container = document.getElementById('disbursement-col-list');
+            const items = container ? Array.from(container.children) : [];
+            const selectedColumns = items
+                .map(div => {
+                    const input = div.querySelector('input[type=checkbox]');
+                    return input && input.checked ? input.value : null;
+                })
+                .filter(Boolean);
             
             if (selectedColumns.length === 0) {
                 Swal.fire("Warning", "Please select at least one column.", "warning");
@@ -1088,6 +1153,30 @@
                 },
                 error:()=> console.error('Error loading bank details')
             });
+        }
+
+        // Reorder helpers for config modals
+        function moveConfigItemUp(containerId, itemId){
+            const container = document.getElementById(containerId);
+            const item = document.getElementById(itemId);
+            if(!container || !item) return;
+            const prev = item.previousElementSibling;
+            if(prev) container.insertBefore(item, prev);
+            // highlight last moved
+            Array.from(container.children).forEach(c=>c.classList.remove('config-moved'));
+            item.classList.add('config-moved');
+            item.scrollIntoView({block:'nearest', behavior:'smooth'});
+        }
+        function moveConfigItemDown(containerId, itemId){
+            const container = document.getElementById(containerId);
+            const item = document.getElementById(itemId);
+            if(!container || !item) return;
+            const next = item.nextElementSibling;
+            if(next) container.insertBefore(next, item);
+            // highlight last moved
+            Array.from(container.children).forEach(c=>c.classList.remove('config-moved'));
+            item.classList.add('config-moved');
+            item.scrollIntoView({block:'nearest', behavior:'smooth'});
         }
 
 

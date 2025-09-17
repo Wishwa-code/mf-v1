@@ -545,7 +545,7 @@ $banner = DB::select($query);
                 'reports','main_reports_dashboard','prediction_report', 'loan_disbursement_performance', 'payment_detail_report', 'full_loan_detail', 'loan_summary',
                 'par_monthly', 'par_weekly', 'loan_status', 'cashflow_accumulated', 'cashflow_monthly', 'profit_loss', 'balance_sheet',
                 'trial_balance', 'daily_collection_sheet', 'center_collection_detail', 'center_collection_summary', 'route_collections',
-                'repayment_sheet_01', 'repayment_sheet_02', 'repayment_sheet_03', 'repayment_sheet_04', 'repayment_sheet_05','repayment_sheet_06','repayment_sheet_07','repayment_sheet_08', 'other_charges_report',
+                'repayment_sheet_01', 'repayment_sheet_02', 'repayment_sheet_03', 'repayment_sheet_04', 'repayment_sheet_05','repayment_sheet_06','repayment_sheet_07','repayment_sheet_08','repayment_sheet_09', 'other_charges_report',
                 'center_dashboard', 'repayment_summary', 'savings_report', 'arrears_report', 'arrears_overview', 'datewise_cashflow',
                 'loan_detail_report', 'collector_report', 'sms_history', 'customer_detail_report', 'officer_customer_detail', 'guardian_detail_report'
             ]
@@ -646,8 +646,23 @@ $banner = DB::select($query);
                     <h2 id="day">{{ date('l') }}</h2>
                 </div>
         <?php
+            // All active branches (used for super users)
             $query = "SELECT * FROM branch where status=1";
             $branch = DB::select($query);
+
+            // Allowed branches for the current user (used for non-super users)
+            $allowedBranches = collect([]);
+            if (session('branch_access') !== 1) {
+                $userId = session('userid');
+                if ($userId) {
+                    $allowedBranches = \Illuminate\Support\Facades\DB::table('user_has_branches')
+                        ->join('branch', 'user_has_branches.branch_id', '=', 'branch.branch_id')
+                        ->where('user_has_branches.user_id', $userId)
+                        ->where('branch.status', 1)
+                        ->select('branch.branch_id', 'branch.Name')
+                        ->get();
+                }
+            }
         ?>
         <div class="date-time">
             @if(session('branch_access')===1)
@@ -684,7 +699,37 @@ $banner = DB::select($query);
                     </div>
                 </div>
             @else
-                <h2 id="date">{{ session('branch_name').' Branch' }}</h2>
+                @if(isset($allowedBranches) && $allowedBranches->count() > 1)
+                    <div class="modern-branch-switcher">
+                        <div class="dropdown">
+                            <button type="button" class="btn modern-dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="ri-building-2-line me-2"></i>
+                                <span class="branch-text">
+                                    @php $currentName = optional($allowedBranches->firstWhere('branch_id', session('branch_id')))->Name; @endphp
+                                    {{ ($currentName ?? session('branch_name')).' Branch' }}
+                                </span>
+                                <i class="ri-arrow-down-s-line ms-2 dropdown-arrow"></i>
+                            </button>
+                            <ul class="dropdown-menu modern-dropdown-menu">
+                                @foreach($allowedBranches as $item)
+                                    <li>
+                                        <a class="dropdown-item modern-dropdown-item branch-option" href="#"
+                                           data-branch-id="{{ $item->branch_id }}"
+                                           data-branch-name="{{ $item->Name }} Branch">
+                                            <i class="ri-building-2-line me-2"></i>
+                                            {{ $item->Name }} Branch
+                                            @if(session('branch_id') == $item->branch_id)
+                                                <i class="ri-check-line ms-auto text-success"></i>
+                                            @endif
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                @else
+                    <h2 id="date">{{ session('branch_name').' Branch' }}</h2>
+                @endif
             @endif
         </div>
         <ul class="topbar-menu d-flex align-items-center gap-3">
@@ -1257,6 +1302,9 @@ $banner = DB::select($query);
                                                 <a href="/privileges">User Privileges</a>
                                             </li>
                                         @endif
+                                        <li>
+                                            <a href="/designation-privileges">Designation Privileges</a>
+                                        </li>
                                     </ul>
                                 </div>
                             </li>
@@ -1441,6 +1489,13 @@ $banner = DB::select($query);
                                                                 <a href="/dailyreport">Repayment Sheet 08</a>
                                                             </li>
                                                         @endif
+
+                                                        {{-- TEMPORARY: Show Repayment Sheet 09 without permission check for testing --}}
+                                                        {{-- @if(optional($privilege)->repayment_sheet_09== 1) --}}
+                                                            <li>
+                                                                <a href="/repaymntseet9">Repayment Sheet 09</a>
+                                                            </li>
+                                                        {{-- @endif --}}
                                                 </ul>
                                             </div>
                                         </li>
@@ -1521,6 +1576,33 @@ $banner = DB::select($query);
 </div>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+<script>
+    // Handle branch switching for both super and non-super users
+    $(document).on('click', '.branch-option', function (e) {
+        e.preventDefault();
+        const branchId = $(this).data('branch-id');
+        const branchName = $(this).data('branch-name');
+
+        $.ajax({
+            url: '/update-branch',
+            method: 'POST',
+            data: {
+                branch_id: branchId,
+                _token: $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function () {
+                // Update UI and reload to apply scoping
+                $('.branch-text').text(branchName);
+                window.location.reload();
+            },
+            error: function (xhr) {
+                const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Unauthorized or error updating branch';
+                Swal.fire('Error', msg, 'error');
+            }
+        });
+    });
+</script>
 
 <script>
     // Function to update the Grand Total

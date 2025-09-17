@@ -52,10 +52,22 @@ Route::get('/privileges', function () {
 Route::post('/privileges', [UserController::class, 'privileges'])->name('privileges.save');
 Route::get('/privileges/load/{id}', [UserController::class, 'showprivileges'])->name('privileges.load');
 
+Route::get('/designation-privileges', function () {
+    return view('pages.DesignationPrivileges');
+});
+
+// designation privileges JSON
+Route::post('/designation/privileges/save', [UserController::class, 'saveDesignationPrivileges']);
+Route::get('/designation/privileges/load/{id}', [UserController::class, 'loadDesignationPrivileges']);
+
+// designation utility
+Route::get('/designation/exists', [UserController::class, 'designationExists']);
+Route::post('/designation/create-for-branch', [UserController::class, 'createDesignationForBranch']);
 
 //designation
 Route::post('/user/designation','\App\Http\Controllers\UserController@designation')->name('privileges.designation');
 Route::post('/update-designation','\App\Http\Controllers\UserController@updatedesignation')->name('privileges.updatedesignation');
+Route::post('/designation/delete','\App\Http\Controllers\UserController@deleteDesignation')->name('designation.delete');
 
 
 //Group
@@ -448,6 +460,9 @@ Route::post('/transaction', [TransactionController::class, 'store'])->name('tran
 Route::get('/daily_repayment_sheet', [TransactionController::class, 'create'])->name('transaction.handle');
 Route::post('/daily_repayment_sheet_filter', [TransactionController::class, 'create'])->name('transaction.daily_repayment_sheet_filter');
 Route::get('/get-groups-by-center/{center_id}', [TransactionController::class, 'getGroupsByCenter']);
+
+Route::get('/repaymntseet9', [TransactionController::class, 'repaymntseet9'])->name('transaction.repaymntseet9');
+Route::post('/repaymntseet9_filter', [TransactionController::class, 'repaymntseet9'])->name('transaction.repaymntseet9_filter');
 
 Route::get('/daily_repayment_sheet_finwin', [TransactionController::class, 'create_for_finwin'])->name('transaction.finwin');
 Route::post('/daily_repayment_sheet_filter_finwin', [TransactionController::class, 'create_for_finwin'])->name('transaction.daily_repayment_sheet_filter_finwin');

@@ -146,6 +146,137 @@ class TransactionController extends Controller
         return view('pages.DailyRepayment', compact('center','group', 'grouped_loans','center_details','group_details','name_mode'));
     }
 
+    /**
+     * Repayment Sheet 9 - Copy of create method
+     */
+    public function repaymntseet9(Request $request)
+    {
+        $center = tableWithBranch('center')->get();
+        $group = tableWithBranch('customer_group')->get();
+
+        // Check if $center is empty
+        if ($center->isEmpty()) {
+            // Handle the case when the center table has no values
+            $center_details = null; // Or any default value you want to assign
+            $group_details = null; // Or any default value you want to assign
+            $grouped_loans = array(); // Or any default value you want to assign
+            // Read app setting for how to display member names (same as dailyreport)
+            $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
+            // Read app setting for empty rows per group on Repayment Sheet 09
+            $empty_row_count = (int) (DB::table('app_settings')->where('key', 'empty_row_count')->value('value') ?? 5);
+            return view('pages.repaymntseet9', compact('center', 'grouped_loans','center_details','name_mode','empty_row_count'));
+        } else {
+            // If $center is not empty, set the default center value
+            $group_details = $request->group_details ?? $group[0]->idCustomer_Group;
+            $center_details = $request->center_details ?? $center[0]->idCenter;
+        }
+
+        // Loan Query
+        $loanQuery = tableWithBranch('installments','installments')
+            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
+                     FROM group_has_customer
+                     LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
+                'customer.idCustomer', '=', 'subquery.cus_id')
+            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
+            ->where('customer_loan.Status', '=', '0')
+            ->select(
+                'customer.idCustomer',
+                DB::raw('IFNULL(center.No, "-") as center_no'),
+                'customer.First_Name as customer_name',
+                'customer.Last_Name as customer_lastname',
+                'customer.cus_number',
+                'customer.Nic as NIC',
+                'customer.Contact_No as Contact_No',
+                'customer_loan.Loan_No as Loan_No',
+                'customer_loan.Amount as Loan_Amount',
+                'customer_loan.idCustomer_Loan as idCustomer_Loan',
+                'customer_loan.type as type',
+                'customer_loan.Installment_Count as Installment_Count',
+                'customer_loan.capital_balance as capital_balance',
+                'customer_loan.Installment_Amount as Installment_Amount',
+                'customer_loan.Vehicle_No as Vehicle_No',
+                DB::raw('COUNT(installments.idInstallments) as Installment_Count'),
+                DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
+                DB::raw('ROUND(SUM(installments.Total_Balance), 2) as Total_Balance'),
+                DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date <= CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as Total_Balance_until'),
+                DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date = CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as Today_installment'),
+                DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date < CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as arrease')
+            )
+            ->groupBy(
+                'customer.idCustomer',
+                'center.No',
+                'customer.First_Name',
+                'customer.Last_Name',
+                'customer.cus_number',
+                'customer.Contact_No',
+                'customer.Nic',
+                'customer_loan.Loan_No',
+                'customer_loan.Amount',
+                'customer_loan.type',
+                'customer_loan.Installment_Count',
+                'customer_loan.Vehicle_No',
+                'customer_loan.idCustomer_Loan',
+                'customer_loan.capital_balance',
+                'customer_loan.Installment_Amount',
+                'subquery.group_name'
+            );
+
+        // Filter by center, group, and customer if provided
+        if ($center_details != '0') {
+            $loanQuery->where('center.idCenter', '=', $center_details);
+        }
+
+        if ($group_details != '0') {
+            $loanQuery->where('customer_group.idCustomer_Group', '=', $group_details);
+        }
+
+        $loan = $loanQuery->get();
+
+        // Group data by 'group_name'
+        $grouped_loans = $loan->groupBy('group_name')->sortKeysUsing(function($a, $b) {
+            // Extract numbers from group names like "Group No: 1"
+            preg_match('/\d+/', $a, $matchA);
+            preg_match('/\d+/', $b, $matchB);
+
+            $numA = isset($matchA[0]) ? (int)$matchA[0] : 0;
+            $numB = isset($matchB[0]) ? (int)$matchB[0] : 0;
+
+            return $numA <=> $numB;
+        });
+
+        // Convert the grouped loans array to an array (if not already)
+        $grouped_loans = is_array($grouped_loans) ? $grouped_loans : $grouped_loans->toArray();
+
+        // Sort the groups based on the numeric part of the key
+        uksort($grouped_loans, function ($a, $b) {
+            // Extract the numeric portion of the group names
+            preg_match('/\d+/', $a, $matchesA);
+            preg_match('/\d+/', $b, $matchesB);
+
+            $numA = isset($matchesA[0]) ? (int)$matchesA[0] : 0;
+            $numB = isset($matchesB[0]) ? (int)$matchesB[0] : 0;
+
+            return $numA <=> $numB; // Ascending order
+        });
+
+        // Sort customers within each group by customer number
+        foreach ($grouped_loans as $groupName => $customers) {
+            $grouped_loans[$groupName] = collect($customers)->sortBy('cus_number')->values()->all();
+        }
+
+        // Read app setting for how to display member names (same as dailyreport)
+        $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
+    // Read app setting for empty rows per group on Repayment Sheet 09
+    $empty_row_count = (int) (DB::table('app_settings')->where('key', 'empty_row_count')->value('value') ?? 5);
+
+    return view('pages.repaymntseet9', compact('center','group', 'grouped_loans','center_details','group_details','name_mode','empty_row_count'));
+    }
+
 
     public function create_for_finwin(Request $request)
     {
