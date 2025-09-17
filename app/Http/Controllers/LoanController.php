@@ -991,6 +991,8 @@ class LoanController extends Controller
             return redirect('/pendingloan');
         }
 
+        $loan_saving_balance=tableWithBranch('Customer_Saving_Accounts')->where('Loan_Id','=',$id)->value('Balance');
+
 
         // Pass the data to the view with compact and handle potential nulls
         return view('pages.LoanView', compact(
@@ -1015,7 +1017,8 @@ class LoanController extends Controller
             'Customer_Bank',
             'savingBalanceSum',
             'Saving_amountSum',
-            'payment_delete_status'
+            'payment_delete_status',
+            'loan_saving_balance'
         ));
     }
 
