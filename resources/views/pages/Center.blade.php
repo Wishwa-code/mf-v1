@@ -48,7 +48,7 @@
 
                             @foreach($userData as $item)
                                 <tr class="style-tr">
-                                    <td>{{$item->name}}</td>
+                                    <td>{{$item->name ?? '-'}}</td>
                                     <td>{{$item->No}}</td>
                                     <td>{{$item->Name}}</td>
                                     <td>{{$item->Contact_no}}</td>

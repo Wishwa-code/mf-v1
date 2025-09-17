@@ -1347,12 +1347,12 @@ class LoanController extends Controller
         if ($reschedule_type=='1'){
             $loan = Loan::find($loan_id);  // Find the loan by its ID
 // Step 2: Prepare the data to insert into the `reschedule` table
-            $rescheduleData = $loan->toArray(); // Convert the loan model to an array
+//            $rescheduleData = $loan->toArray(); // Convert the loan model to an array
+//
+//            Reschedule::create($rescheduleData);  // Assuming the `reschedule` table allows mass assignment
 
-            Reschedule::create($rescheduleData);  // Assuming the `reschedule` table allows mass assignment
 
 
-            $loan->Loan_Category_idLoan_Category = $request->loan_cate_id;
             $loan->Customer_idCustomer = $request->customer_id;
             $loan->Leasing_type = $request->lease_type;
             $loan->Vehicle_No = $request->vehicle_num;

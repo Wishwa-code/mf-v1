@@ -18,7 +18,7 @@ class CenterController extends Controller
     public function index()
     {
         $userData = tableWithBranch('center','center')
-            ->join('route', 'center.route_id', '=', 'route.id_route')
+            ->leftjoin('route', 'center.route_id', '=', 'route.id_route')
             ->get();
         $route = tableWithBranch('route')->get();
 
