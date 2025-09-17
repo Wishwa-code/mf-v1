@@ -497,19 +497,20 @@
                                     </div>
                                 </div>
 
-                                {{-- <div class="col-lg-3">
+                                <div class="col-lg-3">
                                     <div class="mb-3">
                                         <label for="route_filter" class="form-label">Route</label>
                                         <select class="form-control select2" id="route_filter" name="route_filter">
-                                            <option value="">All</option>
+                                            <option value="" {{ (!isset($route_filter) || $route_filter === '' || $route_filter === null) ? 'selected' : '' }}>-- Select Route --</option>
+                                            <option value="" {{ (isset($route_filter) && $route_filter === '') ? 'selected' : '' }}>All</option>
                                             @foreach(($routes ?? []) as $route)
-                                                <option value="{{ $route->id_route }}" {{ ($route_filter ?? '') == $route->id_route ? 'selected' : '' }}>
+                                                <option value="{{ $route->id_route }}" {{ (isset($route_filter) && $route_filter !== '' && $route_filter !== null && $route->id_route == $route_filter) ? 'selected' : '' }}>
                                                     {{ $route->name }}
                                                 </option>
                                             @endforeach
                                         </select>
                                     </div>
-                                </div> --}}
+                                </div>
 
                                 <div class="col-lg-3">
                                     <div class="mb-3">
