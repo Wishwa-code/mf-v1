@@ -434,7 +434,7 @@
                                                 - {{ $Loan_Category->Name }}</td>
                                         </tr>
                                         <tr>
-                                            <td style="text-align: left"><strong>Date & Time</strong></td>
+                                            <td style="text-align: left"><strong>Created Date & Time</strong></td>
                                             <td style="text-align: left">{{ $loan->Date_Time }}</td>
                                         </tr>
                                         <tr>
