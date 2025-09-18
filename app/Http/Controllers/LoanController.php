@@ -333,7 +333,7 @@ class LoanController extends Controller
 
         $loan->save();
 
-        $id = $loan->id;
+        $id = $loan->idCustomer_Loan;
 
 
         $product = tableWithBranch('loan_category')->where('idLoan_Category', '=' ,$request->loan_cate_id)->first();
