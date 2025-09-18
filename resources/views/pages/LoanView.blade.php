@@ -383,7 +383,7 @@
                                     <td style="color:
     {{ $loan->Status == -1 ? 'orange' : ($loan->Status == 0 ? 'red' : 'green') }};">
                                         <strong>
-                                            {{ $loan->Status == -1 ? 'Pending Loan' : ($loan->Status == 0 ? 'Ongoing Loan' : 'Settled') }}
+                                            {{ $loan->Status == -1 ? 'Pending' : ($loan->Status == 0 ? 'Ongoing' : 'Settled') }}
                                         </strong>
                                     </td>
 
@@ -439,7 +439,7 @@
                                         </tr>
                                         <tr>
                                             <td style="text-align: left"><strong>Disbursement Date</strong></td>
-                                            <td style="text-align: left">{{ $loan->Date_Time }}</td>
+                                            <td style="text-align: left">{{ $loan->Status != -1 ? $loan->Date_Time : '-' }}</td>
                                         </tr>
                                         <tr>
                                             <td style="text-align: left"><strong>Amount</strong></td>
@@ -1571,7 +1571,7 @@
                                     <td>{{ $installments->isNotEmpty() ? $installments->last()->Installment_Date : '-' }}</td>
                                     <td style="color: {{ $loan->Balance_Amount > 0 ? 'red' : 'green' }};">
                                         <Strong>
-                                            {{ $loan->Balance_Amount > 0 ? 'Ongoing Loan' : 'Settled' }}
+                                            {{ $loan->Balance_Amount > 0 ? 'Ongoing' : 'Settled' }}
                             </Strong></td>
 
                     </tr>
