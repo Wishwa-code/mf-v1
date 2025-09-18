@@ -379,7 +379,7 @@
                                     <td>{{ number_format($loan->capital_balance, 2, '.', ',') }}</td>
                                     <td>{{ number_format($loan->installment_balance, 2, '.', ',') }}</td>
                                     <td>{{ number_format($loan->Total_Loan_Amount-($total_paid_amount-$savingBalanceSum)+$Panalty_BalanceSum+($Panalty_Amount-$Panalty_BalanceSum), 2, '.', ',') }}</td>
-                                    <td>{{ $installments->last()->Installment_Date }}</td>
+                                    <td>{{ $installments->isNotEmpty() ? $installments->last()->Installment_Date : '-' }}</td>
                                     <td style="color:
     {{ $loan->Status == -1 ? 'orange' : ($loan->Status == 0 ? 'red' : 'green') }};">
                                         <strong>
@@ -1564,7 +1564,7 @@
                                     <td>{{ number_format($total_paid_amount, 2, '.', ',') }}</td>
                                     <td>{{ number_format($loan->Balance_Amount, 2, '.', ',') }}</td>
                                     <td>{{ number_format($loan->capital_balance, 2, '.', ',') }}</td>
-                                    <td>{{ $installments->last()->Installment_Date }}</td>
+                                    <td>{{ $installments->isNotEmpty() ? $installments->last()->Installment_Date : '-' }}</td>
                                     <td style="color: {{ $loan->Balance_Amount > 0 ? 'red' : 'green' }};">
                                         <Strong>
                                             {{ $loan->Balance_Amount > 0 ? 'Ongoing Loan' : 'Settled' }}
