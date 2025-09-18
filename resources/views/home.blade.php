@@ -111,7 +111,7 @@
                         ['title' => 'Today Installment', 'value' => $todayinstallment, 'color' => '#1e3c72'],
                         ['title' => 'Total Arrears', 'value' => $arrease, 'color' => '#ef473a'],
                         ['title' => 'Cheque Payments', 'value' => $checqueamount, 'color' => '#3498db'],
-                        ['title' => 'Total Outstanding', 'value' => ($todayinstallment + $checqueamount + $arrease), 'color' => '#0072ff'],
+                        ['title' => 'Due Outstanding (Installment Due + Arrears)', 'value' => ($todayinstallment + $arrease), 'color' => '#0072ff'],
                         ['title' => 'Today Collected Amount', 'value' => $todaycollected, 'color' => '#ef803a'],
 //                        ['title' => 'Total Outstanding', 'value' => ($todayinstallment + $checqueamount + $arrease), 'color' => '#01503c'],
                     ];
