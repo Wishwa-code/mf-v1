@@ -435,6 +435,10 @@
                                         </tr>
                                         <tr>
                                             <td style="text-align: left"><strong>Created Date & Time</strong></td>
+                                            <td style="text-align: left">{{ $loan->created_at }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="text-align: left"><strong>Disbursement Date</strong></td>
                                             <td style="text-align: left">{{ $loan->Date_Time }}</td>
                                         </tr>
                                         <tr>
