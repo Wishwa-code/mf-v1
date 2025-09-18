@@ -66,7 +66,9 @@ class LoanController extends Controller
 
         $user_id = (int)session('userid');
 
-        $loan = new Loan();
+    $loan = new Loan();
+    // Set true creation time (do not rely on DB default because column was added later and must stay NULL for old records)
+    $loan->created_at = Carbon::now();
 
         $date = Carbon::now()->toDateString();
 
