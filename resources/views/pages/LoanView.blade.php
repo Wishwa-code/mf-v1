@@ -426,7 +426,13 @@
 
                                         <tr>
                                             <td style="text-align: left"><strong>Loan Number</strong></td>
-                                            <td style="text-align: left">{{ $loan->Loan_No }}</td>
+                                            <td style="text-align:left">
+                                                {{ $loan->Loan_No }}
+                                                @if ($exists)
+                                                    <span class="badge bg-danger ms-2">Rescheduled Loan</span>
+                                                @endif
+                                            </td>
+
                                         </tr>
                                         <tr>
                                             <td style="text-align: left"><strong>Product Name</strong></td>
