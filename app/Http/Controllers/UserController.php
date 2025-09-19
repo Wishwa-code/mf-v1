@@ -357,6 +357,14 @@ class UserController extends Controller
         $deleted_loan_Count = tableWithBranch('customer_loan')->where('Status','=','-2')->count();
         $setteled_loan_current_Amount = tableWithBranch('customer_loan')->where('Status','=','1')->sum('Amount');
         $portfolio = tableWithBranch('installments')->sum('capital_balance');
+        
+        // Current month lending amount - from 1st of current month to today
+        $currentMonthStart = date('Y-m-01'); // First day of current month
+        $today = date('Y-m-d');
+        $currentMonthLending = tableWithBranch('installments')
+            ->whereBetween('Installment_Date', [$currentMonthStart, $today])
+            ->sum('capital_balance');
+            
         $todayinstallment = tableWithBranch('customer_loan', 'customer_loan')
             ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
             ->where('installments.Installment_Date', '=', date('Y-m-d'))
@@ -515,7 +523,7 @@ class UserController extends Controller
         }
 
 
-        return view('home',compact( 'portfolio','profit','todaycollected', 'profitTarget','weeklyComparison','deleted_loan_Count','all_loan','monthlyData','dashboard','checqueamount','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
+        return view('home',compact( 'currentMonthLending','portfolio','profit','todaycollected', 'profitTarget','weeklyComparison','deleted_loan_Count','all_loan','monthlyData','dashboard','checqueamount','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
     }
 
     public function logout()

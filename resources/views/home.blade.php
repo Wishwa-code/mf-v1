@@ -84,6 +84,7 @@
                         ['title' => 'Current Loans', 'icon' => 'ri-wallet-2-line', 'value' => $customer_loan_current_Amount, 'count' => $customer_loan_current_Count, 'link' => '/payment_step_1', 'bg' => '#43cea2', 'prefix' => 'Rs.'],
                         ['title' => 'Settled Loans', 'icon' => 'ri-file-paper-2-fill', 'value' => $setteled_loan_current_Amount, 'count' => $setteled_loan_Count, 'link' => '/showsettleloan', 'bg' => '#f7971e', 'prefix' => 'Rs.'],
                         ['title' => 'Portfolio', 'icon' => 'ri-pie-chart-line', 'value' => $portfolio, 'count' => '', 'link' => '', 'bg' => '#9b59b6', 'prefix' => 'Rs.'],
+                        ['title' => 'Current Month Lending', 'icon' => 'ri-calendar-line', 'value' => $currentMonthLending, 'count' => '', 'link' => '', 'bg' => '#1abc9c', 'prefix' => 'Rs.'],
                         ['title' => 'Customers', 'icon' => 'ri-group-2-line', 'value' => $customerCount, 'count' => '', 'link' => '/showcustomers', 'bg' => '#667eea', 'prefix' => ''],
                     ];
                 @endphp
@@ -299,9 +300,10 @@
                 {{ $customer_loan_current_Amount }},
                 {{ $setteled_loan_current_Amount }},
                 {{ $portfolio }},
+                {{ $currentMonthLending }},
                 {{ $customerCount }}
             ];
-            const prefixes = ['Rs. ', 'Rs. ', 'Rs. ', 'Rs. ', ''];
+            const prefixes = ['Rs. ', 'Rs. ', 'Rs. ', 'Rs. ', 'Rs. ', ''];
 
             statValues.forEach((val, i) => {
                 const numAnim = new countUp.CountUp('stat-card-' + i, val, {
