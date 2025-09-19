@@ -1087,6 +1087,7 @@ class ReportController extends Controller
 
         }, 'x')->where('rn', 1);
 
+
         // ---------- as-of END snapshot (NEW) ----------
         $endingOne = DB::query()->fromSub(function ($q) use ($end) {
 
