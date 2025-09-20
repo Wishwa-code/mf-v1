@@ -153,7 +153,7 @@ function change_status(id){
         }
     });
 }
-function view_log(id, bankName, accountName, accountNumber, todayOnly = false) {
+function view_log(id, bankName, accountName, accountNumber, todayOnly = false, startDate = null, endDate = null) {
 
     // cache last viewed account details for reuse from Blade button
     try {
@@ -162,9 +162,18 @@ function view_log(id, bankName, accountName, accountNumber, todayOnly = false) {
 
     $('#standard-modal .modal-header h4').html(`Bank Log Report - <b>${bankName} (${accountName} - ${accountNumber})</b>`);
 
+    let url = "/bank/view_log/" + id;
+    const params = [];
+    if (todayOnly) params.push("todayfilter=1");
+    if (startDate && endDate) {
+        params.push("start_date=" + encodeURIComponent(startDate));
+        params.push("end_date=" + encodeURIComponent(endDate));
+    }
+    if (params.length) url += "?" + params.join("&");
+
     $.ajax({
         type: "GET",
-        url: "/bank/view_log/" + id + (todayOnly ? "?todayfilter=1" : ""),
+        url,
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },

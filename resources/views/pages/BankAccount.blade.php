@@ -205,9 +205,18 @@
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-lg-12">
-                                <div class="d-flex mb-3">
+                                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
                                     <button class="btn btn-warning me-2" id="load_today" onclick="view_log_today()">
                                         <i class="fas fa-calendar-day"></i> Load Today Data
+                                    </button>
+                                    <div class="d-flex align-items-center me-2">
+                                        <input type="date" class="form-control" id="log_start_date" />
+                                    </div>
+                                    <div class="d-flex align-items-center me-2">
+                                        <input type="date" class="form-control" id="log_end_date" />
+                                    </div>
+                                    <button class="btn btn-info me-2" id="load_range" onclick="view_log_range()">
+                                        <i class="fas fa-calendar-alt"></i> Load Date Range
                                     </button>
                                     <button class="btn btn-success me-2" id="download_excel">
                                         <i class="fas fa-file-excel"></i> Download Excel
@@ -372,6 +381,54 @@
                 return;
             }
             view_log(lastViewedAccount.id, lastViewedAccount.bankName, lastViewedAccount.accountName, lastViewedAccount.accountNumber, true);
+        }
+
+        // Trigger loading a date range for the last viewed account
+        function view_log_range(){
+            if(!lastViewedAccount.id){
+                Swal.fire("Info", "Open a bank log first, then choose a date range", "info");
+                return;
+            }
+            const sRaw = document.getElementById('log_start_date').value.trim();
+            const eRaw = document.getElementById('log_end_date').value.trim();
+            if(!sRaw || !eRaw){
+                Swal.fire("Info", "Please select both start and end dates", "info");
+                return;
+            }
+            const sISO = normalizeDateToISO(sRaw);
+            const eISO = normalizeDateToISO(eRaw);
+            if(!sISO || !eISO){
+                Swal.fire("Error", "Please pick dates or use dd/mm/yyyy", "error");
+                return;
+            }
+            if(new Date(sISO) > new Date(eISO)){
+                Swal.fire("Error", "Start date cannot be after end date", "error");
+                return;
+            }
+            // todayOnly false, pass start/end
+            view_log(lastViewedAccount.id, lastViewedAccount.bankName, lastViewedAccount.accountName, lastViewedAccount.accountNumber, false, sISO, eISO);
+        }
+
+        // Accept both dd/mm/yyyy and yyyy-mm-dd, return yyyy-mm-dd
+        function normalizeDateToISO(input){
+            // native date input yields yyyy-mm-dd, accept directly
+            if(/^\d{4}-\d{2}-\d{2}$/.test(input)){
+                return input;
+            }
+            // Parse dd/mm/yyyy
+            const dmy = input;
+            const m = dmy.match(/^([0-2]?\d|3[01])\/(0?\d|1[0-2])\/(\d{4})$/);
+            if(!m) return null;
+            let day = m[1].padStart(2,'0');
+            let month = m[2].padStart(2,'0');
+            const year = m[3];
+            // Basic validity check using Date
+            const iso = `${year}-${month}-${day}`;
+            const d = new Date(iso);
+            if(Number.isNaN(d.getTime())) return null;
+            // Ensure no rollover (e.g., 31/02)
+            if(d.getUTCFullYear() != Number(year) || (d.getUTCMonth()+1) != Number(month) || d.getUTCDate() != Number(day)) return null;
+            return iso;
         }
 
         // Transfer Function with Validation and SweetAlert Confirmation

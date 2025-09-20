@@ -81,8 +81,15 @@ class BankController extends Controller
             ->where('Bank_Account_Id', $id)
             ->select('company_bank_has_log.*', 'company_bank_accounts.Account_No', DB::raw("COALESCE(user.Full_Name, '-') as Full_Name"));
 
-        // optional today filter; keeps existing behavior if not present
-        if ($request->has('todayfilter') && (string)$request->get('todayfilter') === '1') {
+        // Optional filters: date range takes precedence, then today filter; default is no filter
+        $start = $request->get('start_date');
+        $end = $request->get('end_date');
+        if ($start && $end) {
+            // normalize to day bounds
+            $startDT = Carbon::parse($start)->startOfDay();
+            $endDT = Carbon::parse($end)->endOfDay();
+            $query = $query->whereBetween('company_bank_has_log.Date_Time', [$startDT, $endDT]);
+        } elseif ($request->has('todayfilter') && (string)$request->get('todayfilter') === '1') {
             $todayStart = Carbon::today();
             $todayEnd = Carbon::today()->endOfDay();
             $query = $query->whereBetween('company_bank_has_log.Date_Time', [$todayStart, $todayEnd]);
