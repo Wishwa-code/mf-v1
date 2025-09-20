@@ -31,6 +31,13 @@
             border: 5px solid white;
         }
 
+        /* selected filter button gray */
+        .selected-filter {
+            background-color: #6c757d !important; /* bootstrap secondary gray */
+            color: #fff !important;
+            border-color: #6c757d !important;
+        }
+
     </style>
 @endsection
 
@@ -75,7 +82,7 @@
                                                         <td style="text-align: center">
                                                             <button type="button" class="btn btn-success" data-bs-toggle="modal"
                                                                     style="background-color: white; color: #5691FF; border:none"
-                                                                    data-bs-target="#standard-modal" onclick="view_log({{$item->Idbank}}, '{{$item->Bank_Name}}', '{{$item->Account_Name}}', '{{$item->Account_No}}')">
+                                                                    data-bs-target="#standard-modal" onclick="view_log({{$item->Idbank}}, '{{$item->Bank_Name}}', '{{$item->Account_Name}}', '{{$item->Account_No}}', true)">
                                                                 <i class="bi bi-eye fs-4"></i>
                                                             </button>
                                                             @if($collector!="1")
@@ -122,7 +129,19 @@
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-lg-12">
-                                <div class="d-flex mb-3">
+                                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                                    <button class="btn btn-warning me-2" id="load_today" onclick="view_log_today()">
+                                        <i class="fas fa-calendar-day"></i> Load Today Data
+                                    </button>
+                                    <div class="d-flex align-items-center me-2">
+                                        <input type="date" class="form-control" id="log_start_date" />
+                                    </div>
+                                    <div class="d-flex align-items-center me-2">
+                                        <input type="date" class="form-control" id="log_end_date" />
+                                    </div>
+                                    <button class="btn btn-info me-2" id="load_range" onclick="view_log_range()">
+                                        <i class="fas fa-calendar-alt"></i> Load Date Range
+                                    </button>
                                     <button class="btn btn-success me-2" id="download_excel">
                                         <i class="fas fa-file-excel"></i> Download Excel
                                     </button>
@@ -248,6 +267,44 @@
             document.getElementById("bankId").value = bankId;
             document.getElementById("transferAmount").value = "";
             maxAmount = balance; // Set max amount for validation
+        }
+
+        // Collector-side filter helpers reuse shared view_log in bank.js
+        // keep last selected account for quick reload
+        var lastViewedAccount = { id: null, bankName: '', accountName: '', accountNumber: '' };
+
+        // Wrap original view_log to remember account context when called from this page
+        const _collector_view_log = window.view_log;
+        window.view_log = function(id, bankName, accountName, accountNumber, todayOnly = false, startDate = null, endDate = null){
+            lastViewedAccount = { id, bankName, accountName, accountNumber };
+            _collector_view_log(id, bankName, accountName, accountNumber, todayOnly, startDate, endDate);
+        }
+
+        function view_log_today(){
+            if(!lastViewedAccount.id){
+                Swal.fire("Info", "Open a bank log first, then use 'Load Today Data'", "info");
+                return;
+            }
+            window.view_log(lastViewedAccount.id, lastViewedAccount.bankName, lastViewedAccount.accountName, lastViewedAccount.accountNumber, true);
+        }
+
+        function view_log_range(){
+            if(!lastViewedAccount.id){
+                Swal.fire("Info", "Open a bank log first, then choose a date range", "info");
+                return;
+            }
+            const s = document.getElementById('log_start_date').value;
+            const e = document.getElementById('log_end_date').value;
+            if(!s || !e){
+                Swal.fire("Info", "Please select both start and end dates", "info");
+                return;
+            }
+            // use same normalization as in bank.js helper (it accepts yyyy-mm-dd from date inputs)
+            if(new Date(s) > new Date(e)){
+                Swal.fire("Error", "Start date cannot be after end date", "error");
+                return;
+            }
+            window.view_log(lastViewedAccount.id, lastViewedAccount.bankName, lastViewedAccount.accountName, lastViewedAccount.accountNumber, false, s, e);
         }
 
         // Transfer Function with Validation and SweetAlert Confirmation
