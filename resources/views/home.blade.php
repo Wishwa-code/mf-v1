@@ -115,9 +115,6 @@
                         ['title' => 'Cheque Payments', 'value' => $checqueamount, 'color' => '#3498db'],
                         ['title' => 'Due Outstanding (Installment Due + Arrears)', 'value' => ($todayinstallment + $arrease), 'color' => '#0072ff'],
                         ['title' => 'Today Collected Amount', 'value' => $todaycollected, 'color' => '#ef803a'],
-                        // New dashboard cards
-                        ['title' => 'This Week Not-Paid (Count)', 'value' => $weeklyUnpaidCount, 'color' => '#8e44ad'],
-                        ['title' => 'This Week Not-Paid (Amount)', 'value' => $weeklyUnpaidAmount, 'color' => '#2c3e50'],
 //                        ['title' => 'Total Outstanding', 'value' => ($todayinstallment + $checqueamount + $arrease), 'color' => '#01503c'],
                     ];
                 @endphp
@@ -127,15 +124,34 @@
                         <div class="glass-card card text-white shadow animated-card" style="background-color: {{ $item['color'] }};">
                             <div class="card-body">
                                 <h6 class="text-uppercase">{{ $item['title'] }}</h6>
-                                @if(str_contains($item['title'], 'Count'))
-                                    <h3><span id="extra-card-{{ $i }}"></span></h3>
-                                @else
-                                    <h3>LKR <span id="extra-card-{{ $i }}"></span></h3>
-                                @endif
+                                <h3>LKR <span id="extra-card-{{ $i }}"></span></h3>
                             </div>
                         </div>
                     </div>
                 @endforeach
+
+                {{-- Combined Not-Paid Card --}}
+                <div class="col-md-4 mb-4">
+                    <div class="glass-card card text-white shadow animated-card" style="background: linear-gradient(135deg, #8e44ad, #2c3e50);">
+                        <div class="card-body">
+                            <h6 class="text-uppercase mb-3">This Week Not-Paid</h6>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <h4><span id="weekly-unpaid-count"></span></h4>
+                                        <small class="text-light">Installments</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <h4>LKR <span id="weekly-unpaid-amount"></span></h4>
+                                        <small class="text-light">Amount</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {{-- Charts --}}
@@ -325,19 +341,29 @@
                 {{ $todayinstallment }},
                 {{ $arrease }},
                 {{ $checqueamount }},
-                {{ $todayinstallment + $arrease + $checqueamount }},
-                {{ $todaycollected }},
-                {{ $weeklyUnpaidCount }},
-                {{ $weeklyUnpaidAmount }}
+                {{ $todayinstallment + $arrease }},
+                {{ $todaycollected }}
             ];
             extraValues.forEach((val, i) => {
-                const isCount = (i === 5); // index 5 is weekly count
                 const extraAnim = new countUp.CountUp('extra-card-' + i, val, {
                     separator: ',',
-                    decimalPlaces: isCount ? 0 : 2
+                    decimalPlaces: 2
                 });
                 if (!extraAnim.error) extraAnim.start();
             });
+
+            // Animate weekly unpaid metrics
+            const weeklyCountAnim = new countUp.CountUp('weekly-unpaid-count', {{ $weeklyUnpaidCount }}, {
+                separator: ',',
+                decimalPlaces: 0
+            });
+            if (!weeklyCountAnim.error) weeklyCountAnim.start();
+
+            const weeklyAmountAnim = new countUp.CountUp('weekly-unpaid-amount', {{ $weeklyUnpaidAmount }}, {
+                separator: ',',
+                decimalPlaces: 2
+            });
+            if (!weeklyAmountAnim.error) weeklyAmountAnim.start();
 
             // Monthly Area Chart
             new ApexCharts(document.querySelector("#monthly-revenue-chart"), {
