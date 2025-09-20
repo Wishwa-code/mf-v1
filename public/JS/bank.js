@@ -158,6 +158,16 @@ function view_log(id, bankName, accountName, accountNumber, todayOnly = false, s
     // cache last viewed account details for reuse from Blade button
     try {
         window.lastViewedAccount = { id, bankName, accountName, accountNumber };
+        // Default to today filter on open: prefill date inputs and set button highlight
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth()+1).padStart(2,'0');
+        const dd = String(today.getDate()).padStart(2,'0');
+        const iso = `${yyyy}-${mm}-${dd}`;
+        const s = document.getElementById('log_start_date');
+        const e = document.getElementById('log_end_date');
+        if (s) s.value = iso;
+        if (e) e.value = iso;
     } catch (e) {}
 
     $('#standard-modal .modal-header h4').html(`Bank Log Report - <b>${bankName} (${accountName} - ${accountNumber})</b>`);
@@ -217,6 +227,19 @@ function view_log(id, bankName, accountName, accountNumber, todayOnly = false, s
                     autoWidth: false,
                     responsive: true
                 });
+
+                // Toggle selected filter highlight
+                try {
+                    const todayBtn = document.getElementById('load_today');
+                    const rangeBtn = document.getElementById('load_range');
+                    if (todayOnly && todayBtn) {
+                        todayBtn.classList.add('selected-filter');
+                        if (rangeBtn) rangeBtn.classList.remove('selected-filter');
+                    } else if (startDate && endDate && rangeBtn) {
+                        rangeBtn.classList.add('selected-filter');
+                        if (todayBtn) todayBtn.classList.remove('selected-filter');
+                    }
+                } catch(e) {}
 
             } else {
                 Swal.fire("Error!", "Failed to load data!", "error");

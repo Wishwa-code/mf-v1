@@ -37,6 +37,13 @@
             height: 100%;
         }
 
+        /* selected filter button gray */
+        .selected-filter {
+            background-color: #6c757d !important; /* bootstrap secondary gray */
+            color: #fff !important;
+            border-color: #6c757d !important;
+        }
+
     </style>
 @endsection
 
@@ -137,7 +144,7 @@
                                                                 <td style="text-align: center">
                                                                     <button type="button" class="btn btn-success"  data-bs-toggle="modal"
                                                                             style="background-color: white; color: #5691FF; border:none"
-                                                                            data-bs-target="#standard-modal" onclick="view_log({{$item->Idbank}}, '{{$item->Bank_Name}}', '{{$item->Account_Name}}', '{{$item->Account_No}}')"><i
+                                                                            data-bs-target="#standard-modal" onclick="view_log({{$item->Idbank}}, '{{$item->Bank_Name}}', '{{$item->Account_Name}}', '{{$item->Account_No}}', true)"><i
                                                                                 class="bi bi-eye fs-4"></i></button>
 {{--                                                                    <button type="button" class="btn btn-success" data-bs-toggle="modal"--}}
 {{--                                                                            style="background-color: white; color: #5691FF; border:none"--}}
@@ -149,7 +156,7 @@
                                                                 <td style="text-align: center">
                                                                     <button type="button" class="btn btn-success"  data-bs-toggle="modal"
                                                                             style="background-color: white; color: #5691FF; border:none"
-                                                                            data-bs-target="#standard-modal" onclick="view_log({{$item->Idbank}}, '{{$item->Bank_Name}}', '{{$item->Account_Name}}', '{{$item->Account_No}}')"><i
+                                                                            data-bs-target="#standard-modal" onclick="view_log({{$item->Idbank}}, '{{$item->Bank_Name}}', '{{$item->Account_Name}}', '{{$item->Account_No}}', true)"><i
                                                                                 class="bi bi-eye fs-4"></i></button>
                                                                     <button type="button" class="btn btn-success"
                                                                             style="background-color: white; color: #5691FF; border:none"
