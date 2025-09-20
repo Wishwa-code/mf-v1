@@ -309,6 +309,7 @@
 
                         </tbody>
                     </table>
+                    <div id="financialReportPagination" class="d-flex justify-content-end align-items-center gap-2"></div>
                 </div>
             </div>
         </div>
@@ -338,6 +339,10 @@
             $('#financialReportTable').DataTable({
                 destroy: true,  // Destroy any existing DataTable instance
                 dom: 'Bfrtip',  // Adds the button container to the top of the table
+                paging: false,
+                info: false,
+                searching: false,
+                lengthChange: false,
                 buttons: [
                     {
                         extend: 'excelHtml5',
@@ -402,75 +407,111 @@
             $('#financialReportModalLabel').text('Financial Report for - ' + bankName);
             $('#financialReportModal').modal('show'); // Open modal
 
-            // Clear previous data
-            var financialReportTable = $('#financialReportTable');
-
+            // Clear previous data and any existing DataTable wrapping
+            const $table = $('#financialReportTable');
             if ($.fn.DataTable.isDataTable('#financialReportTable')) {
-                financialReportTable.DataTable().clear().destroy();
+                $table.DataTable().clear().destroy();
+            }
+            $('#financialReportTable tbody').empty();
+            $('#financialReportPagination').empty();
+
+            const date_from = $("#date_from").val();
+            const date_to = $("#date_to").val();
+            const perPage = 25; // default page size for modal
+
+            // loader for one page
+            function loadPage(page = 1) {
+                $.ajax({
+                    url: `/get-financial-full-report?page=${page}`,
+                    type: 'POST',
+                    data: {
+                        account_id: idbank,
+                        date_from: date_from,
+                        date_to: date_to,
+                        paginate: 1,
+                        per_page: perPage
+                    },
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function (res) {
+                        const pager = res?.item || {};
+                        const data = pager.data || [];
+
+                        const $tbody = $('#financialReportTable tbody');
+                        $tbody.empty();
+
+                        data.forEach(function (item) {
+                            const row = `
+                                <tr>
+                                    <td style="text-align: left">${item.id}</td>
+                                    <td style="text-align: left">${item.Type || 'N/A'}</td>
+                                    <td style="text-align: left">${item.Description || 'N/A'}</td>
+                                    <td style="text-align: right">${formatNumber(parseFloat(item.Debit).toFixed(2) || 0)}</td>
+                                    <td style="text-align: right">${formatNumber(parseFloat(item.Credit).toFixed(2) || 0)}</td>
+                                    <td style="text-align: right">${formatNumber(parseFloat(item.Balance).toFixed(2) || 0)}</td>
+                                    <td style="text-align: right">${item.Account_Name ?? '-'}</td>
+                                    <td style="text-align: right">${item.reconsilation_status || 'N/A'}</td>
+                                    <td style="text-align: right">${item.Date_Time || 'N/A'}</td>
+                                </tr>`;
+                            $tbody.append(row);
+                        });
+
+                        // Recreate DataTable only for export and sorting on current page
+                        $('#financialReportTable').DataTable({
+                            destroy: true,
+                            dom: 'Bfrtip',
+                            paging: false,
+                            info: false,
+                            searching: false,
+                            lengthChange: false,
+                            buttons: [
+                                {
+                                    extend: 'excelHtml5',
+                                    text: 'Download Excel',
+                                    title: 'Ledger Details',
+                                    className: 'btn btn-success'
+                                }
+                            ],
+                            order: [[0, 'asc']],
+                            columnDefs: [
+                                { orderable: true, targets: 0 },
+                                { orderable: false, targets: '_all' }
+                            ]
+                        });
+
+                        // Simple Prev/Next controls
+                        const $pag = $('#financialReportPagination');
+                        $pag.empty();
+                        if (pager.total > pager.per_page) {
+                            const firstDisabled = pager.current_page === 1 ? 'disabled' : '';
+                            const lastDisabled = pager.current_page === pager.last_page ? 'disabled' : '';
+                            const start = (pager.current_page - 1) * pager.per_page + 1;
+                            const end = Math.min(pager.total, pager.current_page * pager.per_page);
+                            const info = `<span class="me-2">Showing ${start}–${end} of ${pager.total}</span>`;
+                            const html = `
+                                ${info}
+                                <button class="btn btn-sm btn-outline-primary" data-page="1" ${firstDisabled}>First</button>
+                                <button class="btn btn-sm btn-outline-primary" data-page="${Math.max(1, pager.current_page - 1)}" ${firstDisabled}>Prev</button>
+                                <span class="mx-2">Page ${pager.current_page} / ${pager.last_page}</span>
+                                <button class="btn btn-sm btn-outline-primary" data-page="${Math.min(pager.last_page, pager.current_page + 1)}" ${lastDisabled}>Next</button>
+                                <button class="btn btn-sm btn-outline-primary" data-page="${pager.last_page}" ${lastDisabled}>Last</button>`;
+                            $pag.html(html);
+                            $pag.find('button[data-page]').off('click').on('click', function() {
+                                const p = parseInt($(this).data('page'), 10) || 1;
+                                loadPage(p);
+                            });
+                        }
+                    },
+                    error: function (xhr) {
+                        console.error('AJAX error:', xhr.responseText);
+                        alert('Error fetching financial report. Check console for details.');
+                    }
+                });
             }
 
-            var date_from = $("#date_from").val();
-            var date_to = $("#date_to").val();
-
-            $.ajax({
-                url: '/get-financial-full-report',
-                type: 'POST',
-                data: {
-                    account_id: idbank,
-                    date_from: date_from,
-                    date_to: date_to
-                },
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function (data) {
-                    // Populate the table with new data
-                    data.forEach(function (item) {
-                        var row = `
-                <tr>
-                    <td style="text-align: left">${item.id}</td>
-                    <td style="text-align: left">${item.Type || 'N/A'}</td>
-                    <td style="text-align: left">${item.Description || 'N/A'}</td>
-                    <td style="text-align: right">${formatNumber(parseFloat(item.Debit).toFixed(2) || 0)}</td>
-                    <td style="text-align: right">${formatNumber(parseFloat(item.Credit).toFixed(2) || 0)}</td>
-                    <td style="text-align: right">${formatNumber(parseFloat(item.Balance).toFixed(2) || 0)}</td>
-                    <td style="text-align: right">${item.Account_Name ?? '-'}</td>
-                    <td style="text-align: right">${item.reconsilation_status || 'N/A'}</td>
-                    <td style="text-align: right">${item.Date_Time || 'N/A'}</td>
-                </tr>
-            `;
-                        $('#financialReportTable tbody').append(row);
-                    });
-
-                    $('#financialReportTable').DataTable({
-                        destroy: true,  // Destroy any existing DataTable instance
-                        dom: 'Bfrtip',  // Adds the button container to the top of the table
-                        buttons: [
-                            {
-                                extend: 'excelHtml5',
-                                text: 'Download Excel',
-                                title: 'Ledger Details',
-                                className: 'btn btn-success'
-                            }
-                        ],
-                        order: [[0, 'asc']], // Sort by the first column (index 0) in ascending order
-                        columnDefs: [
-                            {
-                                orderable: true,  // Enable sorting for the first column
-                                targets: 0       // First column (index 0)
-                            },
-                            {
-                                orderable: false,  // Disable sorting for all other columns
-                                targets: '_all'   // Targets all columns except the first one
-                            }
-                        ]
-                    });
-                },
-                error: function (xhr) {
-                    console.error("AJAX error:", xhr.responseText);
-                    alert("Error fetching financial report. Check console for details.");
-                }
-            });
+            // initial load
+            loadPage(1);
         }
 
         // Function to format numbers with commas
