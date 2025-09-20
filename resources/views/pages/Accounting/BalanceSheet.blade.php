@@ -343,14 +343,46 @@
                 info: false,
                 searching: false,
                 lengthChange: false,
-                buttons: [
-                    {
-                        extend: 'excelHtml5',
-                        text: 'Download Excel',
-                        title: 'Ledger Details',
-                        className: 'btn btn-success'
-                    }
-                ],
+                        buttons: [
+                            {
+                                text: 'Download Excel',
+                                className: 'btn btn-success',
+                                action: function () {
+                                    // Export ALL rows: call legacy API (no paginate) and build XLSX
+                                    const date_from = $("#date_from").val();
+                                    const date_to = $("#date_to").val();
+                                    const bankName = $('#financialReportModalLabel').text().replace('Financial Report for - ','');
+                                    const accountId = $('#financialReportTable').data('account-id'); // set below before init
+                                    $.ajax({
+                                        url: '/get-financial-full-report',
+                                        type: 'POST',
+                                        data: { account_id: accountId, date_from, date_to },
+                                        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                                        success: function (rows) {
+                                            const data = (rows || []).map(r => ({
+                                                Id: r.id,
+                                                Type: r.Type || 'N/A',
+                                                Description: r.Description || 'N/A',
+                                                Debit: Number(parseFloat(r.Debit || 0).toFixed(2)),
+                                                Credit: Number(parseFloat(r.Credit || 0).toFixed(2)),
+                                                Balance: Number(parseFloat(r.Balance || 0).toFixed(2)),
+                                                'Contra Account': r.Account_Name ?? '-',
+                                                'Reconciliation No': r.reconsilation_status || 'N/A',
+                                                'Created At': r.Date_Time || 'N/A'
+                                            }));
+                                            const ws = XLSX.utils.json_to_sheet(data);
+                                            const wb = XLSX.utils.book_new();
+                                            XLSX.utils.book_append_sheet(wb, ws, 'Ledger');
+                                            XLSX.writeFile(wb, `Ledger_All_${bankName.replace(/[^a-z0-9]/gi,'_')}.xlsx`);
+                                        },
+                                        error: function (xhr) {
+                                            console.error('Full export AJAX error:', xhr.responseText);
+                                            alert('Error fetching full data for Excel export.');
+                                        }
+                                    });
+                                }
+                            }
+                        ],
                 order: [[0, 'asc']], // Sort by the first column (index 0) in ascending order
                 columnDefs: [
                     {
@@ -458,6 +490,9 @@
                         });
 
                         // Recreate DataTable only for export and sorting on current page
+                        // Store the account id for later use by the export button action
+                        $('#financialReportTable').attr('data-account-id', idbank);
+
                         $('#financialReportTable').DataTable({
                             destroy: true,
                             dom: 'Bfrtip',
@@ -467,10 +502,41 @@
                             lengthChange: false,
                             buttons: [
                                 {
-                                    extend: 'excelHtml5',
                                     text: 'Download Excel',
-                                    title: 'Ledger Details',
-                                    className: 'btn btn-success'
+                                    className: 'btn btn-success',
+                                    action: function () {
+                                        const date_from = $("#date_from").val();
+                                        const date_to = $("#date_to").val();
+                                        const bankName = $('#financialReportModalLabel').text().replace('Financial Report for - ','');
+                                        const accountId = $('#financialReportTable').data('account-id');
+                                        $.ajax({
+                                            url: '/get-financial-full-report',
+                                            type: 'POST',
+                                            data: { account_id: accountId, date_from, date_to },
+                                            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                                            success: function (rows) {
+                                                const data = (rows || []).map(r => ({
+                                                    Id: r.id,
+                                                    Type: r.Type || 'N/A',
+                                                    Description: r.Description || 'N/A',
+                                                    Debit: Number(parseFloat(r.Debit || 0).toFixed(2)),
+                                                    Credit: Number(parseFloat(r.Credit || 0).toFixed(2)),
+                                                    Balance: Number(parseFloat(r.Balance || 0).toFixed(2)),
+                                                    'Contra Account': r.Account_Name ?? '-',
+                                                    'Reconciliation No': r.reconsilation_status || 'N/A',
+                                                    'Created At': r.Date_Time || 'N/A'
+                                                }));
+                                                const ws = XLSX.utils.json_to_sheet(data);
+                                                const wb = XLSX.utils.book_new();
+                                                XLSX.utils.book_append_sheet(wb, ws, 'Ledger');
+                                                XLSX.writeFile(wb, `Ledger_All_${bankName.replace(/[^a-z0-9]/gi,'_')}.xlsx`);
+                                            },
+                                            error: function (xhr) {
+                                                console.error('Full export AJAX error:', xhr.responseText);
+                                                alert('Error fetching full data for Excel export.');
+                                            }
+                                        });
+                                    }
                                 }
                             ],
                             order: [[0, 'asc']],
@@ -509,6 +575,49 @@
                     }
                 });
             }
+
+            // wire up full export using legacy API (no pagination)
+            $('#btnFullExcel').off('click').on('click', function() {
+                const date_from = $("#date_from").val();
+                const date_to = $("#date_to").val();
+                $.ajax({
+                    url: '/get-financial-full-report',
+                    type: 'POST',
+                    data: {
+                        account_id: idbank,
+                        date_from: date_from,
+                        date_to: date_to
+                        // intentionally omit paginate => legacy full data
+                    },
+                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                    success: function (rows) {
+                        try {
+                            const data = (rows || []).map(r => ({
+                                Id: r.id,
+                                Type: r.Type || 'N/A',
+                                Description: r.Description || 'N/A',
+                                Debit: Number(parseFloat(r.Debit || 0).toFixed(2)),
+                                Credit: Number(parseFloat(r.Credit || 0).toFixed(2)),
+                                Balance: Number(parseFloat(r.Balance || 0).toFixed(2)),
+                                'Contra Account': r.Account_Name ?? '-',
+                                'Reconciliation No': r.reconsilation_status || 'N/A',
+                                'Created At': r.Date_Time || 'N/A'
+                            }));
+                            const ws = XLSX.utils.json_to_sheet(data);
+                            const wb = XLSX.utils.book_new();
+                            XLSX.utils.book_append_sheet(wb, ws, 'Ledger');
+                            XLSX.writeFile(wb, `Ledger_All_${bankName.replace(/[^a-z0-9]/gi,'_')}.xlsx`);
+                        } catch (e) {
+                            console.error('Excel export error:', e);
+                            alert('Failed to generate Excel file.');
+                        }
+                    },
+                    error: function (xhr) {
+                        console.error('Full export AJAX error:', xhr.responseText);
+                        alert('Error fetching full data for Excel export.');
+                    }
+                });
+            });
 
             // initial load
             loadPage(1);
