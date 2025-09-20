@@ -184,6 +184,13 @@ function view_log(id, bankName, accountName, accountNumber, todayOnly = false, s
     $.ajax({
         type: "GET",
         url,
+        beforeSend: function(){
+            // show loading row while fetching data
+            if ($.fn.DataTable.isDataTable("#bank_table_log")) {
+                $('#bank_table_log').DataTable().clear().destroy();
+            }
+            $('#bank_table_log tbody').html('<tr><td colspan="10" style="text-align:center;">Loading ...</td></tr>');
+        },
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
@@ -242,10 +249,14 @@ function view_log(id, bankName, accountName, accountNumber, todayOnly = false, s
                 } catch(e) {}
 
             } else {
+                // show error row
+                $('#bank_table_log tbody').html('<tr><td colspan="10" style="text-align:center;color:#dc3545;">Failed to load data</td></tr>');
                 Swal.fire("Error!", "Failed to load data!", "error");
             }
         },
         error: function (xhr, textStatus, errorThrown) {
+            // show error row
+            $('#bank_table_log tbody').html('<tr><td colspan="10" style="text-align:center;color:#dc3545;">Failed to load data</td></tr>');
             Swal.fire("Error!", "Failed to load data!", "error");
         }
     });
