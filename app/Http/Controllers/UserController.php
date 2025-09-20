@@ -320,7 +320,7 @@ class UserController extends Controller
     public function showdashboard(Store $session){
 
 
-        if (!auth()->check()) {
+        if (!Auth::check()) {
             return redirect()->route('login')->with("error", "Session expired! Please Login");
         }
 
@@ -535,6 +535,10 @@ class UserController extends Controller
 
         $weeklyUnpaidCount = (clone $weeklyUnpaidQuery)->count();
         $weeklyUnpaidAmount = (clone $weeklyUnpaidQuery)->sum('installments.Total_Balance');
+        // Distinct customers with unpaid installments (head count)
+        $weeklyUnpaidCustomerCount = (clone $weeklyUnpaidQuery)
+            ->distinct()
+            ->count('customer_loan.Customer_idCustomer');
 
 
         return view('home',compact(
@@ -543,7 +547,7 @@ class UserController extends Controller
             'todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount',
             'setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count',
             'customer_loan_current_Count','todayinstallment','todaycollection',
-            'weeklyUnpaidCount','weeklyUnpaidAmount'
+            'weeklyUnpaidCount','weeklyUnpaidAmount','weeklyUnpaidCustomerCount'
         ));
     }
 

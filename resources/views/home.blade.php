@@ -131,18 +131,24 @@
                 @endforeach
 
                 {{-- Combined Not-Paid Card --}}
-                <div class="col-md-4 mb-4">
+                <div class="col-md-6 col-lg-5 mb-4">
                     <div class="glass-card card text-white shadow animated-card" style="background: linear-gradient(135deg, #8e44ad, #2c3e50);">
                         <div class="card-body">
                             <h6 class="text-uppercase mb-3">This Week Not-Paid</h6>
-                            <div class="row">
-                                <div class="col-6">
+                            <div class="row g-3 align-items-stretch">
+                                <div class="col-4">
                                     <div class="text-center">
                                         <h4><span id="weekly-unpaid-count"></span></h4>
                                         <small class="text-light">Installments</small>
                                     </div>
                                 </div>
-                                <div class="col-6">
+                                <div class="col-4">
+                                    <div class="text-center">
+                                        <h4><span id="weekly-unpaid-headcount"></span></h4>
+                                        <small class="text-light">Customers</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
                                     <div class="text-center">
                                         <h4>LKR <span id="weekly-unpaid-amount"></span></h4>
                                         <small class="text-light">Amount</small>
@@ -358,6 +364,13 @@
                 decimalPlaces: 0
             });
             if (!weeklyCountAnim.error) weeklyCountAnim.start();
+
+            // Headcount (distinct customers)
+            const weeklyHeadAnim = new countUp.CountUp('weekly-unpaid-headcount', {{ $weeklyUnpaidCustomerCount ?? 0 }}, {
+                separator: ',',
+                decimalPlaces: 0
+            });
+            if (!weeklyHeadAnim.error) weeklyHeadAnim.start();
 
             const weeklyAmountAnim = new countUp.CountUp('weekly-unpaid-amount', {{ $weeklyUnpaidAmount }}, {
                 separator: ',',
