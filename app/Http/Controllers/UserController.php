@@ -522,8 +522,29 @@ class UserController extends Controller
             DB::statement("ALTER TABLE `company_bank_has_log` ADD `log_tracking_no` VARCHAR(10) NULL");
         }
 
+        // Weekly unpaid (active loans)
+        $weekStart = Carbon::now()->startOfWeek()->toDateString();
+        $weekToday = date('Y-m-d');
 
-        return view('home',compact( 'currentMonthLending','portfolio','profit','todaycollected', 'profitTarget','weeklyComparison','deleted_loan_Count','all_loan','monthlyData','dashboard','checqueamount','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
+        $weeklyUnpaidQuery = tableWithBranch('installments','installments')
+            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->where('customer_loan.Status', '=', '0')
+            ->where('installments.Status', '=', '0')
+            ->where('installments.Total_Balance', '>', 0)
+            ->whereBetween('installments.Installment_Date', [$weekStart, $weekToday]);
+
+        $weeklyUnpaidCount = (clone $weeklyUnpaidQuery)->count();
+        $weeklyUnpaidAmount = (clone $weeklyUnpaidQuery)->sum('installments.Total_Balance');
+
+
+        return view('home',compact(
+            'currentMonthLending','portfolio','profit','todaycollected','profitTarget','weeklyComparison',
+            'deleted_loan_Count','all_loan','monthlyData','dashboard','checqueamount','totalBalanceUntil','arrease',
+            'todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount',
+            'setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count',
+            'customer_loan_current_Count','todayinstallment','todaycollection',
+            'weeklyUnpaidCount','weeklyUnpaidAmount'
+        ));
     }
 
     public function logout()
