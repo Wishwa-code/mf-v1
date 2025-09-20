@@ -351,19 +351,107 @@
         // keep last selected account for quick reload
         var lastViewedAccount = { id: null, bankName: '', accountName: '', accountNumber: '' };
 
-        // Function to download table as Excel
+        // Build rows for export (numbers with 2 decimals)
+        function fmtNum(v){
+            if (v === null || v === undefined || v === "") return "";
+            const n = Number(v);
+            return isNaN(n) ? v : n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // Download Excel: always fetch FULL data from legacy API (no filters)
         document.getElementById('download_excel').addEventListener('click', function () {
-            let table = document.getElementById('bank_table_log');
-            let wb = XLSX.utils.table_to_book(table, {sheet: "Sheet JS"});
-            XLSX.writeFile(wb, companyName+".xlsx");
+            if (!lastViewedAccount.id){
+                Swal.fire("Info", "Open a bank log first to choose the account", "info");
+                return;
+            }
+
+            $.ajax({
+                type: 'GET',
+                url: '/bank/view_log/' + lastViewedAccount.id, // no params -> full data
+                headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr('content') },
+                beforeSend: function(){
+                    // simple feedback
+                    Swal.fire({ title: 'Preparing Excel...', didOpen: () => Swal.showLoading(), allowOutsideClick: false, allowEscapeKey: false, showConfirmButton: false });
+                },
+                success: function(data){
+                    const headers = ["Date Time","Type","Description","Note","Debit","Credit","Balance","Contra Account","Reconciliation No","User"];
+                    const aoa = [headers];
+                    (data.item || []).forEach(function(log){
+                        aoa.push([
+                            log.Date_Time,
+                            log.Type,
+                            log.Description,
+                            log.Note,
+                            fmtNum(log.Debit),
+                            fmtNum(log.Credit),
+                            fmtNum(log.Balance),
+                            (log.Account_Name ?? '-'),
+                            log.reconsilation_status,
+                            log.Full_Name
+                        ]);
+                    });
+
+                    const ws = XLSX.utils.aoa_to_sheet(aoa);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, 'Full');
+                    XLSX.writeFile(wb, companyName+"-Full.xlsx");
+                    Swal.close();
+                },
+                error: function(){
+                    Swal.close();
+                    Swal.fire("Error", "Failed to prepare Excel", "error");
+                }
+            });
         });
 
-        // Function to download table as PDF
+        // Download PDF: always fetch FULL data from legacy API (no filters)
         document.getElementById('download_pdf').addEventListener('click', function () {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.autoTable({ html: '#bank_table_log' });
-            doc.save(companyName+".pdf");
+            if (!lastViewedAccount.id){
+                Swal.fire("Info", "Open a bank log first to choose the account", "info");
+                return;
+            }
+
+            $.ajax({
+                type: 'GET',
+                url: '/bank/view_log/' + lastViewedAccount.id, // no params -> full data
+                headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr('content') },
+                beforeSend: function(){
+                    Swal.fire({ title: 'Preparing PDF...', didOpen: () => Swal.showLoading(), allowOutsideClick: false, allowEscapeKey: false, showConfirmButton: false });
+                },
+                success: function(data){
+                    const { jsPDF } = window.jspdf;
+                    // Landscape to fit columns
+                    const doc = new jsPDF('l','pt');
+                    const headers = ["Date Time","Type","Description","Note","Debit","Credit","Balance","Contra Account","Reconciliation No","User"];
+                    const body = (data.item || []).map(function(log){
+                        return [
+                            log.Date_Time,
+                            log.Type,
+                            log.Description,
+                            log.Note,
+                            fmtNum(log.Debit),
+                            fmtNum(log.Credit),
+                            fmtNum(log.Balance),
+                            (log.Account_Name ?? '-'),
+                            log.reconsilation_status,
+                            log.Full_Name
+                        ];
+                    });
+
+                    doc.autoTable({
+                        head: [headers],
+                        body,
+                        styles: { fontSize: 8 },
+                        headStyles: { fillColor: [86, 145, 255] }
+                    });
+                    doc.save(companyName+"-Full.pdf");
+                    Swal.close();
+                },
+                error: function(){
+                    Swal.close();
+                    Swal.fire("Error", "Failed to prepare PDF", "error");
+                }
+            });
         });
 
         let maxAmount = 0;
