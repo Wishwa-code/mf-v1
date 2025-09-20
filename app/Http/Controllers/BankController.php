@@ -73,14 +73,22 @@ class BankController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(string $id)
+    public function create(string $id, Request $request)
     {
-        $bank_log = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        $query = tableWithBranch('company_bank_has_log','company_bank_has_log')
             ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
             ->leftJoin('user', 'company_bank_has_log.User', '=', 'user.id')
             ->where('Bank_Account_Id', $id)
-            ->select('company_bank_has_log.*', 'company_bank_accounts.Account_No', DB::raw("COALESCE(user.Full_Name, '-') as Full_Name"))
-            ->get();
+            ->select('company_bank_has_log.*', 'company_bank_accounts.Account_No', DB::raw("COALESCE(user.Full_Name, '-') as Full_Name"));
+
+        // optional today filter; keeps existing behavior if not present
+        if ($request->has('todayfilter') && (string)$request->get('todayfilter') === '1') {
+            $todayStart = Carbon::today();
+            $todayEnd = Carbon::today()->endOfDay();
+            $query = $query->whereBetween('company_bank_has_log.Date_Time', [$todayStart, $todayEnd]);
+        }
+
+        $bank_log = $query->get();
 
 
         // Replace NULL values with '-'

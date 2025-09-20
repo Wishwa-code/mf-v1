@@ -206,6 +206,9 @@
                         <div class="row">
                             <div class="col-lg-12">
                                 <div class="d-flex mb-3">
+                                    <button class="btn btn-warning me-2" id="load_today" onclick="view_log_today()">
+                                        <i class="fas fa-calendar-day"></i> Load Today Data
+                                    </button>
                                     <button class="btn btn-success me-2" id="download_excel">
                                         <i class="fas fa-file-excel"></i> Download Excel
                                     </button>
@@ -329,6 +332,8 @@
     <script>
         // Replace special characters in the company name
         var companyName = {!! json_encode(session('company_name')) !!}.replace(/&/g, ' And ') + " Bank Details Report";
+        // keep last selected account for quick reload
+        var lastViewedAccount = { id: null, bankName: '', accountName: '', accountNumber: '' };
 
         // Function to download table as Excel
         document.getElementById('download_excel').addEventListener('click', function () {
@@ -358,6 +363,15 @@
         function openTopUpModal(bankId){
             document.getElementById("bankId_2").value = bankId;
             document.getElementById("transferAmount_2").value = "";
+        }
+
+        // Trigger loading today's data for the last viewed account
+        function view_log_today(){
+            if(!lastViewedAccount.id){
+                Swal.fire("Info", "Open a bank log first, then use 'Load Today Data'", "info");
+                return;
+            }
+            view_log(lastViewedAccount.id, lastViewedAccount.bankName, lastViewedAccount.accountName, lastViewedAccount.accountNumber, true);
         }
 
         // Transfer Function with Validation and SweetAlert Confirmation
