@@ -1015,7 +1015,7 @@ class PendingLoanController extends Controller
         $loans = $query->select(
             'cl.idCustomer_Loan',
             'cl.Loan_No',
-            DB::raw('IFNULL(center.No, "-") as center_no'),
+            DB::raw('IFNULL(center.Name, "-") as center_no'),
             DB::raw('IFNULL(customer_group.Name, "-") as Group_name'),
             'customer.cus_number as cus_number',
             'customer.First_Name as customer_fname',
