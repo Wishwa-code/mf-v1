@@ -80,11 +80,11 @@
             <div class="row">
                 @php
                     $cards = [
-                        ['title' => 'Pending Loans', 'icon' => 'ri-eye-line', 'value' => $customer_loan_pending_Amount, 'count' => $customer_loan_pending_Count, 'link' => '/pendingloan', 'bg' => '#ff758c', 'prefix' => 'Rs.'],
-                        ['title' => 'Current Loans', 'icon' => 'ri-wallet-2-line', 'value' => $customer_loan_current_Amount, 'count' => $customer_loan_current_Count, 'link' => '/payment_step_1', 'bg' => '#43cea2', 'prefix' => 'Rs.'],
-                        ['title' => 'Settled Loans', 'icon' => 'ri-file-paper-2-fill', 'value' => $setteled_loan_current_Amount, 'count' => $setteled_loan_Count, 'link' => '/showsettleloan', 'bg' => '#f7971e', 'prefix' => 'Rs.'],
-                        ['title' => 'Portfolio', 'icon' => 'ri-pie-chart-line', 'value' => $portfolio, 'count' => '', 'link' => '', 'bg' => '#9b59b6', 'prefix' => 'Rs.'],
-                        ['title' => 'Current Month Lending', 'icon' => 'ri-calendar-line', 'value' => $currentMonthLending, 'count' => '', 'link' => '', 'bg' => '#1abc9c', 'prefix' => 'Rs.'],
+                        ['title' => 'Pending Loans', 'icon' => 'ri-eye-line', 'value' => $customer_loan_pending_Amount, 'count' => $customer_loan_pending_Count, 'link' => '/pendingloan', 'bg' => '#ff758c', 'prefix' => ''],
+                        ['title' => 'Current Loans', 'icon' => 'ri-wallet-2-line', 'value' => $customer_loan_current_Amount, 'count' => $customer_loan_current_Count, 'link' => '/payment_step_1', 'bg' => '#43cea2', 'prefix' => ''],
+                        ['title' => 'Settled Loans', 'icon' => 'ri-file-paper-2-fill', 'value' => $setteled_loan_current_Amount, 'count' => $setteled_loan_Count, 'link' => '/showsettleloan', 'bg' => '#f7971e', 'prefix' => ''],
+                        ['title' => 'Portfolio', 'icon' => 'ri-pie-chart-line', 'value' => $portfolio, 'count' => '', 'link' => '', 'bg' => '#9b59b6', 'prefix' => ''],
+                        ['title' => 'Current Month Lending', 'icon' => 'ri-calendar-line', 'value' => $currentMonthLending, 'count' => '', 'link' => '', 'bg' => '#1abc9c', 'prefix' => ''],
                         ['title' => 'Customers', 'icon' => 'ri-group-2-line', 'value' => $customerCount, 'count' => '', 'link' => '/showcustomers', 'bg' => '#667eea', 'prefix' => ''],
                     ];
                 @endphp
@@ -97,7 +97,7 @@
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
                                             <h6 class="text-uppercase">{{ $card['title'] }} {!! $card['count'] !== '' ? '('.$card['count'].')' : '' !!}</h6>
-                                            <h3><span id="stat-card-{{ $index }}"></span></h3>
+                                            <h4><span id="stat-card-{{ $index }}"></span></h4>
                                         </div>
                                         <i class="{{ $card['icon'] }} fs-2"></i>
                                     </div>
@@ -124,7 +124,7 @@
                         <div class="glass-card card text-white shadow animated-card" style="background-color: {{ $item['color'] }};">
                             <div class="card-body">
                                 <h6 class="text-uppercase">{{ $item['title'] }}</h6>
-                                <h3>LKR <span id="extra-card-{{ $i }}"></span></h3>
+                                <h4><span id="extra-card-{{ $i }}"></span></h4>
                             </div>
                         </div>
                     </div>
@@ -150,7 +150,7 @@
                                 </div>
                                 <div class="col-4">
                                     <div class="text-center">
-                                        <h4>LKR <span id="weekly-unpaid-amount"></span></h4>
+                                        <h4><span id="weekly-unpaid-amount"></span></h4>
                                         <small class="text-light">Amount</small>
                                     </div>
                                 </div>
@@ -215,7 +215,7 @@
                         <div class="card-body text-center">
                             <h5 class="card-title mb-3">📟 Profit Gauge</h5>
                             <div id="profit-gauge" style="height: 200px;"></div>
-                            <h4 class="mt-3 text-success fw-bold" id="profit-display">Rs. 0</h4>
+                            <h4 class="mt-3 text-success fw-bold" id="profit-display">0</h4>
                         </div>
                     </div>
                 </div>
@@ -332,7 +332,7 @@
                 {{ $currentMonthLending }},
                 {{ $customerCount }}
             ];
-            const prefixes = ['Rs. ', 'Rs. ', 'Rs. ', 'Rs. ', 'Rs. ', ''];
+            const prefixes = ['', '', '', '', '', ''];
 
             statValues.forEach((val, i) => {
                 const numAnim = new countUp.CountUp('stat-card-' + i, val, {
@@ -431,8 +431,8 @@
                 plotOptions: {
                     radialBar: {
                         dataLabels: {
-                            name: { fontSize: '18px' },
-                            value: { fontSize: '32px', fontWeight: 'bold' }
+                            name: { fontSize: '16px' },
+                            value: { fontSize: '30px', fontWeight: 'bold' }
                         }
                     }
                 }
@@ -502,7 +502,7 @@
 
             // CountUp actual Rs. value
             const animatedRs = new countUp.CountUp('profit-display', profit, {
-                prefix: 'Rs. ',
+                prefix: '',
                 separator: ',',
                 duration: 2.5
             });
