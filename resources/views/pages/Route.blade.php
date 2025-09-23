@@ -64,9 +64,11 @@
                                                 data-route-code="{{$item->root_code}}"
                                                 data-collection-type="{{$item->collection_type}}"
                                                 data-collection-date="{{$item->collection_date}}"
-                                                title="Edit Route">
-                                            <i class="bi bi-pencil fs-4"></i>
+                                                data-has-loans="{{$item->has_loans}}"
+                                        title="Edit Route">
+                                        <i class="bi bi-pencil fs-4"></i>
                                         </button>
+
 
                                         <button type="button" class="btn btn-danger" onclick="confirmDelete('{{$item->id_route}}')" title="Delete Route">
                                             <i class="bi bi-trash fs-4"></i>
@@ -284,21 +286,34 @@
 
                 const cType = (b.data('collection-type') || '').toString().toLowerCase();
                 const cDate = (b.data('collection-date') || 'Monday');
+                const hasLoans = Number(b.data('has-loans')) === 1;
 
-                // set type (fallback safe)
                 $('#edit_collection_type').val(['fixed','customizable'].includes(cType) ? cType : 'customizable');
 
-                // set date only if it exists in the select; otherwise default to first option
                 const $editDate = $('#edit_collection_date');
-                if ($editDate.find(`option[value="${cDate}"]`).length) {
-                    $editDate.val(cDate);
-                } else {
-                    $editDate.prop('selectedIndex', 0);
-                }
+                if ($editDate.find(`option[value="${cDate}"]`).length) $editDate.val(cDate);
+                else $editDate.prop('selectedIndex', 0);
 
-                // apply toggle after values
+                // Apply show/hide
                 applyToggle($('#edit_collection_type'), $('#edit_collection_date_wrap'), $editDate);
+
+                // 🔒 Lock collection fields if route has loans
+                if (hasLoans) {
+                    $('#edit_collection_type').prop('disabled', true);
+                    $editDate.prop('disabled', true);
+                    // one-time helper note (avoid duplicates)
+                    if (!$('#route-lock-msg').length) {
+                        $('#edit_collection_date_wrap').append(
+                            '<small id="route-lock-msg" class="text-danger d-block mt-1">Collection settings are locked because this route has loans.</small>'
+                        );
+                    }
+                } else {
+                    $('#edit_collection_type').prop('disabled', false);
+                    $editDate.prop('disabled', false);
+                    $('#route-lock-msg').remove();
+                }
             });
+
 
         });
 

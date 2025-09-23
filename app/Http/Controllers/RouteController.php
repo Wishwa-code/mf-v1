@@ -13,9 +13,21 @@ class RouteController extends Controller
      */
     public function index()
     {
-        $userData = tableWithBranch('route','route')
+        $userData = DB::table('route')
+            ->where('route.branch_id', session('branch_id'))
+            ->select('route.*')
+            // has_loans: 1 if any customer on this route has any loan
+            ->selectRaw("
+            EXISTS (
+              SELECT 1
+              FROM customer
+              JOIN customer_loan ON customer_loan.Customer_idCustomer = customer.idCustomer
+              WHERE customer.route_id = route.id_route
+            ) AS has_loans
+        ")
             ->get();
-        $user=tableWithBranch('user')->get();
+
+        $user = tableWithBranch('user')->get();
 
         return view('pages.Route', compact('userData','user'));
     }
