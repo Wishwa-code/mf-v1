@@ -5,6 +5,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+    :root {
+        --primary-transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        --card-shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.25);
+        --glass-bg: rgba(255, 255, 255, 0.15);
+        --glass-border: rgba(255, 255, 255, 0.2);
+        --text-white-primary: white;
+        --text-white-secondary: rgba(255, 255, 255, 0.9);
+        --text-white-tertiary: rgba(255, 255, 255, 0.8);
+    }
+
     body { 
         background-color: #f8fafc;
         min-height: 100vh;
@@ -22,26 +33,120 @@
     }
 
     .dashboard-header {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 20px;
-        padding: 30px;
-        margin-bottom: 30px;
+        background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+        border: 1px solid #c7d2fe;
+        border-radius: 32px;
+        padding: 60px 40px;
+        margin-bottom: 40px;
         text-align: center;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 15px 35px rgba(99, 102, 241, 0.2);
+        position: relative;
+        min-height: 180px;
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        animation: headerFloat 6s ease-in-out infinite;
+        cursor: pointer;
+        overflow: hidden;
+    }
+
+    .dashboard-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        transform: translateX(-100%) translateY(-100%) rotate(45deg);
+        transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        pointer-events: none;
+    }
+
+    .dashboard-header:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 25px 50px rgba(99, 102, 241, 0.3);
+        border-color: #a5b4fc;
+        background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 50%, #ddd6fe 100%);
+    }
+
+    .dashboard-header:hover::before {
+        transform: translateX(100%) translateY(100%) rotate(45deg);
+    }
+
+    @keyframes headerFloat {
+        0%, 100% {
+            transform: translateY(0px) rotate(0deg);
+        }
+        25% {
+            transform: translateY(-5px) rotate(0.5deg);
+        }
+        50% {
+            transform: translateY(-3px) rotate(0deg);
+        }
+        75% {
+            transform: translateY(-7px) rotate(-0.5deg);
+        }
     }
 
     .dashboard-title {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #1e293b;
+        font-size: 3.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         margin: 0;
+        position: relative;
+        z-index: 1;
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+        transition: var(--primary-transition);
+        transform-origin: center;
+    }
+
+    .dashboard-header:hover .dashboard-title {
+        transform: scale(1.05);
+        background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4f46e5 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: 0.01em;
+    }
+
+    .dashboard-title i {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-right: 20px;
+        font-size: 3.2rem;
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        display: inline-block;
+        transform-origin: center;
+    }
+
+    .dashboard-header:hover .dashboard-title i {
+        transform: rotate(360deg) scale(1.1);
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #ec4899 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
 
     .dashboard-subtitle {
-        color: #64748b;
-        font-size: 1rem;
-        margin-top: 8px;
+        color: #4338ca;
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-top: 16px;
+        position: relative;
+        z-index: 1;
+        transition: var(--primary-transition);
+        transform-origin: center;
+    }
+
+    .dashboard-header:hover .dashboard-subtitle {
+        color: #312e81;
+        transform: translateY(-3px);
+        font-size: 1.35rem;
     }
 
     .branch-grid {
@@ -52,33 +157,158 @@
     }
     
     .branch-card {
-        background: rgba(255, 255, 255, 0.15);
+        background: var(--glass-bg);
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid var(--glass-border);
         border-radius: 20px;
-        padding: 24px;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.6s ease;
         position: relative;
         overflow: hidden;
-        min-height: 420px;
+        height: 450px;
+        transform-style: preserve-3d;
+        perspective: 1000px;
     }
 
-    .branch-card::before {
-        content: '';
+    .card-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        transition: transform 0.6s ease;
+        transform-style: preserve-3d;
+    }
+
+    .branch-card:hover .card-inner {
+        transform: rotateY(180deg);
+    }
+
+    .card-front, .card-back {
         position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-        z-index: -1;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        border-radius: 20px;
+        padding: 24px;
+        box-sizing: border-box;
+    }
+
+    .card-front {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .card-back {
+        transform: rotateY(180deg);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(20px);
+    }
+
+    .branch-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-shrink: 0;
     }
     
-    .branch-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-        border-color: rgba(255, 255, 255, 0.3);
+    .branch-name {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--text-white-primary);
+        margin: 0;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .branch-icon {
+        font-size: 1.8rem;
+        opacity: 0.8;
+        color: var(--text-white-secondary);
+    }
+
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        flex: 1;
+        margin-bottom: 16px;
+    }
+    
+    .metric-card {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        padding: 12px;
+        text-align: center;
+        backdrop-filter: blur(5px);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 70px;
+    }
+    
+    .metric-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-white-secondary);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        line-height: 1.2;
+    }
+    
+    .metric-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-white-primary);
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        line-height: 1.2;
+        word-break: break-word;
+    }
+
+    .collection-rate {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        padding: 10px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    .collection-rate-label {
+        font-size: 0.8rem;
+        color: var(--text-white-secondary);
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .switch-text {
+        color: var(--text-white-primary);
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+        text-align: center;
+    }
+
+    .switch-icon {
+        color: var(--text-white-primary);
+        font-size: 3rem;
+        margin-bottom: 16px;
+        animation: switchRotate 2s ease-in-out infinite;
+    }
+
+    @keyframes switchRotate {
+        0%, 100% { transform: rotate(0deg); }
+        50% { transform: rotate(180deg); }
+    }
+
+    .switch-subtitle {
+        color: var(--text-white-tertiary);
+        font-size: 1rem;
+        text-align: center;
+        font-weight: 500;
     }
 
     .branch-card.purple {
@@ -101,83 +331,10 @@
         background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
     }
     
-    .branch-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 25px;
-    }
-    
-    .branch-name {
-        font-size: 1.4rem;
-        font-weight: 700;
-        color: white;
-        margin: 0;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-    
-    .branch-icon {
-        font-size: 2rem;
-        opacity: 0.8;
-    }
-
-    .metrics-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-        margin-bottom: 20px;
-    }
-    
-    .metric-card {
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 12px;
-        padding: 16px;
-        text-align: center;
-        backdrop-filter: blur(5px);
-        min-height: 80px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    
-    .metric-label {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: rgba(255, 255, 255, 0.9);
-        margin-bottom: 6px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        line-height: 1.2;
-    }
-    
-    .metric-value {
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: white;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        line-height: 1.2;
-        word-break: break-all;
-    }
-
-    .collection-rate {
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 12px;
-        padding: 12px;
-        text-align: center;
-        margin-top: 16px;
-    }
-
-    .collection-rate-label {
-        font-size: 0.85rem;
-        color: rgba(255, 255, 255, 0.9);
-        margin-bottom: 0;
-        font-weight: 600;
-    }
-
-    .collection-rate-value {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: white;
+    .branch-card:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--card-shadow-hover);
+        border-color: rgba(255, 255, 255, 0.4);
     }
 
     .summary-cards {
@@ -188,9 +345,8 @@
     }
 
     .summary-card {
-        background: rgba(255, 255, 255, 0.15);
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid var(--glass-border);
         border-radius: 20px;
         padding: 25px;
         text-align: center;
@@ -206,7 +362,7 @@
     .summary-label {
         font-size: 0.9rem;
         font-weight: 600;
-        color: rgba(255, 255, 255, 0.8);
+        color: var(--text-white-tertiary);
         margin-bottom: 10px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
@@ -215,7 +371,7 @@
     .summary-value {
         font-size: 1.8rem;
         font-weight: 700;
-        color: white;
+        color: var(--text-white-primary);
         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
@@ -241,39 +397,62 @@
 
     .refresh-btn {
         background: #ffffff;
-        border: 1px solid #e2e8f0;
-        color: #4a5568;
-        padding: 12px 20px;
-        border-radius: 12px;
+        border: 1px solid #a5b4fc;
+        color: #4338ca;
+        padding: 8px 16px;
+        border-radius: 50px;
         font-weight: 600;
-        font-size: 14px;
+        font-size: 13px;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: var(--primary-transition);
         position: absolute;
-        top: 30px;
+        top: 20px;
         right: 30px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        z-index: 2;
+        min-width: 90px;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(67, 56, 202, 0.15);
+        transform-origin: center;
     }
 
     .refresh-btn:hover {
-        background: #f7fafc;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        background: #f0f4ff;
+        border-color: #8b5cf6;
+        color: #312e81;
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 6px 20px rgba(67, 56, 202, 0.3);
+    }
+
+    .refresh-btn i {
+        font-size: 14px;
+        transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .refresh-btn:hover i {
+        transform: rotate(360deg) scale(1.2);
+    }
+
+    .dashboard-header:hover .refresh-btn {
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 6px 20px rgba(67, 56, 202, 0.3);
+    }
+
+    .dashboard-title-icon {
+        margin-right: 12px;
     }
 </style>
 @endsection
 
 @section('content')
 <div class="container-fluid">
-    <button class="refresh-btn" id="refreshBranches">
-        <i class="ri-refresh-line"></i>Refresh
-    </button>
-    
     <div class="dashboard-header">
-        <h1 class="dashboard-title">📊 Head Office Dashboard</h1>
+        <button class="refresh-btn" id="refreshBranches">
+            <i class="ri-refresh-line"></i>Refresh
+        </button>
+        <h1 class="dashboard-title"><i class="ri-dashboard-3-line dashboard-title-icon"></i>Head Office Dashboard</h1>
         <p class="dashboard-subtitle">{{ date('d/m/Y, H:i:s A') }}</p>
     </div>
 
@@ -290,40 +469,54 @@
             @endphp
             @foreach($branchMetrics as $b)
                 <div class="branch-card {{ $colors[$index % count($colors)] }}" data-branch="{{ $b['id'] }}" title="Click to switch to {{ $b['name'] }} branch">
-                    <div class="branch-header">
-                        <h3 class="branch-name">{{ $b['name'] }}</h3>
-                        <div class="branch-icon">🏢</div>
-                    </div>
-                    
-                    <div class="metrics-grid">
-                        <div class="metric-card">
-                            <div class="metric-label">Customers</div>
-                            <div class="metric-value">{{ number_format($b['customers']) }}</div>
+                    <div class="card-inner">
+                        <!-- Front of Card -->
+                        <div class="card-front">
+                            <div class="branch-header">
+                                <h3 class="branch-name">{{ $b['name'] }}</h3>
+                                <div class="branch-icon"><i class="ri-building-line"></i></div>
+                            </div>
+                            
+                            <div class="metrics-grid">
+                                <div class="metric-card">
+                                    <div class="metric-label">Customers</div>
+                                    <div class="metric-value">{{ number_format($b['customers']) }}</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="metric-label">Portfolio</div>
+                                    <div class="metric-value">{{ number_format($b['portfolio'], 2) }}</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="metric-label">Current Loans</div>
+                                    <div class="metric-value">{{ number_format($b['current_loans_count']) }}</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="metric-label">Today Due</div>
+                                    <div class="metric-value">{{ number_format($b['today_installment'], 2) }}</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="metric-label">Collected</div>
+                                    <div class="metric-value">{{ number_format($b['today_collected'], 2) }}</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="metric-label">Arrears</div>
+                                    <div class="metric-value">{{ number_format($b['arrears'], 2) }}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="collection-rate">
+                                <div class="collection-rate-label">Collection Rate: 0.0%</div>
+                            </div>
                         </div>
-                        <div class="metric-card">
-                            <div class="metric-label">Portfolio</div>
-                            <div class="metric-value">{{ number_format($b['portfolio'], 2) }}</div>
+                        
+                        <!-- Back of Card -->
+                        <div class="card-back">
+                            <div class="switch-icon">
+                                <i class="ri-arrow-left-right-line"></i>
+                            </div>
+                            <div class="switch-text">Switch Branch</div>
+                            <div class="switch-subtitle">Click to switch to {{ $b['name'] }}</div>
                         </div>
-                        <div class="metric-card">
-                            <div class="metric-label">Current Loans</div>
-                            <div class="metric-value">{{ number_format($b['current_loans_count']) }}</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-label">Today Due</div>
-                            <div class="metric-value">{{ number_format($b['today_installment'], 2) }}</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-label">Collected</div>
-                            <div class="metric-value">{{ number_format($b['today_collected'], 2) }}</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-label">Arrears</div>
-                            <div class="metric-value">{{ number_format($b['arrears'], 2) }}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="collection-rate">
-                        <div class="collection-rate-label">Collection Rate: 0.0%</div>
                     </div>
                 </div>
                 @php $index++; @endphp
