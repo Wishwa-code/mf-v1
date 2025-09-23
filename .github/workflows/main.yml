@@ -33,14 +33,14 @@ jobs:
       - name: FTP Deploy to Server (Client1)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.0
         with:
-          server:   ${{ secrets.FTP_HOST }}          # e.g. business93.web-hosting.com
+          server:   ${{ secrets.FTP_HOST }}        # e.g. business93.web-hosting.com
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: 21
           protocol: ftps
           security: strict
           local-dir: ./
-          server-dir: /public_html                   # <-- change if your webroot differs
+          server-dir: /public_html/                # must end with /
           dry-run: false
           exclude: |
             **/.git*
@@ -55,3 +55,4 @@ jobs:
             public/**
             !public/index.php
             !public/.htaccess
+
