@@ -23,17 +23,24 @@ jobs:
           composer install --no-dev --prefer-dist --optimize-autoloader
           php artisan storage:link || true
 
+      # --- Debug your host & FTPS reachability ---
+      - name: DNS / FTPS sanity check
+        run: |
+          echo "FTP_HOST='${{ secrets.FTP_HOST }}'"
+          nslookup "${{ secrets.FTP_HOST }}" || true
+          echo | openssl s_client -starttls ftp -connect "${{ secrets.FTP_HOST }}:21" >/dev/null && echo "FTPS handshake OK" || echo "FTPS handshake failed"
+
       - name: FTP Deploy to Server (Client1)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.0
         with:
-          server:   ${{ secrets.FTP_HOST }}        # e.g. ftp.yourdomain.com
+          server:   ${{ secrets.FTP_HOST }}          # e.g. business93.web-hosting.com
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: 21
           protocol: ftps
           security: strict
           local-dir: ./
-          server-dir: /                             # change if your site lives under /public_html
+          server-dir: /public_html                   # <-- change if your webroot differs
           dry-run: false
           exclude: |
             **/.git*
@@ -45,7 +52,6 @@ jobs:
             **/storage/framework/**
             public/storage/**
             vendor/bin/*
-            # keep public/, exclude all then include what’s needed:
             public/**
             !public/index.php
             !public/.htaccess
