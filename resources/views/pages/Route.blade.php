@@ -36,6 +36,8 @@
                             <tr>
                                 <th>Route Name</th>
                                 <th>Route Code</th>
+                                <th>Collection Type</th>
+                                <th>Collection Date</th>
                                 <th class="text-center">Action</th>
                             </tr>
                             </thead>
@@ -44,11 +46,28 @@
                                 <tr class="style-tr">
                                     <td>{{$item->name}}</td>
                                     <td>{{$item->root_code}}</td>
+                                    @if($item->collection_type=='customizable')
+                                        <td>Customizable</td>
+                                        <td>-</td>
+                                    @else
+                                        <td>Fixed Day Of The Week</td>
+                                        <td>{{$item->collection_date}}</td>
+                                    @endif
                                     <td class="text-center">
-                                        <button type="button" class="btn btn-light edit-btn" data-bs-toggle="modal" data-bs-target="#standard-modal"
-                                                data-route="{{$item->name}}" data-route-id="{{$item->id_route}}" data-route-code="{{$item->root_code}}" title="Edit Route">
+                                        <button
+                                                type="button"
+                                                class="btn btn-light edit-btn"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#standard-modal"
+                                                data-route="{{$item->name}}"
+                                                data-route-id="{{$item->id_route}}"
+                                                data-route-code="{{$item->root_code}}"
+                                                data-collection-type="{{$item->collection_type}}"
+                                                data-collection-date="{{$item->collection_date}}"
+                                                title="Edit Route">
                                             <i class="bi bi-pencil fs-4"></i>
                                         </button>
+
                                         <button type="button" class="btn btn-danger" onclick="confirmDelete('{{$item->id_route}}')" title="Delete Route">
                                             <i class="bi bi-trash fs-4"></i>
                                         </button>
@@ -82,6 +101,30 @@
                                     <label for="route" class="form-label">Route Code<span class="required-asterisk">*</span></label>
                                     <input type="text" id="route_code" class="form-control">
                                 </div>
+                                <div class="mb-3">
+                                    <label for="edit_collection_type" class="form-label">Collection Type<span class="required-asterisk">*</span></label>
+                                    <select class="form-select" id="edit_collection_type">
+                                        <option value="customizable">Customizable</option>
+                                        <option value="fixed">Fixed Day Of The Week</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3" id="edit_collection_date_wrap">
+                                    <label for="edit_collection_date" class="form-label">Collection Date<span class="required-asterisk">*</span></label>
+                                    <select class="form-select" id="edit_collection_date">
+                                        <option value="Monday">Monday</option>
+                                        <option value="Tuesday">Tuesday</option>
+                                        <option value="Wednesday">Wednesday</option>
+                                        <option value="Thursday">Thursday</option>
+                                        <option value="Friday">Friday</option>
+                                        <option value="Saturday">Saturday</option>
+                                        <option value="Sunday">Sunday</option>
+                                        <option value="First Week Monday">First Week Monday</option>
+                                        <option value="First Week Tuesday">First Week Tuesday</option>
+                                        <option value="First Week Wednesday">First Week Wednesday</option>
+                                    </select>
+                                </div>
+
                                 <div class="mb-3" hidden>
                                     <label for="center_incharge" class="form-label">Route In-charge<span class="required-asterisk">*</span></label>
                                     <select class="form-control" id="center_incharge">
@@ -116,6 +159,30 @@
                             <label for="new_route_name" class="form-label">Route Code<span class="required-asterisk">*</span></label>
                             <input type="text" id="new_route_code" class="form-control">
                         </div>
+                        <div class="mb-3">
+                            <label for="new_collection_type" class="form-label">Collection Type<span class="required-asterisk">*</span></label>
+                            <select class="form-select" id="new_collection_type">
+                                <option value="customizable" selected>Customizable</option>
+                                <option value="fixed">Fixed Day Of The Week</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3" id="new_collection_date_wrap" style="display:none;">
+                            <label for="new_collection_date" class="form-label">Collection Date<span class="required-asterisk">*</span></label>
+                            <select class="form-select" id="new_collection_date">
+                                <option value="Monday" selected>Monday</option>
+                                <option value="Tuesday">Tuesday</option>
+                                <option value="Wednesday">Wednesday</option>
+                                <option value="Thursday">Thursday</option>
+                                <option value="Friday">Friday</option>
+                                <option value="Saturday">Saturday</option>
+                                <option value="Sunday">Sunday</option>
+                                <option value="First Week Monday">First Week Monday</option>
+                                <option value="First Week Tuesday">First Week Tuesday</option>
+                                <option value="First Week Wednesday">First Week Wednesday</option>
+                            </select>
+                        </div>
+
                         <div class="mb-3" hidden>
                             <label for="new_route_incharge" class="form-label">Route In-charge/Recovery Officer<span class="required-asterisk">*</span></label>
                             <select class="form-control" id="new_route_incharge">
@@ -148,35 +215,75 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             var companyName = {!! json_encode(session('company_name')) !!}.replace(/&/g, ' And ');
 
+            // --- DataTable (unchanged) ---
             $('#centerTable').DataTable({
                 dom: 'Bfrtip',
                 responsive: true,
                 buttons: [
-                    { extend: 'copy', text: '<i class="bi bi-clipboard"></i> Copy', className: 'btn btn-secondary', exportOptions: { columns: [0, 1, 2, 3] }, filename: companyName },
-                    { extend: 'csv', text: '<i class="bi bi-file-earmark-spreadsheet"></i> CSV', className: 'btn btn-success', exportOptions: { columns: [0, 1, 2, 3] }, filename: companyName },
-                    { extend: 'excel', text: '<i class="bi bi-file-earmark-excel"></i> Excel', className: 'btn btn-primary', exportOptions: { columns: [0, 1, 2, 3] }, filename: companyName },
-                    { extend: 'pdf', text: '<i class="bi bi-file-earmark-pdf"></i> PDF', className: 'btn btn-danger', exportOptions: { columns: [0, 1, 2, 3] }, filename: companyName },
-                    { extend: 'print', text: '<i class="bi bi-printer"></i> Print', className: 'btn btn-info', exportOptions: { columns: [0, 1, 2, 3] }, filename: companyName }
+                    { extend: 'copy',  text: '<i class="bi bi-clipboard"></i> Copy',  className: 'btn btn-secondary', exportOptions: { columns: [0,1,2,3] }, filename: companyName },
+                    { extend: 'csv',   text: '<i class="bi bi-file-earmark-spreadsheet"></i> CSV', className: 'btn btn-success', exportOptions: { columns: [0,1,2,3] }, filename: companyName },
+                    { extend: 'excel', text: '<i class="bi bi-file-earmark-excel"></i> Excel', className: 'btn btn-primary', exportOptions: { columns: [0,1,2,3] }, filename: companyName },
+                    { extend: 'pdf',   text: '<i class="bi bi-file-earmark-pdf"></i> PDF', className: 'btn btn-danger', exportOptions: { columns: [0,1,2,3] }, filename: companyName },
+                    { extend: 'print', text: '<i class="bi bi-printer"></i> Print', className: 'btn btn-info', exportOptions: { columns: [0,1,2,3] }, filename: companyName }
                 ],
-                initComplete: function() {
+                initComplete: function () {
                     $('[data-bs-toggle="tooltip"]').tooltip();
                 }
             });
 
-            // Edit Center Modal - Populate fields
-            $(document).on('click', '.edit-btn', function() {
-                const editButton = $(this);
-                $('#route').val(editButton.data('route'));
-                $('#center_count').val(editButton.data('center-count'));
-                $('#center_id').val(editButton.data('route-id'));
-                $('#route_code').val(editButton.data('route-code'));
+            // --- Toggle helpers ---
+            function applyToggle($typeSelect, $wrap, $dateSelect) {
+                const val = $typeSelect.val();
+                if (val === 'fixed') {
+                    $wrap.show();
+                    $dateSelect.prop('disabled', false).attr('required', true);
+                } else {
+                    $wrap.hide();
+                    $dateSelect.prop('disabled', true).removeAttr('required');
+                }
+            }
+
+            // Add modal toggle
+            $('#new_collection_type').on('change', function () {
+                applyToggle($('#new_collection_type'), $('#new_collection_date_wrap'), $('#new_collection_date'));
+            });
+            // Initialize Add modal default state
+            applyToggle($('#new_collection_type'), $('#new_collection_date_wrap'), $('#new_collection_date'));
+
+            // Edit modal toggle
+            $('#edit_collection_type').on('change', function () {
+                applyToggle($('#edit_collection_type'), $('#edit_collection_date_wrap'), $('#edit_collection_date'));
+            });
+
+            // --- Populate Edit Modal ---
+            $(document).on('click', '.edit-btn', function () {
+                const b = $(this);
+                $('#route').val(b.data('route'));
+                $('#center_id').val(b.data('route-id'));
+                $('#route_code').val(b.data('route-code'));
+
+                const cType = (b.data('collection-type') || '').toString().toLowerCase();
+                const cDate = (b.data('collection-date') || 'Monday');
+
+                // set type
+                if (cType === 'fixed' || cType === 'customizable') {
+                    $('#edit_collection_type').val(cType);
+                } else {
+                    $('#edit_collection_type').val('customizable'); // safe default
+                }
+
+                // set date
+                $('#edit_collection_date').val(cDate);
+
+                // apply toggle after setting values
+                applyToggle($('#edit_collection_type'), $('#edit_collection_date_wrap'), $('#edit_collection_date'));
             });
         });
 
-        // SweetAlert2 for delete confirmation
+        // --- Delete (unchanged) ---
         function confirmDelete(idCenter) {
             Swal.fire({
                 title: 'Are you sure?',
@@ -189,27 +296,18 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
-                        url: "/route/delete/" + idCenter, // Pass idCenter in the URL
+                        url: "/route/delete/" + idCenter,
                         method: "GET",
-                        headers: {
-                            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-                        },
-                        success: function(response) {
-                            if(response.item===1){
-                                Swal.fire({
-                                    title: 'Deleted !',
-                                    text: 'The route delete successfully.',
-                                    icon: 'success',
-                                    confirmButtonText: 'OK'
-                                }).then(() => {
-                                    location.reload(); // Reload the page to reflect changes
-                                });
-                            }else{
+                        headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") },
+                        success: function (response) {
+                            if (response.item === 1) {
+                                Swal.fire({ title: 'Deleted !', text: 'The route delete successfully.', icon: 'success', confirmButtonText: 'OK' })
+                                    .then(() => location.reload());
+                            } else {
                                 Swal.fire('Error!', 'This Route is already exist in center', 'error');
                             }
-
                         },
-                        error: function(xhr) {
+                        error: function () {
                             Swal.fire('Error!', 'An error occurred while deleting the center.', 'error');
                         }
                     });
@@ -217,15 +315,17 @@
             });
         }
 
-        // Update Center (AJAX function)
+        // --- Update Route (AJAX) ---
         function update_center() {
-            var centerData = {
+            const collection_type = $('#edit_collection_type').val();
+            const payload = {
                 center_id: $('#center_id').val(),
                 route: $('#route').val(),
                 route_code: $('#route_code').val(),
+                collection_type: collection_type,
+                collection_date: (collection_type === 'fixed') ? $('#edit_collection_date').val() : null,
             };
 
-            // Show SweetAlert2 confirmation dialog before proceeding
             Swal.fire({
                 title: 'Are you sure?',
                 text: "Do you want to update the route details?",
@@ -236,28 +336,16 @@
                 confirmButtonText: 'Yes, update it!'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // If user confirms, send the AJAX request
                     $.ajax({
-                        url: "{{ route('route.update') }}", // Ensure this route is correct
+                        url: "{{ route('route.update') }}",
                         method: "post",
-                        data: centerData, // Send the data via AJAX
-                        headers: {
-                            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                        data: payload,
+                        headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") },
+                        success: function () {
+                            Swal.fire({ title: 'Updated!', text: 'The route details have been updated.', icon: 'success', confirmButtonText: 'OK' })
+                                .then(() => { $('#standard-modal').modal('hide'); location.reload(); });
                         },
-                        success: function(response) {
-                            // Success message
-                            Swal.fire({
-                                title: 'Updated!',
-                                text: 'The route details have been updated.',
-                                icon: 'success',
-                                confirmButtonText: 'OK'
-                            }).then(() => {
-                                // Close the modal and reload the page after success
-                                $('#standard-modal').modal('hide');
-                                location.reload(); // Reload the page to reflect changes
-                            });
-                        },
-                        error: function(xhr) {
+                        error: function () {
                             Swal.fire('Error!', 'An error occurred while updating the center.', 'error');
                         }
                     });
@@ -265,11 +353,15 @@
             });
         }
 
+        // --- Save Route (AJAX) ---
         function saveRoute() {
-            var routeData = {
+            const collection_type = $('#new_collection_type').val();
+            const payload = {
                 route_name: $('#new_route_name').val(),
                 route_incharge: $('#new_route_incharge').val(),
                 root_code: $('#new_route_code').val(),
+                collection_type: collection_type,
+                collection_date: (collection_type === 'fixed') ? $('#new_collection_date').val() : null,
             };
 
             Swal.fire({
@@ -283,31 +375,21 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
-                        url: "{{ route('route.store') }}", // Route for saving
+                        url: "{{ route('route.store') }}",
                         method: "post",
-                        data: routeData, // Send the data via AJAX
-                        headers: {
-                            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                        data: payload,
+                        headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") },
+                        success: function () {
+                            Swal.fire({ title: 'Saved!', text: 'The new route has been added successfully.', icon: 'success', confirmButtonText: 'OK' })
+                                .then(() => { $('#add-route-modal').modal('hide'); location.reload(); });
                         },
-                        success: function(response) {
-                            Swal.fire({
-                                title: 'Saved!',
-                                text: 'The new route has been added successfully.',
-                                icon: 'success',
-                                confirmButtonText: 'OK'
-                            }).then(() => {
-                                $('#add-route-modal').modal('hide'); // Hide the modal
-                                location.reload(); // Reload the page to reflect changes
-                            });
-                        },
-                        error: function(xhr) {
+                        error: function () {
                             Swal.fire('Error!', 'An error occurred while saving the route.', 'error');
                         }
                     });
                 }
             });
-
-
         }
     </script>
+
 @endsection

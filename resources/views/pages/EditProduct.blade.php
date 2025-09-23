@@ -263,6 +263,17 @@
                                         </div>
                                     </div>
 
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="collection_date_type" class="form-label">Collection Date Type<span
+                                                        class="required-asterisk">*</span></label>
+                                            <select class="form-select" id="collection_date_type">
+                                                <option value="same_as_installment" selected>Same As Installment Due</option>
+                                                <option value="according_to_route">According to Route</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
                                 </div>
                                 <div class="row mb-3 section-break">
                                     <div class="col-12">
@@ -543,6 +554,7 @@
             $('#saving_account_amount_type').val(loanCategory.saving_amount_type);
             $('#saving_amount').val(loanCategory.saving_amount);
             $('#saving_payment').val(loanCategory.saving_payment);
+            $('#collection_date_type').val(loanCategory.collection_date_type || 'same_as_installment').trigger('change');
 
 
 
@@ -897,6 +909,7 @@
             let saving_amount = $("#saving_amount").val();
             let saving_payment = $("#saving_payment").val();
             let penalty_method = $("#penalty_method").val();
+            let collection_date_type = $("#collection_date_type").val();
 
             if (enable_saving === "No") {
                 saving_amount = 0.00;
@@ -1011,6 +1024,7 @@
                             saving_amount,
                             saving_payment,
                             penalty_method,
+                            collection_date_type,
                         },
                         success: function (res, status, xhr) {
                             if (xhr.status === 200) {

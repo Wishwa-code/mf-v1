@@ -333,6 +333,32 @@ class UserController extends Controller
         }
 
 
+        if (!Schema::hasColumn('loan_category', 'collection_date_type')) {
+            DB::statement(
+                "ALTER TABLE `loan_category`
+         ADD COLUMN `collection_date_type` VARCHAR(45) NOT NULL
+         DEFAULT 'same_as_installment'"
+            );
+        }
+
+
+        if (!Schema::hasColumn('route', 'collection_type')) {
+            DB::statement(
+                "ALTER TABLE `route`
+         ADD COLUMN `collection_type` VARCHAR(45) NOT NULL
+         DEFAULT 'customizable'"
+            );
+        }
+
+        if (!Schema::hasColumn('route', 'collection_date')) {
+            DB::statement(
+                "ALTER TABLE `route`
+         ADD COLUMN `collection_date` VARCHAR(45) NOT NULL
+         DEFAULT 'Monday'"
+            );
+        }
+
+
 
         $loan=tableWithBranch('customer_loan')->where('Status','!=','1')->get();
         $CapitalBalanceController = new CapitalBalanceController();

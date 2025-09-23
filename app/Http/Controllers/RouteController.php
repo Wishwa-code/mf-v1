@@ -32,23 +32,26 @@ class RouteController extends Controller
      */
     public function store(Request $request)
     {
-        // Validation can be added if required
         $validated = $request->validate([
-            'route_name' => 'required',
-            'route_incharge' => 'required',
-            'root_code' => 'required',
+            'route_name'       => 'required|string|max:255',
+            'route_incharge'   => 'required|integer',
+            'root_code'        => 'required|string|max:255',
+            'collection_type'  => 'required|in:customizable,fixed',
+            'collection_date'  => 'nullable|required_if:collection_type,fixed|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday,First Week Monday,First Week Tuesday,First Week Wednesday',
         ]);
 
-        // Insert new route into the database
         DB::table('route')->insert([
-            'name' => $validated['route_name'],
-            'root_code' => $validated['root_code'],
-            'id_officer' => $validated['route_incharge'],
-            'branch_id' => session('branch_id')
+            'name'             => $validated['route_name'],
+            'root_code'        => $validated['root_code'],
+            'id_officer'       => $validated['route_incharge'],
+            'collection_type'  => $validated['collection_type'],
+            'collection_date'  => ($validated['collection_type'] === 'fixed') ? $validated['collection_date'] : null,
+            'branch_id'        => session('branch_id'),
         ]);
 
         return response()->json(['message' => 'Route added successfully!'], 200);
     }
+
 
     /**
      * Display the specified resource.
@@ -71,16 +74,27 @@ class RouteController extends Controller
      */
     public function update(Request $request)
     {
+        $validated = $request->validate([
+            'center_id'        => 'required|integer',
+            'route'            => 'required|string|max:255',
+            'route_code'       => 'required|string|max:255',
+            'collection_type'  => 'required|in:customizable,fixed',
+            'collection_date'  => 'nullable|required_if:collection_type,fixed|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday,First Week Monday,First Week Tuesday,First Week Wednesday',
+        ]);
+
         DB::table('route')
-            ->where('id_route', $request->center_id)
+            ->where('id_route', $validated['center_id'])
             ->where('branch_id', session('branch_id'))
             ->update([
-                'name' => $request->route,
-                'root_code' => $request->route_code,
+                'name'             => $validated['route'],
+                'root_code'        => $validated['route_code'],
+                'collection_type'  => $validated['collection_type'],
+                'collection_date'  => ($validated['collection_type'] === 'fixed') ? $validated['collection_date'] : null,
             ]);
 
-        return redirect()->route('routes.index')->with('success', 'Route updated successfully!');
+        return response()->json(['message' => 'Route updated successfully!'], 200);
     }
+
 
     /**
      * Remove the specified resource from storage.
