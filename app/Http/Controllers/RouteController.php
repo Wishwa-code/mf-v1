@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class RouteController extends Controller
 {
@@ -27,26 +28,40 @@ class RouteController extends Controller
         //
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    private function allowedRouteDays(): array
+    {
+        return [
+            'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday',
+            'First Week Monday','First Week Tuesday','First Week Wednesday',
+            'Second Week Monday','Second Week Tuesday','Second Week Wednesday',
+            'Third Week Monday','Third Week Tuesday','Third Week Wednesday',
+            'Fourth Week Monday','Fourth Week Tuesday','Fourth Week Wednesday',
+        ];
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'route_name'       => 'required|string|max:255',
-            'route_incharge'   => 'required|integer',
-            'root_code'        => 'required|string|max:255',
-            'collection_type'  => 'required|in:customizable,fixed',
-            'collection_date'  => 'nullable|required_if:collection_type,fixed|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday,First Week Monday,First Week Tuesday,First Week Wednesday',
+            'route_name'      => 'required|string|max:255',
+            'route_incharge'  => 'required|integer',
+            'root_code'       => 'required|string|max:255',
+            // accept both spellings
+            'collection_type' => 'required|in:customizable,customable,fixed',
+            'collection_date' => ['nullable','required_if:collection_type,fixed', Rule::in($this->allowedRouteDays())],
         ]);
 
+        // normalize type
+        $type = $validated['collection_type'] === 'customable' ? 'customizable' : $validated['collection_type'];
+        // force Monday when not fixed
+        $collectionDate = $type === 'fixed' ? ($validated['collection_date'] ?? 'Monday') : 'Monday';
+
         DB::table('route')->insert([
-            'name'             => $validated['route_name'],
-            'root_code'        => $validated['root_code'],
-            'id_officer'       => $validated['route_incharge'],
-            'collection_type'  => $validated['collection_type'],
-            'collection_date'  => ($validated['collection_type'] === 'fixed') ? $validated['collection_date'] : null,
-            'branch_id'        => session('branch_id'),
+            'name'            => $validated['route_name'],
+            'root_code'       => $validated['root_code'],
+            'id_officer'      => $validated['route_incharge'],
+            'collection_type' => $type,
+            'collection_date' => $collectionDate,
+            'branch_id'       => session('branch_id'),
         ]);
 
         return response()->json(['message' => 'Route added successfully!'], 200);
@@ -75,21 +90,25 @@ class RouteController extends Controller
     public function update(Request $request)
     {
         $validated = $request->validate([
-            'center_id'        => 'required|integer',
-            'route'            => 'required|string|max:255',
-            'route_code'       => 'required|string|max:255',
-            'collection_type'  => 'required|in:customizable,fixed',
-            'collection_date'  => 'nullable|required_if:collection_type,fixed|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday,First Week Monday,First Week Tuesday,First Week Wednesday',
+            'center_id'       => 'required|integer',
+            'route'           => 'required|string|max:255',
+            'route_code'      => 'required|string|max:255',
+            // accept both spellings
+            'collection_type' => 'required|in:customizable,customable,fixed',
+            'collection_date' => ['nullable','required_if:collection_type,fixed', Rule::in($this->allowedRouteDays())],
         ]);
+
+        $type = $validated['collection_type'] === 'customable' ? 'customizable' : $validated['collection_type'];
+        $collectionDate = $type === 'fixed' ? ($validated['collection_date'] ?? 'Monday') : 'Monday';
 
         DB::table('route')
             ->where('id_route', $validated['center_id'])
             ->where('branch_id', session('branch_id'))
             ->update([
-                'name'             => $validated['route'],
-                'root_code'        => $validated['route_code'],
-                'collection_type'  => $validated['collection_type'],
-                'collection_date'  => ($validated['collection_type'] === 'fixed') ? $validated['collection_date'] : null,
+                'name'            => $validated['route'],
+                'root_code'       => $validated['route_code'],
+                'collection_type' => $type,
+                'collection_date' => $collectionDate,
             ]);
 
         return response()->json(['message' => 'Route updated successfully!'], 200);

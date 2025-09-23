@@ -112,7 +112,7 @@
                                 <div class="mb-3" id="edit_collection_date_wrap">
                                     <label for="edit_collection_date" class="form-label">Collection Date<span class="required-asterisk">*</span></label>
                                     <select class="form-select" id="edit_collection_date">
-                                        <option value="Monday">Monday</option>
+                                    <option value="Monday" selected>Monday</option>
                                         <option value="Tuesday">Tuesday</option>
                                         <option value="Wednesday">Wednesday</option>
                                         <option value="Thursday">Thursday</option>
@@ -122,6 +122,15 @@
                                         <option value="First Week Monday">First Week Monday</option>
                                         <option value="First Week Tuesday">First Week Tuesday</option>
                                         <option value="First Week Wednesday">First Week Wednesday</option>
+                                        <option value="Second Week Monday">Second Week Monday</option>
+                                        <option value="Second Week Tuesday">Second Week Tuesday</option>
+                                        <option value="Second Week Wednesday">Second Week Wednesday</option>
+                                        <option value="Third Week Monday">Third Week Monday</option>
+                                        <option value="Third Week Tuesday">Third Week Tuesday</option>
+                                        <option value="Third Week Wednesday">Third Week Wednesday</option>
+                                        <option value="Fourth Week Monday">Fourth Week Monday</option>
+                                        <option value="Fourth Week Tuesday">Fourth Week Tuesday</option>
+                                        <option value="Fourth Week Wednesday">Fourth Week Wednesday</option>
                                     </select>
                                 </div>
 
@@ -180,6 +189,15 @@
                                 <option value="First Week Monday">First Week Monday</option>
                                 <option value="First Week Tuesday">First Week Tuesday</option>
                                 <option value="First Week Wednesday">First Week Wednesday</option>
+                                <option value="Second Week Monday">Second Week Monday</option>
+                                <option value="Second Week Tuesday">Second Week Tuesday</option>
+                                <option value="Second Week Wednesday">Second Week Wednesday</option>
+                                <option value="Third Week Monday">Third Week Monday</option>
+                                <option value="Third Week Tuesday">Third Week Tuesday</option>
+                                <option value="Third Week Wednesday">Third Week Wednesday</option>
+                                <option value="Fourth Week Monday">Fourth Week Monday</option>
+                                <option value="Fourth Week Tuesday">Fourth Week Tuesday</option>
+                                <option value="Fourth Week Wednesday">Fourth Week Wednesday</option>
                             </select>
                         </div>
 
@@ -234,9 +252,8 @@
                 }
             });
 
-            // --- Toggle helpers ---
             function applyToggle($typeSelect, $wrap, $dateSelect) {
-                const val = $typeSelect.val();
+                const val = ($typeSelect.val() || '').toLowerCase();
                 if (val === 'fixed') {
                     $wrap.show();
                     $dateSelect.prop('disabled', false).attr('required', true);
@@ -246,19 +263,19 @@
                 }
             }
 
-            // Add modal toggle
+
+            // Add modal toggle + initial state
             $('#new_collection_type').on('change', function () {
                 applyToggle($('#new_collection_type'), $('#new_collection_date_wrap'), $('#new_collection_date'));
             });
-            // Initialize Add modal default state
             applyToggle($('#new_collection_type'), $('#new_collection_date_wrap'), $('#new_collection_date'));
 
-            // Edit modal toggle
+// Edit modal toggle
             $('#edit_collection_type').on('change', function () {
                 applyToggle($('#edit_collection_type'), $('#edit_collection_date_wrap'), $('#edit_collection_date'));
             });
 
-            // --- Populate Edit Modal ---
+// Populate Edit modal
             $(document).on('click', '.edit-btn', function () {
                 const b = $(this);
                 $('#route').val(b.data('route'));
@@ -268,19 +285,21 @@
                 const cType = (b.data('collection-type') || '').toString().toLowerCase();
                 const cDate = (b.data('collection-date') || 'Monday');
 
-                // set type
-                if (cType === 'fixed' || cType === 'customizable') {
-                    $('#edit_collection_type').val(cType);
+                // set type (fallback safe)
+                $('#edit_collection_type').val(['fixed','customizable'].includes(cType) ? cType : 'customizable');
+
+                // set date only if it exists in the select; otherwise default to first option
+                const $editDate = $('#edit_collection_date');
+                if ($editDate.find(`option[value="${cDate}"]`).length) {
+                    $editDate.val(cDate);
                 } else {
-                    $('#edit_collection_type').val('customizable'); // safe default
+                    $editDate.prop('selectedIndex', 0);
                 }
 
-                // set date
-                $('#edit_collection_date').val(cDate);
-
-                // apply toggle after setting values
-                applyToggle($('#edit_collection_type'), $('#edit_collection_date_wrap'), $('#edit_collection_date'));
+                // apply toggle after values
+                applyToggle($('#edit_collection_type'), $('#edit_collection_date_wrap'), $editDate);
             });
+
         });
 
         // --- Delete (unchanged) ---
