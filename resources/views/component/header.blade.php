@@ -935,6 +935,46 @@ $banner = DB::select($query);
 
 
             @if($privilege)
+                @php $isHeadOffice = session('branch_id') == -1; @endphp
+                @if($isHeadOffice)
+                    {{-- Head Office restricted menu: only View Customer, KYC, View Center --}}
+                    @if(optional($privilege)->customer == 1 && (optional($privilege)->view_customer == 1 || optional($privilege)->kyc == 1))
+                        <li class="side-nav-item">
+                            <a data-bs-toggle="collapse" href="#customer" aria-expanded="false"
+                               aria-controls="customer" class="side-nav-link">
+                                <i class="ri-group-2-line"></i>
+                                <span> Customer </span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse" id="customer">
+                                <ul class="side-nav-second-level">
+                                    @if(optional($privilege)->view_customer == 1)
+                                        <li><a href="/showcustomers">View Customer</a></li>
+                                    @endif
+                                    @if(optional($privilege)->kyc == 1)
+                                        <li><a href="/kyc">KYC</a></li>
+                                    @endif
+                                </ul>
+                            </div>
+                        </li>
+                    @endif
+
+                    @if(optional($privilege)->loan_center == 1 && optional($privilege)->view_center == 1)
+                        <li class="side-nav-item">
+                            <a data-bs-toggle="collapse" href="#center" aria-expanded="false" aria-controls="center"
+                               class="side-nav-link">
+                                <i class="bi bi-building"></i>
+                                <span> Loan Center </span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse" id="center">
+                                <ul class="side-nav-second-level">
+                                    <li><a href="/viewcenter">View Center</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    @endif
+                @else
                 @if(optional($privilege)->dashboard == 1)
                     <li class="side-nav-item">
                         <a href="/" class="side-nav-link">
@@ -1568,6 +1608,7 @@ $banner = DB::select($query);
                             </li>
                     @endif
 
+                @endif {{-- end isHeadOffice condition --}}
             @endif
         </ul>
 
