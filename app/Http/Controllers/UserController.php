@@ -324,6 +324,68 @@ class UserController extends Controller
             return redirect()->route('login')->with("error", "Session expired! Please Login");
         }
 
+        // Head Office aggregated dashboard: show all branches overview
+        if ((int)session('branch_id') === -1) {
+            // Fetch active branches excluding head office itself
+            $branches = DB::table('branch')->where('status',1)->where('branch_id','!=',-1)->get();
+
+            $branchMetrics = [];
+            foreach ($branches as $b) {
+                $branchId = $b->branch_id;
+                // Helper closure forcing branch scope manually
+                $scoped = function($table) use ($branchId) {
+                    return DB::table($table)->where($table.'.branch_id',$branchId);
+                };
+
+                $customers = $scoped('customer')->count();
+                $loanPendingQ = $scoped('customer_loan')->where('Status','-1');
+                $loanCurrentQ = $scoped('customer_loan')->where('Status','0');
+                $loanSettledQ = $scoped('customer_loan')->where('Status','1');
+                $pendingCount = $loanPendingQ->count();
+                $pendingAmount = $scoped('customer_loan')->where('Status','-1')->sum('Amount');
+                $currentCount = $loanCurrentQ->count();
+                $currentAmount = $scoped('customer_loan')->where('Status','0')->sum('Amount');
+                $settledCount = $loanSettledQ->count();
+                $portfolio = $scoped('installments')->sum('capital_balance');
+                $todayInstallment = DB::table('installments')
+                    ->join('customer_loan','installments.Customer_Loan_idCustomer_Loan','=','customer_loan.idCustomer_Loan')
+                    ->where('installments.branch_id',$branchId)
+                    ->where('customer_loan.branch_id',$branchId)
+                    ->whereDate('installments.Installment_Date',date('Y-m-d'))
+                    ->where('customer_loan.Status','0')
+                    ->sum('installments.Total_Balance');
+                $todayCollected = $scoped('customer_payments')->where('Date',date('Y-m-d'))->sum('Amount');
+                // arrears: overdue installments (date < today) still active
+                $arrears = DB::table('installments')
+                    ->join('customer_loan','installments.Customer_Loan_idCustomer_Loan','=','customer_loan.idCustomer_Loan')
+                    ->where('installments.branch_id',$branchId)
+                    ->where('customer_loan.branch_id',$branchId)
+                    ->where('installments.Status','0')
+                    ->where('customer_loan.Status','0')
+                    ->whereDate('installments.Installment_Date','<',date('Y-m-d'))
+                    ->sum('installments.Total_Balance');
+
+                $branchMetrics[] = [
+                    'id' => $branchId,
+                    'name' => $b->Name,
+                    'customers' => $customers,
+                    'pending_loans_count' => $pendingCount,
+                    'pending_loans_amount' => (float)$pendingAmount,
+                    'current_loans_count' => $currentCount,
+                    'current_loans_amount' => (float)$currentAmount,
+                    'settled_loans_count' => $settledCount,
+                    'portfolio' => (float)$portfolio,
+                    'today_installment' => (float)$todayInstallment,
+                    'today_collected' => (float)$todayCollected,
+                    'arrears' => (float)$arrears,
+                ];
+            }
+
+            return view('ho-dashboard', [
+                'branchMetrics' => $branchMetrics,
+            ]);
+        }
+
         if (!Schema::hasColumn('installments', 'Panelty_count')) {
             DB::statement(
                 "ALTER TABLE `installments`
