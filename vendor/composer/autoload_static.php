@@ -354,13 +354,13 @@ class ComposerStaticInitda9b7a1dc1dd923105198c572cc7df8d
         ),
         'Spatie\\LaravelIgnition\\' => 
         array (
-            0 => __DIR__ . '/..' . '/spatie/laravel-ignition/src',
-            1 => __DIR__ . '/..' . '/spatie/error-solutions/legacy/laravel-ignition',
+            0 => __DIR__ . '/..' . '/spatie/error-solutions/legacy/laravel-ignition',
+            1 => __DIR__ . '/..' . '/spatie/laravel-ignition/src',
         ),
         'Spatie\\Ignition\\' => 
         array (
-            0 => __DIR__ . '/..' . '/spatie/ignition/src',
-            1 => __DIR__ . '/..' . '/spatie/error-solutions/legacy/ignition',
+            0 => __DIR__ . '/..' . '/spatie/error-solutions/legacy/ignition',
+            1 => __DIR__ . '/..' . '/spatie/ignition/src',
         ),
         'Spatie\\FlareClient\\' => 
         array (
@@ -599,10 +599,12 @@ class ComposerStaticInitda9b7a1dc1dd923105198c572cc7df8d
     );
 
     public static $classMap = array (
+        'App\\Console\\Commands\\BackupDatabase' => __DIR__ . '/../..' . '/app/Console/Commands/BackupDatabase.php',
         'App\\Console\\Commands\\SendSmsBirthday' => __DIR__ . '/../..' . '/app/Console/Commands/SendSmsBirthday.php',
         'App\\Console\\Kernel' => __DIR__ . '/../..' . '/app/Console/Kernel.php',
         'App\\Exceptions\\Handler' => __DIR__ . '/../..' . '/app/Exceptions/Handler.php',
         'App\\Http\\Controllers\\API\\AuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/API/AuthController.php',
+        'App\\Http\\Controllers\\API\\DirectoryController' => __DIR__ . '/../..' . '/app/Http/Controllers/API/DirectoryController.php',
         'App\\Http\\Controllers\\AgreementController' => __DIR__ . '/../..' . '/app/Http/Controllers/AgreementController.php',
         'App\\Http\\Controllers\\AssetManagementController' => __DIR__ . '/../..' . '/app/Http/Controllers/AssetManagementController.php',
         'App\\Http\\Controllers\\BackupController' => __DIR__ . '/../..' . '/app/Http/Controllers/BackupController.php',
@@ -620,6 +622,7 @@ class ComposerStaticInitda9b7a1dc1dd923105198c572cc7df8d
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
         'App\\Http\\Controllers\\CustomerController' => __DIR__ . '/../..' . '/app/Http/Controllers/CustomerController.php',
         'App\\Http\\Controllers\\CustomerLogController' => __DIR__ . '/../..' . '/app/Http/Controllers/CustomerLogController.php',
+        'App\\Http\\Controllers\\DataMigrateController' => __DIR__ . '/../..' . '/app/Http/Controllers/DataMigrateController.php',
         'App\\Http\\Controllers\\ExcelController' => __DIR__ . '/../..' . '/app/Http/Controllers/ExcelController.php',
         'App\\Http\\Controllers\\GroupController' => __DIR__ . '/../..' . '/app/Http/Controllers/GroupController.php',
         'App\\Http\\Controllers\\GuardianController' => __DIR__ . '/../..' . '/app/Http/Controllers/GuardianController.php',
@@ -640,8 +643,10 @@ class ComposerStaticInitda9b7a1dc1dd923105198c572cc7df8d
         'App\\Http\\Controllers\\TransactionController' => __DIR__ . '/../..' . '/app/Http/Controllers/TransactionController.php',
         'App\\Http\\Controllers\\UserController' => __DIR__ . '/../..' . '/app/Http/Controllers/UserController.php',
         'App\\Http\\Kernel' => __DIR__ . '/../..' . '/app/Http/Kernel.php',
+        'App\\Http\\Middleware\\ApplyBranchFromUser' => __DIR__ . '/../..' . '/app/Http/Middleware/ApplyBranchFromUser.php',
         'App\\Http\\Middleware\\AutoLogout' => __DIR__ . '/../..' . '/app/Http/Middleware/AutoLogout.php',
         'App\\Http\\Middleware\\HandleExpiredPage' => __DIR__ . '/../..' . '/app/Http/Middleware/HandleExpiredPage.php',
+        'App\\Jobs\\ProcessPenalties' => __DIR__ . '/../..' . '/app/Jobs/ProcessPenalties.php',
         'App\\Mail\\BranchCreated' => __DIR__ . '/../..' . '/app/Mail/BranchCreated.php',
         'App\\Models\\Agreement' => __DIR__ . '/../..' . '/app/Models/Agreement.php',
         'App\\Models\\Bank' => __DIR__ . '/../..' . '/app/Models/Bank.php',
@@ -659,6 +664,7 @@ class ComposerStaticInitda9b7a1dc1dd923105198c572cc7df8d
         'App\\Models\\Sms' => __DIR__ . '/../..' . '/app/Models/Sms.php',
         'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
         'App\\Providers\\AppServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AppServiceProvider.php',
+        'App\\Services\\BankBalanceService' => __DIR__ . '/../..' . '/app/Services/BankBalanceService.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
         'Barryvdh\\DomPDF\\Facade\\Pdf' => __DIR__ . '/..' . '/barryvdh/laravel-dompdf/src/Facade/Pdf.php',
         'Barryvdh\\DomPDF\\PDF' => __DIR__ . '/..' . '/barryvdh/laravel-dompdf/src/PDF.php',

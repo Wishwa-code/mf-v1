@@ -1062,30 +1062,32 @@ class ReportController extends Controller
             // 1) Sum of capital actually paid on/before $start, per loan
             $capitalPaidBefore = DB::table('installments as ins')
                 ->selectRaw('ins.Customer_Loan_idCustomer_Loan as Loan_ID, COALESCE(SUM(ins.capital_amount), 0) as capital_paid_before')
-                ->where('ins.Installment_Date', '<=', $start)
+                ->where('ins.Installment_Date', '<', $start)
                 ->groupBy('ins.Customer_Loan_idCustomer_Loan');
 
             // 2) Join to loan table to get original capital (Amount) and compute balance
-            DB::table('customer_loan as cl')
+            $inner = DB::table('customer_loan as cl')
                 ->leftJoinSub($capitalPaidBefore, 'p', 'p.Loan_ID', '=', 'cl.idCustomer_Loan')
-                ->selectRaw('
-                cl.idCustomer_Loan as Loan_ID,
-                GREATEST(COALESCE(cl.Amount,0) - COALESCE(p.capital_paid_before,0), 0) as Capital_Balance,
-                ? as Date_Time,
-                0 as Loan_Log_ID,
-                1 as rn
-            ', [$start])
+                ->selectRaw("
+                    cl.idCustomer_Loan as Loan_ID,
+                    GREATEST(COALESCE(cl.Amount,0) - COALESCE(p.capital_paid_before,0), 0) as Capital_Balance,
+                    cl.Date_Time as Date_Time,
+                    0 as Loan_Log_ID,
+                    1 as rn
+                ")
                 ->when(session()->has('branch_id'), function ($qb) {
                     // Optional: keep branch scope if you need it
                     $qb->where('cl.branch_id', session('branch_id'));
                 })
-                ->orderBy('cl.idCustomer_Loan') // not required; just to keep things deterministic
-                ->tap(function ($builder) use ($q) {
-                    // Push the built SELECT into the outer subquery
-                    $q->fromSub($builder, 't');
-                });
+                ->orderBy('cl.idCustomer_Loan'); // not required; just to keep things deterministic
 
-        }, 'x')->where('rn', 1);
+            // Push the built SELECT into the outer subquery
+            $q->fromSub($inner, 't');
+
+        }, 'x')
+            ->where('rn', 1)
+            ->where('Date_Time', '<', $start);
+
 
         // ---------- as-of END snapshot (NEW) ----------
         $endingOne = DB::query()->fromSub(function ($q) use ($end) {
@@ -1130,13 +1132,18 @@ class ReportController extends Controller
                 ->groupBy('i.Customer_Loan_idCustomer_Loan');
         }, 'dep');
 
-        // 4) Collections (customer_payments) per collector user in [start, end]
-        $collections = DB::query()->fromSub(function ($q) use ($start, $end) {
+        // 4) Collections (customer_payments) per LOAN in [start, end]
+        $collections = DB::query()->fromSub(function ($q) use ($start, $end, $collectorId) {
             $q->from('customer_payments as cp')
                 ->whereBetween('cp.Date', [$start->toDateString(), $end->toDateString()])
-                ->selectRaw('cp.User_idUser as collector_user_id, SUM(cp.Amount) as Collection_Sum')
-                ->groupBy('cp.User_idUser');
+                ->selectRaw('
+                    cp.Customer_Loan_idCustomer_Loan as Loan_ID,
+                    SUM(cp.Amount) as Collection_Sum
+                ')
+                ->groupBy('cp.Customer_Loan_idCustomer_Loan');
         }, 'col');
+
+
 
         // A) Installments sum by assigned collector within [start, end]
         $installmentSum = DB::query()->fromSub(function ($q) use ($start, $end) {
@@ -1147,6 +1154,22 @@ class ReportController extends Controller
                 ->groupBy('cl.collector_id');
         }, 'insx');
 
+
+
+        // Arrears per LOAN (sum of Total_Balance for installments before $end)
+        $arrearsPerLoan = DB::query()->fromSub(function ($q) use ($end) {
+            $q->from('installments as i')
+                ->where('i.Installment_Date', '<', $end->toDateString())
+
+                ->selectRaw('
+          i.Customer_Loan_idCustomer_Loan as Loan_ID,
+          SUM(COALESCE(i.Total_Balance, 0)) as Arrears_Sum
+      ')
+                ->groupBy('i.Customer_Loan_idCustomer_Loan');
+        }, 'arrl');
+
+
+
         // B) Payments sum by assigned collector within [start, end]
         $paymentsAssigned = DB::query()->fromSub(function ($q) use ($start, $end) {
             $q->from('customer_payments as cp')
@@ -1155,6 +1178,23 @@ class ReportController extends Controller
                 ->selectRaw('cl.collector_id as collector_id, SUM(cp.Amount) as Pay_Sum')
                 ->groupBy('cl.collector_id');
         }, 'payx');
+
+        // C) Savings credits per LOAN (<= $end)
+        $savingsCredits = DB::query()->fromSub(function ($q) use ($end) {
+            $q->from('Customer_Saving_Accounts as csa')
+                ->join('Savings_Account_Log as sal', 'sal.Saving_Acount_Id', '=', 'csa.id')
+                ->where('sal.Date_Time', '<=', $end->toDateString())
+                ->when(session()->has('branch_id'), function ($qq) {
+                    // keep branch scoping (use csa’s branch; if you prefer the log's, switch to sal.branch_id)
+                    $qq->where('csa.branch_id', session('branch_id'));
+                })
+                ->selectRaw('
+                    csa.Loan_Id as Loan_ID,
+                    SUM(COALESCE(sal.Credit, 0)) as Savings_Credit_Sum
+                ')
+                ->groupBy('csa.Loan_Id');
+        }, 'sav');
+
 
         // TOTAL LOANS per collector (optional product filter)
         $collectorLoanTotals = DB::query()->fromSub(function ($q) use ($productId) {
@@ -1204,6 +1244,17 @@ class ReportController extends Controller
             ->selectRaw("cl.collector_id as collector_id, COUNT(DISTINCT cl.`$customerIdCol`) as OC_Clients")
             ->groupBy('cl.collector_id');
 
+        // Outstanding (sum of installments.Total_Balance) per LOAN (NO date filter)
+        $outstandingPerLoan = DB::query()->fromSub(function ($q) {
+            $q->from('installments as ins')
+                ->selectRaw('
+          ins.Customer_Loan_idCustomer_Loan as Loan_ID,
+          SUM(COALESCE(ins.Total_Balance, 0)) as Outstanding_Sum
+      ')
+                ->groupBy('ins.Customer_Loan_idCustomer_Loan');
+        }, 'out');
+
+
         /*
          * NEW: Collector ↔ Product loan counts, folded into one row per collector via GROUP_CONCAT.
          * (No date/product filter so you see the full distribution per collector.)
@@ -1229,7 +1280,7 @@ class ReportController extends Controller
             ->leftJoinSub($endingOne,    'es',   fn($j) => $j->on('es.Loan_ID', '=', 'cl.idCustomer_Loan'))  // NEW
             ->leftJoinSub($investment,   'inv',  fn($j) => $j->on('inv.Loan_ID', '=', 'cl.idCustomer_Loan'))
             ->leftJoinSub($depletion,    'dep',  fn($j) => $j->on('dep.Loan_ID', '=', 'cl.idCustomer_Loan'))
-            ->leftJoinSub($collections,  'col',  fn($j) => $j->on('col.collector_user_id', '=', 'u.id'))
+            ->leftJoinSub($collections,  'col',  fn($j) => $j->on('col.Loan_ID', '=', 'cl.idCustomer_Loan'))
             ->leftJoinSub($installmentSum,'insx',fn($j) => $j->on('insx.collector_id', '=', 'u.id'))
             ->leftJoinSub($paymentsAssigned,'payx',fn($j) => $j->on('payx.collector_id', '=', 'u.id'))
             ->leftJoinSub($collectorLoanTotals,'lt', fn($j) => $j->on('lt.collector_id', '=', 'u.id'))
@@ -1237,9 +1288,16 @@ class ReportController extends Controller
             ->leftJoinSub($ocLoans, 'ocx', fn($j) => $j->on('ocx.collector_id', '=', 'u.id'))
             ->leftJoinSub($totalClients, 'ct', fn($j) => $j->on('ct.collector_id', '=', 'u.id'))
             ->leftJoinSub($ocClients, 'occt', fn($j) => $j->on('occt.collector_id', '=', 'u.id'))
+            ->leftJoinSub($savingsCredits, 'sav', fn($j) => $j->on('sav.Loan_ID', '=', 'cl.idCustomer_Loan'))
+            ->leftJoinSub($outstandingPerLoan, 'out', fn($j) => $j->on('out.Loan_ID', '=', 'cl.idCustomer_Loan'))
+
+
 
             // NEW: join collector ↔ product counts
             ->leftJoinSub($collectorProductCounts, 'pc', fn($j) => $j->on('pc.collector_id', '=', 'u.id'))
+// NEW: join arrears per collector
+            ->leftJoinSub($arrearsPerLoan, 'arrl', fn($j) => $j->on('arrl.Loan_ID', '=', 'cl.idCustomer_Loan'))
+
 
             // optional filters
             ->when($productId,   fn($q) => $q->where('lc.idLoan_Category', $productId))
@@ -1261,10 +1319,11 @@ class ReportController extends Controller
             COALESCE(MAX(col.Collection_Sum), 0)   as collection_total,
             COALESCE(MAX(insx.Installment_Sum), 0) as installment_total,
             COALESCE(MAX(payx.Pay_Sum), 0)         as payment_total_assigned,
+            COALESCE(MAX(sav.Savings_Credit_Sum), 0)         as payment_saving,
+            /* Use the pre-aggregated arrears by collector */
+            COALESCE(SUM(arrl.Arrears_Sum), 0) as arrears_total,
 
-            GREATEST(0,
-                COALESCE(MAX(insx.Installment_Sum), 0) - COALESCE(MAX(payx.Pay_Sum), 0)
-            ) as arrears_total,
+ 
 
             COALESCE(MAX(lt.Loans_Count_Total), 0)  as total_loans,
             COALESCE(MAX(lt.Loans_Amount_Total), 0) as total_loans_amount,
@@ -1276,9 +1335,12 @@ class ReportController extends Controller
             COALESCE(MAX(occt.OC_Clients), 0)       as oc_clients,
 
             /* NEW: flattened product counts like "12:34,15:7" */
-            COALESCE(MAX(pc.product_kv), "")        as product_kv
+            COALESCE(MAX(pc.product_kv), "")        as product_kv, SUM(COALESCE(out.Outstanding_Sum, 0)) as outstanding_total
+
+            
         ')
             ->where('cl.branch_id', session('branch_id'))   // keep branch scoping
+            ->whereIn('cl.Status', [0, 1])
             ->orderBy('collector')
             ->get();
 
@@ -1288,10 +1350,17 @@ class ReportController extends Controller
             $invest  = (float) ($r->investment_total ?? 0);
             $deplete = (float) ($r->depletion_total ?? 0);
 
+
+
+
+
             // Use snapshot as-of $end (DON'T change other fields)
-            $endStock    = (float) ($r->ending_total ?? 0);
+            $endStock    = $begin+$invest-$deplete;
 
             $arrears     = (float) ($r->arrears_total ?? 0);
+
+//            Log::info($arrears);
+
             $portfolio   = $endStock+$arrears;
             $debtorRatio = $endStock > 0 ? ($arrears / $endStock) * 100 : 0;
 
@@ -1327,7 +1396,7 @@ class ReportController extends Controller
                 'Total_Clients'              => $totalClients,
                 'OC_Clients'                 => $ocClients,
                 'Active_Clients'             => $activeClients,
-                'Total_Outstanding_Balance'  => round($endStock, 2),            // keep same variable
+                'Total_Outstanding_Balance'  => round((float) ($r->outstanding_total ?? 0), 2),
                 // per-collector product counts map
                 'product_counts'             => (object)$perProduct,
             ];

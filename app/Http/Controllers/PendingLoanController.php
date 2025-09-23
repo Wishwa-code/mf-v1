@@ -661,7 +661,7 @@ class PendingLoanController extends Controller
             ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
             ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
             ->leftJoin($collectorPick, 'route.id_route', '=', 'cr.id_route')
-            ->leftJoin('user as collector', 'cr.collector_id', '=', 'collector.id')
+            ->leftJoin('user as collector', 'customer_loan.collector_id', '=', 'collector.id')
             ->leftJoin($approvalSub, 'customer_loan.idCustomer_Loan', '=', 'approval_subquery.loan_id')
             ->leftJoin($chargesSub, 'customer_loan.idCustomer_Loan', '=', 'charges_subquery.Customer_Loan_idCustomer_Loan')
             ->where('customer_loan.Status', '=', $status)
@@ -1015,7 +1015,7 @@ class PendingLoanController extends Controller
         $loans = $query->select(
             'cl.idCustomer_Loan',
             'cl.Loan_No',
-            DB::raw('IFNULL(center.No, "-") as center_no'),
+            DB::raw('IFNULL(center.Name, "-") as center_no'),
             DB::raw('IFNULL(customer_group.Name, "-") as Group_name'),
             'customer.cus_number as cus_number',
             'customer.First_Name as customer_fname',

@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,13 +8,17 @@ class Reschedule extends Model
 {
     use HasFactory;
 
-    protected $table = 'reschedule';        // exact table name
-    protected $primaryKey = 'idReschedule'; // PK of reschedule table
-    public $timestamps = false;
+    protected $table = 'reshedule';
 
-    // columns you allow to be mass assigned
+    // ⚠️ Ideally this table should have its own PK (e.g., idReschedule).
+    // Using a loan PK prevents multiple reschedules per loan.
+    // protected $primaryKey = 'idReschedule';
+
+    // Turn timestamps on if you added both created_at/updated_at.
+    // If you only added created_at, keep timestamps = false.
+    public $timestamps = false; // <- set to true if you also added `updated_at`
+
     protected $fillable = [
-        'original_loan_id',
         'Loan_No',
         'Loan_Category_idLoan_Category',
         'Customer_idCustomer',
@@ -46,15 +49,12 @@ class Reschedule extends Model
         'company_bank_account',
         'lending_officer_id',
         'collector_id',
-        'repayment_duration',
-        'loan_broker',
-        'loan_broker_commission',
-        'saving_amount',
-        'branch_id',
 
-        // audit
-        'rescheduled_by',
-        'rescheduled_at',
-        'reschedule_type',
+        // NEW
+        'loan_id',       // back reference to customer_loan.idCustomer_Loan
+        'created_by',    // user id who did the reschedule
+        'created_at',    // if timestamps=false and you manage it manually
+        // 'updated_at',  // include only if you added it and use timestamps
     ];
 }
+
