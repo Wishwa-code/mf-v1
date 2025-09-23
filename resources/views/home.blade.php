@@ -162,7 +162,7 @@
 
             {{-- Charts --}}
             <div class="row">
-                <div class="col-lg-12 mb-4">
+                {{-- <div class="col-lg-12 mb-4">
                     <div class="glass-card card shadow animated-card">
                         <div class="card-body p-0">
                             <h5 class="card-title p-3">📈 Live Currency Exchange (USD to LKR)</h5>
@@ -171,7 +171,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> --}}
 
 
                 <div class="col-lg-6 mb-4">
@@ -210,7 +210,7 @@
                     </div>
                 </div>
 
-                <div class="col-lg-3 mb-4">
+                {{-- <div class="col-lg-3 mb-4">
                     <div class="glass-card card shadow animated-card">
                         <div class="card-body text-center">
                             <h5 class="card-title mb-3">📟 Profit Gauge</h5>
@@ -218,7 +218,7 @@
                             <h4 class="mt-3 text-success fw-bold" id="profit-display">0</h4>
                         </div>
                     </div>
-                </div>
+                </div> --}}
 
 
 
@@ -442,7 +442,7 @@
 
         });
     </script>
-    <script>
+    {{-- <script>
         document.addEventListener("DOMContentLoaded", function () {
             const profit = {{ $profit }};
             const target = {{ $profitTarget }};
@@ -508,9 +508,9 @@
             });
             if (!animatedRs.error) animatedRs.start();
         });
-    </script>
+    </script> --}}
 
-    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    {{-- <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script type="text/javascript">
         new TradingView.widget({
             "container_id": "tradingview_advanced",
@@ -536,7 +536,7 @@
             "popup_width": "1000",
             "popup_height": "650"
         });
-    </script>
+    </script> --}}
     <script>
         $('#startLoanProcess').on('click', function () {
             $.get('/get-loan-ids', function (data) {
