@@ -1,52 +1,77 @@
-name: FTP Deployment
+name: FTP Deployment (main)
 
 on:
   push:
-    branches:
-      - main
-      - rightwaycredit50
-      - greenlankacapital
-      - greenlankatrust
-      - northerncredit
-      - noble
-      - finwin
-      - minvence
-      - DandD
-      - futurehopeinvestment
-      - sirikathaholdings
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   deploy-client1:
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup PHP
+      - name: Setup PHP 8.2
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.2
+          php-version: "8.2"
 
-      - name: Install Dependencies
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install & Build (PHP + optional Front-end)
+        shell: bash
         run: |
+          # PHP deps
           composer install --no-dev --prefer-dist --optimize-autoloader
-          npm ci
-          npm run prod
-          php artisan storage:link
+
+          # Front-end only if package.json exists
+          if [ -f package.json ]; then
+            echo "package.json found -> installing front-end deps"
+            if [ -f package-lock.json ]; then
+              echo "Using npm ci (lockfile present)"
+              npm ci
+            elif [ -f yarn.lock ]; then
+              echo "Using yarn"
+              corepack enable
+              yarn install --frozen-lockfile
+            elif [ -f pnpm-lock.yaml ]; then
+              echo "Using pnpm"
+              corepack enable
+              pnpm install --frozen-lockfile
+            else
+              echo "No lockfile -> fallback to npm install"
+              npm install
+            fi
+
+            # Build (supports Mix/Vite script names)
+            npm run prod || npm run build || true
+          else
+            echo "No package.json -> skipping front-end build"
+          fi
+
+          # Laravel storage symlink (safe if present)
+          php artisan storage:link || true
+
+          # Show build output (useful for Vite)
           ls -la public/build || true
 
-      - name: FTP Deploy to Server 1 (Client1)
+      - name: FTP Deploy to Server (Client1)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.0
         with:
-          server: ${{ secrets.FTP_HOST }}     # must be a resolvable hostname
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
+          server:   ${{ secrets.FTP_HOST }}        # e.g. ftp.yourdomain.com
+          username: ${{ secrets.FTP_USERNAME }}    # your FTP user
+          password: ${{ secrets.FTP_PASSWORD }}    # your FTP pass
           port: 21
           protocol: ftps
           security: strict
           local-dir: ./
-          server-dir: /                       # or your site root (e.g. /public_html)
+          server-dir: /                             # change if your webroot isn't /
           dry-run: false
           exclude: |
             **/.git*
@@ -58,477 +83,8 @@ jobs:
             **/storage/framework/**
             public/storage/**
             vendor/bin/*
-            # keep public/, but exclude everything then re-include what you need:
+            # keep public/, exclude all then include what's needed:
             public/**
             !public/build/**
             !public/index.php
             !public/.htaccess
-  
-
-  deploy-client2:
-      if: github.ref == 'refs/heads/rightwaycredit50'
-      runs-on: ubuntu-latest
-      steps:
-        - name: Checkout Code
-          uses: actions/checkout@v2
-  
-        - name: Setup PHP
-          uses: shivammathur/setup-php@v2
-          with:
-            php-version: 8.2
-  
-        - name: Install Dependencies
-          run: |
-            composer install --no-dev --optimize-autoloader
-            npm install
-            npm run prod
-            php artisan storage:link
-  
-        - name: FTP Deploy to Server 2 (Client2)
-          uses: SamKirkland/FTP-Deploy-Action@4.3.0
-          with:
-            server: ${{ secrets.FTP_HOST_2 }}
-            username: ${{ secrets.FTP_USERNAME_2 }}
-            password: ${{ secrets.FTP_PASSWORD_2 }}
-            protocol: ftps  # Or ftp if that's what's working for you
-            local-dir: ./
-            server-dir: /
-            dry-run: false
-            timeout: 900000
-            exclude: |
-              .git**
-              node_modules/**
-              storage/**
-              .env*
-              vendor/**              # ⛔️ Exclude vendor folder
-              vendor/bin/*
-              .github/**
-              public/** 
-              !public/JS/**
-              tests/**
-              
-
-  deploy-client3:
-    if: github.ref == 'refs/heads/greenlankacapital'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: 8.2
-
-      - name: Install Dependencies
-        run: |
-          composer install --no-dev --optimize-autoloader
-          npm install
-          npm run prod
-          php artisan storage:link
-
-      - name: FTP Deploy to Server 3 (Client3)
-        uses: SamKirkland/FTP-Deploy-Action@4.3.0
-        with:
-          server: ${{ secrets.FTP_HOST_3 }}
-          username: ${{ secrets.FTP_USERNAME_3 }}
-          password: ${{ secrets.FTP_PASSWORD_3 }}
-          protocol: ftps  # Or ftp if that's what's working for you
-          local-dir: ./
-          server-dir: /
-          dry-run: false
-          timeout: 900000
-          exclude: |
-            .git**
-            node_modules/**
-            storage/**
-            .env*
-            vendor/**              # ⛔️ Exclude vendor folder
-            vendor/bin/*
-            .github/**
-            public/** 
-            !public/JS/**
-            tests/**               
-
-  deploy-client4:
-    if: github.ref == 'refs/heads/greenlankatrust'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: 8.2
-
-      - name: Install Dependencies
-        run: |
-          composer install --no-dev --optimize-autoloader
-          npm install
-          npm run prod
-          php artisan storage:link
-
-      - name: FTP Deploy to Server 4 (Client4)
-        uses: SamKirkland/FTP-Deploy-Action@4.3.0
-        with:
-          server: ${{ secrets.FTP_HOST_4 }}
-          username: ${{ secrets.FTP_USERNAME_4 }}
-          password: ${{ secrets.FTP_PASSWORD_4 }}
-          protocol: ftps  # Or ftp if that's what's working for you
-          local-dir: ./
-          server-dir: /
-          dry-run: false
-          timeout: 900000
-          exclude: |
-            .git**
-            node_modules/**
-            storage/**
-            .env*
-            vendor/**              # ⛔️ Exclude vendor folder
-            vendor/bin/*
-            .github/**
-            public/** 
-            !public/JS/**
-            tests/**  
-
-  deploy-client5:
-    if: github.ref == 'refs/heads/northerncredit'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: 8.2
-
-      - name: Install Dependencies
-        run: |
-          composer install --no-dev --optimize-autoloader
-          npm install
-          npm run prod
-          php artisan storage:link
-
-      - name: FTP Deploy to Server 5 (Client5)
-        uses: SamKirkland/FTP-Deploy-Action@4.3.0
-        with:
-          server: ${{ secrets.FTP_HOST_5 }}
-          username: ${{ secrets.FTP_USERNAME_5 }}
-          password: ${{ secrets.FTP_PASSWORD_5 }}
-          protocol: ftps  # Or ftp if that's what's working for you
-          local-dir: ./
-          server-dir: /
-          dry-run: false
-          timeout: 900000
-          exclude: |
-            .git**
-            node_modules/**
-            storage/**
-            .env*
-            vendor/**              # ⛔️ Exclude vendor folder
-            vendor/bin/*
-            .github/**
-            public/**  
-            !public/JS/**
-            tests/**  
-
-  deploy-client6:
-    if: github.ref == 'refs/heads/noble'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: 8.2
-
-      - name: Install Dependencies
-        run: |
-          composer install --no-dev --optimize-autoloader
-          npm install
-          npm run prod
-          php artisan storage:link
-
-      - name: FTP Deploy to Server 6 (Client6)
-        uses: SamKirkland/FTP-Deploy-Action@4.3.0
-        with:
-          server: ${{ secrets.FTP_HOST_NOBLE }}
-          username: ${{ secrets.FTP_USERNAME_NOBLE }}
-          password: ${{ secrets.FTP_PASSWORD_NOBLE }}
-          protocol: ftps  # Or ftp if that's what's working for you
-          local-dir: ./
-          server-dir: /
-          dry-run: false
-          timeout: 900000
-          exclude: |
-            .git**
-            node_modules/**
-            storage/**
-            .env*
-            vendor/**              # ⛔️ Exclude vendor folder
-            vendor/bin/*
-            .github/**
-            public/**  
-            !public/JS/**
-            tests/**  
-            
-
-  deploy-client7:
-    if: github.ref == 'refs/heads/finwin'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: 8.2
-
-      - name: Install Dependencies
-        run: |
-          composer install --no-dev --optimize-autoloader
-          npm install
-          npm run prod
-          php artisan storage:link
-
-      - name: FTP Deploy to Server 7 (Client7)
-        uses: SamKirkland/FTP-Deploy-Action@4.3.0
-        with:
-          server: ${{ secrets.FTP_HOST_FINWIN }}
-          username: ${{ secrets.FTP_USERNAME_FINWIN }}
-          password: ${{ secrets.FTP_PASSWORD_FINWIN }}
-          protocol: ftps  # Or ftp if that's what's working for you
-          local-dir: ./
-          server-dir: /
-          dry-run: false
-          timeout: 900000
-          exclude: |
-            .git**
-            node_modules/**
-            storage/**
-            .env*
-            vendor/**              # ⛔️ Exclude vendor folder
-            vendor/bin/*
-            .github/**
-            public/** 
-            !public/JS/**
-            tests/**  
-            
-
-  deploy-client8:
-    if: github.ref == 'refs/heads/minvence'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: 8.2
-
-      - name: Install Dependencies
-        run: |
-          composer install --no-dev --optimize-autoloader
-          npm install
-          npm run prod
-          php artisan storage:link
-
-      - name: FTP Deploy to Server 8 (Client8)
-        uses: SamKirkland/FTP-Deploy-Action@4.3.0
-        with:
-          server: ${{ secrets.FTP_HOST_MINV }}
-          username: ${{ secrets.FTP_USERNAME_MINV }}
-          password: ${{ secrets.FTP_PASSWORD_MINV }}
-          protocol: ftps
-          local-dir: ./
-          server-dir: /
-          dry-run: false
-          timeout: 900000
-          exclude: |
-            .git**
-            node_modules/**
-            storage/**
-            .env*
-            vendor/**              # ⛔️ Exclude vendor folder
-            vendor/bin/*
-            .github/**
-            public/**   
-            !public/JS/**
-            tests/**  
-            
-
-  deploy-client9:
-    if: github.ref == 'refs/heads/DN_Invest'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: 8.2
-
-      - name: Install Dependencies
-        run: |
-          composer install --no-dev --optimize-autoloader
-          npm install
-          npm run prod
-          php artisan storage:link
-
-      - name: FTP Deploy to Server 9 (Client8)
-        uses: SamKirkland/FTP-Deploy-Action@4.3.0
-        with:
-          server: ${{ secrets.FTP_HOST_DN_Invest }}
-          username: ${{ secrets.FTP_USERNAME_DN_Invest }}
-          password: ${{ secrets.FTP_PASSWORD_DN_Invest }}
-          protocol: ftps
-          local-dir: ./
-          server-dir: /
-          dry-run: false
-          timeout: 900000
-          exclude: |
-            .git**
-            node_modules/**
-            storage/**
-            .env*
-            vendor/**              # ⛔️ Exclude vendor folder
-            vendor/bin/*
-            .github/**
-            public/**    
-            !public/JS/**
-            tests/**     
-            
-
-  deploy-client10:
-    if: github.ref == 'refs/heads/DandD'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: 8.2
-
-      - name: Install Dependencies
-        run: |
-          composer install --no-dev --optimize-autoloader
-          npm install
-          npm run prod
-          php artisan storage:link
-
-      - name: FTP Deploy to Server 10 (Client10)
-        uses: SamKirkland/FTP-Deploy-Action@4.3.0
-        with:
-          server: ${{ secrets.FTP_HOST__DandD }}
-          username: ${{ secrets.FTP_USERNAME_DandD }}
-          password: ${{ secrets.FTP_PASSWORD_DandD }}
-          protocol: ftps
-          local-dir: ./
-          server-dir: /
-          dry-run: false
-          timeout: 900000
-          exclude: |
-            .git**
-            node_modules/**
-            storage/**
-            .env*
-            vendor/**              # ⛔️ Exclude vendor folder
-            vendor/bin/*
-            .github/**
-            public/**    
-            !public/JS/**
-            tests/**
-
-  deploy-client11:
-    if: github.ref == 'refs/heads/futurehopeinvestment'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: 8.2
-
-      - name: Install Dependencies
-        run: |
-          composer install --no-dev --optimize-autoloader
-          npm install
-          npm run prod
-          php artisan storage:link
-
-      - name: FTP Deploy to Server 11 (Client11)
-        uses: SamKirkland/FTP-Deploy-Action@4.3.0
-        with:
-          server: ${{ secrets.FTP_HOST_Futurehopeinvestment }}
-          username: ${{ secrets.FTP_USERNAME_Futurehopeinvestment }}
-          password: ${{ secrets.FTP_PASSWORD_Futurehopeinvestment }}
-          protocol: ftps
-          local-dir: ./
-          server-dir: /
-          dry-run: false
-          timeout: 900000
-          exclude: |
-            .git**
-            node_modules/**
-            storage/**
-            .env*
-            vendor/**              # ⛔️ Exclude vendor folder
-            vendor/bin/*
-            .github/**
-            public/**    
-            !public/JS/**
-            tests/**
-            
-
-  deploy-client12:
-    if: github.ref == 'refs/heads/sirikathaholdings'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: 8.2
-
-      - name: Install Dependencies
-        run: |
-          composer install --no-dev --optimize-autoloader
-          npm install
-          npm run prod
-          php artisan storage:link
-
-      - name: FTP Deploy to Server 12 (Client12)
-        uses: SamKirkland/FTP-Deploy-Action@4.3.0
-        with:
-          server: ${{ secrets.FTP_HOST_sirikathaholdings }}
-          username: ${{ secrets.FTP_USERNAME_sirikathaholdings }}
-          password: ${{ secrets.FTP_PASSWORD_sirikathaholdings }}
-          protocol: ftps
-          local-dir: ./
-          server-dir: /
-          dry-run: false
-          timeout: 900000
-          exclude: |
-            .git**
-            node_modules/**
-            storage/**
-            .env*
-            vendor/**              # ⛔️ Exclude vendor folder
-            vendor/bin/*
-            .github/**
-            public/**    
-            !public/JS/**
-            tests/**
