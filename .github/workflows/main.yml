@@ -18,60 +18,22 @@ jobs:
         with:
           php-version: "8.2"
 
-      - name: Setup Node 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - name: Install & Build (PHP + optional Front-end)
-        shell: bash
+      - name: Install PHP Dependencies
         run: |
-          # PHP deps
           composer install --no-dev --prefer-dist --optimize-autoloader
-
-          # Front-end only if package.json exists
-          if [ -f package.json ]; then
-            echo "package.json found -> installing front-end deps"
-            if [ -f package-lock.json ]; then
-              echo "Using npm ci (lockfile present)"
-              npm ci
-            elif [ -f yarn.lock ]; then
-              echo "Using yarn"
-              corepack enable
-              yarn install --frozen-lockfile
-            elif [ -f pnpm-lock.yaml ]; then
-              echo "Using pnpm"
-              corepack enable
-              pnpm install --frozen-lockfile
-            else
-              echo "No lockfile -> fallback to npm install"
-              npm install
-            fi
-
-            # Build (supports Mix/Vite script names)
-            npm run prod || npm run build || true
-          else
-            echo "No package.json -> skipping front-end build"
-          fi
-
-          # Laravel storage symlink (safe if present)
           php artisan storage:link || true
-
-          # Show build output (useful for Vite)
-          ls -la public/build || true
 
       - name: FTP Deploy to Server (Client1)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.0
         with:
           server:   ${{ secrets.FTP_HOST }}        # e.g. ftp.yourdomain.com
-          username: ${{ secrets.FTP_USERNAME }}    # your FTP user
-          password: ${{ secrets.FTP_PASSWORD }}    # your FTP pass
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
           port: 21
           protocol: ftps
           security: strict
           local-dir: ./
-          server-dir: /                             # change if your webroot isn't /
+          server-dir: /                             # change if your site lives under /public_html
           dry-run: false
           exclude: |
             **/.git*
@@ -83,8 +45,7 @@ jobs:
             **/storage/framework/**
             public/storage/**
             vendor/bin/*
-            # keep public/, exclude all then include what's needed:
+            # keep public/, exclude all then include what’s needed:
             public/**
-            !public/build/**
             !public/index.php
             !public/.htaccess
