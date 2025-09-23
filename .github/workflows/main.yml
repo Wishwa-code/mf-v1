@@ -37,7 +37,7 @@ jobs:
           ls -la public/build || true
 
       - name: FTP Deploy to Server 1 (Client1)
-        uses: SamKirkland/FTP-Deploy-Action@v4
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.0
         with:
           server: ${{ secrets.FTP_HOST }}     # must be a resolvable hostname
           username: ${{ secrets.FTP_USERNAME }}
@@ -64,7 +64,7 @@ jobs:
             !public/index.php
             !public/.htaccess
   
-  
+
   deploy-client2:
       if: github.ref == 'refs/heads/rightwaycredit50'
       runs-on: ubuntu-latest
