@@ -1154,6 +1154,22 @@ class ReportController extends Controller
                 ->groupBy('cl.collector_id');
         }, 'insx');
 
+
+
+        // Arrears per LOAN (sum of Total_Balance for installments before $end)
+        $arrearsPerLoan = DB::query()->fromSub(function ($q) use ($end) {
+            $q->from('installments as i')
+                ->where('i.Installment_Date', '<', $end->toDateString())
+
+                ->selectRaw('
+          i.Customer_Loan_idCustomer_Loan as Loan_ID,
+          SUM(COALESCE(i.Total_Balance, 0)) as Arrears_Sum
+      ')
+                ->groupBy('i.Customer_Loan_idCustomer_Loan');
+        }, 'arrl');
+
+
+
         // B) Payments sum by assigned collector within [start, end]
         $paymentsAssigned = DB::query()->fromSub(function ($q) use ($start, $end) {
             $q->from('customer_payments as cp')
@@ -1279,6 +1295,9 @@ class ReportController extends Controller
 
             // NEW: join collector ↔ product counts
             ->leftJoinSub($collectorProductCounts, 'pc', fn($j) => $j->on('pc.collector_id', '=', 'u.id'))
+// NEW: join arrears per collector
+            ->leftJoinSub($arrearsPerLoan, 'arrl', fn($j) => $j->on('arrl.Loan_ID', '=', 'cl.idCustomer_Loan'))
+
 
             // optional filters
             ->when($productId,   fn($q) => $q->where('lc.idLoan_Category', $productId))
@@ -1300,10 +1319,11 @@ class ReportController extends Controller
             COALESCE(MAX(col.Collection_Sum), 0)   as collection_total,
             COALESCE(MAX(insx.Installment_Sum), 0) as installment_total,
             COALESCE(MAX(payx.Pay_Sum), 0)         as payment_total_assigned,
+            COALESCE(MAX(sav.Savings_Credit_Sum), 0)         as payment_saving,
+            /* Use the pre-aggregated arrears by collector */
+            COALESCE(SUM(arrl.Arrears_Sum), 0) as arrears_total,
 
-            GREATEST(0,
-                COALESCE(MAX(insx.Installment_Sum), 0) - COALESCE(MAX(payx.Pay_Sum), 0)  + COALESCE(MAX(sav.Savings_Credit_Sum), 0) 
-            ) as arrears_total,
+ 
 
             COALESCE(MAX(lt.Loans_Count_Total), 0)  as total_loans,
             COALESCE(MAX(lt.Loans_Amount_Total), 0) as total_loans_amount,
@@ -1330,10 +1350,17 @@ class ReportController extends Controller
             $invest  = (float) ($r->investment_total ?? 0);
             $deplete = (float) ($r->depletion_total ?? 0);
 
+
+
+
+
             // Use snapshot as-of $end (DON'T change other fields)
             $endStock    = $begin+$invest-$deplete;
 
             $arrears     = (float) ($r->arrears_total ?? 0);
+
+//            Log::info($arrears);
+
             $portfolio   = $endStock+$arrears;
             $debtorRatio = $endStock > 0 ? ($arrears / $endStock) * 100 : 0;
 

@@ -863,6 +863,7 @@ class LoanController extends Controller
 
     public function loan_view_Np(string $id,int $type=0)
     {
+        $this->ensureResheduleTable();
         $company = DB::table('company')->first();
         // Fetch the loan
         $loan = tableWithBranch('customer_loan')->where('idCustomer_Loan', $id)->first();
