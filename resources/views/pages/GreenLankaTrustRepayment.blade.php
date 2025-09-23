@@ -727,6 +727,7 @@
                         <table>
                                 ${printColgroup}
                                 <thead>
+                                    ${ groupBlocks.length === 0 ? `
                                     <tr class="thead-bar">
                                         <td colspan="15" style="border:none; padding:0 0 2px 0;">
                                             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ccc; padding-bottom:2px; margin-bottom:2px;">
@@ -736,6 +737,7 @@
                                             <h2>Repayment Sheet (${centerDetails})</h2>
                                         </td>
                                     </tr>
+                                    ` : '' }
                                     <!-- Summary table header: Title + 5 x (Paid/Correct) -->
                                     <tr>
                                         <th colspan="5">Title</th>
