@@ -67,10 +67,18 @@
                     <div class="glass-card card text-white shadow-lg animated-card" style="background: linear-gradient(135deg, #667eea, #764ba2);">
                         <div class="card-body d-flex justify-content-between align-items-center flex-wrap">
                             <div>
-                                <h2 class="mb-1">Welcome Back 👋</h2>
+                                @if(session('branch_id') == -1)
+                                    <h2 class="mb-1">All Branches Overview 🏢</h2>
+                                @else
+                                    <h2 class="mb-1">Welcome Back 👋</h2>
+                                @endif
                                 <p class="mb-0" id="live-datetime"></p>
                             </div>
-                            <i class="ri-user-smile-line display-4"></i>
+                            @if(session('branch_id') == -1)
+                                <i class="ri-building-2-line display-4"></i>
+                            @else
+                                <i class="ri-user-smile-line display-4"></i>
+                            @endif
                         </div>
                     </div>
                 </div>
