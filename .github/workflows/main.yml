@@ -16,7 +16,7 @@ on:
       - sirikathaholdings
 
 jobs:
-    deploy-client1:
+  deploy-client1:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
@@ -63,8 +63,8 @@ jobs:
             !public/build/**
             !public/index.php
             !public/.htaccess
-
-
+  
+  
   deploy-client2:
       if: github.ref == 'refs/heads/rightwaycredit50'
       runs-on: ubuntu-latest
