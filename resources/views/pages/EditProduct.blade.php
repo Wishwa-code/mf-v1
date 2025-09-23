@@ -100,6 +100,12 @@
             overflow: hidden; /* Hide scroll bars */
         }
     </style>
+    <style>
+        /* optional: start hidden; JS will show if needed */
+        #collection_date_type { }
+        #collection_date_type:not(:disabled) { }
+    </style>
+
 @endsection
 
 
@@ -1163,5 +1169,34 @@
                 });
             });
         });
+
+        // ---- toggle Collection Date Type visibility/selection ----
+        function toggleCollectionDateType() {
+            const durationPeriod = $('#duration_period').val();        // Days | Weeks | Months
+            const collectionType = $('#collection_type').val();        // Daily | Weekly | ... | On A Selected Date
+            const $cdt = $('#collection_date_type');                   // the select
+            const $wrap = $cdt.closest('.col-md-6');                   // its containing column
+
+            const shouldShow = (durationPeriod === 'Months' && collectionType === 'On A Selected Date');
+
+            if (shouldShow) {
+                $wrap.show();
+                $cdt.prop('disabled', false);
+            } else {
+                // force default when hidden
+                $cdt.val('same_as_installment').trigger('change');
+                $cdt.prop('disabled', true);
+                $wrap.hide();
+            }
+        }
+
+        $(document).ready(function () {
+            // run once after you populate all fields
+            toggleCollectionDateType();
+
+            // re-check whenever either controlling field changes
+            $('#duration_period, #collection_type').on('change', toggleCollectionDateType);
+        });
+
     </script>
 @endsection
