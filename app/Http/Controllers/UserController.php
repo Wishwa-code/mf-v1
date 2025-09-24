@@ -360,7 +360,6 @@ class UserController extends Controller
                     ->join('customer_loan','installments.Customer_Loan_idCustomer_Loan','=','customer_loan.idCustomer_Loan')
                     ->where('installments.branch_id',$branchId)
                     ->where('customer_loan.branch_id',$branchId)
-                    ->where('installments.Status','0')
                     ->where('customer_loan.Status','0')
                     ->whereDate('installments.Installment_Date','<',date('Y-m-d'))
                     ->sum('installments.Total_Balance');
