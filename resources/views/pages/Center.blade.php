@@ -34,6 +34,7 @@
                             <tr>
                                 <th>Route</th>
                                 <th>Center No</th>
+                                <th>Branch</th>
                                 <th>Center Name</th>
                                 <th>Contact Number</th>
                                 <th>Address</th>
@@ -50,6 +51,7 @@
                                 <tr class="style-tr">
                                     <td>{{$item->name ?? '-'}}</td>
                                     <td>{{$item->No}}</td>
+                                    <td>{{$item->branch_name ?? '-'}}</td>
                                     <td>{{$item->Name}}</td>
                                     <td>{{$item->Contact_no}}</td>
                                     <td>{{$item->Address}}</td>
@@ -199,7 +201,7 @@
                         text: '<i class="bi bi-clipboard"></i> Copy',
                         className: 'btn btn-secondary',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5]
+                            columns: [0, 1, 2, 3, 4, 5, 6]
                         },
                         filename: companyName
                     },
@@ -208,7 +210,7 @@
                         text: '<i class="bi bi-file-earmark-spreadsheet"></i> CSV',
                         className: 'btn btn-success',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5]
+                            columns: [0, 1, 2, 3, 4, 5, 6]
                         },
                         filename: companyName
                     },
@@ -217,7 +219,7 @@
                         text: '<i class="bi bi-file-earmark-excel"></i> Excel',
                         className: 'btn btn-primary',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5]
+                            columns: [0, 1, 2, 3, 4, 5, 6]
                         },
                         filename: companyName
                     },
@@ -226,7 +228,7 @@
                         text: '<i class="bi bi-file-earmark-pdf"></i> PDF',
                         className: 'btn btn-danger',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5]
+                            columns: [0, 1, 2, 3, 4, 5, 6]
                         },
                         customize: function(doc) {
                             doc.defaultStyle.fontSize = 10; // Example customization
@@ -239,7 +241,7 @@
                         text: '<i class="bi bi-printer"></i> Print',
                         className: 'btn btn-info',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5]
+                            columns: [0, 1, 2, 3, 4, 5, 6]
                         },
                         filename: companyName
                     }

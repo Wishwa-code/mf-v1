@@ -22,11 +22,26 @@ class CenterController extends Controller
         if ($isHeadOffice) {
             $userData = DB::table('center as center')
                 ->leftJoin('route', 'center.route_id', '=', 'route.id_route')
+                ->leftJoin('branch', 'center.branch_id', '=', 'branch.branch_id')
+                //Keep current view links and add branch name
+                ->select(
+                    'center.*',
+                    DB::raw('route.name as name'), // keep `$item->name` for route
+                    DB::raw('route.id_route as id_route'),
+                    DB::raw('branch.Name as branch_name')
+                )
                 ->get();
             $route = DB::table('route')->get();
         } else {
             $userData = tableWithBranch('center','center')
                 ->leftjoin('route', 'center.route_id', '=', 'route.id_route')
+                ->leftJoin('branch', 'center.branch_id', '=', 'branch.branch_id')
+                ->select(
+                    'center.*',
+                    DB::raw('route.name as name'),
+                    DB::raw('route.id_route as id_route'),
+                    DB::raw('branch.Name as branch_name')
+                )
                 ->get();
             $route = tableWithBranch('route')->get();
         }
