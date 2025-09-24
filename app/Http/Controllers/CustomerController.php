@@ -250,36 +250,76 @@ class CustomerController extends Controller
      */
     public function edit()
     {
-        $loanSub = tableWithBranch('customer_loan')
-            ->select(
-                'Customer_idCustomer',
-                DB::raw('SUM(CASE WHEN Status = 0 THEN 1 ELSE 0 END) as current_loans'),
-                DB::raw('SUM(CASE WHEN Status = 1 THEN 1 ELSE 0 END) as settled_loans')
-            )
-            ->groupBy('Customer_idCustomer');
+        $isHeadOffice = (int)session('branch_id') === -1;
 
-        $customers = tableWithBranch('customer', 'customer')
-            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
-            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
-            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
-            ->leftJoin('branch', 'customer.branch_id', '=', 'branch.branch_id')
-            ->leftJoinSub($loanSub, 'loan_counts', function ($join) {
-                $join->on('customer.idCustomer', '=', 'loan_counts.Customer_idCustomer');
-            })
-            ->select(
-                'customer.*',
-                'customer_group.Name as group_name',
-                'center.Name as center_name',
-                'branch.Name as branch_name',
-                DB::raw('IFNULL(loan_counts.current_loans, 0) as current_loans'),
-                DB::raw('IFNULL(loan_counts.settled_loans, 0) as settled_loans')
-            )
-            ->get();
+        if ($isHeadOffice) {
+            // Unscoped (all branches) when Head Office
+            $loanSub = DB::table('customer_loan')
+                ->select(
+                    'Customer_idCustomer',
+                    DB::raw('SUM(CASE WHEN Status = 0 THEN 1 ELSE 0 END) as current_loans'),
+                    DB::raw('SUM(CASE WHEN Status = 1 THEN 1 ELSE 0 END) as settled_loans')
+                )
+                ->groupBy('Customer_idCustomer');
 
-        $group = tableWithBranch('customer_group')->get();
-        $center = tableWithBranch('center')->get();
-        $company = DB::table('company')->first();
-        $route= tableWithBranch('route')->get();
+            $customers = DB::table('customer as customer')
+                ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+                ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+                ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+                ->leftJoin('branch', 'customer.branch_id', '=', 'branch.branch_id')
+                ->leftJoinSub($loanSub, 'loan_counts', function ($join) {
+                    $join->on('customer.idCustomer', '=', 'loan_counts.Customer_idCustomer');
+                })
+                ->select(
+                    'customer.*',
+                    'customer_group.Name as group_name',
+                    'center.Name as center_name',
+                    'branch.Name as branch_name',
+                    DB::raw('IFNULL(loan_counts.current_loans, 0) as current_loans'),
+                    DB::raw('IFNULL(loan_counts.settled_loans, 0) as settled_loans')
+                )
+                ->get();
+        } else {
+            // Branch-scoped for regular branches
+            $loanSub = tableWithBranch('customer_loan')
+                ->select(
+                    'Customer_idCustomer',
+                    DB::raw('SUM(CASE WHEN Status = 0 THEN 1 ELSE 0 END) as current_loans'),
+                    DB::raw('SUM(CASE WHEN Status = 1 THEN 1 ELSE 0 END) as settled_loans')
+                )
+                ->groupBy('Customer_idCustomer');
+
+            $customers = tableWithBranch('customer', 'customer')
+                ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+                ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+                ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+                ->leftJoin('branch', 'customer.branch_id', '=', 'branch.branch_id')
+                ->leftJoinSub($loanSub, 'loan_counts', function ($join) {
+                    $join->on('customer.idCustomer', '=', 'loan_counts.Customer_idCustomer');
+                })
+                ->select(
+                    'customer.*',
+                    'customer_group.Name as group_name',
+                    'center.Name as center_name',
+                    'branch.Name as branch_name',
+                    DB::raw('IFNULL(loan_counts.current_loans, 0) as current_loans'),
+                    DB::raw('IFNULL(loan_counts.settled_loans, 0) as settled_loans')
+                )
+                ->get();
+        }
+
+        if ($isHeadOffice) {
+            $group = DB::table('customer_group')->get();
+            $center = DB::table('center')->get();
+            // At HO there can be multiple companies; pick none or any — retaining prior behavior of single
+            $company = DB::table('company')->first();
+            $route = DB::table('route')->get();
+        } else {
+            $group = tableWithBranch('customer_group')->get();
+            $center = tableWithBranch('center')->get();
+            $company = DB::table('company')->first();
+            $route= tableWithBranch('route')->get();
+        }
 
         return view('pages.ViewCustomer', compact('customers','route','group','center','company'));
     }
