@@ -21,7 +21,12 @@ class KYCController extends Controller
      */
     public function index()
     {
-        $customers=tableWithBranch('customer')->get();
+        $isHeadOffice = (int)session('branch_id') === -1;
+        if ($isHeadOffice) {
+            $customers = DB::table('customer')->get();
+        } else {
+            $customers = tableWithBranch('customer')->get();
+        }
         return view('pages.Insurance.KYC',compact('customers'));
     }
 
@@ -125,7 +130,12 @@ class KYCController extends Controller
      */
     public function show(string $id)
     {
-        $customers=tableWithBranch('customer')->get();
+        $isHeadOffice = (int)session('branch_id') === -1;
+        if ($isHeadOffice) {
+            $customers = DB::table('customer')->get();
+        } else {
+            $customers = tableWithBranch('customer')->get();
+        }
         return view('pages.Insurance.KYC',compact('customers','id'));
     }
 
@@ -156,8 +166,13 @@ class KYCController extends Controller
     // KYCController.php
     public function loadSection($section, $id)
     {
-        $customer = tableWithBranch('customer')->where('idCustomer', $id)->first();
-        $branch_id=session('branch_id');
+        $isHeadOffice = (int)session('branch_id') === -1;
+        $branch_id = session('branch_id');
+
+        // Fetch customer: unscoped at HO, branch-scoped otherwise
+        $customer = $isHeadOffice
+            ? DB::table('customer')->where('idCustomer', $id)->first()
+            : tableWithBranch('customer')->where('idCustomer', $id)->first();
         if (!$customer) {
             return response()->json(['error' => 'Customer not found'], 404);
         }
@@ -168,23 +183,21 @@ class KYCController extends Controller
             case 'guardian':
                 return view('pages.Insurance.kyc.guardian', compact('customer'));
             case 'documents':
-                $documents = tableWithBranch('customer_documents')
-                    ->where('Customer_idCustomer', $id)
-                    ->get();
+                $documents = $isHeadOffice
+                    ? DB::table('customer_documents')->where('Customer_idCustomer', $id)->get()
+                    : tableWithBranch('customer_documents')->where('Customer_idCustomer', $id)->get();
                 return view('pages.Insurance.kyc.documents', compact('documents'));
             case 'loans':
-                $loans = tableWithBranch('customer_loan')
-                    ->where('Customer_idCustomer', $id)
-                    ->orderByDesc('Date_Time')
-                    ->get();
+                $loans = $isHeadOffice
+                    ? DB::table('customer_loan')->where('Customer_idCustomer', $id)->orderByDesc('Date_Time')->get()
+                    : tableWithBranch('customer_loan')->where('Customer_idCustomer', $id)->orderByDesc('Date_Time')->get();
 
                 return view('pages.Insurance.kyc.loans', compact('loans'));
             case 'loanSummary':
-                $guaranteedLoans = DB::table('witness as w')
+                $q = DB::table('witness as w')
                     ->join('customer_loan as cl', 'w.Customer_Loan_idCustomer_Loan', '=', 'cl.idCustomer_Loan')
                     ->join('customer as c', 'cl.Customer_idCustomer', '=', 'c.idCustomer')
                     ->where('w.cus_id', $id)
-                    ->where('w.branch_id', $branch_id)
                     ->select(
                         'cl.idCustomer_Loan',
                         'cl.Loan_No',
@@ -199,17 +212,20 @@ class KYCController extends Controller
                         'c.Last_Name'
                     )
                     ->orderByDesc('cl.Date_Time')
-                    ->get();
+                    ;
+                if (!$isHeadOffice) {
+                    $q->where('w.branch_id', $branch_id);
+                }
+                $guaranteedLoans = $q->get();
                 return view('pages.Insurance.kyc.guranteed_loan', compact('guaranteedLoans'));
             case 'RoadMap':
-                $customer_log=tableWithBranch('customer_log','customer_log')
-                    ->join('user','customer_log.user', '=', 'user.id')
-                    ->where('customer_id','=',$id)
-                    ->get();
+                $customer_log = $isHeadOffice
+                    ? DB::table('customer_log')->join('user','customer_log.user','=','user.id')->where('customer_id','=',$id)->get()
+                    : tableWithBranch('customer_log','customer_log')->join('user','customer_log.user','=','user.id')->where('customer_id','=',$id)->get();
                 return view('pages.Insurance.kyc.RoadMap', compact('customer_log'));
             case 'insurance':
-                $designation=tableWithBranch('designation')->get();
-                $insurance_category=tableWithBranch('insurance_category')->get();
+                $designation = $isHeadOffice ? DB::table('designation')->get() : tableWithBranch('designation')->get();
+                $insurance_category = $isHeadOffice ? DB::table('insurance_category')->get() : tableWithBranch('insurance_category')->get();
                 return view('pages.Insurance.kyc.insurance', compact('designation','insurance_category','id'));
             case 'history':
                 return view('pages.Insurance.kyc.history', compact('customer'));
@@ -281,8 +297,9 @@ class KYCController extends Controller
     public function getHistory($id)
     {
         $branch_id = session('branch_id');
+        $isHeadOffice = (int)$branch_id === -1;
 
-        $history = DB::table('insurance as i')
+        $historyQuery = DB::table('insurance as i')
             ->join('insurance_category as c', 'i.id_insurance_category', '=', 'c.id_insurance_category')
             ->leftJoin('user as created', 'i.user_id', '=', 'created.id')
             ->select(
@@ -295,21 +312,26 @@ class KYCController extends Controller
                 'i.status'
             )
             ->where('i.customer_id', '=', $id)
-            ->where('i.branch_id', '=', $branch_id)
-            ->orderByDesc('i.created_at')
-            ->get();
+            ->orderByDesc('i.created_at');
+        if (!$isHeadOffice) {
+            $historyQuery->where('i.branch_id', '=', $branch_id);
+        }
+        $history = $historyQuery->get();
 
         // Get approval info with Designation (User)
-        $approvals = DB::table('insurance_approval_status as a')
+        $approvalsQuery = DB::table('insurance_approval_status as a')
             ->join('user as u', 'a.user_id', '=', 'u.id')
             ->select(
                 'a.insurance_id',
                 DB::raw("GROUP_CONCAT(CONCAT(a.designation, ' (', u.Full_Name, ')') SEPARATOR ', ') as approved_by")
             )
             ->where('a.status', 'Approved')
-            ->where('a.branch_id', '=', $branch_id)
             ->groupBy('a.insurance_id')
-            ->get()
+            ;
+        if (!$isHeadOffice) {
+            $approvalsQuery->where('a.branch_id', '=', $branch_id);
+        }
+        $approvals = $approvalsQuery->get()
             ->keyBy('insurance_id');
 
         // Merge approvals into history
