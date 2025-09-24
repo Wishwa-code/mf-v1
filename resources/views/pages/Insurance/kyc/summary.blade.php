@@ -35,6 +35,10 @@
                 <label class="form-label">Customer Age with Company</label>
                 <input type="text" class="form-control" value="{{ (isset($summary->registered_at) && $summary->registered_at) ? \Carbon\Carbon::parse($summary->registered_at)->diff(\Carbon\Carbon::now())->format('%y years %m months %d days') : '-' }}" disabled>
             </div>
+            <div class="col-md-6">
+                <label class="form-label">Customer Loan Count</label>
+                <input type="text" class="form-control" value="{{ (isset($summary->loan_count) && $summary->loan_count !== null) ? $summary->loan_count : ((isset($summary->loans_count) && $summary->loans_count !== null) ? $summary->loans_count : '-') }}" disabled>
+            </div>
         </div>
     @else
         <p class="text-muted mb-0">No summary details found for this customer.</p>

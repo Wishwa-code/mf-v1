@@ -190,6 +190,13 @@ class KYCController extends Controller
                 if (!$isHeadOffice) {
                     $regSub->where('cl.branch_id', $branch_id);
                 }
+                // Loan count subquery (all branches)
+                $loanCountSub = DB::table('customer_loan as cln')
+                    ->select(
+                        'cln.Customer_idCustomer as customer_id',
+                        DB::raw('COUNT(*) as loan_count')
+                    )
+                    ->groupBy('cln.Customer_idCustomer');
                 if ($isHeadOffice) {
                     $summary = DB::table('customer as customer')
                         ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
@@ -199,6 +206,9 @@ class KYCController extends Controller
                         ->leftJoin('branch', 'customer.branch_id', '=', 'branch.branch_id')
                         ->leftJoinSub($regSub, 'reg', function ($join) {
                             $join->on('customer.idCustomer', '=', 'reg.customer_id');
+                        })
+                        ->leftJoinSub($loanCountSub, 'lc', function ($join) {
+                            $join->on('customer.idCustomer', '=', 'lc.customer_id');
                         })
                         ->where('customer.idCustomer', $id)
                         ->select(
@@ -213,7 +223,8 @@ class KYCController extends Controller
                             DB::raw('COALESCE(route.root_code, "-") as route_code'),
                             DB::raw('COALESCE(customer_group.Group_No, "-") as group_no'),
                             DB::raw('COALESCE(customer_group.Name, "-") as group_name'),
-                            DB::raw("COALESCE(reg.registered_at, NULL) as registered_at")
+                            DB::raw("COALESCE(reg.registered_at, NULL) as registered_at"),
+                            DB::raw('COALESCE(lc.loan_count, 0) as loan_count')
                         )
                         ->first();
                 } else {
@@ -226,6 +237,9 @@ class KYCController extends Controller
                         ->leftJoinSub($regSub, 'reg', function ($join) {
                             $join->on('customer.idCustomer', '=', 'reg.customer_id');
                         })
+                        ->leftJoinSub($loanCountSub, 'lc', function ($join) {
+                            $join->on('customer.idCustomer', '=', 'lc.customer_id');
+                        })
                         ->where('customer.idCustomer', $id)
                         ->select(
                             'customer.idCustomer',
@@ -239,7 +253,8 @@ class KYCController extends Controller
                             DB::raw('COALESCE(route.root_code, "-") as route_code'),
                             DB::raw('COALESCE(customer_group.Group_No, "-") as group_no'),
                             DB::raw('COALESCE(customer_group.Name, "-") as group_name'),
-                            DB::raw("COALESCE(reg.registered_at, NULL) as registered_at")
+                            DB::raw("COALESCE(reg.registered_at, NULL) as registered_at"),
+                            DB::raw('COALESCE(lc.loan_count, 0) as loan_count')
                         )
                         ->first();
                 }
