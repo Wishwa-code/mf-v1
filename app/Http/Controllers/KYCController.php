@@ -178,6 +178,55 @@ class KYCController extends Controller
         }
         Log::info($section);
         switch ($section) {
+            case 'summary':
+                // Summery with branch name, center, group, route
+                if ($isHeadOffice) {
+                    $summary = DB::table('customer as customer')
+                        ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+                        ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+                        ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+                        ->leftJoin('route', 'center.route_id', '=', 'route.id_route')
+                        ->leftJoin('branch', 'customer.branch_id', '=', 'branch.branch_id')
+                        ->where('customer.idCustomer', $id)
+                        ->select(
+                            'customer.idCustomer',
+                            'customer.cus_number',
+                            'customer.First_Name',
+                            'customer.Last_Name',
+                            DB::raw('COALESCE(branch.Name, "-") as branch_name'),
+                            DB::raw('COALESCE(center.No, "-") as center_no'),
+                            DB::raw('COALESCE(center.Name, "-") as center_name'),
+                            DB::raw('COALESCE(route.name, "-") as route_name'),
+                            DB::raw('COALESCE(route.root_code, "-") as route_code'),
+                            DB::raw('COALESCE(customer_group.Group_No, "-") as group_no'),
+                            DB::raw('COALESCE(customer_group.Name, "-") as group_name')
+                        )
+                        ->first();
+                } else {
+                    $summary = tableWithBranch('customer', 'customer')
+                        ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+                        ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+                        ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+                        ->leftJoin('route', 'center.route_id', '=', 'route.id_route')
+                        ->leftJoin('branch', 'customer.branch_id', '=', 'branch.branch_id')
+                        ->where('customer.idCustomer', $id)
+                        ->select(
+                            'customer.idCustomer',
+                            'customer.cus_number',
+                            'customer.First_Name',
+                            'customer.Last_Name',
+                            DB::raw('COALESCE(branch.Name, "-") as branch_name'),
+                            DB::raw('COALESCE(center.No, "-") as center_no'),
+                            DB::raw('COALESCE(center.Name, "-") as center_name'),
+                            DB::raw('COALESCE(route.name, "-") as route_name'),
+                            DB::raw('COALESCE(route.root_code, "-") as route_code'),
+                            DB::raw('COALESCE(customer_group.Group_No, "-") as group_no'),
+                            DB::raw('COALESCE(customer_group.Name, "-") as group_name')
+                        )
+                        ->first();
+                }
+
+                return view('pages.Insurance.kyc.summary', compact('summary'));
             case 'basic':
                 return view('pages.Insurance.kyc.basic', compact('customer'));
             case 'guardian':
