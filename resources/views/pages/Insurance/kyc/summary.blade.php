@@ -31,6 +31,10 @@
                 <label class="form-label">Registered On</label>
                 <input type="text" class="form-control" value="{{ (isset($summary->registered_at) && $summary->registered_at) ? \Carbon\Carbon::parse($summary->registered_at)->format('Y-m-d h:i A') : '-' }}" disabled>
             </div>
+            <div class="col-md-6">
+                <label class="form-label">Customer Age with Company</label>
+                <input type="text" class="form-control" value="{{ (isset($summary->registered_at) && $summary->registered_at) ? \Carbon\Carbon::parse($summary->registered_at)->diff(\Carbon\Carbon::now())->format('%y years %m months %d days') : '-' }}" disabled>
+            </div>
         </div>
     @else
         <p class="text-muted mb-0">No summary details found for this customer.</p>
