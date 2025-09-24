@@ -262,6 +262,7 @@ class CustomerController extends Controller
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->leftJoin('branch', 'customer.branch_id', '=', 'branch.branch_id')
             ->leftJoinSub($loanSub, 'loan_counts', function ($join) {
                 $join->on('customer.idCustomer', '=', 'loan_counts.Customer_idCustomer');
             })
@@ -269,6 +270,7 @@ class CustomerController extends Controller
                 'customer.*',
                 'customer_group.Name as group_name',
                 'center.Name as center_name',
+                'branch.Name as branch_name',
                 DB::raw('IFNULL(loan_counts.current_loans, 0) as current_loans'),
                 DB::raw('IFNULL(loan_counts.settled_loans, 0) as settled_loans')
             )
