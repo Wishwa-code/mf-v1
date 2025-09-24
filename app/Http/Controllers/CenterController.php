@@ -17,10 +17,19 @@ class CenterController extends Controller
      */
     public function index()
     {
-        $userData = tableWithBranch('center','center')
-            ->leftjoin('route', 'center.route_id', '=', 'route.id_route')
-            ->get();
-        $route = tableWithBranch('route')->get();
+        $isHeadOffice = (int)session('branch_id') === -1;
+
+        if ($isHeadOffice) {
+            $userData = DB::table('center as center')
+                ->leftJoin('route', 'center.route_id', '=', 'route.id_route')
+                ->get();
+            $route = DB::table('route')->get();
+        } else {
+            $userData = tableWithBranch('center','center')
+                ->leftjoin('route', 'center.route_id', '=', 'route.id_route')
+                ->get();
+            $route = tableWithBranch('route')->get();
+        }
 
         return view('pages.Center',compact('userData','route'));
     }
@@ -30,9 +39,17 @@ class CenterController extends Controller
      */
     public function create(string $id)
     {
-        $customer = tableWithBranch('customer')->where('Customer_Group_idCustomer_Group', '=', $id)->get();
-        $center = tableWithBranch('center')->where('idCenter', '=', $id)->first();
-        $customercount = tableWithBranch('customer')->where('Customer_Group_idCustomer_Group', '=', $id)->count();
+        $isHeadOffice = (int)session('branch_id') === -1;
+
+        if ($isHeadOffice) {
+            $customer = DB::table('customer')->where('Customer_Group_idCustomer_Group', '=', $id)->get();
+            $center = DB::table('center')->where('idCenter', '=', $id)->first();
+            $customercount = DB::table('customer')->where('Customer_Group_idCustomer_Group', '=', $id)->count();
+        } else {
+            $customer = tableWithBranch('customer')->where('Customer_Group_idCustomer_Group', '=', $id)->get();
+            $center = tableWithBranch('center')->where('idCenter', '=', $id)->first();
+            $customercount = tableWithBranch('customer')->where('Customer_Group_idCustomer_Group', '=', $id)->count();
+        }
 
         return view('pages.ViewCenter', compact('customer','center','customercount'));
     }
