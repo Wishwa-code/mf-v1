@@ -259,7 +259,35 @@ class KYCController extends Controller
                         ->first();
                 }
 
-                return view('pages.Insurance.kyc.summary', compact('summary'));
+                // Fetch other customers in the same group without current customer
+                $groupMembers = collect();
+                if (!empty($summary?->group_no) || !empty($summary?->group_name)) {
+                    // get group ids
+                    $groupIdRow = ($isHeadOffice
+                        ? DB::table('group_has_customer')
+                        : tableWithBranch('group_has_customer')
+                    )
+                        ->where('cus_id', $id)
+                        ->select('group_id')
+                        ->first();
+
+                    if ($groupIdRow && $groupIdRow->group_id) {
+                        $memberQuery = $isHeadOffice
+                            ? DB::table('customer as c')
+                                ->join('group_has_customer as ghc', 'ghc.cus_id', '=', 'c.idCustomer')
+                            : tableWithBranch('customer as c', 'c')
+                                ->join('group_has_customer as ghc', 'ghc.cus_id', '=', 'c.idCustomer');
+
+                        $groupMembers = $memberQuery
+                            ->where('ghc.group_id', $groupIdRow->group_id)
+                            ->where('c.idCustomer', '!=', $id)
+                            ->select('c.idCustomer', 'c.cus_number', 'c.First_Name', 'c.Last_Name', 'c.Nic', 'c.Contact_No')
+                            ->orderBy('c.First_Name')
+                            ->get();
+                    }
+                }
+
+                return view('pages.Insurance.kyc.summary', compact('summary','groupMembers'));
             case 'basic':
                 return view('pages.Insurance.kyc.basic', compact('customer'));
             case 'guardian':
