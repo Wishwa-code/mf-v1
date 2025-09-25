@@ -52,6 +52,7 @@
                         <th>Name</th>
                         <th style="width: 160px;">NIC</th>
                         <th style="width: 140px;">Contact</th>
+                        <th style="width: 80px;" class="text-center">Action</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -61,6 +62,11 @@
                             <td>{{ $m->First_Name }} {{ $m->Last_Name }}</td>
                             <td>{{ $m->Nic }}</td>
                             <td>{{ $m->Contact_No }}</td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectKycCustomer({{ $m->idCustomer }})">
+                                    <i class="bi bi-eye"></i> View
+                                </button>
+                            </td>
                         </tr>
                     @endforeach
                     </tbody>

@@ -226,6 +226,25 @@
                 });
             }
 
+            // Load other customer's KYC
+            window.selectKycCustomer = function (customerId) {
+                if (!customerId) return;
+                selectedCustomerId = String(customerId);
+                $('#customerSelect').val(String(customerId)).trigger('change');
+
+                const tabSelector = '#kycTabs a[href="#summary"]';
+                const tabEl = document.querySelector(tabSelector);
+                if (tabEl) {
+                    if (window.bootstrap && bootstrap.Tab) {
+                        const tab = new bootstrap.Tab(tabEl);
+                        tab.show();
+                    } else if (typeof $(tabEl).tab === 'function') {
+                        $(tabEl).tab('show');
+                    }
+                }
+                loadTabContent('summary', selectedCustomerId);
+            };
+
             // Leaflet Map Logic
             function load_map() {
                 const mapContainer = document.getElementById('map');
