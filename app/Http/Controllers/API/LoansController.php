@@ -473,6 +473,7 @@ class LoansController
             })
             ->select([
                 // Only required fields
+                'cl.idCustomer_Loan',
                 'cl.Loan_No',
                 DB::raw('CAST(cl.Balance_Amount     AS DECIMAL(18,2)) AS Total_Loan_Balance'),
                 DB::raw('CAST(cl.Installment_Amount AS DECIMAL(18,2)) AS Installment_Amount'),
