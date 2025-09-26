@@ -445,49 +445,22 @@ class LoansController
         $userId   = (int) $user->id;
         $collectorFlag = (int) ($user->collector ?? 0);
 
-        // Validate inputs
+        // inputs
         $request->validate([
-            'q'        => 'required|string|min:2', // name / nic / contact / cus_number
-            'status'   => 'nullable|in:-2,-1,0,1,all,pending,ongoing,settled,deleted',
+            'q'        => 'required|string|min:2', // name / NIC / contact / cus_number
             'per_page' => 'nullable|integer|min:1|max:200',
             'order'    => 'nullable|in:asc,desc',
         ]);
 
-        $qstr     = trim($request->query('q'));
-        $perPage  = (int) $request->query('per_page', 10);
-        $order    = strtolower($request->query('order', 'desc')) === 'asc' ? 'asc' : 'desc';
-        $statusIn = $request->query('status'); // optional
-
-        // Normalize status to one of: -2, -1, 0, 1, or null (for "all")
-        $statusMap = [
-            'deleted' => -2, 'pending' => -1, 'ongoing' => 0, 'settled' => 1,
-            '-2' => -2, '-1' => -1, '0' => 0, '1' => 1, 'all' => null, null => null, '' => null,
-        ];
-        $statusCode = $statusMap[$statusIn] ?? null;
-
-        // Subquery: group info for customers (optional, for display)
-        $cusGroupSub = DB::raw("
-        (
-            SELECT
-                ghc.cus_id,
-                ghc.group_id,
-                cg.Name      AS group_name,
-                cg.center_id AS center_id
-            FROM group_has_customer ghc
-            LEFT JOIN customer_group cg
-                ON ghc.group_id = cg.idCustomer_Group
-        ) AS subquery
-    ");
+        $qstr    = trim($request->query('q'));
+        $perPage = (int) $request->query('per_page', 10);
+        $order   = strtolower($request->query('order', 'desc')) === 'asc' ? 'asc' : 'desc';
 
         $query = DB::table('customer_loan as cl')
             ->join('customer as c', 'cl.Customer_idCustomer', '=', 'c.idCustomer')
-            ->leftJoin($cusGroupSub, 'c.idCustomer', '=', 'subquery.cus_id')
             ->join('loan_category as lc', 'cl.Loan_Category_idLoan_Category', '=', 'lc.idLoan_Category')
-            ->leftJoin('center as cen', 'subquery.center_id', '=', 'cen.idCenter')
-            ->leftJoin('route as r', 'c.route_id', '=', 'r.id_route')
             ->where('cl.branch_id', $branchId)
-            ->when($statusCode !== null, fn($w) => $w->where('cl.Status', $statusCode))
-            // search by NIC, phone(s), cus_number, first/last, or full name
+            ->where('cl.Status', 0) // 🔒 only ongoing loans
             ->where(function ($w) use ($qstr) {
                 $like = '%'.$qstr.'%';
                 $w->where('c.Nic', 'LIKE', $like)
@@ -499,46 +472,18 @@ class LoansController
                     ->orWhere(DB::raw("CONCAT(c.First_Name,' ',c.Last_Name)"), 'LIKE', $like);
             })
             ->select([
-                // Loan (cast money to 2dp at SQL to avoid float noise)
-                'cl.idCustomer_Loan',
+                // Only required fields
                 'cl.Loan_No',
-                'cl.Date_Time',
-                DB::raw('CAST(cl.Amount             AS DECIMAL(18,2)) AS Amount'),
+                DB::raw('CAST(cl.Balance_Amount     AS DECIMAL(18,2)) AS Total_Loan_Balance'),
                 DB::raw('CAST(cl.Installment_Amount AS DECIMAL(18,2)) AS Installment_Amount'),
-                DB::raw('CAST(cl.capital_balance    AS DECIMAL(18,2)) AS capital_balance'),
-                DB::raw('CAST(cl.Balance_Amount     AS DECIMAL(18,2)) AS Balance_Amount'),
-                'cl.Installment_Count',
-                'cl.Status',
-                DB::raw("
-                CASE cl.Status
-                    WHEN -2 THEN 'Deleted'
-                    WHEN -1 THEN 'Pending'
-                    WHEN  0 THEN 'Ongoing'
-                    WHEN  1 THEN 'Settled'
-                    ELSE 'Unknown'
-                END AS loan_status_text
-            "),
-                'cl.type',
-                'cl.Vehicle_No',
-
-                // Customer
-                'c.idCustomer',
-                'c.First_Name',
-                'c.Last_Name',
-                'c.Nic',
-                'c.Contact_No',
-                'c.contact_number_2',
-                'c.cus_number',
-
-                // Labels
-                DB::raw('lc.Name AS loan_name'),
-                DB::raw('IFNULL(subquery.group_name, "-") AS group_name'),
-                DB::raw('IFNULL(cen.No, "-") AS center_no'),
-                DB::raw('IFNULL(r.name, "-") AS route_name'),
+                DB::raw('CAST(cl.Interest_Rate         AS DECIMAL(18,2)) AS Interest'),       // <-- if your column is named differently, change here
+                DB::raw('CAST(cl.Amount             AS DECIMAL(18,2)) AS Loan_Amount'),
+                DB::raw('lc.Name AS Loan_Category_Name'),
+                DB::raw('cl.Collection_Type AS Collection_Type') // <-- if you have cl.Collection_Type, use that instead
             ])
             ->orderBy('cl.idCustomer_Loan', $order);
 
-        // If logged-in user is a collector, restrict by their routes
+        // Optional: enforce collector route restriction (no extra fields returned)
         if ($collectorFlag === 1) {
             $query->join('collector_has_route as chr', 'c.route_id', '=', 'chr.route_id')
                 ->where('chr.collector_id', $userId);
@@ -546,27 +491,24 @@ class LoansController
 
         $items = $query->paginate($perPage);
 
-        // Safety: ensure numeric two-decimal outputs in JSON
+        // Ensure numeric two-decimals in JSON
         $items->setCollection(
             $items->getCollection()->map(function ($r) {
-                $r->Amount             = round((float)$r->Amount, 2);
-                $r->Installment_Amount = round((float)$r->Installment_Amount, 2);
-                $r->capital_balance    = round((float)$r->capital_balance, 2);
-                $r->Balance_Amount     = round((float)$r->Balance_Amount, 2);
+                $r->Total_Loan_Balance  = round((float)$r->Total_Loan_Balance, 2);
+                $r->Installment_Amount  = round((float)$r->Installment_Amount, 2);
+                $r->Interest            = round((float)$r->Interest, 2);
+                $r->Loan_Amount         = round((float)$r->Loan_Amount, 2);
                 return $r;
             })
         );
 
         return response()->json([
-            'status'  => 'success',
-            'query'   => $qstr,
-            'filters' => [
-                'status' => $statusIn ?? 'all',
-                'order'  => $order,
-            ],
-            'loans'   => $items, // paginator
+            'status' => 'success',
+            'query'  => $qstr,
+            'loans'  => $items, // paginator with only requested fields
         ], 200);
     }
+
 
 
 
