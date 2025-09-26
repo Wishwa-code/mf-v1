@@ -438,4 +438,136 @@ class LoansController
     }
 
 
+    public function byCustomer(Request $request)
+    {
+        $branchId = (int) $request->attributes->get('branch_id');
+        $user     = $request->user();
+        $userId   = (int) $user->id;
+        $collectorFlag = (int) ($user->collector ?? 0);
+
+        // Validate inputs
+        $request->validate([
+            'q'        => 'required|string|min:2', // name / nic / contact / cus_number
+            'status'   => 'nullable|in:-2,-1,0,1,all,pending,ongoing,settled,deleted',
+            'per_page' => 'nullable|integer|min:1|max:200',
+            'order'    => 'nullable|in:asc,desc',
+        ]);
+
+        $qstr     = trim($request->query('q'));
+        $perPage  = (int) $request->query('per_page', 10);
+        $order    = strtolower($request->query('order', 'desc')) === 'asc' ? 'asc' : 'desc';
+        $statusIn = $request->query('status'); // optional
+
+        // Normalize status to one of: -2, -1, 0, 1, or null (for "all")
+        $statusMap = [
+            'deleted' => -2, 'pending' => -1, 'ongoing' => 0, 'settled' => 1,
+            '-2' => -2, '-1' => -1, '0' => 0, '1' => 1, 'all' => null, null => null, '' => null,
+        ];
+        $statusCode = $statusMap[$statusIn] ?? null;
+
+        // Subquery: group info for customers (optional, for display)
+        $cusGroupSub = DB::raw("
+        (
+            SELECT
+                ghc.cus_id,
+                ghc.group_id,
+                cg.Name      AS group_name,
+                cg.center_id AS center_id
+            FROM group_has_customer ghc
+            LEFT JOIN customer_group cg
+                ON ghc.group_id = cg.idCustomer_Group
+        ) AS subquery
+    ");
+
+        $query = DB::table('customer_loan as cl')
+            ->join('customer as c', 'cl.Customer_idCustomer', '=', 'c.idCustomer')
+            ->leftJoin($cusGroupSub, 'c.idCustomer', '=', 'subquery.cus_id')
+            ->join('loan_category as lc', 'cl.Loan_Category_idLoan_Category', '=', 'lc.idLoan_Category')
+            ->leftJoin('center as cen', 'subquery.center_id', '=', 'cen.idCenter')
+            ->leftJoin('route as r', 'c.route_id', '=', 'r.id_route')
+            ->where('cl.branch_id', $branchId)
+            ->when($statusCode !== null, fn($w) => $w->where('cl.Status', $statusCode))
+            // search by NIC, phone(s), cus_number, first/last, or full name
+            ->where(function ($w) use ($qstr) {
+                $like = '%'.$qstr.'%';
+                $w->where('c.Nic', 'LIKE', $like)
+                    ->orWhere('c.Contact_No', 'LIKE', $like)
+                    ->orWhere('c.contact_number_2', 'LIKE', $like)
+                    ->orWhere('c.cus_number', 'LIKE', $like)
+                    ->orWhere('c.First_Name', 'LIKE', $like)
+                    ->orWhere('c.Last_Name', 'LIKE', $like)
+                    ->orWhere(DB::raw("CONCAT(c.First_Name,' ',c.Last_Name)"), 'LIKE', $like);
+            })
+            ->select([
+                // Loan (cast money to 2dp at SQL to avoid float noise)
+                'cl.idCustomer_Loan',
+                'cl.Loan_No',
+                'cl.Date_Time',
+                DB::raw('CAST(cl.Amount             AS DECIMAL(18,2)) AS Amount'),
+                DB::raw('CAST(cl.Installment_Amount AS DECIMAL(18,2)) AS Installment_Amount'),
+                DB::raw('CAST(cl.capital_balance    AS DECIMAL(18,2)) AS capital_balance'),
+                DB::raw('CAST(cl.Balance_Amount     AS DECIMAL(18,2)) AS Balance_Amount'),
+                'cl.Installment_Count',
+                'cl.Status',
+                DB::raw("
+                CASE cl.Status
+                    WHEN -2 THEN 'Deleted'
+                    WHEN -1 THEN 'Pending'
+                    WHEN  0 THEN 'Ongoing'
+                    WHEN  1 THEN 'Settled'
+                    ELSE 'Unknown'
+                END AS loan_status_text
+            "),
+                'cl.type',
+                'cl.Vehicle_No',
+
+                // Customer
+                'c.idCustomer',
+                'c.First_Name',
+                'c.Last_Name',
+                'c.Nic',
+                'c.Contact_No',
+                'c.contact_number_2',
+                'c.cus_number',
+
+                // Labels
+                DB::raw('lc.Name AS loan_name'),
+                DB::raw('IFNULL(subquery.group_name, "-") AS group_name'),
+                DB::raw('IFNULL(cen.No, "-") AS center_no'),
+                DB::raw('IFNULL(r.name, "-") AS route_name'),
+            ])
+            ->orderBy('cl.idCustomer_Loan', $order);
+
+        // If logged-in user is a collector, restrict by their routes
+        if ($collectorFlag === 1) {
+            $query->join('collector_has_route as chr', 'c.route_id', '=', 'chr.route_id')
+                ->where('chr.collector_id', $userId);
+        }
+
+        $items = $query->paginate($perPage);
+
+        // Safety: ensure numeric two-decimal outputs in JSON
+        $items->setCollection(
+            $items->getCollection()->map(function ($r) {
+                $r->Amount             = round((float)$r->Amount, 2);
+                $r->Installment_Amount = round((float)$r->Installment_Amount, 2);
+                $r->capital_balance    = round((float)$r->capital_balance, 2);
+                $r->Balance_Amount     = round((float)$r->Balance_Amount, 2);
+                return $r;
+            })
+        );
+
+        return response()->json([
+            'status'  => 'success',
+            'query'   => $qstr,
+            'filters' => [
+                'status' => $statusIn ?? 'all',
+                'order'  => $order,
+            ],
+            'loans'   => $items, // paginator
+        ], 200);
+    }
+
+
+
 }
