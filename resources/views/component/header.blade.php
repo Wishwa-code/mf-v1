@@ -937,7 +937,16 @@ $banner = DB::select($query);
             @if($privilege)
                 @php $isHeadOffice = session('branch_id') == -1; @endphp
                 @if($isHeadOffice)
-                    {{-- Head Office restricted menu: only View Customer, KYC, View Center --}}
+                    {{-- Head Office restricted menu: Dashboard, View Customer, KYC, View Center --}}
+                    @if(optional($privilege)->dashboard == 1)
+                        <li class="side-nav-item">
+                            <a href="/" class="side-nav-link">
+                                <i class="ri-dashboard-3-line"></i>
+                                <span> Dashboard </span>
+                            </a>
+                        </li>
+                    @endif
+                    
                     @if(optional($privilege)->customer == 1 && (optional($privilege)->view_customer == 1 || optional($privilege)->kyc == 1))
                         <li class="side-nav-item">
                             <a data-bs-toggle="collapse" href="#customer" aria-expanded="false"
