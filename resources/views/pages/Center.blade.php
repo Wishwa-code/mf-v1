@@ -6,6 +6,7 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.2.3/css/buttons.dataTables.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css">
+    <link href="{{ asset('css/ho-dashboard.css') }}" rel="stylesheet">
 
     <style>
         .style-tr>td {
@@ -21,13 +22,68 @@
 
 
 @section('content')
-    <div>
-        <div class="row mt-3">
+    <div class="container-fluid">
+        @php $isHeadOffice = session('branch_id') == -1; @endphp
+        
+        @if($isHeadOffice)
+            <!-- Dashboard Header -->
+            <div class="dashboard-header">
+                <button class="refresh-btn" onclick="window.location.reload()">
+                    <i class="ri-refresh-line"></i>Refresh
+                </button>
+                <h1 class="dashboard-title"><i class="ri-building-2-line dashboard-title-icon"></i>centers summery</h1>
+                <p class="dashboard-subtitle">{{ date('d/m/Y, H:i:s A') }}</p>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="summary-cards">
+                @php
+                    $totalRoutes = count($route);
+                    $totalCenters = count($userData);
+                    $totalGroups = collect($userData)->sum('Groups');
+                    $totalMembers = collect($userData)->sum('Members');
+                    $routeNames = collect($route)->pluck('name')->unique();
+                    $branchNames = collect($userData)->pluck('branch_name')->filter()->unique();
+                @endphp
+                
+                <div class="summary-card blue">
+                    <div class="summary-label">Total Routes</div>
+                    <div class="summary-value">{{ number_format($totalRoutes) }}</div>
+                </div>
+                
+                <div class="summary-card green">
+                    <div class="summary-label">Total Centers</div>
+                    <div class="summary-value">{{ number_format($totalCenters) }}</div>
+                </div>
+                
+                <div class="summary-card orange">
+                    <div class="summary-label">Total Groups</div>
+                    <div class="summary-value">{{ number_format($totalGroups) }}</div>
+                </div>
+                
+                <div class="summary-card teal">
+                    <div class="summary-label">Total Members</div>
+                    <div class="summary-value">{{ number_format($totalMembers) }}</div>
+                </div>
+                
+                <div class="summary-card purple">
+                    <div class="summary-label">Active Branches</div>
+                    <div class="summary-value">{{ number_format(count($branchNames)) }}</div>
+                </div>
+                
+                <div class="summary-card navy">
+                    <div class="summary-label">Avg Members/Center</div>
+                    <div class="summary-value">{{ $totalCenters > 0 ? number_format($totalMembers / $totalCenters, 1) : '0' }}</div>
+                </div>
+            </div>
+        @endif
+
+        <div class="row {{ $isHeadOffice ? 'mt-4' : 'mt-3' }}">
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
                         <div class="d-flex justify-content-between mb-3">
-                            <h4 class="page-title">Centers</h4>
+                            <h4 class="page-title">Centers{{ $isHeadOffice ? ' Details' : '' }}</h4>
                         </div>
                         <table id="centerTable" class="display nowrap table table-striped table-bordered" style="width:100%">
                             <thead>
@@ -79,11 +135,8 @@
 
                     </div> <!-- end card-->
                 </div> <!-- end col -->
-
-
             </div>
             <!-- end row -->
-
         </div>
 
 
