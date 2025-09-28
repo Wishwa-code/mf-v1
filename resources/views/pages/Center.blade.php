@@ -172,11 +172,6 @@
                      <div class="summary-label">Active Branches</div>
                      <div class="summary-value">{{ number_format(count($branchNames)) }}</div>
                  </div>
-                 
-                 <div class="summary-card navy">
-                     <div class="summary-label">Avg Members/Center</div>
-                     <div class="summary-value">{{ $totalCenters > 0 ? number_format($totalMembers / $totalCenters, 1) : '0' }}</div>
-                 </div>
              </div>
          @endif
 
