@@ -7,10 +7,18 @@ use Illuminate\Support\Facades\DB;
 
 class ApprovalController extends Controller
 {
-    public function pending_approval()
+    public function pending_approval(Request $request)
     {
-        // Get pending approvals with branch and user information
-        $pendingApprovals = DB::table('approval_request as ar')
+        // Get branch access info
+        $branch_access = session('branch_access', 0);
+        $user_branch_id = session('branch_id');
+        $selectedBranch = $request->get('branch_id', '');
+        
+        // Get branches for filter dropdown (exclude branch_id = -1)
+        $branches = DB::table('branch')->where('status', 1)->where('branch_id', '!=', -1)->get();
+        
+        // Build query for pending approvals with branch and user information
+        $query = DB::table('approval_request as ar')
             ->leftJoin('branch as b', 'ar.branch_id', '=', 'b.branch_id')
             ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
             ->select(
@@ -18,17 +26,34 @@ class ApprovalController extends Controller
                 'b.Name as branch_name',
                 'u.Full_Name as user_full_name'
             )
-            ->where('ar.status', 0) // Pending status
-            ->orderBy('ar.data_time', 'desc')
-            ->get();
+            ->where('ar.status', 0); // Pending status
+            
+        // Apply branch filtering
+        if ($branch_access == 0) {
+            // User has no branch access - only show their branch
+            $query->where('ar.branch_id', $user_branch_id);
+        } elseif (!empty($selectedBranch)) {
+            // User has branch access and selected a specific branch
+            $query->where('ar.branch_id', $selectedBranch);
+        }
+        
+        $pendingApprovals = $query->orderBy('ar.data_time', 'desc')->get();
 
-        return view('pages.PendingApproval', compact('pendingApprovals'));
+        return view('pages.PendingApproval', compact('pendingApprovals', 'branches', 'branch_access', 'selectedBranch'));
     }
 
-    public function approved_history()
+    public function approved_history(Request $request)
     {
-        // Get approved requests
-        $approvedHistory = DB::table('approval_request as ar')
+        // Get branch access info
+        $branch_access = session('branch_access', 0);
+        $user_branch_id = session('branch_id');
+        $selectedBranch = $request->get('branch_id', '');
+        
+        // Get branches for filter dropdown (exclude branch_id = -1)
+        $branches = DB::table('branch')->where('status', 1)->where('branch_id', '!=', -1)->get();
+        
+        // Build query for approved requests
+        $query = DB::table('approval_request as ar')
             ->leftJoin('branch as b', 'ar.branch_id', '=', 'b.branch_id')
             ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
             ->leftJoin('user as au', 'ar.approveduserid', '=', 'au.id')
@@ -38,17 +63,34 @@ class ApprovalController extends Controller
                 'u.Full_Name as user_full_name',
                 'au.Full_Name as approved_by_full_name'
             )
-            ->where('ar.status', 1) // Approved status
-            ->orderBy('ar.approved_date_time', 'desc')
-            ->get();
+            ->where('ar.status', 1); // Approved status
+            
+        // Apply branch filtering
+        if ($branch_access == 0) {
+            // User has no branch access - only show their branch
+            $query->where('ar.branch_id', $user_branch_id);
+        } elseif (!empty($selectedBranch)) {
+            // User has branch access and selected a specific branch
+            $query->where('ar.branch_id', $selectedBranch);
+        }
+        
+        $approvedHistory = $query->orderBy('ar.approved_date_time', 'desc')->get();
 
-        return view('pages.ApprovedHistory', compact('approvedHistory'));
+        return view('pages.ApprovedHistory', compact('approvedHistory', 'branches', 'branch_access', 'selectedBranch'));
     }
 
-    public function rejected_approval()
+    public function rejected_approval(Request $request)
     {
-        // Get rejected requests
-        $rejectedApprovals = DB::table('approval_request as ar')
+        // Get branch access info
+        $branch_access = session('branch_access', 0);
+        $user_branch_id = session('branch_id');
+        $selectedBranch = $request->get('branch_id', '');
+        
+        // Get branches for filter dropdown (exclude branch_id = -1)
+        $branches = DB::table('branch')->where('status', 1)->where('branch_id', '!=', -1)->get();
+        
+        // Build query for rejected requests
+        $query = DB::table('approval_request as ar')
             ->leftJoin('branch as b', 'ar.branch_id', '=', 'b.branch_id')
             ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
             ->leftJoin('user as au', 'ar.approveduserid', '=', 'au.id')
@@ -58,11 +100,20 @@ class ApprovalController extends Controller
                 'u.Full_Name as user_full_name',
                 'au.Full_Name as rejected_by_full_name'
             )
-            ->where('ar.status', 2) // Rejected status
-            ->orderBy('ar.approved_date_time', 'desc')
-            ->get();
+            ->where('ar.status', 2); // Rejected status
+            
+        // Apply branch filtering
+        if ($branch_access == 0) {
+            // User has no branch access - only show their branch
+            $query->where('ar.branch_id', $user_branch_id);
+        } elseif (!empty($selectedBranch)) {
+            // User has branch access and selected a specific branch
+            $query->where('ar.branch_id', $selectedBranch);
+        }
+        
+        $rejectedApprovals = $query->orderBy('ar.approved_date_time', 'desc')->get();
 
-        return view('pages.RejectedApproval', compact('rejectedApprovals'));
+        return view('pages.RejectedApproval', compact('rejectedApprovals', 'branches', 'branch_access', 'selectedBranch'));
     }
 
     public function approve(Request $request)
