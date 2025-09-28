@@ -321,7 +321,7 @@ body {
 }
 
 .branch-card.green {
-    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
 }
 
 .branch-card:hover {
@@ -351,6 +351,7 @@ body {
 .summary-card.orange { background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); }
 .summary-card.teal { background: linear-gradient(135deg, #1abc9c 0%, #16a085 100%); }
 .summary-card.red { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+.summary-card.purple { background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); }
 
 .summary-label {
     font-size: 0.9rem;
