@@ -452,6 +452,93 @@ class CenterController extends Controller
         return view('pages.RouteWiseCollection', compact('date', 'route', 'route_id', 'collection'));
     }
 
+    /**
+     * Get branch hierarchy data for dropdown
+     */
+    public function getBranchHierarchy($branchId)
+    {
+        try {
+            // Fetch routes for the specific branch
+            $routes = DB::table('route')
+                ->where('branch_id', $branchId)
+                ->select('id_route as id', 'name')
+                ->orderBy('name')
+                ->get();
+
+            $hierarchyData = [];
+
+            foreach ($routes as $route) {
+                // Fetch centers for each route
+                $centers = DB::table('center')
+                    ->where('branch_id', $branchId)
+                    ->where('route_id', $route->id)
+                    ->select('idCenter as id', 'Name as name')
+                    ->orderBy('Name')
+                    ->get();
+
+                $routeData = [
+                    'id' => $route->id,
+                    'name' => $route->name,
+                    'centers' => []
+                ];
+
+                foreach ($centers as $center) {
+                    // Fetch groups for each center
+                    $groups = DB::table('customer_group')
+                        ->where('branch_id', $branchId)
+                        ->where('center_id', $center->id)
+                        ->select('idCustomer_Group as id', 'Name as name')
+                        ->orderBy('Name')
+                        ->get();
+
+                    $centerData = [
+                        'id' => $center->id,
+                        'name' => $center->name,
+                        'groups' => []
+                    ];
+
+                    foreach ($groups as $group) {
+                        // Fetch customers for each group
+                        $customers = DB::table('customer')
+                            ->join('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+                            ->where('customer.branch_id', $branchId)
+                            ->where('group_has_customer.group_id', $group->id)
+                            ->select(
+                                'customer.idCustomer as id',
+                                DB::raw("CONCAT(customer.First_Name, ' ', customer.Last_Name) as name"),
+                                'customer.cus_number'
+                            )
+                            ->orderBy('customer.First_Name')
+                            ->get();
+
+                        $groupData = [
+                            'id' => $group->id,
+                            'name' => $group->name,
+                            'customer_count' => $customers->count(),
+                            'customers' => $customers->toArray()
+                        ];
+
+                        $centerData['groups'][] = $groupData;
+                    }
+
+                    $routeData['centers'][] = $centerData;
+                }
+
+                $hierarchyData[] = $routeData;
+            }
+
+            return response()->json([
+                'routes' => $hierarchyData
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch branch hierarchy',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 
 
 

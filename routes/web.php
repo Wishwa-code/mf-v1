@@ -23,6 +23,9 @@ Route::get('/storage_link', function () {
     Artisan::call('storage:link');
 });
 
+// API for branch hierarchy dropdown
+Route::get('/api/branch-hierarchy/{branchId}', '\App\Http\Controllers\CenterController@getBranchHierarchy');
+
 
 Route::get('/','\App\Http\Controllers\UserController@showdashboard')->name('home');
 //user
