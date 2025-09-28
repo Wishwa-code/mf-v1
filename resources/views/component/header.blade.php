@@ -983,6 +983,23 @@ $banner = DB::select($query);
                             </div>
                         </li>
                     @endif
+
+                    {{-- Approval menu for Head Office --}}
+                    <li class="side-nav-item">
+                        <a data-bs-toggle="collapse" href="#approval" aria-expanded="false" aria-controls="approval"
+                           class="side-nav-link">
+                            <i class="ri-checkbox-circle-line"></i>
+                            <span> Approval </span>
+                            <span class="menu-arrow"></span>
+                        </a>
+                        <div class="collapse" id="approval">
+                            <ul class="side-nav-second-level">
+                                <li><a href="/pending_approval">Pending Approval</a></li>
+                                <li><a href="/approved_history">Approved History</a></li>
+                                <li><a href="/rejected_approval">Rejected Approval</a></li>
+                            </ul>
+                        </div>
+                    </li>
                 @else
                 @if(optional($privilege)->dashboard == 1)
                     <li class="side-nav-item">

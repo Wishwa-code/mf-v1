@@ -778,4 +778,9 @@ Route::get('/depletion','\App\Http\Controllers\ReportController@depletion')->nam
 Route::post('/depletion/data', [\App\Http\Controllers\ReportController::class, 'depletionData'])
     ->name('depletion.data');
 
+//approval
+Route::get('/pending_approval','\App\Http\Controllers\ApprovalController@pending_approval')->name('approval.pending');
+Route::get('/approved_history','\App\Http\Controllers\ApprovalController@approved_history')->name('approval.approved');
+Route::get('/rejected_approval','\App\Http\Controllers\ApprovalController@rejected_approval')->name('approval.rejected');
+
 
