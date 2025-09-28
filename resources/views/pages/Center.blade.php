@@ -58,129 +58,19 @@
 
 
 @section('content')
+    @php $isHeadOffice = session('branch_id') == -1; @endphp
+    
+    @if($isHeadOffice)
+        @include('ho-center')
+    @else
     <div class="container-fluid">
-        @php $isHeadOffice = session('branch_id') == -1; @endphp
-        
-        @if($isHeadOffice)
-            <!-- Dashboard Header -->
-            <div class="dashboard-header">
-                <button class="refresh-btn" onclick="window.location.reload()">
-                    <i class="ri-refresh-line"></i>Refresh
-                </button>
-                <h1 class="dashboard-title"><i class="ri-building-2-line dashboard-title-icon"></i>centers summery</h1>
-                <p class="dashboard-subtitle">{{ date('d/m/Y, H:i:s A') }}</p>
-            </div>
 
-             <!-- Branch Cards (similar to ho-dashboard) -->
-             <div class="branch-grid">
-                 @php
-                     $colors = ['purple', 'pink', 'blue', 'orange', 'green'];
-                     $index = 0;
-                     // Group data by branch
-                     $branchData = collect($userData)->groupBy('branch_name')->map(function($centers, $branchName) {
-                         return [
-                             'name' => $branchName ?? 'Unknown Branch',
-                             'centers' => $centers->count(),
-                             'routes' => $centers->pluck('name')->unique()->count(),
-                             'groups' => $centers->sum('Groups'),
-                             'members' => $centers->sum('Members'),
-                             'avg_members' => $centers->count() > 0 ? round($centers->sum('Members') / $centers->count(), 1) : 0
-                         ];
-                     });
-                 @endphp
-                 
-                 @foreach($branchData as $b)
-                     @php
-                         // Find branch ID for switching
-                         $branchId = collect($userData)->where('branch_name', $b['name'])->first()->branch_id ?? null;
-                     @endphp
-                     <div class="branch-card {{ $colors[$index % count($colors)] }}" data-branch="{{ $branchId }}" title="Click to switch to {{ $b['name'] }} branch">
-                         <div class="card-inner">
-                             <!-- Front of Card -->
-                             <div class="card-front">
-                                 <div class="branch-header">
-                                     <h3 class="branch-name">{{ $b['name'] }}</h3>
-                                     <div class="branch-icon"><i class="ri-building-line"></i></div>
-                                 </div>
-                                 
-                                 <div class="metrics-grid">
-                                     <div class="metric-card">
-                                         <div class="metric-label">Routes</div>
-                                         <div class="metric-value">{{ number_format($b['routes']) }}</div>
-                                     </div>
-                                     <div class="metric-card">
-                                         <div class="metric-label">Centers</div>
-                                         <div class="metric-value">{{ number_format($b['centers']) }}</div>
-                                     </div>
-                                     <div class="metric-card">
-                                         <div class="metric-label">Groups</div>
-                                         <div class="metric-value">{{ number_format($b['groups']) }}</div>
-                                     </div>
-                                     <div class="metric-card">
-                                         <div class="metric-label">Members</div>
-                                         <div class="metric-value">{{ number_format($b['members']) }}</div>
-                                     </div>
-                                 </div>
-                             </div>
-                             
-                             <!-- Back of Card -->
-                             <div class="card-back">
-                                 <div class="switch-icon">
-                                     <i class="ri-arrow-left-right-line"></i>
-                                 </div>
-                                 <div class="switch-text">Switch Branch</div>
-                                 <div class="switch-subtitle">Click to switch to {{ $b['name'] }}</div>
-                             </div>
-                         </div>
-                     </div>
-                     @php $index++; @endphp
-                 @endforeach
-             </div>
-
-             <!-- Summary Cards -->
-             <div class="summary-cards">
-                 @php
-                     $totalRoutes = count($route);
-                     $totalCenters = count($userData);
-                     $totalGroups = collect($userData)->sum('Groups');
-                     $totalMembers = collect($userData)->sum('Members');
-                     $routeNames = collect($route)->pluck('name')->unique();
-                     $branchNames = collect($userData)->pluck('branch_name')->filter()->unique();
-                 @endphp
-                 
-                 <div class="summary-card blue">
-                     <div class="summary-label">Total Routes</div>
-                     <div class="summary-value">{{ number_format($totalRoutes) }}</div>
-                 </div>
-                 
-                 <div class="summary-card green">
-                     <div class="summary-label">Total Centers</div>
-                     <div class="summary-value">{{ number_format($totalCenters) }}</div>
-                 </div>
-                 
-                 <div class="summary-card orange">
-                     <div class="summary-label">Total Groups</div>
-                     <div class="summary-value">{{ number_format($totalGroups) }}</div>
-                 </div>
-                 
-                 <div class="summary-card teal">
-                     <div class="summary-label">Total Members</div>
-                     <div class="summary-value">{{ number_format($totalMembers) }}</div>
-                 </div>
-                 
-                 <div class="summary-card purple">
-                     <div class="summary-label">Active Branches</div>
-                     <div class="summary-value">{{ number_format(count($branchNames)) }}</div>
-                 </div>
-             </div>
-         @endif
-
-         <div class="row {{ $isHeadOffice ? 'mt-4' : 'mt-3' }}">
+         <div class="row mt-3">
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
                         <div class="d-flex justify-content-between mb-3">
-                            <h4 class="page-title">Centers{{ $isHeadOffice ? ' Details' : '' }}</h4>
+                            <h4 class="page-title">Centers</h4>
                         </div>
                         <table id="centerTable" class="display nowrap table table-striped table-bordered" style="width:100%">
                             <thead>
@@ -453,4 +343,6 @@
         });
 
     </script>
+    </div>
+    @endif
 @endsection
