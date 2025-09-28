@@ -66,7 +66,7 @@
                             </div>
                             
                             <div class="collection-rate">
-                                <div class="collection-rate-label">Collection Rate: 0.0%</div>
+                                <div class="collection-rate-label">Arrears %: {{ number_format((($b['portfolio'] ?? 0) > 0) ? ((($b['arrears'] ?? 0) / ($b['portfolio'] ?? 0)) * 100) : 0, 2) }}%</div>
                             </div>
                         </div>
                         
