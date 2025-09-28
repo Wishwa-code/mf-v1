@@ -17,31 +17,9 @@
             background-color: #d9edf7; /* Light blue color */
             color: #31708f; /* Darker blue text for contrast */
         }
-        /* Reduce branch card height */
-        .branch-card {
-            height: 180px !important; /* Reduced from default */
-        }
-        .branch-card .metrics-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            padding: 10px;
-        }
-        .branch-card .metric-card {
-            padding: 8px !important;
-            font-size: 0.85rem !important;
-        }
-        .branch-card .metric-value {
-            font-size: 1.1rem !important;
-        }
-        /* Adjust back card for reduced height */
-        .branch-card .card-back {
-            height: 180px !important;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 15px;
+        /* Center page specific - disable flip animation for better 4-metric display */
+        .branch-card:hover .card-inner {
+            transform: none !important;
         }
         .branch-card .switch-icon i {
             font-size: 2rem;
@@ -90,29 +68,29 @@
                      // Find branch ID for switching
                      $branchId = collect($userData)->where('branch_name', $b['name'])->first()->branch_id ?? null;
                  @endphp
-                 <div class="branch-card {{ $colors[$index % count($colors)] }}" data-branch="{{ $branchId }}" title="Click to switch to {{ $b['name'] }} branch">
-                     <div class="card-inner">
+                 <div class="branch-card {{ $colors[$index % count($colors)] }}" data-branch="{{ $branchId }}" title="Click to switch to {{ $b['name'] }} branch" style="height: 320px !important; overflow: visible !important;">
+                     <div class="card-inner" style="transform: none !important; transition: none !important;">
                          <!-- Front of Card -->
-                         <div class="card-front">
+                         <div class="card-front" style="position: static !important; display: flex !important; flex-direction: column !important; height: 320px !important; backface-visibility: visible !important;">
                              <div class="branch-header">
                                  <h3 class="branch-name">{{ $b['name'] }}</h3>
                                  <div class="branch-icon"><i class="ri-building-line"></i></div>
                              </div>
                              
-                             <div class="metrics-grid">
-                                 <div class="metric-card">
+                             <div class="metrics-grid" style="display: grid !important; grid-template-columns: 1fr 1fr !important; grid-template-rows: 1fr 1fr !important; gap: 12px !important; flex: 1 !important; margin-bottom: 16px !important; padding: 12px !important;">
+                                 <div class="metric-card" style="background: rgba(255, 255, 255, 0.2) !important; border-radius: 10px !important; padding: 12px !important; text-align: center !important; display: flex !important; flex-direction: column !important; justify-content: center !important; min-height: 70px !important; backdrop-filter: blur(5px) !important;">
                                      <div class="metric-label">Routes</div>
                                      <div class="metric-value">{{ number_format($b['routes']) }}</div>
                                  </div>
-                                 <div class="metric-card">
+                                 <div class="metric-card" style="background: rgba(255, 255, 255, 0.2) !important; border-radius: 10px !important; padding: 12px !important; text-align: center !important; display: flex !important; flex-direction: column !important; justify-content: center !important; min-height: 70px !important; backdrop-filter: blur(5px) !important;">
                                      <div class="metric-label">Centers</div>
                                      <div class="metric-value">{{ number_format($b['centers']) }}</div>
                                  </div>
-                                 <div class="metric-card">
+                                 <div class="metric-card" style="background: rgba(255, 255, 255, 0.2) !important; border-radius: 10px !important; padding: 12px !important; text-align: center !important; display: flex !important; flex-direction: column !important; justify-content: center !important; min-height: 70px !important; backdrop-filter: blur(5px) !important;">
                                      <div class="metric-label">Groups</div>
                                      <div class="metric-value">{{ number_format($b['groups']) }}</div>
                                  </div>
-                                 <div class="metric-card">
+                                 <div class="metric-card" style="background: rgba(255, 255, 255, 0.2) !important; border-radius: 10px !important; padding: 12px !important; text-align: center !important; display: flex !important; flex-direction: column !important; justify-content: center !important; min-height: 70px !important; backdrop-filter: blur(5px) !important;">
                                      <div class="metric-label">Members</div>
                                      <div class="metric-value">{{ number_format($b['members']) }}</div>
                                  </div>
@@ -120,7 +98,7 @@
                          </div>
                          
                          <!-- Back of Card -->
-                         <div class="card-back">
+                         <div class="card-back" style="display: none !important;">
                              <div class="switch-icon">
                                  <i class="ri-arrow-left-right-line"></i>
                              </div>
