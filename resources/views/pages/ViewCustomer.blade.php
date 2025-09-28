@@ -121,6 +121,9 @@
                                     @endif
                                     <td>
                                         <div class="d-flex justify-content-center">
+                                            <button type="button" class="btn btn-light" onclick="viewCustomer({{$customer->idCustomer}})" title="View Customer Details">
+                                                <i class="bi bi-eye fs-4"></i>
+                                            </button>
                                             <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#view-modal" onclick="load_document({{$customer->idCustomer}});">
                                                 <i class="bi bi-envelope-check fs-4"></i>
                                             </button>
@@ -985,6 +988,10 @@
                     });
                 }
             });
+        }
+
+        function viewCustomer(id) {
+            window.location.href = '/kyc/' + id;
         }
 
 
