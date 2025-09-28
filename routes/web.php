@@ -782,5 +782,8 @@ Route::post('/depletion/data', [\App\Http\Controllers\ReportController::class, '
 Route::get('/pending_approval','\App\Http\Controllers\ApprovalController@pending_approval')->name('approval.pending');
 Route::get('/approved_history','\App\Http\Controllers\ApprovalController@approved_history')->name('approval.approved');
 Route::get('/rejected_approval','\App\Http\Controllers\ApprovalController@rejected_approval')->name('approval.rejected');
+Route::post('/approve_request','\App\Http\Controllers\ApprovalController@approve')->name('approval.approve');
+Route::post('/reject_request','\App\Http\Controllers\ApprovalController@reject')->name('approval.reject');
+Route::post('/callback_request','\App\Http\Controllers\ApprovalController@callback')->name('approval.callback');
 
 
