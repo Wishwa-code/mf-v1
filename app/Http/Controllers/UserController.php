@@ -641,6 +641,90 @@ class UserController extends Controller
         return redirect()->intended(route('login'));
     }
 
+    public function totalOutstandingList()
+    {
+        $totalOutstandingData = tableWithBranch('installments','installments')
+            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->select(
+                'customer_loan.idCustomer_Loan as loan_id',
+                'customer.idCustomer as customer_id',
+                DB::raw('CONCAT(customer.First_Name, " ", customer.Last_Name) as customer_name'),
+                'customer_loan.Amount as capital_amount',
+                'customer_loan.Total_Loan_Amount as full_loan_amount',
+                DB::raw('SUM(installments.capital_balance + installments.Interest_Balance) as total_outstanding')
+            )
+            ->where('customer_loan.Status', '=', '0')
+            ->where(function($query) {
+                $query->where('installments.capital_balance', '>', 0)
+                      ->orWhere('installments.Interest_Balance', '>', 0);
+            })
+            ->groupBy('customer_loan.idCustomer_Loan', 'customer.idCustomer', 'customer.First_Name', 'customer.Last_Name', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount')
+            ->havingRaw('total_outstanding > 0')
+            ->orderBy('total_outstanding', 'DESC')
+            ->get();
+
+        return view('pages.TotalOutstanding', compact('totalOutstandingData'));
+    }
+
+    public function weeklyNotPaidList()
+    {
+        // Get current week date range
+        $weekStart = Carbon::now()->startOfWeek()->toDateString();
+        $weekToday = date('Y-m-d');
+
+        $weeklyNotPaidData = tableWithBranch('installments','installments')
+            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->select(
+                'customer_loan.idCustomer_Loan as loan_id',
+                'customer.idCustomer as customer_id',
+                DB::raw('CONCAT(customer.First_Name, " ", customer.Last_Name) as customer_name'),
+                'customer_loan.Amount as capital_amount',
+                'customer_loan.Total_Loan_Amount as full_loan_amount',
+                // This week not paid amount (installments between week start and today)
+                DB::raw('SUM(CASE WHEN installments.Installment_Date BETWEEN "'.$weekStart.'" AND "'.$weekToday.'" THEN installments.Total_Balance ELSE 0 END) as this_week_not_paid'),
+                // Total arrears (all overdue installments)
+                DB::raw('SUM(CASE WHEN installments.Installment_Date < CURDATE() THEN installments.Total_Balance ELSE 0 END) as total_arrears'),
+                // Not paid installment count
+                DB::raw('COUNT(CASE WHEN installments.Total_Balance > 0 AND installments.Status = 0 THEN 1 END) as not_paid_installment_count')
+            )
+            ->where('customer_loan.Status', '=', '0')
+            ->where('installments.Status', '=', '0')
+            ->where('installments.Total_Balance', '>', 0)
+            ->whereBetween('installments.Installment_Date', [$weekStart, $weekToday])
+            ->groupBy('customer_loan.idCustomer_Loan', 'customer.idCustomer', 'customer.First_Name', 'customer.Last_Name', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount')
+            ->havingRaw('this_week_not_paid > 0')
+            ->orderBy('this_week_not_paid', 'DESC')
+            ->get();
+
+        return view('pages.WeeklyNotPaid', compact('weeklyNotPaidData'));
+    }
+
+    public function penaltyBalanceList()
+    {
+        $penaltyBalanceData = tableWithBranch('installments','installments')
+            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->select(
+                'customer_loan.idCustomer_Loan as loan_id',
+                'customer.idCustomer as customer_id',
+                DB::raw('CONCAT(customer.First_Name, " ", customer.Last_Name) as customer_name'),
+                'customer_loan.Amount as capital_amount',
+                'customer_loan.Total_Loan_Amount as full_loan_amount',
+                DB::raw('SUM(installments.capital_balance + installments.Interest_Balance) as total_outstanding'),
+                DB::raw('SUM(installments.Panalty_Balance) as penalty_balance')
+            )
+            ->where('customer_loan.Status', '=', '0')
+            ->where('installments.Panalty_Balance', '>', 0)
+            ->groupBy('customer_loan.idCustomer_Loan', 'customer.idCustomer', 'customer.First_Name', 'customer.Last_Name', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount')
+            ->havingRaw('penalty_balance > 0')
+            ->orderBy('penalty_balance', 'DESC')
+            ->get();
+
+        return view('pages.PenaltyBalance', compact('penaltyBalanceData'));
+    }
+
 
 
     public function create_panelty()

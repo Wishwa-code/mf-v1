@@ -167,6 +167,15 @@ Route::post('/pendingloanissue','\App\Http\Controllers\PendingLoanController@sho
 Route::get('/pendingloandelete/{id}','\App\Http\Controllers\PendingLoanController@destroy')->name('pendingloan.destroy');
 Route::get('/show_loan/{id}/{loan}','\App\Http\Controllers\PendingLoanController@edit')->name('loan.show_loan');
 
+//Total Outstanding
+Route::get('/total-outstanding','\App\Http\Controllers\UserController@totalOutstandingList')->name('total-outstanding.index');
+
+//Weekly Not Paid
+Route::get('/weekly-not-paid','\App\Http\Controllers\UserController@weeklyNotPaidList')->name('weekly-not-paid.index');
+
+//Penalty Balance
+Route::get('/penalty-balance','\App\Http\Controllers\UserController@penaltyBalanceList')->name('penalty-balance.index');
+
 
 //payment
 Route::get('/payment_step_1','\App\Http\Controllers\PaymentLoanController@index')->name('payment_step_1.index');

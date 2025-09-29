@@ -130,42 +130,64 @@
 
                 @foreach($extra as $i => $item)
                     <div class="col-md-2 mb-4">
-                        <div class="glass-card card text-white shadow animated-card" style="background-color: {{ $item['color'] }};">
-                            <div class="card-body">
-                                <h6 class="text-uppercase">{{ $item['title'] }}</h6>
-                                <h4><span id="extra-card-{{ $i }}"></span></h4>
+                        @if($item['title'] === 'Total Outstanding')
+                            <a href="/total-outstanding" class="text-decoration-none">
+                                <div class="glass-card card text-white shadow animated-card" style="background-color: {{ $item['color'] }};">
+                                    <div class="card-body">
+                                        <h6 class="text-uppercase">{{ $item['title'] }}</h6>
+                                        <h4><span id="extra-card-{{ $i }}"></span></h4>
+                                    </div>
+                                </div>
+                            </a>
+                        @elseif($item['title'] === 'Penalty Balance')
+                            <a href="/penalty-balance" class="text-decoration-none">
+                                <div class="glass-card card text-white shadow animated-card" style="background-color: {{ $item['color'] }};">
+                                    <div class="card-body">
+                                        <h6 class="text-uppercase">{{ $item['title'] }}</h6>
+                                        <h4><span id="extra-card-{{ $i }}"></span></h4>
+                                    </div>
+                                </div>
+                            </a>
+                        @else
+                            <div class="glass-card card text-white shadow animated-card" style="background-color: {{ $item['color'] }};">
+                                <div class="card-body">
+                                    <h6 class="text-uppercase">{{ $item['title'] }}</h6>
+                                    <h4><span id="extra-card-{{ $i }}"></span></h4>
+                                </div>
                             </div>
-                        </div>
+                        @endif
                     </div>
                 @endforeach
 
                 {{-- Combined Not-Paid Card --}}
                 <div class="col-md-6 col-lg-5 mb-4">
-                    <div class="glass-card card text-white shadow animated-card" style="background: linear-gradient(135deg, #8e44ad, #2c3e50);">
-                        <div class="card-body">
-                            <h6 class="text-uppercase mb-3">This Week Not-Paid</h6>
-                            <div class="row g-3 align-items-stretch">
-                                <div class="col-4">
-                                    <div class="text-center">
-                                        <h4><span id="weekly-unpaid-count"></span></h4>
-                                        <small class="text-light">Installments</small>
+                    <a href="/weekly-not-paid" class="text-decoration-none">
+                        <div class="glass-card card text-white shadow animated-card" style="background: linear-gradient(135deg, #8e44ad, #2c3e50);">
+                            <div class="card-body">
+                                <h6 class="text-uppercase mb-3">This Week Not-Paid</h6>
+                                <div class="row g-3 align-items-stretch">
+                                    <div class="col-4">
+                                        <div class="text-center">
+                                            <h4><span id="weekly-unpaid-count"></span></h4>
+                                            <small class="text-light">Installments</small>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="text-center">
-                                        <h4><span id="weekly-unpaid-headcount"></span></h4>
-                                        <small class="text-light">Customers</small>
+                                    <div class="col-4">
+                                        <div class="text-center">
+                                            <h4><span id="weekly-unpaid-headcount"></span></h4>
+                                            <small class="text-light">Customers</small>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="text-center">
-                                        <h4><span id="weekly-unpaid-amount"></span></h4>
-                                        <small class="text-light">Amount</small>
+                                    <div class="col-4">
+                                        <div class="text-center">
+                                            <h4><span id="weekly-unpaid-amount"></span></h4>
+                                            <small class="text-light">Amount</small>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
             </div>
 
