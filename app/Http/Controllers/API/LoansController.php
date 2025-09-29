@@ -438,4 +438,83 @@ class LoansController
     }
 
 
+    public function byCustomer(Request $request)
+    {
+        $branchId = (int) $request->attributes->get('branch_id');
+        $user     = $request->user();
+        $userId   = (int) $user->id;
+        $collectorFlag = (int) ($user->collector ?? 0);
+
+        // inputs
+        $request->validate([
+            'q'        => 'required|string|min:2', // name / NIC / contact / cus_number
+            'per_page' => 'nullable|integer|min:1|max:200',
+            'order'    => 'nullable|in:asc,desc',
+        ]);
+
+        $qstr    = trim($request->query('q'));
+        $perPage = (int) $request->query('per_page', 10);
+        $order   = strtolower($request->query('order', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        $query = DB::table('customer_loan as cl')
+            ->join('customer as c', 'cl.Customer_idCustomer', '=', 'c.idCustomer')
+            ->join('loan_category as lc', 'cl.Loan_Category_idLoan_Category', '=', 'lc.idLoan_Category')
+            ->where('cl.branch_id', $branchId)
+            ->where('cl.Status', 0) // 🔒 only ongoing loans
+            ->where(function ($w) use ($qstr) {
+                $like = '%'.$qstr.'%';
+                $w->where('c.Nic', 'LIKE', $like)
+                    ->orWhere('c.Contact_No', 'LIKE', $like)
+                    ->orWhere('c.contact_number_2', 'LIKE', $like)
+                    ->orWhere('c.cus_number', 'LIKE', $like)
+                    ->orWhere('c.First_Name', 'LIKE', $like)
+                    ->orWhere('c.Last_Name', 'LIKE', $like)
+                    ->orWhere(DB::raw("CONCAT(c.First_Name,' ',c.Last_Name)"), 'LIKE', $like);
+            })
+            ->select([
+                // Only required fields
+                'cl.idCustomer_Loan',
+                'cl.Loan_No',
+                'c.cus_number',
+                'c.First_Name',
+                'c.Last_Name',
+                'c.Contact_No',
+                DB::raw('CAST(cl.Balance_Amount     AS DECIMAL(18,2)) AS Total_Loan_Balance'),
+                DB::raw('CAST(cl.Installment_Amount AS DECIMAL(18,2)) AS Installment_Amount'),
+                DB::raw('CAST(cl.Interest_Rate         AS DECIMAL(18,2)) AS Interest'),       // <-- if your column is named differently, change here
+                DB::raw('CAST(cl.Amount             AS DECIMAL(18,2)) AS Loan_Amount'),
+                DB::raw('lc.Name AS Loan_Category_Name'),
+                DB::raw('cl.Collection_Type AS Collection_Type') // <-- if you have cl.Collection_Type, use that instead
+            ])
+            ->orderBy('cl.idCustomer_Loan', $order);
+
+        // Optional: enforce collector route restriction (no extra fields returned)
+        if ($collectorFlag === 1) {
+            $query->join('collector_has_route as chr', 'c.route_id', '=', 'chr.route_id')
+                ->where('chr.collector_id', $userId);
+        }
+
+        $items = $query->paginate($perPage);
+
+        // Ensure numeric two-decimals in JSON
+        $items->setCollection(
+            $items->getCollection()->map(function ($r) {
+                $r->Total_Loan_Balance  = round((float)$r->Total_Loan_Balance, 2);
+                $r->Installment_Amount  = round((float)$r->Installment_Amount, 2);
+                $r->Interest            = round((float)$r->Interest, 2);
+                $r->Loan_Amount         = round((float)$r->Loan_Amount, 2);
+                return $r;
+            })
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'query'  => $qstr,
+            'loans'  => $items, // paginator with only requested fields
+        ], 200);
+    }
+
+
+
+
 }

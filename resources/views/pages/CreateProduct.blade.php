@@ -262,6 +262,18 @@
                                         </div>
                                     </div>
 
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="collection_date_type" class="form-label">Collection Date Type<span
+                                                        class="required-asterisk">*</span></label>
+                                            <select class="form-select" id="collection_date_type">
+                                                <option value="same_as_installment" selected>Same As Installment Due</option>
+                                                <option value="according_to_route">According to Route</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+
                                 </div>
                                 <div class="row mb-3 section-break">
                                     <div class="col-12">

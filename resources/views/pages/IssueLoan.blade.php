@@ -365,6 +365,18 @@
                                                         </div>
                                                     </div>
 
+
+                                                    <div class="col-md-6">
+                                                        <div class="mb-3">
+                                                            <label for="collection_date_type" class="form-label">Collection Date Type<span
+                                                                        class="required-asterisk">*</span></label>
+                                                            <select class="form-select" id="collection_date_type" disabled>
+                                                                <option value="same_as_installment" selected>Same As Installment Due</option>
+                                                                <option value="according_to_route">According to Route</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+
                                                 </div>
                                                 <div class="row mb-3 section-break">
                                                     <div class="col-12">
@@ -786,7 +798,7 @@
 
 
                                             <hr>
-                                            <div class="row mt-4 mb-4">
+                                            <div class="row mt-4 mb-4" id="Collection_section">
                                                 <div class="col-lg-2">
                                                     <div class="mt-2 mb-2">
                                                         <span class="fw-bold">Collection Date</span>
@@ -1113,7 +1125,8 @@
     <script src="../JS/validate.js"></script>
     <script src="../JS/issueloan.js?n=15"></script>
     <script>
-
+        var route_collection_type="";
+        var route_collection_date="";
         $(document).ready(function() {
             let x = ["#installment_amount","#offer_decided"];
             decimalFormat(x);
@@ -1453,6 +1466,7 @@
                         $('#penalty_percentage').val(product.Panelty_pecentage);
                         $('#penalty_date').val(product.Panelty_date);
                         $('#guarantee_count').val(product.Guarantee_count);
+                        $('#collection_date_type').val(product.collection_date_type || 'same_as_installment').trigger('change');
 
 
                         toggleFields();
@@ -1566,21 +1580,28 @@
 
         function select_package(){
 
+            let customer_details=$('#customer_details').val();
+            $.ajax({
+                type: "GET",
+                url: "/load_customer_route/" + customer_details,
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                },
+                success: function(data) {
+                    route_collection_type = data.collection_type;
+                    const type = (data.collection_type || '').toLowerCase();
+                    route_collection_date = (type === 'fixed') ? (data.collection_date || '') : '';
 
-            let group=$("#group").val();
-            let customer_details=$("#customer_details").val();
+                },
+                error: function(xhr, textStatus, errorThrown) {
+                    console.log("Error:", errorThrown);
+                }
+            });
 
             $("#package_feild").slideDown();
             $("#leasing_feild").slideDown();
             $("#customer_bank_feild").slideDown();
             issue_request();
-            // if(group==="1" && customer_details==="1"){
-            //     $("#package_feild").slideDown();
-            // }else{
-            //
-            // }
-
-
         }
 
 
@@ -2002,73 +2023,193 @@
         }
 
 
-        function changeCategory(){
-            let Collection_Type=$('#repayment_type').val();
-            let penalty_date=$('#penalty_date').val();
-            $("#load_div").slideDown();
+        function hideAllSchedules() {
+            $("#weekly,#first_of_the_month,#end_of_the_month,#twice_a_month,#on_a_selected_date,#daily").hide();
+        }
 
+        function changeCategory(){
+            // ===== Helpers defined at top (inside same function) =====
+            function hideAllSchedules() {
+                $("#weekly,#first_of_the_month,#end_of_the_month,#twice_a_month,#on_a_selected_date,#daily").hide();
+            }
+            const WEEKDAY = { Sunday:0, Monday:1, Tuesday:2, Wednesday:3, Thursday:4, Friday:5, Saturday:6 };
+            const NTH_MAP = { first:1, second:2, third:3, fourth:4 };
+
+            function parseISO(d){ return new Date(d); }
+            function fmtISO(d){ return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+
+            function addMonthsSafe(d, months){
+                const nd = new Date(d);
+                const day = nd.getDate();
+                nd.setDate(1);
+                nd.setMonth(nd.getMonth() + months);
+                const last = new Date(nd.getFullYear(), nd.getMonth()+1, 0).getDate();
+                nd.setDate(Math.min(day, last));
+                return nd;
+            }
+
+            function getNthWeekday(year, month /*0-based*/, weekday /*0=Sun..6*/, nth /*1..4*/){
+                const first = new Date(year, month, 1);
+                const shift = (weekday - first.getDay() + 7) % 7;
+                const day = 1 + shift + (nth - 1) * 7;
+                return new Date(year, month, day);
+            }
+
+            // For "First Week Monday" etc: choose the nth weekday in the SAME month.
+            // If that date is > dueDate, pick the PREVIOUS month's nth weekday.
+            function nthWeekCollectionOnOrBeforeDue(dueDate, nthWord, weekdayName){
+                const nth = NTH_MAP[(nthWord || '').toLowerCase()] || 1;
+                const wd  = WEEKDAY[weekdayName];
+                const y   = dueDate.getFullYear();
+                const m   = dueDate.getMonth();
+                let candidate = getNthWeekday(y, m, wd, nth);
+                if (candidate > dueDate) {
+                    // previous month
+                    const pm = (m - 1 + 12) % 12;
+                    const py = y - (m === 0 ? 1 : 0);
+                    candidate = getNthWeekday(py, pm, wd, nth);
+                }
+                return candidate;
+            }
+
+            // For plain weekday ("Monday" etc): pick the last occurrence on/before dueDate
+            function weekdayOnOrBefore(dueDate, weekdayName){
+                const wd = WEEKDAY[weekdayName];
+                const diff = (dueDate.getDay() - wd + 7) % 7; // 0..6 days to go back
+                const d = new Date(dueDate);
+                d.setDate(d.getDate() - diff);
+                return d;
+            }
+
+            function computeCollectionOnOrBeforeDue(dueISO, routeTxt){
+                const due = parseISO(dueISO);
+                const txt = String(routeTxt || '').trim();
+
+                // Plain weekday
+                if (WEEKDAY.hasOwnProperty(txt)) {
+                    return fmtISO(weekdayOnOrBefore(due, txt));
+                }
+
+                // "Second Week Monday" etc
+                const parts = txt.split(/\s+/); // e.g., ["Second","Week","Monday"]
+                if (parts.length >= 3) {
+                    const nthWord = parts[0];
+                    const weekdayName = parts[2];
+                    if (WEEKDAY.hasOwnProperty(weekdayName)) {
+                        const d = nthWeekCollectionOnOrBeforeDue(due, nthWord, weekdayName);
+                        return fmtISO(d);
+                    }
+                }
+
+                // Fallback: due date itself
+                return fmtISO(due);
+            }
+
+            // ===== Your existing code starts here =====
+            let Collection_Type      = $('#repayment_type').val();
+            let penalty_date         = $('#penalty_date').val();
+            let collection_date_type = $("#collection_date_type").val();
+
+            $("#load_div").slideDown();
             $('#panelty_date').text("Installment Date + " + penalty_date + " Days");
             $('#panelty_date_2').text(penalty_date);
-            if(Collection_Type==="Daily"){
-                $("#weekly").hide();
-                $("#first_of_the_month").hide();
-                $("#end_of_the_month").hide();
-                $("#twice_a_month").hide();
-                $("#on_a_selected_date").hide();
+
+            // 🔒 route-based schedule? hide EVERYTHING including the section and show summary
+            const isRouteLocked =
+                (String(route_collection_type || '').toLowerCase() === 'fixed') &&
+                (collection_date_type === 'according_to_route');
+
+            if (isRouteLocked) {
+                hideAllSchedules();
+                $("#Collection_section").hide();
+                $('#repayment_type').prop('disabled', true);
+
+                // === Compute and show the 3 values ===
+                let issue_date = $('#issue_date').val(); // expected YYYY-MM-DD
+                if (!issue_date || isNaN(parseISO(issue_date))) {
+                    // If missing/invalid, just ensure any old summary is removed and bail (or you can alert)
+                    $('#RouteLockedSummary').remove();
+                } else {
+                    // First Due Date = issue_date + 1 month
+                    const firstDue = addMonthsSafe(parseISO(issue_date), 1);
+                    const firstDueISO = fmtISO(firstDue);
+
+                    // First Collection Date based on route_collection_date (on/before due)
+                    const firstCollectionISO = computeCollectionOnOrBeforeDue(firstDueISO, route_collection_date);
+
+                    // Difference (days); label earlier/later/same
+                    const dueDateObj = parseISO(firstDueISO);
+                    const colDateObj = parseISO(firstCollectionISO);
+                    const diffMs = dueDateObj - colDateObj;
+                    const diffDays = Math.round(diffMs / (24*60*60*1000));
+                    const diffLabel = (diffDays === 0)
+                        ? 'same day'
+                        : (diffDays > 0 ? `${diffDays} day(s) earlier` : `${Math.abs(diffDays)} day(s) later`);
+
+                    // Render / update a small summary box right above the hidden section
+                    if (!$('#RouteLockedSummary').length) {
+                        $('#Collection_section').before(
+                            `<div id="RouteLockedSummary" class="alert alert-info mt-2">
+             <div><strong>First Due Date:</strong> <span id="first_due_date_txt"></span></div>
+             <div><strong>First Collection Date:</strong> <span id="first_collection_date_txt"></span></div>
+             <div><strong>Difference:</strong> <span id="due_collect_diff_txt"></span></div>
+             <small class="text-muted">Repayments follow the customer’s route schedule${route_collection_date ? ' ('+route_collection_date+')' : ''}.</small>
+           </div>`
+                        );
+                    }
+                    $('#first_due_date_txt').text(firstDueISO);
+                    $('#first_collection_date_txt').text(firstCollectionISO);
+                    $('#due_collect_diff_txt').text(diffLabel);
+                }
+
+                if (!$('#routeLockMsg').length) {
+                    $('#repayment_type').closest('.mb-3').append(
+                        '<small id="routeLockMsg" class="text-info d-block mt-1">Repayments follow the customer’s route schedule'
+                        + (route_collection_date ? ' (' + route_collection_date + ')' : '')
+                        + '.</small>'
+                    );
+                }
+
+                // clear table if you generate rows
+                $('#installment_table tbody').empty();
+                installment = [];
+                return; // stop here so nothing else is shown
+            } else {
+                // unlock + SHOW the section again when not route-locked
+                $('#repayment_type').prop('disabled', false);
+                $('#routeLockMsg').remove();
+                $('#RouteLockedSummary').remove(); // remove summary if present
+                $("#Collection_section").show();
+            }
+
+            // --- your existing UI switching ---
+            hideAllSchedules();
+            if (Collection_Type === "Daily"){
                 $("#daily").show();
-            }else if (Collection_Type==="Weekly"){
+            } else if (Collection_Type === "Weekly"){
                 $("#weekly").show();
-                $("#first_of_the_month").hide();
-                $("#end_of_the_month").hide();
-                $("#twice_a_month").hide();
-                $("#on_a_selected_date").hide();
-                $("#daily").hide();
-
-
                 $("#panelty_amount_txt").text("Penalty Rate Per Full Amount (%)");
                 $("#interest_txt").text("Interest Rate Per Full Amount (%)");
-
-
-            }else if (Collection_Type==="First Of The Month"){
-                $("#weekly").hide();
+            } else if (Collection_Type === "First Of The Month"){
                 $("#first_of_the_month").show();
-                $("#end_of_the_month").hide();
-                $("#twice_a_month").hide();
-                $("#on_a_selected_date").hide();
-                $("#daily").hide();
-            }else if (Collection_Type==="End Of The Month"){
-                $("#weekly").hide();
-                $("#first_of_the_month").hide();
+            } else if (Collection_Type === "End Of The Month"){
                 $("#end_of_the_month").show();
-                $("#twice_a_month").hide();
-                $("#on_a_selected_date").hide();
-                $("#daily").hide();
-            }else if (Collection_Type==="Twice A Month"){
-                $("#weekly").hide();
-                $("#first_of_the_month").hide();
-                $("#end_of_the_month").hide();
+            } else if (Collection_Type === "Twice A Month"){
                 $("#twice_a_month").show();
-                $("#on_a_selected_date").hide();
-                $("#daily").hide();
-                var currentDate = new Date();
-                currentDate.setDate(1);
+                var currentDate = new Date(); currentDate.setDate(1);
                 $("#installment_date_txt").val(currentDate.toISOString().split('T')[0]);
-            }else if (Collection_Type==="On A Selected Date"){
-                $("#weekly").hide();
-                $("#first_of_the_month").hide();
-                $("#end_of_the_month").hide();
-                $("#twice_a_month").hide();
-                $("#daily").hide();
+            } else if (Collection_Type === "On A Selected Date"){
                 $("#on_a_selected_date").show();
                 check_date(1);
             }
 
-            var tableBody = $('#installment_table tbody');
-
-            // Clear existing rows
-            tableBody.empty();
-            installment=[];
+            // reset table on change
+            $('#installment_table tbody').empty();
+            installment = [];
         }
+
+
+
 
         function check_date(on_a_selected_date_txt){
             var selectedValue = parseInt(on_a_selected_date_txt);
@@ -2149,214 +2290,516 @@
             let duration_period = $("#duration_period").val();
             let interest_period_count = $("#interest_period_count").val();
 
+
             const loanAmountFrom = parseFloat($("#loan_amount_from").val());
             const loanAmountTo = parseFloat($("#loan_amount_to").val());
 
-            // Validate if loan_amount_from and loan_amount_to are numeric
-            if (isNaN(loanAmountFrom) || isNaN(loanAmountTo)) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: 'Please enter valid numeric values for Minimum Loan Amount to Maximum Loan Amount',
-                });
-                return; // Stop the function if validation fails
+            let collection_date_type = $("#collection_date_type").val();
+
+
+            /* ---------- date helpers (define once in this scope) ---------- */
+            if (typeof parseYMD !== 'function') {
+                window.parseYMD = function parseYMD(ymd) {
+                    const [y, m, d] = String(ymd || '').split('-').map(Number);
+                    const dt = new Date(y, (m || 1) - 1, d || 1);
+                    return isNaN(dt.getTime()) ? new Date('Invalid') : dt;
+                };
+            }
+            if (typeof fmtISO !== 'function') {
+                window.fmtISO = function fmtISO(d) {
+                    if (!(d instanceof Date) || isNaN(d.getTime())) return '';
+                    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+                };
+            }
+            if (typeof addMonthsKeepDOM !== 'function') {
+                window.addMonthsKeepDOM = function addMonthsKeepDOM(date, months) {
+                    const dom = date.getDate();
+                    const y = date.getFullYear();
+                    const m = date.getMonth() + months;
+                    const firstOfTarget = new Date(y, m, 1);
+                    const lastDOM = new Date(firstOfTarget.getFullYear(), firstOfTarget.getMonth() + 1, 0).getDate();
+                    firstOfTarget.setDate(Math.min(dom, lastDOM));
+                    return firstOfTarget;
+                };
+            }
+            if (typeof diffDays !== 'function') {
+                window.diffDays = function diffDays(dueISO, collISO) {
+                    const due  = parseYMD(dueISO);
+                    const coll = parseYMD(collISO);
+                    if (isNaN(due.getTime()) || isNaN(coll.getTime())) return '';
+                    const ms = due - coll;                 // collection is on/before due
+                    return Math.round(ms / 86400000);      // integer # of days
+                };
             }
 
-            // Validate if loan_amount is a valid number
-            loan_amount = parseFloat(loan_amount);
-            if (isNaN(loan_amount)) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: 'Please enter a valid Loan Amount.',
-                });
-                return; // Stop the function if validation fails
-            }
+            if (route_collection_type === "fixed") {
+                if (collection_date_type === "according_to_route") {
+                    // ===== header with Collection Date + Difference =====
+                    $('#installment_table thead').empty();
+                    const theadContent = `
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Due Date</th>
+          <th class="text-end">Installment Amount</th>
+          <th class="text-end">Capital Amount</th>
+          <th class="text-end">Interest Amount</th>
+          <th class="text-end" style="width:100px;">Penalty Date</th>
+          <th class="text-end">Penalty Amount</th>
+          <th class="text-end">Saving Amount</th>
+          <th class="text-end">Total Amount</th>
+          <th class="text-end">Paid Amount</th>
+          <th class="text-end">Penalty Balance</th>
+          <th class="text-end">Installment Balance</th>
+          <th class="text-end">Savings Balance</th>
+          <th class="text-end">Total Balance</th>
+          <th class="text-end">Collection Date</th>
+          <th class="text-end">Difference</th>
+          <th>Status</th>
+        </tr>
+      </thead>`;
+                    $('#installment_table').prepend(theadContent);
 
-            // Check if loan_amount is within the range
-            if (loan_amount < loanAmountFrom) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: `Loan Amount must be greater than or equal to ${loanAmountFrom}`,
-                });
-                return; // Stop the function if validation fails
-            } else if (loan_amount > loanAmountTo) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: `Loan Amount must be less than or equal to ${loanAmountTo}`,
-                });
-                return; // Stop the function if validation fails
-            }
+                    // ===== helpers for collection date per route =====
+                    const WEEKDAY = { Sunday:0, Monday:1, Tuesday:2, Wednesday:3, Thursday:4, Friday:5, Saturday:6 };
+                    const NTH_MAP = { first:1, second:2, third:3, fourth:4 };
 
-            const loan_interest_from = parseFloat($("#loan_interest_from").val());
-            const loan_interest_to = parseFloat($("#loan_interest_to").val());
+                    function getNthWeekday(y, m /*0-based*/, wd /*0..6*/, nth /*1..4*/) {
+                        const first = new Date(y, m, 1);
+                        const shift = (wd - first.getDay() + 7) % 7;
+                        const day = 1 + shift + (nth - 1) * 7;
+                        return new Date(y, m, day);
+                    }
+                    function nthWeekOnOrBefore(due, nthWord, wdName) {
+                        const nth = NTH_MAP[(nthWord||'').toLowerCase()] || 1;
+                        const wd  = WEEKDAY[wdName];
+                        const y = due.getFullYear(), m = due.getMonth();
+                        let cand = getNthWeekday(y, m, wd, nth);
+                        if (cand > due) {
+                            const pm = (m + 11) % 12, py = y - (m === 0 ? 1 : 0);
+                            cand = getNthWeekday(py, pm, wd, nth);
+                        }
+                        return fmtISO(cand);
+                    }
+                    function weekdayOnOrBefore(due, wdName) {
+                        const wd = WEEKDAY[wdName];
+                        const diff = (due.getDay() - wd + 7) % 7;
+                        const d = new Date(due);
+                        d.setDate(d.getDate() - diff);
+                        return fmtISO(d);
+                    }
+                    function collectionDateForRoute(dueISO, offsetDays = 5) {
+                        const txt = String(route_collection_date || '').trim(); // e.g., "Second Week Monday"
+                        let due = parseYMD(dueISO);
+                        if (isNaN(due.getTime())) return dueISO;
 
-            // Validate if loan_interest_from and loan_interest_to are numeric
-            if (isNaN(loan_interest_from) || isNaN(loan_interest_to)) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: 'Please enter valid numeric values for Minimum Interest to Maximum Interest',
-                });
-                return; // Stop the function if validation fails
-            }
+                        // shift anchor by +N days (default 5)
+                        if (Number.isFinite(offsetDays) && offsetDays !== 0) {
+                            const d = new Date(due);
+                            d.setDate(d.getDate() + offsetDays);
+                            due = d;
+                        }
 
-            // Validate if interest is a valid number
-            interest = parseFloat(interest);
-            if (isNaN(interest)) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: 'Please enter a valid Loan Interest.',
-                });
-                return; // Stop the function if validation fails
-            }
+                        // simple weekday name (e.g., "Monday")
+                        if (WEEKDAY.hasOwnProperty(txt)) {
+                            return weekdayOnOrBefore(due, txt);
+                        }
 
+                        // "First Week Monday" / "Second Week Tuesday" / etc.
+                        const parts = txt.split(/\s+/);
+                        if (parts.length >= 3 && WEEKDAY.hasOwnProperty(parts[2])) {
+                            return nthWeekOnOrBefore(due, parts[0], parts[2]);
+                        }
 
-            if(interest_method === "Reducing Balance") {
-                let interest_amt = 0;
-
-                let interestRate = parseFloat(interest); // input interest value
-                let principal = parseFloat(loan_amount); // loan amount
-
-                if (interest_period === "Daily") {
-                    if (duration_period === "Days") {
-                        interest_amt = interestRate * interest_period_count;
-                    } else if (duration_period === "Weeks") {
-                        interest_amt = interestRate * interest_period_count * 7;
-                    } else if (duration_period === "Months") {
-                        interest_amt = interestRate * interest_period_count * 30;
+                        // fallback: return the shifted (due + 5 days) date
+                        return fmtISO(due);
                     }
 
-                } else if (interest_period === "Weekly") {
-                    if (duration_period === "Days") {
-                        interest_amt = (interestRate / 7) * interest_period_count;
-                    } else if (duration_period === "Weeks") {
-                        interest_amt = interestRate * interest_period_count;
-                    } else if (duration_period === "Months") {
-                        interest_amt = (interestRate / 7) * 30 * interest_period_count;
+
+                    // ===== monthly due dates starting from First Due Date =====
+                    const firstDueISO = $('#first_due_date_txt').text(); // e.g. "2025-10-24"
+                    const firstDue = parseYMD(firstDueISO);
+                    const instCount = parseInt(installmentCount, 10) || 0;
+
+                    if (!firstDueISO || isNaN(firstDue.getTime())) {
+                        Swal.fire("Error!", "First Due Date is invalid.", "error");
+                        return;
                     }
 
-                } else if (interest_period === "Per Month") {
-                    if (duration_period === "Days") {
-                        interest_amt = (interestRate / 30) * interest_period_count;
-                    } else if (duration_period === "Weeks") {
-                        interest_amt = (interestRate / 30) * 7 * interest_period_count;
-                    } else if (duration_period === "Months") {
-                        interest_amt = interestRate * interest_period_count;
+                    const installmentDates = [];
+                    for (let i = 0; i < instCount; i++) {
+                        installmentDates.push(fmtISO(addMonthsKeepDOM(firstDue, i)));
                     }
 
-                } else if (interest_period === "Per Year") {
-                    if (duration_period === "Days") {
-                        interest_amt = (interestRate / 365) * interest_period_count;
-                    } else if (duration_period === "Weeks") {
-                        interest_amt = (interestRate / 365) * 7 * interest_period_count;
-                    } else if (duration_period === "Months") {
-                        interest_amt = (interestRate / 12) * interest_period_count;
+                    // ===== amounts (your logic, savings fixed to 0) =====
+                    const loan_interest_from  = parseFloat($("#loan_interest_from").val()) || 0;
+                    const interestRate = (typeof interest !== 'undefined' && !isNaN(parseFloat(interest)))
+                        ? parseFloat(interest) : loan_interest_from;
+
+                    const duration_period       = $("#duration_period").val(); // "Days" | "Weeks" | "Months"
+                    const interest_period_count = parseFloat($("#period_count").val()) || 0;
+
+                    let interest_amt = 0;
+                    if (duration_period === "Days")   interest_amt = (interestRate / 30) * interest_period_count;
+                    if (duration_period === "Weeks")  interest_amt = (interestRate / 30) * 7 * interest_period_count;
+                    if (duration_period === "Months") interest_amt =  interestRate *       interest_period_count;
+
+                    const loanChargesBalanceCheckbox = document.getElementById("loanChargesBalance");
+                    if (loanChargesBalanceCheckbox && loanChargesBalanceCheckbox.checked) {
+                        loan_amount = loan_amount + parseFloat(total_loan_charge || 0);
                     }
 
-                } else if (interest_period === "Per Loan") {
-                    interest_amt = (principal * interestRate / 100);
+                    let tot_amount      = (total_loan_amount || 0) - (loan_amount_ins || 0);
+                    let capital_amount  = loan_amount / installmentDates.length;
+                    let interest_amount = tot_amount  / installmentDates.length;
+
+                    capital_amount  = parseFloat(capital_amount).toFixed(2);
+                    interest_amount = parseFloat(interest_amount).toFixed(2);
+
+                    let installmentAmount = parseFloat($("#new_interest_amount").text()) || 0;
+                    let panelty_date_2    = parseFloat($("#panelty_date_2").text()) || 0;
+
+                    if (interest_method === "Draft") {
+                        installmentAmount = parseFloat(interest_amount);
+                        capital_amount = (0).toFixed(2);
+                    }
+
+                    // ===== render rows =====
+                    const tableBody = $('#installment_table tbody');
+                    tableBody.empty();
+
+                    let count = 1;
+                    if (interest_method === "Reducing Balance") {
+                        let total_interest_percent = interest; // e.g., 10
+                        let monthly_rate = total_interest_percent / 100;
+                        let r = monthly_rate / installmentDates.length;
+                        let n = installmentDates.length;
+                        let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                        EMI = parseFloat(EMI.toFixed(2));
+                        let principal_balance = loan_amount;
+
+                        installmentDates.forEach(function(dueISO) {
+                            const penBase = parseYMD(dueISO);
+                            if (isNaN(penBase.getTime())) return;
+                            penBase.setDate(penBase.getDate() + (Number.isFinite(panelty_date_2) ? panelty_date_2 : 0));
+                            const panelty_date = fmtISO(penBase);
+
+                            let interest_amt_rb = parseFloat((principal_balance * r).toFixed(2));
+                            let capital_amt_rb  = parseFloat((EMI - interest_amt_rb).toFixed(2));
+
+                            if (count === installmentDates.length) {
+                                capital_amt_rb = parseFloat(principal_balance.toFixed(2));
+                                EMI = parseFloat((capital_amt_rb + interest_amt_rb).toFixed(2));
+                            }
+                            principal_balance = parseFloat((principal_balance - capital_amt_rb).toFixed(2));
+
+                            const saving_amount_show = EMI + 0; // savings=0
+                            const collectionISO = collectionDateForRoute(dueISO);
+                            const diff = diffDays(dueISO, collectionISO);
+
+                            const row = '<tr>' +
+                                '<td>' + count + '</td>' +
+                                '<td>' + dueISO + '</td>' +
+                                '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                '<td class="text-end">' + capital_amt_rb.toFixed(2) + '</td>' +
+                                '<td class="text-end">' + interest_amt_rb.toFixed(2) + '</td>' +
+                                '<td class="text-end">' + panelty_date + '</td>' +
+                                '<td class="text-end">0.00</td>' +
+                                '<td class="text-end">0.00</td>' +
+                                '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                '<td class="text-end">0.00</td>' +
+                                '<td class="text-end">0.00</td>' +
+                                '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                '<td class="text-end">0.00</td>' +
+                                '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                '<td class="text-end">' + collectionISO + '</td>' +
+                                '<td class="text-end">' + diff + '</td>' +
+                                '<td class="text-center"><span class="px-1" style="background-color:#ff0000;border-radius:10px;color:#ff0000;">-</span></td>' +
+                                '</tr>';
+
+                            tableBody.append(row);
+
+                            const span = tableBody.children('tr:last-child').find('span');
+                            const instDate = parseYMD(dueISO);
+                            const now = new Date();
+                            if (instDate > now) span.addClass('bg-danger text-danger').text('-');
+                            else span.addClass('bg-warning text-warning').text('-');
+
+                            count++;
+                        });
+
+                    } else {
+                        const capEach  = parseFloat(capital_amount);
+                        const intEach  = parseFloat(interest_amount);
+                        const saveVal  = 0; // savings fixed to 0
+
+                        installmentDates.forEach(function(dueISO) {
+                            const penBase = parseYMD(dueISO);
+                            if (isNaN(penBase.getTime())) return;
+                            penBase.setDate(penBase.getDate() + (Number.isFinite(panelty_date_2) ? panelty_date_2 : 0));
+                            const panelty_date = fmtISO(penBase);
+
+                            const instAmt = (interest_method === "Draft")
+                                ? parseFloat(intEach)
+                                : parseFloat(installmentAmount || (capEach + intEach));
+
+                            const capAmt = (interest_method === "Draft") ? 0 : capEach;
+                            const intAmt = (interest_method === "Draft") ? intEach : (instAmt - capAmt);
+                            const saving_amount_show = instAmt + saveVal; // == instAmt
+                            const collectionISO = collectionDateForRoute(dueISO);
+                            const diff = diffDays(dueISO, collectionISO);
+
+                            const row = '<tr>' +
+                                '<td>' + count + '</td>' +
+                                '<td>' + dueISO + '</td>' +
+                                '<td class="text-end">' + instAmt.toFixed(2) + '</td>' +
+                                '<td class="text-end">' + capAmt.toFixed(2) + '</td>' +
+                                '<td class="text-end">' + intAmt.toFixed(2) + '</td>' +
+                                '<td class="text-end">' + panelty_date + '</td>' +
+                                '<td class="text-end">0.00</td>' +
+                                '<td class="text-end">' + saveVal.toFixed(2) + '</td>' +
+                                '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                '<td class="text-end">0.00</td>' +
+                                '<td class="text-end">0.00</td>' +
+                                '<td class="text-end">' + instAmt.toFixed(2) + '</td>' +
+                                '<td class="text-end">' + saveVal.toFixed(2) + '</td>' +
+                                '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                '<td class="text-end">' + collectionISO + '</td>' +
+                                '<td class="text-end">' + diff + '</td>' +
+                                '<td class="text-center"><span class="px-1" style="background-color:#ff0000;border-radius:10px;color:#ff0000;">-</span></td>' +
+                                '</tr>';
+
+                            tableBody.append(row);
+
+                            const span = tableBody.children('tr:last-child').find('span');
+                            const instDate = parseYMD(dueISO);
+                            const now = new Date();
+                            if (instDate > now) span.addClass('bg-danger text-danger').text('-');
+                            else span.addClass('bg-warning text-warning').text('-');
+
+                            count++;
+                        });
+                    }
+
+                } else {
+                    load_ins_data();
                 }
-
-                interest = parseFloat(interest_amt.toFixed(2)); // Final assignment
-
-
-            }else{
-                // Check if interest is within the range
-                if (interest < loan_interest_from) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Oops...',
-                        text: `Interest must be greater than or equal to ${loan_interest_from}`,
-                    });
-                    return; // Stop the function if validation fails
-                } else if (interest > loan_interest_to) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Oops...',
-                        text: `Interest must be less than or equal to ${loan_interest_to}`,
-                    });
-                    return; // Stop the function if validation fails
-                }
-            }
-
-
-
-
-
-
-
-            let loanChargesBalanceCheckbox = document.getElementById("loanChargesBalance");
-
-            if (loanChargesBalanceCheckbox.checked) {
-                loan_amount = loan_amount + parseFloat(total_loan_charge);
-                tot_amount = total_loan_amount - loan_amount_ins;
-                capital_amount = loan_amount / installmentCount;
-                interest_amount = tot_amount / installmentCount;
             } else {
-                capital_amount = loan_amount / installmentCount;
-                tot_amount = total_loan_amount - loan_amount_ins;
-                interest_amount = tot_amount / installmentCount;
+                load_ins_data();
             }
 
 
 
-            capital_amount = capital_amount.toFixed(2);
-            interest_amount = interest_amount.toFixed(2);
-
-            let panelty_amount = $("#penalty_percentage").val();
-            installmentAmount = parseFloat($("#new_interest_amount").text());
-            let panelty_date_2 = parseFloat($("#panelty_date_2").text());
-
-
-            if (interest_method === "Draft") {
-                installmentAmount = interest_amount;
-                installmentAmount = parseFloat(installmentAmount);
-                capital_amount = 0.00;
-            }
-
-
-            let loan_type = $("#repayment_type").val();
-
-            if (startDate.trim() === "" || isNaN(new Date(startDate))) {
-                Swal.fire("Error!", "Please enter a valid installment date !", "error");
-            } else if (isNaN(parseInt(installmentCount)) || parseInt(installmentCount) <= 0) {
-                Swal.fire("Error!", "Please enter a valid installment count greater than zero !", "error")
-            } else if (isNaN(installmentAmount) || installmentAmount <= 0) {
-                Swal.fire("Error!", "Please calculate the installment amount first !", "error")
-            } else if (panelty_amount === "") {
-                Swal.fire("Error!", "Please calculate the penalty rate !", "error")
-            } else {
 
 
 
+            function load_ins_data(){
+               // Validate if loan_amount_from and loan_amount_to are numeric
+               if (isNaN(loanAmountFrom) || isNaN(loanAmountTo)) {
+                   Swal.fire({
+                       icon: 'error',
+                       title: 'Oops...',
+                       text: 'Please enter valid numeric values for Minimum Loan Amount to Maximum Loan Amount',
+                   });
+                   return; // Stop the function if validation fails
+               }
+
+               // Validate if loan_amount is a valid number
+               loan_amount = parseFloat(loan_amount);
+               if (isNaN(loan_amount)) {
+                   Swal.fire({
+                       icon: 'error',
+                       title: 'Oops...',
+                       text: 'Please enter a valid Loan Amount.',
+                   });
+                   return; // Stop the function if validation fails
+               }
+
+               // Check if loan_amount is within the range
+               if (loan_amount < loanAmountFrom) {
+                   Swal.fire({
+                       icon: 'error',
+                       title: 'Oops...',
+                       text: `Loan Amount must be greater than or equal to ${loanAmountFrom}`,
+                   });
+                   return; // Stop the function if validation fails
+               } else if (loan_amount > loanAmountTo) {
+                   Swal.fire({
+                       icon: 'error',
+                       title: 'Oops...',
+                       text: `Loan Amount must be less than or equal to ${loanAmountTo}`,
+                   });
+                   return; // Stop the function if validation fails
+               }
+
+               const loan_interest_from = parseFloat($("#loan_interest_from").val());
+               const loan_interest_to = parseFloat($("#loan_interest_to").val());
+
+               // Validate if loan_interest_from and loan_interest_to are numeric
+               if (isNaN(loan_interest_from) || isNaN(loan_interest_to)) {
+                   Swal.fire({
+                       icon: 'error',
+                       title: 'Oops...',
+                       text: 'Please enter valid numeric values for Minimum Interest to Maximum Interest',
+                   });
+                   return; // Stop the function if validation fails
+               }
+
+               // Validate if interest is a valid number
+               interest = parseFloat(interest);
+               if (isNaN(interest)) {
+                   Swal.fire({
+                       icon: 'error',
+                       title: 'Oops...',
+                       text: 'Please enter a valid Loan Interest.',
+                   });
+                   return; // Stop the function if validation fails
+               }
 
 
-                let saving=$("#enable_saving").text();
-                let saving_payment_active=$("#saving_payment_active").text();
+               if(interest_method === "Reducing Balance") {
+                   let interest_amt = 0;
+
+                   let interestRate = parseFloat(interest); // input interest value
+                   let principal = parseFloat(loan_amount); // loan amount
+
+                   if (interest_period === "Daily") {
+                       if (duration_period === "Days") {
+                           interest_amt = interestRate * interest_period_count;
+                       } else if (duration_period === "Weeks") {
+                           interest_amt = interestRate * interest_period_count * 7;
+                       } else if (duration_period === "Months") {
+                           interest_amt = interestRate * interest_period_count * 30;
+                       }
+
+                   } else if (interest_period === "Weekly") {
+                       if (duration_period === "Days") {
+                           interest_amt = (interestRate / 7) * interest_period_count;
+                       } else if (duration_period === "Weeks") {
+                           interest_amt = interestRate * interest_period_count;
+                       } else if (duration_period === "Months") {
+                           interest_amt = (interestRate / 7) * 30 * interest_period_count;
+                       }
+
+                   } else if (interest_period === "Per Month") {
+                       if (duration_period === "Days") {
+                           interest_amt = (interestRate / 30) * interest_period_count;
+                       } else if (duration_period === "Weeks") {
+                           interest_amt = (interestRate / 30) * 7 * interest_period_count;
+                       } else if (duration_period === "Months") {
+                           interest_amt = interestRate * interest_period_count;
+                       }
+
+                   } else if (interest_period === "Per Year") {
+                       if (duration_period === "Days") {
+                           interest_amt = (interestRate / 365) * interest_period_count;
+                       } else if (duration_period === "Weeks") {
+                           interest_amt = (interestRate / 365) * 7 * interest_period_count;
+                       } else if (duration_period === "Months") {
+                           interest_amt = (interestRate / 12) * interest_period_count;
+                       }
+
+                   } else if (interest_period === "Per Loan") {
+                       interest_amt = (principal * interestRate / 100);
+                   }
+
+                   interest = parseFloat(interest_amt.toFixed(2)); // Final assignment
+
+
+               }else{
+                   // Check if interest is within the range
+                   if (interest < loan_interest_from) {
+                       Swal.fire({
+                           icon: 'error',
+                           title: 'Oops...',
+                           text: `Interest must be greater than or equal to ${loan_interest_from}`,
+                       });
+                       return; // Stop the function if validation fails
+                   } else if (interest > loan_interest_to) {
+                       Swal.fire({
+                           icon: 'error',
+                           title: 'Oops...',
+                           text: `Interest must be less than or equal to ${loan_interest_to}`,
+                       });
+                       return; // Stop the function if validation fails
+                   }
+               }
 
 
 
-                let saving_amount_value=0.00;
-                if (saving==="Yes"){
-                    let saving_amount=$("#saving_amount").text();
-                    saving_amount_value=saving_amount;
-                    if(saving_payment_active==="1"){
-                        saving_amount_value=0.00;
-                    }
-                }
 
 
 
 
-                $('#installment_table thead').empty();
-                // if (saving==="Yes"){
+               let loanChargesBalanceCheckbox = document.getElementById("loanChargesBalance");
 
-                    // Define the table header content
-                    var theadContent = `
+               if (loanChargesBalanceCheckbox.checked) {
+                   loan_amount = loan_amount + parseFloat(total_loan_charge);
+                   tot_amount = total_loan_amount - loan_amount_ins;
+                   capital_amount = loan_amount / installmentCount;
+                   interest_amount = tot_amount / installmentCount;
+               } else {
+                   capital_amount = loan_amount / installmentCount;
+                   tot_amount = total_loan_amount - loan_amount_ins;
+                   interest_amount = tot_amount / installmentCount;
+               }
+
+
+
+               capital_amount = capital_amount.toFixed(2);
+               interest_amount = interest_amount.toFixed(2);
+
+               let panelty_amount = $("#penalty_percentage").val();
+               installmentAmount = parseFloat($("#new_interest_amount").text());
+               let panelty_date_2 = parseFloat($("#panelty_date_2").text());
+
+
+               if (interest_method === "Draft") {
+                   installmentAmount = interest_amount;
+                   installmentAmount = parseFloat(installmentAmount);
+                   capital_amount = 0.00;
+               }
+
+
+               let loan_type = $("#repayment_type").val();
+
+               if (startDate.trim() === "" || isNaN(new Date(startDate))) {
+                   Swal.fire("Error!", "Please enter a valid installment date !", "error");
+               } else if (isNaN(parseInt(installmentCount)) || parseInt(installmentCount) <= 0) {
+                   Swal.fire("Error!", "Please enter a valid installment count greater than zero !", "error")
+               } else if (isNaN(installmentAmount) || installmentAmount <= 0) {
+                   Swal.fire("Error!", "Please calculate the installment amount first !", "error")
+               } else if (panelty_amount === "") {
+                   Swal.fire("Error!", "Please calculate the penalty rate !", "error")
+               } else {
+
+
+
+
+
+                   let saving=$("#enable_saving").text();
+                   let saving_payment_active=$("#saving_payment_active").text();
+
+
+
+                   let saving_amount_value=0.00;
+                   if (saving==="Yes"){
+                       let saving_amount=$("#saving_amount").text();
+                       saving_amount_value=saving_amount;
+                       if(saving_payment_active==="1"){
+                           saving_amount_value=0.00;
+                       }
+                   }
+
+                   let is_according_to_route=0;
+                   // alert(route_collection_type);
+                   // alert(route_collection_date);
+
+                   $('#installment_table thead').empty();
+                   // if (saving==="Yes"){
+
+                   // Define the table header content
+                   var theadContent = `
         <thead>
             <tr>
                 <th>No</th>
@@ -2378,1559 +2821,1084 @@
         </thead>
     `;
 
-                    // Append the header content to the table
-                    $('#installment_table').prepend(theadContent);
 
 
 
-
-                    if(loan_type==="Daily"){
-                        var selected_date = new Date($('#installment_date_txt').val());
-                        let on_a_selected_date_txt=$('#installment_date_txt').val();
-
-                        if (on_a_selected_date_txt.trim() === "" || isNaN(new Date(on_a_selected_date_txt))) {
-                            Swal.fire("Error!", "Please enter a valid Collection Date !", "error");
-                        }else{
-                            var installmentDates = [];
-                            var currentDate = new Date(on_a_selected_date_txt);
-
-                            // Function to format date as YYYY-MM-DD
-                            function formatDate(date) {
-                                var year = date.getFullYear();
-                                var month = (date.getMonth() + 1).toString().padStart(2, '0');
-                                var day = date.getDate().toString().padStart(2, '0');
-                                return year + '-' + month + '-' + day;
-                            }
-
-                            // Ensure holidays array contains consistently formatted dates
-                            holidays = holidays.map(date => new Date(date).toISOString().split('T')[0]);
-
-                            for (var i = 0; i < installmentCount;) {
-                                // Add one day to the current date
-
-
-                                // Format the current date as YYYY-MM-DD
-                                var formattedDate = new Date(currentDate).toISOString().split('T')[0]; // Ensure consistent format
-
-                                // Log both for debugging
-                                console.log('Checking date:', formattedDate);
-                                console.log('Holidays:', holidays);
-
-                                // Check if the current date is NOT in the holidays array
-                                if (!holidays.includes(formattedDate)) {
-                                    console.log('Date added:', formattedDate); // Log added dates
-                                    installmentDates.push(formattedDate);
-                                    i++; // Increment only for valid dates (non-holidays)
-                                } else {
-                                    console.log('Skipped holiday:', formattedDate); // Log skipped dates
-                                }
-                                currentDate.setDate(currentDate.getDate()+1);
-                            }
-                            // Usage
-
-
-                            let total_interest_percent = interest; // input like 10 (meaning 10%)
-                            let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
-                            let r = monthly_rate / installmentDates.length; // divide over months
-                            let n = installmentDates.length;
-                            let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
-                            EMI = parseFloat(EMI.toFixed(2));
-                            let principal_balance = loan_amount;
-
-
-                            // Get the table body
-                            var tableBody = $('#installment_table tbody');
-
-                            // Clear existing rows
-                            tableBody.empty();
-                            let saving_amount_show=installmentAmount+parseFloat(saving_amount_value);
-                            installmentAmount=installmentAmount.toFixed(2);
-
-                            let count=1;
-
-                            installmentDates.forEach(function(date) {
-                                let currentDate = new Date(date);
-
-                                currentDate.setDate(currentDate.getDate() + panelty_date_2);
-
-                                let panelty_date = currentDate.toISOString().slice(0, 10);
-
-                                if (interest_method === "Reducing Balance") {
-                                    let currentDate = new Date(date);
-                                    currentDate.setDate(currentDate.getDate() + panelty_date_2);
-                                    let panelty_date = currentDate.toISOString().slice(0, 10);
-
-                                    let interest_amt = parseFloat((principal_balance * r).toFixed(2));
-                                    let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
-
-                                    if (count === installmentDates.length) {
-                                        capital_amt = parseFloat(principal_balance.toFixed(2));
-                                        EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
-                                    }
-
-                                    principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
-                                    let saving_amount_show = EMI + parseFloat(saving_amount_value);
-
-                                    var row = '<tr>' +
-                                        '<td>' + count + '</td>' +
-                                        '<td>' + date + '</td>' +
-                                        '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + panelty_date + '</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                        '<td class="text-center">' +
-                                        '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                        '</td>' +
-                                        '</tr>';
-
-                                    tableBody.append(row);
-
-                                    var span = tableBody.children('tr:last-child').find('span');
-                                    var installmentDate = new Date(date);
-                                    var currentTime = new Date();
-
-                                    if (installmentDate > currentTime) {
-                                        span.addClass('bg-warning text-danger').text('-');
-                                    } else {
-                                        span.addClass('bg-danger text-warning').text('-');
-                                    }
-
-                                } else{
-
-                                    // Create the row
-                                    var row = '<tr>' +
-                                        '<td>' + count + '</td>' +
-                                        '<td>' + date + '</td>' +
-                                        '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + panelty_date + '</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                        '<td class="text-center">' +
-                                        '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                        '</td>' +
-                                        '</tr>';
-
-                                    tableBody.append(row);
-                                }
-
-
-
-                                var span = tableBody.children('tr:last-child').find('span');
-
-                                var installmentDate = new Date(date);
-                                var currentTime = new Date();
-
-                                if (installmentDate > currentTime) {
-                                    span.addClass('bg-warning text-danger').text('-');
-                                } else {
-                                    span.addClass('bg-danger text-warning').text('-');
-                                }
-                                count++;
-                            });
-                        }
-                    }else if(loan_type==="Weekly"){
-
-                        var selected_date = new Date($('#installment_date_txt').val());
-                        var weekly_txt = $('#weekly_txt').val();
-
-
-
-                        // Check if it's the first day of the month
-                        if (selected_date.getDay() == weekly_txt) {
-
-                            let on_a_selected_date_txt=$('#installment_date_txt').val();
-
-                            if (on_a_selected_date_txt.trim() === "" || isNaN(new Date(on_a_selected_date_txt))) {
-                                Swal.fire("Error!", "Please enter a valid Collection Date !", "error");
-                            }else{
-
-                                var installmentDates = [];
-                                var currentDate = new Date(on_a_selected_date_txt);
-
-                                // Function to format date as YYYY-MM-DD
-                                function formatDate(date) {
-                                    var year = date.getFullYear();
-                                    var month = (date.getMonth() + 1).toString().padStart(2, '0');
-                                    var day = date.getDate().toString().padStart(2, '0');
-                                    return year + '-' + month + '-' + day;
-                                }
-
-                                // Loop through each installment count
-                                for (var i = 0; i < installmentCount; i++) {
-                                    // Add one month to the current date
-                                    // Format the date
-
-                                    var formattedDate = formatDate(currentDate);
-                                    installmentDates.push(formattedDate);
-                                    currentDate.setDate(currentDate.getDate()+7)
-
-                                }
-
-
-
-                                // Get the table body
-                                var tableBody = $('#installment_table tbody');
-
-                                // Clear existing rows
-                                tableBody.empty();
-                                let saving_amount_show=installmentAmount+parseFloat(saving_amount_value);
-                                installmentAmount=installmentAmount.toFixed(2);
-
-                                let total_interest_percent = interest; // input like 10 (meaning 10%)
-                                let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
-                                let r = monthly_rate / installmentDates.length; // divide over months
-                                let n = installmentDates.length;
-                                let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
-                                EMI = parseFloat(EMI.toFixed(2));
-                                let principal_balance = loan_amount;
-
-
-                                let count=1;
-                                installmentDates.forEach(function(date) {
-
-                                    let currentDate = new Date(date);
-
-                                    currentDate.setDate(currentDate.getDate() + panelty_date_2);
-
-                                    let panelty_date = currentDate.toISOString().slice(0, 10);
-
-                                    if(interest_method === "Reducing Balance") {
-                                        let currentDate = new Date(date);
-                                        currentDate.setDate(currentDate.getDate() + panelty_date_2);
-                                        let panelty_date = currentDate.toISOString().slice(0, 10);
-
-                                        let interest_amt = parseFloat((principal_balance * r).toFixed(2));
-                                        let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
-
-                                        if (count === installmentDates.length) {
-                                            capital_amt = parseFloat(principal_balance.toFixed(2));
-                                            EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
-                                        }
-
-                                        principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
-                                        let saving_amount_show = EMI + parseFloat(saving_amount_value);
-
-                                        var row = '<tr>' +
-                                            '<td>' + count + '</td>' +
-                                            '<td>' + date + '</td>' +
-                                            '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + panelty_date + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                            '<td class="text-center">' +
-                                            '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                            '</td>' +
-                                            '</tr>';
-
-                                        tableBody.append(row);
-
-                                        var span = tableBody.children('tr:last-child').find('span');
-                                        var installmentDate = new Date(date);
-                                        var currentTime = new Date();
-
-                                        if (installmentDate > currentTime) {
-                                            span.addClass('bg-warning text-danger').text('-');
-                                        } else {
-                                            span.addClass('bg-danger text-warning').text('-');
-                                        }
-
-                                    }else{
-
-                                        var row = '<tr>' +
-                                            '<td>' + count + '</td>' +
-                                            '<td>' + date + '</td>' +
-                                            '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + panelty_date + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                            '<td class="text-center">' +
-                                            '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                            '</td>' +
-                                            '</tr>';
-
-                                        tableBody.append(row);
-                                    }
-
-                                    var span = tableBody.children('tr:last-child').find('span');
-
-                                    var installmentDate = new Date(date);
-                                    var currentTime = new Date();
-
-                                    if (installmentDate > currentTime) {
-                                        span.addClass('bg-danger text-danger').text('-');
-                                    } else {
-                                        span.addClass('bg-warning text-warning').text('-');
-                                    }
-                                    count++;
-                                });
-                            }
-                        } else {
-                            Swal.fire("Error!", "Selected date is not a equal to selected day !", "error")
-                        }
-
-
-
-                    }else if (loan_type==="First Of The Month"){
-                        var selected_date = new Date($('#installment_date_txt').val());
-
-                        // Check if it's the first day of the month
-                        if (selected_date.getDate() === 1) {
-
-                            let on_a_selected_date_txt=$('#installment_date_txt').val();
-
-                            if (on_a_selected_date_txt.trim() === "" || isNaN(new Date(on_a_selected_date_txt))) {
-                                Swal.fire("Error!", "Please enter a valid Collection Date !", "error");
-                            }else{
-                                var installmentDates = [];
-                                var currentDate = new Date(on_a_selected_date_txt);
-
-                                // Function to format date as YYYY-MM-DD
-                                function formatDate(date) {
-                                    var year = date.getFullYear();
-                                    var month = (date.getMonth() + 1).toString().padStart(2, '0');
-                                    var day = date.getDate().toString().padStart(2, '0');
-                                    return year + '-' + month + '-' + day;
-                                }
-
-                                // Loop through each installment count
-                                for (var i = 0; i < installmentCount; i++) {
-                                    // Add one month to the current date
-                                    // Format the date
-
-                                    var formattedDate = formatDate(currentDate);
-                                    installmentDates.push(formattedDate);
-                                    currentDate.setMonth(currentDate.getMonth() + 1);
-                                }
-
-                                // Get the table body
-                                var tableBody = $('#installment_table tbody');
-
-                                let total_interest_percent = interest; // input like 10 (meaning 10%)
-                                let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
-                                let r = monthly_rate / installmentDates.length; // divide over months
-                                let n = installmentDates.length;
-                                let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
-                                EMI = parseFloat(EMI.toFixed(2));
-                                let principal_balance = loan_amount;
-
-                                // Clear existing rows
-                                tableBody.empty();
-                                let saving_amount_show=installmentAmount+parseFloat(saving_amount_value);
-                                installmentAmount=installmentAmount.toFixed(2);
-                                let count=1;
-                                installmentDates.forEach(function(date) {
-                                    let currentDate = new Date(date);
-
-                                    currentDate.setDate(currentDate.getDate() + panelty_date_2);
-
-                                    let panelty_date = currentDate.toISOString().slice(0, 10);
-
-                                    if(interest_method === "Reducing Balance") {
-                                        let currentDate = new Date(date);
-                                        currentDate.setDate(currentDate.getDate() + panelty_date_2);
-                                        let panelty_date = currentDate.toISOString().slice(0, 10);
-
-                                        let interest_amt = parseFloat((principal_balance * r).toFixed(2));
-                                        let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
-
-                                        if (count === installmentDates.length) {
-                                            capital_amt = parseFloat(principal_balance.toFixed(2));
-                                            EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
-                                        }
-
-                                        principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
-                                        let saving_amount_show = EMI + parseFloat(saving_amount_value);
-
-                                        var row = '<tr>' +
-                                            '<td>' + count + '</td>' +
-                                            '<td>' + date + '</td>' +
-                                            '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + panelty_date + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                            '<td class="text-center">' +
-                                            '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                            '</td>' +
-                                            '</tr>';
-
-                                        tableBody.append(row);
-
-                                        var span = tableBody.children('tr:last-child').find('span');
-                                        var installmentDate = new Date(date);
-                                        var currentTime = new Date();
-
-                                        if (installmentDate > currentTime) {
-                                            span.addClass('bg-warning text-danger').text('-');
-                                        } else {
-                                            span.addClass('bg-danger text-warning').text('-');
-                                        }
-
-                                    }else{
-                                        var row = '<tr>' +
-                                            '<td>' + count + '</td>' +
-                                            '<td>' + date + '</td>' +
-                                            '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + panelty_date + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                            '<td class="text-center">' +
-                                            '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                            '</td>' +
-                                            '</tr>';
-
-                                        tableBody.append(row);
-                                    }
-
-                                    var span = tableBody.children('tr:last-child').find('span');
-
-                                    var installmentDate = new Date(date);
-                                    var currentTime = new Date();
-
-                                    if (installmentDate > currentTime) {
-                                        span.addClass('bg-danger text-danger').text('-');
-                                    } else {
-                                        span.addClass('bg-warning text-warning').text('-');
-                                    }
-                                    count++;
-                                });
-                            }
-                        } else {
-                            Swal.fire("Error!", "Selected date is not the first day of the month !", "error")
-                        }
-                    }else if (loan_type==="End Of The Month"){
-                        var on_a_selected_date_txt = $('#installment_date_txt').val();
-                        var selected_date = new Date(on_a_selected_date_txt);
+
+
+                   // Append the header content to the table
+                   $('#installment_table').prepend(theadContent);
+
+
+
+
+                   if(loan_type==="Daily"){
+                       var selected_date = new Date($('#installment_date_txt').val());
+                       let on_a_selected_date_txt=$('#installment_date_txt').val();
+
+                       if (on_a_selected_date_txt.trim() === "" || isNaN(new Date(on_a_selected_date_txt))) {
+                           Swal.fire("Error!", "Please enter a valid Collection Date !", "error");
+                       }else{
+                           var installmentDates = [];
+                           var currentDate = new Date(on_a_selected_date_txt);
+
+                           // Function to format date as YYYY-MM-DD
+                           function formatDate(date) {
+                               var year = date.getFullYear();
+                               var month = (date.getMonth() + 1).toString().padStart(2, '0');
+                               var day = date.getDate().toString().padStart(2, '0');
+                               return year + '-' + month + '-' + day;
+                           }
+
+                           // Ensure holidays array contains consistently formatted dates
+                           holidays = holidays.map(date => new Date(date).toISOString().split('T')[0]);
+
+                           for (var i = 0; i < installmentCount;) {
+                               // Add one day to the current date
+
+
+                               // Format the current date as YYYY-MM-DD
+                               var formattedDate = new Date(currentDate).toISOString().split('T')[0]; // Ensure consistent format
+
+                               // Log both for debugging
+                               console.log('Checking date:', formattedDate);
+                               console.log('Holidays:', holidays);
+
+                               // Check if the current date is NOT in the holidays array
+                               if (!holidays.includes(formattedDate)) {
+                                   console.log('Date added:', formattedDate); // Log added dates
+                                   installmentDates.push(formattedDate);
+                                   i++; // Increment only for valid dates (non-holidays)
+                               } else {
+                                   console.log('Skipped holiday:', formattedDate); // Log skipped dates
+                               }
+                               currentDate.setDate(currentDate.getDate()+1);
+                           }
+                           // Usage
+
+
+                           let total_interest_percent = interest; // input like 10 (meaning 10%)
+                           let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
+                           let r = monthly_rate / installmentDates.length; // divide over months
+                           let n = installmentDates.length;
+                           let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                           EMI = parseFloat(EMI.toFixed(2));
+                           let principal_balance = loan_amount;
+
+
+                           // Get the table body
+                           var tableBody = $('#installment_table tbody');
+
+                           // Clear existing rows
+                           tableBody.empty();
+                           let saving_amount_show=installmentAmount+parseFloat(saving_amount_value);
+                           installmentAmount=installmentAmount.toFixed(2);
+
+                           let count=1;
+
+                           installmentDates.forEach(function(date) {
+                               let currentDate = new Date(date);
+
+                               currentDate.setDate(currentDate.getDate() + panelty_date_2);
+
+                               let panelty_date = currentDate.toISOString().slice(0, 10);
+
+                               if (interest_method === "Reducing Balance") {
+                                   let currentDate = new Date(date);
+                                   currentDate.setDate(currentDate.getDate() + panelty_date_2);
+                                   let panelty_date = currentDate.toISOString().slice(0, 10);
+
+                                   let interest_amt = parseFloat((principal_balance * r).toFixed(2));
+                                   let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
+
+                                   if (count === installmentDates.length) {
+                                       capital_amt = parseFloat(principal_balance.toFixed(2));
+                                       EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
+                                   }
+
+                                   principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
+                                   let saving_amount_show = EMI + parseFloat(saving_amount_value);
+
+                                   var row = '<tr>' +
+                                       '<td>' + count + '</td>' +
+                                       '<td>' + date + '</td>' +
+                                       '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + panelty_date + '</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                       '<td class="text-center">' +
+                                       '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                       '</td>' +
+                                       '</tr>';
+
+                                   tableBody.append(row);
+
+                                   var span = tableBody.children('tr:last-child').find('span');
+                                   var installmentDate = new Date(date);
+                                   var currentTime = new Date();
+
+                                   if (installmentDate > currentTime) {
+                                       span.addClass('bg-warning text-danger').text('-');
+                                   } else {
+                                       span.addClass('bg-danger text-warning').text('-');
+                                   }
+
+                               } else{
+
+                                   // Create the row
+                                   var row = '<tr>' +
+                                       '<td>' + count + '</td>' +
+                                       '<td>' + date + '</td>' +
+                                       '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + panelty_date + '</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                       '<td class="text-center">' +
+                                       '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                       '</td>' +
+                                       '</tr>';
+
+                                   tableBody.append(row);
+                               }
+
+
+
+                               var span = tableBody.children('tr:last-child').find('span');
+
+                               var installmentDate = new Date(date);
+                               var currentTime = new Date();
+
+                               if (installmentDate > currentTime) {
+                                   span.addClass('bg-warning text-danger').text('-');
+                               } else {
+                                   span.addClass('bg-danger text-warning').text('-');
+                               }
+                               count++;
+                           });
+                       }
+                   }else if(loan_type==="Weekly"){
+
+                       var selected_date = new Date($('#installment_date_txt').val());
+                       var weekly_txt = $('#weekly_txt').val();
+
+
+
+                       // Check if it's the first day of the month
+                       if (selected_date.getDay() == weekly_txt) {
+
+                           let on_a_selected_date_txt=$('#installment_date_txt').val();
+
+                           if (on_a_selected_date_txt.trim() === "" || isNaN(new Date(on_a_selected_date_txt))) {
+                               Swal.fire("Error!", "Please enter a valid Collection Date !", "error");
+                           }else{
+
+                               var installmentDates = [];
+                               var currentDate = new Date(on_a_selected_date_txt);
+
+                               // Function to format date as YYYY-MM-DD
+                               function formatDate(date) {
+                                   var year = date.getFullYear();
+                                   var month = (date.getMonth() + 1).toString().padStart(2, '0');
+                                   var day = date.getDate().toString().padStart(2, '0');
+                                   return year + '-' + month + '-' + day;
+                               }
+
+                               // Loop through each installment count
+                               for (var i = 0; i < installmentCount; i++) {
+                                   // Add one month to the current date
+                                   // Format the date
+
+                                   var formattedDate = formatDate(currentDate);
+                                   installmentDates.push(formattedDate);
+                                   currentDate.setDate(currentDate.getDate()+7)
+
+                               }
+
+
+
+                               // Get the table body
+                               var tableBody = $('#installment_table tbody');
+
+                               // Clear existing rows
+                               tableBody.empty();
+                               let saving_amount_show=installmentAmount+parseFloat(saving_amount_value);
+                               installmentAmount=installmentAmount.toFixed(2);
+
+                               let total_interest_percent = interest; // input like 10 (meaning 10%)
+                               let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
+                               let r = monthly_rate / installmentDates.length; // divide over months
+                               let n = installmentDates.length;
+                               let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                               EMI = parseFloat(EMI.toFixed(2));
+                               let principal_balance = loan_amount;
+
+
+                               let count=1;
+                               installmentDates.forEach(function(date) {
+
+                                   let currentDate = new Date(date);
+
+                                   currentDate.setDate(currentDate.getDate() + panelty_date_2);
+
+                                   let panelty_date = currentDate.toISOString().slice(0, 10);
+
+                                   if(interest_method === "Reducing Balance") {
+                                       let currentDate = new Date(date);
+                                       currentDate.setDate(currentDate.getDate() + panelty_date_2);
+                                       let panelty_date = currentDate.toISOString().slice(0, 10);
+
+                                       let interest_amt = parseFloat((principal_balance * r).toFixed(2));
+                                       let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
+
+                                       if (count === installmentDates.length) {
+                                           capital_amt = parseFloat(principal_balance.toFixed(2));
+                                           EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
+                                       }
+
+                                       principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
+                                       let saving_amount_show = EMI + parseFloat(saving_amount_value);
+
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
+
+                                       tableBody.append(row);
+
+                                       var span = tableBody.children('tr:last-child').find('span');
+                                       var installmentDate = new Date(date);
+                                       var currentTime = new Date();
+
+                                       if (installmentDate > currentTime) {
+                                           span.addClass('bg-warning text-danger').text('-');
+                                       } else {
+                                           span.addClass('bg-danger text-warning').text('-');
+                                       }
+
+                                   }else{
+
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
+
+                                       tableBody.append(row);
+                                   }
+
+                                   var span = tableBody.children('tr:last-child').find('span');
+
+                                   var installmentDate = new Date(date);
+                                   var currentTime = new Date();
+
+                                   if (installmentDate > currentTime) {
+                                       span.addClass('bg-danger text-danger').text('-');
+                                   } else {
+                                       span.addClass('bg-warning text-warning').text('-');
+                                   }
+                                   count++;
+                               });
+                           }
+                       } else {
+                           Swal.fire("Error!", "Selected date is not a equal to selected day !", "error")
+                       }
+
+
+
+                   }else if (loan_type==="First Of The Month"){
+                       var selected_date = new Date($('#installment_date_txt').val());
+
+                       // Check if it's the first day of the month
+                       if (selected_date.getDate() === 1) {
+
+                           let on_a_selected_date_txt=$('#installment_date_txt').val();
+
+                           if (on_a_selected_date_txt.trim() === "" || isNaN(new Date(on_a_selected_date_txt))) {
+                               Swal.fire("Error!", "Please enter a valid Collection Date !", "error");
+                           }else{
+                               var installmentDates = [];
+                               var currentDate = new Date(on_a_selected_date_txt);
+
+                               // Function to format date as YYYY-MM-DD
+                               function formatDate(date) {
+                                   var year = date.getFullYear();
+                                   var month = (date.getMonth() + 1).toString().padStart(2, '0');
+                                   var day = date.getDate().toString().padStart(2, '0');
+                                   return year + '-' + month + '-' + day;
+                               }
+
+                               // Loop through each installment count
+                               for (var i = 0; i < installmentCount; i++) {
+                                   // Add one month to the current date
+                                   // Format the date
+
+                                   var formattedDate = formatDate(currentDate);
+                                   installmentDates.push(formattedDate);
+                                   currentDate.setMonth(currentDate.getMonth() + 1);
+                               }
+
+                               // Get the table body
+                               var tableBody = $('#installment_table tbody');
+
+                               let total_interest_percent = interest; // input like 10 (meaning 10%)
+                               let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
+                               let r = monthly_rate / installmentDates.length; // divide over months
+                               let n = installmentDates.length;
+                               let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                               EMI = parseFloat(EMI.toFixed(2));
+                               let principal_balance = loan_amount;
+
+                               // Clear existing rows
+                               tableBody.empty();
+                               let saving_amount_show=installmentAmount+parseFloat(saving_amount_value);
+                               installmentAmount=installmentAmount.toFixed(2);
+                               let count=1;
+                               installmentDates.forEach(function(date) {
+                                   let currentDate = new Date(date);
+
+                                   currentDate.setDate(currentDate.getDate() + panelty_date_2);
+
+                                   let panelty_date = currentDate.toISOString().slice(0, 10);
+
+                                   if(interest_method === "Reducing Balance") {
+                                       let currentDate = new Date(date);
+                                       currentDate.setDate(currentDate.getDate() + panelty_date_2);
+                                       let panelty_date = currentDate.toISOString().slice(0, 10);
+
+                                       let interest_amt = parseFloat((principal_balance * r).toFixed(2));
+                                       let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
+
+                                       if (count === installmentDates.length) {
+                                           capital_amt = parseFloat(principal_balance.toFixed(2));
+                                           EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
+                                       }
+
+                                       principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
+                                       let saving_amount_show = EMI + parseFloat(saving_amount_value);
+
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
+
+                                       tableBody.append(row);
+
+                                       var span = tableBody.children('tr:last-child').find('span');
+                                       var installmentDate = new Date(date);
+                                       var currentTime = new Date();
+
+                                       if (installmentDate > currentTime) {
+                                           span.addClass('bg-warning text-danger').text('-');
+                                       } else {
+                                           span.addClass('bg-danger text-warning').text('-');
+                                       }
+
+                                   }else{
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
+
+                                       tableBody.append(row);
+                                   }
+
+                                   var span = tableBody.children('tr:last-child').find('span');
+
+                                   var installmentDate = new Date(date);
+                                   var currentTime = new Date();
+
+                                   if (installmentDate > currentTime) {
+                                       span.addClass('bg-danger text-danger').text('-');
+                                   } else {
+                                       span.addClass('bg-warning text-warning').text('-');
+                                   }
+                                   count++;
+                               });
+                           }
+                       } else {
+                           Swal.fire("Error!", "Selected date is not the first day of the month !", "error")
+                       }
+                   }else if (loan_type==="End Of The Month"){
+                       var on_a_selected_date_txt = $('#installment_date_txt').val();
+                       var selected_date = new Date(on_a_selected_date_txt);
 
 // Get the last day of the month for the selected date
-                        var lastDayOfMonth = new Date(selected_date.getFullYear(), selected_date.getMonth() + 1, 0);
+                       var lastDayOfMonth = new Date(selected_date.getFullYear(), selected_date.getMonth() + 1, 0);
 
 // Check if it's the last day of the month
-                        if (selected_date.getDate() === lastDayOfMonth.getDate()) {
-                            if (on_a_selected_date_txt.trim() === "" || isNaN(new Date(on_a_selected_date_txt))) {
-                                Swal.fire("Error!", "Please enter a valid Collection Date !", "error");
-                            } else {
-                                var installmentDates = [];
-                                var currentDate = new Date(on_a_selected_date_txt);
+                       if (selected_date.getDate() === lastDayOfMonth.getDate()) {
+                           if (on_a_selected_date_txt.trim() === "" || isNaN(new Date(on_a_selected_date_txt))) {
+                               Swal.fire("Error!", "Please enter a valid Collection Date !", "error");
+                           } else {
+                               var installmentDates = [];
+                               var currentDate = new Date(on_a_selected_date_txt);
 
-                                // Function to format date as YYYY-MM-DD
-                                function formatDate(date) {
-                                    var year = date.getFullYear();
-                                    var month = (date.getMonth() + 1).toString().padStart(2, '0');
-                                    var day = date.getDate().toString().padStart(2, '0');
-                                    return year + '-' + month + '-' + day;
-                                }
+                               // Function to format date as YYYY-MM-DD
+                               function formatDate(date) {
+                                   var year = date.getFullYear();
+                                   var month = (date.getMonth() + 1).toString().padStart(2, '0');
+                                   var day = date.getDate().toString().padStart(2, '0');
+                                   return year + '-' + month + '-' + day;
+                               }
 
-                                // Loop through each installment count
-                                for (var i = 0; i < installmentCount; i++) {
+                               // Loop through each installment count
+                               for (var i = 0; i < installmentCount; i++) {
 
-                                    var selectedDate = new Date($('#installment_date_txt').val());
-
-// Get the last day of the selected month
-                                    var lastDayOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1+i, 0);
-
-
-                                    // Get the last day of the current month
-                                    // var nextMonthDate = new Date(currentDate);
-                                    // nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
-                                    // nextMonthDate.setDate(0); // Set to last day of current month
-
-                                    // Format the date
-                                    var formattedDate = formatDate(lastDayOfMonth);
-                                    installmentDates.push(formattedDate);
-
-                                    // Move to the first day of the next month
-                                    // currentDate.setMonth(currentDate.getMonth() + 1);
-                                    // currentDate.setDate(1);
-                                }
-
-                                // Get the table body
-                                var tableBody = $('#installment_table tbody');
-
-
-                                let total_interest_percent = interest; // input like 10 (meaning 10%)
-                                let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
-                                let r = monthly_rate / installmentDates.length; // divide over months
-                                let n = installmentDates.length;
-                                let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
-                                EMI = parseFloat(EMI.toFixed(2));
-                                let principal_balance = loan_amount;
-
-                                // Clear existing rows
-                                tableBody.empty();
-                                let saving_amount_show=installmentAmount+parseFloat(saving_amount_value);
-                                installmentAmount = installmentAmount.toFixed(2);
-                                let count=1;
-                                installmentDates.forEach(function(date) {
-
-                                    let currentDate = new Date(date);
-
-                                    currentDate.setDate(currentDate.getDate() + panelty_date_2);
-
-                                    let panelty_date = currentDate.toISOString().slice(0, 10);
-
-                                    if(interest_method === "Reducing Balance") {
-                                        let currentDate = new Date(date);
-                                        currentDate.setDate(currentDate.getDate() + panelty_date_2);
-                                        let panelty_date = currentDate.toISOString().slice(0, 10);
-
-                                        let interest_amt = parseFloat((principal_balance * r).toFixed(2));
-                                        let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
-
-                                        if (count === installmentDates.length) {
-                                            capital_amt = parseFloat(principal_balance.toFixed(2));
-                                            EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
-                                        }
-
-                                        principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
-                                        let saving_amount_show = EMI + parseFloat(saving_amount_value);
-
-                                        var row = '<tr>' +
-                                            '<td>' + count + '</td>' +
-                                            '<td>' + date + '</td>' +
-                                            '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + panelty_date + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                            '<td class="text-center">' +
-                                            '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                            '</td>' +
-                                            '</tr>';
-
-                                        tableBody.append(row);
-
-                                        var span = tableBody.children('tr:last-child').find('span');
-                                        var installmentDate = new Date(date);
-                                        var currentTime = new Date();
-
-                                        if (installmentDate > currentTime) {
-                                            span.addClass('bg-warning text-danger').text('-');
-                                        } else {
-                                            span.addClass('bg-danger text-warning').text('-');
-                                        }
-                                    }else{
-                                        var row = '<tr>' +
-                                            '<td>' + count + '</td>' +
-                                            '<td>' + date + '</td>' +
-                                            '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + panelty_date + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">0.00</td>' +
-                                            '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                            '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                            '<td class="text-center">' +
-                                            '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                            '</td>' +
-                                            '</tr>';
-
-                                        tableBody.append(row);
-                                    }
-
-
-
-                                    var span = tableBody.children('tr:last-child').find('span');
-
-                                    var installmentDate = new Date(date);
-                                    var currentTime = new Date();
-
-                                    if (installmentDate > currentTime) {
-                                        span.addClass('bg-danger text-danger').text('-');
-                                    } else {
-                                        span.addClass('bg-warning text-warning').text('-');
-                                    }
-
-                                    count++;
-                                });
-                            }
-                        } else {
-                            Swal.fire("Error!", "Selected date is not the last day of the month !", "error")
-                        }
-
-
-                    }else if (loan_type==="Twice A Month"){
-                        let twice_a_month_txt=$('#twice_a_month_txt').val();
-                        if (twice_a_month_txt=="2"){
-                            var installmentDates = [];
-                            var currentDate = new Date(on_a_selected_date_txt);
-
-                            // Function to format date as YYYY-MM-DD
-                            function formatDate(date) {
-                                var year = date.getFullYear();
-                                var month = (date.getMonth() + 1).toString().padStart(2, '0');
-                                var day = date.getDate().toString().padStart(2, '0');
-                                return year + '-' + month + '-' + day;
-                            }
-
-                            // Loop through each installment count
-                            for (var i = 0; i < (installmentCount/2); i++) {
-
-                                var selectedDate = new Date($('#installment_date_txt').val());
+                                   var selectedDate = new Date($('#installment_date_txt').val());
 
 // Get the last day of the selected month
+                                   var lastDayOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1+i, 0);
 
 
-                                var lastDayOfMonth2 = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + i, 15);
-                                var lastDayOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + i+1, 0);
+                                   // Get the last day of the current month
+                                   // var nextMonthDate = new Date(currentDate);
+                                   // nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+                                   // nextMonthDate.setDate(0); // Set to last day of current month
+
+                                   // Format the date
+                                   var formattedDate = formatDate(lastDayOfMonth);
+                                   installmentDates.push(formattedDate);
+
+                                   // Move to the first day of the next month
+                                   // currentDate.setMonth(currentDate.getMonth() + 1);
+                                   // currentDate.setDate(1);
+                               }
+
+                               // Get the table body
+                               var tableBody = $('#installment_table tbody');
 
 
-                                var formattedDate = formatDate(lastDayOfMonth2);
-                                installmentDates.push(formattedDate);
-                                var formattedDate2 = formatDate(lastDayOfMonth);
-                                installmentDates.push(formattedDate2);
+                               let total_interest_percent = interest; // input like 10 (meaning 10%)
+                               let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
+                               let r = monthly_rate / installmentDates.length; // divide over months
+                               let n = installmentDates.length;
+                               let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                               EMI = parseFloat(EMI.toFixed(2));
+                               let principal_balance = loan_amount;
 
-                                // Move to the first day of the next month
-                                // currentDate.setMonth(currentDate.getMonth() + 1);
-                                // currentDate.setDate(1);
-                            }
+                               // Clear existing rows
+                               tableBody.empty();
+                               let saving_amount_show=installmentAmount+parseFloat(saving_amount_value);
+                               installmentAmount = installmentAmount.toFixed(2);
+                               let count=1;
+                               installmentDates.forEach(function(date) {
 
-                            // Get the table body
-                            var tableBody = $('#installment_table tbody');
-                            let total_interest_percent = interest; // input like 10 (meaning 10%)
-                            let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
-                            let r = monthly_rate / installmentDates.length; // divide over months
-                            let n = installmentDates.length;
-                            let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
-                            EMI = parseFloat(EMI.toFixed(2));
-                            let principal_balance = loan_amount;
+                                   let currentDate = new Date(date);
 
-                            // Clear existing rows
-                            tableBody.empty();
-                            let saving_amount_show=installmentAmount+parseFloat(saving_amount_value);
-                            installmentAmount = installmentAmount.toFixed(2);
-                            let count=1;
-                            installmentDates.forEach(function(date) {
-                                let currentDate = new Date(date);
+                                   currentDate.setDate(currentDate.getDate() + panelty_date_2);
 
-                                currentDate.setDate(currentDate.getDate() + panelty_date_2);
+                                   let panelty_date = currentDate.toISOString().slice(0, 10);
 
-                                let panelty_date = currentDate.toISOString().slice(0, 10);
+                                   if(interest_method === "Reducing Balance") {
+                                       let currentDate = new Date(date);
+                                       currentDate.setDate(currentDate.getDate() + panelty_date_2);
+                                       let panelty_date = currentDate.toISOString().slice(0, 10);
 
+                                       let interest_amt = parseFloat((principal_balance * r).toFixed(2));
+                                       let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
 
-                                if(interest_method === "Reducing Balance") {
-                                    let currentDate = new Date(date);
-                                    currentDate.setDate(currentDate.getDate() + panelty_date_2);
-                                    let panelty_date = currentDate.toISOString().slice(0, 10);
+                                       if (count === installmentDates.length) {
+                                           capital_amt = parseFloat(principal_balance.toFixed(2));
+                                           EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
+                                       }
 
-                                    let interest_amt = parseFloat((principal_balance * r).toFixed(2));
-                                    let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
+                                       principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
+                                       let saving_amount_show = EMI + parseFloat(saving_amount_value);
 
-                                    if (count === installmentDates.length) {
-                                        capital_amt = parseFloat(principal_balance.toFixed(2));
-                                        EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
-                                    }
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
 
-                                    principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
-                                    let saving_amount_show = EMI + parseFloat(saving_amount_value);
+                                       tableBody.append(row);
 
-                                    var row = '<tr>' +
-                                        '<td>' + count + '</td>' +
-                                        '<td>' + date + '</td>' +
-                                        '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + panelty_date + '</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                        '<td class="text-center">' +
-                                        '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                        '</td>' +
-                                        '</tr>';
+                                       var span = tableBody.children('tr:last-child').find('span');
+                                       var installmentDate = new Date(date);
+                                       var currentTime = new Date();
 
-                                    tableBody.append(row);
+                                       if (installmentDate > currentTime) {
+                                           span.addClass('bg-warning text-danger').text('-');
+                                       } else {
+                                           span.addClass('bg-danger text-warning').text('-');
+                                       }
+                                   }else{
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
 
-                                    var span = tableBody.children('tr:last-child').find('span');
-                                    var installmentDate = new Date(date);
-                                    var currentTime = new Date();
-
-                                    if (installmentDate > currentTime) {
-                                        span.addClass('bg-warning text-danger').text('-');
-                                    } else {
-                                        span.addClass('bg-danger text-warning').text('-');
-                                    }
-
-                                }else{
-                                    var row = '<tr>' +
-                                        '<td>' + count + '</td>' +
-                                        '<td>' + date + '</td>' +
-                                        '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + panelty_date + '</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                        '<td class="text-center">' +
-                                        '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                        '</td>' +
-                                        '</tr>';
-
-                                    tableBody.append(row);
-                                }
-
-
-
-                                var span = tableBody.children('tr:last-child').find('span');
-
-                                var installmentDate = new Date(date);
-                                var currentTime = new Date();
-
-                                if (installmentDate > currentTime) {
-                                    span.addClass('bg-danger text-danger').text('-');
-                                } else {
-                                    span.addClass('bg-warning text-warning').text('-');
-                                }
-                                count++;
-                            });
+                                       tableBody.append(row);
+                                   }
 
 
 
+                                   var span = tableBody.children('tr:last-child').find('span');
+
+                                   var installmentDate = new Date(date);
+                                   var currentTime = new Date();
+
+                                   if (installmentDate > currentTime) {
+                                       span.addClass('bg-danger text-danger').text('-');
+                                   } else {
+                                       span.addClass('bg-warning text-warning').text('-');
+                                   }
+
+                                   count++;
+                               });
+                           }
+                       } else {
+                           Swal.fire("Error!", "Selected date is not the last day of the month !", "error")
+                       }
 
 
-                        }else{
-                            var installmentDates = [];
-                            var currentDate = new Date(on_a_selected_date_txt);
+                   }else if (loan_type==="Twice A Month"){
+                       let twice_a_month_txt=$('#twice_a_month_txt').val();
+                       if (twice_a_month_txt=="2"){
+                           var installmentDates = [];
+                           var currentDate = new Date(on_a_selected_date_txt);
 
-                            // Function to format date as YYYY-MM-DD
-                            function formatDate(date) {
-                                var year = date.getFullYear();
-                                var month = (date.getMonth() + 1).toString().padStart(2, '0');
-                                var day = date.getDate().toString().padStart(2, '0');
-                                return year + '-' + month + '-' + day;
-                            }
+                           // Function to format date as YYYY-MM-DD
+                           function formatDate(date) {
+                               var year = date.getFullYear();
+                               var month = (date.getMonth() + 1).toString().padStart(2, '0');
+                               var day = date.getDate().toString().padStart(2, '0');
+                               return year + '-' + month + '-' + day;
+                           }
 
-                            // Loop through each installment count
-                            for (var i = 0; i < (installmentCount/2); i++) {
+                           // Loop through each installment count
+                           for (var i = 0; i < (installmentCount/2); i++) {
 
-                                var selectedDate = new Date($('#installment_date_txt').val());
+                               var selectedDate = new Date($('#installment_date_txt').val());
 
 // Get the last day of the selected month
-                                var lastDayOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + i, 1);
-
-                                var lastDayOfMonth2 = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + i, 15);
 
 
-                                // Get the last day of the current month
-                                // var nextMonthDate = new Date(currentDate);
-                                // nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
-                                // nextMonthDate.setDate(0); // Set to last day of current month
-                                // Format the date
-                                var formattedDate = formatDate(lastDayOfMonth);
-                                installmentDates.push(formattedDate);
-                                var formattedDate2 = formatDate(lastDayOfMonth2);
-                                installmentDates.push(formattedDate2);
-
-                                // Move to the first day of the next month
-                                // currentDate.setMonth(currentDate.getMonth() + 1);
-                                // currentDate.setDate(1);
-                            }
-
-                            // Get the table body
-                            var tableBody = $('#installment_table tbody');
-
-                            let total_interest_percent = interest; // input like 10 (meaning 10%)
-                            let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
-                            let r = monthly_rate / installmentDates.length; // divide over months
-                            let n = installmentDates.length;
-                            let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
-                            EMI = parseFloat(EMI.toFixed(2));
-                            let principal_balance = loan_amount;
-
-                            // Clear existing rows
-                            tableBody.empty();
-                            let saving_amount_show=installmentAmount+parseFloat(saving_amount_value);
-                            installmentAmount = installmentAmount.toFixed(2);
-                            let count=1;
-                            installmentDates.forEach(function(date) {
-                                let currentDate = new Date(date);
-
-                                currentDate.setDate(currentDate.getDate() + panelty_date_2);
-
-                                let panelty_date = currentDate.toISOString().slice(0, 10);
+                               var lastDayOfMonth2 = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + i, 15);
+                               var lastDayOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + i+1, 0);
 
 
-                                if(interest_method === "Reducing Balance") {
-                                    let currentDate = new Date(date);
-                                    currentDate.setDate(currentDate.getDate() + panelty_date_2);
-                                    let panelty_date = currentDate.toISOString().slice(0, 10);
+                               var formattedDate = formatDate(lastDayOfMonth2);
+                               installmentDates.push(formattedDate);
+                               var formattedDate2 = formatDate(lastDayOfMonth);
+                               installmentDates.push(formattedDate2);
 
-                                    let interest_amt = parseFloat((principal_balance * r).toFixed(2));
-                                    let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
+                               // Move to the first day of the next month
+                               // currentDate.setMonth(currentDate.getMonth() + 1);
+                               // currentDate.setDate(1);
+                           }
 
-                                    if (count === installmentDates.length) {
-                                        capital_amt = parseFloat(principal_balance.toFixed(2));
-                                        EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
-                                    }
+                           // Get the table body
+                           var tableBody = $('#installment_table tbody');
+                           let total_interest_percent = interest; // input like 10 (meaning 10%)
+                           let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
+                           let r = monthly_rate / installmentDates.length; // divide over months
+                           let n = installmentDates.length;
+                           let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                           EMI = parseFloat(EMI.toFixed(2));
+                           let principal_balance = loan_amount;
 
-                                    principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
-                                    let saving_amount_show = EMI + parseFloat(saving_amount_value);
+                           // Clear existing rows
+                           tableBody.empty();
+                           let saving_amount_show=installmentAmount+parseFloat(saving_amount_value);
+                           installmentAmount = installmentAmount.toFixed(2);
+                           let count=1;
+                           installmentDates.forEach(function(date) {
+                               let currentDate = new Date(date);
 
-                                    var row = '<tr>' +
-                                        '<td>' + count + '</td>' +
-                                        '<td>' + date + '</td>' +
-                                        '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + panelty_date + '</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                        '<td class="text-center">' +
-                                        '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                        '</td>' +
-                                        '</tr>';
+                               currentDate.setDate(currentDate.getDate() + panelty_date_2);
 
-                                    tableBody.append(row);
+                               let panelty_date = currentDate.toISOString().slice(0, 10);
 
-                                    var span = tableBody.children('tr:last-child').find('span');
-                                    var installmentDate = new Date(date);
-                                    var currentTime = new Date();
 
-                                    if (installmentDate > currentTime) {
-                                        span.addClass('bg-warning text-danger').text('-');
-                                    } else {
-                                        span.addClass('bg-danger text-warning').text('-');
-                                    }
+                               if(interest_method === "Reducing Balance") {
+                                   let currentDate = new Date(date);
+                                   currentDate.setDate(currentDate.getDate() + panelty_date_2);
+                                   let panelty_date = currentDate.toISOString().slice(0, 10);
 
-                                }else{
-                                    var row = '<tr>' +
-                                        '<td>' + count + '</td>' +
-                                        '<td>' + date + '</td>' +
-                                        '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + panelty_date + '</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                        '<td class="text-center">' +
-                                        '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                        '</td>' +
-                                        '</tr>';
+                                   let interest_amt = parseFloat((principal_balance * r).toFixed(2));
+                                   let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
 
-                                    tableBody.append(row);
-                                }
+                                   if (count === installmentDates.length) {
+                                       capital_amt = parseFloat(principal_balance.toFixed(2));
+                                       EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
+                                   }
+
+                                   principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
+                                   let saving_amount_show = EMI + parseFloat(saving_amount_value);
+
+                                   var row = '<tr>' +
+                                       '<td>' + count + '</td>' +
+                                       '<td>' + date + '</td>' +
+                                       '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + panelty_date + '</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                       '<td class="text-center">' +
+                                       '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                       '</td>' +
+                                       '</tr>';
+
+                                   tableBody.append(row);
+
+                                   var span = tableBody.children('tr:last-child').find('span');
+                                   var installmentDate = new Date(date);
+                                   var currentTime = new Date();
+
+                                   if (installmentDate > currentTime) {
+                                       span.addClass('bg-warning text-danger').text('-');
+                                   } else {
+                                       span.addClass('bg-danger text-warning').text('-');
+                                   }
+
+                               }else{
+                                   var row = '<tr>' +
+                                       '<td>' + count + '</td>' +
+                                       '<td>' + date + '</td>' +
+                                       '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + panelty_date + '</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                       '<td class="text-center">' +
+                                       '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                       '</td>' +
+                                       '</tr>';
+
+                                   tableBody.append(row);
+                               }
 
 
 
-                                var span = tableBody.children('tr:last-child').find('span');
+                               var span = tableBody.children('tr:last-child').find('span');
 
-                                var installmentDate = new Date(date);
-                                var currentTime = new Date();
+                               var installmentDate = new Date(date);
+                               var currentTime = new Date();
 
-                                if (installmentDate > currentTime) {
-                                    span.addClass('bg-danger text-danger').text('-');
-                                } else {
-                                    span.addClass('bg-warning text-warning').text('-');
-                                }
-                                count++;
-                            });
-                        }
+                               if (installmentDate > currentTime) {
+                                   span.addClass('bg-danger text-danger').text('-');
+                               } else {
+                                   span.addClass('bg-warning text-warning').text('-');
+                               }
+                               count++;
+                           });
 
-                    }else if (loan_type==="On A Selected Date"){
 
-                        let on_a_selected_date_txt = $("#installment_date_txt").val();
 
-                        if (on_a_selected_date_txt.trim() === "" || isNaN(new Date(on_a_selected_date_txt))) {
-                            Swal.fire("Error!", "Please enter a valid Collection Date !", "error");
-                        }else{
-                            var installmentDates = [];
-                            var currentDate = new Date(on_a_selected_date_txt);
 
-                            // Function to format date as YYYY-MM-DD
-                            function formatDate(date) {
-                                var year = date.getFullYear();
-                                var month = (date.getMonth() + 1).toString().padStart(2, '0');
-                                var day = date.getDate().toString().padStart(2, '0');
-                                return year + '-' + month + '-' + day;
-                            }
 
-                            // Loop through each installment count
-                            for (var i = 0; i < installmentCount; i++) {
-                                // Add one month to the current date
-                                // Format the date
+                       }else{
+                           var installmentDates = [];
+                           var currentDate = new Date(on_a_selected_date_txt);
 
-                                var formattedDate = formatDate(currentDate);
-                                installmentDates.push(formattedDate);
-                                currentDate.setMonth(currentDate.getMonth() + 1);
-                            }
+                           // Function to format date as YYYY-MM-DD
+                           function formatDate(date) {
+                               var year = date.getFullYear();
+                               var month = (date.getMonth() + 1).toString().padStart(2, '0');
+                               var day = date.getDate().toString().padStart(2, '0');
+                               return year + '-' + month + '-' + day;
+                           }
 
-                            // Get the table body
-                            var tableBody = $('#installment_table tbody');
+                           // Loop through each installment count
+                           for (var i = 0; i < (installmentCount/2); i++) {
 
-                            let total_interest_percent = interest; // input like 10 (meaning 10%)
-                            let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
-                            let r = monthly_rate / installmentDates.length; // divide over months
-                            let n = installmentDates.length;
-                            let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
-                            EMI = parseFloat(EMI.toFixed(2));
-                            let principal_balance = loan_amount;
+                               var selectedDate = new Date($('#installment_date_txt').val());
 
-                            // Clear existing rows
-                            tableBody.empty();
-                            let saving_amount_show=installmentAmount+parseFloat(saving_amount_value);
-                            installmentAmount=installmentAmount.toFixed(2);
-                            let count=1;
-                            installmentDates.forEach(function(date) {
+// Get the last day of the selected month
+                               var lastDayOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + i, 1);
 
-                                let currentDate = new Date(date);
+                               var lastDayOfMonth2 = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + i, 15);
 
-                                currentDate.setDate(currentDate.getDate() + panelty_date_2);
 
-                                let panelty_date = currentDate.toISOString().slice(0, 10);
+                               // Get the last day of the current month
+                               // var nextMonthDate = new Date(currentDate);
+                               // nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+                               // nextMonthDate.setDate(0); // Set to last day of current month
+                               // Format the date
+                               var formattedDate = formatDate(lastDayOfMonth);
+                               installmentDates.push(formattedDate);
+                               var formattedDate2 = formatDate(lastDayOfMonth2);
+                               installmentDates.push(formattedDate2);
 
-                                if(interest_method === "Reducing Balance") {
-                                    let currentDate = new Date(date);
-                                    currentDate.setDate(currentDate.getDate() + panelty_date_2);
-                                    let panelty_date = currentDate.toISOString().slice(0, 10);
+                               // Move to the first day of the next month
+                               // currentDate.setMonth(currentDate.getMonth() + 1);
+                               // currentDate.setDate(1);
+                           }
 
-                                    let interest_amt = parseFloat((principal_balance * r).toFixed(2));
-                                    let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
+                           // Get the table body
+                           var tableBody = $('#installment_table tbody');
 
-                                    if (count === installmentDates.length) {
-                                        capital_amt = parseFloat(principal_balance.toFixed(2));
-                                        EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
-                                    }
+                           let total_interest_percent = interest; // input like 10 (meaning 10%)
+                           let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
+                           let r = monthly_rate / installmentDates.length; // divide over months
+                           let n = installmentDates.length;
+                           let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                           EMI = parseFloat(EMI.toFixed(2));
+                           let principal_balance = loan_amount;
 
-                                    principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
-                                    let saving_amount_show = EMI + parseFloat(saving_amount_value);
+                           // Clear existing rows
+                           tableBody.empty();
+                           let saving_amount_show=installmentAmount+parseFloat(saving_amount_value);
+                           installmentAmount = installmentAmount.toFixed(2);
+                           let count=1;
+                           installmentDates.forEach(function(date) {
+                               let currentDate = new Date(date);
 
-                                    var row = '<tr>' +
-                                        '<td>' + count + '</td>' +
-                                        '<td>' + date + '</td>' +
-                                        '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + panelty_date + '</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                        '<td class="text-center">' +
-                                        '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                        '</td>' +
-                                        '</tr>';
+                               currentDate.setDate(currentDate.getDate() + panelty_date_2);
 
-                                    tableBody.append(row);
+                               let panelty_date = currentDate.toISOString().slice(0, 10);
 
-                                    var span = tableBody.children('tr:last-child').find('span');
-                                    var installmentDate = new Date(date);
-                                    var currentTime = new Date();
 
-                                    if (installmentDate > currentTime) {
-                                        span.addClass('bg-warning text-danger').text('-');
-                                    } else {
-                                        span.addClass('bg-danger text-warning').text('-');
-                                    }
-                                }else{
-                                    var row = '<tr>' +
-                                        '<td>' + count + '</td>' +
-                                        '<td>' + date + '</td>' +
-                                        '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + panelty_date + '</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">0.00</td>' +
-                                        '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                        '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                        '<td class="text-center">' +
-                                        '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                        '</td>' +
-                                        '</tr>';
+                               if(interest_method === "Reducing Balance") {
+                                   let currentDate = new Date(date);
+                                   currentDate.setDate(currentDate.getDate() + panelty_date_2);
+                                   let panelty_date = currentDate.toISOString().slice(0, 10);
 
-                                    tableBody.append(row);
-                                }
+                                   let interest_amt = parseFloat((principal_balance * r).toFixed(2));
+                                   let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
 
-                                var span = tableBody.children('tr:last-child').find('span');
+                                   if (count === installmentDates.length) {
+                                       capital_amt = parseFloat(principal_balance.toFixed(2));
+                                       EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
+                                   }
 
-                                var installmentDate = new Date(date);
-                                var currentTime = new Date();
+                                   principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
+                                   let saving_amount_show = EMI + parseFloat(saving_amount_value);
 
-                                if (installmentDate > currentTime) {
-                                    span.addClass('bg-danger text-danger').text('-');
-                                } else {
-                                    span.addClass('bg-warning text-warning').text('-');
-                                }
-                                count++;
-                            });
-                        }
-                    }
+                                   var row = '<tr>' +
+                                       '<td>' + count + '</td>' +
+                                       '<td>' + date + '</td>' +
+                                       '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + panelty_date + '</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                       '<td class="text-center">' +
+                                       '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                       '</td>' +
+                                       '</tr>';
 
-                // }
-//                 else{
-//
-//                     // Define the table header content
-//                     var theadContent = `
-//         <thead>
-//             <tr>
-//                 <th>No</th>
-//                 <th>Installment Date</th>
-//                 <th class="text-end">Installment Amount</th>
-//                 <th class="text-end">Capital Amount</th>
-//                 <th class="text-end">Interest Amount</th>
-//                 <th class="text-end">Penalty Date</th>
-//                 <th class="text-end">Penalty Amount</th>
-//                 <th class="text-end">Total Amount</th>
-//                 <th class="text-end">Paid Amount</th>
-//                 <th class="text-end">Penalty Balance</th>
-//                 <th class="text-end">Installment Balance</th>
-//                 <th class="text-end">Total Balance</th>
-//                 <th>Status</th>
-//             </tr>
-//         </thead>
-//     `;
-//
-//                     // Append the header content to the table
-//                     $('#installment_table').prepend(theadContent);
-//
-//
-//
-//                     if(loan_type==="Daily"){
-//                         var selected_date = new Date($('#installment_date_txt').val());
-//                         let on_a_selected_date_txt=$('#installment_date_txt').val();
-//
-//                         if (on_a_selected_date_txt.trim() === "" || isNaN(new Date(on_a_selected_date_txt))) {
-//                             Swal.fire("Error!", "Please enter a valid Collection Date !", "error");
-//                         }else{
-//                             var installmentDates = [];
-//                             var currentDate = new Date(on_a_selected_date_txt);
-//
-//                             // Function to format date as YYYY-MM-DD
-//                             function formatDate(date) {
-//                                 var year = date.getFullYear();
-//                                 var month = (date.getMonth() + 1).toString().padStart(2, '0');
-//                                 var day = date.getDate().toString().padStart(2, '0');
-//                                 return year + '-' + month + '-' + day;
-//                             }
-//
-//                             // Loop through each installment count
-//                             for (var i = 0; i < installmentCount;) {
-//                                 // Add one day to the current date
-//                                 currentDate.setDate(currentDate.getDate() + 1);
-//
-//                                 // Check if the current date is Saturday or Sunday
-//                                 var dayOfWeek = currentDate.getDay();
-//
-//                                 if(saturday_sunday==='1'){
-//                                     if (dayOfWeek !== 0 && dayOfWeek !== 6) { // 0 is Sunday, 6 is Saturday
-//                                         // Format the date
-//                                         var formattedDate = formatDate(currentDate);
-//                                         installmentDates.push(formattedDate);
-//                                         i++; // Only increment i if it's a valid date
-//                                     }
-//
-//                                 }else {
-//
-//
-//                                     var formattedDate = formatDate(currentDate);
-//                                     installmentDates.push(formattedDate);
-//                                     i++;
-//
-//
-//
-//                                 }
-//
-//                             }
-//                             // Get the table body
-//                             var tableBody = $('#installment_table tbody');
-//
-//                             // Clear existing rows
-//                             tableBody.empty();
-//                             installmentAmount=installmentAmount.toFixed(2);
-//                             let count=1;
-//                             installmentDates.forEach(function(date) {
-//                                 let currentDate = new Date(date);
-//
-//                                 currentDate.setDate(currentDate.getDate() + panelty_date_2);
-//
-//                                 let panelty_date = currentDate.toISOString().slice(0, 10);
-//
-//
-//                                 var row = '<tr><td>' + count + '</td><td>' + date + '</td><td class="text-end">'+installmentAmount+'</td><td class="text-end">'+capital_amount+'</td><td class="text-end">'+interest_amount+'</td><td  class="text-end">' + panelty_date + '</td><td class="text-end">0.00</td><td class="text-end">'+installmentAmount+'</td><td class="text-end">0.00</td><td class="text-end">0.00</td><td class="text-end">'+installmentAmount+'</td><td class="text-end">'+installmentAmount+'</td><td class="text-center"><span class="px-1" style="background-color: #ff0000;border-radius: 10px; color: #ff0000;">-</span></td></tr>';
-//                                 tableBody.append(row);
-//                                 var span = tableBody.children('tr:last-child').find('span');
-//
-//                                 var installmentDate = new Date(date);
-//                                 var currentTime = new Date();
-//
-//                                 if (installmentDate > currentTime) {
-//                                     span.addClass('bg-danger text-danger').text('-');
-//                                 } else {
-//                                     span.addClass('bg-warning text-warning').text('-');
-//                                 }
-//                                 count++;
-//                             });
-//                         }
-//                     }else if(loan_type==="Weekly"){
-//
-//                         var selected_date = new Date($('#installment_date_txt').val());
-//                         var weekly_txt = $('#weekly_txt').val();
-//
-//                         console.log(selected_date,weekly_txt);
-//
-//                         // Check if it's the first day of the month
-//                         if (selected_date.getDay() == weekly_txt) {
-//
-//                             let on_a_selected_date_txt=$('#installment_date_txt').val();
-//
-//                             if (on_a_selected_date_txt.trim() === "" || isNaN(new Date(on_a_selected_date_txt))) {
-//                                 Swal.fire("Error!", "Please enter a valid Collection Date !", "error");
-//                             }else{
-//                                 var installmentDates = [];
-//                                 var currentDate = new Date(on_a_selected_date_txt);
-//
-//                                 // Function to format date as YYYY-MM-DD
-//                                 function formatDate(date) {
-//                                     var year = date.getFullYear();
-//                                     var month = (date.getMonth() + 1).toString().padStart(2, '0');
-//                                     var day = date.getDate().toString().padStart(2, '0');
-//                                     return year + '-' + month + '-' + day;
-//                                 }
-//
-//                                 // Loop through each installment count
-//                                 for (var i = 0; i < installmentCount; i++) {
-//                                     // Add one month to the current date
-//                                     // Format the date
-//
-//                                     var formattedDate = formatDate(currentDate);
-//                                     installmentDates.push(formattedDate);
-//                                     currentDate.setDate(currentDate.getDate()+7)
-//
-//                                 }
-//
-//                                 // Get the table body
-//                                 var tableBody = $('#installment_table tbody');
-//
-//                                 // Clear existing rows
-//                                 tableBody.empty();
-//                                 installmentAmount=installmentAmount.toFixed(2);
-//                                 let count=1;
-//                                 installmentDates.forEach(function(date) {
-//                                     let currentDate = new Date(date);
-//
-//                                     currentDate.setDate(currentDate.getDate() + panelty_date_2);
-//
-//                                     let panelty_date = currentDate.toISOString().slice(0, 10);
-//
-//
-//                                     var row = '<tr><td>' + count + '</td><td>' + date + '</td><td class="text-end">'+installmentAmount+'</td><td class="text-end">'+capital_amount+'</td><td class="text-end">'+interest_amount+'</td><td  class="text-end">' + panelty_date + '</td><td class="text-end">0.00</td><td class="text-end">'+installmentAmount+'</td><td class="text-end">0.00</td><td class="text-end">0.00</td><td class="text-end">'+installmentAmount+'</td><td class="text-end">'+installmentAmount+'</td><td class="text-center"><span class="px-1" style="background-color: #ff0000;border-radius: 10px; color: #ff0000;">-</span></td></tr>';
-//                                     tableBody.append(row);
-//                                     var span = tableBody.children('tr:last-child').find('span');
-//
-//                                     var installmentDate = new Date(date);
-//                                     var currentTime = new Date();
-//
-//                                     if (installmentDate > currentTime) {
-//                                         span.addClass('bg-danger text-danger').text('-');
-//                                     } else {
-//                                         span.addClass('bg-warning text-warning').text('-');
-//                                     }
-//                                     count++;
-//                                 });
-//                             }
-//                         } else {
-//                             Swal.fire("Error!", "Selected date is not a equal to selected day !", "error")
-//                         }
-//
-//
-//
-//                     }else if (loan_type==="First Of The Month"){
-//                         var selected_date = new Date($('#installment_date_txt').val());
-//
-//                         // Check if it's the first day of the month
-//                         if (selected_date.getDate() === 1) {
-//
-//                             let on_a_selected_date_txt=$('#installment_date_txt').val();
-//
-//                             if (on_a_selected_date_txt.trim() === "" || isNaN(new Date(on_a_selected_date_txt))) {
-//                                 Swal.fire("Error!", "Please enter a valid Collection Date !", "error");
-//                             }else{
-//                                 var installmentDates = [];
-//                                 var currentDate = new Date(on_a_selected_date_txt);
-//
-//                                 // Function to format date as YYYY-MM-DD
-//                                 function formatDate(date) {
-//                                     var year = date.getFullYear();
-//                                     var month = (date.getMonth() + 1).toString().padStart(2, '0');
-//                                     var day = date.getDate().toString().padStart(2, '0');
-//                                     return year + '-' + month + '-' + day;
-//                                 }
-//
-//                                 // Loop through each installment count
-//                                 for (var i = 0; i < installmentCount; i++) {
-//                                     // Add one month to the current date
-//                                     // Format the date
-//
-//                                     var formattedDate = formatDate(currentDate);
-//                                     installmentDates.push(formattedDate);
-//                                     currentDate.setMonth(currentDate.getMonth() + 1);
-//                                 }
-//
-//                                 // Get the table body
-//                                 var tableBody = $('#installment_table tbody');
-//
-//                                 // Clear existing rows
-//                                 tableBody.empty();
-//                                 installmentAmount=installmentAmount.toFixed(2);
-//                                 let count=1;
-//                                 installmentDates.forEach(function(date) {
-//                                     let currentDate = new Date(date);
-//
-//                                     currentDate.setDate(currentDate.getDate() + panelty_date_2);
-//
-//                                     let panelty_date = currentDate.toISOString().slice(0, 10);
-//
-//
-//                                     var row = '<tr><td>' + count + '</td><td>' + date + '</td><td class="text-end">'+installmentAmount+'</td><td class="text-end">'+capital_amount+'</td><td class="text-end">'+interest_amount+'</td><td  class="text-end">' + panelty_date + '</td><td class="text-end">0.00</td><td class="text-end">'+installmentAmount+'</td><td class="text-end">0.00</td><td class="text-end">0.00</td><td class="text-end">'+installmentAmount+'</td><td class="text-end">'+installmentAmount+'</td><td class="text-center"><span class="px-1" style="background-color: #ff0000;border-radius: 10px; color: #ff0000;">-</span></td></tr>';
-//                                     tableBody.append(row);
-//                                     var span = tableBody.children('tr:last-child').find('span');
-//
-//                                     var installmentDate = new Date(date);
-//                                     var currentTime = new Date();
-//
-//                                     if (installmentDate > currentTime) {
-//                                         span.addClass('bg-danger text-danger').text('-');
-//                                     } else {
-//                                         span.addClass('bg-warning text-warning').text('-');
-//                                     }
-//                                     count++;
-//                                 });
-//                             }
-//                         } else {
-//                             Swal.fire("Error!", "Selected date is not the first day of the month !", "error")
-//                         }
-//                     }else if (loan_type==="End Of The Month"){
-//                         var on_a_selected_date_txt = $('#installment_date_txt').val();
-//                         var selected_date = new Date(on_a_selected_date_txt);
-//
-// // Get the last day of the month for the selected date
-//                         var lastDayOfMonth = new Date(selected_date.getFullYear(), selected_date.getMonth() + 1, 0);
-//
-// // Check if it's the last day of the month
-//                         if (selected_date.getDate() === lastDayOfMonth.getDate()) {
-//                             if (on_a_selected_date_txt.trim() === "" || isNaN(new Date(on_a_selected_date_txt))) {
-//                                 Swal.fire("Error!", "Please enter a valid Collection Date !", "error");
-//                             } else {
-//                                 var installmentDates = [];
-//                                 var currentDate = new Date(on_a_selected_date_txt);
-//
-//                                 // Function to format date as YYYY-MM-DD
-//                                 function formatDate(date) {
-//                                     var year = date.getFullYear();
-//                                     var month = (date.getMonth() + 1).toString().padStart(2, '0');
-//                                     var day = date.getDate().toString().padStart(2, '0');
-//                                     return year + '-' + month + '-' + day;
-//                                 }
-//
-//                                 // Loop through each installment count
-//                                 for (var i = 0; i < installmentCount; i++) {
-//
-//                                     var selectedDate = new Date($('#installment_date_txt').val());
-//
-// // Get the last day of the selected month
-//                                     var lastDayOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1+i, 0);
-//
-//
-//                                     // Get the last day of the current month
-//                                     // var nextMonthDate = new Date(currentDate);
-//                                     // nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
-//                                     // nextMonthDate.setDate(0); // Set to last day of current month
-//
-//                                     // Format the date
-//                                     var formattedDate = formatDate(lastDayOfMonth);
-//                                     installmentDates.push(formattedDate);
-//
-//                                     // Move to the first day of the next month
-//                                     // currentDate.setMonth(currentDate.getMonth() + 1);
-//                                     // currentDate.setDate(1);
-//                                 }
-//
-//                                 // Get the table body
-//                                 var tableBody = $('#installment_table tbody');
-//
-//                                 // Clear existing rows
-//                                 tableBody.empty();
-//                                 installmentAmount = installmentAmount.toFixed(2);
-//                                 let count=1;
-//                                 installmentDates.forEach(function(date) {
-//
-//                                     let currentDate = new Date(date);
-//
-//                                     currentDate.setDate(currentDate.getDate() + panelty_date_2);
-//
-//                                     let panelty_date = currentDate.toISOString().slice(0, 10);
-//
-//                                     var row = '<tr><td>' + count + '</td><td>' + date + '</td><td class="text-end">'+installmentAmount+'</td><td class="text-end">'+capital_amount+'</td><td class="text-end">'+interest_amount+'</td><td class="text-end">'+panelty_date+'</td><td class="text-end">0.00</td><td class="text-end">'+installmentAmount+'</td><td class="text-end">0.00</td><td class="text-end">0.00</td><td class="text-end">'+installmentAmount+'</td><td class="text-end">'+installmentAmount+'</td><td class="text-center"><span class="px-1" style="border-radius: 10px; color: #000000;">-</span></td></tr>';
-//
-//                                     tableBody.append(row);
-//
-//                                     var span = tableBody.children('tr:last-child').find('span');
-//
-//                                     var installmentDate = new Date(date);
-//                                     var currentTime = new Date();
-//
-//                                     if (installmentDate > currentTime) {
-//                                         span.addClass('bg-danger text-danger').text('-');
-//                                     } else {
-//                                         span.addClass('bg-warning text-warning').text('-');
-//                                     }
-//
-//                                     count++;
-//                                 });
-//                             }
-//                         } else {
-//                             Swal.fire("Error!", "Selected date is not the last day of the month !", "error")
-//                         }
-//
-//
-//                     }else if (loan_type === "Twice A Month") {
-//                         let twice_a_month_txt = $('#twice_a_month_txt').val();
-//                         let installmentDates = [];
-//                         let selectedDate = new Date($('#installment_date_txt').val());
-//                         let on_a_selected_date_txt = new Date($('#on_a_selected_date_txt').val());
-//
-//                         // Function to format date as YYYY-MM-DD
-//                         function formatDate(date) {
-//                             var year = date.getFullYear();
-//                             var month = (date.getMonth() + 1).toString().padStart(2, '0');
-//                             var day = date.getDate().toString().padStart(2, '0');
-//                             return year + '-' + month + '-' + day;
-//                         }
-//
-//                         // Ensure the first installment date is after or on the selected date
-//                         if (selectedDate < on_a_selected_date_txt) {
-//                             selectedDate = new Date(on_a_selected_date_txt);
-//                         }
-//                         let day = selectedDate.getDate();
-//
-//                         // Calculate the installment dates
-//                         for (var i = 0; i < installmentCount; i++) {
-//                             let firstInstallmentDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + i, 15);
-//                             let secondInstallmentDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + i + 1, 0);
-//
-//                             if (twice_a_month_txt == "2") {
-//                                 if (i === 0) {
-//                                     // Check if the current day is 15, or after 15, or before 15
-//                                     if (day === 15) {
-//                                         installmentDates.push(formatDate(firstInstallmentDate));
-//                                         installmentDates.push(formatDate(secondInstallmentDate));
-//                                     } else if (day > 15 && day <= secondInstallmentDate.getDate()) {
-//                                         installmentDates.push(formatDate(secondInstallmentDate));
-//                                     } else {
-//                                         installmentDates.push(formatDate(firstInstallmentDate));
-//                                         installmentDates.push(formatDate(secondInstallmentDate));
-//                                     }
-//                                 } else {
-//                                     // For subsequent installments
-//                                     installmentDates.push(formatDate(firstInstallmentDate));
-//                                     installmentDates.push(formatDate(secondInstallmentDate));
-//                                 }
-//                             } else {
-//                                 let altFirstInstallmentDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + i, 1);
-//                                 let altSecondInstallmentDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + i, 15);
-//                                 if (i === 0) {
-//                                     if (day === 1) {
-//                                         installmentDates.push(formatDate(altFirstInstallmentDate));
-//                                         installmentDates.push(formatDate(altSecondInstallmentDate));
-//                                     } else if (day > 1 && day <= altSecondInstallmentDate.getDate()) {
-//                                         installmentDates.push(formatDate(altSecondInstallmentDate));
-//                                     }
-//                                 } else {
-//                                     installmentDates.push(formatDate(altFirstInstallmentDate));
-//                                     installmentDates.push(formatDate(altSecondInstallmentDate));
-//                                 }
-//                             }
-//                             if (installmentCount<=installmentDates.length){
-//                                 if (installmentCount<installmentDates.length){
-//                                     installmentDates.pop();
-//                                 }
-//                                 break;
-//                             }
-//                         }
-//
-//                         // Get the table body
-//                         var tableBody = $('#installment_table tbody');
-//
-//                         // Clear existing rows
-//                         tableBody.empty();
-//                         installmentAmount = installmentAmount.toFixed(2);
-//                         let count = 1;
-//
-//                         installmentDates.forEach(function (date) {
-//                             let currentDate = new Date(date);
-//
-//                             currentDate.setDate(currentDate.getDate() + panelty_date_2);
-//
-//                             let panelty_date = currentDate.toISOString().slice(0, 10);
-//                             var row = '<tr><td>' + count + '</td><td>' + date + '</td><td class="text-end">' + installmentAmount + '</td><td class="text-end">' + capital_amount + '</td><td class="text-end">' + interest_amount + '</td><td class="text-end">' + panelty_date + '</td><td class="text-end">0.00</td><td class="text-end">' + installmentAmount + '</td><td class="text-end">0.00</td><td class="text-end">0.00</td><td class="text-end">' + installmentAmount + '</td><td class="text-end">' + installmentAmount + '</td><td class="text-center"><span class="px-1" style="background-color: #ff0000;border-radius: 10px; color: #ff0000;">-</span></td></tr>';
-//                             tableBody.append(row);
-//
-//                             var span = tableBody.children('tr:last-child').find('span');
-//
-//                             var installmentDate = new Date(date);
-//                             var currentTime = new Date();
-//
-//                             if (installmentDate > currentTime) {
-//                                 span.addClass('bg-danger text-danger').text('-');
-//                             } else {
-//                                 span.addClass('bg-warning text-warning').text('-');
-//                             }
-//                             count++;
-//                         });
-//                     }
-//
-//                     else if (loan_type==="On A Selected Date"){
-//
-//                         let on_a_selected_date_txt = $("#installment_date_txt").val();
-//
-//                         if (on_a_selected_date_txt.trim() === "" || isNaN(new Date(on_a_selected_date_txt))) {
-//                             Swal.fire("Error!", "Please enter a valid Collection Date !", "error");
-//                         }else{
-//                             var installmentDates = [];
-//                             var currentDate = new Date(on_a_selected_date_txt);
-//
-//                             // Function to format date as YYYY-MM-DD
-//                             function formatDate(date) {
-//                                 var year = date.getFullYear();
-//                                 var month = (date.getMonth() + 1).toString().padStart(2, '0');
-//                                 var day = date.getDate().toString().padStart(2, '0');
-//                                 return year + '-' + month + '-' + day;
-//                             }
-//
-//                             // Loop through each installment count
-//                             for (var i = 0; i < installmentCount; i++) {
-//                                 // Add one month to the current date
-//                                 // Format the date
-//
-//                                 var formattedDate = formatDate(currentDate);
-//                                 installmentDates.push(formattedDate);
-//                                 currentDate.setMonth(currentDate.getMonth() + 1);
-//                             }
-//
-//                             // Get the table body
-//                             var tableBody = $('#installment_table tbody');
-//
-//                             // Clear existing rows
-//                             tableBody.empty();
-//                             installmentAmount=installmentAmount.toFixed(2);
-//                             let count=1;
-//                             installmentDates.forEach(function(date) {
-//
-//                                 let currentDate = new Date(date);
-//
-//                                 currentDate.setDate(currentDate.getDate() + panelty_date_2);
-//
-//                                 let panelty_date = currentDate.toISOString().slice(0, 10);
-//
-//                                 var row = '<tr><td>' + count + '</td><td>' + date + '</td><td class="text-end">'+installmentAmount+'</td><td class="text-end">'+capital_amount+'</td><td class="text-end">'+interest_amount+'</td><td class="text-end">'+panelty_date+'</td><td class="text-end">0.00</td><td class="text-end">'+installmentAmount+'</td><td class="text-end">0.00</td><td class="text-end">0.00</td><td class="text-end">'+installmentAmount+'</td><td class="text-end">'+installmentAmount+'</td><td class="text-center"><span class="px-1" style="background-color: #ff0000;border-radius: 10px; color: #ff0000;">-</span></td></tr>';
-//                                 tableBody.append(row);
-//
-//                                 var span = tableBody.children('tr:last-child').find('span');
-//
-//                                 var installmentDate = new Date(date);
-//                                 var currentTime = new Date();
-//
-//                                 if (installmentDate > currentTime) {
-//                                     span.addClass('bg-danger text-danger').text('-');
-//                                 } else {
-//                                     span.addClass('bg-warning text-warning').text('-');
-//                                 }
-//                                 count++;
-//                             });
-//                         }
-//                     }
-//                 }
-            }
+                                   tableBody.append(row);
+
+                                   var span = tableBody.children('tr:last-child').find('span');
+                                   var installmentDate = new Date(date);
+                                   var currentTime = new Date();
+
+                                   if (installmentDate > currentTime) {
+                                       span.addClass('bg-warning text-danger').text('-');
+                                   } else {
+                                       span.addClass('bg-danger text-warning').text('-');
+                                   }
+
+                               }else{
+                                   var row = '<tr>' +
+                                       '<td>' + count + '</td>' +
+                                       '<td>' + date + '</td>' +
+                                       '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + panelty_date + '</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                       '<td class="text-center">' +
+                                       '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                       '</td>' +
+                                       '</tr>';
+
+                                   tableBody.append(row);
+                               }
+
+
+
+                               var span = tableBody.children('tr:last-child').find('span');
+
+                               var installmentDate = new Date(date);
+                               var currentTime = new Date();
+
+                               if (installmentDate > currentTime) {
+                                   span.addClass('bg-danger text-danger').text('-');
+                               } else {
+                                   span.addClass('bg-warning text-warning').text('-');
+                               }
+                               count++;
+                           });
+                       }
+
+                   }else if (loan_type==="On A Selected Date"){
+
+                       let on_a_selected_date_txt = $("#installment_date_txt").val();
+
+                       if (on_a_selected_date_txt.trim() === "" || isNaN(new Date(on_a_selected_date_txt))) {
+                           Swal.fire("Error!", "Please enter a valid Collection Date !", "error");
+                       }else{
+                           var installmentDates = [];
+                           var currentDate = new Date(on_a_selected_date_txt);
+
+                           // Function to format date as YYYY-MM-DD
+                           function formatDate(date) {
+                               var year = date.getFullYear();
+                               var month = (date.getMonth() + 1).toString().padStart(2, '0');
+                               var day = date.getDate().toString().padStart(2, '0');
+                               return year + '-' + month + '-' + day;
+                           }
+
+                           // Loop through each installment count
+                           for (var i = 0; i < installmentCount; i++) {
+                               // Add one month to the current date
+                               // Format the date
+
+                               var formattedDate = formatDate(currentDate);
+                               installmentDates.push(formattedDate);
+                               currentDate.setMonth(currentDate.getMonth() + 1);
+                           }
+
+                           // Get the table body
+                           var tableBody = $('#installment_table tbody');
+
+                           let total_interest_percent = interest; // input like 10 (meaning 10%)
+                           let monthly_rate = total_interest_percent / 100; // e.g., 0.10 total
+                           let r = monthly_rate / installmentDates.length; // divide over months
+                           let n = installmentDates.length;
+                           let EMI = loan_amount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                           EMI = parseFloat(EMI.toFixed(2));
+                           let principal_balance = loan_amount;
+
+                           // Clear existing rows
+                           tableBody.empty();
+                           let saving_amount_show=installmentAmount+parseFloat(saving_amount_value);
+                           installmentAmount=installmentAmount.toFixed(2);
+                           let count=1;
+                           installmentDates.forEach(function(date) {
+
+                               let currentDate = new Date(date);
+
+                               currentDate.setDate(currentDate.getDate() + panelty_date_2);
+
+                               let panelty_date = currentDate.toISOString().slice(0, 10);
+
+                               if(interest_method === "Reducing Balance") {
+                                   let currentDate = new Date(date);
+                                   currentDate.setDate(currentDate.getDate() + panelty_date_2);
+                                   let panelty_date = currentDate.toISOString().slice(0, 10);
+
+                                   let interest_amt = parseFloat((principal_balance * r).toFixed(2));
+                                   let capital_amt = parseFloat((EMI - interest_amt).toFixed(2));
+
+                                   if (count === installmentDates.length) {
+                                       capital_amt = parseFloat(principal_balance.toFixed(2));
+                                       EMI = parseFloat((capital_amt + interest_amt).toFixed(2));
+                                   }
+
+                                   principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
+                                   let saving_amount_show = EMI + parseFloat(saving_amount_value);
+
+                                   var row = '<tr>' +
+                                       '<td>' + count + '</td>' +
+                                       '<td>' + date + '</td>' +
+                                       '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + panelty_date + '</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                       '<td class="text-center">' +
+                                       '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                       '</td>' +
+                                       '</tr>';
+
+                                   tableBody.append(row);
+
+                                   var span = tableBody.children('tr:last-child').find('span');
+                                   var installmentDate = new Date(date);
+                                   var currentTime = new Date();
+
+                                   if (installmentDate > currentTime) {
+                                       span.addClass('bg-warning text-danger').text('-');
+                                   } else {
+                                       span.addClass('bg-danger text-warning').text('-');
+                                   }
+                               }else{
+                                   var row = '<tr>' +
+                                       '<td>' + count + '</td>' +
+                                       '<td>' + date + '</td>' +
+                                       '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + panelty_date + '</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">0.00</td>' +
+                                       '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                       '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                       '<td class="text-center">' +
+                                       '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                       '</td>' +
+                                       '</tr>';
+
+                                   tableBody.append(row);
+                               }
+
+                               var span = tableBody.children('tr:last-child').find('span');
+
+                               var installmentDate = new Date(date);
+                               var currentTime = new Date();
+
+                               if (installmentDate > currentTime) {
+                                   span.addClass('bg-danger text-danger').text('-');
+                               } else {
+                                   span.addClass('bg-warning text-warning').text('-');
+                               }
+                               count++;
+                           });
+                       }
+                   }
+
+               }
+           }
+
+
+
             $("#createLoanButton").removeClass("disabled").off("click.disable").on("click", function() {
                 save_loan();
             });

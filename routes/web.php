@@ -776,3 +776,4 @@ Route::post('/depletion/data', [\App\Http\Controllers\ReportController::class, '
     ->name('depletion.data');
 
 
+Route::get('/load_customer_route/{id}','\App\Http\Controllers\CustomerController@load_customer_route')->name('customers.load_customer_route');

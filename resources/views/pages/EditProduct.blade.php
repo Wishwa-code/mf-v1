@@ -100,6 +100,12 @@
             overflow: hidden; /* Hide scroll bars */
         }
     </style>
+    <style>
+        /* optional: start hidden; JS will show if needed */
+        #collection_date_type { }
+        #collection_date_type:not(:disabled) { }
+    </style>
+
 @endsection
 
 
@@ -259,6 +265,17 @@
                                                 <option value="End Of The Month">End Of The Month</option>
                                                 <option value="Twice A Month">Twice A Month</option>
                                                 <option value="On A Selected Date">On A Selected Date</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="collection_date_type" class="form-label">Collection Date Type<span
+                                                        class="required-asterisk">*</span></label>
+                                            <select class="form-select" id="collection_date_type">
+                                                <option value="same_as_installment" selected>Same As Installment Due</option>
+                                                <option value="according_to_route">According to Route</option>
                                             </select>
                                         </div>
                                     </div>
@@ -543,6 +560,7 @@
             $('#saving_account_amount_type').val(loanCategory.saving_amount_type);
             $('#saving_amount').val(loanCategory.saving_amount);
             $('#saving_payment').val(loanCategory.saving_payment);
+            $('#collection_date_type').val(loanCategory.collection_date_type || 'same_as_installment').trigger('change');
 
 
 
@@ -897,6 +915,7 @@
             let saving_amount = $("#saving_amount").val();
             let saving_payment = $("#saving_payment").val();
             let penalty_method = $("#penalty_method").val();
+            let collection_date_type = $("#collection_date_type").val();
 
             if (enable_saving === "No") {
                 saving_amount = 0.00;
@@ -1011,6 +1030,7 @@
                             saving_amount,
                             saving_payment,
                             penalty_method,
+                            collection_date_type,
                         },
                         success: function (res, status, xhr) {
                             if (xhr.status === 200) {
@@ -1149,5 +1169,34 @@
                 });
             });
         });
+
+        // ---- toggle Collection Date Type visibility/selection ----
+        function toggleCollectionDateType() {
+            const durationPeriod = $('#duration_period').val();        // Days | Weeks | Months
+            const collectionType = $('#collection_type').val();        // Daily | Weekly | ... | On A Selected Date
+            const $cdt = $('#collection_date_type');                   // the select
+            const $wrap = $cdt.closest('.col-md-6');                   // its containing column
+
+            const shouldShow = (durationPeriod === 'Months' && collectionType === 'On A Selected Date');
+
+            if (shouldShow) {
+                $wrap.show();
+                $cdt.prop('disabled', false);
+            } else {
+                // force default when hidden
+                $cdt.val('same_as_installment').trigger('change');
+                $cdt.prop('disabled', true);
+                $wrap.hide();
+            }
+        }
+
+        $(document).ready(function () {
+            // run once after you populate all fields
+            toggleCollectionDateType();
+
+            // re-check whenever either controlling field changes
+            $('#duration_period, #collection_type').on('change', toggleCollectionDateType);
+        });
+
     </script>
 @endsection

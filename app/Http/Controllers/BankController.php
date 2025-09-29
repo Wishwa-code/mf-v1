@@ -286,6 +286,7 @@ class BankController extends Controller
         $chq = $query->select(
                 'Cheque_payment.*',
                 'company_bank_accounts.Bank_Name',
+                'company_bank_accounts.Account_Name',
                 'company_bank_accounts.Account_No',
                 'customer_loan.Loan_No',
                 'customer.cus_number',

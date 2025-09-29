@@ -58,6 +58,14 @@ class LoanCategoryController extends Controller
             );
         }
 
+        if (!Schema::hasColumn('loan_category', 'collection_date_type')) {
+            DB::statement(
+                "ALTER TABLE `loan_category`
+         ADD COLUMN `collection_date_type` VARCHAR(45) NOT NULL
+         DEFAULT 'same_as_installment'"
+            );
+        }
+
         // Save LoanCategory
         $loancategory = new LoanCategory();
         $loancategory->Name = $request->product_name;
@@ -83,6 +91,7 @@ class LoanCategoryController extends Controller
         $loancategory->saving_payment = $request->saving_payment;
         $loancategory->default_loan_duration_period = $request->default_loan_duration_period;
         $loancategory->panelty_method = $request->penalty_method;
+        $loancategory->collection_date_type = $request->collection_date_type;
         $loancategory->branch_id = session('branch_id');
 
 
@@ -361,6 +370,7 @@ class LoanCategoryController extends Controller
                 'default_loan_duration_period' => $request->default_loan_duration_period,
                 'updated_at' => now(),
                 'panelty_method' => $request->penalty_method,
+                'collection_date_type' => $request->collection_date_type,
             ]);
 
             // Delete existing related data
