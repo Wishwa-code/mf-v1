@@ -475,6 +475,10 @@ class LoansController
                 // Only required fields
                 'cl.idCustomer_Loan',
                 'cl.Loan_No',
+                'c.cus_number',
+                'c.First_Name',
+                'c.Last_Name',
+                'c.Contact_No',
                 DB::raw('CAST(cl.Balance_Amount     AS DECIMAL(18,2)) AS Total_Loan_Balance'),
                 DB::raw('CAST(cl.Installment_Amount AS DECIMAL(18,2)) AS Installment_Amount'),
                 DB::raw('CAST(cl.Interest_Rate         AS DECIMAL(18,2)) AS Interest'),       // <-- if your column is named differently, change here
