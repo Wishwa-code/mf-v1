@@ -221,6 +221,16 @@
             transform: translate(0, 0) scale(1);
         }
 
+        /* Tooltip styles for table headers */
+        .modern-table-header th[title] {
+            cursor: help;
+            position: relative;
+        }
+
+        .modern-table-header th[title]:hover {
+            background: #e9ecef !important;
+        }
+
     </style>
 
 @endsection
@@ -548,9 +558,9 @@
                                             <th>Loan ID</th>
                                             <th>Customer ID</th>
                                             <th>Customer Name</th>
-                                            <th class="text-end">Capital Amount</th>
-                                            <th class="text-end">Full Loan Amount</th>
-                                            <th class="text-end">Total Outstanding</th>
+                                            <th class="text-end" title="Loan Amount - Capital amount">Capital Amount</th>
+                                            <th class="text-end" title="Full Loan Amount - Capital and interest">Full Loan Amount</th>
+                                            <th class="text-end" title="Total Outstanding Amount - Capital balance + interest balance">Total Outstanding</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -603,11 +613,11 @@
                                             <th>Loan ID</th>
                                             <th>Customer ID</th>
                                             <th>Customer Name</th>
-                                            <th class="text-end">Capital Amount</th>
-                                            <th class="text-end">Full Loan Amount</th>
-                                            <th class="text-end">Week Not Paid</th>
-                                            <th class="text-end">Total Arrears</th>
-                                            <th class="text-center">Unpaid Count</th>
+                                            <th class="text-end" title="Loan Amount - Capital amount">Capital Amount</th>
+                                            <th class="text-end" title="Full Loan Amount - Capital + interest">Full Loan Amount</th>
+                                            <th class="text-end" title="This Week Not Paid Amount">Week Not Paid</th>
+                                            <th class="text-end" title="Total Not Paid Amount - Arrears">Total Arrears</th>
+                                            <th class="text-center" title="Not Paid Installment Count">Unpaid Count</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -660,10 +670,10 @@
                                             <th>Loan ID</th>
                                             <th>Customer ID</th>
                                             <th>Customer Name</th>
-                                            <th class="text-end">Capital Amount</th>
-                                            <th class="text-end">Full Loan Amount</th>
-                                            <th class="text-end">Total Outstanding</th>
-                                            <th class="text-end">Penalty Balance</th>
+                                            <th class="text-end" title="Loan Amount - Capital amount">Capital Amount</th>
+                                            <th class="text-end" title="Full Loan Amount - Capital and interest">Full Loan Amount</th>
+                                            <th class="text-end" title="Total Outstanding Amount - Capital balance + interest balance">Total Outstanding</th>
+                                            <th class="text-end" title="Penalty Balance">Penalty Balance</th>
                                         </tr>
                                     </thead>
                                     <tbody>
