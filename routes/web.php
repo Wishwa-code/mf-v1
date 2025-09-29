@@ -168,13 +168,13 @@ Route::get('/pendingloandelete/{id}','\App\Http\Controllers\PendingLoanControlle
 Route::get('/show_loan/{id}/{loan}','\App\Http\Controllers\PendingLoanController@edit')->name('loan.show_loan');
 
 //Total Outstanding
-Route::get('/total-outstanding','\App\Http\Controllers\UserController@totalOutstandingList')->name('total-outstanding.index');
+Route::get('/total-outstanding-data','\App\Http\Controllers\UserController@totalOutstandingData')->name('total-outstanding.data');
 
 //Weekly Not Paid
-Route::get('/weekly-not-paid','\App\Http\Controllers\UserController@weeklyNotPaidList')->name('weekly-not-paid.index');
+Route::get('/weekly-not-paid-data','\App\Http\Controllers\UserController@weeklyNotPaidData')->name('weekly-not-paid.data');
 
 //Penalty Balance
-Route::get('/penalty-balance','\App\Http\Controllers\UserController@penaltyBalanceList')->name('penalty-balance.index');
+Route::get('/penalty-balance-data','\App\Http\Controllers\UserController@penaltyBalanceData')->name('penalty-balance.data');
 
 
 //payment

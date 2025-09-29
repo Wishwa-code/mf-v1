@@ -667,7 +667,8 @@ class UserController extends Controller
         return redirect()->intended(route('login'));
     }
 
-    public function totalOutstandingList()
+
+    public function totalOutstandingData()
     {
         $totalOutstandingData = tableWithBranch('installments','installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
@@ -690,10 +691,11 @@ class UserController extends Controller
             ->orderBy('total_outstanding', 'DESC')
             ->get();
 
-        return view('pages.TotalOutstanding', compact('totalOutstandingData'));
+        return response()->json(['data' => $totalOutstandingData]);
     }
 
-    public function weeklyNotPaidList()
+
+    public function weeklyNotPaidData()
     {
         // Get current week date range
         $weekStart = Carbon::now()->startOfWeek()->toDateString();
@@ -724,10 +726,10 @@ class UserController extends Controller
             ->orderBy('this_week_not_paid', 'DESC')
             ->get();
 
-        return view('pages.WeeklyNotPaid', compact('weeklyNotPaidData'));
+        return response()->json(['data' => $weeklyNotPaidData]);
     }
 
-    public function penaltyBalanceList()
+    public function penaltyBalanceData()
     {
         $penaltyBalanceData = tableWithBranch('installments','installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
@@ -748,7 +750,7 @@ class UserController extends Controller
             ->orderBy('penalty_balance', 'DESC')
             ->get();
 
-        return view('pages.PenaltyBalance', compact('penaltyBalanceData'));
+        return response()->json(['data' => $penaltyBalanceData]);
     }
 
 

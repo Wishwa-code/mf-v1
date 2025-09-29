@@ -2,6 +2,9 @@
 
 @section('head')
     <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.2.3/css/buttons.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css">
     <style>
         body {
             background: #f6f9ff;
@@ -131,7 +134,7 @@
                 @foreach($extra as $i => $item)
                     <div class="col-md-2 mb-4">
                         @if($item['title'] === 'Total Outstanding')
-                            <a href="/total-outstanding" class="text-decoration-none">
+                            <a href="#" onclick="showTotalOutstandingModal()" class="text-decoration-none">
                                 <div class="glass-card card text-white shadow animated-card" style="background-color: {{ $item['color'] }};">
                                     <div class="card-body">
                                         <h6 class="text-uppercase">{{ $item['title'] }}</h6>
@@ -140,7 +143,7 @@
                                 </div>
                             </a>
                         @elseif($item['title'] === 'Penalty Balance')
-                            <a href="/penalty-balance" class="text-decoration-none">
+                            <a href="#" onclick="showPenaltyBalanceModal()" class="text-decoration-none">
                                 <div class="glass-card card text-white shadow animated-card" style="background-color: {{ $item['color'] }};">
                                     <div class="card-body">
                                         <h6 class="text-uppercase">{{ $item['title'] }}</h6>
@@ -161,7 +164,7 @@
 
                 {{-- Combined Not-Paid Card --}}
                 <div class="col-md-6 col-lg-5 mb-4">
-                    <a href="/weekly-not-paid" class="text-decoration-none">
+                    <a href="#" onclick="showWeeklyNotPaidModal()" class="text-decoration-none">
                         <div class="glass-card card text-white shadow animated-card" style="background: linear-gradient(135deg, #8e44ad, #2c3e50);">
                             <div class="card-body">
                                 <h6 class="text-uppercase mb-3">This Week Not-Paid</h6>
@@ -334,12 +337,116 @@
         </div>
         </div>
         <button id="startLoanProcess" hidden>Start Processing Loans</button>
+
+        <!-- Total Outstanding Modal -->
+        <div class="modal fade" id="totalOutstandingModal" tabindex="-1" aria-labelledby="totalOutstandingModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="totalOutstandingModalLabel">Total Outstanding</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table class="table table-centered mb-0" id="outstanding_table_modal">
+                                <thead class="bg-primary text-white">
+                                    <tr>
+                                        <th>Loan ID</th>
+                                        <th>Customer ID</th>
+                                        <th>Customer Name</th>
+                                        <th class="text-end">Loan Amount (Capital)</th>
+                                        <th class="text-end">Full Loan Amount (Capital + Interest)</th>
+                                        <th class="text-end">Total Outstanding</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded via AJAX -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Weekly Not Paid Modal -->
+        <div class="modal fade" id="weeklyNotPaidModal" tabindex="-1" aria-labelledby="weeklyNotPaidModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="weeklyNotPaidModalLabel">This Week Not-Paid</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table class="table table-centered mb-0" id="weekly_not_paid_table_modal">
+                                <thead class="bg-warning text-dark">
+                                    <tr>
+                                        <th>Loan ID</th>
+                                        <th>Customer ID</th>
+                                        <th>Customer Name</th>
+                                        <th class="text-end">Loan Amount (Capital)</th>
+                                        <th class="text-end">Full Loan Amount (Capital + Interest)</th>
+                                        <th class="text-end">This Week Not Paid</th>
+                                        <th class="text-end">Total Arrears</th>
+                                        <th class="text-center">Unpaid Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded via AJAX -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Penalty Balance Modal -->
+        <div class="modal fade" id="penaltyBalanceModal" tabindex="-1" aria-labelledby="penaltyBalanceModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="penaltyBalanceModalLabel">Penalty Balance</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table class="table table-centered mb-0" id="penalty_balance_table_modal">
+                                <thead class="bg-danger text-white">
+                                    <tr>
+                                        <th>Loan ID</th>
+                                        <th>Customer ID</th>
+                                        <th>Customer Name</th>
+                                        <th class="text-end">Loan Amount (Capital)</th>
+                                        <th class="text-end">Full Loan Amount (Capital + Interest)</th>
+                                        <th class="text-end">Total Outstanding</th>
+                                        <th class="text-end">Penalty Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded via AJAX -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     @endif
 @endsection
 
 @section('script')
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/countup.js/2.0.7/countUp.umd.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/2.2.3/js/buttons.html5.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
     <script>
         // Live DateTime (Updated Every Second)
         function updateDateTime() {
@@ -632,6 +739,222 @@
                     });
                 }
             });
+        });
+    </script>
+
+    <script>
+        let outstandingTable = null;
+        
+        function showTotalOutstandingModal() {
+            // Show loading state
+            $('#totalOutstandingModal').modal('show');
+            
+            // Destroy existing DataTable if it exists
+            if (outstandingTable) {
+                outstandingTable.destroy();
+            }
+            
+            $('#outstanding_table_modal tbody').html('<tr><td colspan="6" class="text-center">Loading...</td></tr>');
+            
+            // Fetch data via AJAX
+            $.get('/total-outstanding-data', function(response) {
+                if (response.data && response.data.length > 0) {
+                    let tbody = '';
+                    response.data.forEach(function(item) {
+                        tbody += `
+                            <tr>
+                                <td>${item.loan_id}</td>
+                                <td>${item.customer_id}</td>
+                                <td>${item.customer_name}</td>
+                                <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.capital_amount).toFixed(2))}</td>
+                                <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.full_loan_amount).toFixed(2))}</td>
+                                <td class="text-end"><strong>${new Intl.NumberFormat().format(parseFloat(item.total_outstanding).toFixed(2))}</strong></td>
+                            </tr>
+                        `;
+                    });
+                    $('#outstanding_table_modal tbody').html(tbody);
+                    
+                    // Initialize DataTable with export buttons
+                    outstandingTable = $('#outstanding_table_modal').DataTable({
+                        dom: 'Bfrtip',
+                        buttons: [
+                            {
+                                extend: 'excel',
+                                text: 'Export Excel',
+                                className: 'btn btn-success btn-sm'
+                            },
+                            {
+                                extend: 'pdf',
+                                text: 'Export PDF',
+                                className: 'btn btn-danger btn-sm'
+                            }
+                        ],
+                        responsive: true,
+                        pageLength: 25,
+                        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                        order: [[5, 'desc']], // Sort by Total Outstanding column desc
+                        columnDefs: [
+                            { className: "text-end", targets: [3, 4, 5] }
+                        ]
+                    });
+                } else {
+                    $('#outstanding_table_modal tbody').html('<tr><td colspan="6" class="text-center">No outstanding loans found</td></tr>');
+                }
+            }).fail(function() {
+                $('#outstanding_table_modal tbody').html('<tr><td colspan="6" class="text-center text-danger">Error loading data</td></tr>');
+            });
+        }
+        
+        // Cleanup when modal is hidden
+        $('#totalOutstandingModal').on('hidden.bs.modal', function () {
+            if (outstandingTable) {
+                outstandingTable.destroy();
+                outstandingTable = null;
+            }
+        });
+    </script>
+
+    <script>
+        let weeklyNotPaidTable = null;
+        let penaltyBalanceTable = null;
+        
+        function showWeeklyNotPaidModal() {
+            // Show loading state
+            $('#weeklyNotPaidModal').modal('show');
+            
+            // Destroy existing DataTable if it exists
+            if (weeklyNotPaidTable) {
+                weeklyNotPaidTable.destroy();
+            }
+            
+            $('#weekly_not_paid_table_modal tbody').html('<tr><td colspan="8" class="text-center">Loading...</td></tr>');
+            
+            // Fetch data via AJAX
+            $.get('/weekly-not-paid-data', function(response) {
+                if (response.data && response.data.length > 0) {
+                    let tbody = '';
+                    response.data.forEach(function(item) {
+                        tbody += `
+                            <tr>
+                                <td>${item.loan_id}</td>
+                                <td>${item.customer_id}</td>
+                                <td>${item.customer_name}</td>
+                                <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.capital_amount).toFixed(2))}</td>
+                                <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.full_loan_amount).toFixed(2))}</td>
+                                <td class="text-end"><strong>${new Intl.NumberFormat().format(parseFloat(item.this_week_not_paid).toFixed(2))}</strong></td>
+                                <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.total_arrears).toFixed(2))}</td>
+                                <td class="text-center">${item.not_paid_installment_count}</td>
+                            </tr>
+                        `;
+                    });
+                    $('#weekly_not_paid_table_modal tbody').html(tbody);
+                    
+                    // Initialize DataTable with export buttons
+                    weeklyNotPaidTable = $('#weekly_not_paid_table_modal').DataTable({
+                        dom: 'Bfrtip',
+                        buttons: [
+                            {
+                                extend: 'excel',
+                                text: 'Export Excel',
+                                className: 'btn btn-success btn-sm'
+                            },
+                            {
+                                extend: 'pdf',
+                                text: 'Export PDF',
+                                className: 'btn btn-danger btn-sm'
+                            }
+                        ],
+                        responsive: true,
+                        pageLength: 25,
+                        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                        order: [[5, 'desc']], // Sort by This Week Not Paid column desc
+                        columnDefs: [
+                            { className: "text-end", targets: [3, 4, 5, 6] },
+                            { className: "text-center", targets: [7] }
+                        ]
+                    });
+                } else {
+                    $('#weekly_not_paid_table_modal tbody').html('<tr><td colspan="8" class="text-center">No unpaid loans found for this week</td></tr>');
+                }
+            }).fail(function() {
+                $('#weekly_not_paid_table_modal tbody').html('<tr><td colspan="8" class="text-center text-danger">Error loading data</td></tr>');
+            });
+        }
+        
+        function showPenaltyBalanceModal() {
+            // Show loading state
+            $('#penaltyBalanceModal').modal('show');
+            
+            // Destroy existing DataTable if it exists
+            if (penaltyBalanceTable) {
+                penaltyBalanceTable.destroy();
+            }
+            
+            $('#penalty_balance_table_modal tbody').html('<tr><td colspan="7" class="text-center">Loading...</td></tr>');
+            
+            // Fetch data via AJAX
+            $.get('/penalty-balance-data', function(response) {
+                if (response.data && response.data.length > 0) {
+                    let tbody = '';
+                    response.data.forEach(function(item) {
+                        tbody += `
+                            <tr>
+                                <td>${item.loan_id}</td>
+                                <td>${item.customer_id}</td>
+                                <td>${item.customer_name}</td>
+                                <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.capital_amount).toFixed(2))}</td>
+                                <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.full_loan_amount).toFixed(2))}</td>
+                                <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.total_outstanding).toFixed(2))}</td>
+                                <td class="text-end"><strong>${new Intl.NumberFormat().format(parseFloat(item.penalty_balance).toFixed(2))}</strong></td>
+                            </tr>
+                        `;
+                    });
+                    $('#penalty_balance_table_modal tbody').html(tbody);
+                    
+                    // Initialize DataTable with export buttons
+                    penaltyBalanceTable = $('#penalty_balance_table_modal').DataTable({
+                        dom: 'Bfrtip',
+                        buttons: [
+                            {
+                                extend: 'excel',
+                                text: 'Export Excel',
+                                className: 'btn btn-success btn-sm'
+                            },
+                            {
+                                extend: 'pdf',
+                                text: 'Export PDF',
+                                className: 'btn btn-danger btn-sm'
+                            }
+                        ],
+                        responsive: true,
+                        pageLength: 25,
+                        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                        order: [[6, 'desc']], // Sort by Penalty Balance column desc
+                        columnDefs: [
+                            { className: "text-end", targets: [3, 4, 5, 6] }
+                        ]
+                    });
+                } else {
+                    $('#penalty_balance_table_modal tbody').html('<tr><td colspan="7" class="text-center">No penalty balances found</td></tr>');
+                }
+            }).fail(function() {
+                $('#penalty_balance_table_modal tbody').html('<tr><td colspan="7" class="text-center text-danger">Error loading data</td></tr>');
+            });
+        }
+        
+        // Cleanup when modals are hidden
+        $('#weeklyNotPaidModal').on('hidden.bs.modal', function () {
+            if (weeklyNotPaidTable) {
+                weeklyNotPaidTable.destroy();
+                weeklyNotPaidTable = null;
+            }
+        });
+        
+        $('#penaltyBalanceModal').on('hidden.bs.modal', function () {
+            if (penaltyBalanceTable) {
+                penaltyBalanceTable.destroy();
+                penaltyBalanceTable = null;
+            }
         });
     </script>
 
