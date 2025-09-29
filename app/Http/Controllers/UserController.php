@@ -432,7 +432,7 @@ class UserController extends Controller
 
 
         // Call to the penalty creation function
-        $this->create_panelty();
+        // $this->create_panelty();
 
 
         $customerCount = tableWithBranch('customer')->count();
@@ -753,6 +753,7 @@ class UserController extends Controller
 
 
 
+    /*
     public function create_panelty()
     {
         $date=date('Y-m-d');
@@ -965,6 +966,7 @@ class UserController extends Controller
 
 
     }
+    */
 
 
     public function privileges(Request $request,Store $session)
