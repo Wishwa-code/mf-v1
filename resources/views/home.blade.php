@@ -50,6 +50,177 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Modern Modal Styles */
+        .modern-modal {
+            border: none;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        .modern-modal-header {
+            border-radius: 16px 16px 0 0 !important;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal-icon-container {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+        }
+
+        .modern-modal-body {
+            padding: 2rem;
+            background: #fafbfc;
+        }
+
+        /* Modern Table Styles */
+        .modern-table-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.08);
+        }
+
+        .modern-table {
+            border-radius: 12px;
+            overflow: hidden;
+            border: none;
+        }
+
+        .modern-table-header {
+            background: #f8f9fa;
+            color: #495057;
+            position: relative;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .modern-table-warning {
+            background: #f8f9fa !important;
+            color: #495057 !important;
+            border-bottom: 2px solid #ffc107 !important;
+        }
+
+        .modern-table-danger {
+            background: #f8f9fa !important;
+            color: #495057 !important;
+            border-bottom: 2px solid #dc3545 !important;
+        }
+
+        .modern-table-header th {
+            border: none;
+            padding: 1rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            background: #f8f9fa;
+        }
+
+        /* Remove DataTable sorting arrows */
+        .modern-table thead th.sorting:before,
+        .modern-table thead th.sorting:after,
+        .modern-table thead th.sorting_asc:before,
+        .modern-table thead th.sorting_asc:after,
+        .modern-table thead th.sorting_desc:before,
+        .modern-table thead th.sorting_desc:after {
+            display: none !important;
+        }
+
+        .modern-table thead th {
+            cursor: default !important;
+        }
+
+        .modern-table tbody tr {
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .modern-table tbody tr:hover {
+            background: linear-gradient(135deg, #f8f9ff, #e3f2fd);
+            transform: translateX(2px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .modern-table tbody td {
+            border: none;
+            padding: 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .modern-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Loading Skeleton */
+        .skeleton-loader {
+            padding: 0 2rem;
+        }
+
+        .skeleton-row {
+            height: 20px;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 2s infinite;
+            border-radius: 4px;
+            margin: 0.75rem 0;
+        }
+
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Enhanced DataTable Styling */
+        .modern-table-container .dataTables_wrapper .dataTables_length,
+        .modern-table-container .dataTables_wrapper .dataTables_filter {
+            margin: 1rem;
+        }
+
+        .modern-table-container .dataTables_wrapper .dataTables_info,
+        .modern-table-container .dataTables_wrapper .dataTables_paginate {
+            margin: 1rem;
+        }
+
+        .modern-table-container .dt-buttons {
+            margin: 1rem;
+        }
+
+        .modern-table-container .dt-button {
+            background: linear-gradient(135deg, #667eea, #764ba2) !important;
+            border: none !important;
+            color: white !important;
+            border-radius: 8px !important;
+            padding: 0.5rem 1rem !important;
+            margin-right: 0.5rem !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .modern-table-container .dt-button:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
+        }
+
+        /* Modal Animation */
+        .modal.fade .modal-dialog {
+            transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out;
+            transform: translate(0, -100px) scale(0.9);
+        }
+
+        .modal.show .modal-dialog {
+            transform: translate(0, 0) scale(1);
+        }
+
     </style>
 
 @endsection
@@ -341,28 +512,52 @@
         <!-- Total Outstanding Modal -->
         <div class="modal fade" id="totalOutstandingModal" tabindex="-1" aria-labelledby="totalOutstandingModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-xl">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="totalOutstandingModalLabel">Total Outstanding</h5>
+                <div class="modal-content modern-modal">
+                    <div class="modal-header modern-modal-header" style="background: #ffffff; color: #2d3748; border-bottom: 1px solid #e2e8f0;">
+                        <div class="d-flex align-items-center">
+                            <div class="modal-icon-container me-3" style="background: #edf2f7; color: #01503c;">
+                                <i class="ri-money-dollar-circle-line fs-4"></i>
+                            </div>
+                            <div>
+                                <h4 class="modal-title mb-0" id="totalOutstandingModalLabel">💰 Total Outstanding</h4>
+                                <small class="text-muted">Complete loan portfolio overview</small>
+                            </div>
+                        </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
-                        <div class="table-responsive">
-                            <table class="table table-centered mb-0" id="outstanding_table_modal">
-                                <thead class="bg-primary text-white">
-                                    <tr>
-                                        <th>Loan ID</th>
-                                        <th>Customer ID</th>
-                                        <th>Customer Name</th>
-                                        <th class="text-end">Loan Amount (Capital)</th>
-                                        <th class="text-end">Full Loan Amount (Capital + Interest)</th>
-                                        <th class="text-end">Total Outstanding</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Data will be loaded via AJAX -->
-                                </tbody>
-                            </table>
+                    <div class="modal-body modern-modal-body">
+                        <!-- Loading State -->
+                        <div id="outstanding-loading" class="d-none">
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+                                <h5 class="text-muted">Loading outstanding loans...</h5>
+                                <div class="skeleton-loader mt-4">
+                                    <div class="skeleton-row"></div>
+                                    <div class="skeleton-row"></div>
+                                    <div class="skeleton-row"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Table Container -->
+                        <div id="outstanding-content">
+                            <div class="table-responsive modern-table-container">
+                                <table class="table modern-table mb-0" id="outstanding_table_modal">
+                                    <thead class="modern-table-header">
+                                        <tr>
+                                            <th>Loan ID</th>
+                                            <th>Customer ID</th>
+                                            <th>Customer Name</th>
+                                            <th class="text-end">Capital Amount</th>
+                                            <th class="text-end">Full Loan Amount</th>
+                                            <th class="text-end">Total Outstanding</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Data will be loaded via AJAX -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -372,30 +567,54 @@
         <!-- Weekly Not Paid Modal -->
         <div class="modal fade" id="weeklyNotPaidModal" tabindex="-1" aria-labelledby="weeklyNotPaidModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-xl">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="weeklyNotPaidModalLabel">This Week Not-Paid</h5>
+                <div class="modal-content modern-modal">
+                    <div class="modal-header modern-modal-header" style="background: #ffffff; color: #2d3748; border-bottom: 1px solid #e2e8f0;">
+                        <div class="d-flex align-items-center">
+                            <div class="modal-icon-container me-3" style="background: #fef5e7; color: #f39c12;">
+                                <i class="ri-calendar-event-line fs-4"></i>
+                            </div>
+                            <div>
+                                <h4 class="modal-title mb-0" id="weeklyNotPaidModalLabel">📅 This Week Not-Paid</h4>
+                                <small class="text-muted">Loans with missed payments this week</small>
+                            </div>
+                        </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
-                        <div class="table-responsive">
-                            <table class="table table-centered mb-0" id="weekly_not_paid_table_modal">
-                                <thead class="bg-warning text-dark">
-                                    <tr>
-                                        <th>Loan ID</th>
-                                        <th>Customer ID</th>
-                                        <th>Customer Name</th>
-                                        <th class="text-end">Loan Amount (Capital)</th>
-                                        <th class="text-end">Full Loan Amount (Capital + Interest)</th>
-                                        <th class="text-end">This Week Not Paid</th>
-                                        <th class="text-end">Total Arrears</th>
-                                        <th class="text-center">Unpaid Count</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Data will be loaded via AJAX -->
-                                </tbody>
-                            </table>
+                    <div class="modal-body modern-modal-body">
+                        <!-- Loading State -->
+                        <div id="weekly-loading" class="d-none">
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-warning mb-3" style="width: 3rem; height: 3rem;"></div>
+                                <h5 class="text-muted">Loading weekly unpaid loans...</h5>
+                                <div class="skeleton-loader mt-4">
+                                    <div class="skeleton-row"></div>
+                                    <div class="skeleton-row"></div>
+                                    <div class="skeleton-row"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Table Container -->
+                        <div id="weekly-content">
+                            <div class="table-responsive modern-table-container">
+                                <table class="table modern-table mb-0" id="weekly_not_paid_table_modal">
+                                    <thead class="modern-table-header modern-table-warning">
+                                        <tr>
+                                            <th>Loan ID</th>
+                                            <th>Customer ID</th>
+                                            <th>Customer Name</th>
+                                            <th class="text-end">Capital Amount</th>
+                                            <th class="text-end">Full Loan Amount</th>
+                                            <th class="text-end">Week Not Paid</th>
+                                            <th class="text-end">Total Arrears</th>
+                                            <th class="text-center">Unpaid Count</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Data will be loaded via AJAX -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -405,29 +624,53 @@
         <!-- Penalty Balance Modal -->
         <div class="modal fade" id="penaltyBalanceModal" tabindex="-1" aria-labelledby="penaltyBalanceModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-xl">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="penaltyBalanceModalLabel">Penalty Balance</h5>
+                <div class="modal-content modern-modal">
+                    <div class="modal-header modern-modal-header" style="background: #ffffff; color: #2d3748; border-bottom: 1px solid #e2e8f0;">
+                        <div class="d-flex align-items-center">
+                            <div class="modal-icon-container me-3" style="background: #fed7d7; color: #c53030;">
+                                <i class="ri-error-warning-line fs-4"></i>
+                            </div>
+                            <div>
+                                <h4 class="modal-title mb-0" id="penaltyBalanceModalLabel">⚠️ Penalty Balance</h4>
+                                <small class="text-muted">Outstanding penalty charges</small>
+                            </div>
+                        </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
-                        <div class="table-responsive">
-                            <table class="table table-centered mb-0" id="penalty_balance_table_modal">
-                                <thead class="bg-danger text-white">
-                                    <tr>
-                                        <th>Loan ID</th>
-                                        <th>Customer ID</th>
-                                        <th>Customer Name</th>
-                                        <th class="text-end">Loan Amount (Capital)</th>
-                                        <th class="text-end">Full Loan Amount (Capital + Interest)</th>
-                                        <th class="text-end">Total Outstanding</th>
-                                        <th class="text-end">Penalty Balance</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Data will be loaded via AJAX -->
-                                </tbody>
-                            </table>
+                    <div class="modal-body modern-modal-body">
+                        <!-- Loading State -->
+                        <div id="penalty-loading" class="d-none">
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-danger mb-3" style="width: 3rem; height: 3rem;"></div>
+                                <h5 class="text-muted">Loading penalty balances...</h5>
+                                <div class="skeleton-loader mt-4">
+                                    <div class="skeleton-row"></div>
+                                    <div class="skeleton-row"></div>
+                                    <div class="skeleton-row"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Table Container -->
+                        <div id="penalty-content">
+                            <div class="table-responsive modern-table-container">
+                                <table class="table modern-table mb-0" id="penalty_balance_table_modal">
+                                    <thead class="modern-table-header modern-table-danger">
+                                        <tr>
+                                            <th>Loan ID</th>
+                                            <th>Customer ID</th>
+                                            <th>Customer Name</th>
+                                            <th class="text-end">Capital Amount</th>
+                                            <th class="text-end">Full Loan Amount</th>
+                                            <th class="text-end">Total Outstanding</th>
+                                            <th class="text-end">Penalty Balance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Data will be loaded via AJAX -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -746,18 +989,21 @@
         let outstandingTable = null;
         
         function showTotalOutstandingModal() {
-            // Show loading state
+            // Show modal with loading state
             $('#totalOutstandingModal').modal('show');
+            $('#outstanding-loading').removeClass('d-none');
+            $('#outstanding-content').addClass('d-none');
             
             // Destroy existing DataTable if it exists
             if (outstandingTable) {
                 outstandingTable.destroy();
             }
             
-            $('#outstanding_table_modal tbody').html('<tr><td colspan="6" class="text-center">Loading...</td></tr>');
-            
             // Fetch data via AJAX
             $.get('/total-outstanding-data', function(response) {
+                // Hide loading and show content
+                $('#outstanding-loading').addClass('d-none');
+                $('#outstanding-content').removeClass('d-none');
                 if (response.data && response.data.length > 0) {
                     let tbody = '';
                     response.data.forEach(function(item) {
@@ -794,13 +1040,16 @@
                         lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
                         order: [[5, 'desc']], // Sort by Total Outstanding column desc
                         columnDefs: [
-                            { className: "text-end", targets: [3, 4, 5] }
+                            { className: "text-end", targets: [3, 4, 5] },
+                            { orderable: false, targets: '_all' }
                         ]
                     });
                 } else {
                     $('#outstanding_table_modal tbody').html('<tr><td colspan="6" class="text-center">No outstanding loans found</td></tr>');
                 }
             }).fail(function() {
+                $('#outstanding-loading').addClass('d-none');
+                $('#outstanding-content').removeClass('d-none');
                 $('#outstanding_table_modal tbody').html('<tr><td colspan="6" class="text-center text-danger">Error loading data</td></tr>');
             });
         }
@@ -819,18 +1068,21 @@
         let penaltyBalanceTable = null;
         
         function showWeeklyNotPaidModal() {
-            // Show loading state
+            // Show modal with loading state
             $('#weeklyNotPaidModal').modal('show');
+            $('#weekly-loading').removeClass('d-none');
+            $('#weekly-content').addClass('d-none');
             
             // Destroy existing DataTable if it exists
             if (weeklyNotPaidTable) {
                 weeklyNotPaidTable.destroy();
             }
             
-            $('#weekly_not_paid_table_modal tbody').html('<tr><td colspan="8" class="text-center">Loading...</td></tr>');
-            
             // Fetch data via AJAX
             $.get('/weekly-not-paid-data', function(response) {
+                // Hide loading and show content
+                $('#weekly-loading').addClass('d-none');
+                $('#weekly-content').removeClass('d-none');
                 if (response.data && response.data.length > 0) {
                     let tbody = '';
                     response.data.forEach(function(item) {
@@ -870,30 +1122,36 @@
                         order: [[5, 'desc']], // Sort by This Week Not Paid column desc
                         columnDefs: [
                             { className: "text-end", targets: [3, 4, 5, 6] },
-                            { className: "text-center", targets: [7] }
+                            { className: "text-center", targets: [7] },
+                            { orderable: false, targets: '_all' }
                         ]
                     });
                 } else {
                     $('#weekly_not_paid_table_modal tbody').html('<tr><td colspan="8" class="text-center">No unpaid loans found for this week</td></tr>');
                 }
             }).fail(function() {
+                $('#weekly-loading').addClass('d-none');
+                $('#weekly-content').removeClass('d-none');
                 $('#weekly_not_paid_table_modal tbody').html('<tr><td colspan="8" class="text-center text-danger">Error loading data</td></tr>');
             });
         }
         
         function showPenaltyBalanceModal() {
-            // Show loading state
+            // Show modal with loading state
             $('#penaltyBalanceModal').modal('show');
+            $('#penalty-loading').removeClass('d-none');
+            $('#penalty-content').addClass('d-none');
             
             // Destroy existing DataTable if it exists
             if (penaltyBalanceTable) {
                 penaltyBalanceTable.destroy();
             }
             
-            $('#penalty_balance_table_modal tbody').html('<tr><td colspan="7" class="text-center">Loading...</td></tr>');
-            
             // Fetch data via AJAX
             $.get('/penalty-balance-data', function(response) {
+                // Hide loading and show content
+                $('#penalty-loading').addClass('d-none');
+                $('#penalty-content').removeClass('d-none');
                 if (response.data && response.data.length > 0) {
                     let tbody = '';
                     response.data.forEach(function(item) {
@@ -931,13 +1189,16 @@
                         lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
                         order: [[6, 'desc']], // Sort by Penalty Balance column desc
                         columnDefs: [
-                            { className: "text-end", targets: [3, 4, 5, 6] }
+                            { className: "text-end", targets: [3, 4, 5, 6] },
+                            { orderable: false, targets: '_all' }
                         ]
                     });
                 } else {
                     $('#penalty_balance_table_modal tbody').html('<tr><td colspan="7" class="text-center">No penalty balances found</td></tr>');
                 }
             }).fail(function() {
+                $('#penalty-loading').addClass('d-none');
+                $('#penalty-content').removeClass('d-none');
                 $('#penalty_balance_table_modal tbody').html('<tr><td colspan="7" class="text-center text-danger">Error loading data</td></tr>');
             });
         }
