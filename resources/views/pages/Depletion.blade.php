@@ -183,22 +183,23 @@
                                     <th>Beginning Stock</th>
                                     <th>Current/End Stock (capital outstanding)</th>
                                     <th>Investment</th>
-                                    <th>Depletion (collected capital amount)</th>
+                                    <th>Depletion (Due capital amount)</th>
                                     <th>Collection (capital + interest + savings)</th>
                                     <th>Arrears</th>
-                                    <th>Portfolio</th>
-                                    <th>Debtor Ratio</th>
+                                    <th>Portfolio(Current Stock + Arrease)</th>
+                                    <th>Debtor Ratio(Arrease/End Stock*100)</th>
                                     <th>Penalty Arrears</th>
                                     <th>Total Loans</th>
                                     <th>OC Loans</th>
                                     <th>Total Clients</th>
                                     <th>OC Clients</th>
                                     <th>Active Clients</th>
-
+                                    <th>Total Outstanding Amount</th>
                                     {{-- Dynamic product-wise loan counts --}}
                                     @foreach($product as $p)
                                         <th>{{ $p->Product_code }}</th>
                                     @endforeach
+
                                 </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -221,10 +222,11 @@
                                     <th class="text-end"></th>        {{-- 14 OC Clients --}}
                                     <th class="text-end"></th>        {{-- 15 Active Clients --}}
                                     <th class="text-end"></th>        {{-- 16 Total Outstanding Balance --}}
-                                    {{-- Dynamic product totals placeholders --}}
+                                    <th class="text-end"></th>
                                     @foreach($product as $p)
                                         <th class="text-end"></th>
                                     @endforeach
+
                                 </tr>
                                 </tfoot>
                             </table>
@@ -312,6 +314,7 @@
                     + '<td class="text-end">'+Number(r.Total_Clients || 0)+'</td>'
                     + '<td class="text-end">'+Number(r.OC_Clients || 0)+'</td>'
                     + '<td class="text-end">'+Number(r.Active_Clients || 0)+'</td>'
+                    + '<td class="text-end">'+fmt(r.Total_Outstanding_Balance || 0)+'</td>'
 
 
                 PRODUCT_IDS.forEach(function(pid){
@@ -338,6 +341,7 @@
                 totals.Total_Clients             += Number(r.Total_Clients || 0);
                 totals.OC_Clients                += Number(r.OC_Clients || 0);
                 totals.Active_Clients            += Number(r.Active_Clients || 0);
+                totals.Total_Outstanding_Balance += Number(r.Total_Outstanding_Balance || 0);
             });
 
             // Debtor Ratio total
@@ -362,8 +366,9 @@
             cells.eq(12).html(fmt(totals.Total_Clients, 0));
             cells.eq(13).html(fmt(totals.OC_Clients, 0));
             cells.eq(14).html(fmt(totals.Active_Clients, 0));
+            cells.eq(15).html(fmt(totals.Total_Outstanding_Balance, 0));
 
-            var startIdx = 15; // first product footer cell
+            var startIdx = 16; // first product footer cell
             PRODUCT_IDS.forEach(function(pid, i){
                 cells.eq(startIdx + i).html(fmt(productTotals[String(pid)], 0));
             });
@@ -408,6 +413,7 @@
                     toRaw(r.Total_Clients || 0),
                     toRaw(r.OC_Clients || 0),
                     toRaw(r.Active_Clients || 0),
+                    toRaw(r.Total_Outstanding_Balance || 0),
                 ];
 
                 var pc = r.product_counts || {};

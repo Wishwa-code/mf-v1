@@ -795,4 +795,26 @@ class CustomerController extends Controller
         return response()->json($transactions);
     }
 
+    public function load_customer_route($id)
+    {
+        $customer = tableWithBranch('customer','customer')
+            ->join('route','customer.route_id','=','route.id_route')
+            ->where('idCustomer', $id)
+            ->first();
+
+        if (!$customer) {
+            return response()->json(['message' => 'Customer not found'], 404);
+        }
+
+        $type = strtolower($customer->collection_type ?? '');
+        $date = ($type === 'fixed') ? ($customer->collection_date ?? '') : '';
+
+        return response()->json([
+            'message'          => 'Customers loaded successfully',
+            'collection_type'  => $customer->collection_type,
+            'collection_date'  => $date, // '' when customizable
+        ], 200);
+    }
+
+
 }

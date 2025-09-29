@@ -48,7 +48,7 @@
                 <div class="card">
                     <div class="card-body">
                         <div class="d-flex justify-content-between mb-3">
-                            <h4 class="page-title">Collector Account Details</h4>
+                            <h4 class="page-title">Collector/Cashier Account Details</h4>
                         </div>
 
 
@@ -61,7 +61,7 @@
                                             <table class="table table-centered mb-0" id="bank_table">
                                                 <thead>
                                                 <tr>
-                                                    <th>Bank Name</th>
+                                                    <th>Type</th>
                                                     <th>Account Name</th>
                                                     <th>Account Number</th>
                                                     <th>Branch</th>
@@ -73,7 +73,14 @@
                                                 <tbody>
                                                 @foreach($banks as $item)
                                                     <tr>
-                                                        <td>{{$item->Bank_Name}}</td>
+                                                        <td>
+                                                            @if($item->collector == 1)
+                                                                <span class="badge bg-primary">Collector</span>
+                                                            @endif
+                                                            @if($item->cashier == 1)
+                                                                <span class="badge bg-success">Cashier</span>
+                                                            @endif
+                                                        </td>
                                                         <td>{{$item->Account_Name}}</td>
                                                         <td>{{$item->Account_No}}</td>
                                                         <td>{{$item->Bank_Branch}}</td>

@@ -359,6 +359,7 @@
 
                                     <th scope="col">Total Paid Penalty</th>
                                     <th scope="col">Total Penalty Balance</th>
+                                    <th scope="col">Savings Balance</th>
                                     <th scope="col">Capital Balance</th>
                                     <th scope="col">Interest Balance</th>
                                     <th scope="col">Total Outstanding</th>
@@ -373,9 +374,9 @@
                                     <td>{{ number_format($total_paid_amount-$savingBalanceSum, 2, '.', ',') }}</td>
                                     <td>{{ number_format($savingBalanceSum, 2, '.', ',') }}</td>
                                     <td>{{ number_format($total_paid_amount, 2, '.', ',') }}</td>
-
                                     <td>{{ number_format($Panalty_Amount-$Panalty_BalanceSum, 2, '.', ',') }}</td>
                                     <td>{{ number_format($Panalty_BalanceSum, 2, '.', ',') }}</td>
+                                    <td>{{ number_format($loan_saving_balance, 2, '.', ',') }}</td>
                                     <td>{{ number_format($loan->capital_balance, 2, '.', ',') }}</td>
                                     <td>{{ number_format($loan->installment_balance, 2, '.', ',') }}</td>
                                     <td>{{ number_format($loan->Total_Loan_Amount-($total_paid_amount-$savingBalanceSum)+$Panalty_BalanceSum+($Panalty_Amount-$Panalty_BalanceSum), 2, '.', ',') }}</td>
@@ -386,7 +387,6 @@
                                             {{ $loan->Status == -1 ? 'Pending' : ($loan->Status == 0 ? 'Ongoing' : 'Settled') }}
                                         </strong>
                                     </td>
-
                                 </tr>
                                 </tbody>
                             </table>
@@ -426,7 +426,13 @@
 
                                         <tr>
                                             <td style="text-align: left"><strong>Loan Number</strong></td>
-                                            <td style="text-align: left">{{ $loan->Loan_No }}</td>
+                                            <td style="text-align:left">
+                                                {{ $loan->Loan_No }}
+                                                @if ($exists)
+                                                    <span class="badge bg-danger ms-2">Rescheduled Loan</span>
+                                                @endif
+                                            </td>
+
                                         </tr>
                                         <tr>
                                             <td style="text-align: left"><strong>Product Name</strong></td>

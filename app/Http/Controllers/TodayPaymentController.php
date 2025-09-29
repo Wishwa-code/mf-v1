@@ -3020,7 +3020,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
         if ($sms_template) {
             $customer = DB::table('customer')->where('idCustomer', '=', $loan->Customer_idCustomer)->first();
             $arrears = DB::table('installments')
-                ->where('installments.Customer_Loan_idCustomer_Loan', $loan->Customer_idCustomer)
+                ->where('installments.Customer_Loan_idCustomer_Loan', $customer_payment->Customer_Loan_idCustomer_Loan)
                 ->where('installments.Status', '=', '0')
                 ->where('installments.Installment_Date', '<', date('Y-m-d'))
                 ->sum('installments.Total_Balance');
