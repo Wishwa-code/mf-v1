@@ -235,7 +235,7 @@
                                             <td>{{$item->name_on_cheque}}</td>
                                             <td>{{$item->chq_type}}</td>
                                             <td>{{$item->chq_date}}</td>
-                                            <td></td>
+                                            <td>{{$item->Bank_Name}}-{{$item->Account_Name}}</td>
                                             <td>{{ number_format(str_replace(',', '', $item->payment_amount), 2, '.', ',') }}</td>
                                             @if($item->chq_status==="1")
                                                 <td><span style="color: red">Proceeded</span></td>

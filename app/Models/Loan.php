@@ -10,7 +10,7 @@ class Loan extends Model
     use HasFactory;
 
     protected $table = 'customer_loan';
-    protected $primaryKey = 'idCustomer_Loan';
+
     public $timestamps = false;
 
     // if you ever mass-assign on Loan, either keep guarded empty or define fillable

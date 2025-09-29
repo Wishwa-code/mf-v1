@@ -787,3 +787,4 @@ Route::post('/reject_request','\App\Http\Controllers\ApprovalController@reject')
 Route::post('/callback_request','\App\Http\Controllers\ApprovalController@callback')->name('approval.callback');
 
 
+Route::get('/load_customer_route/{id}','\App\Http\Controllers\CustomerController@load_customer_route')->name('customers.load_customer_route');

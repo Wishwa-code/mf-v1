@@ -1011,13 +1011,13 @@
                                                 <label for="simpleinput" class="form-label">User</label>
                                                 <input type="text" class="form-control" value="{{session('Full_Name')}}" readonly>
                                             </div>
-                                                <div class="mb-3">
-                                                    <label for="simpleinput" class="form-label">Reschedule Type</label>
-                                                    <select class="form-control"  id="reschedule_type">
-                                                        <option value="1">Extend installments</option>
-                                                        <option value="2">Reschedule as a new loan</option>
-                                                    </select>
-                                                </div>
+                                            <div class="mb-3">
+                                                <label for="simpleinput" class="form-label">Reschedule Type</label>
+                                                <select class="form-control"  id="reschedule_type">
+                                                    <option value="1">Extend installments</option>
+                                                    <option value="2">Reschedule as a new loan</option>
+                                                </select>
+                                            </div>
                                         </div> <!-- end row -->
                                     </div>
 
@@ -1878,11 +1878,11 @@
                             );
                         }
 
-                        resolve(); // ✅ Tell the caller we're done
+                        resolve(); // âœ… Tell the caller we're done
                     },
                     error: function (xhr, textStatus, errorThrown) {
                         console.error("Error:", errorThrown);
-                        reject(errorThrown); // 🔴 If error, reject the promise
+                        reject(errorThrown); // ðŸ”´ If error, reject the promise
                     }
                 });
             });
@@ -2367,22 +2367,7 @@
                 return; // Stop the function if validation fails
             }
 
-            // Check if loan_amount is within the range
-            if (loan_amount < loanAmountFrom) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: `Loan Amount must be greater than or equal to ${loanAmountFrom}`,
-                });
-                return; // Stop the function if validation fails
-            } else if (loan_amount > loanAmountTo) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: `Loan Amount must be less than or equal to ${loanAmountTo}`,
-                });
-                return; // Stop the function if validation fails
-            }
+
 
             const loan_interest_from = parseFloat($("#loan_interest_from").val());
             const loan_interest_to = parseFloat($("#loan_interest_to").val());
