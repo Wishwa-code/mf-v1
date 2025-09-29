@@ -123,7 +123,8 @@
                         ['title' => 'Cheque Payments', 'value' => $checqueamount, 'color' => '#3498db'],
                         ['title' => 'Due Outstanding (Installment Due + Arrears)', 'value' => ($todayinstallment + $arrease), 'color' => '#0072ff'],
                         ['title' => 'Today Collected Amount', 'value' => $todaycollected, 'color' => '#ef803a'],
-//                        ['title' => 'Total Outstanding', 'value' => ($todayinstallment + $checqueamount + $arrease), 'color' => '#01503c'],
+                        ['title' => 'Total Outstanding', 'value' => $totalOutstanding, 'color' => '#01503c'],
+                        ['title' => 'Penalty Balance', 'value' => $penaltyBalance, 'color' => '#c0392b'],
                     ];
                 @endphp
 
@@ -356,7 +357,9 @@
                 {{ $arrease }},
                 {{ $checqueamount }},
                 {{ $todayinstallment + $arrease }},
-                {{ $todaycollected }}
+                {{ $todaycollected }},
+                {{ $totalOutstanding }},
+                {{ $penaltyBalance }}
             ];
             extraValues.forEach((val, i) => {
                 const extraAnim = new countUp.CountUp('extra-card-' + i, val, {

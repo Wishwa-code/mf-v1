@@ -472,6 +472,27 @@ class UserController extends Controller
         $arrease = $loanQuery_2->arrease;
         $totalBalanceUntil = $loanQuery_2->Total_Balance_until;
         $totalBalanceUntil=$totalBalanceUntil+$checqueamount;
+        
+        // Total Outstanding: capital balance + interest balance where status = 0
+        $totalOutstanding = tableWithBranch('installments','installments')
+            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->select(
+                DB::raw('SUM(installments.capital_balance + installments.Interest_Balance) as total_outstanding')
+            )
+            ->where('customer_loan.Status', '=', '0')
+            ->first();
+        $totalOutstanding = $totalOutstanding->total_outstanding ?? 0;
+
+        // Penalty Balance: sum of penalty balance where status = 0
+        $penaltyBalance = tableWithBranch('installments','installments')
+            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->select(
+                DB::raw('SUM(installments.Panalty_Balance) as penalty_balance')
+            )
+            ->where('customer_loan.Status', '=', '0')
+            ->first();
+        $penaltyBalance = $penaltyBalance->penalty_balance ?? 0;
+        
         $userid=session('userid');
 
         $getuser = DB::table('user_privileges_has_user')->where('user_id', $userid)->where('permission_key','=','dashboard')->first();
@@ -608,7 +629,7 @@ class UserController extends Controller
             'todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount',
             'setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count',
             'customer_loan_current_Count','todayinstallment','todaycollection',
-            'weeklyUnpaidCount','weeklyUnpaidAmount','weeklyUnpaidCustomerCount'
+            'weeklyUnpaidCount','weeklyUnpaidAmount','weeklyUnpaidCustomerCount','totalOutstanding','penaltyBalance'
         ));
     }
 
