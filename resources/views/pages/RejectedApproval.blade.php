@@ -35,11 +35,11 @@
                             <span class="badge bg-danger fs-6">{{ count($rejectedApprovals) }} Rejected</span>
                         </div>
 
-                        <!-- Branch Filter -->
+                        <!-- Filters -->
                         <form method="GET" action="{{ route('approval.rejected') }}" class="mb-4">
-                            <div class="row">
+                            <div class="row mb-3">
                                 <div class="col-md-4">
-                                    <label for="branch_id" class="form-label">Filter by Branch</label>
+                                    <label for="branch_id" class="form-label">Branch</label>
                                     <select class="form-select" id="branch_id" name="branch_id" {{ $branch_access == 0 ? 'disabled' : '' }}>
                                         @if($branch_access == 1)
                                             <option value="">All Branches</option>
@@ -55,11 +55,36 @@
                                         <input type="hidden" name="branch_id" value="{{ session('branch_id') }}">
                                     @endif
                                 </div>
-                                <div class="col-md-2 d-flex align-items-end">
+                                <div class="col-md-4">
+                                    <label for="type" class="form-label">Type</label>
+                                    <select class="form-select" id="type" name="type">
+                                        <option value="">All Types</option>
+                                        @foreach($types as $category => $typesList)
+                                            <optgroup label="{{ $category }}">
+                                                @foreach($typesList as $code => $name)
+                                                    <option value="{{ $code }}" {{ $selectedType == $code ? 'selected' : '' }}>
+                                                        {{ $code }} - {{ $name }}
+                                                    </option>
+                                                @endforeach
+                                            </optgroup>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="date_from" class="form-label">From</label>
+                                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ $dateFrom }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="date_to" class="form-label">To</label>
+                                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ $dateTo }}">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
                                     <button type="submit" class="btn btn-primary me-2">
                                         <i class="ri-filter-line me-1"></i>Filter
                                     </button>
-                                    @if(!empty($selectedBranch))
+                                    @if(!empty($selectedBranch) || !empty($selectedType) || !empty($dateFrom) || !empty($dateTo))
                                         <a href="{{ route('approval.rejected') }}" class="btn btn-outline-secondary">
                                             <i class="ri-close-line me-1"></i>Clear
                                         </a>

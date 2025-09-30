@@ -13,9 +13,45 @@ class ApprovalController extends Controller
         $branch_access = session('branch_access', 0);
         $user_branch_id = session('branch_id');
         $selectedBranch = $request->get('branch_id', '');
+        $selectedType = $request->get('type', '');
         
         // Get branches for filter dropdown (exclude branch_id = -1)
         $branches = DB::table('branch')->where('status', 1)->where('branch_id', '!=', -1)->get();
+        
+        // Types list
+        $types = [
+            'User Management' => [
+                '101' => 'User Creation',
+                '102' => 'User Details Update',
+                '103' => 'User Privilege Change',
+                '104' => 'User Designation Change'
+            ],
+            'Designation Management' => [
+                '201' => 'Designation Privileges Update'
+            ],
+            'Customer Management' => [
+                '301' => 'Customer Creation',
+                '302' => 'Customer Details Update',
+                '303' => 'Customer Status Change',
+                '304' => 'Customer Blacklist',
+                '305' => 'Customer Document Update'
+            ],
+            'Loan Management' => [
+                '401' => 'Loan Approval',
+                '402' => 'Loan Rejection',
+                '403' => 'Loan Modification'
+            ],
+            'Financial Transactions' => [
+                '501' => 'Bank Account Transfer',
+                '502' => 'Payment Undo',
+                '503' => 'Payment Reversal'
+            ],
+            'Expenses' => [
+                '601' => 'Expense Creation',
+                '602' => 'Expense Approval',
+                '603' => 'Expense Modification'
+            ]
+        ];
         
         // Build query for pending approvals with branch and user information
         $query = DB::table('approval_request as ar')
@@ -30,16 +66,19 @@ class ApprovalController extends Controller
             
         // Apply branch filtering
         if ($branch_access == 0) {
-            // User has no branch access - only show their branch
             $query->where('ar.branch_id', $user_branch_id);
         } elseif (!empty($selectedBranch)) {
-            // User has branch access and selected a specific branch
             $query->where('ar.branch_id', $selectedBranch);
+        }
+        
+        // Apply type filtering
+        if (!empty($selectedType)) {
+            $query->where('ar.type', $selectedType);
         }
         
         $pendingApprovals = $query->orderBy('ar.data_time', 'desc')->get();
 
-        return view('pages.PendingApproval', compact('pendingApprovals', 'branches', 'branch_access', 'selectedBranch'));
+        return view('pages.PendingApproval', compact('pendingApprovals', 'branches', 'branch_access', 'selectedBranch', 'selectedType', 'types'));
     }
 
     public function approved_history(Request $request)
@@ -48,9 +87,47 @@ class ApprovalController extends Controller
         $branch_access = session('branch_access', 0);
         $user_branch_id = session('branch_id');
         $selectedBranch = $request->get('branch_id', '');
+        $selectedType = $request->get('type', '');
+        $dateFrom = $request->get('date_from', '');
+        $dateTo = $request->get('date_to', '');
         
         // Get branches for filter dropdown (exclude branch_id = -1)
         $branches = DB::table('branch')->where('status', 1)->where('branch_id', '!=', -1)->get();
+        
+        // Types list
+        $types = [
+            'User Management' => [
+                '101' => 'User Creation',
+                '102' => 'User Details Update',
+                '103' => 'User Privilege Change',
+                '104' => 'User Designation Change'
+            ],
+            'Designation Management' => [
+                '201' => 'Designation Privileges Update'
+            ],
+            'Customer Management' => [
+                '301' => 'Customer Creation',
+                '302' => 'Customer Details Update',
+                '303' => 'Customer Status Change',
+                '304' => 'Customer Blacklist',
+                '305' => 'Customer Document Update'
+            ],
+            'Loan Management' => [
+                '401' => 'Loan Approval',
+                '402' => 'Loan Rejection',
+                '403' => 'Loan Modification'
+            ],
+            'Financial Transactions' => [
+                '501' => 'Bank Account Transfer',
+                '502' => 'Payment Undo',
+                '503' => 'Payment Reversal'
+            ],
+            'Expenses' => [
+                '601' => 'Expense Creation',
+                '602' => 'Expense Approval',
+                '603' => 'Expense Modification'
+            ]
+        ];
         
         // Build query for approved requests
         $query = DB::table('approval_request as ar')
@@ -67,16 +144,27 @@ class ApprovalController extends Controller
             
         // Apply branch filtering
         if ($branch_access == 0) {
-            // User has no branch access - only show their branch
             $query->where('ar.branch_id', $user_branch_id);
         } elseif (!empty($selectedBranch)) {
-            // User has branch access and selected a specific branch
             $query->where('ar.branch_id', $selectedBranch);
+        }
+        
+        // Apply type filtering
+        if (!empty($selectedType)) {
+            $query->where('ar.type', $selectedType);
+        }
+        
+        // Apply date filtering
+        if (!empty($dateFrom)) {
+            $query->whereDate('ar.approved_date_time', '>=', $dateFrom);
+        }
+        if (!empty($dateTo)) {
+            $query->whereDate('ar.approved_date_time', '<=', $dateTo);
         }
         
         $approvedHistory = $query->orderBy('ar.approved_date_time', 'desc')->get();
 
-        return view('pages.ApprovedHistory', compact('approvedHistory', 'branches', 'branch_access', 'selectedBranch'));
+        return view('pages.ApprovedHistory', compact('approvedHistory', 'branches', 'branch_access', 'selectedBranch', 'selectedType', 'dateFrom', 'dateTo', 'types'));
     }
 
     public function rejected_approval(Request $request)
@@ -85,9 +173,47 @@ class ApprovalController extends Controller
         $branch_access = session('branch_access', 0);
         $user_branch_id = session('branch_id');
         $selectedBranch = $request->get('branch_id', '');
+        $selectedType = $request->get('type', '');
+        $dateFrom = $request->get('date_from', '');
+        $dateTo = $request->get('date_to', '');
         
         // Get branches for filter dropdown (exclude branch_id = -1)
         $branches = DB::table('branch')->where('status', 1)->where('branch_id', '!=', -1)->get();
+        
+        // Types list
+        $types = [
+            'User Management' => [
+                '101' => 'User Creation',
+                '102' => 'User Details Update',
+                '103' => 'User Privilege Change',
+                '104' => 'User Designation Change'
+            ],
+            'Designation Management' => [
+                '201' => 'Designation Privileges Update'
+            ],
+            'Customer Management' => [
+                '301' => 'Customer Creation',
+                '302' => 'Customer Details Update',
+                '303' => 'Customer Status Change',
+                '304' => 'Customer Blacklist',
+                '305' => 'Customer Document Update'
+            ],
+            'Loan Management' => [
+                '401' => 'Loan Approval',
+                '402' => 'Loan Rejection',
+                '403' => 'Loan Modification'
+            ],
+            'Financial Transactions' => [
+                '501' => 'Bank Account Transfer',
+                '502' => 'Payment Undo',
+                '503' => 'Payment Reversal'
+            ],
+            'Expenses' => [
+                '601' => 'Expense Creation',
+                '602' => 'Expense Approval',
+                '603' => 'Expense Modification'
+            ]
+        ];
         
         // Build query for rejected requests
         $query = DB::table('approval_request as ar')
@@ -104,16 +230,27 @@ class ApprovalController extends Controller
             
         // Apply branch filtering
         if ($branch_access == 0) {
-            // User has no branch access - only show their branch
             $query->where('ar.branch_id', $user_branch_id);
         } elseif (!empty($selectedBranch)) {
-            // User has branch access and selected a specific branch
             $query->where('ar.branch_id', $selectedBranch);
+        }
+        
+        // Apply type filtering
+        if (!empty($selectedType)) {
+            $query->where('ar.type', $selectedType);
+        }
+        
+        // Apply date filtering
+        if (!empty($dateFrom)) {
+            $query->whereDate('ar.approved_date_time', '>=', $dateFrom);
+        }
+        if (!empty($dateTo)) {
+            $query->whereDate('ar.approved_date_time', '<=', $dateTo);
         }
         
         $rejectedApprovals = $query->orderBy('ar.approved_date_time', 'desc')->get();
 
-        return view('pages.RejectedApproval', compact('rejectedApprovals', 'branches', 'branch_access', 'selectedBranch'));
+        return view('pages.RejectedApproval', compact('rejectedApprovals', 'branches', 'branch_access', 'selectedBranch', 'selectedType', 'dateFrom', 'dateTo', 'types'));
     }
 
     public function approve(Request $request)
