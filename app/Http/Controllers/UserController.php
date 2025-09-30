@@ -448,9 +448,10 @@ class UserController extends Controller
         // Current month lending amount - from 1st of current month to today
         $currentMonthStart = date('Y-m-01'); // First day of current month
         $today = date('Y-m-d');
-        $currentMonthLending = tableWithBranch('installments')
-            ->whereBetween('Installment_Date', [$currentMonthStart, $today])
-            ->sum('capital_balance');
+        $currentMonthLending = tableWithBranch('customer_loan')
+            ->whereBetween('Date_Time', [$currentMonthStart, $today])
+            ->where('Status', '0') // Only disbursed loans
+            ->sum('Amount');
             
         $todayinstallment = tableWithBranch('customer_loan', 'customer_loan')
             ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
