@@ -943,40 +943,32 @@ class UserController extends Controller
         $userId = $request->input('userId');
         $privileges = $request->input('privileges', []);
 
-        foreach ($privileges as $key => $value) {
-            DB::table('user_privileges_has_user')->updateOrInsert(
-                ['user_id' => $userId, 'permission_key' => $key],
-                ['value' => $value]
-            );
-            if ($key=="payment_delete"){
-                DB::table('user')->where('id', $userId)->update([
-                    'payment_delete' => $value
-                ]);
-            }
-
-            if ($key=="branch_access"){
-                DB::table('user')->where('id', $userId)->update([
-                    'branch_access' => $value
-                ]);
-                $session->put('branch_access',(int) $value);
-            }
-
-
-            if ($key=="collector_access"){
-                DB::table('user')->where('id', $userId)->update([
-                    'collector' => $value
-                ]);
-            }
-
-            if ($key=="cashier_access"){
-                DB::table('user')->where('id', $userId)->update([
-                    'cashier' => $value
-                ]);
-            }
-
+        // Get user details for description
+        $user = DB::table('user')->where('id', $userId)->first();
+        if (!$user) {
+            return response()->json(['status' => 'error', 'message' => 'User not found']);
         }
 
-        return response()->json(['status' => 'success']);
+        // Store privilege change data for approval
+        $requestData = [
+            'user_id' => $userId,
+            'privileges' => $privileges,
+            'user_email' => $user->email
+        ];
+
+        // Create approval request
+        DB::table('approval_request')->insert([
+            'type' => '103',
+            'typeid' => $userId,
+            'description' => 'User Privilege Change: ' . $user->Full_Name . ' (' . $user->email . ')',
+            'data' => json_encode($requestData),
+            'userid' => session('userid'),
+            'branch_id' => session('branch_id'),
+            'data_time' => now(),
+            'status' => 0
+        ]);
+
+        return response()->json(['status' => 'success', 'message' => 'Privilege change request sent for approval!']);
     }
 
     public function showprivileges($id)

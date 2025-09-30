@@ -373,6 +373,45 @@ class ApprovalController extends Controller
                 }
             }
             
+            // Handle User Privilege Change (Type 103)
+            if ($approval->type == '103') {
+                $requestData = json_decode($approval->data, true);
+                $userId = $requestData['user_id'];
+                $privileges = $requestData['privileges'];
+                
+                foreach ($privileges as $key => $value) {
+                    DB::table('user_privileges_has_user')->updateOrInsert(
+                        ['user_id' => $userId, 'permission_key' => $key],
+                        ['value' => $value]
+                    );
+                    
+                    // Update special fields in user table
+                    if ($key == "payment_delete") {
+                        DB::table('user')->where('id', $userId)->update([
+                            'payment_delete' => $value
+                        ]);
+                    }
+                    
+                    if ($key == "branch_access") {
+                        DB::table('user')->where('id', $userId)->update([
+                            'branch_access' => $value
+                        ]);
+                    }
+                    
+                    if ($key == "collector_access") {
+                        DB::table('user')->where('id', $userId)->update([
+                            'collector' => $value
+                        ]);
+                    }
+                    
+                    if ($key == "cashier_access") {
+                        DB::table('user')->where('id', $userId)->update([
+                            'cashier' => $value
+                        ]);
+                    }
+                }
+            }
+            
             // Update approval status
             DB::table('approval_request')
                 ->where('id', $id)
