@@ -1105,7 +1105,14 @@ $banner = DB::select($query);
                                             <li>
                                                 <a href="/payment_step_1">Current Loans</a>
                                             </li>
+
                                         @endif
+                                            @if(optional($privilege)->current_loan_delete == 1)
+                                                <li>
+                                                    <a href="loan_delete_requests">Delete Loans Approval</a>
+                                                </li>
+                                            @endif
+
                                         @if(optional($privilege)->settled_loans == 1)
                                             <li>
                                                 <a href="/showsettleloan">Settled Loans</a>

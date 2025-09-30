@@ -327,50 +327,60 @@ class CapitalBalanceController extends Controller
     public function upsert(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'key'   => ['required', 'in:payment_member_name,loan_disbursement_policy,payment_backdate,loan_order,max_allowed_loans,empty_row_count,document_types,collector_txn_modes,fund_request_columns,disbursement_columns'],
+            // We can't use a static `in:` list anymore because of dynamic, sheet-scoped keys.
+            'key'   => ['required'],
             'value' => [
                 'required',
                 function ($attribute, $value, $fail) use ($request) {
-                    // Existing validators
-                    if ($request->key === 'payment_member_name' &&
-                        !in_array($value, ['full_name', 'with_initial', 'only_first_name', 'only_last_name'])) {
+                    $key = (string) $request->key;
+
+                    // ----- Fixed (non-repayment) keys you still support globally -----
+                    $fixedKeys = [
+                        'payment_member_name','loan_disbursement_policy','payment_backdate','loan_order',
+                        'max_allowed_loans','document_types','collector_txn_modes',
+                        'fund_request_columns','disbursement_columns',
+                    ];
+                    $isFixed = in_array($key, $fixedKeys, true);
+
+                    // ----- Repayment-sheet–scoped keys (ONLY) -----
+                    // Example: empty_row_count_rs9, repayment_order_rs9
+                    $isSheetEmptyRows = preg_match('/^empty_row_count_[A-Za-z0-9_]+$/', $key) === 1;
+                    $isSheetOrderBy   = preg_match('/^repayment_order_[A-Za-z0-9_]+$/', $key) === 1;
+
+                    if (!$isFixed && !$isSheetEmptyRows && !$isSheetOrderBy) {
+                        return $fail('Invalid key.');
+                    }
+
+                    // ----- Validation for fixed keys (unchanged) -----
+                    if ($key === 'payment_member_name' &&
+                        !in_array($value, ['full_name','with_initial','only_first_name','only_last_name'], true)) {
                         return $fail('Invalid value for payment_member_name.');
                     }
 
-                    if ($request->key === 'loan_disbursement_policy' &&
-                        !in_array($value, ['strict', 'flexible'])) {
+                    if ($key === 'loan_disbursement_policy' &&
+                        !in_array($value, ['strict','flexible'], true)) {
                         return $fail('Invalid value for loan_disbursement_policy.');
                     }
 
-                    if ($request->key === 'payment_backdate' &&
-                        !in_array($value, ['enabled', 'disabled'])) {
+                    if ($key === 'payment_backdate' &&
+                        !in_array($value, ['enabled','disabled'], true)) {
                         return $fail('Invalid value for payment_backdate.');
                     }
 
-                    if ($request->key === 'loan_order' &&
-                        !in_array($value, ['create_date', 'loan_number', 'issue_date'])) {
+                    if ($key === 'loan_order' &&
+                        !in_array($value, ['create_date','loan_number','issue_date'], true)) {
                         return $fail('Invalid value for loan_order.');
                     }
 
-                    // NEW: collector_txn_modes validator
-                    if ($request->key === 'collector_txn_modes') {
-                        $allowed = ['cash_bank', 'bank_deposit', 'cheques', 'collector_account'];
-
-                        // Accept JSON array or comma-separated string
+                    if ($key === 'collector_txn_modes') {
+                        $allowed = ['cash_bank','bank_deposit','cheques','collector_account'];
                         $modes = [];
                         try {
                             $decoded = json_decode($value, true);
-                            if (is_array($decoded)) {
-                                $modes = $decoded;
-                            } else {
-                                // not JSON array → fallback to CSV
-                                $modes = array_filter(array_map('trim', explode(',', (string)$value)));
-                            }
+                            $modes = is_array($decoded) ? $decoded : array_filter(array_map('trim', explode(',', (string) $value)));
                         } catch (\Throwable $e) {
-                            $modes = array_filter(array_map('trim', explode(',', (string)$value)));
+                            $modes = array_filter(array_map('trim', explode(',', (string) $value)));
                         }
-
-                        // Ensure all are allowed
                         foreach ($modes as $mode) {
                             if (!in_array($mode, $allowed, true)) {
                                 return $fail("Invalid mode '{$mode}' for collector_txn_modes.");
@@ -378,52 +388,44 @@ class CapitalBalanceController extends Controller
                         }
                     }
 
-                    if ($request->key === 'max_allowed_loans' &&
+                    if ($key === 'max_allowed_loans' &&
                         (!is_numeric($value) || $value < 1 || $value > 50)) {
-                        $fail('Max allowed loans must be between 1 and 50.');
+                        return $fail('Max allowed loans must be between 1 and 50.');
                     }
 
-                    if ($request->key === 'empty_row_count' &&
-                        (!is_numeric($value) || $value < 0 || $value > 100)) {
-                        $fail('Empty row count must be between 0 and 100.');
-                    }
-
-                    if ($request->key === 'document_types') {
+                    if ($key === 'document_types') {
                         $decoded = json_decode($value, true);
-                        if (json_last_error() !== JSON_ERROR_NONE) {
-                            $fail('Document types must be valid JSON.');
-                        } elseif (!is_array($decoded)) {
-                            $fail('Document types must be a JSON array.');
-                        } elseif (count($decoded) === 0) {
-                            $fail('At least one document type is required.');
-                        }
+                        if (json_last_error() !== JSON_ERROR_NONE) return $fail('Document types must be valid JSON.');
+                        if (!is_array($decoded))                return $fail('Document types must be a JSON array.');
+                        if (count($decoded) === 0)              return $fail('At least one document type is required.');
                     }
 
-                    if ($request->key === 'fund_request_columns') {
+                    if ($key === 'fund_request_columns') {
                         $decoded = json_decode($value, true);
-                        if (json_last_error() !== JSON_ERROR_NONE) {
-                            $fail('Fund request columns must be valid JSON.');
-                        } elseif (!is_array($decoded)) {
-                            $fail('Fund request columns must be a JSON array.');
-                        } elseif (count($decoded) === 0) {
-                            $fail('At least one column is required for fund request.');
-                        }
+                        if (json_last_error() !== JSON_ERROR_NONE) return $fail('Fund request columns must be valid JSON.');
+                        if (!is_array($decoded))                return $fail('Fund request columns must be a JSON array.');
+                        if (count($decoded) === 0)              return $fail('At least one column is required for fund request.');
                     }
 
-                    if ($request->key === 'disbursement_columns') {
+                    if ($key === 'disbursement_columns') {
                         $decoded = json_decode($value, true);
-                        if (json_last_error() !== JSON_ERROR_NONE) {
-                            $fail('Disbursement columns must be valid JSON.');
-                        } elseif (!is_array($decoded)) {
-                            $fail('Disbursement columns must be a JSON array.');
-                        } elseif (count($decoded) === 0) {
-                            $fail('At least one column is required for disbursement.');
-                        }
+                        if (json_last_error() !== JSON_ERROR_NONE) return $fail('Disbursement columns must be valid JSON.');
+                        if (!is_array($decoded))                return $fail('Disbursement columns must be a JSON array.');
+                        if (count($decoded) === 0)              return $fail('At least one column is required for disbursement.');
+                    }
+
+                    // ----- Repayment-sheet–scoped validations -----
+                    if ($isSheetEmptyRows && (!is_numeric($value) || $value < 0 || $value > 100)) {
+                        return $fail('Empty row count must be between 0 and 100.');
+                    }
+
+                    if ($isSheetOrderBy &&
+                        !in_array($value, ['name_asc','name_desc','loan_asc','loan_issue','cus_number'], true)) {
+                        return $fail('Invalid value for repayment_order.');
                     }
                 },
             ],
         ]);
-
 
         if ($validator->fails()) {
             return response()->json(['message' => $validator->errors()->first()], 422);
@@ -457,6 +459,7 @@ class CapitalBalanceController extends Controller
         Cache::forget('app_settings');
         return response()->json(['success' => true], 200);
     }
+
 
 
     /**
