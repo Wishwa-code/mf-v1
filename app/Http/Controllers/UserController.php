@@ -76,61 +76,27 @@ class UserController extends Controller
             $data['branch_access']=$request->has('branch_access') ? 1 : 0;
             $data['cashier']=$request->has('cashier') ? 1 : 0;
             $data['collector']=$request->has('collecting_officer') ? 1 : 0;
-            $user=User::create($data);
 
-            if ($request->has('branches')) {
-                foreach ($request->branches as $branch_id) {
-                    DB::table('user_has_branches')->insert([
-                        'user_id' => $user->id,
-                        'branch_id' => $branch_id
-                    ]);
-                }
-            }
-
-            if (!$user){
-                return redirect()->intended(route('pages.user'))->with("error","Registration Failed !");
-            }
-
-            // Apply designation privileges to new user
-            $this->applyDesignationPrivilegesToUser($user->id, $request->desi);
-
-            $Bank = [
-                'Bank_Type' => "Collector",
-                'code' => $user->id.'/Collector',
-                'Bank_Name' => "Collector",
-                'Account_Name' => $request->full_name,
-                'Account_No' => $user->id,
-                'Bank_Branch' => '-',
-                'Account_Balance' => "0.00",
-                'type' => "Cash and Bank",
-                'cashflow' => "Non Applicable",
-                'User' => $user->id,
-                'branch_id' => $request->has('branch_access'),
+            // Store request data for approval
+            $requestData = [
+                'user_data' => $data,
+                'branches' => $request->branches ?? [],
+                'account_number' => $request->account_number ?? null
             ];
 
-            if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $request->account_number)->exists()) {
+            // Create approval request
+            DB::table('approval_request')->insert([
+                'type' => '101',
+                'typeid' => 0,
+                'description' => 'User Creation: ' . $request->full_name . ' (' . $request->email . ')',
+                'data' => json_encode($requestData),
+                'userid' => session('userid'),
+                'branch_id' => session('branch_id'),
+                'data_time' => now(),
+                'status' => 0
+            ]);
 
-            }else {
-                $insertedId = insertWithBranch('company_bank_accounts', $Bank);
-// Convert the BankLog object to an array for insertion
-                $bankLogData = [
-                    'Bank_Account_Id' => $insertedId,
-                    'Date_Time' => date('Y-m-d H:i:s'),
-                    'Type' => "Account Creation",
-                    'Description' => "Collector Account",
-                    'Note' => "",
-                    'Credit' => "0.00",
-                    'Debit' => "0.00",
-                    'Balance' => "0.00",
-                    'User' => $user->id,
-                    'branch_id' => $request->has('branch_access'),
-                ];
-
-// Insert the BankLog entry using the helper function
-                insertWithBranch('company_bank_has_log', $bankLogData);
-            }
-
-            return redirect()->intended(route('pages.user'))->with("success", "Registration success !");
+            return redirect()->intended(route('pages.user'))->with("success", "User creation request sent for approval!");
         }
     }
 

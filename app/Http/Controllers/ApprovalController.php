@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\User;
 
 class ApprovalController extends Controller
 {
@@ -259,6 +260,83 @@ class ApprovalController extends Controller
         $comment = $request->input('comment');
         
         try {
+            // Get approval request
+            $approval = DB::table('approval_request')->where('id', $id)->first();
+            
+            // Handle User Creation (Type 101)
+            if ($approval->type == '101') {
+                $requestData = json_decode($approval->data, true);
+                $userData = $requestData['user_data'];
+                
+                // Create user
+                $user = User::create($userData);
+                
+                // Add branches
+                if (!empty($requestData['branches'])) {
+                    foreach ($requestData['branches'] as $branch_id) {
+                        DB::table('user_has_branches')->insert([
+                            'user_id' => $user->id,
+                            'branch_id' => $branch_id
+                        ]);
+                    }
+                }
+                
+                // Apply privileges - Find designation from user's branch
+                $designation_branch_id = $userData['branch_id'];
+                $designation = DB::table('designation')
+                    ->where('branch_id', $designation_branch_id)
+                    ->where(function($query) use ($userData) {
+                        $query->where('name', $userData['Designation'])
+                              ->orWhere('idDesignation', $userData['Designation']);
+                    })
+                    ->first();
+                
+                if ($designation && $designation->privileges) {
+                    $privileges = json_decode($designation->privileges, true);
+                    if (is_array($privileges)) {
+                        foreach ($privileges as $permissionKey => $value) {
+                            DB::table('user_privileges_has_user')->updateOrInsert(
+                                ['user_id' => $user->id, 'permission_key' => $permissionKey],
+                                ['value' => $value]
+                            );
+                        }
+                    }
+                }
+                
+                // Create bank account
+                $Bank = [
+                    'Bank_Type' => "Collector",
+                    'code' => $user->id.'/Collector',
+                    'Bank_Name' => "Collector",
+                    'Account_Name' => $userData['Full_Name'],
+                    'Account_No' => $user->id,
+                    'Bank_Branch' => '-',
+                    'Account_Balance' => "0.00",
+                    'type' => "Cash and Bank",
+                    'cashflow' => "Non Applicable",
+                    'User' => $user->id,
+                    'branch_id' => $userData['branch_access'],
+                ];
+                
+                $insertedId = insertWithBranch('company_bank_accounts', $Bank);
+                
+                $bankLogData = [
+                    'Bank_Account_Id' => $insertedId,
+                    'Date_Time' => date('Y-m-d H:i:s'),
+                    'Type' => "Account Creation",
+                    'Description' => "Collector Account",
+                    'Note' => "",
+                    'Credit' => "0.00",
+                    'Debit' => "0.00",
+                    'Balance' => "0.00",
+                    'User' => $user->id,
+                    'branch_id' => $userData['branch_access'],
+                ];
+                
+                insertWithBranch('company_bank_has_log', $bankLogData);
+            }
+            
+            // Update approval status
             DB::table('approval_request')
                 ->where('id', $id)
                 ->update([
