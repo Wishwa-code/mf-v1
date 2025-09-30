@@ -86,8 +86,8 @@ class UserController extends Controller
 
             // Create approval request
             DB::table('approval_request')->insert([
-                'type' => '101',
-                'typeid' => 0,
+                'type' => 'User Creation',
+                'typeid' => 101,
                 'description' => 'User Creation: ' . $request->full_name . ' (' . $request->email . ')',
                 'data' => json_encode($requestData),
                 'userid' => session('userid'),
@@ -958,8 +958,8 @@ class UserController extends Controller
 
         // Create approval request
         DB::table('approval_request')->insert([
-            'type' => '103',
-            'typeid' => $userId,
+            'type' => 'User Privilege Change',
+            'typeid' => 103,
             'description' => 'User Privilege Change: ' . $user->Full_Name . ' (' . $user->email . ')',
             'data' => json_encode($requestData),
             'userid' => session('userid'),
@@ -1437,8 +1437,8 @@ class UserController extends Controller
 
         // Create approval request
         DB::table('approval_request')->insert([
-            'type' => '102',
-            'typeid' => $user->id,
+            'type' => 'User Details Update',
+            'typeid' => 102,
             'description' => 'User Details Update: ' . $request->full_name . ' (' . $request->email . ')',
             'data' => json_encode($requestData),
             'userid' => session('userid'),

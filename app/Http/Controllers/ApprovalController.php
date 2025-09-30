@@ -264,7 +264,7 @@ class ApprovalController extends Controller
             $approval = DB::table('approval_request')->where('id', $id)->first();
             
             // Handle User Creation (Type 101)
-            if ($approval->type == '101') {
+            if ($approval->typeid == 101) {
                 $requestData = json_decode($approval->data, true);
                 $userData = $requestData['user_data'];
                 
@@ -337,7 +337,7 @@ class ApprovalController extends Controller
             }
             
             // Handle User Details Update (Type 102)
-            if ($approval->type == '102') {
+            if ($approval->typeid == 102) {
                 $requestData = json_decode($approval->data, true);
                 $updateData = $requestData['update_data'];
                 $newBranches = $requestData['new_branches'];
@@ -374,7 +374,7 @@ class ApprovalController extends Controller
             }
             
             // Handle User Privilege Change (Type 103)
-            if ($approval->type == '103') {
+            if ($approval->typeid == 103) {
                 $requestData = json_decode($approval->data, true);
                 $userId = $requestData['user_id'];
                 $privileges = $requestData['privileges'];
