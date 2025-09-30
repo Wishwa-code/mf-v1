@@ -777,3 +777,16 @@ Route::post('/depletion/data', [\App\Http\Controllers\ReportController::class, '
 
 
 Route::get('/load_customer_route/{id}','\App\Http\Controllers\CustomerController@load_customer_route')->name('customers.load_customer_route');
+
+
+
+// routes/web.php
+Route::post('/loan/destroy', [PendingLoanController::class, 'destroy_loan'])->name('loan.destroy_loan');
+Route::post('/loan/destroy/approve', [PendingLoanController::class, 'approve_destroy_loan'])->name('loan.approve_destroy_loan');
+// List all loan delete requests
+// routes/web.php
+Route::get('/loan_delete_requests', [PendingLoanController::class, 'delete_loan_requests'])
+    ->name('loan.delete_requests');
+Route::post('/loan_delete_requests/reject', [PendingLoanController::class, 'reject_destroy_loan'])
+    ->name('loan.reject_destroy_loan');
+

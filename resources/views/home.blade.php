@@ -107,13 +107,22 @@
 
                 {{-- Summary Cards --}}
                 @php
+                    // Make sure these vars exist in the controller or set 0 defaults
+                    $todayinstallment = $todayinstallment ?? 0;
+                    $arrease          = $arrease ?? 0;
+                    $checqueamount    = $checqueamount ?? 0;
+                    $todaycollected   = $todaycollected ?? 0;
+                    $penaltyBalance   = $penaltyBalance ?? 0;
+                    $totalOutstanding   = $totalOutstanding ?? 0;
+
                     $extra = [
-                        ['title' => 'Today Installment', 'value' => $todayinstallment, 'color' => '#1e3c72'],
-                        ['title' => 'Total Arrears', 'value' => $arrease, 'color' => '#ef473a'],
-                        ['title' => 'Cheque Payments', 'value' => $checqueamount, 'color' => '#3498db'],
-                        ['title' => 'Total Outstanding', 'value' => ($todayinstallment + $checqueamount + $arrease), 'color' => '#0072ff'],
-                        ['title' => 'Today Collected Amount', 'value' => $todaycollected, 'color' => '#ef803a'],
-//                        ['title' => 'Total Outstanding', 'value' => ($todayinstallment + $checqueamount + $arrease), 'color' => '#01503c'],
+                        ['title' => 'Today Installment',    'value' => $todayinstallment,                         'color' => '#1e3c72'],
+                        ['title' => 'Total Arrears',        'value' => $arrease,                                  'color' => '#ef473a'],
+                        ['title' => 'Cheque Payments',      'value' => $checqueamount,                            'color' => '#3498db'],
+                        ['title' => 'Due Outstanding (Installment Due + Arrears)',    'value' => ($todayinstallment + $checqueamount + $arrease), 'color' => '#0072ff'],
+                        ['title' => 'Today Collected',      'value' => $todaycollected,                           'color' => '#ef803a'],
+                        ['title' => 'Total Outstanding',    'value' => $totalOutstanding,                         'color' => '#0072ff'],
+                        ['title' => 'Penalty Balance',      'value' => $penaltyBalance,                           'color' => '#c0392b'],
                     ];
                 @endphp
 
@@ -127,6 +136,7 @@
                         </div>
                     </div>
                 @endforeach
+
             </div>
 
             {{-- Charts --}}
@@ -310,20 +320,17 @@
                 if (!numAnim.error) numAnim.start();
             });
 
-            const extraValues = [
-                {{ $todayinstallment }},
-                {{ $arrease }},
-                {{ $checqueamount }},
-                {{ $todayinstallment + $arrease + $checqueamount }},
-                {{ $todaycollected }}
-            ];
-            extraValues.forEach((val, i) => {
-                const extraAnim = new countUp.CountUp('extra-card-' + i, val, {
+            const extraData = @json($extra); // [{title,value,color},...]
+            extraData.forEach((item, i) => {
+                const val = Number(item.value || 0);
+                const anim = new countUp.CountUp('extra-card-' + i, val, {
                     separator: ',',
                     decimalPlaces: 2
                 });
-                if (!extraAnim.error) extraAnim.start();
+                if (!anim.error) anim.start();
             });
+
+
 
             // Monthly Area Chart
             new ApexCharts(document.querySelector("#monthly-revenue-chart"), {

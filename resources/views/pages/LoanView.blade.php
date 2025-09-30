@@ -404,12 +404,20 @@
                                 <a href="/kyc/{{$loan->Customer_idCustomer}}" class="btn btn-dark" id="KYC" target="_blank">
                                     KYC
                                 </a>
+                                <a href="javascript:void(0)" class="btn btn-outline-danger" id="btnDeleteLoan">
+                                    Delete Loan Permanently
+                                </a>
+
+
                             </div>
 
                         </div>
                     </div>
                 </div>
             </div>
+
+
+
 
 
             <div class="custom-container py-4">
@@ -1225,6 +1233,51 @@
                     </div>
                 </div>
 
+                <div class="modal fade" id="deleteLoanModal" tabindex="-1" role="dialog" aria-labelledby="deleteLoanModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                            <form id="deleteLoanForm">
+                                @csrf
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="deleteLoanModalLabel">Delete Loan Permanently</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span>&times;</span></button>
+                                </div>
+
+                                <div class="modal-body">
+                                    <p class="mb-2">Choose how to proceed:</p>
+
+                                    <div class="custom-control custom-radio mb-2">
+                                        <input type="radio" id="modePassword" name="mode" class="custom-control-input" value="password" checked>
+                                        <label class="custom-control-label" for="modePassword">Delete now with Admin Password</label>
+                                    </div>
+
+                                    <div id="passwordBlock" class="mb-3">
+                                        <label for="admin_password" class="mb-1">Admin Password</label>
+                                        <input type="password" name="admin_password" id="admin_password" class="form-control" placeholder="Enter admin password">
+                                        <small class="text-muted">Immediately reverses & deletes on success.</small>
+                                    </div>
+
+                                    <div class="custom-control custom-radio mb-2">
+                                        <input type="radio" id="modeApproval" name="mode" class="custom-control-input" value="approval">
+                                        <label class="custom-control-label" for="modeApproval">Send for Approval</label>
+                                    </div>
+
+                                    <div id="approvalNote" class="d-none">
+                                        <small class="text-muted">Creates a request; admin must approve before deletion.</small>
+                                    </div>
+
+                                    <input type="hidden" name="loan_id" value="{{ $loan->idCustomer_Loan }}">
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary" id="btnProceedDelete">Proceed</button>
+
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
 
 
 
@@ -1958,6 +2011,84 @@
                         }
 
                     </script>
+
+                    <script>
+                        $(function() {
+                            $('#btnDeleteLoan').on('click', function() {
+                                $('#deleteLoanModal').modal('show');
+                            });
+
+                            $('input[name="mode"]').on('change', function() {
+                                const mode = $(this).val();
+                                if (mode === 'password') {
+                                    $('#passwordBlock').removeClass('d-none');
+                                    $('#approvalNote').addClass('d-none');
+                                } else {
+                                    $('#passwordBlock').addClass('d-none');
+                                    $('#approvalNote').removeClass('d-none');
+                                }
+                            });
+
+                            $('#btnProceedDelete').on('click', function(e) {
+                                e.preventDefault();
+                                const form = $('#deleteLoanForm');
+                                const data = form.serialize();
+
+                                if (window.Swal) {
+                                    Swal.fire({
+                                        title: 'Are you sure?',
+                                        text: 'This will permanently delete the loan after reversal & archiving.',
+                                        icon: 'warning',
+                                        showCancelButton: true,
+                                        confirmButtonText: 'Yes, proceed',
+                                        cancelButtonText: 'Cancel'
+                                    }).then((result) => {
+                                        if (result.isConfirmed) {
+                                            doAjax(data);
+                                        }
+                                    });
+                                } else if (confirm('This will permanently delete the loan after reversal & archiving. Continue?')) {
+                                    doAjax(data);
+                                }
+                            });
+
+                            function doAjax(payload) {
+                                $.ajax({
+                                    url: "{{ route('loan.destroy_loan') }}",
+                                    method: "POST",
+                                    data: payload,
+                                    success: function(res) {
+                                        if (res.need_approval) {
+                                            Swal && Swal.fire('Request Sent', 'Approval request was created successfully.', 'info');
+                                            $('#deleteLoanModal').modal('hide');
+                                            return;
+                                        }
+
+                                        const msg = res.message || 'Loan deleted successfully.';
+
+                                        if (window.Swal) {
+                                            Swal.fire('Done', msg, 'success').then(() => {
+                                                window.location.href = "/payment_step_1"; // ✅ redirect here
+                                            });
+                                        } else {
+                                            alert(msg);
+                                            window.location.href = "/payment_step_1"; // ✅ fallback redirect
+                                        }
+                                    },
+                                    error: function(xhr) {
+                                        let msg = 'Operation failed';
+                                        if (xhr.responseJSON && xhr.responseJSON.error) msg = xhr.responseJSON.error;
+                                        if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                                        Swal && Swal.fire('Error', msg, 'error');
+                                    }
+                                });
+                            }
+
+                        });
+
+                    </script>
+
+
 
 @endsection
 

@@ -6,7 +6,7 @@ on:
       - main
       - rightwaycredit50
       - greenlankacapital
-      - greenlankatrust
+      - greenlankatrustdo
       - northerncredit
       - noble
       - finwin
@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -30,30 +30,40 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          composer install --no-dev --optimize-autoloader
-          npm install
+          composer install --no-dev --prefer-dist --optimize-autoloader
+          npm ci
           npm run prod
           php artisan storage:link
+          ls -la public/build || true
 
       - name: FTP Deploy to Server 1 (Client1)
-        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.0
         with:
-          server: ${{ secrets.FTP_HOST }}
+          server: ${{ secrets.FTP_HOST }}     # must be a resolvable hostname
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftp
+          port: 21
+          protocol: ftps
+          security: strict
           local-dir: ./
-          server-dir: /
+          server-dir: /                       # or your site root (e.g. /public_html)
           dry-run: false
           exclude: |
-            .git**
-            node_modules/**
-            storage/**
-            .env*
+            **/.git*
+            **/.github/**
+            **/node_modules/**
+            **/tests/**
+            **/.env*
+            **/storage/logs/**
+            **/storage/framework/**
+            public/storage/**
             vendor/bin/*
-            .github/**
-            public/**     
-            !public/JS/**
+            # keep public/, but exclude everything then re-include what you need:
+            public/**
+            !public/build/**
+            !public/index.php
+            !public/.htaccess
+  
 
   deploy-client2:
       if: github.ref == 'refs/heads/rightwaycredit50'

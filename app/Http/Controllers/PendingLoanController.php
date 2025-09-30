@@ -6,7 +6,11 @@ use App\Models\Expenses;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+use App\Http\Controllers\TodayPaymentController;
+
 
 class PendingLoanController extends Controller
 {
@@ -1108,6 +1112,472 @@ class PendingLoanController extends Controller
 
         return response()->json($data);
     }
+
+
+    public function destroy_loan(Request $request)
+    {
+        $request->validate([
+            'loan_id' => 'required|integer',
+            'mode'    => 'required|in:password,approval',
+            'admin_password' => 'nullable|string'
+        ]);
+
+        $loanId   = (int) $request->loan_id;
+        $branchId = (int) session('branch_id');
+        $userId   = (int) session('userid');
+        $mode     = $request->mode;
+
+        if ($mode === 'password') {
+            // Verify admin password of the current user (or any admin policy you have)
+            $user = DB::table('user')->where('id', $userId)->where('Designation','=','Admin')->first();
+            if (!$user || !Hash::check($request->admin_password ?? '', $user->password)) {
+                return response()->json(['error' => 'Invalid admin password.'], 403);
+            }
+
+            // Perform deletion immediately
+            [$ok, $msg, $payload] = $this->performLoanDelete($loanId, $branchId, $userId);
+            if (!$ok) {
+                return response()->json(['message' => 'Loan delete failed', 'error' => $msg], 500);
+            }
+            return response()->json(['message' => 'Loan deleted successfully. Disbursement reversed, data archived.', 'audit_id' => $payload['audit_id'] ?? null], 200);
+
+        } else {
+            // Create approval request
+            if (!Schema::hasTable('loan_delete_requests')) {
+                DB::statement("
+                CREATE TABLE IF NOT EXISTS `loan_delete_requests` (
+                  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  `loan_id` BIGINT UNSIGNED NOT NULL,
+                  `branch_id` BIGINT UNSIGNED NOT NULL,
+                  `requested_by` BIGINT UNSIGNED NOT NULL,
+                  `requested_at` DATETIME NOT NULL,
+                  `status` ENUM('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING',
+                  `approved_by` BIGINT UNSIGNED NULL,
+                  `approved_at` DATETIME NULL,
+                  `audit_id` BIGINT UNSIGNED NULL,
+                  `context` JSON NULL,
+                  PRIMARY KEY (`id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            ");
+            }
+
+            // inside else {  // Create approval request
+            $loan = tableWithBranch('customer_loan')->where('idCustomer_Loan', $loanId)->first();
+            if (!$loan) return response()->json(['error' => 'Loan not found'], 404);
+
+            $customer = tableWithBranch('customer')->where('idCustomer', $loan->Customer_idCustomer)->first();
+            $product  = tableWithBranch('loan_category')->where('idLoan_Category', $loan->Loan_Category_idLoan_Category)->first();
+
+            $reqId = DB::table('loan_delete_requests')->insertGetId([
+                'loan_id'      => $loanId,
+                'branch_id'    => $branchId,
+                'requested_by' => $userId,
+                'requested_at' => now(),
+                'status'       => 'PENDING',
+                'context'      => json_encode([
+                    'Loan_No'       => $loan->Loan_No,
+                    'Amount'        => (string)$loan->Amount,
+                    'Customer_Id'   => $customer->idCustomer ?? null,
+                    'Customer_Name' => trim(($customer->First_Name ?? '').' '.($customer->Last_Name ?? '')),
+                    'Product'       => $product->Name ?? null,
+                    // 'Reason'      => $request->input('delete_reason') ?? null,  // if you capture a reason
+                ], JSON_UNESCAPED_UNICODE),
+            ]);
+
+
+            return response()->json(['need_approval' => true, 'request_id' => $reqId], 200);
+        }
+    }
+
+    public function approve_destroy_loan(Request $request)
+    {
+        // Only admins should reach here — adapt to your role system
+        $request->validate([
+            'request_id' => 'required|integer'
+        ]);
+
+        $approverId = (int) session('userid');
+        $branchId   = (int) session('branch_id');
+
+        $req = DB::table('loan_delete_requests')->where('id', $request->request_id)->first();
+        if (!$req) return response()->json(['error' => 'Approval request not found'], 404);
+        if ($req->status !== 'PENDING') return response()->json(['error' => 'Request is not pending'], 409);
+
+        // Optional: verify $approverId is admin
+        // e.g., $isAdmin = DB::table('user')->where('idUser', $approverId)->value('role') === 'admin';
+        // if (!$isAdmin) return response()->json(['error'=>'Forbidden'],403);
+
+        [$ok, $msg, $payload] = $this->performLoanDelete((int)$req->loan_id, (int)$req->branch_id, $approverId);
+        if (!$ok) {
+            return response()->json(['message' => 'Loan delete failed', 'error' => $msg], 500);
+        }
+
+        DB::table('loan_delete_requests')->where('id', $req->id)->update([
+            'status'      => 'APPROVED',
+            'approved_by' => $approverId,
+            'approved_at' => now(),
+            'audit_id'    => $payload['audit_id'] ?? null
+        ]);
+
+        return response()->json(['message' => 'Loan deletion approved and completed.', 'audit_id' => $payload['audit_id'] ?? null], 200);
+    }
+
+
+    private function performLoanDelete(int $loanId, int $branchId, int $actorUserId): array
+    {
+        // ---------- UNDO PAYMENTS FIRST (uses TodayPaymentController; each call has its own tx) ----------
+        $eligiblePayments = DB::table('customer_payments')
+            ->where('Customer_Loan_idCustomer_Loan', $loanId)
+            ->where('branch_id', $branchId)
+            ->orderByDesc('idCustomer_Payments')
+            ->get();
+
+// Keep a snapshot of all payment rows BEFORE undo
+        $paymentsBeforeUndo = $eligiblePayments->map(function ($p) {
+            return (array)$p;
+        })->values();
+
+        $undonePaymentIds = [];
+        $undoReason = 'Payment Undo (Loan Delete)';
+
+        if ($eligiblePayments->count()) {
+            $tp = app(TodayPaymentController::class); // resolve your controller
+
+            foreach ($eligiblePayments as $p) {
+                // Call your existing controller method (keeps your logic, SMS, logs, bank reversals, etc.)
+                $resp = $tp->undoPayment(new \Illuminate\Http\Request([
+                    'reason' => $undoReason,
+                ]), (int)$p->idCustomer_Payments);
+
+                // Validate result
+                $ok = !method_exists($resp, 'getStatusCode') || $resp->getStatusCode() === 200;
+                if (!$ok) {
+                    $payload = method_exists($resp, 'getContent') ? @json_decode($resp->getContent(), true) : null;
+                    $msg = $payload['message'] ?? 'Undo payment failed';
+                    throw new \Exception("Payment {$p->idCustomer_Payments} undo failed: {$msg}");
+                }
+
+                $undonePaymentIds[] = (int)$p->idCustomer_Payments;
+            }
+        }
+
+// After all undos, fetch what those rows look like NOW (status/amount changed)
+        $paymentsAfterUndo = [];
+        if ($undonePaymentIds) {
+            $paymentsAfterUndo = DB::table('customer_payments')
+                ->whereIn('idCustomer_Payments', $undonePaymentIds)
+                ->get()
+                ->map(function ($p) { return (array)$p; })
+                ->values();
+        }
+
+        DB::beginTransaction();
+        try {
+            $loan = tableWithBranch('customer_loan')->where('idCustomer_Loan', $loanId)->lockForUpdate()->first();
+            if (!$loan) {
+                DB::rollBack();
+                return [false, 'Loan not found', []];
+            }
+
+            // Gather related data for archive
+            $installments      = DB::table('installments')->where('Customer_Loan_idCustomer_Loan', $loanId)->where('branch_id', $branchId)->get();
+            $loanOtherCharges  = DB::table('loan_other_charges')->where('Customer_Loan_idCustomer_Loan', $loanId)->where('branch_id', $branchId)->get();
+            $witnesses         = DB::table('witness')->where('Customer_Loan_idCustomer_Loan', $loanId)->orWhere('Customer_Loan_idCustomer_Loan', $loanId)->where('branch_id', $branchId)->get();
+            $approvals         = DB::table('loan_has_approval')->where('loan_id', $loanId)->where('branch_id', $branchId)->get();
+            $approvalChecklist = DB::table('loan_has_approval_checklist')->where('loan_id', $loanId)->where('branch_id', $branchId)->get();
+            $savingAccounts    = DB::table('Customer_Saving_Accounts')->where('Loan_Id', $loanId)->where('branch_id', $branchId)->get();
+            $savingAccountIds  = $savingAccounts->pluck('id')->filter()->values();
+            $savingLogsByAcc   = [];
+            foreach ($savingAccountIds as $sid) {
+                $savingLogsByAcc[$sid] = DB::table('Savings_Account_Log')->where('Saving_Acount_Id', $sid)->where('branch_id', $branchId)->get();
+            }
+
+            $customer = tableWithBranch('customer')->where('idCustomer', $loan->Customer_idCustomer)->first();
+            $product  = tableWithBranch('loan_category')->where('idLoan_Category', $loan->Loan_Category_idLoan_Category)->first();
+
+
+
+            // Ensure audit table
+            if (!Schema::hasTable('loan_delete_audit')) {
+                DB::statement("
+                CREATE TABLE IF NOT EXISTS `loan_delete_audit` (
+                  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  `loan_id` BIGINT UNSIGNED NOT NULL,
+                  `branch_id` BIGINT UNSIGNED NOT NULL,
+                  `deleted_by` BIGINT UNSIGNED NOT NULL,
+                  `deleted_at` DATETIME NOT NULL,
+                  `loan_snapshot` JSON NOT NULL,
+                  `related_snapshots` JSON NOT NULL,
+                  `reversal_metadata` JSON NOT NULL,
+                  PRIMARY KEY (`id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            ");
+            }
+
+            // Reverse disbursement transfers if applicable
+            $companyBankId = (int) ($loan->company_bank_account ?? 0);
+            $default1 = tableWithBranch('company_bank_accounts')->where('Bank_Type', 'System_default_1')->first();
+            $default9 = tableWithBranch('company_bank_accounts')->where('Bank_Type', 'System_default_9')->first();
+
+            // Reverse Issue Loan
+            if ($companyBankId && $default1) {
+                $comment = "REVERSAL of Issue Loan\nLoan Number : {$loan->Loan_No}\nLoan Amount : {$loan->Amount}\n";
+                // company bank DEBIT (reverse)
+                $this->bankLogController->index($companyBankId, "Reversal - Issue Loan", $comment, "-", "debit", $loan->Amount, $default1->Idbank);
+                // default_1 CREDIT (reverse)
+                $this->bankLogController->index($default1->Idbank, "Reversal - Issue Loan", $comment, "-", "credit", $loan->Amount, $companyBankId);
+            }
+
+            // Reverse Doc Charges
+            $sumOther = DB::table('loan_other_charges')->where('Customer_Loan_idCustomer_Loan', $loanId)->where('branch_id', $branchId)->sum('Amount');
+            if ($sumOther > 0 && $companyBankId && $default9) {
+                $docComment = "REVERSAL of Loan Document Charges\nLoan Number : {$loan->Loan_No}\nAmount : {$sumOther}\n";
+                // company CREDIT
+                $this->bankLogController->index($companyBankId, "Reversal - Loan Document Charges", $docComment, "-", "credit", $sumOther, $default9->Idbank);
+                // default_9 DEBIT
+                $this->bankLogController->index($default9->Idbank, "Reversal - Loan Document Charges", $docComment, "-", "debit", $sumOther, $companyBankId);
+
+                // Neutralize income with compensating Expense
+                $reason = "Reversal of Other loan charges for loan number: ({$loan->Loan_No}), Customer name: ({$customer->First_Name} {$customer->Last_Name})";
+                $exp = new \App\Models\Expenses();
+                $exp->type       = "Expense";
+                $exp->reason     = $reason;
+                $exp->date       = date('Y-m-d');
+                $exp->amount     = $sumOther;
+                $exp->category_id= optional(tableWithBranch('income_category')->where('description','Other')->first())->id;
+                $exp->bank_id    = 1;
+                $exp->user_id    = $actorUserId;
+                $exp->branch_id  = $branchId;
+                $exp->save();
+            }
+
+            // Logs (customer + loan)
+            $custLogReq = new Request([
+                'customer_id'    => $loan->Customer_idCustomer,
+                'description'    => "Loan Deleted ({$loan->Loan_No})\nLoan Amount : ({$loan->Amount})",
+                'description_id' => $loanId,
+                'comment'        => ' ',
+                'type'           => 'Delete Loan',
+            ]);
+            $this->customerLogController->store($custLogReq);
+
+            $this->LoanLogController->index(
+                $loanId,
+                'Loan Delete',
+                $loanId,
+                'Loan Delete Reversal',
+                0, // Amount
+                0, // Panelty_Payment
+                0, // Interest_Payment
+                0, // Capital_Payment
+                0, // Savings_Payment
+                0, // Panelty_Balance
+                0, // Interest_Balance
+                0, // Capital_Balance
+                0, // Total_Pending_Balance
+                '0' // Status
+            );
+
+
+            $auditId = DB::table('loan_delete_audit')->insertGetId([
+                'loan_id'          => $loanId,
+                'branch_id'        => $branchId,
+                'deleted_by'       => $actorUserId,
+                'deleted_at'       => now(),
+                'loan_snapshot'    => json_encode($loan, JSON_UNESCAPED_UNICODE),
+                'related_snapshots'=> json_encode([
+                    'installments'                 => $installments,
+                    'loan_other_charges'           => $loanOtherCharges,
+                    'witnesses'                    => $witnesses,
+                    'loan_has_approval'            => $approvals,
+                    'loan_has_approval_checklist'  => $approvalChecklist,
+                    'saving_accounts'              => $savingAccounts,
+                    'saving_logs'                  => $savingLogsByAcc,
+                    'payments_before_undo'         => $paymentsBeforeUndo,   // << added
+                    'payments_after_undo'          => $paymentsAfterUndo,    // << added
+                    'customer'                     => $customer,
+                    'product'                      => $product,
+                ], JSON_UNESCAPED_UNICODE),
+                'reversal_metadata' => json_encode([
+                    'reversed_issue_loan'  => (bool) ($companyBankId && $default1),
+                    'reversed_doc_charges' => (bool) ($sumOther > 0 && $companyBankId && $default9),
+                    'company_bank_id'      => $companyBankId,
+                    'default1_bank_id'     => optional($default1)->Idbank,
+                    'default9_bank_id'     => optional($default9)->Idbank,
+                    'sum_other_charges'    => (float) $sumOther,
+                    'undone_payment_ids'   => $undonePaymentIds,             // << added
+                    'undone_payments_count'=> count($undonePaymentIds),      // << added
+                    'payments_undo_reason' => $undoReason,                   // << added
+                ], JSON_UNESCAPED_UNICODE),
+            ]);
+
+
+            // Delete dependents
+            foreach ($savingAccountIds as $sid) {
+                DB::table('Savings_Account_Log')->where('Saving_Acount_Id', $sid)->where('branch_id', $branchId)->delete();
+            }
+            DB::table('Customer_Saving_Accounts')->where('Loan_Id', $loanId)->where('branch_id', $branchId)->delete();
+            DB::table('loan_has_approval_checklist')->where('loan_id', $loanId)->where('branch_id', $branchId)->delete();
+            DB::table('loan_has_approval')->where('loan_id', $loanId)->where('branch_id', $branchId)->delete();
+            DB::table('witness')->where('Customer_Loan_idCustomer_Loan', $loanId)->where('branch_id', $branchId)->delete();
+            DB::table('witness')->where('Customer_Loan_idCustomer_Loan', $loanId)->where('branch_id', $branchId)->delete();
+            DB::table('loan_other_charges')->where('Customer_Loan_idCustomer_Loan', $loanId)->where('branch_id', $branchId)->delete();
+            DB::table('installments')->where('Customer_Loan_idCustomer_Loan', $loanId)->where('branch_id', $branchId)->delete();
+
+            DB::table('customer_loan')->where('idCustomer_Loan', $loanId)->where('branch_id', $branchId)->delete();
+
+            DB::commit();
+            return [true, null, ['audit_id' => $auditId]];
+
+        } catch (\Throwable $e) {
+            Log::info($e);
+            DB::rollBack();
+            return [false, $e->getMessage(), []];
+        }
+    }
+
+    public function delete_loan_requests(Request $request)
+    {
+        $branchId = (int) session('branch_id');
+
+        if (!Schema::hasTable('loan_delete_requests')) {
+            return back()->with('error', 'No delete requests table found.');
+        }
+
+        $status = $request->query('status');
+
+        $q = DB::table('loan_delete_requests as r')
+            ->leftJoin('customer_loan as l', 'r.loan_id', '=', 'l.idCustomer_Loan')
+            ->leftJoin('customer as c', 'l.Customer_idCustomer', '=', 'c.idCustomer')
+            ->leftJoin('user as u1', 'u1.id', '=', 'r.requested_by')
+            ->leftJoin('user as u2', 'u2.id', '=', 'r.approved_by')
+            ->select(
+                'r.*',
+                'l.Loan_No',
+                'l.Amount',
+                'c.First_Name', 'c.Last_Name',
+                DB::raw("u1.Full_Name as requester_name"),
+                DB::raw("u2.Full_Name as approver_name")
+            )
+            ->where('r.branch_id', $branchId);
+
+        if (in_array($status, ['PENDING','APPROVED','REJECTED'])) {
+            $q->where('r.status', $status);
+        }
+
+        if ($search = trim($request->query('search', ''))) {
+            $q->where(function ($x) use ($search) {
+                $x->where('l.Loan_No', 'like', "%{$search}%")
+                    ->orWhere('c.First_Name', 'like', "%{$search}%")
+                    ->orWhere('c.Last_Name', 'like', "%{$search}%");
+            });
+        }
+
+        $requests = $q->orderByDesc('r.id')->get();
+
+        foreach ($requests as $r) {
+            // ----- Context taken from loan_delete_requests.context -----
+            // Example (your data):
+            // {"Loan_No":"...","Amount":"40000","Customer_Id":3376,"Customer_Name":"...","Product":"..."}
+            $ctx = json_decode($r->context ?? '', true) ?: [];
+
+            // Fallbacks from context
+            $r->ctx_loan_no       = $ctx['Loan_No']        ?? null;
+            $r->ctx_amount        = $ctx['Amount']         ?? null;
+            $r->ctx_customer_name = $ctx['Customer_Name']  ?? null;  // <- use Customer_Name
+            $r->ctx_customer_id   = $ctx['Customer_Id']    ?? null;
+            $r->ctx_product       = $ctx['Product']        ?? null;
+
+            // Defaults for audit-based fallbacks
+            $r->snap_customer_no    = null;
+            $r->snap_customer_name  = null;
+            $r->snap_customer_phone = null;
+
+            // Payments summary (for modal)
+            $r->payments_summary = null;
+
+            if ($r->audit_id) {
+                $audit = DB::table('loan_delete_audit')->where('id', $r->audit_id)->first();
+                if ($audit) {
+                    $related = json_decode($audit->related_snapshots ?? '{}', true);
+
+                    // 1) Customer fallback from related_snapshots.customer
+                    // (only when joined customer name is missing AND context also didn't have it)
+                    if ((empty($r->First_Name) && empty($r->Last_Name)) && empty($r->ctx_customer_name)) {
+                        $cust = $related['customer'] ?? [];
+                        $r->snap_customer_no    = $cust['cus_number'] ?? null;
+                        $r->snap_customer_name  = trim(($cust['First_Name'] ?? '').' '.($cust['Last_Name'] ?? '')) ?: null;
+                        $r->snap_customer_phone = $cust['Contact_No'] ?? ($cust['Gua_contact'] ?? null);
+                    }
+
+                    // 2) Payments for modal
+                    $before = $related['payments_before_undo'] ?? [];
+                    if (!empty($before)) {
+                        $items = [];
+                        $total = 0.0;
+                        foreach ($before as $p) {
+                            $amt = (float) ($p['Amount'] ?? 0);
+                            $total += $amt;
+                            $items[] = [
+                                'id'     => $p['idCustomer_Payments'] ?? null,
+                                'date'   => $p['Date'] ?? '-',
+                                'amount' => $amt,
+                                'type'   => $p['Payment_type'] ?? '-',
+                                'user'   => $p['User_idUser'] ?? '-',
+                                'desc'   => $p['Description'] ?? '',
+                            ];
+                        }
+                        $r->payments_summary = [
+                            'count'  => count($items),
+                            'total'  => $total,
+                            'items'  => $items,
+                        ];
+                    }
+
+                    // 3) Ensure Loan_No/Amount exist from audit->loan_snapshot if still missing
+                    if (empty($r->Loan_No) || empty($r->Amount) || empty($r->ctx_loan_no) || empty($r->ctx_amount)) {
+                        $snap = json_decode($audit->loan_snapshot ?? '{}', true);
+                        $r->ctx_loan_no = $r->ctx_loan_no ?: ($snap['Loan_No'] ?? null);
+                        $r->ctx_amount  = $r->ctx_amount  ?: ($snap['Amount']  ?? null);
+                    }
+                }
+            }
+        }
+
+        $counts = DB::table('loan_delete_requests')
+            ->selectRaw("
+          SUM(status='PENDING') as pending_count,
+          SUM(status='APPROVED') as approved_count,
+          SUM(status='REJECTED') as rejected_count
+        ")
+            ->where('branch_id', $branchId)
+            ->first();
+
+        return view('pages.loan_delete_requests', compact('requests','counts','status','search'));
+    }
+
+
+
+
+
+    public function reject_destroy_loan(Request $request)
+    {
+        $request->validate(['request_id' => 'required|integer']);
+        $req = DB::table('loan_delete_requests')->where('id', $request->request_id)->first();
+        if (!$req) return response()->json(['error' => 'Request not found'], 404);
+        if ($req->status !== 'PENDING') return response()->json(['error' => 'Request is not pending'], 409);
+
+        DB::table('loan_delete_requests')->where('id', $req->id)->update([
+            'status'      => 'REJECTED',
+            'approved_by' => (int) session('userid'),
+            'approved_at' => now(),
+        ]);
+
+        return response()->json(['message' => 'Request rejected.'], 200);
+    }
+
+
+
 
 
 
