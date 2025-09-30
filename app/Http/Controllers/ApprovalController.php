@@ -336,6 +336,43 @@ class ApprovalController extends Controller
                 insertWithBranch('company_bank_has_log', $bankLogData);
             }
             
+            // Handle User Details Update (Type 102)
+            if ($approval->type == '102') {
+                $requestData = json_decode($approval->data, true);
+                $updateData = $requestData['update_data'];
+                $newBranches = $requestData['new_branches'];
+                $branchesChanged = $requestData['branches_changed'];
+                
+                $userId = $updateData['user_id'];
+                
+                // Update main user record
+                DB::table('user')
+                    ->where('id', $userId)
+                    ->update([
+                        'Epf_no' => $updateData['Epf_no'],
+                        'Designation' => $updateData['Designation'],
+                        'Nic' => $updateData['Nic'],
+                        'Full_Name' => $updateData['Full_Name'],
+                        'TP' => $updateData['TP'],
+                        'lending_officer' => $updateData['lending_officer'],
+                        'collector' => $updateData['collector'],
+                        'branch_id' => $updateData['branch_id'],
+                        'branch_access' => $updateData['branch_access'],
+                        'cashier' => $updateData['cashier'],
+                    ]);
+                
+                // Sync branches if changed
+                if ($branchesChanged) {
+                    DB::table('user_has_branches')->where('user_id', $userId)->delete();
+                    foreach ($newBranches as $branch_id) {
+                        DB::table('user_has_branches')->insert([
+                            'user_id' => $userId,
+                            'branch_id' => (int)$branch_id,
+                        ]);
+                    }
+                }
+            }
+            
             // Update approval status
             DB::table('approval_request')
                 ->where('id', $id)

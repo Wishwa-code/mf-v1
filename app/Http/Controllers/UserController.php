@@ -1421,39 +1421,41 @@ class UserController extends Controller
         // Determine primary branch: first of new list if present, else keep current
         $primaryBranch = count($newBranches) > 0 ? (int)$newBranches[0] : (int)$user->branch_id;
 
-        // Update main user record
-        $updated = DB::table('user')
-            ->where('email', $request->email)
-            ->update([
-                'Epf_no' => $request->epf_no,
-                'Designation' => $request->desi,
-                'Nic' => $request->nic,
-                'Full_Name' => $request->full_name,
-                'TP' => $request->tp,
-                'lending_officer' => $request->boolean('editLendingOfficer') ? 1 : 0,
-                'collector' => $request->boolean('editCollectingOfficer') ? 1 : 0,
-                'branch_id' => $primaryBranch,
-                'branch_access' => $request->boolean('branch_access') ? 1 : 0,
-                'cashier' => $request->boolean('editcashier') ? 1 : 0,
-            ]);
+        // Store update data for approval
+        $updateData = [
+            'user_id' => $user->id,
+            'email' => $request->email,
+            'Epf_no' => $request->epf_no,
+            'Designation' => $request->desi,
+            'Nic' => $request->nic,
+            'Full_Name' => $request->full_name,
+            'TP' => $request->tp,
+            'lending_officer' => $request->boolean('editLendingOfficer') ? 1 : 0,
+            'collector' => $request->boolean('editCollectingOfficer') ? 1 : 0,
+            'branch_id' => $primaryBranch,
+            'branch_access' => $request->boolean('branch_access') ? 1 : 0,
+            'cashier' => $request->boolean('editcashier') ? 1 : 0,
+        ];
 
-        // Sync branches only if changed
-        if ($branchesChanged) {
-            DB::table('user_has_branches')->where('user_id', $user->id)->delete();
-            foreach ($newBranches as $branch_id) {
-                DB::table('user_has_branches')->insert([
-                    'user_id' => $user->id,
-                    'branch_id' => (int)$branch_id,
-                ]);
-            }
-        }
+        $requestData = [
+            'update_data' => $updateData,
+            'new_branches' => $newBranches,
+            'branches_changed' => $branchesChanged
+        ];
 
-        // Consider operation successful if either main record updated or branches changed
-        if ($updated > 0 || $branchesChanged) {
-            return response()->json(['success' => true]);
-        }
+        // Create approval request
+        DB::table('approval_request')->insert([
+            'type' => '102',
+            'typeid' => $user->id,
+            'description' => 'User Details Update: ' . $request->full_name . ' (' . $request->email . ')',
+            'data' => json_encode($requestData),
+            'userid' => session('userid'),
+            'branch_id' => session('branch_id'),
+            'data_time' => now(),
+            'status' => 0
+        ]);
 
-        return response()->json(['success' => false, 'message' => 'No changes detected']);
+        return response()->json(['success' => true, 'message' => 'User update request sent for approval!']);
     }
 
     public function resetPassword($id,Request $request)
