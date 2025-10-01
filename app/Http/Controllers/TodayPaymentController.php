@@ -488,7 +488,6 @@ class TodayPaymentController extends Controller
 
 
 
-
         $loan = $loanQuery->get();
 
 
