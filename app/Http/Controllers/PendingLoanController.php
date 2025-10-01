@@ -312,7 +312,7 @@ class PendingLoanController extends Controller
             $userController = new UserController();
 
             // Call the create_panelty function
-            $userController->create_panelty();
+            // $userController->create_panelty();
 
             // Check if any rows were affected
             if ($affected) {
