@@ -104,7 +104,9 @@ class TodayPaymentController extends Controller
         }
         $loanQuery->orderBy('customer_loan.idCustomer_Loan', 'asc'); // Add this line to order by loan number
         $loan = $loanQuery->get();
-        return view('pages.BulkPayment', compact('group','loan', 'route', 'center', 'customers', 'company'));
+        $sheetKey  = 'bp';
+        $order_by  = DB::table('app_settings')->where('key', "repayment_order_{$sheetKey}")->value('value') ?? 'name_asc';
+        return view('pages.BulkPayment', compact('group','loan', 'route', 'center', 'customers', 'company','sheetKey', 'order_by'));
     }
 
     /**
@@ -508,6 +510,11 @@ class TodayPaymentController extends Controller
         $perPage        = (int) ($request->get('per_page', 10));
         $includeTotals  = (bool) $request->get('include_totals', false); // ← only compute when true
 
+
+
+        // 🔑 Saved order (sheet-scoped for Bulk Payments)
+        $orderBy = DB::table('app_settings')->where('key', 'repayment_order_bp')->value('value') ?? 'name_asc';
+
         // Collector & bank
         $collector = '0';
         $collector_val = DB::table('user')->where('id', $user_id)->first();
@@ -649,6 +656,35 @@ class TodayPaymentController extends Controller
         if ($loan_number != '0') {
             $loanQuery->where('customer_loan.idCustomer_Loan', $loan_number);
         }
+
+     
+
+        // ✅ Apply saved ordering BEFORE paginate()
+        switch ($orderBy) {
+            case 'name_desc':
+                $loanQuery->orderByRaw("CONCAT(customer.First_Name, ' ', customer.Last_Name) DESC");
+                break;
+
+            case 'loan_asc':
+                $loanQuery->orderBy('customer_loan.Loan_No', 'ASC');
+                break;
+            case 'loan_desc':
+                $loanQuery->orderBy('customer_loan.Loan_No', 'DESC');
+                break;
+
+            case 'create_asc':
+                $loanQuery->orderBy('customer_loan.idCustomer_Loan', 'ASC');
+                break;
+            case 'create_desc':
+                $loanQuery->orderBy('customer_loan.idCustomer_Loan', 'DESC');
+                break;
+
+            case 'name_asc':
+            default:
+                $loanQuery->orderByRaw("CONCAT(customer.First_Name, ' ', customer.Last_Name) ASC");
+                break;
+        }
+
 
         // ---- Paginate (distinct on PK) ----
         $loanQuery->distinct('customer_loan.idCustomer_Loan');
