@@ -20,26 +20,37 @@ class RoutesController
     public function index(Request $request)
     {
         $branchId = (int) $request->attributes->get('branch_id');
+        $user     = $request->user();
+        $userId   = (int) $user->id;
+        $collectorFlag = (int) ($user->collector ?? 0);
 
-        $routes = DB::table('route')
-            ->where('branch_id', $branchId)
+        // Base query (branch-wise)
+        $q = DB::table('route as r')
+            ->where('r.branch_id', $branchId)
             ->select([
-                'id_route',
-                'name',
-                'root_code',
-                'id_officer',
-                'branch_id',
-                'collection_type',
-                'collection_date',
-            ])
-            ->orderBy('name', 'asc') // or ->orderBy('id_route', 'asc')
-            ->get();
+                'r.id_route',
+                'r.name',
+                'r.root_code',
+                'r.id_officer',
+                'r.branch_id',
+                'r.collection_type',
+                'r.collection_date',
+            ]);
+
+        // 🔒 If collector, only show routes assigned to this collector
+        if ($collectorFlag === 1) {
+            $q->join('collector_has_route as chr', 'chr.route_id', '=', 'r.id_route')
+                ->where('chr.collector_id', $userId);
+        }
+
+        $routes = $q->orderBy('r.name', 'asc')->get();
 
         return response()->json([
             'status' => 'success',
             'routes' => $routes,
         ], 200);
     }
+
 
 
     /**
