@@ -511,7 +511,10 @@
                             </div>
                             <input type="hidden" id="loan_balance"  class="form-control">
                             <div class="col-sm-8">
-                                <input type="date" id="payment_date" value="{{ date('Y-m-d') }}" class="form-control">
+                                <input type="date" id="payment_date"
+                                       value="{{ date('Y-m-d') }}" class="form-control"
+                                       inputmode="none" onkeydown="return false" onpaste="return false">
+
                             </div>
                         </div>
 
@@ -726,7 +729,10 @@
                             <div class="col-md-6">
                                 <div>
                                     <label for="payment_date_2" class="form-label fw-bold">Payment Date:</label>
-                                    <input type="date" id="payment_date_2" value="{{ date('Y-m-d') }}" class="form-control">
+                                    <input type="date" id="payment_date_2"
+                                           value="{{ date('Y-m-d') }}" class="form-control"
+                                           inputmode="none" onkeydown="return false" onpaste="return false" >
+
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -1161,14 +1167,12 @@
     <script src="../JS/today_payment.js?n=29"></script>
 
     <script>
-        /*** Payment Date Limits (respects APP_SETTINGS.payment_backdate) ***/
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             const ids = ["payment_date", "payment_date_2"];
             const allowBackdate = window.APP_SETTINGS?.payment_backdate === "enabled";
-
             const today = new Date().toISOString().split("T")[0];
-            let minDate = today;
 
+            let minDate = today;
             if (allowBackdate) {
                 const lastYear = new Date();
                 lastYear.setFullYear(lastYear.getFullYear() - 1);
@@ -1178,11 +1182,34 @@
             ids.forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;
+
                 el.setAttribute("max", today);
                 el.setAttribute("min", minDate);
+
+                // ✅ Always disable typing/pasting (regardless of backdate)
+                el.addEventListener('keydown', e => e.preventDefault());
+                el.addEventListener('keypress', e => e.preventDefault());
+                el.addEventListener('keyup', e => e.preventDefault());
+                el.addEventListener('paste', e => e.preventDefault());
+                el.addEventListener('input', e => e.preventDefault());
+                el.setAttribute("inputmode", "none"); // hides keyboard on mobile
+
+                // ✅ Allow picker to open normally
+                el.addEventListener('focus', () => {
+                    if (typeof el.showPicker === "function") el.showPicker();
+                });
+
+                // ✅ Clamp to min/max if changed through picker
+                el.addEventListener('change', () => {
+                    if (!el.value) return;
+                    if (el.value > today)   el.value = today;
+                    if (el.value < minDate) el.value = minDate;
+                });
             });
         });
     </script>
+
+
 
     <script>
         // collectorId from session
