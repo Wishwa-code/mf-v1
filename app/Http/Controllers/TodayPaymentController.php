@@ -657,7 +657,7 @@ class TodayPaymentController extends Controller
             $loanQuery->where('customer_loan.idCustomer_Loan', $loan_number);
         }
 
-     
+
 
         // ✅ Apply saved ordering BEFORE paginate()
         switch ($orderBy) {
