@@ -301,6 +301,14 @@
 
                 {{-- Summary Cards --}}
                 @php
+                    // Make sure these vars exist in the controller or set 0 defaults
+                    $todayinstallment = $todayinstallment ?? 0;
+                    $arrease          = $arrease ?? 0;
+                    $checqueamount    = $checqueamount ?? 0;
+                    $todaycollected   = $todaycollected ?? 0;
+                    $penaltyBalance   = $penaltyBalance ?? 0;
+                    $totalOutstanding   = $totalOutstanding ?? 0;
+
                     $extra = [
                         ['title' => 'Today Installment', 'value' => $todayinstallment, 'color' => '#1e3c72'],
                         ['title' => 'Total Arrears', 'value' => $arrease, 'color' => '#ef473a'],
@@ -341,7 +349,7 @@
                             </div>
                         @endif
                     </div>
-                @endforeach
+                    @endforeach
 
                 {{-- Combined Not-Paid Card --}}
                 <div class="col-md-6 col-lg-5 mb-4">
@@ -770,6 +778,7 @@
                 decimalPlaces: 2
             });
             if (!weeklyAmountAnim.error) weeklyAmountAnim.start();
+
 
             // Monthly Area Chart
             new ApexCharts(document.querySelector("#monthly-revenue-chart"), {

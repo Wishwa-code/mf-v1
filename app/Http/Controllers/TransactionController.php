@@ -153,7 +153,13 @@ class TransactionController extends Controller
     {
         $center = tableWithBranch('center')->get();
         $group = tableWithBranch('customer_group')->get();
-
+        // 🔑 Sheet-specific key for this page
+        $sheetKey = 'rs9'; // change the alias as you like
+        $order_by = DB::table('app_settings')->where('key', 'repayment_order')->value('value') ?? 'name_asc';
+        $empty_row_count=(int) (
+        DB::table('app_settings')->where('key', "empty_row_count_{$sheetKey}")->value('value')
+        ?? 5
+    );
         // Check if $center is empty
         if ($center->isEmpty()) {
             // Handle the case when the center table has no values
@@ -235,6 +241,28 @@ class TransactionController extends Controller
             $loanQuery->where('customer_group.idCustomer_Group', '=', $group_details);
         }
 
+        // ✅ Apply sheet-scoped order
+        switch ($order_by) {
+            case 'name_desc':
+                $loanQuery->orderByRaw("CONCAT(customer.First_Name, ' ', customer.Last_Name) DESC");
+                break;
+            case 'loan_asc':
+                $loanQuery->orderBy('customer_loan.Loan_No', 'ASC');
+                break;
+            case 'loan_issue':
+                $loanQuery->orderBy('customer_loan.idCustomer_Loan', 'ASC');
+                break;
+            case 'cus_number':
+                $loanQuery->orderBy('customer.cus_number', 'ASC');
+                break;
+            case 'name_asc':
+            default:
+                $loanQuery->orderByRaw("CONCAT(customer.First_Name, ' ', customer.Last_Name) ASC");
+                break;
+        }
+
+
+
         $loan = $loanQuery->get();
 
         // Group data by 'group_name'
@@ -271,10 +299,10 @@ class TransactionController extends Controller
 
         // Read app setting for how to display member names (same as dailyreport)
         $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
-    // Read app setting for empty rows per group on Repayment Sheet 09
-    $empty_row_count = (int) (DB::table('app_settings')->where('key', 'empty_row_count')->value('value') ?? 5);
+        // Read app setting for empty rows per group on Repayment Sheet 09
 
-    return view('pages.repaymntseet9', compact('center','group', 'grouped_loans','center_details','group_details','name_mode','empty_row_count'));
+
+        return view('pages.repaymntseet9', compact('sheetKey','order_by','center','group', 'grouped_loans','center_details','group_details','name_mode','empty_row_count'));
     }
 
 
@@ -946,7 +974,13 @@ class TransactionController extends Controller
 
     public function DandDRepayment(Request $request){
         $center = tableWithBranch('center')->get();
+        // 🔑 Sheet-specific key for this page
+        $sheetKey = 'rs7'; // change the alias as you like
 
+        // ✅ Read ONLY the sheet-scoped order setting (default: name_asc)
+        $order_by = DB::table('app_settings')
+            ->where('key', "repayment_order_{$sheetKey}")
+            ->value('value') ?? 'name_asc';
         // Check if $center is empty
         if ($center->isEmpty()) {
             // Handle the case when the center table has no values
@@ -1030,6 +1064,27 @@ class TransactionController extends Controller
             $loanQuery->where('center.idCenter', '=', $center_details);
         }
 
+        // ✅ Apply the sheet-scoped order
+        switch ($order_by) {
+            case 'name_desc':
+                $loanQuery->orderByRaw("CONCAT(customer.First_Name, ' ', customer.Last_Name) DESC");
+                break;
+            case 'loan_asc':
+                $loanQuery->orderBy('customer_loan.Loan_No', 'ASC');
+                break;
+            case 'loan_issue':
+                $loanQuery->orderBy('customer_loan.idCustomer_Loan', 'ASC');
+                break;
+            case 'cus_number':
+                $loanQuery->orderBy('customer.cus_number', 'ASC');
+                break;
+            case 'name_asc':
+            default:
+                $loanQuery->orderByRaw("CONCAT(customer.First_Name, ' ', customer.Last_Name) ASC");
+                break;
+        }
+
+
         $loan = $loanQuery->get();
         $loan = $loan->transform(function ($item) {
             $parts = explode(' ', trim($item->customer_name));
@@ -1053,7 +1108,7 @@ class TransactionController extends Controller
         $grouped_loans = $loan->groupBy('group_name')->sortKeys();
 
 
-    $selected_center = $center->firstWhere('idCenter', $center_details);
+        $selected_center = $center->firstWhere('idCenter', $center_details);
 
         $center_no = $selected_center->No ?? 'N/A';
         $center_name = $selected_center->Name ?? 'N/A';
@@ -1063,9 +1118,10 @@ class TransactionController extends Controller
         // Read app setting for how to display member names
         $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
 
+        // 👉 Pass $sheetKey so the view/JS can save to repayment_order_<sheetKey>
         return view('pages.DandDRepayment', compact(
-            'center', 'grouped_loans', 'center_details',
-            'center_no', 'center_name', 'printedBy', 'printedAt', 'name_mode'
+            'order_by','sheetKey','center','grouped_loans','center_details',
+            'center_no','center_name','printedBy','printedAt','name_mode'
         ));
     }
 

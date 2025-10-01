@@ -193,18 +193,63 @@
                         </div>
                         <hr>
                         <div class="row mb-3">
-                            <div class="col-12">
-                                <button id="portraitPrint" class="btn btn-primary"><i class="bi bi-printer"></i> Portrait Print</button>
-                                <button id="landscapePrint" class="btn btn-secondary"><i class="bi bi-printer"></i> Landscape Print</button>
-                                <button id="downloadExcel" class="btn btn-success"><i class="bi bi-file-earmark-excel"></i> Download Excel</button>
-                                <div class="d-inline-flex align-items-center gap-2 flex-wrap ms-2 mt-2">
+                            <div class="col-12 d-flex flex-wrap align-items-center gap-3">
+
+                                <!-- Print & Export Buttons -->
+                                <button id="portraitPrint" class="btn btn-primary">
+                                    <i class="bi bi-printer"></i> Portrait Print
+                                </button>
+                                <button id="landscapePrint" class="btn btn-secondary">
+                                    <i class="bi bi-printer"></i> Landscape Print
+                                </button>
+                                <button id="downloadExcel" class="btn btn-success">
+                                    <i class="bi bi-file-earmark-excel"></i> Download Excel
+                                </button>
+
+                                <!-- Settings Row: Empty Rows + Order By + Update -->
+                                <div class="d-inline-flex align-items-center flex-wrap gap-2 ms-2 mt-2">
+
+                                    <!-- 🧾 Empty Rows -->
                                     <label for="empty_row_count_local" class="form-label mb-0">Empty rows per group:</label>
-                                    <input type="number" id="empty_row_count_local" class="form-control" style="width: 100px;" min="0" max="100" value="{{ $empty_row_count ?? 5 }}" />
-                                    <button type="button" id="btnUpdateEmptyRowCountLocal" class="btn btn-outline-secondary">Update</button>
+                                    <input type="number" id="empty_row_count_local" class="form-control"
+                                           style="width: 100px;" min="0" max="100"
+                                           value="{{ $empty_row_count ?? 5 }}" />
+
+                                    <!-- 🔽 Order By -->
+                                    <label for="order_by" class="form-label mb-0 ms-3">Order By:</label>
+                                    <input type="hidden" id="repayment_sheet_key" value="rs9"> {{-- this page = Repayment Sheet 9 --}}
+
+                                    <select id="order_by" class="form-select" style="width: 200px;">
+                                        <option value="name_asc" {{ $order_by == 'name_asc' ? 'selected' : '' }}>
+                                            Customer Name Asc
+                                        </option>
+                                        <option value="name_desc" {{ $order_by == 'name_desc' ? 'selected' : '' }}>
+                                            Customer Name Desc
+                                        </option>
+                                        <option value="loan_asc" {{ $order_by == 'loan_asc' ? 'selected' : '' }}>
+                                            Loan Number Asc
+                                        </option>
+                                        <option value="loan_issue" {{ $order_by == 'loan_issue' ? 'selected' : '' }}>
+                                            Loan Issue Order
+                                        </option>
+                                        <option value="cus_number" {{ $order_by == 'cus_number' ? 'selected' : '' }}>
+                                            Customer Number Order
+                                        </option>
+                                    </select>
+
+
+                                    <!-- 🔘 Update Button -->
+                                    <button type="button" id="btnUpdateEmptyRowCountLocal" class="btn btn-outline-secondary ms-2">
+                                        Update
+                                    </button>
+
                                     <small class="text-muted">(saved to Settings)</small>
                                 </div>
                             </div>
                         </div>
+
+
+
 
                         <!-- Repayment table -->
                         <div class="table-responsive">
@@ -434,29 +479,38 @@
                 XLSX.writeFile(wb, `Repayment_Report_${new Date().toLocaleString('default', { month: 'long' })}.xlsx`);
             });
 
-            // Update empty_row_count setting from this page
             $('#btnUpdateEmptyRowCountLocal').on('click', function () {
-                const value = parseInt($('#empty_row_count_local').val(), 10);
-                if (isNaN(value) || value < 0 || value > 100) {
+                const emptyRows = parseInt($('#empty_row_count_local').val(), 10);
+                const orderBy   = $('#order_by').val();
+                const sheetKey  = $('#repayment_sheet_key').val(); // e.g., "rs9"
+
+                if (isNaN(emptyRows) || emptyRows < 0 || emptyRows > 100) {
                     alert('Empty row count must be between 0 and 100.');
                     return;
                 }
 
-                const token = $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').first().val();
+                const token   = $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').first().val();
+                const headers = { 'X-CSRF-TOKEN': token };
 
-                $.ajax({
+                const req1 = $.ajax({
                     type: 'POST',
                     url: '/settings/upsert',
-                    headers: { 'X-CSRF-TOKEN': token },
-                    data: { key: 'empty_row_count', value: value },
-                    success: function () {
-                        // Reload to re-render with new number of empty rows
-                        location.reload();
-                    },
-                    error: function (xhr) {
-                        const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to update setting';
-                        alert(msg);
-                    }
+                    headers,
+                    data: { key: `empty_row_count_${sheetKey}`, value: emptyRows }
+                });
+
+                const req2 = $.ajax({
+                    type: 'POST',
+                    url: '/settings/upsert',
+                    headers,
+                    data: { key: `repayment_order_${sheetKey}`, value: orderBy }
+                });
+
+                $.when(req1, req2).done(function () {
+                    location.reload();
+                }).fail(function (xhr) {
+                    const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to update setting(s)';
+                    alert(msg);
                 });
             });
 
