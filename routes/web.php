@@ -790,3 +790,5 @@ Route::get('/loan_delete_requests', [PendingLoanController::class, 'delete_loan_
 Route::post('/loan_delete_requests/reject', [PendingLoanController::class, 'reject_destroy_loan'])
     ->name('loan.reject_destroy_loan');
 
+
+Route::get('/get-groups-by-center/{centerId}','\App\Http\Controllers\CenterController@getGroupsByCenter')->name('center.getGroupsByCenter');
