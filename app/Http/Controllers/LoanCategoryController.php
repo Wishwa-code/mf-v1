@@ -28,6 +28,15 @@ class LoanCategoryController extends Controller
             );
         }
 
+        if (!Schema::hasColumn('other_charges', 'deduction_type')) {
+            DB::statement(
+                "ALTER TABLE `other_charges`
+         ADD COLUMN `deduction_type` VARCHAR(45) NOT NULL
+         DEFAULT 'On Loan Disbursement'"
+            );
+        }
+
+
         $loan_category = tableWithBranch('loan_category')->get();
         return view('pages.Product', compact('loan_category'));
     }
@@ -63,6 +72,14 @@ class LoanCategoryController extends Controller
                 "ALTER TABLE `loan_category`
          ADD COLUMN `collection_date_type` VARCHAR(45) NOT NULL
          DEFAULT 'same_as_installment'"
+            );
+        }
+
+        if (!Schema::hasColumn('other_charges', 'deduction_type')) {
+            DB::statement(
+                "ALTER TABLE `other_charges`
+         ADD COLUMN `deduction_type` VARCHAR(45) NOT NULL
+         DEFAULT 'On Loan Disbursement'"
             );
         }
 
@@ -111,6 +128,7 @@ class LoanCategoryController extends Controller
                     'Amount' => $row[2],
                     'charge_type' => $row[1],
                     'Loan_Category_idLoan_Category' => $categoryId,
+                    'deduction_type' => $row[3],
                 ];
 
 // Insert the data with branch-specific logic
@@ -392,6 +410,7 @@ class LoanCategoryController extends Controller
                     'Description' => $row[0],
                     'charge_type' => $row[1],
                     'Amount' => $row[2],
+                    'deduction_type' => $row[3],
                     'Loan_Category_idLoan_Category' => $id,
                     'branch_id'=>session('branch_id')
                 ]);
