@@ -315,6 +315,7 @@ class TodayPaymentController extends Controller
                 ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
                 ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
                 ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
+                ->leftJoin(DB::raw('(SELECT cp1.Customer_Loan_idCustomer_Loan, cp1.Date as Last_Payment_Date, cp1.Amount as Last_Payment_Amount FROM customer_payments cp1 INNER JOIN (SELECT Customer_Loan_idCustomer_Loan, MAX(Date) as MaxDate FROM customer_payments GROUP BY Customer_Loan_idCustomer_Loan) cp2 ON cp1.Customer_Loan_idCustomer_Loan = cp2.Customer_Loan_idCustomer_Loan AND cp1.Date = cp2.MaxDate) as last_payment'), 'customer_loan.idCustomer_Loan', '=', 'last_payment.Customer_Loan_idCustomer_Loan')
                 ->where('customer_loan.Status', '=', '0')
                 ->select(
                     'customer.idCustomer',
@@ -339,7 +340,9 @@ class TodayPaymentController extends Controller
                     DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date <= CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as Installment_Balance'),
                     DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date <= CURDATE() THEN installments.Panalty_Balance ELSE 0 END), 2) as Panalty_Balance'),
                     DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date < CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as arrears'),
-                    DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date <= CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as Total_Balance')
+                    DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date <= CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as Total_Balance'),
+                    DB::raw('IFNULL(last_payment.Last_Payment_Date, "-") as Last_Payment_Date'),
+                    DB::raw('IFNULL(last_payment.Last_Payment_Amount, 0) as Last_Payment_Amount')
                 )
                 ->groupBy(
                     'customer.idCustomer',
@@ -357,9 +360,10 @@ class TodayPaymentController extends Controller
                     'customer_loan.Installment_Count',
                     'customer_loan.Vehicle_No',
                     'customer_loan.idCustomer_Loan',
-                    'customer_loan.capital_balance',
                     'customer_loan.Installment_Amount',
-                    'subquery.group_name'
+                    'subquery.group_name',
+                    'last_payment.Last_Payment_Date',
+                    'last_payment.Last_Payment_Amount'
                 );
         }else{
             $loanQuery = tableWithBranch('installments','installments')
@@ -374,6 +378,7 @@ class TodayPaymentController extends Controller
                 ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
                 ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
                 ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
+                ->leftJoin(DB::raw('(SELECT cp1.Customer_Loan_idCustomer_Loan, cp1.Date as Last_Payment_Date, cp1.Amount as Last_Payment_Amount FROM customer_payments cp1 INNER JOIN (SELECT Customer_Loan_idCustomer_Loan, MAX(Date) as MaxDate FROM customer_payments GROUP BY Customer_Loan_idCustomer_Loan) cp2 ON cp1.Customer_Loan_idCustomer_Loan = cp2.Customer_Loan_idCustomer_Loan AND cp1.Date = cp2.MaxDate) as last_payment'), 'customer_loan.idCustomer_Loan', '=', 'last_payment.Customer_Loan_idCustomer_Loan')
                 ->where('installments.Status', '=', '0')
                 ->where('customer_loan.Status', '=', '0')
                 ->select(
@@ -398,7 +403,9 @@ class TodayPaymentController extends Controller
                     DB::raw('ROUND(SUM(installments.Total_Balance), 2) as Installment_Balance'),
                     DB::raw('ROUND(SUM(installments.Panalty_Balance), 2) as Panalty_Balance'),
                     DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date < CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as arrears'),
-                    DB::raw('ROUND(SUM(installments.Total_Balance), 2) as Total_Balance')
+                    DB::raw('ROUND(SUM(installments.Total_Balance), 2) as Total_Balance'),
+                    DB::raw('IFNULL(last_payment.Last_Payment_Date, "-") as Last_Payment_Date'),
+                    DB::raw('IFNULL(last_payment.Last_Payment_Amount, 0) as Last_Payment_Amount')
                 )
                 ->groupBy(
                     'customer.idCustomer',
@@ -416,7 +423,9 @@ class TodayPaymentController extends Controller
                     'customer_loan.Vehicle_No',
                     'customer_loan.Installment_Amount',
                     'customer_loan.idCustomer_Loan',
-                    'subquery.group_name'
+                    'subquery.group_name',
+                    'last_payment.Last_Payment_Date',
+                    'last_payment.Last_Payment_Amount'
                 );
         }
 
