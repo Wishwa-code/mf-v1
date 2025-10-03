@@ -2719,6 +2719,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
         $customer = $request->customer;
         $user = $request->user;
         $loan_number_search = $request->loan_number_search;
+        $payment_type = $request->payment_type;
 
         $loanQuery = tableWithBranch('customer_payments','customer_payments')
             ->join('customer_loan', 'customer_payments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
@@ -2763,6 +2764,10 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
 
         if ($user != '0') {
             $loanQuery->where('user.id', '=', $user);
+        }
+
+        if ($payment_type != '0') {
+            $loanQuery->where('customer_payments.Payment_type', '=', $payment_type);
         }
         $loanQuery->whereBetween('customer_payments.date', [$date, $date_to]);
 

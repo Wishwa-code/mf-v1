@@ -296,6 +296,19 @@
                                 </select>
                             </div>
 
+                            <!-- Payment Type Filter -->
+                            <div class="col-lg-3 mb-3">
+                                <label for="payment_type" class="form-label">Payment Type</label>
+                                <select class="form-control select2" id="payment_type">
+                                    <option value="0">All</option>
+                                    <option value="Cash">Cash</option>
+                                    <option value="Bank Deposit">Bank Deposit</option>
+                                    <option value="Cheque">Cheque</option>
+                                    <option value="Collector">Collector</option>
+                                    <option value="Cashier">Cashier</option>
+                                </select>
+                            </div>
+
                             <!-- Search Box -->
                             <div class="col-lg-3 mb-3">
                                 <label for="simpleinput" class="form-label">Loan Number</label>
