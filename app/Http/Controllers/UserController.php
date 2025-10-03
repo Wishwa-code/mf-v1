@@ -466,11 +466,11 @@ class UserController extends Controller
         $totalBalanceUntil = $loanQuery_2->Total_Balance_until;
         $totalBalanceUntil=$totalBalanceUntil+$checqueamount;
         
-        // Total Outstanding: capital balance + interest balance where status = 0
+        // Total Outstanding: using Total_Balance field (includes capital + interest + penalty + saving)
         $totalOutstanding = tableWithBranch('installments','installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->select(
-                DB::raw('SUM(installments.capital_balance + installments.Interest_Balance) as total_outstanding')
+                DB::raw('SUM(installments.Total_Balance) as total_outstanding')
             )
             ->where('customer_loan.Status', '=', '0')
             ->first();
@@ -646,13 +646,10 @@ class UserController extends Controller
                 DB::raw('CONCAT(customer.First_Name, " ", customer.Last_Name) as customer_name'),
                 'customer_loan.Amount as capital_amount',
                 'customer_loan.Total_Loan_Amount as full_loan_amount',
-                DB::raw('SUM(installments.capital_balance + installments.Interest_Balance) as total_outstanding')
+                DB::raw('SUM(installments.Total_Balance) as total_outstanding')
             )
             ->where('customer_loan.Status', '=', '0')
-            ->where(function($query) {
-                $query->where('installments.capital_balance', '>', 0)
-                      ->orWhere('installments.Interest_Balance', '>', 0);
-            })
+            ->where('installments.Total_Balance', '>', 0)
             ->groupBy('customer_loan.idCustomer_Loan', 'customer.idCustomer', 'customer.First_Name', 'customer.Last_Name', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount')
             ->havingRaw('total_outstanding > 0')
             ->orderBy('total_outstanding', 'DESC')
