@@ -320,8 +320,69 @@ class UserController extends Controller
     public function showdashboard(Store $session){
 
 
-        if (!auth()->check()) {
+        if (!Auth::check()) {
             return redirect()->route('login')->with("error", "Session expired! Please Login");
+        }
+
+        // Head Office aggregated dashboard: show all branches overview
+        if ((int)session('branch_id') === -1) {
+            // Fetch active branches excluding head office itself
+            $branches = DB::table('branch')->where('status',1)->where('branch_id','!=',-1)->get();
+
+            $branchMetrics = [];
+            foreach ($branches as $b) {
+                $branchId = $b->branch_id;
+                // Helper closure forcing branch scope manually
+                $scoped = function($table) use ($branchId) {
+                    return DB::table($table)->where($table.'.branch_id',$branchId);
+                };
+
+                $customers = $scoped('customer')->count();
+                $loanPendingQ = $scoped('customer_loan')->where('Status','-1');
+                $loanCurrentQ = $scoped('customer_loan')->where('Status','0');
+                $loanSettledQ = $scoped('customer_loan')->where('Status','1');
+                $pendingCount = $loanPendingQ->count();
+                $pendingAmount = $scoped('customer_loan')->where('Status','-1')->sum('Amount');
+                $currentCount = $loanCurrentQ->count();
+                $currentAmount = $scoped('customer_loan')->where('Status','0')->sum('Amount');
+                $settledCount = $loanSettledQ->count();
+                $portfolio = $scoped('installments')->sum('capital_balance');
+                $todayInstallment = DB::table('installments')
+                    ->join('customer_loan','installments.Customer_Loan_idCustomer_Loan','=','customer_loan.idCustomer_Loan')
+                    ->where('installments.branch_id',$branchId)
+                    ->where('customer_loan.branch_id',$branchId)
+                    ->whereDate('installments.Installment_Date',date('Y-m-d'))
+                    ->where('customer_loan.Status','0')
+                    ->sum('installments.Total_Balance');
+                $todayCollected = $scoped('customer_payments')->where('Date',date('Y-m-d'))->sum('Amount');
+                // arrears: overdue installments (date < today) still active
+                $arrears = DB::table('installments')
+                    ->join('customer_loan','installments.Customer_Loan_idCustomer_Loan','=','customer_loan.idCustomer_Loan')
+                    ->where('installments.branch_id',$branchId)
+                    ->where('customer_loan.branch_id',$branchId)
+                    ->where('customer_loan.Status','0')
+                    ->whereDate('installments.Installment_Date','<',date('Y-m-d'))
+                    ->sum('installments.Total_Balance');
+
+                $branchMetrics[] = [
+                    'id' => $branchId,
+                    'name' => $b->Name,
+                    'customers' => $customers,
+                    'pending_loans_count' => $pendingCount,
+                    'pending_loans_amount' => (float)$pendingAmount,
+                    'current_loans_count' => $currentCount,
+                    'current_loans_amount' => (float)$currentAmount,
+                    'settled_loans_count' => $settledCount,
+                    'portfolio' => (float)$portfolio,
+                    'today_installment' => (float)$todayInstallment,
+                    'today_collected' => (float)$todayCollected,
+                    'arrears' => (float)$arrears,
+                ];
+            }
+
+            return view('ho-dashboard', [
+                'branchMetrics' => $branchMetrics,
+            ]);
         }
 
         if (!Schema::hasColumn('installments', 'Panelty_count')) {
@@ -371,7 +432,7 @@ class UserController extends Controller
 
 
         // Call to the penalty creation function
-        $this->create_panelty();
+        // $this->create_panelty();
 
 
         $customerCount = tableWithBranch('customer')->count();
@@ -382,6 +443,16 @@ class UserController extends Controller
         $setteled_loan_Count = tableWithBranch('customer_loan')->where('Status','=','1')->count();
         $deleted_loan_Count = tableWithBranch('customer_loan')->where('Status','=','-2')->count();
         $setteled_loan_current_Amount = tableWithBranch('customer_loan')->where('Status','=','1')->sum('Amount');
+        $portfolio = tableWithBranch('installments')->sum('capital_balance');
+
+        // Current month lending amount - from 1st of current month to today
+        $currentMonthStart = date('Y-m-01'); // First day of current month
+        $today = date('Y-m-d');
+        $currentMonthLending = tableWithBranch('customer_loan')
+            ->whereBetween('Date_Time', [$currentMonthStart, $today])
+            ->where('Status', '0') // Only disbursed loans
+            ->sum('Amount');
+
         $todayinstallment = tableWithBranch('customer_loan', 'customer_loan')
             ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
             ->where('installments.Installment_Date', '=', date('Y-m-d'))
@@ -428,6 +499,27 @@ class UserController extends Controller
         $arrease = $loanQuery_2->arrease;
         $totalBalanceUntil = $loanQuery_2->Total_Balance_until;
         $totalBalanceUntil=$totalBalanceUntil+$checqueamount;
+
+        // Total Outstanding: capital balance + interest balance where status = 0
+        $totalOutstanding = tableWithBranch('installments','installments')
+            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->select(
+                DB::raw('SUM(installments.capital_balance + installments.Interest_Balance) as total_outstanding')
+            )
+            ->where('customer_loan.Status', '=', '0')
+            ->first();
+        $totalOutstanding = $totalOutstanding->total_outstanding ?? 0;
+
+        // Penalty Balance: sum of penalty balance where status = 0
+        $penaltyBalance = tableWithBranch('installments','installments')
+            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->select(
+                DB::raw('SUM(installments.Panalty_Balance) as penalty_balance')
+            )
+            ->where('customer_loan.Status', '=', '0')
+            ->first();
+        $penaltyBalance = $penaltyBalance->penalty_balance ?? 0;
+
         $userid=session('userid');
 
         $getuser = DB::table('user_privileges_has_user')->where('user_id', $userid)->where('permission_key','=','dashboard')->first();
@@ -539,31 +631,368 @@ class UserController extends Controller
             DB::statement("ALTER TABLE `company_bank_has_log` ADD `log_tracking_no` VARCHAR(10) NULL");
         }
 
+        // Weekly unpaid (active loans)
+        $weekStart = Carbon::now()->startOfWeek()->toDateString();
+        $weekToday = date('Y-m-d');
 
-        // Total Outstanding: capital balance + interest balance where status = 0
-        $totalOutstanding = tableWithBranch('installments','installments')
+        $weeklyUnpaidQuery = tableWithBranch('installments','installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->where('customer_loan.Status', '=', '0')
+            ->where('installments.Status', '=', '0')
+            ->where('installments.Total_Balance', '>', 0)
+            ->whereBetween('installments.Installment_Date', [$weekStart, $weekToday]);
+
+        $weeklyUnpaidCount = (clone $weeklyUnpaidQuery)->count();
+        $weeklyUnpaidAmount = (clone $weeklyUnpaidQuery)->sum('installments.Total_Balance');
+        // Distinct customers with unpaid installments (head count)
+        $weeklyUnpaidCustomerCount = (clone $weeklyUnpaidQuery)
+            ->distinct()
+            ->count('customer_loan.Customer_idCustomer');
+
+
+        return view('home',compact(
+            'currentMonthLending','portfolio','profit','todaycollected','profitTarget','weeklyComparison',
+            'deleted_loan_Count','all_loan','monthlyData','dashboard','checqueamount','totalBalanceUntil','arrease',
+            'todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount',
+            'setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count',
+            'customer_loan_current_Count','todayinstallment','todaycollection',
+            'weeklyUnpaidCount','weeklyUnpaidAmount','weeklyUnpaidCustomerCount','totalOutstanding','penaltyBalance'
+        ));
+    }
+
+
+//    public function showdashboard(Store $session){
+//
+//
+//        if (!auth()->check()) {
+//            return redirect()->route('login')->with("error", "Session expired! Please Login");
+//        }
+//
+//        if (!Schema::hasColumn('installments', 'Panelty_count')) {
+//            DB::statement(
+//                "ALTER TABLE `installments`
+//         ADD COLUMN `Panelty_count` VARCHAR(45) NOT NULL
+//         DEFAULT '0'"
+//            );
+//        }
+//
+//
+//        if (!Schema::hasColumn('loan_category', 'collection_date_type')) {
+//            DB::statement(
+//                "ALTER TABLE `loan_category`
+//         ADD COLUMN `collection_date_type` VARCHAR(45) NOT NULL
+//         DEFAULT 'same_as_installment'"
+//            );
+//        }
+//
+//
+//        if (!Schema::hasColumn('route', 'collection_type')) {
+//            DB::statement(
+//                "ALTER TABLE `route`
+//         ADD COLUMN `collection_type` VARCHAR(45) NOT NULL
+//         DEFAULT 'customizable'"
+//            );
+//        }
+//
+//        if (!Schema::hasColumn('route', 'collection_date')) {
+//            DB::statement(
+//                "ALTER TABLE `route`
+//         ADD COLUMN `collection_date` VARCHAR(45) NOT NULL
+//         DEFAULT 'Monday'"
+//            );
+//        }
+//
+//
+//
+//        $loan=tableWithBranch('customer_loan')->where('Status','!=','1')->get();
+//        $CapitalBalanceController = new CapitalBalanceController();
+//        foreach ($loan as $loans){
+//            $CapitalBalanceController->create($loans->idCustomer_Loan);
+//        }
+//
+//
+////        $CapitalBalanceController->panelty_remove();
+//
+//
+//        // Call to the penalty creation function
+//        $this->create_panelty();
+//
+//
+//        $customerCount = tableWithBranch('customer')->count();
+//        $customer_loan_pending_Count = tableWithBranch('customer_loan')->where('Status','=','-1')->count();
+//        $customer_loan_pending_Amount = tableWithBranch('customer_loan')->where('Status','=','-1')->sum('Amount');
+//        $customer_loan_current_Count = tableWithBranch('customer_loan')->where('Status','=','0')->count();
+//        $customer_loan_current_Amount = tableWithBranch('customer_loan')->where('Status','=','0')->sum('Amount');
+//        $setteled_loan_Count = tableWithBranch('customer_loan')->where('Status','=','1')->count();
+//        $deleted_loan_Count = tableWithBranch('customer_loan')->where('Status','=','-2')->count();
+//        $setteled_loan_current_Amount = tableWithBranch('customer_loan')->where('Status','=','1')->sum('Amount');
+//        $todayinstallment = tableWithBranch('customer_loan', 'customer_loan')
+//            ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
+//            ->where('installments.Installment_Date', '=', date('Y-m-d'))
+//            ->where('customer_loan.Status', '=', '0')
+//            ->sum('installments.Total_Balance');
+//        $todaycollected = tableWithBranch('customer_payments')->where('Date',date('Y-m-d'))->sum('Amount');
+//
+//
+//
+//        $checqueamount = tableWithBranch('Cheque_payment')->where('payment_date',date('Y-m-d'))->where('chq_status','=','0')->sum('payment_amount');
+//        $shortcut=tableWithBranch('shortcut')->get();
+//        $shortcut_count=tableWithBranch('shortcut')->count();
+//
+//        $all_loan=$customer_loan_current_Count+$setteled_loan_Count;
+//
+//
+//
+//        $todaycollection=tableWithBranch('installments','installments')
+//            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+//            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+//            ->join('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+//            ->join('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+//            ->join('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category')
+//            ->select('customer.*','customer_group.Name as group_name','installments.*','customer_loan.*','loan_category.Name as loan_name')
+//            ->whereDate('Installment_Date','=',date('Y-m-d'))
+//            ->where('installments.Status','=','0')
+//            ->where('customer_loan.Status', '=', '0')
+//            ->get();
+//
+//
+//        $loanQuery_2 = tableWithBranch('installments','installments')
+//            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+//            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+//            ->select(
+//                DB::raw('SUM(CASE WHEN Installment_Date = CURDATE() THEN Total_Balance ELSE 0 END) as Today_installment'),
+//                DB::raw('SUM(CASE WHEN Installment_Date < CURDATE() THEN Total_Balance ELSE 0 END) as arrease'),
+//                DB::raw('SUM(CASE WHEN Installment_Date <= CURDATE() THEN Total_Balance ELSE 0 END) as Total_Balance_until')
+//            )
+//            ->where('customer_loan.Status', '=', '0')
+//            ->first();  // Try without grouping for now
+//
+//// Assign the values to variables
+//        $todayInstallment = $loanQuery_2->Today_installment;
+//        $arrease = $loanQuery_2->arrease;
+//        $totalBalanceUntil = $loanQuery_2->Total_Balance_until;
+//        $totalBalanceUntil=$totalBalanceUntil+$checqueamount;
+//        $userid=session('userid');
+//
+//        $getuser = DB::table('user_privileges_has_user')->where('user_id', $userid)->where('permission_key','=','dashboard')->first();
+//        $dashboard=0;
+//        if ($getuser){
+//            $dashboard=$getuser->value;
+//        }
+//
+//        $currentYear = date('Y');
+//
+//        $monthlyRevenue = tableWithBranch('customer_payments')
+//            ->select(
+//                DB::raw('MONTH(Date) as month'),
+//                DB::raw('SUM(Amount) as total')
+//            )
+//            ->whereYear('Date', $currentYear) // Filter by current year
+//            ->groupBy(DB::raw('MONTH(Date)'))
+//            ->orderBy(DB::raw('MONTH(Date)'))
+//            ->get();
+//
+//        $monthlyData = array_fill(0, 12, 0); // Initialize with 12 zeros
+//
+//        foreach ($monthlyRevenue as $item) {
+//            $monthlyData[$item->month - 1] = (float) $item->total;
+//        }
+//
+//
+//        $startOfWeek = Carbon::now()->startOfWeek(); // Mon 2025-04-21 00:00:00
+//        $endOfWeek = Carbon::now()->endOfWeek();     // Sun 2025-04-27 23:59:59
+//        $startOfLastWeek = $startOfWeek->copy()->subWeek();
+//        $endOfLastWeek = $endOfWeek->copy()->subWeek();
+//
+//
+//        $getPaymentsPerDay = function ($start, $end) {
+//            $results = tableWithBranch('customer_payments')
+//                ->select('Date', DB::raw('SUM(Amount) as total'))
+//                ->whereBetween('Date', [$start->toDateString(), $end->toDateString()])
+//                ->groupBy('Date')
+//                ->get();
+//
+//            $week = array_fill(0, 7, 0);
+//            foreach ($results as $row) {
+//                $dayIndex = Carbon::parse($row->Date)->dayOfWeek; // 0 = Sun, ..., 6 = Sat
+//                $week[$dayIndex] += (float) $row->total;
+//            }
+//
+//            return $week;
+//        };
+//
+//
+//
+//        $weeklyComparison = [
+//            'current' => $getPaymentsPerDay($startOfWeek, $endOfWeek),
+//            'last' => $getPaymentsPerDay($startOfLastWeek, $endOfLastWeek),
+//        ];
+//
+//
+//
+//        $profit = 907195;
+//        $profitTarget = 1000000; // 1 million
+//
+//
+//        $user=tableWithBranch('user')->where('id','=',$userid)->first();
+//
+//
+//        if ($user){
+//            if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $userid)->exists()) {
+//
+//            }else {
+//
+//                $Bank = [
+//                    'Bank_Type' => "Collector",
+//                    'code' => $user->id.'/Collector',
+//                    'Bank_Name' => "Collector",
+//                    'Account_Name' => $user->Full_Name,
+//                    'Account_No' => $user->id,
+//                    'Bank_Branch' => '-',
+//                    'Account_Balance' => "0.00",
+//                    'type' => "Cash and Bank",
+//                    'cashflow' => "Non Applicable",
+//                    'User' => $user->id,
+//                    'branch_id' => session('branch_id'),
+//                ];
+//
+//
+//                $insertedId = insertWithBranch('company_bank_accounts', $Bank);
+//// Convert the BankLog object to an array for insertion
+//                $bankLogData = [
+//                    'Bank_Account_Id' => $insertedId,
+//                    'Date_Time' => date('Y-m-d H:i:s'),
+//                    'Type' => "Account Creation",
+//                    'Description' => "Collector Account",
+//                    'Note' => "",
+//                    'Credit' => "0.00",
+//                    'Debit' => "0.00",
+//                    'Balance' => "0.00",
+//                    'User' => $user->id,
+//                    'branch_id' => session('branch_id'),
+//                ];
+//
+//// Insert the BankLog entry using the helper function
+//                insertWithBranch('company_bank_has_log', $bankLogData);
+//            }
+//        }
+//
+//
+//// Check if 'log_tracking_no' column exists in 'company_bank_has_log'
+//        if (!Schema::hasColumn('company_bank_has_log', 'log_tracking_no')) {
+//            DB::statement("ALTER TABLE `company_bank_has_log` ADD `log_tracking_no` VARCHAR(10) NULL");
+//        }
+//
+//
+//        // Total Outstanding: capital balance + interest balance where status = 0
+//        $totalOutstanding = tableWithBranch('installments','installments')
+//            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+//            ->select(
+//                DB::raw('SUM(installments.capital_balance + installments.Interest_Balance) as total_outstanding')
+//            )
+//            ->where('customer_loan.Status', '=', '0')
+//            ->first();
+//        $totalOutstanding = $totalOutstanding->total_outstanding ?? 0;
+//
+//        // Penalty Balance: sum of penalty balance where status = 0
+//        $penaltyBalance = tableWithBranch('installments','installments')
+//            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+//            ->select(
+//                DB::raw('SUM(installments.Panalty_Balance) as penalty_balance')
+//            )
+//            ->where('customer_loan.Status', '=', '0')
+//            ->first();
+//        $penaltyBalance = $penaltyBalance->penalty_balance ?? 0;
+//
+//
+//
+//
+//        return view('home',compact( 'penaltyBalance','totalOutstanding','profit','todaycollected', 'profitTarget','weeklyComparison','deleted_loan_Count','all_loan','monthlyData','dashboard','checqueamount','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
+//    }
+
+    public function totalOutstandingData()
+    {
+        $totalOutstandingData = tableWithBranch('installments','installments')
+            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->select(
+                'customer_loan.idCustomer_Loan as loan_id',
+                'customer.idCustomer as customer_id',
+                DB::raw('CONCAT(customer.First_Name, " ", customer.Last_Name) as customer_name'),
+                'customer_loan.Amount as capital_amount',
+                'customer_loan.Total_Loan_Amount as full_loan_amount',
                 DB::raw('SUM(installments.capital_balance + installments.Interest_Balance) as total_outstanding')
             )
             ->where('customer_loan.Status', '=', '0')
-            ->first();
-        $totalOutstanding = $totalOutstanding->total_outstanding ?? 0;
+            ->where(function($query) {
+                $query->where('installments.capital_balance', '>', 0)
+                    ->orWhere('installments.Interest_Balance', '>', 0);
+            })
+            ->groupBy('customer_loan.idCustomer_Loan', 'customer.idCustomer', 'customer.First_Name', 'customer.Last_Name', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount')
+            ->havingRaw('total_outstanding > 0')
+            ->orderBy('total_outstanding', 'DESC')
+            ->get();
 
-        // Penalty Balance: sum of penalty balance where status = 0
-        $penaltyBalance = tableWithBranch('installments','installments')
+        return response()->json(['data' => $totalOutstandingData]);
+    }
+
+
+    public function weeklyNotPaidData()
+    {
+        // Get current week date range
+        $weekStart = Carbon::now()->startOfWeek()->toDateString();
+        $weekToday = date('Y-m-d');
+
+        $weeklyNotPaidData = tableWithBranch('installments','installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->select(
+                'customer_loan.idCustomer_Loan as loan_id',
+                'customer.idCustomer as customer_id',
+                DB::raw('CONCAT(customer.First_Name, " ", customer.Last_Name) as customer_name'),
+                'customer_loan.Amount as capital_amount',
+                'customer_loan.Total_Loan_Amount as full_loan_amount',
+                // This week not paid amount (installments between week start and today)
+                DB::raw('SUM(CASE WHEN installments.Installment_Date BETWEEN "'.$weekStart.'" AND "'.$weekToday.'" THEN installments.Total_Balance ELSE 0 END) as this_week_not_paid'),
+                // Total arrears (all overdue installments)
+                DB::raw('SUM(CASE WHEN installments.Installment_Date < CURDATE() THEN installments.Total_Balance ELSE 0 END) as total_arrears'),
+                // Not paid installment count
+                DB::raw('COUNT(CASE WHEN installments.Total_Balance > 0 AND installments.Status = 0 THEN 1 END) as not_paid_installment_count')
+            )
+            ->where('customer_loan.Status', '=', '0')
+            ->where('installments.Status', '=', '0')
+            ->where('installments.Total_Balance', '>', 0)
+            ->whereBetween('installments.Installment_Date', [$weekStart, $weekToday])
+            ->groupBy('customer_loan.idCustomer_Loan', 'customer.idCustomer', 'customer.First_Name', 'customer.Last_Name', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount')
+            ->havingRaw('this_week_not_paid > 0')
+            ->orderBy('this_week_not_paid', 'DESC')
+            ->get();
+
+        return response()->json(['data' => $weeklyNotPaidData]);
+    }
+
+    public function penaltyBalanceData()
+    {
+        $penaltyBalanceData = tableWithBranch('installments','installments')
+            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->select(
+                'customer_loan.idCustomer_Loan as loan_id',
+                'customer.idCustomer as customer_id',
+                DB::raw('CONCAT(customer.First_Name, " ", customer.Last_Name) as customer_name'),
+                'customer_loan.Amount as capital_amount',
+                'customer_loan.Total_Loan_Amount as full_loan_amount',
+                DB::raw('SUM(installments.capital_balance + installments.Interest_Balance) as total_outstanding'),
                 DB::raw('SUM(installments.Panalty_Balance) as penalty_balance')
             )
             ->where('customer_loan.Status', '=', '0')
-            ->first();
-        $penaltyBalance = $penaltyBalance->penalty_balance ?? 0;
+            ->where('installments.Panalty_Balance', '>', 0)
+            ->groupBy('customer_loan.idCustomer_Loan', 'customer.idCustomer', 'customer.First_Name', 'customer.Last_Name', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount')
+            ->havingRaw('penalty_balance > 0')
+            ->orderBy('penalty_balance', 'DESC')
+            ->get();
 
-
-
-
-        return view('home',compact( 'penaltyBalance','totalOutstanding','profit','todaycollected', 'profitTarget','weeklyComparison','deleted_loan_Count','all_loan','monthlyData','dashboard','checqueamount','totalBalanceUntil','arrease','todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount','setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count','customer_loan_current_Count','todayinstallment','todaycollection'));
+        return response()->json(['data' => $penaltyBalanceData]);
     }
 
     public function logout()

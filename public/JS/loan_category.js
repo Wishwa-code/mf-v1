@@ -249,7 +249,7 @@ const saveLoanCategory = (e) => {
                             default_loan_duration_period:default_loan_duration_period,
                             collection_date_type:collection_date_type,
                             penalty_method:penalty_method,
-                            deduction_type:deduction_type
+
                         },
                         success: function (data, textStatus, xhr) {
                             if (xhr.status === 200) {
