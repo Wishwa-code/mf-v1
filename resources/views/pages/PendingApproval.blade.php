@@ -166,6 +166,31 @@
         </div>
     </div>
 
+    <!-- Loan Details Modal -->
+    <div class="modal fade" id="loanDetailsModal" tabindex="-1" aria-labelledby="loanDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="loanDetailsModalLabel">
+                        <i class="ri-file-text-line me-2"></i>Loan Details
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="loanDetailsContent">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3">Loading loan details...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Action Modal -->
     <div class="modal fade" id="actionModal" tabindex="-1" aria-labelledby="actionModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -218,9 +243,49 @@
         });
 
         function viewDetails(id, type, typeId) {
-            // View details functionality
-            alert(`View details for ${type} request #${id} (Type ID: ${typeId})`);
-            // TODO
+            if (typeId == 401) {
+                // Loan Approval - Show loan details modal
+                showLoanDetails(id);
+            } else {
+                // Other types - show alert for now
+                alert(`View details for ${type} request #${id} (Type ID: ${typeId})`);
+                // TODO: Implement other type views
+            }
+        }
+
+        function showLoanDetails(approvalId) {
+            $('#loanDetailsModal').modal('show');
+            $('#loanDetailsContent').html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading loan details...</p>
+                </div>
+            `);
+            
+            $.ajax({
+                url: `/approval/loan-details/${approvalId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#loanDetailsContent').html(response.html);
+                    } else {
+                        $('#loanDetailsContent').html(`
+                            <div class="alert alert-danger" role="alert">
+                                <i class="ri-error-warning-line me-2"></i>Error: ${response.message}
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#loanDetailsContent').html(`
+                        <div class="alert alert-danger" role="alert">
+                            <i class="ri-error-warning-line me-2"></i>Error loading loan details. Please try again.
+                        </div>
+                    `);
+                }
+            });
         }
 
         function approveRequest(id) {

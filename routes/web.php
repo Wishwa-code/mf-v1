@@ -794,6 +794,7 @@ Route::get('/rejected_approval','\App\Http\Controllers\ApprovalController@reject
 Route::post('/approve_request','\App\Http\Controllers\ApprovalController@approve')->name('approval.approve');
 Route::post('/reject_request','\App\Http\Controllers\ApprovalController@reject')->name('approval.reject');
 Route::post('/callback_request','\App\Http\Controllers\ApprovalController@callback')->name('approval.callback');
+Route::get('/approval/loan-details/{id}','\App\Http\Controllers\ApprovalController@getLoanDetails')->name('approval.loan_details');
 
 
 Route::get('/load_customer_route/{id}','\App\Http\Controllers\CustomerController@load_customer_route')->name('customers.load_customer_route');

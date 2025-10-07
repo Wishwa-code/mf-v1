@@ -493,4 +493,54 @@ class ApprovalController extends Controller
             return response()->json(['success' => false, 'message' => 'Error processing callback: ' . $e->getMessage()]);
         }
     }
+
+    public function getLoanDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request')->where('id', $approvalId)->first();
+            
+            if (!$approval || $approval->typeid != 401) {
+                return response()->json(['success' => false, 'message' => 'Loan approval request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $loan_id = $requestData['loan_id'];
+            $branch_id = $approval->branch_id;
+            
+            $loan = DB::table('customer_loan')
+                ->where('idCustomer_Loan', $loan_id)
+                ->where('branch_id', $branch_id)
+                ->first();
+            
+            if (!$loan) {
+                return response()->json(['success' => false, 'message' => 'Loan not found.']);
+            }
+            
+            $customer = DB::table('customer')->where('idCustomer', $loan->Customer_idCustomer)->where('branch_id', $branch_id)->first();
+            $loanCategory = DB::table('loan_category')->where('idLoan_Category', $loan->Loan_Category_idLoan_Category)->where('branch_id', $branch_id)->first();
+            $user = DB::table('user')->where('id', $loan->User_idUser)->first();
+            $lendingOfficer = DB::table('user')->where('id', $loan->lending_officer_id)->first();
+            
+            $installments = DB::table('installments')->where('Customer_Loan_idCustomer_Loan', $loan_id)->where('branch_id', $branch_id)->orderBy('idInstallments')->get();
+            $witnesses = DB::table('witness')->where('Customer_Loan_idCustomer_Loan', $loan_id)->where('branch_id', $branch_id)->get();
+            $otherCharges = DB::table('loan_other_charges')->where('Customer_Loan_idCustomer_Loan', $loan_id)->where('branch_id', $branch_id)->get();
+            $approvalLevels = DB::table('loan_has_approval')->where('loan_id', $loan_id)->where('branch_id', $branch_id)->get();
+            
+            $html = view('partials.loan_details_modal', compact(
+                'loan',
+                'customer',
+                'loanCategory',
+                'user',
+                'lendingOfficer',
+                'installments',
+                'witnesses',
+                'otherCharges',
+                'approvalLevels'
+            ))->render();
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
 }
