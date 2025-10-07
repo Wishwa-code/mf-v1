@@ -106,6 +106,7 @@
                                             <th>User</th>
                                             <th>Rejected By</th>
                                             <th>Reason</th>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -143,6 +144,15 @@
                                                         <small class="text-muted">{{ $rejected->comment ?? 'No reason provided' }}</small>
                                                     </div>
                                                 </td>
+                                                <td>
+                                                    @if($rejected->typeid == 401)
+                                                        <button onclick="undoRejection({{ $rejected->id }})" class="btn btn-sm btn-warning" title="Undo Rejection">
+                                                            <i class="ri-arrow-go-back-line"></i> Undo
+                                                        </button>
+                                                    @else
+                                                        <span class="text-muted">-</span>
+                                                    @endif
+                                                </td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -178,5 +188,46 @@
                 "order": [[ 3, "desc" ]], // Sort by rejected date column
             });
         });
+
+        function undoRejection(approvalId) {
+            Swal.fire({
+                title: 'Undo Rejection?',
+                text: "This will send the loan back to pending approval status.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ffc107',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, undo it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `/approval/undo-rejection/${approvalId}`,
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Undone!',
+                                    text: response.message,
+                                    showConfirmButton: false,
+                                    timer: 1500
+                                }).then(() => {
+                                    window.location.reload();
+                                });
+                            } else {
+                                Swal.fire('Error!', response.message, 'error');
+                            }
+                        },
+                        error: function() {
+                            Swal.fire('Error!', 'Failed to undo rejection. Please try again.', 'error');
+                        }
+                    });
+                }
+            });
+        }
     </script>
 @endsection

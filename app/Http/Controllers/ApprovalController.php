@@ -543,4 +543,47 @@ class ApprovalController extends Controller
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
         }
     }
+
+    public function undoRejection($id)
+    {
+        try {
+            $approval = DB::table('approval_request')->where('id', $id)->first();
+
+            if (!$approval) {
+                return response()->json(['success' => false, 'message' => 'Approval request not found.']);
+            }
+
+            if ($approval->status != 2) {
+                return response()->json(['success' => false, 'message' => 'This request is not rejected.']);
+            }
+
+            // Update approval_request back to pending
+            DB::table('approval_request')
+                ->where('id', $id)
+                ->update([
+                    'status' => 0,
+                    'approved_date_time' => null,
+                    'approveduserid' => null,
+                    'approved_reject_comment' => null
+                ]);
+
+            // If Type 401 (Loan Approval), update loan status back to -3
+            if ($approval->typeid == 401) {
+                $requestData = json_decode($approval->data, true);
+                $loan_id = $requestData['loan_id'];
+
+                DB::table('customer_loan')
+                    ->where('idCustomer_Loan', $loan_id)
+                    ->where('branch_id', $approval->branch_id)
+                    ->update(['Status' => '-3']);
+            }
+
+            return response()->json([
+                'success' => true, 
+                'message' => 'Rejection undone successfully. Request moved back to pending approval.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
 }
