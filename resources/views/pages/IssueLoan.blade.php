@@ -1144,7 +1144,7 @@
 
 @section('script')
     <script src="../JS/validate.js"></script>
-    <script src="../JS/issueloan.js?n=15"></script>
+    <script src="../JS/issueloan.js?n=16"></script>
     <script>
         var route_collection_type="";
         var route_collection_date="";
