@@ -16,8 +16,8 @@ class ApprovalController extends Controller
         $selectedBranch = $request->get('branch_id', '');
         $selectedType = $request->get('type', '');
         
-        // Get branches for filter dropdown (exclude branch_id = -1)
-        $branches = DB::table('branch')->where('status', 1)->where('branch_id', '!=', -1)->get();
+        // Get branches for filter dropdown
+        $branches = DB::table('branch')->where('status', 1)->get();
         
         // Types list
         $types = [
@@ -92,8 +92,8 @@ class ApprovalController extends Controller
         $dateFrom = $request->get('date_from', '');
         $dateTo = $request->get('date_to', '');
         
-        // Get branches for filter dropdown (exclude branch_id = -1)
-        $branches = DB::table('branch')->where('status', 1)->where('branch_id', '!=', -1)->get();
+        // Get branches for filter dropdown
+        $branches = DB::table('branch')->where('status', 1)->get();
         
         // Types list
         $types = [
@@ -178,8 +178,8 @@ class ApprovalController extends Controller
         $dateFrom = $request->get('date_from', '');
         $dateTo = $request->get('date_to', '');
         
-        // Get branches for filter dropdown (exclude branch_id = -1)
-        $branches = DB::table('branch')->where('status', 1)->where('branch_id', '!=', -1)->get();
+        // Get branches for filter dropdown
+        $branches = DB::table('branch')->where('status', 1)->get();
         
         // Types list
         $types = [
