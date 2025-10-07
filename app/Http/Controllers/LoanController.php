@@ -559,7 +559,50 @@ class LoanController extends Controller
 
             DB::commit();
 
-            return response()->json(['item' => $id, 'installment' => $request->installment, 'type' => $type], 200);
+            // Fetch customer once
+            $customer = tableWithBranch('customer', 'customer')
+                ->select([
+                    'idCustomer',
+                    'cus_number',
+                    'Title',
+                    'First_Name',
+                    'Last_Name',
+                    'Email',
+                    'Contact_No',
+                    'contact_number_2',
+                    'Nic',
+                    'Gender',
+                    'Dob',
+                ])
+                ->where('idCustomer', $customer_id)
+                ->first();
+
+            $customerPayload = null;
+            if ($customer) {
+                $fullName = trim(implode(' ', array_filter([
+                    $customer->First_Name,
+                    $customer->Last_Name
+                ])));
+
+                $customerPayload = [
+                    'cus_number'       => (string) $customer->cus_number,
+                    'name'             => $fullName,
+                ];
+            }
+
+            return response()->json([
+                'item' => $loan->getKey(),
+                'type' => $type,
+                'loan' => [
+                    'loan_no'           => $loan->Loan_No,
+                    'amount'            => $loan->Amount,
+                    'interest_rate'     => $loan->Interest_Rate,
+                    'installments'      => $loan->Installment_Count,
+                    'interest_amt'      => $loan->Interest_Amount,
+                ],
+                'customer' => $customerPayload,
+            ], 200);
+
         } catch (\Throwable $e) {
             DB::rollBack();
             // You can log the error if needed:
