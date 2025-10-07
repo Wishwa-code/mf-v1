@@ -610,6 +610,240 @@ class LoanCategoryController extends Controller
         return response()->json(['message' => 'Products from branch 1 copied to branch ' . $branch . ' successfully.']);
     }
 
+    public function cloneProductsToBranches(Request $request)
+    {
+        $request->validate([
+            'source_branch_id'   => 'required|integer',
+            'target_branch_ids'  => 'required|array|min:1',
+            'target_branch_ids.*'=> 'integer|distinct',
+            'category_ids'       => 'nullable|array',
+            'category_ids.*'     => 'integer|distinct',
+            'merge_mode'         => 'nullable|in:skip,overwrite',
+        ]);
+
+        $sourceBranchId  = (int) $request->input('source_branch_id');
+        $targetBranchIds = array_map('intval', $request->input('target_branch_ids', []));
+        $categoryIds     = $request->input('category_ids', null);   // null => all categories in source
+        $mergeMode       = $request->input('merge_mode', 'skip');   // 'skip' | 'overwrite'
+
+        // 1) Pull the source products
+        $sourceProductsQ = DB::table('loan_category')
+            ->where('branch_id', $sourceBranchId);
+
+        if (is_array($categoryIds) && count($categoryIds) > 0) {
+            $sourceProductsQ->whereIn('idLoan_Category', $categoryIds);
+        }
+
+        $sourceProducts = $sourceProductsQ->get();
+
+        if ($sourceProducts->isEmpty()) {
+            return response()->json([
+                'status'  => 'no_source_products',
+                'message' => 'No products found in the source branch with the given filters.',
+            ], 200);
+        }
+
+        $summary = [
+            'processed_products' => $sourceProducts->count(),
+            'per_target' => [],
+        ];
+
+        foreach ($targetBranchIds as $targetBranchId) {
+            if ($targetBranchId === $sourceBranchId) {
+                $summary['per_target'][$targetBranchId] = ['skipped_same_branch' => true];
+                continue;
+            }
+
+            $counts = [
+                'created'   => 0,
+                'overwritten' => 0,
+                'skipped'   => 0,
+            ];
+
+            DB::transaction(function () use ($sourceProducts, $sourceBranchId, $targetBranchId, $mergeMode, &$counts) {
+
+                foreach ($sourceProducts as $src) {
+
+                    // Check same Product_code in target
+                    $existing = DB::table('loan_category')
+                        ->where('branch_id', $targetBranchId)
+                        ->where('Product_code', $src->Product_code)
+                        ->first();
+
+                    // Create or overwrite header
+                    if ($existing && $mergeMode === 'skip') {
+                        $counts['skipped']++;
+                        continue;
+                    }
+
+                    if ($existing && $mergeMode === 'overwrite') {
+                        $newCategoryId = (int) $existing->idLoan_Category;
+
+                        // Update fields on the existing header
+                        DB::table('loan_category')
+                            ->where('idLoan_Category', $newCategoryId)
+                            ->update([
+                                'Name'                         => $src->Name,
+                                'Product_code'                 => $src->Product_code,
+                                'Loan_amount'                  => $src->Loan_amount,
+                                'Loan_amount_to'               => $src->Loan_amount_to,
+                                'Interest_method'              => $src->Interest_method,
+                                'Interest_period'              => $src->Interest_period,
+                                'Loan_interest'                => $src->Loan_interest,
+                                'Loan_interest_to'             => $src->Loan_interest_to,
+                                'Duration_period'              => $src->Duration_period,
+                                'Loan_period'                  => $src->Loan_period,
+                                'Repayment_type'               => $src->Repayment_type,
+                                'Panelty_period'               => $src->Panelty_period,
+                                'Panelty_pecentage'            => $src->Panelty_pecentage,
+                                'Panelty_date'                 => $src->Panelty_date,
+                                'Guarantee_count'              => $src->Guarantee_count,
+                                'Interest_Period_Count'        => $src->Interest_Period_Count,
+                                'enable_saving_process'        => $src->enable_saving_process,
+                                'saving_amount_type'           => $src->saving_amount_type,
+                                'saving_amount'                => $src->saving_amount,
+                                'saving_payment'               => $src->saving_payment,
+                                'default_loan_duration_period' => $src->default_loan_duration_period,
+                                'panelty_method'               => $src->panelty_method,
+                                'collection_date_type'         => $src->collection_date_type,
+                                'status'                       => $src->status ?? 1,
+                            ]);
+
+                        // Remove children to re-insert fresh (hard replace)
+                        DB::table('other_charges')->where('Loan_Category_idLoan_Category', $newCategoryId)->where('branch_id', $targetBranchId)->delete();
+                        DB::table('required_documents')->where('Loan_Category_idLoan_Category', $newCategoryId)->where('branch_id', $targetBranchId)->delete();
+
+                        // Delete levels and their children
+                        $targetLevelIds = DB::table('level')->where('product_id', $newCategoryId)->where('branch_id', $targetBranchId)->pluck('id');
+                        if ($targetLevelIds->isNotEmpty()) {
+                            DB::table('level_has_designation')->whereIn('level_id', $targetLevelIds)->where('branch_id', $targetBranchId)->delete();
+                            DB::table('approval_checklist')->whereIn('level_id', $targetLevelIds)->where('branch_id', $targetBranchId)->delete();
+                            DB::table('level')->whereIn('id', $targetLevelIds)->delete();
+                        }
+
+                        // Recreate children from source
+                        $this->cloneProductChildren($src->idLoan_Category, $newCategoryId, $targetBranchId);
+
+                        $counts['overwritten']++;
+                        continue;
+                    }
+
+                    // Create brand new product header in target
+                    $newCategoryId = DB::table('loan_category')->insertGetId([
+                        'Name'                         => $src->Name,
+                        'Product_code'                 => $src->Product_code,
+                        'Loan_amount'                  => $src->Loan_amount,
+                        'Loan_amount_to'               => $src->Loan_amount_to,
+                        'Interest_method'              => $src->Interest_method,
+                        'Interest_period'              => $src->Interest_period,
+                        'Loan_interest'                => $src->Loan_interest,
+                        'Loan_interest_to'             => $src->Loan_interest_to,
+                        'Duration_period'              => $src->Duration_period,
+                        'Loan_period'                  => $src->Loan_period,
+                        'Repayment_type'               => $src->Repayment_type,
+                        'Panelty_period'               => $src->Panelty_period,
+                        'Panelty_pecentage'            => $src->Panelty_pecentage,
+                        'Panelty_date'                 => $src->Panelty_date,
+                        'Guarantee_count'              => $src->Guarantee_count,
+                        'Interest_Period_Count'        => $src->Interest_Period_Count,
+                        'enable_saving_process'        => $src->enable_saving_process,
+                        'saving_amount_type'           => $src->saving_amount_type,
+                        'saving_amount'                => $src->saving_amount,
+                        'saving_payment'               => $src->saving_payment,
+                        'default_loan_duration_period' => $src->default_loan_duration_period,
+                        'panelty_method'               => $src->panelty_method,
+                        'collection_date_type'         => $src->collection_date_type,
+                        'status'                       => $src->status ?? 1,
+                        'branch_id'                    => $targetBranchId,
+                    ]);
+
+                    // Clone children
+                    $this->cloneProductChildren($src->idLoan_Category, $newCategoryId, $targetBranchId);
+
+                    $counts['created']++;
+                }
+            });
+
+            $summary['per_target'][$targetBranchId] = $counts;
+        }
+
+        return response()->json([
+            'status'  => 'ok',
+            'summary' => $summary,
+        ], 200);
+    }
+
+    /**
+     * Clone children of a product from source product_id to target product_id in a target branch.
+     * Uses your branch-aware insert helper for consistency.
+     */
+    /**
+     * Clone children of a product from source product_id to target product_id in a target branch.
+     * Writes rows explicitly with branch_id = $targetBranchId (no session reliance).
+     */
+    private function cloneProductChildren(int $srcCategoryId, int $newCategoryId, int $targetBranchId): void
+    {
+        // ---- other_charges ----
+        $srcCharges = DB::table('other_charges')
+            ->where('Loan_Category_idLoan_Category', $srcCategoryId)
+            ->get();
+
+        foreach ($srcCharges as $oc) {
+            DB::table('other_charges')->insert([
+                'Description'                   => $oc->Description,
+                'Amount'                        => $oc->Amount,
+                'charge_type'                   => $oc->charge_type,
+                'deduction_type'                => $oc->deduction_type ?? 'On Loan Disbursement',
+                'Loan_Category_idLoan_Category' => $newCategoryId,
+                'branch_id'                     => $targetBranchId,
+            ]);
+        }
+
+        // ---- required_documents ----
+        $srcDocs = DB::table('required_documents')
+            ->where('Loan_Category_idLoan_Category', $srcCategoryId)
+            ->get();
+
+        foreach ($srcDocs as $rd) {
+            DB::table('required_documents')->insert([
+                'Name'                          => $rd->Name,
+                'Loan_Category_idLoan_Category' => $newCategoryId,
+                'branch_id'                     => $targetBranchId,
+            ]);
+        }
+
+        // ---- levels (+ children) ----
+        $srcLevels = DB::table('level')->where('product_id', $srcCategoryId)->get();
+
+        foreach ($srcLevels as $lvl) {
+            $newLevelId = DB::table('level')->insertGetId([
+                'product_id'  => $newCategoryId,
+                'type'        => $lvl->type,
+                'description' => $lvl->description,
+                'branch_id'   => $targetBranchId,
+            ]);
+
+            // level_has_designation
+            $srcLvlDesigs = DB::table('level_has_designation')->where('level_id', $lvl->id)->get();
+            foreach ($srcLvlDesigs as $ld) {
+                DB::table('level_has_designation')->insert([
+                    'level_id'       => $newLevelId,
+                    'designation_id' => $ld->designation_id, // mirror as stored
+                    'branch_id'      => $targetBranchId,
+                ]);
+            }
+
+            // approval_checklist
+            $srcChecklist = DB::table('approval_checklist')->where('level_id', $lvl->id)->get();
+            foreach ($srcChecklist as $ac) {
+                DB::table('approval_checklist')->insert([
+                    'level_id'    => $newLevelId,
+                    'description' => $ac->description,
+                    'branch_id'   => $targetBranchId,
+                ]);
+            }
+        }
+    }
 
 
 
