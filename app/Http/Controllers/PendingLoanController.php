@@ -82,9 +82,17 @@ class PendingLoanController extends Controller
             GROUP BY loan_id) as approval_subquery'),
                 'customer_loan.idCustomer_Loan', '=', 'approval_subquery.loan_id')
             ->where('customer_loan.Status', '=', $status)
-            ->whereNotNull('approval_subquery.loan_id')  // Ensure at least one approval exists
-            ->where('approval_subquery.pending_approvals', '>', 0)  // Ensure there are still pending approvals
-            ->select(
+            ->whereNotNull('approval_subquery.loan_id');
+        
+        // For status -3 (awaiting head office), all internal approvals are done
+        if ($status == '-3') {
+            $loanQuery->whereRaw('COALESCE(approval_subquery.pending_approvals, 0) = 0');
+        } else {
+            // For other statuses, show only loans with pending approvals
+            $loanQuery->where('approval_subquery.pending_approvals', '>', 0);
+        }
+        
+        $loanQuery = $loanQuery->select(
                 'customer_loan.*',
                 'loan_category.Name as loan_name',
                 'customer.*',

@@ -116,6 +116,7 @@
                                     <label for="status" class="form-label">Status</label>
                                     <select class="form-control select2" id="status">
                                         <option value="-1">Pending</option>
+                                        <option value="-3">Pending on Head Office</option>
                                         <option value="-2">Deleted</option>
                                     </select>
                                 </div>
