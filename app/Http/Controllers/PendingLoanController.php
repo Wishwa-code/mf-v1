@@ -547,10 +547,54 @@ class PendingLoanController extends Controller
         });
 
         if ($allApproved) {
+            $loan_id = $request->loan_id;
+            
+            $customer_loan = tableWithBranch('customer_loan')
+                ->where('idCustomer_Loan', '=', $loan_id)
+                ->first();
+            
+            if ($customer_loan) {
+                $customer = tableWithBranch('customer')
+                    ->where('idCustomer', '=', $customer_loan->Customer_idCustomer)
+                    ->first();
+                
+                $loan_category = tableWithBranch('loan_category')
+                    ->where('idLoan_Category', '=', $customer_loan->Loan_Category_idLoan_Category)
+                    ->first();
+                
+                $requestData = [
+                    'loan_id' => $loan_id,
+                    'customer_id' => $customer_loan->Customer_idCustomer,
+                    'loan_no' => $customer_loan->Loan_No,
+                    'amount' => $customer_loan->Amount,
+                ];
+                
+                $description = 'Loan Approval: ' . $customer->First_Name . ' ' . $customer->Last_Name . 
+                               ' | Loan No: ' . $customer_loan->Loan_No . 
+                               ' | Amount: ' . $customer_loan->Amount .
+                               ' | Category: ' . $loan_category->Name;
+                
+                DB::table('approval_request')->insert([
+                    'type' => 'Loan Approval',
+                    'typeid' => 401,
+                    'description' => $description,
+                    'data' => json_encode($requestData),
+                    'userid' => session('userid'),
+                    'branch_id' => session('branch_id'),
+                    'data_time' => now(),
+                    'status' => 0
+                ]);
+                
+                DB::table('customer_loan')
+                    ->where('idCustomer_Loan', $loan_id)
+                    ->where('branch_id', session('branch_id'))
+                    ->update(['Status' => '-3']);
+            }
+            
             return response()->json([
                 'item'     => $affected,
-                'redirect' => true,
-                'url'      => url('/loan_disbursement')
+                'redirect' => false,
+                'message'  => 'All approvals completed. Loan sent to head office for final approval!'
             ], 200);
         }
 

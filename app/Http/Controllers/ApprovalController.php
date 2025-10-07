@@ -412,6 +412,17 @@ class ApprovalController extends Controller
                 }
             }
             
+            // Handle Loan Approval (Type 401)
+            if ($approval->typeid == 401) {
+                $requestData = json_decode($approval->data, true);
+                $loan_id = $requestData['loan_id'];
+                
+                DB::table('customer_loan')
+                    ->where('idCustomer_Loan', $loan_id)
+                    ->where('branch_id', $approval->branch_id)
+                    ->update(['Status' => '-1']);
+            }
+            
             // Update approval status
             DB::table('approval_request')
                 ->where('id', $id)
@@ -434,6 +445,19 @@ class ApprovalController extends Controller
         $reason = $request->input('reason');
         
         try {
+            $approval = DB::table('approval_request')->where('id', $id)->first();
+            
+            // Handle Loan Approval Rejection (Type 401)
+            if ($approval->typeid == 401) {
+                $requestData = json_decode($approval->data, true);
+                $loan_id = $requestData['loan_id'];
+                
+                DB::table('customer_loan')
+                    ->where('idCustomer_Loan', $loan_id)
+                    ->where('branch_id', $approval->branch_id)
+                    ->update(['Status' => '-2']);
+            }
+            
             DB::table('approval_request')
                 ->where('id', $id)
                 ->update([
