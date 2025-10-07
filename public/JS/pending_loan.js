@@ -69,6 +69,8 @@ function load_table() {
                         // Status type conditional rendering
                         status_type === "-1"
                             ? '<span class="px-2" style="background-color: #FFD700;border-radius: 10px; color: white;">Pending</span>'
+                            : status_type === "-3"
+                            ? '<span class="px-2" style="background-color: #FFA500;border-radius: 10px; color: white;">Pending on Head Office</span>'
                             : '<span class="px-2" style="background-color: #ff0000;border-radius: 10px; color: white;">Deleted</span>',
 
                         // Buttons based on status_type
@@ -78,6 +80,8 @@ function load_table() {
                             '<button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#view-modal" disabled><i class="bi bi-trash"></i></button>' +
                             '<a href="/loanview/' + item.idCustomer_Loan + '" target="_blank" class="btn btn-warning"><i class="bi bi-eye"></i></a>' +
                             '' :
+                        status_type === "-3" ?
+                            '-' :
                             '' +
                             '<a href="/loanview/' + item.idCustomer_Loan + '/438217" class="btn btn-primary"><i class="ri ri-send-plane-line"></i></a>' +
                             '<button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#view-modal" onclick="delete_request(' + item.idCustomer_Loan + ')"><i class="bi bi-trash"></i></button>' +
