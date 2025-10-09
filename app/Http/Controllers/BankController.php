@@ -305,6 +305,8 @@ class BankController extends Controller
                 'company_bank_accounts.Account_No',
                 'customer_loan.Loan_No',
                 'customer.cus_number',
+                'customer.First_Name',
+                'customer.Last_Name',
                 'loan_category.Name as product_name',
                 'center.No as center_no',
                 'center.Name as center_name'
