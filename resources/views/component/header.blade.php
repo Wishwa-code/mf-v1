@@ -1010,6 +1010,11 @@ $banner = DB::select($query);
                             </a>
                             <div class="collapse" id="account">
                                 <ul class="side-nav-second-level">
+                                    @if(optional($privilege)->bank_cash_account == 1)
+                                        <li>
+                                            <a href="/bank_account">Bank/Cash Account</a>
+                                        </li>
+                                    @endif
                                     @if(optional($privilege)->internal_bank_transfer == 1)
                                         <li>
                                             <a href="/InnerBankTransfer">Internal Account Transfer</a>
