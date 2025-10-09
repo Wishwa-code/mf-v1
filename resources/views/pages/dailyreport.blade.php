@@ -177,6 +177,13 @@
     }  /* Total Paid */
     
     #repaymentTable th:nth-child(9), #repaymentTable td:nth-child(9) { 
+        width: 6%; 
+        max-width: 6%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }  /* Remaining Installments */
+    
+    #repaymentTable th:nth-child(10), #repaymentTable td:nth-child(10) { 
         width: 8%; 
         max-width: 8%;
         overflow: hidden;
@@ -210,6 +217,12 @@
         background-color: #f8f9fa;
         border: 2px solid #333;
         text-align: center;
+    }
+    
+    /* Smaller font for Remaining Installments header to prevent wrapping */
+    #repaymentTable thead th:nth-child(9) {
+        font-size: 11px !important;
+        line-height: 1.2;
     }
 
 
@@ -409,7 +422,8 @@
             #repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 8%; max-width: 8%; }  /* Installment Amount */
             #repaymentTable th:nth-child(7), #repaymentTable td:nth-child(7) { width: 8%; max-width: 8%; }  /* Total Saving Amount */
             #repaymentTable th:nth-child(8), #repaymentTable td:nth-child(8) { width: 8%; max-width: 8%; }  /* Total Paid */
-            #repaymentTable th:nth-child(9), #repaymentTable td:nth-child(9) { width: 8%; max-width: 8%; }  /* Balance */
+            #repaymentTable th:nth-child(9), #repaymentTable td:nth-child(9) { width: 6%; max-width: 6%; }  /* Remaining Installments */
+            #repaymentTable th:nth-child(10), #repaymentTable td:nth-child(10) { width: 8%; max-width: 8%; }  /* Balance */
             
             /* Date columns - 4.33% each for 6 columns - CONSISTENT */
             .paid-amount,
@@ -420,6 +434,12 @@
                 font-size: 10px !important;
                 font-weight: bold;
                 text-align: center;
+            }
+            
+            /* Smaller font for Remaining Installments header in print */
+            #repaymentTable thead th:nth-child(9) {
+                font-size: 8px !important;
+                line-height: 1.1;
             }
             
             
@@ -582,7 +602,8 @@
                                     <col style="width:8%; max-width:8%;">
                                     <col style="width:8%; max-width:8%;"> {{-- Total Saving Amount column --}}
                                     <col style="width:8%; max-width:8%;"> {{-- Total Paid column --}}
-                                    <col style="width:8%; max-width:8%;">
+                                    <col style="width:6%; max-width:6%;"> {{-- Remaining Installments column --}}
+                                    <col style="width:8%; max-width:8%;"> {{-- Balance column --}}
                                     @for ($i = 1; $i <= 6; $i++)
                                         <col class="date-col" style="width:4.33%; max-width:4.33%;">
                                     @endfor
@@ -597,6 +618,7 @@
                                     <th rowspan="2">Installment Amount</th>
                                     <th rowspan="2">Total Saving Amount</th>
                                     <th rowspan="2">Total Paid</th>
+                                    <th rowspan="2">Remaining Installments</th>
                                     <th rowspan="2">Balance</th>
                                     @for ($i = 1; $i <= 6; $i++)
                                         <th class="empty-date-header"></th>
@@ -614,11 +636,11 @@
                                     @foreach($centerPair as $center_name => $centerGroups)
                                         {{-- Center Header --}}
                                         <tr class="center-header">
-                                            <td colspan="15"><strong>Center: {{ $center_name }}</strong></td>
+                                            <td colspan="16"><strong>Center: {{ $center_name }}</strong></td>
                                         </tr>
                                         @foreach($centerGroups as $group_name => $group)
                                             {{-- Group Header --}}
-                                            <tr><td colspan="15"><strong>Group No: {{ $group_name }}</strong></td></tr>
+                                            <tr><td colspan="16"><strong>Group No: {{ $group_name }}</strong></td></tr>
                                             @foreach($group as $item)
                                                 <tr class="group-row">
                                                     @php
@@ -662,6 +684,7 @@
                                                     <td>{{ number_format($item->Installment_Amount, 2) }}</td>
                                                     <td>{{ number_format($savingBalance, 2) }}</td>
                                                     <td>{{ number_format($paidTotal, 2) }}</td>
+                                                    <td>{{ $item->remaining_installments ?? 0 }}</td>
                                                     <td>{{ number_format($outstanding, 2) }}</td>
                                                     @for ($i = 1; $i <= 6; $i++)
                                                         <td class="paid-amount"></td>
@@ -703,13 +726,14 @@
                                                 <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
                                                 <td>{{ number_format($grpSaving, 2) }}</td>
                                                 <td>{{ number_format($grpPaid, 2) }}</td>
+                                                <td>{{ $group->sum('remaining_installments') }}</td>
                                                 <td>{{ number_format($grpOutstanding, 2) }}</td>
                                                 <td colspan="6"></td>
                                             </tr>
                                             {{-- Empty Rows for manual entries --}}
                                             @for ($j = 0; $j < 3; $j++)
                                                 <tr class="group-row">
-                                                    @for ($k = 0; $k < 15; $k++)
+                                                    @for ($k = 0; $k < 16; $k++)
                                                         <td>&nbsp;</td>
                                                     @endfor
                                                 </tr>
@@ -752,6 +776,7 @@
                                             <td>{{ number_format($centerGroups->flatten()->sum('Installment_Amount'), 2) }}</td>
                                             <td>{{ number_format($ctrSaving, 2) }}</td>
                                             <td>{{ number_format($ctrPaid, 2) }}</td>
+                                            <td>{{ $centerGroups->flatten()->sum('remaining_installments') }}</td>
                                             <td>{{ number_format($ctrOutstanding, 2) }}</td>
                                             <td colspan="6"></td>
                                         </tr>
@@ -946,11 +971,14 @@
                 printWindow.document.write('#repaymentTable th:nth-child(6), #repaymentTable td:nth-child(6) { width: 8%; max-width: 8%; overflow: hidden; }');   // Installment Amount
                 printWindow.document.write('#repaymentTable th:nth-child(7), #repaymentTable td:nth-child(7) { width: 8%; max-width: 8%; overflow: hidden; }');   // Total Saving Amount
                 printWindow.document.write('#repaymentTable th:nth-child(8), #repaymentTable td:nth-child(8) { width: 8%; max-width: 8%; overflow: hidden; }');   // Total Paid
-                printWindow.document.write('#repaymentTable th:nth-child(9), #repaymentTable td:nth-child(9) { width: 8%; max-width: 8%; overflow: hidden; }');   // Balance
+                printWindow.document.write('#repaymentTable th:nth-child(9), #repaymentTable td:nth-child(9) { width: 6%; max-width: 6%; overflow: hidden; }');   // Remaining Installments
+                printWindow.document.write('#repaymentTable th:nth-child(10), #repaymentTable td:nth-child(10) { width: 8%; max-width: 8%; overflow: hidden; }');   // Balance
                 printWindow.document.write('.paid-amount { width: 4.33% !important; min-width: 4.33% !important; max-width: 4.33% !important; font-size: 8px; }'); // Date columns
                 printWindow.document.write('#repaymentTable thead th { font-size: 10px !important; font-weight: bold; text-align: center; }');
                 // Ensure the first three headers share the same font size
                 printWindow.document.write('#repaymentTable thead th:nth-child(1), #repaymentTable thead th:nth-child(2), #repaymentTable thead th:nth-child(3) { font-size: 10px !important; }');
+                // Smaller font for Remaining Installments header
+                printWindow.document.write('#repaymentTable thead th:nth-child(9) { font-size: 8px !important; line-height: 1.1; }');
                 // Removed old "Paid Date" header styling from print
                 printWindow.document.write('.empty-date-header { width: 4.33% !important; min-width: 4.33% !important; max-width: 4.33% !important; font-size: 9px !important; background-color: #fff !important; padding: 6px 2px !important; height: auto !important; min-height: 20px !important; line-height: 1.1 !important; white-space: nowrap !important; vertical-align: middle !important; font-weight: normal !important; }');
                 printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } .signature-section { page-break-before: always; } }');
