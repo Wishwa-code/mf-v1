@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendPaymentSmsJob;
 use App\Models\Expenses;
 use Carbon\Carbon;
 use Illuminate\Database\Schema\Blueprint;
@@ -1420,7 +1421,14 @@ class TodayPaymentController extends Controller
                         $loan_number_txt = str_replace($placeholder, $value, $loan_number_txt);
                     }
                     if ($sms_status == '1') {
-                        $this->smsLogController->index($loan->Customer_idCustomer, $loan_number_txt, "Customer Loan Payment");
+                        DB::afterCommit(function () use ($loan, $loan_number_txt, $savedId) {
+                            dispatch(new SendPaymentSmsJob(
+                                paymentId: (int)$savedId,
+                                loanId: (int)$loan->idCustomer_Loan ?? (int)$loan->idCustomer_Loan ?? 0, // ensure numeric
+                                customerId: (int)$loan->Customer_idCustomer,
+                                message: $loan_number_txt
+                            ))->onQueue('sms');
+                        });
                     }
 
                 }
@@ -2232,9 +2240,15 @@ class TodayPaymentController extends Controller
                     }
                     Log::info($sms_status);
                     if ($sms_status == '1') {
-                        $this->smsLogController->index($loan->Customer_idCustomer, $loan_number_txt, "Customer Loan Payment");
+                        DB::afterCommit(function () use ($loan, $loan_number_txt, $savedId) {
+                            dispatch(new SendPaymentSmsJob(
+                                paymentId: (int)$savedId,
+                                loanId: (int)$loan->idCustomer_Loan ?? (int)$loan->idCustomer_Loan ?? 0, // ensure numeric
+                                customerId: (int)$loan->Customer_idCustomer,
+                                message: $loan_number_txt
+                            ))->onQueue('sms');
+                        });
                     }
-
                 }
 
 
