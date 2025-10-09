@@ -1000,6 +1000,49 @@ $banner = DB::select($query);
                             </ul>
                         </div>
                     </li>
+
+                    @if(optional($privilege)->account_center == 1)
+                        <li class="side-nav-item">
+                            <a data-bs-toggle="collapse" href="#account" aria-expanded="false" aria-controls="center" class="side-nav-link">
+                                <i class="bi bi-universal-access"></i>
+                                <span> Account Center </span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse" id="account">
+                                <ul class="side-nav-second-level">
+                                    @if(optional($privilege)->internal_bank_transfer == 1)
+                                        <li>
+                                            <a href="/InnerBankTransfer">Internal Account Transfer</a>
+                                        </li>
+                                    @endif
+                                </ul>
+                            </div>
+                        </li>
+                    @endif
+
+                    @if(optional($privilege)->account_department == 1)
+                        <li class="side-nav-item">
+                            <a data-bs-toggle="collapse" href="#accountmanagement" aria-expanded="false" aria-controls="center" class="side-nav-link">
+                                <i class="bi bi-bank"></i>
+                                <span> Account Department </span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse" id="accountmanagement">
+                                <ul class="side-nav-second-level">
+                                    @if(optional($privilege)->manual_journal == 1)
+                                        <li>
+                                            <a href="/ManualJournal">Manual Journal</a>
+                                        </li>
+                                    @endif
+                                    @if(optional($privilege)->chart_of_account == 1)
+                                        <li>
+                                            <a href="/ChartOfAccount">Chart Of Account</a>
+                                        </li>
+                                    @endif
+                                </ul>
+                            </div>
+                        </li>
+                    @endif
                 @else
                 @if(optional($privilege)->dashboard == 1)
                     <li class="side-nav-item">
