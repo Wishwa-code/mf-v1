@@ -1148,6 +1148,7 @@
     <script>
         var route_collection_type="";
         var route_collection_date="";
+        var collection_date_type_global="";
         $(document).ready(function() {
             let x = ["#installment_amount","#offer_decided"];
             decimalFormat(x);
@@ -1517,7 +1518,7 @@
                         $('#penalty_date').val(product.Panelty_date);
                         $('#guarantee_count').val(product.Guarantee_count);
                         $('#collection_date_type').val(product.collection_date_type || 'same_as_installment').trigger('change');
-
+                        collection_date_type_global=product.collection_date_type;
 
                         toggleFields();
 
@@ -2158,7 +2159,7 @@
             // ===== Your existing code starts here =====
             let Collection_Type      = $('#repayment_type').val();
             let penalty_date         = $('#penalty_date').val();
-            let collection_date_type = $("#collection_date_type").val();
+            let collection_date_type = collection_date_type_global;
 
             $("#load_div").slideDown();
             $('#panelty_date').text("Installment Date + " + penalty_date + " Days");
@@ -2344,7 +2345,8 @@
             const loanAmountFrom = parseFloat($("#loan_amount_from").val());
             const loanAmountTo = parseFloat($("#loan_amount_to").val());
 
-            let collection_date_type = $("#collection_date_type").val();
+
+
 
 
             /* ---------- date helpers (define once in this scope) ---------- */
@@ -2382,8 +2384,9 @@
                 };
             }
 
+
             if (route_collection_type === "fixed") {
-                if (collection_date_type === "according_to_route") {
+                if (collection_date_type_global === "according_to_route") {
                     // ===== header with Collection Date + Difference =====
                     $('#installment_table thead').empty();
                     const theadContent = `

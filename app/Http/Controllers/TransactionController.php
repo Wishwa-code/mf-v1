@@ -73,6 +73,7 @@ class TransactionController extends Controller
                 'customer_loan.Installment_Count as Installment_Count',
                 'customer_loan.capital_balance as capital_balance',
                 'customer_loan.Installment_Amount as Installment_Amount',
+                'customer_loan.saving_amount as saving_amount',
                 'customer_loan.Vehicle_No as Vehicle_No',
                 DB::raw('COUNT(installments.idInstallments) as Installment_Count'),
                 DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
@@ -97,6 +98,7 @@ class TransactionController extends Controller
                 'customer_loan.idCustomer_Loan',
                 'customer_loan.capital_balance',
                 'customer_loan.Installment_Amount',
+                'customer_loan.saving_amount',
                 'subquery.group_name'
             );
 

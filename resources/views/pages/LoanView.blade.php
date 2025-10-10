@@ -647,6 +647,8 @@
                                         <th scope="col">Capital Balance</th>
                                         <th scope="col">Savings Balance</th>
                                         <th scope="col">Total Balance</th>
+                                        <th scope="col">Collection Date</th>
+                                        <th scope="col">Difference</th>
                                         <th scope="col">Status</th>
                                         <th scope="col"></th>
                                     </tr>
@@ -683,6 +685,8 @@
                                             <td>{{ number_format($installment->capital_balance, 2, '.', ',') }}</td>
                                             <td>{{ number_format($installment->Saving_balance, 2, '.', ',') }}</td>
                                             <td>{{ number_format($installment->Total_Balance, 2, '.', ',') }}</td>
+                                            <td>{{ $installment->Collection_Date ?? '-' }}</td>
+                                            <td>{{ $installment->Collection_Diff ?? '-' }}</td>
                                             <td>{{ $statusText }}</td>
                                             <td>
                                                 <i class="fas fa-lightbulb bulb-icon {{ $bulbColor }}"></i>

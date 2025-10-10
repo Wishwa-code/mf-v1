@@ -586,7 +586,7 @@
 
                                 for (let i = 0; i < filteredRows.length; i++) {
                                     await $.ajax({
-                                        url: '/upload-excel-loan',
+                                        url: '/upload-excel-loan-finco',
                                         method: 'POST',
                                         data: {
                                             row: filteredRows[i]

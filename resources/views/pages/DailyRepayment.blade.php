@@ -242,7 +242,7 @@
                                             <td>{{ $item->Loan_No }}</td>
                                             <td>{{ $item->Contact_No }}</td>
                                             <td class="loan-amount">{{ number_format($item->Loan_Amount, 2) }}</td>
-                                            <td class="due-amount">{{ number_format($item->Installment_Amount, 2) }}</td>
+                                            <td class="due-amount">{{ number_format($item->Installment_Amount+$item->saving_amount, 2) }}</td>
                                             <td class="total-balance">{{ number_format($item->Total_Balance, 2) }}</td>
                                             <td class="arrears">{{ number_format($item->arrease, 2) }}</td>
                                             <td></td>

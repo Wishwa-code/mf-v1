@@ -241,18 +241,11 @@
                             <label class="form-label">Date</label>
                             <input type="date" class="form-control shadow-sm" id="extra_date">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <label class="form-label">Description</label>
                             <input type="text" class="form-control shadow-sm" id="extra_description" placeholder="Enter reason...">
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Bank Account</label>
-                            <select class="form-select shadow-sm" id="bank_id">
-                                @foreach($bank as $item)
-                                    <option value="{{$item->Idbank}}">{{$item->Bank_Name}} - {{$item->Account_No}}</option>
-                                @endforeach
-                            </select>
-                        </div>
+
                         <div class="col-md-3">
                             <label class="form-label">Amount</label>
                             <input type="number" class="form-control shadow-sm" id="extra_amount" placeholder="0.00" min="0" step="0.01">

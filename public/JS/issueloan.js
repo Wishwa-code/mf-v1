@@ -326,72 +326,82 @@ function save_loan(){
     // if (saving==="Yes"){
 
 // Iterate over each row of the table
-        $('#installment_table tbody tr').each(function() {
-            // Initialize an empty object to store row data
-            var rowData = {};
+    $('#installment_table tbody tr').each(function() {
+        var rowData = {};
 
-            // Iterate over each cell of the row
-            $(this).find('td').each(function(index) {
-                // Get the text content of the cell
-                var cellData = $(this).text();
+        $(this).find('td').each(function(index) {
+            var cellData = $(this).text().trim();
 
-                // Assign the cell data to the corresponding property of the row data object
-                // Assuming the order of cells matches the order of headers in the table
-                switch(index) {
-                    case 0:
-                        rowData.No = cellData; // Add No column data
-                        break;
-                    case 1:
-                        rowData.installmentDate = cellData;
-                        break;
-                    case 2:
-                        rowData.installmentAmount = cellData;
-                        break;
-                    case 3:
-                        rowData.capitalAmount = cellData;
-                        break;
-                    case 4:
-                        rowData.interestAmount = cellData;
-                        break;
-                    case 5:
-                        rowData.panaltyDate = cellData;
-                        break;
-                    case 6:
-                        rowData.panaltyAmount = cellData;
-                        break;
-                    case 7:
-                        rowData.savingAmount = cellData;
-                        break;
-                    case 8:
-                        rowData.totalAmount = cellData;
-                        break;
-                    case 9:
-                        rowData.paidAmount = cellData;
-                        break;
-                    case 10:
-                        rowData.panaltyBalance = cellData;
-                        break;
-                    case 11:
-                        rowData.installmentBalance = cellData;
-                        break;
-                    case 12:
-                        rowData.savingBalance = cellData;
-                        break;
-                    case 13:
-                        rowData.totalBalance = cellData;
-                        break;
-                    case 14:
+            // ===== Normal column mapping =====
+            switch(index) {
+                case 0:
+                    rowData.No = cellData;
+                    break;
+                case 1:
+                    rowData.installmentDate = cellData;
+                    break;
+                case 2:
+                    rowData.installmentAmount = cellData;
+                    break;
+                case 3:
+                    rowData.capitalAmount = cellData;
+                    break;
+                case 4:
+                    rowData.interestAmount = cellData;
+                    break;
+                case 5:
+                    rowData.panaltyDate = cellData;
+                    break;
+                case 6:
+                    rowData.panaltyAmount = cellData;
+                    break;
+                case 7:
+                    rowData.savingAmount = cellData;
+                    break;
+                case 8:
+                    rowData.totalAmount = cellData;
+                    break;
+                case 9:
+                    rowData.paidAmount = cellData;
+                    break;
+                case 10:
+                    rowData.panaltyBalance = cellData;
+                    break;
+                case 11:
+                    rowData.installmentBalance = cellData;
+                    break;
+                case 12:
+                    rowData.savingBalance = cellData;
+                    break;
+                case 13:
+                    rowData.totalBalance = cellData;
+                    break;
+                // ===== NEW columns for "fixed" + "according_to_route" =====
+                case 14:
+                    if (route_collection_type === "fixed" && collection_date_type_global === "according_to_route") {
+                        rowData.collectionDate = cellData;
+                    } else {
                         rowData.status = cellData;
-                        break;
-                    default:
-                        break;
-                }
-
-            });
-
-            // Push the row data object to the table data array
-            installment.push(rowData);
+                    }
+                    break;
+                case 15:
+                    if (route_collection_type === "fixed" && collection_date_type_global === "according_to_route") {
+                        rowData.difference = cellData;
+                    }
+                    break;
+                case 16:
+                    if (route_collection_type === "fixed" && collection_date_type_global === "according_to_route") {
+                        rowData.status = cellData;
+                    }
+                    break;
+                default:
+                    break;
+            }
         });
+
+        installment.push(rowData);
+    });
+
 
     // Initialize an empty array to store table data
     loan_charge_table=[];
@@ -531,7 +541,9 @@ function save_loan(){
                         collector_officer:collector_officer,
                         saving:saving,
                         repayment_duration_period:repayment_duration_period,
-                        type_loan_number:type_loan_number
+                        type_loan_number:type_loan_number,
+                        route_collection_type:route_collection_type,
+                        collection_date_type_global:collection_date_type_global,
                     },
                     success: function (data, textStatus, xhr) {
                         if (xhr.status === 200) {

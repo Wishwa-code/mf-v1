@@ -27,7 +27,7 @@ class PDFController extends Controller
         $total_paid_amount = $customer_payments->sum('Amount');
         $customers = tableWithBranch('customer')->where('idCustomer', $loan->Customer_idCustomer)->first();
         $User = tableWithBranch('user')->where('id', $loan->User_idUser)->first();
-        $Lending_Officer = tableWithBranch('user')->where('id', $loan->lending_officer_id)->first();
+        $Lending_Officer = tableWithBranch('user')->where('id', $loan->lending_officer_id)->first() ?? '-';
         $Loan_Category = tableWithBranch('loan_category')->where('idLoan_Category', $loan->Loan_Category_idLoan_Category)->first();
         $Customer_Bank = tableWithBranch('customer_has_bank')->where([
             ['id', $loan->cus_bank_account],

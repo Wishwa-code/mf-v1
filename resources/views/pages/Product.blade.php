@@ -56,11 +56,11 @@
                                         <h4 class="page-title mb-3">Loan Product</h4>
 
 {{--                                        <!-- File input -->--}}
-{{--                                        <label style="color: red">Upload Excel</label>--}}
-{{--                                        <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="form-control mb-2 w-50">--}}
+                                        <label style="color: red">Upload Excel</label>
+                                        <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="form-control mb-2 w-50">
 
-{{--                                        <!-- Upload button, aligned below the file input -->--}}
-{{--                                        <input type="button" onclick="upload_excel()" class="btn btn-success mt-2" value="Upload">--}}
+                                        <!-- Upload button, aligned below the file input -->
+                                        <input type="button" onclick="upload_excel()" class="btn btn-success mt-2" value="Upload">
 
                                         <button type="button" class="btn btn-primary" id="openCloneModal">
                                             <i class="fas fa-random me-1"></i> Clone / Merge Products to Other Branches

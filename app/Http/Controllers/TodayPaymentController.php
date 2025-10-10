@@ -3811,88 +3811,70 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
         return response()->json($loanDetailsArray);
     }
 
+
+
     public function saveExtraCharge(Request $request)
     {
         try {
             DB::beginTransaction();
 
-            $customer_loan = tableWithBranch('customer_loan')
-                ->where('idCustomer_Loan', $request->loan_id)
+            // --- Basic manual checks ---
+            if (empty($request->loan_id) || empty($request->amount)) {
+                return response()->json(['status' => 'error', 'message' => 'Loan ID and Amount are required.']);
+            }
+
+            // --- Prepare values ---
+            $loanId      = (int)$request->loan_id;
+            $amount      = (float)$request->amount;
+            $description = $request->description ?? '';
+            $date        = $request->date ? Carbon::parse($request->date)->toDateString() : now()->toDateString();
+            $userId      = (int)session('userid');
+            $branchId    = (int)session('branch_id');
+
+            // --- Lock last record for consistency ---
+            $lastRow = DB::table('extra_charger')
+                ->where('loan_id', $loanId)
+                ->orderByDesc('id_extra_charger')
+                ->lockForUpdate()
                 ->first();
 
-            $customer = tableWithBranch('customer')
-                ->where('idCustomer', $customer_loan->Customer_idCustomer)
-                ->first();
+            $currentBalance = $lastRow ? (float)$lastRow->balance : 0.0;
+            $newBalance     = $currentBalance + $amount;
 
-            $cate = tableWithBranch('income_category')
-                ->where('description', 'Other')
-                ->first();
-
-            $expenses = new Expenses();
-            $expenses->type = "Income";
-            $expenses->reason = "Other loan charges for loan number: ({$customer_loan->Loan_No}), Customer name: ({$customer->First_Name} {$customer->Last_Name})";
-            $expenses->date = date('Y-m-d');
-            $expenses->amount = $request->amount;
-            $expenses->category_id = $cate->id;
-            $expenses->bank_id = $request->bank_id;
-            $expenses->user_id = session('userid');
-            $expenses->branch_id = session('branch_id');
-            $expenses->save();
-
-            // Insert into extra_charger
-            DB::table('extra_charger')->insert([
-                'loan_id' => $request->loan_id,
-                'date' => $request->date,
-                'time' => now()->format('H:i:s'),
-                'description' => $request->description,
-                'amount' => $request->amount,
-                'bank_id' => $request->bank_id,
-                'expences_id' => $expenses->id,
-                'user_id' => session('userid'),
-                'branch_id' => session('branch_id')
+            // --- Insert new extra charge record ---
+            $id = DB::table('extra_charger')->insertGetId([
+                'loan_id'     => $loanId,
+                'date'        => $date,
+                'time'        => now()->format('H:i:s'),
+                'description' => $description,
+                'user_id'     => $userId,
+                'branch_id'   => $branchId,
+                'amount'      => $amount,
+                'balance'     => $newBalance,
             ]);
 
-            $bank_id = tableWithBranch('company_bank_accounts')
-                ->where('Bank_Type', 'System_default_9')
-                ->first();
-
-            $company_bank = $request->bank_id;
-            $sumAmount = $request->amount;
-            $bank_log_doc_comment = 'Extra Charges - ' . $request->description;
-
-            $this->bankLogController->index(
-                $company_bank,
-                "Loan Document Charges",
-                $bank_log_doc_comment,
-                "-",
-                "debit",
-                $sumAmount,
-                $bank_id->Idbank
-            );
-
-            $this->bankLogController->index(
-                $bank_id->Idbank,
-                "Loan Document Charges",
-                $bank_log_doc_comment,
-                "-",
-                "credit",
-                $sumAmount,
-                $company_bank
-            );
-
+            // --- Add comment for audit trail ---
             DB::table('loan_comment')->insert([
-                'comment' => "Extra Loan Document Charges",
-                'loan_id' => $request->loan_id,
-                'user_id' => session('userid'),
-                'date' => now()->toDateString(),
-                'time' => now()->toTimeString(),
+                'comment' => 'Extra Charges ' . number_format($amount, 2),
+                'loan_id' => $loanId,
+                'user_id' => $userId,
+                'date'    => now()->toDateString(),
+                'time'    => now()->toTimeString(),
             ]);
 
             DB::commit();
-            return response()->json(['status' => 'success']);
-        } catch (\Exception $e) {
+
+            $created = DB::table('extra_charger')->where('id_extra_charger', $id)->first();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Extra charge saved successfully.',
+                'data'    => $created
+            ]);
+
+        } catch (\Throwable $e) {
             DB::rollBack();
-            Log::info($e->getMessage());
+            Log::error('saveExtraCharge failed', ['error' => $e->getMessage()]);
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
