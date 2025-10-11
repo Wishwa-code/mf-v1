@@ -74,7 +74,7 @@ class ApprovalController extends Controller
         
         // Apply type filtering
         if (!empty($selectedType)) {
-            $query->where('ar.type', $selectedType);
+            $query->where('ar.typeid', $selectedType);
         }
         
         $pendingApprovals = $query->orderBy('ar.data_time', 'desc')->get();
