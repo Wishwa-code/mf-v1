@@ -38,10 +38,10 @@ function savePrivileges(e){
                 },
                 data:{ designationId: designationId, privileges: privileges, propagate: propagate },
                 success:function(res){
-                    if (propagate === 1 && res && typeof res.updated_users !== 'undefined') {
-                        Swal.fire("Updated!", `Designation privileges updated and applied to ${res.updated_users} user(s).`, "success");
+                    if (res && res.message) {
+                        Swal.fire("Sent for Approval!", res.message, "success");
                     } else {
-                        Swal.fire("Updated!", "Designation privileges updated.", "success");
+                        Swal.fire("Sent for Approval!", "Designation privilege change request sent for approval!", "success");
                     }
                 },
                 error:function(){

@@ -191,6 +191,31 @@
         </div>
     </div>
 
+    <!-- Designation Details Modal -->
+    <div class="modal fade" id="designationDetailsModal" tabindex="-1" aria-labelledby="designationDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="designationDetailsModalLabel">
+                        <i class="ri-shield-user-line me-2"></i>Designation Change Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="designationDetailsContent">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-warning" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3">Loading designation details...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Action Modal -->
     <div class="modal fade" id="actionModal" tabindex="-1" aria-labelledby="actionModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -246,6 +271,9 @@
             if (typeId == 401) {
                 // Loan Approval - Show loan details modal
                 showLoanDetails(id);
+            } else if (typeId == 201) {
+                // Designation update - Show designation details modal
+                showDesignationDetails(id);
             } else {
                 // Other types - show alert for now
                 alert(`View details for ${type} request #${id} (Type ID: ${typeId})`);
@@ -282,6 +310,41 @@
                     $('#loanDetailsContent').html(`
                         <div class="alert alert-danger" role="alert">
                             <i class="ri-error-warning-line me-2"></i>Error loading loan details. Please try again.
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function showDesignationDetails(approvalId) {
+            $('#designationDetailsModal').modal('show');
+            $('#designationDetailsContent').html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading designation details...</p>
+                </div>
+            `);
+            
+            $.ajax({
+                url: `/approval/designation-details/${approvalId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#designationDetailsContent').html(response.html);
+                    } else {
+                        $('#designationDetailsContent').html(`
+                            <div class="alert alert-danger" role="alert">
+                                <i class="ri-error-warning-line me-2"></i>Error: ${response.message}
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#designationDetailsContent').html(`
+                        <div class="alert alert-danger" role="alert">
+                            <i class="ri-error-warning-line me-2"></i>Error loading designation details. Please try again.
                         </div>
                     `);
                 }

@@ -412,6 +412,36 @@ class ApprovalController extends Controller
                 }
             }
             
+            // Handle Designation Privileges Update (Type 201)
+            if ($approval->typeid == 201) {
+                $requestData = json_decode($approval->data, true);
+                $designationId = $requestData['designation_id'];
+                
+                // Check if this is a details update or privileges update
+                if (isset($requestData['update_type']) && $requestData['update_type'] === 'details') {
+                    // Update designation details (name, max amounts, etc.)
+                    $newData = $requestData['new_data'];
+                    DB::table('designation')
+                        ->where('idDesignation', $designationId)
+                        ->update([
+                            'name' => $newData['name'],
+                            'desi_level' => $newData['desi_level'],
+                            'loan_creat' => $newData['loan_creat'],
+                            'loan_issue' => $newData['loan_issue'],
+                            'max_create_amount' => $newData['max_create_amount'],
+                            'max_issue_amount' => $newData['max_issue_amount'],
+                        ]);
+                } else {
+                    // Update designation privileges
+                    $privileges = $requestData['privileges'];
+                    DB::table('designation')
+                        ->where('idDesignation', $designationId)
+                        ->update([
+                            'privileges' => json_encode($privileges)
+                        ]);
+                }
+            }
+            
             // Handle Loan Approval (Type 401)
             if ($approval->typeid == 401) {
                 $requestData = json_decode($approval->data, true);
@@ -537,6 +567,127 @@ class ApprovalController extends Controller
                 'otherCharges',
                 'approvalLevels'
             ))->render();
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getDesignationDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request')->where('id', $approvalId)->first();
+            
+            if (!$approval || $approval->typeid != 201) {
+                return response()->json(['success' => false, 'message' => 'Designation approval request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $designationId = $requestData['designation_id'];
+            
+            // Get current designation from database
+            $currentDesignation = DB::table('designation')
+                ->where('idDesignation', $designationId)
+                ->first();
+            
+            $html = '';
+            
+            // Check if this is a details update or privileges update
+            if (isset($requestData['update_type']) && $requestData['update_type'] === 'details') {
+                // Details update - show old vs new comparison
+                $oldData = $requestData['old_data'];
+                $newData = $requestData['new_data'];
+                
+                $html = '
+                <div class="alert alert-info">
+                    <i class="ri-information-line me-2"></i><strong>Designation Details Update Request</strong>
+                </div>
+                
+                <table class="table table-bordered">
+                    <thead class="table-secondary">
+                        <tr>
+                            <th style="width: 33%;">Field</th>
+                            <th style="width: 33%;" class="text-danger">Current Value</th>
+                            <th style="width: 33%;" class="text-success">Requested Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Designation Name</strong></td>
+                            <td class="text-danger">' . htmlspecialchars($oldData['name']) . '</td>
+                            <td class="text-success">' . htmlspecialchars($newData['name']) . '</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Max Create Amount</strong></td>
+                            <td class="text-danger">' . number_format($oldData['max_create_amount'], 2) . '</td>
+                            <td class="text-success">' . number_format($newData['max_create_amount'], 2) . '</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Max Issue Amount</strong></td>
+                            <td class="text-danger">' . number_format($oldData['max_issue_amount'], 2) . '</td>
+                            <td class="text-success">' . number_format($newData['max_issue_amount'], 2) . '</td>
+                        </tr>
+                    </tbody>
+                </table>
+                ';
+            } else {
+                // Privileges update - show old vs new privileges comparison
+                $oldPrivileges = $requestData['old_privileges'] ?? [];
+                $newPrivileges = $requestData['privileges'] ?? [];
+                
+                // Get all unique keys
+                $allKeys = array_unique(array_merge(array_keys($oldPrivileges), array_keys($newPrivileges)));
+                sort($allKeys);
+                
+                $html = '
+                <div class="alert alert-info">
+                    <i class="ri-information-line me-2"></i><strong>Designation: ' . htmlspecialchars($requestData['designation_name']) . ' - Privileges Update Request</strong>
+                </div>
+                
+                <table class="table table-bordered table-sm">
+                    <thead class="table-secondary">
+                        <tr>
+                            <th>Permission</th>
+                            <th class="text-center text-danger">Current</th>
+                            <th class="text-center text-success">Requested</th>
+                            <th class="text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
+                
+                $changesCount = 0;
+                foreach ($allKeys as $key) {
+                    $oldVal = $oldPrivileges[$key] ?? 0;
+                    $newVal = $newPrivileges[$key] ?? 0;
+                    
+                    if ($oldVal != $newVal) {
+                        $changesCount++;
+                        $statusBadge = $newVal == 1 ? '<span class="badge bg-success">Enabled</span>' : '<span class="badge bg-danger">Disabled</span>';
+                        $oldIcon = $oldVal == 1 ? '<i class="ri-checkbox-circle-fill text-success"></i>' : '<i class="ri-close-circle-fill text-danger"></i>';
+                        $newIcon = $newVal == 1 ? '<i class="ri-checkbox-circle-fill text-success"></i>' : '<i class="ri-close-circle-fill text-danger"></i>';
+                        
+                        $html .= '
+                        <tr>
+                            <td>' . htmlspecialchars(ucwords(str_replace('_', ' ', $key))) . '</td>
+                            <td class="text-center">' . $oldIcon . '</td>
+                            <td class="text-center">' . $newIcon . '</td>
+                            <td class="text-center">' . $statusBadge . '</td>
+                        </tr>';
+                    }
+                }
+                
+                if ($changesCount == 0) {
+                    $html .= '<tr><td colspan="4" class="text-center text-muted">No changes detected</td></tr>';
+                }
+                
+                $html .= '
+                    </tbody>
+                </table>
+                <div class="alert alert-secondary mt-3">
+                    <strong>Total Changes:</strong> ' . $changesCount . ' permission(s)
+                </div>';
+            }
             
             return response()->json(['success' => true, 'html' => $html]);
         } catch (\Exception $e) {
