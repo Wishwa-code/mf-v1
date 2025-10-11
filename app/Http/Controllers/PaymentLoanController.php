@@ -28,10 +28,10 @@ class PaymentLoanController extends Controller
     public function index()
     {
         // Instantiate UserController
-        $userController = new UserController();
+        // $userController = new UserController();
 
         // Call the create_panelty function
-        $userController->create_panelty();
+        // $userController->create_panelty();
 
 
         $group = tableWithBranch('customer_group')->get();
