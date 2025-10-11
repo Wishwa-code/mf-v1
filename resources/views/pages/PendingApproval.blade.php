@@ -271,6 +271,9 @@
             if (typeId == 401) {
                 // Loan Approval - Show loan details modal
                 showLoanDetails(id);
+            } else if (typeId == 402) {
+                // Loan Rejection - Show loan rejection details modal
+                showLoanRejectionDetails(id);
             } else if (typeId == 201) {
                 // Designation update - Show designation details modal
                 showDesignationDetails(id);
@@ -345,6 +348,42 @@
                     $('#designationDetailsContent').html(`
                         <div class="alert alert-danger" role="alert">
                             <i class="ri-error-warning-line me-2"></i>Error loading designation details. Please try again.
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function showLoanRejectionDetails(approvalId) {
+            $('#loanDetailsModal').modal('show');
+            $('#loanDetailsModalLabel').html('<i class="ri-delete-bin-line me-2"></i>Loan Rejection Details');
+            $('#loanDetailsContent').html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-danger" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading loan rejection details...</p>
+                </div>
+            `);
+            
+            $.ajax({
+                url: `/approval/loan-rejection-details/${approvalId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#loanDetailsContent').html(response.html);
+                    } else {
+                        $('#loanDetailsContent').html(`
+                            <div class="alert alert-danger" role="alert">
+                                <i class="ri-error-warning-line me-2"></i>Error: ${response.message}
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#loanDetailsContent').html(`
+                        <div class="alert alert-danger" role="alert">
+                            <i class="ri-error-warning-line me-2"></i>Error loading loan rejection details. Please try again.
                         </div>
                     `);
                 }

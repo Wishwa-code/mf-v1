@@ -453,6 +453,40 @@ class ApprovalController extends Controller
                     ->update(['Status' => '-1']);
             }
             
+            // Handle Loan Rejection (Type 402)
+            if ($approval->typeid == 402) {
+                $requestData = json_decode($approval->data, true);
+                $loan_id = $requestData['loan_id'];
+                $reason = $requestData['reason'];
+                $customer_id = $requestData['customer_id'];
+                
+                // Update loan status to rejected
+                DB::table('customer_loan')
+                    ->where('idCustomer_Loan', $loan_id)
+                    ->where('branch_id', $approval->branch_id)
+                    ->update(['Status' => '-2', 'reason' => $reason]);
+                
+                // Log to customer log
+                $customer = DB::table('customer')
+                    ->where('idCustomer', $customer_id)
+                    ->where('branch_id', $approval->branch_id)
+                    ->first();
+                
+                $logData = [
+                    'customer_id' => $customer_id,
+                    'customer_name' => ($customer->First_Name ?? '') . ' ' . ($customer->Last_Name ?? ''),
+                    'date' => date('Y-m-d'),
+                    'time' => date('H:i:s'),
+                    'description' => "Delete Loan ({$loan_id})\nReason : {$reason}",
+                    'description_id' => $loan_id,
+                    'comment' => ' ',
+                    'type' => 'Delete Loan',
+                    'user' => session('userid'),
+                ];
+                
+                insertWithBranch('customer_log', $logData);
+            }
+            
             // Update approval status
             DB::table('approval_request')
                 ->where('id', $id)
@@ -688,6 +722,87 @@ class ApprovalController extends Controller
                     <strong>Total Changes:</strong> ' . $changesCount . ' permission(s)
                 </div>';
             }
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getLoanRejectionDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 402) {
+                return response()->json(['success' => false, 'message' => 'Loan rejection request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $loan_id = $requestData['loan_id'];
+            $customer_name = $requestData['customer_name'];
+            $loan_no = $requestData['loan_no'];
+            $amount = $requestData['amount'];
+            $category_name = $requestData['category_name'];
+            $reason = $requestData['reason'];
+            
+            $html = '
+            <div class="alert alert-danger">
+                <i class="ri-alert-line me-2"></i><strong>Loan Deletion/Rejection Request</strong>
+                <p class="mb-0 mt-2"><small>This action will permanently reject/delete the loan and update its status.</small></p>
+            </div>
+            
+            <table class="table table-bordered">
+                <tbody>
+                    <tr>
+                        <th style="width: 35%;">Customer Name</th>
+                        <td><strong>' . htmlspecialchars($customer_name) . '</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Loan Number</th>
+                        <td>' . htmlspecialchars($loan_no) . '</td>
+                    </tr>
+                    <tr>
+                        <th>Loan Amount</th>
+                        <td><strong class="text-primary">' . number_format($amount, 2) . '</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Product/Category</th>
+                        <td>' . htmlspecialchars($category_name) . '</td>
+                    </tr>
+                    <tr>
+                        <th>Rejection Reason</th>
+                        <td>
+                            <div class="alert alert-warning mb-0">
+                                <i class="ri-information-line me-2"></i>' . nl2br(htmlspecialchars($reason)) . '
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Requested By</th>
+                        <td>' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Request Date</th>
+                        <td>' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="alert alert-info mt-3">
+                <i class="ri-information-line me-2"></i>
+                <strong>Note:</strong> Approving this request will:
+                <ul class="mb-0 mt-2">
+                    <li>Set loan status to <strong>Rejected (-2)</strong></li>
+                    <li>Create an entry in customer log</li>
+                    <li>This action cannot be undone automatically</li>
+                </ul>
+            </div>
+            ';
             
             return response()->json(['success' => true, 'html' => $html]);
         } catch (\Exception $e) {
