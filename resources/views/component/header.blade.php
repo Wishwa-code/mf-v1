@@ -1048,6 +1048,31 @@ $banner = DB::select($query);
                             </div>
                         </li>
                     @endif
+
+                    @if(optional($privilege)->expenses == 1)
+                        <li class="side-nav-item">
+                            <a data-bs-toggle="collapse" href="#expences" aria-expanded="false" aria-controls="expences"
+                               class="side-nav-link">
+                                <i class="ri-briefcase-line"></i>
+                                <span> Expenses </span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse" id="expences">
+                                <ul class="side-nav-second-level">
+                                    @if(optional($privilege)->add_expenses == 1)
+                                        <li>
+                                            <a href="/expenses">Add Expenses</a>
+                                        </li>
+                                    @endif
+                                    @if(optional($privilege)->view_expenses == 1)
+                                        <li>
+                                            <a href="/view_expenses">View Expenses</a>
+                                        </li>
+                                    @endif
+                                </ul>
+                            </div>
+                        </li>
+                    @endif
                 @else
                 @if(optional($privilege)->dashboard == 1)
                     <li class="side-nav-item">
