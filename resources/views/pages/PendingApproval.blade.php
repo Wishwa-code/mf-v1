@@ -21,6 +21,28 @@
         .table-responsive {
             overflow-x: auto;
         }
+        
+        /* Expand/Collapse icon styling */
+        .details-control {
+            cursor: pointer;
+            color: #007bff;
+            font-size: 1.2rem;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        .details-control:hover {
+            color: #0056b3;
+        }
+        
+        /* Child row styling */
+        .child-row-content {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 3px solid #007bff;
+        }
+        .child-row-content strong {
+            color: #495057;
+        }
     </style>
 @endsection
 
@@ -90,10 +112,10 @@
                                 <table id="pendingApprovalTable" class="table table-striped table-bordered nowrap" style="width:100%">
                                     <thead>
                                         <tr>
+                                            <th class="text-center" style="width: 30px;"></th>
                                             <th>Branch</th>
                                             <th>Type</th>
                                             <th>Date & Time</th>
-                                            <th>Description</th>
                                             <th>User</th>
                                             <th class="text-center">View</th>
                                             <th class="text-center">Actions</th>
@@ -101,7 +123,10 @@
                                     </thead>
                                     <tbody>
                                         @foreach($pendingApprovals as $approval)
-                                            <tr>
+                                            <tr data-description="{{ htmlspecialchars($approval->description, ENT_QUOTES, 'UTF-8') }}">
+                                                <td class="details-control text-center">
+                                                    <i class="ri-add-circle-line"></i>
+                                                </td>
                                                 <td>
                                                     <span class="badge bg-primary">{{ $approval->branch_name ?? 'N/A' }}</span>
                                                 </td>
@@ -111,11 +136,6 @@
                                                 <td>
                                                     <small>{{ date('d/m/Y', strtotime($approval->data_time)) }}</small><br>
                                                     <small class="text-muted">{{ date('h:i A', strtotime($approval->data_time)) }}</small>
-                                                </td>
-                                                <td>
-                                                    <div style="max-width: 300px;">
-                                                        <strong>{{ $approval->description }}</strong>
-                                                    </div>
                                                 </td>
                                                 <td>
                                                     <span class="text-primary">
@@ -257,13 +277,33 @@
         let currentAction = null;
 
         $(document).ready(function() {
-            $('#pendingApprovalTable').DataTable({
+            var table = $('#pendingApprovalTable').DataTable({
                 "pageLength": 25,
-                "responsive": true,
-                "order": [[ 2, "desc" ]], // Sort by date column
+                "responsive": false,
+                "order": [[ 3, "desc" ]], // Sort by date column
                 "columnDefs": [
-                    { "orderable": false, "targets": [5, 6] } // Disable sorting for View and Actions columns
+                    { "orderable": false, "targets": [0, 5, 6] } // Disable sorting for expand and action columns
                 ]
+            });
+            
+            // Add event listener for expand/collapse icon
+            $('#pendingApprovalTable tbody').on('click', 'td.details-control', function() {
+                var tr = $(this).closest('tr');
+                var row = table.row(tr);
+                var icon = $(this).find('i');
+                
+                if (row.child.isShown()) {
+                    // Close the row
+                    row.child.hide();
+                    tr.removeClass('shown');
+                    icon.removeClass('ri-subtract-line').addClass('ri-add-circle-line');
+                } else {
+                    // Open the row
+                    var description = tr.data('description');
+                    row.child('<div class="child-row-content"><strong>Description:</strong> ' + description + '</div>').show();
+                    tr.addClass('shown');
+                    icon.removeClass('ri-add-circle-line').addClass('ri-subtract-line');
+                }
             });
         });
 

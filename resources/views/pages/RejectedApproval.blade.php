@@ -21,6 +21,28 @@
         .table-responsive {
             overflow-x: auto;
         }
+        
+        /* Expand/Collapse icon styling */
+        .details-control {
+            cursor: pointer;
+            color: #007bff;
+            font-size: 1.2rem;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        .details-control:hover {
+            color: #0056b3;
+        }
+        
+        /* Child row styling */
+        .child-row-content {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 3px solid #dc3545;
+        }
+        .child-row-content strong {
+            color: #495057;
+        }
     </style>
 @endsection
 
@@ -98,11 +120,11 @@
                                 <table id="rejectedApprovalTable" class="table table-striped table-bordered nowrap" style="width:100%">
                                     <thead>
                                         <tr>
+                                            <th class="text-center" style="width: 30px;"></th>
                                             <th>Branch</th>
                                             <th>Type</th>
                                             <th>Request Date</th>
                                             <th>Rejected Date</th>
-                                            <th>Description</th>
                                             <th>User</th>
                                             <th>Rejected By</th>
                                             <th>Reason</th>
@@ -111,7 +133,10 @@
                                     </thead>
                                     <tbody>
                                         @foreach($rejectedApprovals as $rejected)
-                                            <tr>
+                                            <tr data-description="{{ htmlspecialchars($rejected->description, ENT_QUOTES, 'UTF-8') }}">
+                                                <td class="details-control text-center">
+                                                    <i class="ri-add-circle-line"></i>
+                                                </td>
                                                 <td>
                                                     <span class="badge bg-primary">{{ $rejected->branch_name ?? 'N/A' }}</span>
                                                 </td>
@@ -123,11 +148,6 @@
                                                 </td>
                                                 <td>
                                                     <small>{{ $rejected->approved_date_time ? date('d/m/Y h:i A', strtotime($rejected->approved_date_time)) : 'N/A' }}</small>
-                                                </td>
-                                                <td>
-                                                    <div style="max-width: 250px;">
-                                                        <strong>{{ $rejected->description }}</strong>
-                                                    </div>
                                                 </td>
                                                 <td>
                                                     <span class="text-primary">
@@ -182,10 +202,33 @@
     
     <script>
         $(document).ready(function() {
-            $('#rejectedApprovalTable').DataTable({
+            var table = $('#rejectedApprovalTable').DataTable({
                 "pageLength": 25,
-                "responsive": true,
-                "order": [[ 3, "desc" ]], // Sort by rejected date column
+                "responsive": false,
+                "order": [[ 4, "desc" ]], // Sort by rejected date column
+                "columnDefs": [
+                    { "orderable": false, "targets": [0, 8] } // Disable sorting for expand and action columns
+                ]
+            });
+            
+            // Add event listener for expand/collapse icon
+            $('#rejectedApprovalTable tbody').on('click', 'td.details-control', function() {
+                var tr = $(this).closest('tr');
+                var row = table.row(tr);
+                var icon = $(this).find('i');
+                
+                if (row.child.isShown()) {
+                    // Close the row
+                    row.child.hide();
+                    tr.removeClass('shown');
+                    icon.removeClass('ri-subtract-line').addClass('ri-add-circle-line');
+                } else {
+                    // Open the row
+                    var description = tr.data('description');
+                    row.child('<div class="child-row-content"><strong>Description:</strong> ' + description + '</div>').show();
+                    tr.addClass('shown');
+                    icon.removeClass('ri-add-circle-line').addClass('ri-subtract-line');
+                }
             });
         });
 
