@@ -1064,11 +1064,11 @@ $banner = DB::select($query);
                                             <a href="/expenses">Add Expenses</a>
                                         </li>
                                     @endif
-                                    @if(optional($privilege)->view_expenses == 1)
+{{--                                    @if(optional($privilege)->view_expenses == 1)
                                         <li>
                                             <a href="/view_expenses">View Expenses</a>
                                         </li>
-                                    @endif
+                                    @endif--}}
                                 </ul>
                             </div>
                         </li>
