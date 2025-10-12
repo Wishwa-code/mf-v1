@@ -127,7 +127,8 @@ class ReportController extends Controller
         ]);
         $user_id = (int)session('userid');
         $Bank = [
-            'Bank_Type' => "Expenses",
+            'Bank_Type' => "ChartOfAccount",
+            'acc_type_group' => "Expenses",
             'code' => $id,
             'Bank_Name' => $request->description,
             'Account_Name' => $request->description,
