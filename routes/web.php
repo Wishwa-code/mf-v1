@@ -339,6 +339,7 @@ Route::post('/income','\App\Http\Controllers\ReportController@saveexpenses')->na
 Route::get('/view_income','\App\Http\Controllers\ReportController@viewincome')->name('report.viewincome');
 
 Route::get('/expenses','\App\Http\Controllers\ReportController@create')->name('report.create');
+Route::post('/get-branch-expense-data','\App\Http\Controllers\ReportController@getBranchExpenseData')->name('report.getBranchExpenseData');
 Route::post('/expenses_categories', '\App\Http\Controllers\ReportController@store')->name('expenses_categories.store');
 Route::delete('/expenses_categories/{id}', '\App\Http\Controllers\ReportController@destroy')->name('categories.destroy');
 
