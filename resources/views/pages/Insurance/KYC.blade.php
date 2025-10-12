@@ -86,7 +86,11 @@
 
                                 <ul class="nav nav-tabs" id="kycTabs" role="tablist">
                                     <li class="nav-item">
-                                        <a class="nav-link active" data-bs-toggle="tab" href="#basic" role="tab"><i
+                                        <a class="nav-link active" data-bs-toggle="tab" href="#summary" role="tab"><i
+                                                    class="fas fa-list me-1"></i>Customer Summary</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" data-bs-toggle="tab" href="#basic" role="tab"><i
                                                     class="fas fa-user me-1"></i>Basic Details</a>
                                     </li>
                                     <li class="nav-item">
@@ -117,7 +121,8 @@
                                 </ul>
 
                                 <div class="tab-content" id="kycTabContent">
-                                    <div class="tab-pane fade show active" id="basic" role="tabpanel"></div>
+                                    <div class="tab-pane fade show active" id="summary" role="tabpanel"></div>
+                                    <div class="tab-pane fade" id="basic" role="tabpanel"></div>
                                     <div class="tab-pane fade" id="guardian" role="tabpanel"></div>
                                     <div class="tab-pane fade" id="documents" role="tabpanel"></div>
                                     <div class="tab-pane fade" id="loans" role="tabpanel"></div>
@@ -221,6 +226,25 @@
                 });
             }
 
+            // Load other customer's KYC
+            window.selectKycCustomer = function (customerId) {
+                if (!customerId) return;
+                selectedCustomerId = String(customerId);
+                $('#customerSelect').val(String(customerId)).trigger('change');
+
+                const tabSelector = '#kycTabs a[href="#summary"]';
+                const tabEl = document.querySelector(tabSelector);
+                if (tabEl) {
+                    if (window.bootstrap && bootstrap.Tab) {
+                        const tab = new bootstrap.Tab(tabEl);
+                        tab.show();
+                    } else if (typeof $(tabEl).tab === 'function') {
+                        $(tabEl).tab('show');
+                    }
+                }
+                loadTabContent('summary', selectedCustomerId);
+            };
+
             // Leaflet Map Logic
             function load_map() {
                 const mapContainer = document.getElementById('map');
@@ -248,7 +272,7 @@
             // Optional: Load default tab on page load if customer already selected
             selectedCustomerId = $('#customerSelect').val();
             if (selectedCustomerId && selectedCustomerId !== '0') {
-                loadTabContent('basic', selectedCustomerId);
+                loadTabContent('summary', selectedCustomerId);
             } else {
                 clearTabs();
             }

@@ -70,7 +70,7 @@ class LoanController extends Controller
             $user_id = (int) session('userid');
 
             $loan = new Loan();
-
+            $loan->created_at = Carbon::now();
             $date = Carbon::now()->toDateString();
 
             $customer_id      = $request->customer_id;
@@ -966,7 +966,15 @@ class LoanController extends Controller
 
         $loan_saving_balance=tableWithBranch('Customer_Saving_Accounts')->where('Loan_Id','=',$id)->value('Balance');
 
-        $exists=DB::table('reshedule')->where('loan_id', $loan->idCustomer_Loan)->exists() ? 1 : 0;
+        // Guard against legacy reshedule tables missing 'loan_id' column
+        $exists = 0;
+        try {
+            if (Schema::hasTable('reshedule') && Schema::hasColumn('reshedule', 'loan_id')) {
+                $exists = DB::table('reshedule')->where('loan_id', $loan->idCustomer_Loan)->exists() ? 1 : 0;
+            }
+        } catch (\Throwable $e) {
+            $exists = 0; // Fallback silently to avoid breaking the view
+        }
 
         // Pass the data to the view with compact and handle potential nulls
         return view('pages.LoanView', compact(
@@ -1511,18 +1519,35 @@ class LoanController extends Controller
             return;
         }
 
-        // Add the three new columns if they’re missing (safe to call repeatedly)
-        if (!Schema::hasColumn('reshedule', 'loan_id')) {
-            Schema::table('reshedule', fn (Blueprint $t) => $t
-                ->unsignedBigInteger('loan_id')->nullable()->index()->after('idReschedule'));
-        }
-        if (!Schema::hasColumn('reshedule', 'created_by')) {
-            Schema::table('reshedule', fn (Blueprint $t) => $t
-                ->unsignedBigInteger('created_by')->nullable()->index()->after('collector_id'));
-        }
-        if (!Schema::hasColumn('reshedule', 'created_at')) {
-            Schema::table('reshedule', fn (Blueprint $t) => $t
-                ->timestamp('created_at')->nullable()->after('created_by'));
+        // Add the new columns if they’re missing (safe to call repeatedly) without relying on column order
+        if (Schema::hasTable('reshedule')) {
+            if (!Schema::hasColumn('reshedule', 'loan_id')) {
+                try {
+                    Schema::table('reshedule', function (Blueprint $t) {
+                        $t->unsignedBigInteger('loan_id')->nullable()->index();
+                    });
+                } catch (\Throwable $e) {
+                    // ignore if fails due to permissions or legacy engine
+                }
+            }
+            if (!Schema::hasColumn('reshedule', 'created_by')) {
+                try {
+                    Schema::table('reshedule', function (Blueprint $t) {
+                        $t->unsignedBigInteger('created_by')->nullable()->index();
+                    });
+                } catch (\Throwable $e) {
+                    // ignore
+                }
+            }
+            if (!Schema::hasColumn('reshedule', 'created_at')) {
+                try {
+                    Schema::table('reshedule', function (Blueprint $t) {
+                        $t->timestamp('created_at')->nullable();
+                    });
+                } catch (\Throwable $e) {
+                    // ignore
+                }
+            }
         }
     }
 

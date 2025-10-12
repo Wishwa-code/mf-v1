@@ -273,6 +273,8 @@
                                     <th>Capital Balance</th>
                                     <th>Arrears</th>
                                     <th>Total Balance</th>
+                                    <th>Last Payment Date</th>
+                                    <th>Last Payment Amount</th>
                                     <th>Status</th>
                                     <th>Action</th>
                                 </tr>
@@ -553,6 +555,8 @@
                                 (parseFloat(item.Balance_Amount) || 0) +
                                 (parseFloat(item.Panalty_Balance) || 0)
                             ).toFixed(2)}</td>
+                            <td>${item.Last_Payment_Date ?? '-'}</td>
+                            <td>${item.Last_Payment_Amount > 0 ? parseFloat(item.Last_Payment_Amount).toFixed(2) : '-'}</td>
                             <td><i class="fas fa-lightbulb bulb-icon" style="color: ${statusColor}"></i></td>
                             <td><a href="/loanview/${item.idCustomer_Loan}" target="_blank" class="btn btn-warning"><i class="bi bi-eye"></i></a></td>
                         </tr>
@@ -581,7 +585,7 @@
                         $('#pagination').html(paginationControls);
 
                     } else {
-                        tbody.append('<tr><td colspan="13" class="text-center">No records found</td></tr>');
+                        tbody.append('<tr><td colspan="18" class="text-center">No records found</td></tr>');
                         $("#tot_amount").text("0.00");
                         $('#pagination').html('');
                     }
@@ -621,10 +625,11 @@
                 'Installment Amount',
                 'Pending Installments',
                 'Penalty Total',
-                'Pending Total',
+                'Total Balance',
                 'Loan Balance',
                 'Capital Balance',
-                'Arrears'
+                'Arrears',
+                'Last Payment Amount'
             ]);
 
             // Build a map of column index -> numeric (true/false)

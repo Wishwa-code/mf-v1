@@ -353,6 +353,7 @@
                                                 <th scope="col">Center</th>
                                                 <th scope="col">Group</th>
                                                 <th scope="col">Loan Amount</th>
+                                                <th scope="col">Due Amount</th>
                                                 <th scope="col">Loan Balance</th>
                                                 <th scope="col">Last Payment Amount</th>
                                                 <th scope="col">Last Payment Date</th>

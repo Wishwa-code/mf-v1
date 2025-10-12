@@ -74,12 +74,31 @@
                 <!-- Right Section -->
                 <div class="col-md-6">
                     <div class="row">
+                        @if($isHeadOffice)
+                        <div class="col-md-12 mb-3">
+                            <label for="branchFilter">Filter by Branch</label>
+                            <select id="branchFilter" class="form-control select2">
+                                <option value="">All Branches</option>
+                                @foreach($branches as $branch)
+                                    <option value="{{ $branch->branch_id }}">{{ $branch->Name }} Branch</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        @endif
                         <div class="col-md-12 mb-3">
                             <label for="toBank">To Bank Account</label>
                             <select id="toBank" name="toBank" class="form-control select2">
                                 <option value="0">Select Bank Account</option>
                                 @foreach($banks_2 as $bank)
-                                    <option value="{{ $bank->Idbank }}">{{ $bank->Bank_Name }} - {{ $bank->Account_Name }} - {{ $bank->Account_No }}</option>
+                                    <option value="{{ $bank->Idbank }}" data-branch="{{ $bank->branch_id }}">
+                                        {{ $bank->Bank_Name }} - {{ $bank->Account_Name }} - {{ $bank->Account_No }}
+                                        @if($isHeadOffice)
+                                            @php
+                                                $branchName = DB::table('branch')->where('branch_id', $bank->branch_id)->value('Name');
+                                            @endphp
+                                            ({{ $branchName ?? 'Head Office' }})
+                                        @endif
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
@@ -137,6 +156,43 @@
             decimalFormat(x);
             // Initialize Select2
             $('.select2').select2();
+
+            @if($isHeadOffice)
+            // Store all original options
+            var allOptions = $('#toBank option').clone();
+            
+            // Branch filter for head office
+            $('#branchFilter').on('change', function() {
+                var selectedBranch = $(this).val();
+                var $toBank = $('#toBank');
+                
+                // Destroy select2, clear options
+                $toBank.select2('destroy');
+                $toBank.empty();
+                
+                // Add placeholder option
+                $toBank.append('<option value="0">Select Bank Account</option>');
+                
+                // Filter and add options based on selected branch
+                allOptions.each(function() {
+                    var $option = $(this);
+                    var optionBranch = $option.data('branch');
+                    
+                    // Skip the placeholder option
+                    if ($option.val() === '0') {
+                        return;
+                    }
+                    
+                    // Add option if no branch selected OR branch matches
+                    if (selectedBranch === '' || optionBranch == selectedBranch) {
+                        $toBank.append($option.clone());
+                    }
+                });
+                
+                // Reinitialize select2
+                $toBank.select2();
+            });
+            @endif
 
 
             // Handle form submission

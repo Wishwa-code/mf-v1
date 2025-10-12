@@ -228,6 +228,7 @@ function load_payment_table(page = 1, includeTotals = false) {
             <td>${item.center_no}</td>
             <td>${item.group_name}</td>
             <td>${formatter.format(parseFloat(item.Loan_Amount))}</td>
+            <td>${formatter.format(parseFloat(item.Installment_Amount || item.Today_installment || item.due_amount || 0))}</td>
             <td>${formatter.format(parseFloat(item.Balance_With_Penalty))}</td>
             <td>${formatter.format(parseFloat(item.Last_Payment_Amount))}</td>
             <td>${item.Last_Payment_Date}</td>

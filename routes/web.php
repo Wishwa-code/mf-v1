@@ -23,6 +23,9 @@ Route::get('/storage_link', function () {
     Artisan::call('storage:link');
 });
 
+// API for branch hierarchy dropdown
+Route::get('/api/branch-hierarchy/{branchId}', '\App\Http\Controllers\CenterController@getBranchHierarchy');
+
 
 Route::get('/','\App\Http\Controllers\UserController@showdashboard')->name('home');
 //user
@@ -163,6 +166,15 @@ Route::get('/pendingloanload','\App\Http\Controllers\PendingLoanController@creat
 Route::post('/pendingloanissue','\App\Http\Controllers\PendingLoanController@show')->name('pendingloan.show');
 Route::get('/pendingloandelete/{id}','\App\Http\Controllers\PendingLoanController@destroy')->name('pendingloan.destroy');
 Route::get('/show_loan/{id}/{loan}','\App\Http\Controllers\PendingLoanController@edit')->name('loan.show_loan');
+
+//Total Outstanding
+Route::get('/total-outstanding-data','\App\Http\Controllers\UserController@totalOutstandingData')->name('total-outstanding.data');
+
+//Weekly Not Paid
+Route::get('/weekly-not-paid-data','\App\Http\Controllers\UserController@weeklyNotPaidData')->name('weekly-not-paid.data');
+
+//Penalty Balance
+Route::get('/penalty-balance-data','\App\Http\Controllers\UserController@penaltyBalanceData')->name('penalty-balance.data');
 
 
 //payment
@@ -774,6 +786,16 @@ Route::post('/settings/upsert','\App\Http\Controllers\CapitalBalanceController@u
 Route::get('/depletion','\App\Http\Controllers\ReportController@depletion')->name('report.depletion');
 Route::post('/depletion/data', [\App\Http\Controllers\ReportController::class, 'depletionData'])
     ->name('depletion.data');
+
+//approval
+Route::get('/pending_approval','\App\Http\Controllers\ApprovalController@pending_approval')->name('approval.pending');
+Route::get('/approved_history','\App\Http\Controllers\ApprovalController@approved_history')->name('approval.approved');
+Route::get('/rejected_approval','\App\Http\Controllers\ApprovalController@rejected_approval')->name('approval.rejected');
+Route::post('/approve_request','\App\Http\Controllers\ApprovalController@approve')->name('approval.approve');
+Route::post('/reject_request','\App\Http\Controllers\ApprovalController@reject')->name('approval.reject');
+Route::post('/callback_request','\App\Http\Controllers\ApprovalController@callback')->name('approval.callback');
+Route::get('/approval/loan-details/{id}','\App\Http\Controllers\ApprovalController@getLoanDetails')->name('approval.loan_details');
+Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalController@undoRejection')->name('approval.undo_rejection');
 
 
 Route::get('/load_customer_route/{id}','\App\Http\Controllers\CustomerController@load_customer_route')->name('customers.load_customer_route');

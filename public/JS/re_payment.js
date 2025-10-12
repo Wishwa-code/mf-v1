@@ -11,6 +11,7 @@ function load_payment_table() {
     let date_to = $("#select_date_to").val();
     let user = $("#agent").val();
     let loan_number_search = $("#loan_number_search").val();
+    let payment_type = $("#payment_type").val();
 
     $.ajax({
         type: "POST",
@@ -25,7 +26,8 @@ function load_payment_table() {
             date: date,
             date_to: date_to,
             user: user,
-            loan_number_search: loan_number_search
+            loan_number_search: loan_number_search,
+            payment_type: payment_type
         },
         success: function (data, textStatus, xhr) {
             console.log(data);

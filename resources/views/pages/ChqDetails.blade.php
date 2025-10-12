@@ -215,6 +215,7 @@
                                         <th>Date Time</th>
                                         <th>Loan No</th>
                                         <th>Customer No</th>
+                                        <th>Customer Name</th>
                                         <th>Cheque No</th>
                                         <th>Name Of Cheque</th>
                                         <th>Cheque Type</th>
@@ -231,6 +232,7 @@
                                             <td>{{$item->date}} {{$item->time}}</td>
                                             <td>{{$item->Loan_No}}</td>
                                             <td>{{$item->cus_number}}</td>
+                                            <td>{{$item->First_Name}} {{$item->Last_Name}}</td>
                                             <td>{{$item->chq_number}}</td>
                                             <td>{{$item->name_on_cheque}}</td>
                                             <td>{{$item->chq_type}}</td>
@@ -646,7 +648,7 @@
                 const row = $(this);
                 const cells = row.find('td');
                 if (cells.length > 0) {
-                    const statusText = cells.eq(9).find('span').text();
+                    const statusText = cells.eq(10).find('span').text();
                     let status = statusText;
                     let statusOrder = 0;
                     
@@ -658,15 +660,15 @@
                     tableRows.push({
                         order: statusOrder,
                         data: [
-                            cells.eq(3).text(), // Cheque Number
-                            cells.eq(6).text(), // Cheque Date
+                            cells.eq(4).text(), // Cheque Number
+                            cells.eq(7).text(), // Cheque Date
                             cells.eq(0).text(), // Received Date (Date Time)
-                            cells.eq(4).text(), // Customer Name (Name Of Cheque)
+                            cells.eq(3).text(), // Customer Name
                             cells.eq(2).text(), // Customer Number
                             cells.eq(1).text(), // Loan Number
                             '', // Bank Name (empty)
                             '', // Branch Name (empty)
-                            cells.eq(8).text(), // Cheque Amount
+                            cells.eq(9).text(), // Cheque Amount
                             status, // Status
                             statusText === 'Proceeded' ? cells.eq(0).text() : '', // Deposited Date
                             '', // Collector (empty)
@@ -718,7 +720,7 @@
                 const row = $(this);
                 const cells = row.find('td');
                 if (cells.length > 0) {
-                    const statusText = cells.eq(9).find('span').text();
+                    const statusText = cells.eq(10).find('span').text();
                     let status = statusText;
                     let statusOrder = 0;
                     
@@ -729,15 +731,15 @@
                     
                     printRows.push({
                         order: statusOrder,
-                        chequeNumber: cells.eq(3).text(),
-                        chequeDate: cells.eq(6).text(),
+                        chequeNumber: cells.eq(4).text(),
+                        chequeDate: cells.eq(7).text(),
                         receivedDate: cells.eq(0).text(),
-                        customerName: cells.eq(4).text(),
+                        customerName: cells.eq(3).text(),
                         customerNumber: cells.eq(2).text(),
                         loanNumber: cells.eq(1).text(),
                         bankName: '',
                         branchName: '',
-                        chequeAmount: cells.eq(8).text(),
+                        chequeAmount: cells.eq(9).text(),
                         status: status,
                         depositedDate: statusText === 'Proceeded' ? cells.eq(0).text() : '',
                         collector: '',

@@ -76,14 +76,29 @@ class BankController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(string $id)
+    public function create(string $id, Request $request)
     {
-        $bank_log = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        $query = tableWithBranch('company_bank_has_log','company_bank_has_log')
             ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
             ->leftJoin('user', 'company_bank_has_log.User', '=', 'user.id')
             ->where('Bank_Account_Id', $id)
-            ->select('company_bank_has_log.*', 'company_bank_accounts.Account_No', DB::raw("COALESCE(user.Full_Name, '-') as Full_Name"))
-            ->get();
+            ->select('company_bank_has_log.*', 'company_bank_accounts.Account_No', DB::raw("COALESCE(user.Full_Name, '-') as Full_Name"));
+
+        // Optional filters: date range takes precedence, then today filter; default is no filter
+        $start = $request->get('start_date');
+        $end = $request->get('end_date');
+        if ($start && $end) {
+            // normalize to day bounds
+            $startDT = Carbon::parse($start)->startOfDay();
+            $endDT = Carbon::parse($end)->endOfDay();
+            $query = $query->whereBetween('company_bank_has_log.Date_Time', [$startDT, $endDT]);
+        } elseif ($request->has('todayfilter') && (string)$request->get('todayfilter') === '1') {
+            $todayStart = Carbon::today();
+            $todayEnd = Carbon::today()->endOfDay();
+            $query = $query->whereBetween('company_bank_has_log.Date_Time', [$todayStart, $todayEnd]);
+        }
+
+        $bank_log = $query->get();
 
 
         // Replace NULL values with '-'
@@ -138,6 +153,7 @@ class BankController extends Controller
     {
 
         $user_id = (int)session('userid');
+        $isHeadOffice = (int)session('branch_id') === -1;
 
         $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
 
@@ -152,16 +168,28 @@ class BankController extends Controller
                     ->get();
 
                 // Exclude this account from $banks_2
-                $banks_2 = tableWithBranch('company_bank_accounts')
-                    ->where(function($query) {
-                        $query->where('Bank_Type', '=', 'Bank')
-                            ->orWhere('Bank_Type', '=', 'Collector');
-                    })
-                    ->where('Account_No', '!=', $user_id)
-                    ->get();
+                if ($isHeadOffice) {
+                    // Head office can see ALL branches
+                    $banks_2 = DB::table('company_bank_accounts')
+                        ->where(function($query) {
+                            $query->where('Bank_Type', '=', 'Bank')
+                                ->orWhere('Bank_Type', '=', 'Collector');
+                        })
+                        ->where('Account_No', '!=', $user_id)
+                        ->get();
+                } else {
+                    $banks_2 = tableWithBranch('company_bank_accounts')
+                        ->where(function($query) {
+                            $query->where('Bank_Type', '=', 'Bank')
+                                ->orWhere('Bank_Type', '=', 'Collector');
+                        })
+                        ->where('Account_No', '!=', $user_id)
+                        ->get();
+                }
 
             } else {
                 // Normal access - include everything in both
+                // FROM account: always current branch only
                 $banks = tableWithBranch('company_bank_accounts')
                     ->where(function($query) {
                         $query->where('Bank_Type', '=', 'Bank')
@@ -169,10 +197,25 @@ class BankController extends Controller
                     })
                     ->get();
 
-                $banks_2 = clone $banks;
+                // TO account: head office sees all branches, others see same as FROM
+                if ($isHeadOffice) {
+                    $banks_2 = DB::table('company_bank_accounts')
+                        ->where(function($query) {
+                            $query->where('Bank_Type', '=', 'Bank')
+                                ->orWhere('Bank_Type', '=', 'Collector');
+                        })
+                        ->get();
+                } else {
+                    $banks_2 = clone $banks;
+                }
             }
         }
 
+        // Fetch all branches for head office branch selector
+        $branches = [];
+        if ($isHeadOffice) {
+            $branches = DB::table('branch')->where('status', 1)->get();
+        }
 
         // Fetch bank logs with a join to company_bank_accounts, scoped by branch
         $banklog = tableWithBranch('company_bank_has_log','company_bank_has_log')
@@ -180,7 +223,7 @@ class BankController extends Controller
             ->where('company_bank_has_log.Type', '=', 'InterBank Transfer')
             ->get();
 
-        return view('pages.Accounting.InnerBankTransfers',compact('banks','banklog','banks_2'));
+        return view('pages.Accounting.InnerBankTransfers',compact('banks','banklog','banks_2','branches','isHeadOffice'));
     }
 
     /**
@@ -189,14 +232,26 @@ class BankController extends Controller
     public function edit(Request $request)
     {
         $fromBank=$request->fromBank;
+        $isHeadOffice = (int)session('branch_id') === -1;
 
-        $fromBankDetails = tableWithBranch('company_bank_accounts')->where('Idbank', $fromBank)->first();
-
+        // For head office, don't filter by branch
+        if ($isHeadOffice) {
+            $fromBankDetails = DB::table('company_bank_accounts')->where('Idbank', $fromBank)->first();
+        } else {
+            $fromBankDetails = tableWithBranch('company_bank_accounts')->where('Idbank', $fromBank)->first();
+        }
 
         $fromAmount=$request->fromAmount;
         $reason=$request->reason;
         $toBank=$request->toBank;
-        $toBankDetails = tableWithBranch('company_bank_accounts')->where('Idbank', $toBank)->first();
+        
+        // For head office, don't filter by branch
+        if ($isHeadOffice) {
+            $toBankDetails = DB::table('company_bank_accounts')->where('Idbank', $toBank)->first();
+        } else {
+            $toBankDetails = tableWithBranch('company_bank_accounts')->where('Idbank', $toBank)->first();
+        }
+        
         $this->bankLogController->index($fromBank,"InterBank Transfer",'To ('.$toBankDetails->Account_No.')',$reason,"credit",$fromAmount,$toBank);
         $this->bankLogController->index($toBank,"InterBank Transfer",'From'.' ('.$fromBankDetails->Account_No.')',$reason,"debit",$fromAmount,$fromBank);
         return response()->json(["id" => "1"], 200);
@@ -290,6 +345,8 @@ class BankController extends Controller
                 'company_bank_accounts.Account_No',
                 'customer_loan.Loan_No',
                 'customer.cus_number',
+                'customer.First_Name',
+                'customer.Last_Name',
                 'loan_category.Name as product_name',
                 'center.No as center_no',
                 'center.Name as center_name'
