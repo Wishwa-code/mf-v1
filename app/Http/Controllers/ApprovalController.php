@@ -810,6 +810,257 @@ class ApprovalController extends Controller
         }
     }
 
+    public function getUserCreationDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 101) {
+                return response()->json(['success' => false, 'message' => 'User creation request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $userData = $requestData['user_data'] ?? [];
+            
+            $html = '
+            <div class="alert alert-info">
+                <i class="ri-user-add-line me-2"></i><strong>New User Creation Request</strong>
+            </div>
+            
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 35%;">Field</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th>Full Name</th>
+                        <td><strong>' . htmlspecialchars($userData['Full_Name'] ?? 'N/A') . '</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Email</th>
+                        <td>' . htmlspecialchars($userData['email'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Designation</th>
+                        <td><span class="badge bg-primary">' . htmlspecialchars($userData['Designation'] ?? 'N/A') . '</span></td>
+                    </tr>
+                    <tr>
+                        <th>Contact</th>
+                        <td>' . htmlspecialchars($userData['TP'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>NIC</th>
+                        <td>' . htmlspecialchars($userData['Nic'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>EPF Number</th>
+                        <td>' . htmlspecialchars($userData['Epf_no'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Branch Access</th>
+                        <td>' . ($userData['branch_access'] == 1 ? '<span class="badge bg-success">Yes</span>' : '<span class="badge bg-secondary">No</span>') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Requested By</th>
+                        <td>' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Request Date</th>
+                        <td>' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</td>
+                    </tr>
+                </tbody>
+            </table>
+            ';
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getUserDetailsUpdateDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 102) {
+                return response()->json(['success' => false, 'message' => 'User update request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $updateData = $requestData['update_data'] ?? [];
+            
+            // Get current user data for comparison
+            $user = DB::table('user')->where('id', $updateData['user_id'])->first();
+            
+            $html = '
+            <div class="alert alert-warning">
+                <i class="ri-user-settings-line me-2"></i><strong>User Details Update Request</strong>
+                <p class="mb-0 mt-2"><small>Review the changes before approving</small></p>
+            </div>
+            
+            <h6 class="mb-3">User: <strong>' . htmlspecialchars($updateData['Full_Name'] ?? 'N/A') . '</strong></h6>
+            
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 25%;">Field</th>
+                        <th style="width: 37.5%;">Current Value</th>
+                        <th style="width: 37.5%;">New Value</th>
+                    </tr>
+                </thead>
+                <tbody>';
+            
+            $fields = [
+                'Full_Name' => 'Full Name',
+                'email' => 'Email',
+                'TP' => 'Contact',
+                'Nic' => 'NIC',
+                'Epf_no' => 'EPF Number',
+                'Designation' => 'Designation',
+            ];
+            
+            foreach ($fields as $key => $label) {
+                if (isset($updateData[$key])) {
+                    $oldVal = $user->$key ?? 'N/A';
+                    $newVal = $updateData[$key] ?? 'N/A';
+                    
+                    if ($oldVal != $newVal) {
+                        $html .= '
+                        <tr>
+                            <th>' . htmlspecialchars($label) . '</th>
+                            <td>' . htmlspecialchars($oldVal) . '</td>
+                            <td><strong class="text-primary">' . htmlspecialchars($newVal) . '</strong></td>
+                        </tr>';
+                    }
+                }
+            }
+            
+            // Check for branch changes
+            if (isset($requestData['branches_changed']) && $requestData['branches_changed']) {
+                $html .= '
+                <tr>
+                    <th>Branches</th>
+                    <td colspan="2"><span class="badge bg-info">Branch assignments will be updated</span></td>
+                </tr>';
+            }
+            
+            $html .= '
+                </tbody>
+            </table>
+            
+            <div class="mt-3">
+                <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
+                <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
+            </div>
+            ';
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getUserPrivilegeChangeDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 103) {
+                return response()->json(['success' => false, 'message' => 'Privilege change request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $userId = $requestData['user_id'];
+            $newPrivileges = $requestData['privileges'] ?? [];
+            
+            // Get current user and their privileges
+            $user = DB::table('user')->where('id', $userId)->first();
+            $currentPrivileges = DB::table('user_privileges_has_user')
+                ->where('user_id', $userId)
+                ->pluck('value', 'permission_key')
+                ->toArray();
+            
+            $html = '
+            <div class="alert alert-warning">
+                <i class="ri-shield-user-line me-2"></i><strong>User Privilege Change Request</strong>
+            </div>
+            
+            <h6 class="mb-3">User: <strong>' . htmlspecialchars($user->Full_Name ?? 'N/A') . '</strong> (' . htmlspecialchars($requestData['user_email'] ?? '') . ')</h6>
+            
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 40%;">Permission</th>
+                        <th style="width: 30%;">Current</th>
+                        <th style="width: 30%;">New</th>
+                    </tr>
+                </thead>
+                <tbody>';
+            
+            $changesCount = 0;
+            // Privileges are stored as flat key-value pairs
+            foreach ($newPrivileges as $key => $value) {
+                if (empty($key)) continue;
+                
+                $newValue = (int)$value;
+                $currentValue = (int)($currentPrivileges[$key] ?? 0);
+                
+                if ($currentValue != $newValue) {
+                    $changesCount++;
+                    $currentIcon = $currentValue == 1 ? '<i class="ri-checkbox-circle-fill text-success"></i> Enabled' : '<i class="ri-close-circle-fill text-danger"></i> Disabled';
+                    $newIcon = $newValue == 1 ? '<i class="ri-checkbox-circle-fill text-success"></i> Enabled' : '<i class="ri-close-circle-fill text-danger"></i> Disabled';
+                    
+                    $html .= '
+                    <tr>
+                        <td>' . htmlspecialchars(ucwords(str_replace('_', ' ', $key))) . '</td>
+                        <td>' . $currentIcon . '</td>
+                        <td><strong>' . $newIcon . '</strong></td>
+                    </tr>';
+                }
+            }
+            
+            if ($changesCount == 0) {
+                $html .= '<tr><td colspan="3" class="text-center text-muted">No privilege changes detected</td></tr>';
+            }
+            
+            $html .= '
+                </tbody>
+            </table>
+            
+            <div class="mt-3">
+                <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
+                <p class="text-muted mb-1"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
+                <p class="text-muted mb-0"><strong>Total Changes:</strong> ' . $changesCount . ' permission(s)</p>
+            </div>
+            
+            <div class="alert alert-info mt-3">
+                <i class="ri-information-line me-2"></i>
+                <strong>Note:</strong> Approving this will update the user\'s access privileges.
+            </div>
+            ';
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
     public function undoRejection($id)
     {
         try {
