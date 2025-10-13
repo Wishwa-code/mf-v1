@@ -408,6 +408,15 @@
                                     Delete Loan Permanently
                                 </a>
 
+                                <a href="javascript:void(0)"
+                                   class="btn btn-outline-dark btn-show-double-entries"
+                                   data-loan-id="{{ $loan->idCustomer_Loan }}"
+                                   data-loan-no="{{ $loan->Loan_No }}">
+                                    Loan Double Entries
+                                </a>
+
+
+
 
                             </div>
 
@@ -415,6 +424,50 @@
                     </div>
                 </div>
             </div>
+
+
+
+            <!-- Double Entries Modal -->
+            <div class="modal fade" id="doubleEntriesModal" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Loan Double Entries — <span id="deLoanNo"></span></h5>
+
+                        </div>
+                        <div class="modal-body">
+                            <!-- Table -->
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered" id="doubleEntriesTable">
+                                    <thead>
+                                    <tr>
+                                        <th>Account Name</th>
+                                        <th>Debit Amount</th>
+                                        <th>Credit Amount</th>
+                                        <th>Contra Account</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <!-- filled by JS -->
+                                    </tbody>
+                                    <tfoot>
+                                    <tr>
+                                        <th>Total</th>
+                                        <th id="totalDebit">0.00</th>
+                                        <th id="totalCredit">0.00</th>
+                                        <th></th>
+                                    </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+
+                            <div id="deError" class="alert alert-danger d-none"></div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
 
 
 
@@ -2017,6 +2070,84 @@
                     </script>
 
                     <script>
+                        $(document).ready(function() {
+
+                            function formatCurrency(n) {
+                                // simple format, adjust locale if needed
+                                return parseFloat(n || 0).toFixed(2);
+                            }
+
+                            $(document).on('click', '.btn-show-double-entries', function(e) {
+
+                                e.preventDefault();
+
+                                var loanNo = $(this).data('loan-no');
+                                if (!loanNo) {
+                                    alert('Loan number missing.');
+                                    return;
+                                }
+                                let loanId = '{{ $loan->idCustomer_Loan }}'; // Loan ID from Blade
+
+
+                                $('#deLoanNo').text(loanNo);
+                                $('#doubleEntriesTable tbody').html('');
+                                $('#totalDebit').text('0.00');
+                                $('#totalCredit').text('0.00');
+                                $('#deError').addClass('d-none').text('');
+
+                                // show modal
+                                var modal = new bootstrap.Modal(document.getElementById('doubleEntriesModal'), { keyboard: true });
+                                modal.show();
+
+
+
+                                $.ajax({
+                                    url: '/double-entries/'+loanId,
+                                    method: 'GET',
+                                    dataType: 'json',
+                                    success: function(res) {
+
+                                        if (!res.data || res.data.length === 0) {
+                                            $('#doubleEntriesTable tbody').html('<tr><td colspan="4" class="text-center">No entries found for this loan.</td></tr>');
+                                            return;
+                                        }
+
+                                        var rows = res.data;
+                                        var html = '';
+                                        var totalDebit = 0;
+                                        var totalCredit = 0;
+
+                                        rows.forEach(function(r) {
+                                            html += '<tr>';
+                                            html += '<td>' + (r.account_name || '') + '</td>';
+                                            html += '<td class="text-end">' + formatCurrency(r.debit) + '</td>';
+                                            html += '<td class="text-end">' + formatCurrency(r.credit) + '</td>';
+                                            html += '<td>' + (r.contra_account || '') + '</td>';
+                                            html += '</tr>';
+
+                                            totalDebit += parseFloat(r.debit || 0);
+                                            totalCredit += parseFloat(r.credit || 0);
+                                        });
+
+                                        $('#doubleEntriesTable tbody').html(html);
+                                        $('#totalDebit').text(formatCurrency(totalDebit));
+                                        $('#totalCredit').text(formatCurrency(totalCredit));
+
+                                    },
+                                    error: function(xhr) {
+                                        var msg = 'Failed to load entries.';
+                                        if (xhr && xhr.responseJSON && xhr.responseJSON.error) msg = xhr.responseJSON.error;
+                                        $('#deError').removeClass('d-none').text(msg);
+                                        $('#doubleEntriesTable tbody').html('<tr><td colspan="4" class="text-center">Error loading data</td></tr>');
+                                    }
+                                });
+
+                            });
+
+                        });
+                    </script>
+
+                    <script>
                         $(function() {
                             $('#btnDeleteLoan').on('click', function() {
                                 $('#deleteLoanModal').modal('show');
@@ -2091,6 +2222,7 @@
                         });
 
                     </script>
+
 
 
 

@@ -3997,7 +3997,78 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
     }
 
 
+    public function doubleEntries(Request $request, $loanId)
+    {
+        // ensure numeric id
+        $loanId = (int) $loanId;
+
+        if ($loanId <= 0) {
+            return response()->json(['error' => 'Invalid loan id'], 400);
+        }
+
+        // fetch the full loan row (not just value)
+        $loan = tableWithBranch('customer_loan')
+            ->where('idCustomer_Loan', $loanId)
+            ->first();
+
+        if (!$loan) {
+            return response()->json(['error' => "Loan not found for id: {$loanId}"], 404);
+        }
+
+        // get actual loan number used in descriptions
+        $loan_no = trim((string)($loan->Loan_No ?? ''));
+
+        if ($loan_no === '') {
+            return response()->json(['error' => 'Loan number missing from loan record'], 400);
+        }
+
+        // like pattern, match exactly as in your logs
+        $like = "%Loan Number : {$loan_no}%";
+
+        $rows = DB::table('company_bank_has_log as log')
+            ->leftJoin('company_bank_accounts as acc', 'log.Bank_Account_Id', '=', 'acc.Idbank')
+            ->leftJoin('company_bank_accounts as contra_acc', 'log.contra_account', '=', 'contra_acc.Idbank')
+            ->select([
+                'log.id',
+                'log.Bank_Account_Id',
+                'acc.Account_Name as account_name',
+                'log.Debit',
+                'log.Credit',
+                'log.contra_account',
+                DB::raw("COALESCE(contra_acc.Account_Name, '') as contra_account_name"),
+                'log.Date_Time',
+                'log.Type',
+                'log.Description',
+                'log.branch_id'
+            ])
+            ->where('log.Description', 'like', $like)
+            // scope to same branch (optional but recommended)
+            ->when(session('branch_id'), function($q) {
+                $q->where('log.branch_id', session('branch_id'));
+            })
+            ->orderBy('log.Date_Time', 'asc')
+            ->get();
+
+        $data = $rows->map(function($r) {
+            return [
+                'id' => $r->id,
+                'account_name' => $r->account_name ?? '',
+                'debit' => (float) ($r->Debit ?? 0),
+                'credit' => (float) ($r->Credit ?? 0),
+                'contra_account' => $r->contra_account_name ?? '',
+                'raw_contra_id' => $r->contra_account ?? null,
+                'date_time' => $r->Date_Time ?? null,
+                'type' => $r->Type ?? null,
+                'description' => $r->Description ?? null,
+            ];
+        })->toArray();
+
+        return response()->json(['data' => $data], 200);
+    }
 
 
 
 }
+
+
+

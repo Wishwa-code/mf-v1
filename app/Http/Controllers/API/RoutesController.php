@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class RoutesController
 {
@@ -24,6 +25,7 @@ class RoutesController
         $userId   = (int) $user->id;
         $collectorFlag = (int) ($user->collector ?? 0);
 
+
         // Base query (branch-wise)
         $q = DB::table('route as r')
             ->where('r.branch_id', $branchId)
@@ -33,8 +35,6 @@ class RoutesController
                 'r.root_code',
                 'r.id_officer',
                 'r.branch_id',
-                'r.collection_type',
-                'r.collection_date',
             ]);
 
         // 🔒 If collector, only show routes assigned to this collector

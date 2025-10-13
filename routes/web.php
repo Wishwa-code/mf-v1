@@ -522,7 +522,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/changeCollector_filter','\App\Http\Controllers\TodayPaymentController@collector_filter')->name('load.collector_filtor');
 
 
-    Route::post('/upload-excel-customer', [\App\Http\Controllers\ExcelController::class, 'uploadExcelCenters']);
+    Route::post('/upload-excel-customer', [\App\Http\Controllers\ExcelController::class, 'uploadExcelCustomer']);
 //Route::post('/upload-excel-customer', [\App\Http\Controllers\ExcelController::class, 'edit']);
     Route::post('/upload-excel-product', [\App\Http\Controllers\ExcelController::class, 'uploadExcelProduct']);
     Route::post('/upload-excel-loan', [\App\Http\Controllers\ExcelController::class, 'uploadExcelLoan']);
@@ -824,5 +824,8 @@ Route::middleware(['auth'])->group(function () {
             ->orderBy('Name')
             ->get();
     })->name('api.branches');
+
+    Route::get('double-entries/{loanId}', '\App\Http\Controllers\TodayPaymentController@doubleEntries')
+        ->name('loan.double-entries');
 
 });

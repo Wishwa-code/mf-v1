@@ -298,6 +298,10 @@ class LoanImportController extends Controller
         $loan_amount          = (float)$row[5];
         $interest_rate_str    = (string)$row[6]; // "54%" or "54"
         $installment_cnt      = (int)$row[8];
+        $interest_amount      = (float)$row[10];
+        $Total_Loan_Amount      = (float)$row[12];
+        $Installment_Amount      = (float)$row[13];
+
         $other_charge         = (float)$row[11];
         $installment_amt_xls  = (float)$row[13]; // optional fixed EMI input
         $collection_type_raw  = (string)$row[14];
@@ -378,18 +382,18 @@ class LoanImportController extends Controller
             $loan->Interest_Rate                 = $annual_rate;
             $loan->Panalty_Rate                  = $panelty_rate;
             $loan->Installment_Count             = $installment_cnt;
-            $loan->Interest_Amount               = 0;
+            $loan->Interest_Amount               = $interest_amount;
             $loan->Total_Other_Amount            = $other_charge;
             $loan->Other_Amount_Balance          = '0';
-            $loan->Total_Loan_Amount             = 0;
-            $loan->Installment_Amount            = 0;
+            $loan->Total_Loan_Amount             = $Total_Loan_Amount;
+            $loan->Installment_Amount            = $Installment_Amount;
             $loan->Collection_Type               = $collection_type;
             $loan->Collection_Date               = $ymd($firstDT);
             $loan->Panalty_Date                  = $panelty_start_day;
             $loan->Status                        = "0";
             $loan->User_idUser                   = $user_id;
             $loan->capital_balance               = $loan_amount;
-            $loan->installment_balance           = 0;
+            $loan->installment_balance           = $interest_amount;
             $loan->type                          = "Reducing Balance";
             $loan->Interest_period               = $collection_type;
             $loan->lending_officer_id            = $user_id;
@@ -563,6 +567,36 @@ class LoanImportController extends Controller
                     $bank_id->Idbank, "Issue Loan", $bank_log_comment, "-", "debit",
                     $customer_loan->Amount, $company_bank
                 );
+
+
+//                $Interest_Receivable_Suspense_AC = tableWithBranch('company_bank_accounts')
+//                    ->where('Bank_Type', 'System_default_4')
+//                    ->first();
+//
+//                $Deferred_Income_AC = tableWithBranch('company_bank_accounts')
+//                    ->where('Bank_Type', 'System_default_14')
+//                    ->first();
+
+                $Interest_Receivable_Suspense_AC=9;
+                $Deferred_Income_AC=320;
+
+                $this->bankLogController->index(
+                    $Interest_Receivable_Suspense_AC, "Issue Loan", $bank_log_comment, "-", "debit",
+                    $interest_amount, $Deferred_Income_AC
+                );
+                $this->bankLogController->index(
+                    $Deferred_Income_AC, "Issue Loan", $bank_log_comment, "-", "credit",
+                    $interest_amount, $Interest_Receivable_Suspense_AC
+                );
+
+                insertWithBranch('loan_other_charges', [
+                    'Description' => 'Document / Insuarance Charge',
+                    'Amount'        => $other_charge,
+                    'Type'             => "Amount",
+                    'Customer_Loan_idCustomer_Loan'      => $loanId,
+                ]);
+
+
 
                 $sumAmount = \DB::table('loan_other_charges')
                     ->where('Customer_Loan_idCustomer_Loan', $loanId)

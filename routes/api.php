@@ -30,5 +30,8 @@ Route::middleware(['auth:sanctum', ApplyBranchFromUser::class])->group(function 
 
     Route::get('/routes', [RoutesController::class, 'index']);
     Route::get('/routes/{id}/customers', [RoutesController::class, 'customers'])->whereNumber('id');
+    Route::get('/payments/{id}/receipt', [PaymentsController::class, 'paymentReceipt'])
+        ->whereNumber('id');
+
 });
 

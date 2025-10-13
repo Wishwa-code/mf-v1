@@ -1577,10 +1577,4 @@ class LoanController extends Controller
     }
 
 
-
-
-
-
-
-
 }
