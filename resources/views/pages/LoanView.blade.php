@@ -702,6 +702,82 @@
                         </div>
                     </div>
 
+                    <!-- Customer Summary Section -->
+                    @if(isset($customerSummary) && $customerSummary)
+                    <div class="card shadow mt-4">
+                        <div class="card-header">
+                            <i class="fas fa-id-card me-2"></i>Customer Summary
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <!-- Left Column: Customer Details -->
+                                <div class="col-lg-6">
+                                    <h6 class="text-primary mb-3"><i class="fas fa-info-circle me-2"></i>Customer Information</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-sm">
+                                            <tbody>
+                                                <tr>
+                                                    <td style="text-align: left; width: 40%;"><strong>Route</strong></td>
+                                                    <td style="text-align: left;">{{ $customerSummary->route_code ?? '-' }} - {{ $customerSummary->route_name ?? '-' }}</td>
+                                                </tr>
+                                                @if(isset($customerSummary->collection_type) && strtolower($customerSummary->collection_type) === 'fixed' && isset($customerSummary->collection_date))
+                                                <tr>
+                                                    <td style="text-align: left;"><strong>Collection Date</strong></td>
+                                                    <td style="text-align: left;">{{ $customerSummary->collection_date }}</td>
+                                                </tr>
+                                                @endif
+                                                <tr>
+                                                    <td style="text-align: left;"><strong>Center</strong></td>
+                                                    <td style="text-align: left;">{{ $customerSummary->center_no ?? '-' }} - {{ $customerSummary->center_name ?? '-' }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="text-align: left;"><strong>Group</strong></td>
+                                                    <td style="text-align: left;">{{ $customerSummary->group_no ?? '-' }} - {{ $customerSummary->group_name ?? '-' }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Right Column: Group Members -->
+                                <div class="col-lg-6">
+                                    <h6 class="text-primary mb-3"><i class="fas fa-users me-2"></i>Group Members</h6>
+                                    @if(isset($groupMembers) && $groupMembers->count() > 0)
+                                        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                            <table class="table table-bordered table-sm table-striped">
+                                                <thead class="sticky-top bg-white">
+                                                    <tr>
+                                                        <th style="width: 120px;">Cus No</th>
+                                                        <th>Name</th>
+                                                        <th style="width: 80px;" class="text-center">Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($groupMembers as $member)
+                                                        <tr>
+                                                            <td>{{ $member->cus_number }}</td>
+                                                            <td>{{ $member->First_Name }} {{ $member->Last_Name }}</td>
+                                                            <td class="text-center">
+                                                                <a href="/kyc/{{ $member->idCustomer }}" class="btn btn-sm btn-outline-primary" target="_blank" title="View KYC">
+                                                                    <i class="fas fa-eye"></i>
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    @else
+                                        <div class="alert alert-info mb-0">
+                                            <i class="fas fa-info-circle me-2"></i>No other members in this group.
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
 
                 </div>
 

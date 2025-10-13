@@ -976,6 +976,53 @@ class LoanController extends Controller
             $exists = 0; // Fallback silently to avoid breaking the view
         }
 
+        // Fetch customer summary data (route, center, group, group members)
+        $customerSummary = tableWithBranch('customer', 'customer')
+            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->leftJoin('route', 'center.route_id', '=', 'route.id_route')
+            ->where('customer.idCustomer', $loan->Customer_idCustomer)
+            ->select(
+                'customer.idCustomer',
+                DB::raw('COALESCE(route.name, "-") as route_name'),
+                DB::raw('COALESCE(route.root_code, "-") as route_code'),
+                DB::raw('COALESCE(center.No, "-") as center_no'),
+                DB::raw('COALESCE(center.Name, "-") as center_name'),
+                DB::raw('COALESCE(customer_group.Group_No, "-") as group_no'),
+                DB::raw('COALESCE(customer_group.Name, "-") as group_name'),
+                'group_has_customer.group_id',
+                'route.collection_type',
+                'route.collection_date'
+            )
+            ->first();
+
+        // Fetch other customers in the same group
+        $groupMembers = collect();
+        if ($customerSummary && $customerSummary->group_id) {
+            $isHeadOffice = (int)session('branch_id') === -1;
+            $branch_id = session('branch_id');
+            
+            if ($isHeadOffice) {
+                $groupMembers = DB::table('customer as c')
+                    ->join('group_has_customer as ghc', 'ghc.cus_id', '=', 'c.idCustomer')
+                    ->where('ghc.group_id', $customerSummary->group_id)
+                    ->where('c.idCustomer', '!=', $loan->Customer_idCustomer)
+                    ->select('c.idCustomer', 'c.cus_number', 'c.First_Name', 'c.Last_Name', 'c.Nic', 'c.Contact_No')
+                    ->orderBy('c.First_Name')
+                    ->get();
+            } else {
+                $groupMembers = DB::table('customer as c')
+                    ->join('group_has_customer as ghc', 'ghc.cus_id', '=', 'c.idCustomer')
+                    ->where('c.branch_id', $branch_id)
+                    ->where('ghc.group_id', $customerSummary->group_id)
+                    ->where('c.idCustomer', '!=', $loan->Customer_idCustomer)
+                    ->select('c.idCustomer', 'c.cus_number', 'c.First_Name', 'c.Last_Name', 'c.Nic', 'c.Contact_No')
+                    ->orderBy('c.First_Name')
+                    ->get();
+            }
+        }
+
         // Pass the data to the view with compact and handle potential nulls
         return view('pages.LoanView', compact(
             'type',
@@ -1001,7 +1048,9 @@ class LoanController extends Controller
             'savingBalanceSum',
             'Saving_amountSum',
             'payment_delete_status',
-            'loan_saving_balance'
+            'loan_saving_balance',
+            'customerSummary',
+            'groupMembers'
         ));
     }
 
