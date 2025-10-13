@@ -282,6 +282,21 @@
                                 </thead>
                                 <tbody>
                                 </tbody>
+                                <tfoot class="bg-purple" style="font-weight: bold;">
+                                <tr>
+                                    <td colspan="8" style="text-align: right; padding-right: 10px;">TOTAL:</td>
+                                    <td id="total_installment_amount">0.00</td>
+                                    <td id="total_pending_installments">0</td>
+                                    <td id="total_penalty">0.00</td>
+                                    <td id="total_loan_balance">0.00</td>
+                                    <td id="total_capital_balance">0.00</td>
+                                    <td id="total_arrears">0.00</td>
+                                    <td id="total_balance">0.00</td>
+                                    <td colspan="2"></td>
+                                    <td id="total_last_payment">0.00</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                                </tfoot>
                             </table>
                         </div>
 
@@ -519,6 +534,14 @@
 
                     if (xhr.status === 200 && data.item.length > 0) {
                         let tot = 0.0;
+                        let totalInstallmentAmount = 0.0;
+                        let totalPendingInstallments = 0;
+                        let totalPenalty = 0.0;
+                        let totalLoanBalance = 0.0;
+                        let totalCapitalBalance = 0.0;
+                        let totalArrears = 0.0;
+                        let totalBalance = 0.0;
+                        let totalLastPayment = 0.0;
 
                         let currentPage = data.current_page ?? page;
                         let lastPage = data.last_page ?? 1;
@@ -527,6 +550,16 @@
                             let totalBalance = parseFloat(item.Total_Balance);
                             let Installment_Count = parseFloat(item.Installment_Count);
                             tot += totalBalance;
+
+                            // Accumulate totals
+                            totalInstallmentAmount += parseFloat(item.Installment_Amount || 0);
+                            totalPendingInstallments += parseInt(item.Installment_Count || 0);
+                            totalPenalty += parseFloat(item.Panalty_Balance || 0);
+                            totalLoanBalance += parseFloat(item.Balance_Amount || 0);
+                            totalCapitalBalance += parseFloat(item.capital_balance || 0);
+                            totalArrears += parseFloat(item.arrears || 0);
+                            totalBalance += (parseFloat(item.Balance_Amount || 0) + parseFloat(item.Panalty_Balance || 0));
+                            totalLastPayment += parseFloat(item.Last_Payment_Amount || 0);
 
                             let statusColor = "#000";
                             if (Installment_Count === 1) {
@@ -566,6 +599,16 @@
                             tbody.append(row);
                         });
 
+                        // Update footer totals
+                        $('#total_installment_amount').text(totalInstallmentAmount.toFixed(2));
+                        $('#total_pending_installments').text(totalPendingInstallments);
+                        $('#total_penalty').text(totalPenalty.toFixed(2));
+                        $('#total_loan_balance').text(totalLoanBalance.toFixed(2));
+                        $('#total_capital_balance').text(totalCapitalBalance.toFixed(2));
+                        $('#total_arrears').text(totalArrears.toFixed(2));
+                        $('#total_balance').text(totalBalance.toFixed(2));
+                        $('#total_last_payment').text(totalLastPayment.toFixed(2));
+
                         // Update total amount
                         $("#tot_amount").text(tot.toFixed(2));
 
@@ -589,6 +632,17 @@
                     } else {
                         tbody.append('<tr><td colspan="19" class="text-center">No records found</td></tr>');
                         $("#tot_amount").text("0.00");
+                        
+                        // Reset footer totals
+                        $('#total_installment_amount').text('0.00');
+                        $('#total_pending_installments').text('0');
+                        $('#total_penalty').text('0.00');
+                        $('#total_loan_balance').text('0.00');
+                        $('#total_capital_balance').text('0.00');
+                        $('#total_arrears').text('0.00');
+                        $('#total_balance').text('0.00');
+                        $('#total_last_payment').text('0.00');
+                        
                         $('#pagination').html('');
                     }
                 },
@@ -663,6 +717,36 @@
                 }
                 ws_data.push(row);
             });
+
+            // 3.5) Add totals row from tfoot (accounting for colspan)
+            const totalsRow = [];
+            
+            // Manually build totals row with proper column alignment
+            // Columns: Loan No, Disbursement Date, Center Name, Group No, Leasing, Member NIC, Member Contact No, Member Name,
+            //          Installment Amount, Pending Installments, Penalty Total, Loan Balance, Capital Balance, Arrears, Total Balance, Last Payment Date, Last Payment Amount
+            
+            // First 8 columns show "TOTAL:"
+            totalsRow.push('TOTAL:');  // Loan No
+            totalsRow.push('');         // Disbursement Date
+            totalsRow.push('');         // Center Name
+            totalsRow.push('');         // Group No
+            totalsRow.push('');         // Leasing
+            totalsRow.push('');         // Member NIC
+            totalsRow.push('');         // Member Contact No
+            totalsRow.push('');         // Member Name
+            
+            // Add the actual totals from footer
+            totalsRow.push(parseFloat($('#total_installment_amount').text()) || 0);  // Installment Amount
+            totalsRow.push(parseInt($('#total_pending_installments').text()) || 0);  // Pending Installments
+            totalsRow.push(parseFloat($('#total_penalty').text()) || 0);             // Penalty Total
+            totalsRow.push(parseFloat($('#total_loan_balance').text()) || 0);        // Loan Balance
+            totalsRow.push(parseFloat($('#total_capital_balance').text()) || 0);     // Capital Balance
+            totalsRow.push(parseFloat($('#total_arrears').text()) || 0);             // Arrears
+            totalsRow.push(parseFloat($('#total_balance').text()) || 0);             // Total Balance
+            totalsRow.push('');                                                      // Last Payment Date
+            totalsRow.push(parseFloat($('#total_last_payment').text()) || 0);        // Last Payment Amount
+            
+            ws_data.push(totalsRow);
 
             // 4) Create sheet
             const ws = XLSX.utils.aoa_to_sheet(ws_data);
