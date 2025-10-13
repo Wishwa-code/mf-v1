@@ -581,6 +581,35 @@
                 save_setting('collector_txn_modes', JSON.stringify(selected));
             });
 
+            // Loan Creation Restrictions
+            $('#btnUpdateLoanRestrictions').on('click', function (e) {
+                e.preventDefault();
+                
+                const documentUpload = $('#document_upload_restriction').val();
+                const guarantees = $('#guarantees_restriction').val();
+                const changeProduct = $('#change_product_details').val();
+                const dailyDays = $('#first_installment_daily').val();
+                const weeklyDays = $('#first_installment_weekly').val();
+                const monthlyDays = $('#first_installment_monthly').val();
+
+                // Validate numeric fields
+                if (!dailyDays || dailyDays < 0 || dailyDays > 365) {
+                    Swal.fire("Warning", "Daily loans max days must be between 0 and 365.", "warning");
+                    return;
+                }
+                if (!weeklyDays || weeklyDays < 0 || weeklyDays > 365) {
+                    Swal.fire("Warning", "Weekly loans max days must be between 0 and 365.", "warning");
+                    return;
+                }
+                if (!monthlyDays || monthlyDays < 0 || monthlyDays > 365) {
+                    Swal.fire("Warning", "Monthly loans max days must be between 0 and 365.", "warning");
+                    return;
+                }
+
+                // Save all settings
+                saveLoanRestrictions(documentUpload, guarantees, changeProduct, dailyDays, weeklyDays, monthlyDays);
+            });
+
         });
 
 
@@ -806,6 +835,26 @@
                         $('.collector-mode').prop('checked', false);
                         modes.forEach(v => $(`.collector-mode[value="${v}"]`).prop('checked', true));
                     }
+
+                    // Loan Creation Restrictions
+                    if (items.document_upload_restriction) {
+                        $('#document_upload_restriction').val(items.document_upload_restriction);
+                    }
+                    if (items.guarantees_restriction) {
+                        $('#guarantees_restriction').val(items.guarantees_restriction);
+                    }
+                    if (items.change_product_details) {
+                        $('#change_product_details').val(items.change_product_details);
+                    }
+                    if (items.first_installment_daily) {
+                        $('#first_installment_daily').val(items.first_installment_daily);
+                    }
+                    if (items.first_installment_weekly) {
+                        $('#first_installment_weekly').val(items.first_installment_weekly);
+                    }
+                    if (items.first_installment_monthly) {
+                        $('#first_installment_monthly').val(items.first_installment_monthly);
+                    }
                 },
                 error: function (xhr) {
                     console.error('Settings load error:', xhr.responseText || xhr.statusText);
@@ -845,6 +894,64 @@
                     error: function (xhr) {
                         Swal.fire("Error", xhr.responseJSON?.message || "Failed to update setting", "error");
                     }
+                });
+            });
+        };
+
+        // Save all loan restriction settings at once
+        const saveLoanRestrictions = (documentUpload, guarantees, changeProduct, dailyDays, weeklyDays, monthlyDays) => {
+            Swal.fire({
+                title: "Are you sure?",
+                text: "Update all loan creation restrictions?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, Update All",
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                // Prepare all settings to save
+                const settings = [
+                    { key: 'document_upload_restriction', value: documentUpload },
+                    { key: 'guarantees_restriction', value: guarantees },
+                    { key: 'change_product_details', value: changeProduct },
+                    { key: 'first_installment_daily', value: dailyDays },
+                    { key: 'first_installment_weekly', value: weeklyDays },
+                    { key: 'first_installment_monthly', value: monthlyDays },
+                ];
+
+                let completedCount = 0;
+                let hasError = false;
+
+                // Save each setting
+                settings.forEach(setting => {
+                    $.ajax({
+                        type: "POST",
+                        url: "/settings/upsert",
+                        headers: {
+                            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                        },
+                        data: setting,
+                        success: function () {
+                            completedCount++;
+                            if (completedCount === settings.length && !hasError) {
+                                Swal.fire({
+                                    position: "center",
+                                    icon: "success",
+                                    title: "All loan restrictions updated!",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                            }
+                        },
+                        error: function (xhr) {
+                            if (!hasError) {
+                                hasError = true;
+                                Swal.fire("Error", xhr.responseJSON?.message || "Failed to update loan restrictions", "error");
+                            }
+                        }
+                    });
                 });
             });
         };
