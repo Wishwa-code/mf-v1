@@ -260,6 +260,7 @@
                                 <thead class="sticky-top bg-purple">
                                 <tr>
                                     <th>Loan No</th>
+                                    <th>Disbursement Date</th>
                                     <th>Center Name</th>
                                     <th>Group No</th>
                                     <th>Leasing</th>
@@ -539,6 +540,7 @@
                             let row = `
                         <tr>
                             <td>${item.Loan_No}</td>
+                            <td>${item.Date_Time ?? '-'}</td>
                             <td>${item.center_no}</td>
                             <td>${item.group_name}</td>
                             <td>${item.Vehicle_No ?? '-'}</td>
@@ -585,7 +587,7 @@
                         $('#pagination').html(paginationControls);
 
                     } else {
-                        tbody.append('<tr><td colspan="18" class="text-center">No records found</td></tr>');
+                        tbody.append('<tr><td colspan="19" class="text-center">No records found</td></tr>');
                         $("#tot_amount").text("0.00");
                         $('#pagination').html('');
                     }
