@@ -586,6 +586,7 @@ function payment() {
                         contentType: false,
                         success: function (data, textStatus, xhr) {
                             let payment_id = data.payment_id;
+                            alert(payment_id);
                             if (xhr.status === 200) {
                                 Swal.fire({
                                     position: "center",
@@ -600,6 +601,16 @@ function payment() {
                                         $("#payment_amount").val("");
                                         $("#payment_amount_2").val("");
                                         $('.btn-success').prop('disabled', false);
+                                    } else if (payment_id === 2) {
+                                        let payment_amount = $('#payment_amount').val();
+                                        Swal.fire({
+                                            title: "Extra Charge Paid!",
+                                            text: `An extra charge of ${payment_amount} has been successfully paid.`,
+                                            icon: "info",
+                                            confirmButtonText: "OK",
+                                        }).then(() => {
+                                            window.location.reload();
+                                        });
                                     }else{
                                         load_payment_reciept(payment_id);
                                     }

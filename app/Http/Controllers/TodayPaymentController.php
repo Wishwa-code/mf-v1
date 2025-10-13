@@ -789,6 +789,126 @@ class TodayPaymentController extends Controller
 
         $bank_account_company_chq = $request->bank_account_company;
 
+
+
+        $latest = DB::table('extra_charger')
+            ->where('loan_id', $loan_id)
+            ->orderByDesc('id_extra_charger')
+            ->first();
+
+        if ($latest && (float)$latest->balance > 0) {
+
+            DB::transaction(function () use (&$payment_amount, $latest, $loan_id) {
+
+                // Get latest Loan_Log balances
+                $latestLog = DB::table('Loan_Log')
+                    ->where('Loan_ID', $loan_id)
+                    ->orderByDesc('Loan_Log_ID') // latest log
+                    ->first();
+
+                $penaltyBalance   = $latestLog->Panelty_Balance ?? 0;
+                $interestBalance  = $latestLog->Interest_Balance ?? 0;
+                $capitalBalance   = $latestLog->Capital_Balance ?? 0;
+                $savingBalance    = $latestLog->Saving_Account_Balance ?? 0;
+                $totalPending     = $latestLog->Total_Pending_Balance ?? 0;
+
+                $latestBalance = (float)$latest->balance;
+
+                $now = Carbon::now();
+                $date = $now->toDateString();
+                $time = $now->toTimeString();
+                $user_id = session('userid');
+                $branch_id = session('branch_id');
+
+                // Common data for extra_charger
+                $commonData = [
+                    'loan_id'     => $loan_id,
+                    'date'        => $date,
+                    'time'        => $time,
+                    'description' => 'Payment adjustment for -'.$latest->description,
+                    'user_id'     => $user_id,
+                    'branch_id'   => $branch_id,
+                ];
+                Log::info($payment_amount);
+                Log::info($latestBalance);
+                if ($payment_amount <= $latestBalance) {
+                    // Payment fully absorbed by this extra_charger row
+                    $newBalance = $latestBalance - $payment_amount;
+
+                    // Insert new extra_charger row
+                    DB::table('extra_charger')->insert(array_merge($commonData, [
+                        'amount'  => -$payment_amount,
+                        'balance' => $newBalance,
+                    ]));
+
+                    // Insert Loan_Log with latest balances
+                    DB::table('Loan_Log')->insert([
+                        'Loan_ID' => $loan_id,
+                        'Date_Time' => $now->toDateTimeString(),
+                        'Type' => 'Extra Payment',
+                        'Type_ID' => 0,
+                        'Description' => 'Extra payment applied from Extra Charger',
+                        'Amount' => $payment_amount,
+                        'Panelty_Payment' => 0,
+                        'Interest_Payment' => 0,
+                        'Capital_Payment' => 0,
+                        'Savings_Payment' => 0,
+                        'Extra_Payment' => $payment_amount,
+                        'Panelty_Balance' => $penaltyBalance,
+                        'Interest_Balance' => $interestBalance,
+                        'Capital_Balance' => $capitalBalance,
+                        'Total_Pending_Balance' => $totalPending - $payment_amount,
+                        'Saving_Account_Balance' => $savingBalance,
+                        'Extra_Balance' => $newBalance,
+                        'User_idUser' => $user_id,
+                        'branch_id' => $branch_id
+                    ]);
+
+                    $payment_amount = 0;
+
+
+                } else {
+                    // Payment larger than extra_charger balance
+                    DB::table('extra_charger')->insert(array_merge($commonData, [
+                        'amount'  => -$latestBalance,
+                        'balance' => 0,
+                    ]));
+
+                    // Insert Loan_Log with latest balances
+                    DB::table('Loan_Log')->insert([
+                        'Loan_ID' => $loan_id,
+                        'Date_Time' => $now->toDateTimeString(),
+                        'Type' => 'Extra Payment',
+                        'Type_ID' => 0,
+                        'Description' => 'Extra payment applied from Extra Charger',
+                        'Amount' => $latestBalance,
+                        'Panelty_Payment' => 0,
+                        'Interest_Payment' => 0,
+                        'Capital_Payment' => 0,
+                        'Savings_Payment' => 0,
+                        'Extra_Payment' => $latestBalance,
+                        'Panelty_Balance' => $penaltyBalance,
+                        'Interest_Balance' => $interestBalance,
+                        'Capital_Balance' => $capitalBalance,
+                        'Total_Pending_Balance' => $totalPending - $latestBalance,
+                        'Saving_Account_Balance' => $savingBalance,
+                        'Extra_Balance' => 0,
+                        'User_idUser' => $user_id,
+                        'branch_id' => $branch_id
+                    ]);
+
+                    $payment_amount -= $latestBalance;
+                }
+            });
+        }
+
+        if ($payment_amount==0){
+            return response()->json(['item' => 'success', 'id' => '1', 'test' => "1", 'payment_id' => 2], 200);
+        }
+
+
+
+
         if ($request->extraAmount > 0){
 
             $payment_amount = $request->total_loan_balance;
@@ -3862,6 +3982,42 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
                 'time'    => now()->toTimeString(),
             ]);
 
+            // --- Get latest Loan_Log balances ---
+            $latestLog = DB::table('Loan_Log')
+                ->where('Loan_ID', $loanId)
+                ->orderByDesc('Loan_Log_ID')
+                ->first();
+
+            $penaltyBalance   = $latestLog->Panelty_Balance ?? 0;
+            $interestBalance  = $latestLog->Interest_Balance ?? 0;
+            $capitalBalance   = $latestLog->Capital_Balance ?? 0;
+            $savingBalance    = $latestLog->Saving_Account_Balance ?? 0;
+            $totalPending     = $latestLog->Total_Pending_Balance ?? 0;
+            $extraBalance     = $newBalance; // latest extra balance including this payment
+
+            // --- Insert Loan_Log for this extra charge ---
+            DB::table('Loan_Log')->insert([
+                'Loan_ID' => $loanId,
+                'Date_Time' => now()->toDateTimeString(),
+                'Type' => 'Extra Charge',
+                'Type_ID' => $id,
+                'Description' => 'Extra charge added: ' . $description,
+                'Amount' => $amount,
+                'Panelty_Payment' => 0,
+                'Interest_Payment' => 0,
+                'Capital_Payment' => 0,
+                'Savings_Payment' => 0,
+                'Extra_Payment' => 0,
+                'Panelty_Balance' => $penaltyBalance,
+                'Interest_Balance' => $interestBalance,
+                'Capital_Balance' => $capitalBalance,
+                'Total_Pending_Balance' => $totalPending + $amount,
+                'Saving_Account_Balance' => $savingBalance,
+                'Extra_Balance' => $extraBalance,
+                'User_idUser' => $userId,
+                'branch_id' => $branchId
+            ]);
+
             DB::commit();
 
             $created = DB::table('extra_charger')->where('id_extra_charger', $id)->first();
@@ -3878,6 +4034,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
+
 
     public function getExtraCharges(Request $request)
     {

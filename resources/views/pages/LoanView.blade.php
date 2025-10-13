@@ -283,6 +283,45 @@
             max-width: 100%;
             max-height: 100%;
         }
+
+        /* Make the table area scrollable with a max-height so modal body doesn't overflow */
+        #deTableWrap {
+            max-height: 55vh; /* adjust based on preference */
+            overflow: auto;
+        }
+
+        /* Sticky header - stays visible while scrolling the tbody */
+        #doubleEntriesTable thead th {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: #fff; /* match table header bg (table-light) */
+        }
+
+        /* Sticky footer - keep totals visible at bottom of table area */
+        #doubleEntriesTable tfoot th {
+            position: sticky;
+            bottom: 0;
+            background: #fff;
+            z-index: 4;
+        }
+
+        /* Improve numeric cell spacing and wrapping */
+        #doubleEntriesTable td, #doubleEntriesTable th {
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        /* On very narrow screens allow wrapping for account names */
+        @media (max-width: 420px) {
+            #doubleEntriesTable td:first-child,
+            #doubleEntriesTable th:first-child,
+            #doubleEntriesTable td:last-child,
+            #doubleEntriesTable th:last-child {
+                white-space: normal;
+            }
+        }
+
     </style>
 
 @endsection
@@ -428,41 +467,46 @@
 
 
             <!-- Double Entries Modal -->
+            <!-- Modal -->
             <div class="modal fade" id="doubleEntriesModal" tabindex="-1" role="dialog" aria-hidden="true">
-                <div class="modal-dialog modal-lg" role="document">
+                <!-- modal-fullscreen-sm-down makes modal fullscreen on small screens -->
+                <div class="modal-dialog modal-lg modal-fullscreen-sm-down modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">Loan Double Entries — <span id="deLoanNo"></span></h5>
-
                         </div>
+
                         <div class="modal-body">
-                            <!-- Table -->
-                            <div class="table-responsive">
-                                <table class="table table-sm table-bordered" id="doubleEntriesTable">
-                                    <thead>
+                            <!-- error -->
+                            <div id="deError" class="alert alert-danger d-none"></div>
+
+                            <!-- Scrollable table area with sticky header/footer -->
+                            <div class="table-responsive" id="deTableWrap">
+                                <table class="table table-sm table-bordered table-striped align-middle mb-0" id="doubleEntriesTable">
+                                    <thead class="table-light">
                                     <tr>
-                                        <th>Account Name</th>
-                                        <th>Debit Amount</th>
-                                        <th>Credit Amount</th>
-                                        <th>Contra Account</th>
+                                        <th class="text-start">Account Name</th>
+                                        <th class="text-end">Debit Amount</th>
+                                        <th class="text-end">Credit Amount</th>
+                                        <th class="text-start">Contra Account</th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                     <!-- filled by JS -->
                                     </tbody>
-                                    <tfoot>
+                                    <tfoot class="table-light">
                                     <tr>
                                         <th>Total</th>
-                                        <th id="totalDebit">0.00</th>
-                                        <th id="totalCredit">0.00</th>
+                                        <th id="totalDebit" class="text-end">0.00</th>
+                                        <th id="totalCredit" class="text-end">0.00</th>
                                         <th></th>
                                     </tr>
                                     </tfoot>
                                 </table>
                             </div>
-
-                            <div id="deError" class="alert alert-danger d-none"></div>
                         </div>
+
+
 
                     </div>
                 </div>
@@ -1071,10 +1115,12 @@
                                             <th>Interest Payment</th>
                                             <th>Capital Payment</th>
                                             <th>Savings Payment</th>
+                                            <th>Extra Payment</th>
                                             <th>Penalty Balance</th>
                                             <th>Interest Balance</th>
                                             <th>Capital Balance</th>
                                             <th>Savings Balance</th>
+                                            <th>Extra Balance</th>
                                             <th>Total Pending Balance</th>
                                         </tr>
                                         </thead>
@@ -1932,10 +1978,12 @@
                                                 parseFloat(log.Interest_Payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                                                 parseFloat(log.Capital_Payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                                                 parseFloat(log.Savings_Payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                                parseFloat(log.Extra_Payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                                                 parseFloat(log.Panelty_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                                                 parseFloat(log.Interest_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                                                 parseFloat(log.Capital_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                                                 parseFloat(log.Saving_Account_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                                parseFloat(log.Extra_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                                                 parseFloat(log.Total_Pending_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                                             ]).draw(false);
                                         });
@@ -2073,21 +2121,19 @@
                         $(document).ready(function() {
 
                             function formatCurrency(n) {
-                                // simple format, adjust locale if needed
-                                return parseFloat(n || 0).toFixed(2);
+                                return Number(parseFloat(n || 0).toFixed(2)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                             }
 
                             $(document).on('click', '.btn-show-double-entries', function(e) {
-
                                 e.preventDefault();
 
-                                var loanNo = $(this).data('loan-no');
-                                if (!loanNo) {
-                                    alert('Loan number missing.');
+                                var loanNo = $(this).data('loan-no') || '';
+                                var loanId = $(this).data('loan-id'); // now taken from button attribute
+
+                                if (!loanId) {
+                                    alert('Loan ID missing.');
                                     return;
                                 }
-                                let loanId = '{{ $loan->idCustomer_Loan }}'; // Loan ID from Blade
-
 
                                 $('#deLoanNo').text(loanNo);
                                 $('#doubleEntriesTable tbody').html('');
@@ -2096,17 +2142,16 @@
                                 $('#deError').addClass('d-none').text('');
 
                                 // show modal
-                                var modal = new bootstrap.Modal(document.getElementById('doubleEntriesModal'), { keyboard: true });
+                                var modalEl = document.getElementById('doubleEntriesModal');
+                                var modal = new bootstrap.Modal(modalEl, { keyboard: true });
                                 modal.show();
 
-
-
+                                // fetch entries
                                 $.ajax({
-                                    url: '/double-entries/'+loanId,
+                                    url: '/double-entries/' + loanId,
                                     method: 'GET',
                                     dataType: 'json',
                                     success: function(res) {
-
                                         if (!res.data || res.data.length === 0) {
                                             $('#doubleEntriesTable tbody').html('<tr><td colspan="4" class="text-center">No entries found for this loan.</td></tr>');
                                             return;
@@ -2118,21 +2163,24 @@
                                         var totalCredit = 0;
 
                                         rows.forEach(function(r) {
+                                            // guard number fields
+                                            var debit = parseFloat(r.debit || 0);
+                                            var credit = parseFloat(r.credit || 0);
+
                                             html += '<tr>';
-                                            html += '<td>' + (r.account_name || '') + '</td>';
-                                            html += '<td class="text-end">' + formatCurrency(r.debit) + '</td>';
-                                            html += '<td class="text-end">' + formatCurrency(r.credit) + '</td>';
-                                            html += '<td>' + (r.contra_account || '') + '</td>';
+                                            html += '<td class="text-start">' + (r.account_name || '') + '</td>';
+                                            html += '<td class="text-end">' + formatCurrency(debit) + '</td>';
+                                            html += '<td class="text-end">' + formatCurrency(credit) + '</td>';
+                                            html += '<td class="text-start">' + (r.contra_account || '') + '</td>';
                                             html += '</tr>';
 
-                                            totalDebit += parseFloat(r.debit || 0);
-                                            totalCredit += parseFloat(r.credit || 0);
+                                            totalDebit += debit;
+                                            totalCredit += credit;
                                         });
 
                                         $('#doubleEntriesTable tbody').html(html);
                                         $('#totalDebit').text(formatCurrency(totalDebit));
                                         $('#totalCredit').text(formatCurrency(totalCredit));
-
                                     },
                                     error: function(xhr) {
                                         var msg = 'Failed to load entries.';
@@ -2141,11 +2189,11 @@
                                         $('#doubleEntriesTable tbody').html('<tr><td colspan="4" class="text-center">Error loading data</td></tr>');
                                     }
                                 });
-
                             });
 
                         });
                     </script>
+
 
                     <script>
                         $(function() {
