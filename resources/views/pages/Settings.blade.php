@@ -243,6 +243,7 @@
                             <label class="form-label fw-bold">Document Upload Restriction</label>
                             <div class="d-flex gap-2">
                                 <select id="document_upload_restriction" class="form-select" style="max-width: 300px;">
+                                    <option value="" disabled selected>-- Select Option --</option>
                                     <option value="required">Required</option>
                                     <option value="not_required">Not Required</option>
                                 </select>
@@ -256,6 +257,7 @@
                             <label class="form-label fw-bold">Guarantees</label>
                             <div class="d-flex gap-2">
                                 <select id="guarantees_restriction" class="form-select" style="max-width: 300px;">
+                                    <option value="" disabled selected>-- Select Option --</option>
                                     <option value="required">Required</option>
                                     <option value="not_required">Not Required</option>
                                 </select>
@@ -269,6 +271,7 @@
                             <label class="form-label fw-bold">Change Product Details</label>
                             <div class="d-flex gap-2">
                                 <select id="change_product_details" class="form-select" style="max-width: 300px;">
+                                    <option value="" disabled selected>-- Select Option --</option>
                                     <option value="editable">Editable</option>
                                     <option value="not_editable">Not Editable</option>
                                 </select>
@@ -286,7 +289,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Daily Loans (max days)</label>
                                 <div class="d-flex gap-2 align-items-center">
-                                    <input type="number" id="first_installment_daily" class="form-control" min="0" max="365" value="7" style="max-width: 150px;" placeholder="Days">
+                                    <input type="number" id="first_installment_daily" class="form-control" min="0" max="365" style="max-width: 150px;" placeholder="Days">
                                     <span class="text-muted">days</span>
                                 </div>
                             </div>
@@ -295,7 +298,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Weekly Loans (max days)</label>
                                 <div class="d-flex gap-2 align-items-center">
-                                    <input type="number" id="first_installment_weekly" class="form-control" min="0" max="365" value="14" style="max-width: 150px;" placeholder="Days">
+                                    <input type="number" id="first_installment_weekly" class="form-control" min="0" max="365" style="max-width: 150px;" placeholder="Days">
                                     <span class="text-muted">days</span>
                                 </div>
                             </div>
@@ -304,7 +307,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Monthly Loans (max days)</label>
                                 <div class="d-flex gap-2 align-items-center">
-                                    <input type="number" id="first_installment_monthly" class="form-control" min="0" max="365" value="30" style="max-width: 150px;" placeholder="Days">
+                                    <input type="number" id="first_installment_monthly" class="form-control" min="0" max="365" style="max-width: 150px;" placeholder="Days">
                                     <span class="text-muted">days</span>
                                 </div>
                             </div>
