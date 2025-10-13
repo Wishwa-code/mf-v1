@@ -352,7 +352,7 @@ class ReportController extends Controller
         if ($expenses->save()) {
 
             if ($type=="Expense") {
-                $bank_id=tableWithBranch('company_bank_accounts')
+                $bank_id=DB::table('company_bank_accounts')
                     ->where('acc_type_group','=','Expenses')
                     ->where('Idbank','=',$request->category)
                     ->first();
@@ -361,7 +361,7 @@ class ReportController extends Controller
                     $this->bankLogController->index($bank_id->Idbank,"Expenses",$reason,"-","debit",$amount,$request->bank);
                 }
             }else{
-                $bank_id=tableWithBranch('company_bank_accounts')
+                $bank_id=DB::table('company_bank_accounts')
                     ->where('acc_type_group','=','Income')
                     ->where('Idbank','=',$request->category)
                     ->first();
