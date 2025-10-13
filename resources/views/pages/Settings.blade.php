@@ -230,6 +230,91 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Loan Creation Restrictions Card -->
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h5 class="mb-3">Loan Creation Restrictions</h5>
+                        <hr>
+                        <small class="text-muted d-block mb-3">Configure restrictions and requirements for loan creation process.</small>
+                        
+                        <!-- Document Upload Restriction -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Document Upload Restriction</label>
+                            <div class="d-flex gap-2">
+                                <select id="document_upload_restriction" class="form-select" style="max-width: 300px;">
+                                    <option value="required">Required</option>
+                                    <option value="not_required">Not Required</option>
+                                </select>
+                            </div>
+                            <small class="text-muted">Specify whether document uploads are mandatory during loan creation.</small>
+                        </div>
+
+                        <hr>
+                        <!-- Guarantees Restriction -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Guarantees</label>
+                            <div class="d-flex gap-2">
+                                <select id="guarantees_restriction" class="form-select" style="max-width: 300px;">
+                                    <option value="required">Required</option>
+                                    <option value="not_required">Not Required</option>
+                                </select>
+                            </div>
+                            <small class="text-muted">Specify whether guarantees are mandatory during loan creation.</small>
+                        </div>
+
+                        <hr>
+                        <!-- Change Product Details -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Change Product Details</label>
+                            <div class="d-flex gap-2">
+                                <select id="change_product_details" class="form-select" style="max-width: 300px;">
+                                    <option value="editable">Editable</option>
+                                    <option value="not_editable">Not Editable</option>
+                                </select>
+                            </div>
+                            <small class="text-muted">Control whether product details can be modified after loan creation.</small>
+                        </div>
+
+                        <hr>
+                        <!-- First Installment Date Restrictions -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">First Installment Date - Maximum Days After Issue Date</label>
+                            <small class="text-muted d-block mb-2">Set how many days after the Issue Date the first installment date can be set for each loan type.</small>
+                            
+                            <!-- Daily Loans -->
+                            <div class="mb-3">
+                                <label class="form-label">Daily Loans (max days)</label>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <input type="number" id="first_installment_daily" class="form-control" min="0" max="365" value="7" style="max-width: 150px;" placeholder="Days">
+                                    <span class="text-muted">days</span>
+                                </div>
+                            </div>
+
+                            <!-- Weekly Loans -->
+                            <div class="mb-3">
+                                <label class="form-label">Weekly Loans (max days)</label>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <input type="number" id="first_installment_weekly" class="form-control" min="0" max="365" value="14" style="max-width: 150px;" placeholder="Days">
+                                    <span class="text-muted">days</span>
+                                </div>
+                            </div>
+
+                            <!-- Monthly Loans -->
+                            <div class="mb-3">
+                                <label class="form-label">Monthly Loans (max days)</label>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <input type="number" id="first_installment_monthly" class="form-control" min="0" max="365" value="30" style="max-width: 150px;" placeholder="Days">
+                                    <span class="text-muted">days</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="btnUpdateLoanRestrictions" class="btn btn-primary">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Update Restrictions
+                        </button>
+                    </div>
+                </div>
             </div>
             <div class="col-6">
                 <div class="card">
