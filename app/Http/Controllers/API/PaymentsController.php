@@ -273,6 +273,7 @@ class PaymentsController extends Controller
                 'points_to_add'   => $points_to_add,
                 'point_check'     => $company->points ?? '0',
                 'logo_url'        => $logo_url, // <-- added here
+                'company_name'        => $company->company_name, // <-- added here
             ], 200);
 
         } catch (\Exception $e) {
