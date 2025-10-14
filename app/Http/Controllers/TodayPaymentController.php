@@ -737,6 +737,17 @@ class TodayPaymentController extends Controller
 
 
     public function create_view($id){
+
+        $latest = DB::table('extra_charger')
+            ->where('loan_id', $id)
+            ->orderByDesc('id_extra_charger')
+            ->first();
+        $extraChargelatestBalance=0;
+        if($latest){
+            $extraChargelatestBalance = (float)$latest->balance ?? 0;
+        }
+
+
         $loan = DB::table('installments')
             ->where('Customer_Loan_idCustomer_Loan','=',$id)
             ->select(
@@ -761,7 +772,7 @@ class TodayPaymentController extends Controller
 
         $last_log = DB::table('Loan_Log')->where('Loan_ID','=',$id)->orderBy('Loan_Log_ID', 'desc')->first();
 
-        return response()->json(['item' => $loan,'saving' => $saving,'savings'=>$last_log->Saving_Account_Balance], 200);
+        return response()->json(['item' => $loan,'saving' => $saving,'savings'=>$last_log->Saving_Account_Balance,'extraChargelatestBalance'=>$extraChargelatestBalance], 200);
     }
 
     /**

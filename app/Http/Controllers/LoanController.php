@@ -1005,8 +1005,11 @@ class LoanController extends Controller
             ->where('loan_id', $loan->idCustomer_Loan)
             ->orderByDesc('id_extra_charger')
             ->first();
+        $extraChargelatestBalance=0;
+        if($latest){
+            $extraChargelatestBalance = (float)$latest->balance ?? 0;
+        }
 
-        $extraChargelatestBalance = (float)$latest->balance;
 
         // Pass the data to the view with compact and handle potential nulls
         return view('pages.LoanView', compact(

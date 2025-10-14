@@ -199,6 +199,7 @@ function payment_model(cus_id, topic, loan_id,Today_installment) {
         method: 'GET',
         success: function(response) {
             let savings=parseFloat(response.savings);
+            let extraChargelatestBalance=parseFloat(response.extraChargelatestBalance);
             $.each(response.item, function (index, item) {
                 let Total_Balance=parseFloat(item.Total_Balance);
 
@@ -207,10 +208,14 @@ function payment_model(cus_id, topic, loan_id,Today_installment) {
                 let Installment_Amount=parseFloat(item.Today_installment);
                 let Total_Paid_Amount=parseFloat(item.Total_Paid_Amount);
 
+
                 $('#loan_balance').val(Total_Balance.toFixed(2));
                 $('#today_arrese').val(arrease.toFixed(2));
                 $('#total_outstanding').val(Total_Balance_until.toFixed(2));
-                $('#total_loan_balance').val(Total_Balance.toFixed(2));
+                $('#total_loan_balance').val(
+                    (parseFloat(Total_Balance) + parseFloat(extraChargelatestBalance)).toFixed(2)
+                );
+
                 $('#total_savings_balance').val(savings.toFixed(2));
                 $('#ins_amount').val(Installment_Amount.toFixed(2));
                 $('#tot_paid_amount').val(Total_Paid_Amount.toFixed(2));
