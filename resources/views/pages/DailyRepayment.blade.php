@@ -57,6 +57,10 @@
             cursor: pointer;
         }
 
+        #repaymentTable.hide-other .other-column {
+            display: none;
+        }
+
         button:hover {
             background-color: #d32f2f;
         }
@@ -197,6 +201,7 @@
                                 <button id="portraitPrint" class="btn btn-primary"><i class="bi bi-printer"></i> Portrait Print</button>
                                 <button id="landscapePrint" class="btn btn-secondary"><i class="bi bi-printer"></i> Landscape Print</button>
                                 <button id="downloadExcel" class="btn btn-success"><i class="bi bi-file-earmark-excel"></i> Download Excel</button>
+                                <button id="toggleOtherColumns" type="button" class="btn btn-outline-dark"><i class="bi bi-eye-slash"></i> Hide Other Columns</button>
                             </div>
                         </div>
 
@@ -213,20 +218,20 @@
                                     <th rowspan="2">Due Amount</th>
                                     <th rowspan="2">Total Balance</th>
                                     <th rowspan="2">Arrears</th>
-                                    <th colspan="2"></th>
-                                    <th colspan="2"></th>
-                                    <th colspan="2"></th>
-                                    <th colspan="2"></th>
+                                    <th class="collection-group" colspan="2"></th>
+                                    <th class="collection-group" colspan="2"></th>
+                                    <th class="collection-group" colspan="2"></th>
+                                    <th class="collection-group" colspan="2"></th>
                                 </tr>
                                 <tr>
                                     <th class="portrait-hide">Collection</th>
-                                    <th class="portrait-hide">Other</th>
+                                    <th class="portrait-hide other-column">Other</th>
                                     <th class="portrait-hide">Collection</th>
-                                    <th class="portrait-hide">Other</th>
+                                    <th class="portrait-hide other-column">Other</th>
                                     <th class="portrait-hide">Collection</th>
-                                    <th class="portrait-hide">Other</th>
+                                    <th class="portrait-hide other-column">Other</th>
                                     <th class="portrait-hide">Collection</th>
-                                    <th class="portrait-hide">Other</th>
+                                    <th class="portrait-hide other-column">Other</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -245,14 +250,14 @@
                                             <td class="due-amount">{{ number_format($item->Installment_Amount, 2) }}</td>
                                             <td class="total-balance">{{ number_format($item->Total_Balance, 2) }}</td>
                                             <td class="arrears">{{ number_format($item->arrease, 2) }}</td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
+                                            <td class="collection-column"></td>
+                                            <td class="other-column"></td>
+                                            <td class="collection-column"></td>
+                                            <td class="other-column"></td>
+                                            <td class="collection-column"></td>
+                                            <td class="other-column"></td>
+                                            <td class="collection-column"></td>
+                                            <td class="other-column"></td>
                                         </tr>
                                     @endforeach
                                     <tr class="group-total">
@@ -315,6 +320,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <script>
+        const OTHER_COLUMN_STATE_KEY = 'daily-repayment-hide-other';
+        let otherColumnsHidden = false;
+
+        try {
+            const cachedState = localStorage.getItem(OTHER_COLUMN_STATE_KEY);
+            if (cachedState !== null) {
+                otherColumnsHidden = cachedState === 'true';
+            }
+        } catch (error) {
+            console.warn('DailyRepayment: unable to read localStorage', error);
+            otherColumnsHidden = false;
+        }
+
         $(document).ready(function() {
             $('.select2').select2();
 
@@ -415,6 +433,35 @@
                 window.print();
             });
 
+            const $otherToggle = $('#toggleOtherColumns');
+
+            if ($otherToggle.length) {
+                const syncOtherColumns = () => {
+                    $('#repaymentTable').toggleClass('hide-other', otherColumnsHidden);
+                    const newSpan = otherColumnsHidden ? 1 : 2;
+                    $('#repaymentTable .collection-group').attr('colspan', newSpan);
+                    const iconClass = otherColumnsHidden ? 'bi-eye' : 'bi-eye-slash';
+                    const label = otherColumnsHidden ? 'Show Other Columns' : 'Hide Other Columns';
+                    $otherToggle.html(`<i class="bi ${iconClass}"></i> ${label}`);
+                    $otherToggle
+                        .removeClass('btn-outline-dark btn-success btn-danger')
+                        .addClass(otherColumnsHidden ? 'btn-danger' : 'btn-success');
+
+                    try {
+                        localStorage.setItem(OTHER_COLUMN_STATE_KEY, String(otherColumnsHidden));
+                    } catch (error) {
+                        console.warn('DailyRepayment: unable to persist localStorage', error);
+                    }
+                };
+
+                $otherToggle.on('click', function () {
+                    otherColumnsHidden = !otherColumnsHidden;
+                    syncOtherColumns();
+                });
+
+                syncOtherColumns();
+            }
+
             // Download Excel functionality
             $('#downloadExcel').click(function() {
                 // Convert HTML table to a workbook object
@@ -468,11 +515,11 @@
             const currentMonth = new Date().toLocaleString('default', { month: 'long' });
             const centerDetails = $('#center_details').find('option:selected').text();
             const table = document.getElementById('repaymentTable').cloneNode(true);
-
-            // Hide extra columns in portrait mode
-            if (orientation === 'portrait') {
-                table.querySelectorAll('.portrait-hide').forEach(col => col.style.display = 'none');
+            if (otherColumnsHidden) {
+                table.classList.add('hide-other');
             }
+
+            table.querySelectorAll('.portrait-hide').forEach(col => col.style.display = '');
 
             const printWindow = window.open('', '', 'height=1000,width=1200');
             printWindow.document.write('<html><head><title>Repayment Sheet</title>');
@@ -481,6 +528,7 @@
             printWindow.document.write('body { font-family: Arial, sans-serif; margin: 10px; font-size: 9px; }');
             printWindow.document.write('table { width: 100%; border-collapse: collapse; font-size: 8px; table-layout: auto; }');
             printWindow.document.write('th, td { border: 1px solid #000; padding: 4px; text-align: center; word-wrap: break-word; }');
+            printWindow.document.write('table.hide-other .other-column { display: none; }');
             printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
             printWindow.document.write('</style>');
 
