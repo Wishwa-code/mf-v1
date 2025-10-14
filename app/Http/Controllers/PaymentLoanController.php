@@ -60,6 +60,8 @@ class PaymentLoanController extends Controller
         $center_details = $request->center_details;
         $route = $request->route;
         $loan_number = $request->loan_number_search;
+        $from_date = $request->from_date;
+        $to_date = $request->to_date;
 
         $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
@@ -123,6 +125,15 @@ class PaymentLoanController extends Controller
         if (!empty($loan_number)) {
             $loanQuery->where('customer_loan.Loan_No', 'LIKE', '%' . $loan_number . '%');
         }
+
+        if (!empty($from_date)) {
+            $loanQuery->whereDate('customer_loan.Date_Time', '>=', $from_date);
+        }
+
+        if (!empty($to_date)) {
+            $loanQuery->whereDate('customer_loan.Date_Time', '<=', $to_date);
+        }
+
         $loanQuery->orderBy('idCustomer_Loan','desc');
         $loans = $loanQuery->paginate(10);
 
@@ -167,6 +178,14 @@ class PaymentLoanController extends Controller
 
         if (!empty($loan_number)) {
             $totals->where('customer_loan.Loan_No', 'LIKE', '%' . $loan_number . '%');
+        }
+
+        if (!empty($from_date)) {
+            $totals->whereDate('customer_loan.Date_Time', '>=', $from_date);
+        }
+
+        if (!empty($to_date)) {
+            $totals->whereDate('customer_loan.Date_Time', '<=', $to_date);
         }
 
         // Calculate the totals

@@ -8,6 +8,8 @@ function load_table(page = 1) {
     let center_details = $("#center_details").val();
     let route = $("#route").val();
     let loan_number_search = $("#loan_number_search").val();
+    let from_date = $("#from_date").val();
+    let to_date = $("#to_date").val();
 
     $.ajax({
         type: "GET",
@@ -21,7 +23,9 @@ function load_table(page = 1) {
             center_details: center_details,
             route: route,
             loan_number_search: loan_number_search,
-            customer: customer
+            customer: customer,
+            from_date: from_date,
+            to_date: to_date
         },
         success: function(response) {
             let data = response.item.data; // paginated data

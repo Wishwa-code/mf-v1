@@ -118,6 +118,18 @@
                                     <input type="text" class="form-control" id="loan_number_search" onkeyup="load_table();">
                                 </div>
                             </div>
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="from_date" class="form-label">From Date (Disbursement)</label>
+                                    <input type="date" class="form-control" id="from_date">
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="to_date" class="form-label">To Date (Disbursement)</label>
+                                    <input type="date" class="form-control" id="to_date">
+                                </div>
+                            </div>
                             <div class="col-lg-3 d-flex align-items-center"> <!-- Align button vertically in the center -->
                                 <button type="button" class="btn btn-danger w-100" onclick="load_table();">
                                     <i class="bi bi-search"></i> Search
