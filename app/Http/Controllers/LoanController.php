@@ -1000,6 +1000,14 @@ class LoanController extends Controller
 
         $exists=DB::table('reshedule')->where('loan_id', $loan->idCustomer_Loan)->exists() ? 1 : 0;
 
+
+        $latest = DB::table('extra_charger')
+            ->where('loan_id', $loan->idCustomer_Loan)
+            ->orderByDesc('id_extra_charger')
+            ->first();
+
+        $extraChargelatestBalance = (float)$latest->balance;
+
         // Pass the data to the view with compact and handle potential nulls
         return view('pages.LoanView', compact(
             'type',
@@ -1025,7 +1033,8 @@ class LoanController extends Controller
             'savingBalanceSum',
             'Saving_amountSum',
             'payment_delete_status',
-            'loan_saving_balance'
+            'loan_saving_balance',
+            'extraChargelatestBalance'
         ));
     }
 

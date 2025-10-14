@@ -401,6 +401,7 @@
                                     <th scope="col">Savings Balance</th>
                                     <th scope="col">Capital Balance</th>
                                     <th scope="col">Interest Balance</th>
+                                    <th scope="col">Extra Charge Balance</th>
                                     <th scope="col">Total Outstanding</th>
                                     <th scope="col">Loan Maturity Date</th>
                                     <th>Loan Status</th>
@@ -418,7 +419,8 @@
                                     <td>{{ number_format($loan_saving_balance, 2, '.', ',') }}</td>
                                     <td>{{ number_format($loan->capital_balance, 2, '.', ',') }}</td>
                                     <td>{{ number_format($loan->installment_balance, 2, '.', ',') }}</td>
-                                    <td>{{ number_format($loan->Total_Loan_Amount-($total_paid_amount-$savingBalanceSum)+$Panalty_BalanceSum+($Panalty_Amount-$Panalty_BalanceSum), 2, '.', ',') }}</td>
+                                    <td>{{ number_format($extraChargelatestBalance, 2, '.', ',') }}</td>
+                                    <td>{{ number_format($loan->Total_Loan_Amount-($total_paid_amount-$savingBalanceSum)+$Panalty_BalanceSum+($Panalty_Amount-$Panalty_BalanceSum)+$extraChargelatestBalance, 2, '.', ',') }}</td>
                                     <td>{{ $installments->last()->Installment_Date }}</td>
                                     <td style="color:
     {{ $loan->Status == -1 ? 'orange' : ($loan->Status == 0 ? 'red' : 'green') }};">
