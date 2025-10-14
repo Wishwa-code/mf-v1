@@ -177,6 +177,15 @@
             // Initialize Select2
             $('.select2').select2();
 
+            // Initialize DataTable and keep the instance
+            var table = $('#customerTable').DataTable({
+                dom: 'Bfrtip',
+                buttons: [],
+                responsive: true,
+                fixedHeader: true,
+                order: [[0, 'asc']],
+                pageLength: 25
+            });
 
             // Function to get the current date and time in Asia/Colombo timezone
             function getColomboDateTime() {
@@ -194,30 +203,50 @@
                 return formatter.format(new Date());
             }
 
+            $('#customPDF').on('click', function(e) {
+                e.preventDefault();
 
-            $('#customPDF').on('click', function() {
-                var branchName = {!! json_encode(session('branch_name')) !!} + ' Branch' || 'All Branches';
-                var executiveName = {!! json_encode(session('username')) !!} || 'All Executives';
+                // Safely get session values (avoid calling .replace on null)
+                var branchName = {!! json_encode(session('branch_name') ?? '') !!};
+                branchName = branchName ? branchName + ' Branch' : 'All Branches';
+
+                var executiveName = {!! json_encode(session('username') ?? '') !!} || 'All Executives';
                 var selectedDate = $('#date_from').val() || 'All Dates';
-                var companyName = {!! json_encode(session('company_name')) !!}.replace(/[^\w\s&]/gi, '');
-                var totalAmount = 0;
 
+                var rawCompany = {!! json_encode(session('company_name') ?? '') !!};
+                // remove unsafe chars if present (only if non-empty)
+                var companyName = rawCompany ? rawCompany.replace(/[^\w\s&]/gi, '') : 'Company';
+
+                // Get all rows from DataTables (use filtered rows if you prefer search-applied)
+                // Use { search: 'applied' } to respect the current filter, or remove to get absolutely all rows.
+                var allData = table.rows({ search: 'applied' }).data().toArray();
+
+                var totalAmount = 0;
                 var data = [];
-                $('#customerTable tbody tr').each(function() {
-                    var row = [];
-                    $(this).find('td').each(function(index) {
-                        var cellText = $(this).text().trim();
-                        if (index === 3) { // Amount column
-                            var amount = parseFloat(cellText.replace(/,/g, '')) || 0;
-                            totalAmount += amount;
-                            row.push({ text: amount.toFixed(2), alignment: 'right' });
-                        } else {
-                            row.push({ text: cellText, alignment: 'center' });
-                        }
-                    });
-                    data.push(row);
+
+                // allData entries are either arrays (DOM-source) or objects (if using data option)
+                allData.forEach(function(row) {
+                    // If row is an array of cell strings, use indexes.
+                    // Defensive: convert to array of strings
+                    var cells = Array.isArray(row) ? row : Object.values(row);
+                    var centerNo = (cells[0] || '').toString().trim();
+                    var centerName = (cells[1] || '').toString().trim();
+                    var paymentType = (cells[2] || '').toString().trim();
+                    var amountText = (cells[3] || '').toString().trim();
+
+                    // parse amount safely
+                    var amount = parseFloat(amountText.replace(/,/g, '')) || 0;
+                    totalAmount += amount;
+
+                    data.push([
+                        { text: centerNo || '-', alignment: 'center' },
+                        { text: centerName || '-', alignment: 'center' },
+                        { text: paymentType || '-', alignment: 'center' },
+                        { text: amount.toFixed(2), alignment: 'right' }
+                    ]);
                 });
 
+                // Cash table body (unchanged)
                 var cashTableBody = [
                     [{ text: "5000", alignment: 'center' }, { text: "", alignment: 'center' }, { text: "", alignment: 'right' }],
                     [{ text: "1000", alignment: 'center' }, { text: "", alignment: 'center' }, { text: "", alignment: 'right' }],
@@ -237,15 +266,15 @@
                         { text: "", style: 'totalRow', alignment: 'right' }
                     ]
                 ];
-// Get the current date and time in Colombo
+
                 var dateTime = getColomboDateTime();
+
                 var docDefinition = {
                     pageSize: 'A4',
-                    pageMargins: [30, 20, 30, 20], // Keep margins minimal to fit everything
+                    pageMargins: [30, 20, 30, 20],
                     content: [
                         { text: companyName, style: 'companyName', margin: [0, 0, 0, 5] },
                         { text: 'CASH DENOMINATION', style: 'title', margin: [0, 5, 0, 5] },
-                        // Add the current date and time here
                         { text: `Date: ${dateTime}`, style: 'subheader', margin: [0, 2, 0, 5] },
                         {
                             columns: [
@@ -275,7 +304,7 @@
                                     return rowIndex % 2 === 0 ? '#F5F5F5' : null;
                                 }
                             },
-                            pageBreak: 'avoid' // Prevents splitting to a new page
+                            pageBreak: 'avoid'
                         },
                         { text: '\n' },
 
@@ -395,31 +424,9 @@
                 pdfMake.createPdf(docDefinition).download('Cash_Denomination.pdf');
             });
 
-
-
-
-
-
-
-
-
-
-
-            // Initialize DataTable with export buttons
-            $('#customerTable').DataTable({
-                dom: 'Bfrtip',
-                buttons: [
-
-                ],
-                responsive: true,
-                fixedHeader: true,
-                order: [[0, 'asc']],
-                pageLength: 25
-            });
         });
-
-
     </script>
+
 
 
 
