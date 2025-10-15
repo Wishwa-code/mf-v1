@@ -94,6 +94,7 @@
             overflow-y: auto;
             overflow-x: auto;
             border: 1px solid #ccc;
+            position: relative;
         }
 
         /* Keep the header sticky */
@@ -103,6 +104,16 @@
             z-index: 2;
             background-color: #1A2942; /* Match your bg-purple */
             color: white;
+        }
+        #loan_table tfoot {
+            position: sticky;
+            bottom: 0;
+            z-index: 3;
+        }
+        #loan_table tfoot td,
+        #loan_table tfoot th {
+            background-color: #1A2942;
+            color: #e1e1e1;
         }
         #loading-spinner {
             display: none;
@@ -292,9 +303,10 @@
                                     <td id="total_capital_balance">0.00</td>
                                     <td id="total_arrears">0.00</td>
                                     <td id="total_balance">0.00</td>
-                                    <td colspan="2"></td>
+                                    <td></td>
                                     <td id="total_last_payment">0.00</td>
-                                    <td colspan="2"></td>
+                                    <td></td>
+                                    <td></td>
                                 </tr>
                                 </tfoot>
                             </table>
@@ -540,16 +552,16 @@
                         let totalLoanBalance = 0.0;
                         let totalCapitalBalance = 0.0;
                         let totalArrears = 0.0;
-                        let totalBalance = 0.0;
+                        let totalBalanceSum = 0.0;
                         let totalLastPayment = 0.0;
 
                         let currentPage = data.current_page ?? page;
                         let lastPage = data.last_page ?? 1;
 
                         data.item.forEach(function(item) {
-                            let totalBalance = parseFloat(item.Total_Balance);
+                            const rowTotalBalance = parseFloat(item.Total_Balance || 0);
                             let Installment_Count = parseFloat(item.Installment_Count);
-                            tot += totalBalance;
+                            tot += rowTotalBalance;
 
                             // Accumulate totals
                             totalInstallmentAmount += parseFloat(item.Installment_Amount || 0);
@@ -558,7 +570,7 @@
                             totalLoanBalance += parseFloat(item.Balance_Amount || 0);
                             totalCapitalBalance += parseFloat(item.capital_balance || 0);
                             totalArrears += parseFloat(item.arrears || 0);
-                            totalBalance += (parseFloat(item.Balance_Amount || 0) + parseFloat(item.Panalty_Balance || 0));
+                            totalBalanceSum += (parseFloat(item.Balance_Amount || 0) + parseFloat(item.Panalty_Balance || 0));
                             totalLastPayment += parseFloat(item.Last_Payment_Amount || 0);
 
                             let statusColor = "#000";
@@ -606,7 +618,7 @@
                         $('#total_loan_balance').text(totalLoanBalance.toFixed(2));
                         $('#total_capital_balance').text(totalCapitalBalance.toFixed(2));
                         $('#total_arrears').text(totalArrears.toFixed(2));
-                        $('#total_balance').text(totalBalance.toFixed(2));
+                        $('#total_balance').text(totalBalanceSum.toFixed(2));
                         $('#total_last_payment').text(totalLastPayment.toFixed(2));
 
                         // Update total amount
@@ -745,6 +757,8 @@
             totalsRow.push(parseFloat($('#total_balance').text()) || 0);             // Total Balance
             totalsRow.push('');                                                      // Last Payment Date
             totalsRow.push(parseFloat($('#total_last_payment').text()) || 0);        // Last Payment Amount
+            totalsRow.push('');                                                      // Status
+            totalsRow.push('');                                                      // Action
             
             ws_data.push(totalsRow);
 
