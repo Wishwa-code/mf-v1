@@ -161,6 +161,60 @@ class LoanController extends Controller
                 }
             }
 
+            // Check first installment date restriction
+            $issueDate = $request->input('issue_date');
+            $installments = $request->input('installment', []);
+            
+            if ($issueDate && !empty($installments)) {
+                // Get the first installment date
+                $firstInstallment = is_array($installments) ? reset($installments) : null;
+                $firstInstallmentDate = $firstInstallment['installmentDate'] ?? null;
+                
+                if ($firstInstallmentDate) {
+                    // Get loan product to determine the loan type
+                    $loanProduct = tableWithBranch('loan_category')
+                        ->where('idLoan_Category', $request->loan_cate_id)
+                        ->first();
+                    
+                    if ($loanProduct) {
+                        $interestPeriod = $loanProduct->Interest_period;
+                        $settingKey = null;
+                        
+                        // Map Interest_period to the appropriate setting key
+                        if (in_array($interestPeriod, ['Daily', 'Per Day'])) {
+                            $settingKey = 'first_installment_daily';
+                        } elseif (in_array($interestPeriod, ['Weekly', 'Per Week'])) {
+                            $settingKey = 'first_installment_weekly';
+                        } elseif (in_array($interestPeriod, ['Per Month', 'Monthly'])) {
+                            $settingKey = 'first_installment_monthly';
+                        }
+                        
+                        if ($settingKey) {
+                            // Get the maximum allowed days from settings
+                            $maxDays = (int) DB::table('app_settings')
+                                ->where('key', $settingKey)
+                                ->value('value');
+                            
+                            if ($maxDays > 0) {
+                                // Calculate the difference in days
+                                $issueDateObj = new \DateTime($issueDate);
+                                $firstInstallmentDateObj = new \DateTime($firstInstallmentDate);
+                                $daysDifference = $issueDateObj->diff($firstInstallmentDateObj)->days;
+                                
+                                // Check if the first installment date exceeds the allowed days
+                                if ($daysDifference > $maxDays) {
+                                    DB::rollBack();
+                                    $loanTypeText = str_replace(['Per ', 'Per'], '', $interestPeriod);
+                                    return response()->json([
+                                        'message' => "The first installment date cannot be more than {$maxDays} days from the issue date for {$loanTypeText} loans. Current difference: {$daysDifference} days."
+                                    ], 422);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             if ($type_loan_number == "") {
                 if ($loan_num_type === "Customize") {
                     $branch_no_txt = $branch_no . '/';
