@@ -181,7 +181,7 @@
         max-width: 6%;
         overflow: hidden;
         text-overflow: ellipsis;
-    }  /* Remaining Installments */
+    }  /* Loan Ending Date */
     
     #repaymentTable th:nth-child(10), #repaymentTable td:nth-child(10) { 
         width: 8%; 
@@ -602,7 +602,7 @@
                                     <col style="width:8%; max-width:8%;">
                                     <col style="width:8%; max-width:8%;"> {{-- Total Saving Amount column --}}
                                     <col style="width:8%; max-width:8%;"> {{-- Total Paid column --}}
-                                    <col style="width:6%; max-width:6%;"> {{-- Remaining Installments column --}}
+                                    <col style="width:6%; max-width:6%;"> {{-- Loan Ending Date column --}}
                                     <col style="width:8%; max-width:8%;"> {{-- Balance column --}}
                                     @for ($i = 1; $i <= 6; $i++)
                                         <col class="date-col" style="width:4.33%; max-width:4.33%;">
@@ -618,7 +618,7 @@
                                     <th rowspan="2">Installment Amount</th>
                                     <th rowspan="2">Total Saving Amount</th>
                                     <th rowspan="2">Total Paid</th>
-                                    <th rowspan="2">Remaining Installments</th>
+                                    <th rowspan="2">Loan Ending Date</th>
                                     <th rowspan="2">Balance</th>
                                     @for ($i = 1; $i <= 6; $i++)
                                         <th class="empty-date-header"></th>
@@ -684,7 +684,7 @@
                                                     <td>{{ number_format($item->Installment_Amount, 2) }}</td>
                                                     <td>{{ number_format($savingBalance, 2) }}</td>
                                                     <td>{{ number_format($paidTotal, 2) }}</td>
-                                                    <td>{{ $item->remaining_installments ?? 0 }}</td>
+                                                    <td>{{ $item->loan_ending_date ? date('Y-m-d', strtotime($item->loan_ending_date)) : '-' }}</td>
                                                     <td>{{ number_format($outstanding, 2) }}</td>
                                                     @for ($i = 1; $i <= 6; $i++)
                                                         <td class="paid-amount"></td>
@@ -726,7 +726,7 @@
                                                 <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
                                                 <td>{{ number_format($grpSaving, 2) }}</td>
                                                 <td>{{ number_format($grpPaid, 2) }}</td>
-                                                <td>{{ $group->sum('remaining_installments') }}</td>
+                                                <td>-</td>
                                                 <td>{{ number_format($grpOutstanding, 2) }}</td>
                                                 <td colspan="6"></td>
                                             </tr>
@@ -776,7 +776,7 @@
                                             <td>{{ number_format($centerGroups->flatten()->sum('Installment_Amount'), 2) }}</td>
                                             <td>{{ number_format($ctrSaving, 2) }}</td>
                                             <td>{{ number_format($ctrPaid, 2) }}</td>
-                                            <td>{{ $centerGroups->flatten()->sum('remaining_installments') }}</td>
+                                            <td>-</td>
                                             <td>{{ number_format($ctrOutstanding, 2) }}</td>
                                             <td colspan="6"></td>
                                         </tr>
