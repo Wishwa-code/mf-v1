@@ -135,6 +135,28 @@ class LoanController extends Controller
                 }
             }
 
+            // Check document upload restriction
+            $documentUploadRestriction = DB::table('app_settings')->where('key', 'document_upload_restriction')->value('value') ?? 'not_required';
+            if ($documentUploadRestriction === 'required') {
+                // Check if this loan category has required documents
+                $requiredDocumentsCount = tableWithBranch('required_documents')
+                    ->where('Loan_Category_idLoan_Category', $request->loan_cate_id)
+                    ->count();
+                
+                if ($requiredDocumentsCount > 0) {
+                    // Get the count of uploaded documents from the request
+                    $uploadedDocumentsCount = (int) $request->input('uploaded_documents_count', 0);
+                    
+                    // Ensure ALL required documents are uploaded
+                    if ($uploadedDocumentsCount < $requiredDocumentsCount) {
+                        DB::rollBack();
+                        return response()->json([
+                            'message' => "All required documents must be uploaded. Please upload all {$requiredDocumentsCount} required document(s) before proceeding. (Currently uploaded: {$uploadedDocumentsCount})"
+                        ], 422);
+                    }
+                }
+            }
+
             if ($type_loan_number == "") {
                 if ($loan_num_type === "Customize") {
                     $branch_no_txt = $branch_no . '/';

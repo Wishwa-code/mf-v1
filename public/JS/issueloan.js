@@ -464,6 +464,14 @@ function save_loan(){
         })
 
     }else{
+        // Count how many documents have files uploaded
+        let uploadedDocumentsCount = 0;
+        $('input[type="file"]').each(function() {
+            if (this.files && this.files[0]) {
+                uploadedDocumentsCount++;
+            }
+        });
+
         Swal.fire({
             title: "Are you sure?",
             text: "Do you want to create this Loan ?",
@@ -517,7 +525,8 @@ function save_loan(){
                         collector_officer:collector_officer,
                         saving:saving,
                         repayment_duration_period:repayment_duration_period,
-                        type_loan_number:type_loan_number
+                        type_loan_number:type_loan_number,
+                        uploaded_documents_count:uploadedDocumentsCount
                     },
                     success: function (data, textStatus, xhr) {
                         if (xhr.status === 200) {
