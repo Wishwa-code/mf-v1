@@ -109,6 +109,32 @@ class LoanController extends Controller
                 return response()->json(['message' => "Customer already has maximum allowed loans ({$maxAllowedLoans}). Current active loans: {$currentActiveLoans}"], 422);
             }
 
+            // Check guarantees restriction
+            $guaranteesRestriction = DB::table('app_settings')->where('key', 'guarantees_restriction')->value('value') ?? 'not_required';
+            if ($guaranteesRestriction === 'required') {
+                $witnessesArray = $request->input('witnessesArray', []);
+                
+                // Check if witnessesArray is empty or has no valid guarantors
+                if (empty($witnessesArray) || count($witnessesArray) === 0) {
+                    DB::rollBack();
+                    return response()->json(['message' => 'Guarantors are required for this loan. Please add at least one guarantor before proceeding.'], 422);
+                }
+                
+                // Check if all entries have valid cus_id (not empty or "0")
+                $hasValidGuarantor = false;
+                foreach ($witnessesArray as $witness) {
+                    if (isset($witness['cus_id']) && $witness['cus_id'] !== '0' && !empty($witness['cus_id'])) {
+                        $hasValidGuarantor = true;
+                        break;
+                    }
+                }
+                
+                if (!$hasValidGuarantor) {
+                    DB::rollBack();
+                    return response()->json(['message' => 'Guarantors are required for this loan. Please add at least one valid guarantor before proceeding.'], 422);
+                }
+            }
+
             if ($type_loan_number == "") {
                 if ($loan_num_type === "Customize") {
                     $branch_no_txt = $branch_no . '/';
