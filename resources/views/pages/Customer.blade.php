@@ -192,7 +192,7 @@
                                     </div>
                                     <div class="mb-3">
                                         <label for="simpleinput" class="form-label">Customer Photo</label>
-                                        <input type="file" id="cus_phto" name="cus_phto" class="form-control" accept="image/*">
+                                        <input type="file" id="cus_phto" name="cus_phto" class="form-control" accept="image/*" capture="environment">
                                         <button type="button" onclick="openGlobalCamera('#cus_phto')" class="btn btn-outline-secondary mt-1">📷</button>
                                     </div>
                                 </div>
@@ -316,7 +316,7 @@
                                     </div>
                                 </div>
                             </div>
-<hr>
+                            <hr>
 
                             <div class="row">
                                 <div class="card border-secondary border">
@@ -339,8 +339,14 @@
                                                     <input type="text" id="account_number" class="form-control">
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <label for="branch" class="form-label">Branch</label>
+                                                    <label for="branch" class="form-label">Branch code</label>
                                                     <input type="text" id="branch" class="form-control">
+                                                </div>
+                                            </div>
+                                            <div class="row mb-3">
+                                                <div class="col-md-6">
+                                                    <label for="bank_code" class="form-label">Bank code</label>
+                                                    <input type="text" id="bank_code" class="form-control">
                                                 </div>
                                             </div>
                                             <button type="button" class="btn btn-success" id="addBankBtn">Add Bank Account</button>
@@ -352,7 +358,8 @@
                                                     <th>Bank Name</th>
                                                     <th>Account Name</th>
                                                     <th>Account Number</th>
-                                                    <th>Branch</th>
+                                                    <th>Branch code</th>
+                                                    <th>Bank code</th>
                                                     <th>Action</th>
                                                 </tr>
                                                 </thead>
@@ -441,7 +448,7 @@
 
 
                             <button type="button" class="btn btn-success" style="float: right" onclick="validateSubmitCustomer(event)"><i
-                                    class="bi bi-save"></i>&nbsp;&nbsp;Save Customer</button>
+                                        class="bi bi-save"></i>&nbsp;&nbsp;Save Customer</button>
                         </div>
 
 
@@ -504,13 +511,13 @@
 
 
             @if($company->customer_num_type == "Format")
-                // Get the original format string
-                var originalFormat = '{{ $newnum }}';
+            // Get the original format string
+            var originalFormat = '{{ $newnum }}';
 
 
-                // Update the label with the new formatted string
-                document.getElementById('formatted_num').innerText = originalFormat.replace('Customize No', value);
-                document.getElementById('formatted_num_use').innerText = originalFormat.replace('Customize No', value);
+            // Update the label with the new formatted string
+            document.getElementById('formatted_num').innerText = originalFormat.replace('Customize No', value);
+            document.getElementById('formatted_num_use').innerText = originalFormat.replace('Customize No', value);
             @endif
 
 
@@ -765,10 +772,11 @@
                 var bankName = $('#bank_name').val();
                 var accountName = $('#account_name').val();
                 var accountNumber = $('#account_number').val();
-                var branch = $('#branch').val();
+                var branchCode = $('#branch').val();
+                var bankCode = $('#bank_code').val();
 
                 // Validate input (optional)
-                if (bankName === '' || accountName === '' || accountNumber === '' || branch === '') {
+                if (bankName === '' || accountName === '' || accountNumber === '' || branchCode === '' || bankCode === '') {
                     Swal.fire("Error!", "All fields are required!", "error");
                     return;
                 }
@@ -779,10 +787,11 @@
                     var rowBankName = $(this).find('td').eq(0).text();
                     var rowAccountName = $(this).find('td').eq(1).text();
                     var rowAccountNumber = $(this).find('td').eq(2).text();
-                    var rowBranch = $(this).find('td').eq(3).text();
+                    var rowBranchCode = $(this).find('td').eq(3).text();
+                    var rowBankCode = $(this).find('td').eq(4).text();
 
                     if (rowBankName === bankName && rowAccountName === accountName &&
-                        rowAccountNumber === accountNumber && rowBranch === branch) {
+                        rowAccountNumber === accountNumber && rowBranchCode === branchCode && rowBankCode === bankCode) {
                         isDuplicate = true;
                         return false; // Break the loop
                     }
@@ -799,7 +808,8 @@
                 <td>${bankName}</td>
                 <td>${accountName}</td>
                 <td>${accountNumber}</td>
-                <td>${branch}</td>
+                <td>${branchCode}</td>
+                <td>${bankCode}</td>
                 <td>
                     <button type="button" class="btn btn-danger remove-btn">Remove</button>
                 </td>
@@ -814,6 +824,7 @@
                 $('#account_name').val('');
                 $('#account_number').val('');
                 $('#branch').val('');
+                $('#bank_code').val('');
             });
 
             // Delegate the click event to the remove buttons
@@ -850,7 +861,7 @@
                     const dropdown = $('#otherDocDescription');
                     dropdown.empty();
                     dropdown.append('<option value="">Select Document Type</option>');
-                    
+
                     documentTypes.forEach(function(type) {
                         dropdown.append(`<option value="${type}">${type}</option>`);
                     });
@@ -861,7 +872,7 @@
                     const dropdown = $('#otherDocDescription');
                     dropdown.empty();
                     dropdown.append('<option value="">Select Document Type</option>');
-                    
+
                     getDefaultDocumentTypes().forEach(function(type) {
                         dropdown.append(`<option value="${type}">${type}</option>`);
                     });

@@ -218,12 +218,9 @@ class LoanImportController extends Controller
             return (new \DateTime(sprintf('%04d-%02d-%02d', $y, $m, min($dom,$last))))->setTime(0,0,0);
         };
 
-        // ====== EXACT BACKEND PORT OF YOUR JS ======
-        // Anchor = due + 5; "Monday" => weekday on/before; "First Week Monday" => nth weekday on/before.
         $collectionDateForRoute = function (\DateTime $due, string $ruleText, int $offsetDays = 5): \DateTime {
             $txt = trim($ruleText);
 
-            // Only the full weekday names per your JS (no abbreviations)
             $weekdayIndex = function (string $name): ?int {
                 static $map = ['sunday'=>0,'monday'=>1,'tuesday'=>2,'wednesday'=>3,'thursday'=>4,'friday'=>5,'saturday'=>6];
                 $k = strtolower(trim($name));
@@ -235,51 +232,60 @@ class LoanImportController extends Controller
                 return $map[$k] ?? 1;
             };
             $getNthWeekday = function (int $y, int $m0, int $wd, int $nth): \DateTime {
+                // m0 = 0..11
                 $first = new \DateTime(sprintf('%04d-%02d-01', $y, $m0 + 1));
                 $shift = ($wd - (int)$first->format('w') + 7) % 7;
                 $day   = 1 + $shift + ($nth - 1) * 7;
-                return new \DateTime(sprintf('%04d-%02d-%02d', $y, $m0 + 1, $day));
+                return (new \DateTime(sprintf('%04d-%02d-%02d', $y, $m0 + 1, $day)))->setTime(0,0,0);
             };
+
+            // Helper: on/before a given anchor
             $weekdayOnOrBefore = function (\DateTime $anchor, string $wdName) use ($weekdayIndex): \DateTime {
-                $wd = $weekdayIndex($wdName);
-                $cur  = (int)$anchor->format('w');
-                $diff = ($cur - $wd + 7) % 7;
-                $d = clone $anchor; $d->modify("-{$diff} days")->setTime(0,0,0);
-                return $d;
-            };
-            $nthWeekOnOrBefore = function (\DateTime $anchor, string $nthWord, string $wdName)
-            use ($nthWordToNum, $weekdayIndex, $getNthWeekday): \DateTime {
-                $nth = $nthWordToNum($nthWord);
                 $wd  = $weekdayIndex($wdName);
-                $y = (int)$anchor->format('Y'); $m0 = (int)$anchor->format('n')-1;
-                $cand = $getNthWeekday($y,$m0,$wd,$nth);
-                if ($cand > $anchor) {
-                    $pm0 = ($m0 + 11) % 12; $py = $m0===0 ? $y-1 : $y;
-                    $cand = $getNthWeekday($py,$pm0,$wd,$nth);
-                }
-                return $cand->setTime(0,0,0);
+                $cur = (int)$anchor->format('w');
+                $diff = ($cur - $wd + 7) % 7;  // back to that weekday
+                return (clone $anchor)->modify("-{$diff} days")->setTime(0,0,0);
             };
 
-            // base = due + offset (e.g., +5)
-            $anchor = clone $due; $anchor->modify("+{$offsetDays} days")->setTime(0,0,0);
+            // Always respect "must be ≤ due"
+            $dueMid = (clone $due)->setTime(0,0,0);
 
-            if ($txt === '') return $anchor; // (you don't do this on FE; but we'll never call with '')
+            if ($txt === '') return $dueMid;
 
-            // Case 1: simple weekday, exactly as your JS object keys
-            if (($weekdayIndex($txt) ?? null) !== null) {
-                return $weekdayOnOrBefore($anchor, $txt);
-            }
-
-            // Case 2: "First Week Monday" (we allow extra spaces / any case)
-            $clean = preg_replace('/\s+/', ' ', trim($txt));
+            // Case A: "First Week Monday" (nth weekday). Choose in the SAME month as due.
+            // If that date is > due, fall back to the previous month’s nth weekday.
+            $clean = preg_replace('/\s+/', ' ', strtolower($txt));
             $parts = explode(' ', $clean);
-            if (count($parts) >= 3 && strtolower($parts[1]) === 'week' && ($weekdayIndex($parts[2]) ?? null) !== null) {
-                return $nthWeekOnOrBefore($anchor, $parts[0], $parts[2]);
+            if (count($parts) >= 3 && $parts[1] === 'week' && ($weekdayIndex($parts[2]) ?? null) !== null) {
+                $nth = $nthWordToNum($parts[0]);
+                $wd  = $weekdayIndex($parts[2]);
+
+                $y  = (int)$dueMid->format('Y');
+                $m0 = (int)$dueMid->format('n') - 1;
+
+                $cand = $getNthWeekday($y, $m0, $wd, $nth);
+                if ($cand > $dueMid) {
+                    // previous month
+                    $m0--;
+                    if ($m0 < 0) { $m0 = 11; $y--; }
+                    $cand = $getNthWeekday($y, $m0, $wd, $nth);
+                }
+                return $cand;
             }
 
-            // Fallback (should not happen if rule provided correctly): just anchor
-            return $anchor;
+            // Case B: simple weekday name → pick that weekday on/before (due + offset), then clamp to ≤ due
+            $wdMaybe = $weekdayIndex($txt);
+            if ($wdMaybe !== null) {
+                $anchor = (clone $dueMid)->modify("+{$offsetDays} days")->setTime(0,0,0);
+                $cand = $weekdayOnOrBefore($anchor, $txt);
+                if ($cand > $dueMid) $cand = $dueMid; // extra safety clamp
+                return $cand;
+            }
+
+            // Fallback: just the due date (never after)
+            return $dueMid;
         };
+
 
         $diffDaysUI = function (\DateTime $due, \DateTime $collection): int {
             // JS: diffDays(due, coll) = (due - coll) in whole days
@@ -493,13 +499,14 @@ class LoanImportController extends Controller
                 $balance = round($balance - $capitalThis, 2);
                 $totalInterestAcc += $interestThis;
 
-                // penalty date
-                $penaltyDT = clone $dueDT;
-                if ($panelty_start_day > 0) $penaltyDT->modify("+{$panelty_start_day} day")->setTime(0,0,0);
 
                 // ==== EXACT JS BEHAVIOR ====
                 $collectionDT = $collectionDateForRoute($dueDT, $routeRule, $offsetDays);
                 $diff         = $diffDaysUI($dueDT, $collectionDT);   // positive if collection is earlier
+
+                // penalty date
+                $penaltyDT = clone $collectionDT;
+                if ($panelty_start_day > 0) $penaltyDT->modify("+{$panelty_start_day} day")->setTime(0,0,0);
 
                 $totalAmt = round($EMI + $savingVal, 2);
 

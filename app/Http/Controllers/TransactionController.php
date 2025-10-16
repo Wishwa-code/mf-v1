@@ -1129,18 +1129,18 @@ class TransactionController extends Controller
 
     public function dailyreport(Request $request){
         $center = tableWithBranch('center')->get();
-    $routes = tableWithBranch('route')->get(); // route list
+        $routes = tableWithBranch('route')->get(); // route list
 
         // NOTE: Don't early-return when center table is empty. Keep going with LEFT JOINs so data still loads.
         // Get center_details from request; can be null (means "All").
         $center_details = $request->center_details;
 
-    // selected product
+        // selected product
         $product_filter = $request->get('product_filter');
-    // selected route
-    $route_filter = $request->get('route_filter');
-    // selected collector
-    $collector_filter = $request->get('collector_filter');
+        // selected route
+        $route_filter = $request->get('route_filter');
+        // selected collector
+        $collector_filter = $request->get('collector_filter');
 
         // Loan Query
         $loanQuery = tableWithBranch('installments','installments')
