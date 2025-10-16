@@ -112,26 +112,30 @@ class LoanController extends Controller
             // Check guarantees restriction
             $guaranteesRestriction = DB::table('app_settings')->where('key', 'guarantees_restriction')->value('value') ?? 'not_required';
             if ($guaranteesRestriction === 'required') {
-                $witnessesArray = $request->input('witnessesArray', []);
+                // Get the required guarantee count from the loan product
+                $loanProduct = tableWithBranch('loan_category')
+                    ->where('idLoan_Category', $request->loan_cate_id)
+                    ->first();
                 
-                // Check if witnessesArray is empty or has no valid guarantors
-                if (empty($witnessesArray) || count($witnessesArray) === 0) {
-                    DB::rollBack();
-                    return response()->json(['message' => 'Guarantors are required for this loan. Please add at least one guarantor before proceeding.'], 422);
-                }
-                
-                // Check if all entries have valid cus_id (not empty or "0")
-                $hasValidGuarantor = false;
-                foreach ($witnessesArray as $witness) {
-                    if (isset($witness['cus_id']) && $witness['cus_id'] !== '0' && !empty($witness['cus_id'])) {
-                        $hasValidGuarantor = true;
-                        break;
+                if ($loanProduct && $loanProduct->Guarantee_count > 0) {
+                    $requiredGuaranteeCount = (int) $loanProduct->Guarantee_count;
+                    $witnessesArray = $request->input('witnessesArray', []);
+                    
+                    // Count valid guarantors (cus_id not empty or "0")
+                    $validGuarantorCount = 0;
+                    foreach ($witnessesArray as $witness) {
+                        if (isset($witness['cus_id']) && $witness['cus_id'] !== '0' && !empty($witness['cus_id'])) {
+                            $validGuarantorCount++;
+                        }
                     }
-                }
-                
-                if (!$hasValidGuarantor) {
-                    DB::rollBack();
-                    return response()->json(['message' => 'Guarantors are required for this loan. Please add at least one valid guarantor before proceeding.'], 422);
+                    
+                    // Ensure ALL required guarantors are provided
+                    if ($validGuarantorCount < $requiredGuaranteeCount) {
+                        DB::rollBack();
+                        return response()->json([
+                            'message' => "All required guarantors must be added. This loan requires {$requiredGuaranteeCount} guarantor(s). (Currently added: {$validGuarantorCount})"
+                        ], 422);
+                    }
                 }
             }
 
