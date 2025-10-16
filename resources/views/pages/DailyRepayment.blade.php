@@ -57,7 +57,32 @@
             cursor: pointer;
         }
 
-        #repaymentTable.hide-other .other-column {
+        #repaymentTable.show-eight-collections .other-column {
+            display: none;
+        }
+
+        .collection-column-5, .collection-column-6, .collection-column-7, .collection-column-8,
+        .other-column-5, .other-column-6, .other-column-7, .other-column-8,
+        .collection-header-5, .collection-header-6, .collection-header-7, .collection-header-8 {
+            display: none;
+        }
+
+        #repaymentTable.show-eight-collections .collection-column-5,
+        #repaymentTable.show-eight-collections .collection-column-6,
+        #repaymentTable.show-eight-collections .collection-column-7,
+        #repaymentTable.show-eight-collections .collection-column-8,
+        #repaymentTable.show-eight-collections .collection-header-5,
+        #repaymentTable.show-eight-collections .collection-header-6,
+        #repaymentTable.show-eight-collections .collection-header-7,
+        #repaymentTable.show-eight-collections .collection-header-8 {
+            display: table-cell;
+        }
+
+        #repaymentTable.show-eight-collections .other-column,
+        #repaymentTable.show-eight-collections .other-column-5,
+        #repaymentTable.show-eight-collections .other-column-6,
+        #repaymentTable.show-eight-collections .other-column-7,
+        #repaymentTable.show-eight-collections .other-column-8 {
             display: none;
         }
 
@@ -201,7 +226,7 @@
                                 <button id="portraitPrint" class="btn btn-primary"><i class="bi bi-printer"></i> Portrait Print</button>
                                 <button id="landscapePrint" class="btn btn-secondary"><i class="bi bi-printer"></i> Landscape Print</button>
                                 <button id="downloadExcel" class="btn btn-success"><i class="bi bi-file-earmark-excel"></i> Download Excel</button>
-                                <button id="toggleOtherColumns" type="button" class="btn btn-outline-dark"><i class="bi bi-eye-slash"></i> Hide Other Columns</button>
+                                <button id="toggleCollectionMode" type="button" class="btn btn-outline-dark"><i class="bi bi-grid-3x3"></i> Show 8 Collections</button>
                             </div>
                         </div>
 
@@ -222,6 +247,10 @@
                                     <th class="collection-group" colspan="2"></th>
                                     <th class="collection-group" colspan="2"></th>
                                     <th class="collection-group" colspan="2"></th>
+                                    <th class="collection-group collection-header-5" colspan="2"></th>
+                                    <th class="collection-group collection-header-6" colspan="2"></th>
+                                    <th class="collection-group collection-header-7" colspan="2"></th>
+                                    <th class="collection-group collection-header-8" colspan="2"></th>
                                 </tr>
                                 <tr>
                                     <th class="portrait-hide">Collection</th>
@@ -232,6 +261,14 @@
                                     <th class="portrait-hide other-column">Other</th>
                                     <th class="portrait-hide">Collection</th>
                                     <th class="portrait-hide other-column">Other</th>
+                                    <th class="portrait-hide collection-column-5">Collection</th>
+                                    <th class="portrait-hide other-column other-column-5">Other</th>
+                                    <th class="portrait-hide collection-column-6">Collection</th>
+                                    <th class="portrait-hide other-column other-column-6">Other</th>
+                                    <th class="portrait-hide collection-column-7">Collection</th>
+                                    <th class="portrait-hide other-column other-column-7">Other</th>
+                                    <th class="portrait-hide collection-column-8">Collection</th>
+                                    <th class="portrait-hide other-column other-column-8">Other</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -258,6 +295,14 @@
                                             <td class="other-column"></td>
                                             <td class="collection-column"></td>
                                             <td class="other-column"></td>
+                                            <td class="collection-column collection-column-5"></td>
+                                            <td class="other-column other-column-5"></td>
+                                            <td class="collection-column collection-column-6"></td>
+                                            <td class="other-column other-column-6"></td>
+                                            <td class="collection-column collection-column-7"></td>
+                                            <td class="other-column other-column-7"></td>
+                                            <td class="collection-column collection-column-8"></td>
+                                            <td class="other-column other-column-8"></td>
                                         </tr>
                                     @endforeach
                                     <tr class="group-total">
@@ -269,7 +314,7 @@
                                         <td class="group-due-amount"></td>
                                         <td class="group-total-balance"></td>
                                         <td class="group-arrears"></td>
-                                        <td colspan="11"></td>
+                                        <td colspan="16"></td>
                                     </tr>
                                     <!-- Free empty rows after group -->
                                     @php
@@ -277,7 +322,7 @@
                                     @endphp
                                     @for ($i = 0; $i < $emptyRowCount; $i++)
                                         <tr class="group-empty-rule">
-                                            <td colspan="16">&nbsp;</td>
+                                            <td colspan="24">&nbsp;</td>
                                         </tr>
                                     @endfor
                                 @endforeach
@@ -292,16 +337,16 @@
                                     <td id="total-due-amount"></td>
                                     <td id="total-balance"></td>
                                     <td id="total-arrears"></td>
-                                    <td colspan="11"></td>
+                                    <td colspan="16"></td>
                                 </tr>
-                                <tr><td><strong>Present</strong></td><td colspan="15"></td></tr>
-                                <tr><td><strong>Late</strong></td><td colspan="15"></td></tr>
-                                <tr><td><strong>Informed</strong></td><td colspan="15"></td></tr>
-                                <tr><td><strong>Absent</strong></td><td colspan="15"></td></tr>
-                                <tr><td><strong>%</strong></td><td colspan="15"></td></tr>
-                                <tr><td><strong>Executive</strong></td><td colspan="15"></td></tr>
-                                <tr><td><strong>Cashier</strong></td><td colspan="15"></td></tr>
-                                <tr><td><strong>Manager</strong></td><td colspan="15"></td></tr>
+                                <tr><td><strong>Present</strong></td><td colspan="23"></td></tr>
+                                <tr><td><strong>Late</strong></td><td colspan="23"></td></tr>
+                                <tr><td><strong>Informed</strong></td><td colspan="23"></td></tr>
+                                <tr><td><strong>Absent</strong></td><td colspan="23"></td></tr>
+                                <tr><td><strong>%</strong></td><td colspan="23"></td></tr>
+                                <tr><td><strong>Executive</strong></td><td colspan="23"></td></tr>
+                                <tr><td><strong>Cashier</strong></td><td colspan="23"></td></tr>
+                                <tr><td><strong>Manager</strong></td><td colspan="23"></td></tr>
                                 </tfoot>
                             </table>
                         </div>
@@ -320,18 +365,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <script>
-        const OTHER_COLUMN_STATE_KEY = 'daily-repayment-hide-other';
-        let otherColumnsHidden = false;
+        const COLLECTION_MODE_KEY = 'daily-repayment-collection-mode';
+        let showEightCollections = false;
 
         try {
-            const cachedState = localStorage.getItem(OTHER_COLUMN_STATE_KEY);
-            if (cachedState !== null) {
-                otherColumnsHidden = cachedState === 'true';
+            const savedValue = localStorage.getItem(COLLECTION_MODE_KEY);
+            if (savedValue === 'true') {
+                showEightCollections = true;
             }
         } catch (error) {
             console.warn('DailyRepayment: unable to read localStorage', error);
-            otherColumnsHidden = false;
         }
+
+
 
         $(document).ready(function() {
             $('.select2').select2();
@@ -433,33 +479,33 @@
                 window.print();
             });
 
-            const $otherToggle = $('#toggleOtherColumns');
+            const $collectionToggle = $('#toggleCollectionMode');
 
-            if ($otherToggle.length) {
-                const syncOtherColumns = () => {
-                    $('#repaymentTable').toggleClass('hide-other', otherColumnsHidden);
-                    const newSpan = otherColumnsHidden ? 1 : 2;
+            if ($collectionToggle.length) {
+                const syncCollectionMode = () => {
+                    $('#repaymentTable').toggleClass('show-eight-collections', showEightCollections);
+                    const newSpan = showEightCollections ? 1 : 2;
                     $('#repaymentTable .collection-group').attr('colspan', newSpan);
-                    const iconClass = otherColumnsHidden ? 'bi-eye' : 'bi-eye-slash';
-                    const label = otherColumnsHidden ? 'Show Other Columns' : 'Hide Other Columns';
-                    $otherToggle.html(`<i class="bi ${iconClass}"></i> ${label}`);
-                    $otherToggle
-                        .removeClass('btn-outline-dark btn-success btn-danger')
-                        .addClass(otherColumnsHidden ? 'btn-danger' : 'btn-success');
+                    const iconClass = showEightCollections ? 'bi-grid' : 'bi-grid-3x3';
+                    const label = showEightCollections ? 'Show 4 Collection + Other' : 'Show 8 Collections';
+                    $collectionToggle.html(`<i class="bi ${iconClass}"></i> ${label}`);
+                    $collectionToggle
+                        .removeClass('btn-outline-dark btn-primary btn-secondary')
+                        .addClass(showEightCollections ? 'btn-primary' : 'btn-outline-dark');
 
                     try {
-                        localStorage.setItem(OTHER_COLUMN_STATE_KEY, String(otherColumnsHidden));
+                        localStorage.setItem(COLLECTION_MODE_KEY, String(showEightCollections));
                     } catch (error) {
                         console.warn('DailyRepayment: unable to persist localStorage', error);
                     }
                 };
 
-                $otherToggle.on('click', function () {
-                    otherColumnsHidden = !otherColumnsHidden;
-                    syncOtherColumns();
+                $collectionToggle.on('click', function () {
+                    showEightCollections = !showEightCollections;
+                    syncCollectionMode();
                 });
 
-                syncOtherColumns();
+                syncCollectionMode();
             }
 
             // Download Excel functionality
@@ -515,8 +561,8 @@
             const currentMonth = new Date().toLocaleString('default', { month: 'long' });
             const centerDetails = $('#center_details').find('option:selected').text();
             const table = document.getElementById('repaymentTable').cloneNode(true);
-            if (otherColumnsHidden) {
-                table.classList.add('hide-other');
+            if (showEightCollections) {
+                table.classList.add('show-eight-collections');
             }
 
             table.querySelectorAll('.portrait-hide').forEach(col => col.style.display = '');
@@ -528,7 +574,9 @@
             printWindow.document.write('body { font-family: Arial, sans-serif; margin: 10px; font-size: 9px; }');
             printWindow.document.write('table { width: 100%; border-collapse: collapse; font-size: 8px; table-layout: auto; }');
             printWindow.document.write('th, td { border: 1px solid #000; padding: 4px; text-align: center; word-wrap: break-word; }');
-            printWindow.document.write('table.hide-other .other-column { display: none; }');
+            printWindow.document.write('.collection-column-5, .collection-column-6, .collection-column-7, .collection-column-8, .other-column-5, .other-column-6, .other-column-7, .other-column-8, .collection-header-5, .collection-header-6, .collection-header-7, .collection-header-8 { display: none; }');
+            printWindow.document.write('table.show-eight-collections .collection-column-5, table.show-eight-collections .collection-column-6, table.show-eight-collections .collection-column-7, table.show-eight-collections .collection-column-8, table.show-eight-collections .collection-header-5, table.show-eight-collections .collection-header-6, table.show-eight-collections .collection-header-7, table.show-eight-collections .collection-header-8 { display: table-cell; }');
+            printWindow.document.write('table.show-eight-collections .other-column, table.show-eight-collections .other-column-5, table.show-eight-collections .other-column-6, table.show-eight-collections .other-column-7, table.show-eight-collections .other-column-8 { display: none; }');
             printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
             printWindow.document.write('</style>');
 
