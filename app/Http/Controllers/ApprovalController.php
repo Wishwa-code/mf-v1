@@ -66,11 +66,15 @@ class ApprovalController extends Controller
             ->where('ar.status', 0); // Pending status
             
         // Apply branch filtering
-        if ($branch_access == 0) {
+        // If not head office (-1), force filter to user's branch only
+        if ($user_branch_id != -1) {
+            // Non-head office users can only see their own branch data
             $query->where('ar.branch_id', $user_branch_id);
         } elseif (!empty($selectedBranch)) {
+            // Head office can filter by selected branch
             $query->where('ar.branch_id', $selectedBranch);
         }
+        // If head office and no branch selected, show all branches
         
         // Apply type filtering
         if (!empty($selectedType)) {
@@ -144,11 +148,15 @@ class ApprovalController extends Controller
             ->where('ar.status', 1); // Approved status
             
         // Apply branch filtering
-        if ($branch_access == 0) {
+        // If not head office (-1), force filter to user's branch only
+        if ($user_branch_id != -1) {
+            // Non-head office users can only see their own branch data
             $query->where('ar.branch_id', $user_branch_id);
         } elseif (!empty($selectedBranch)) {
+            // Head office can filter by selected branch
             $query->where('ar.branch_id', $selectedBranch);
         }
+        // If head office and no branch selected, show all branches
         
         // Apply type filtering
         if (!empty($selectedType)) {
@@ -230,11 +238,15 @@ class ApprovalController extends Controller
             ->where('ar.status', 2); // Rejected status
             
         // Apply branch filtering
-        if ($branch_access == 0) {
+        // If not head office (-1), force filter to user's branch only
+        if ($user_branch_id != -1) {
+            // Non-head office users can only see their own branch data
             $query->where('ar.branch_id', $user_branch_id);
         } elseif (!empty($selectedBranch)) {
+            // Head office can filter by selected branch
             $query->where('ar.branch_id', $selectedBranch);
         }
+        // If head office and no branch selected, show all branches
         
         // Apply type filtering
         if (!empty($selectedType)) {

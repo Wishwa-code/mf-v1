@@ -60,24 +60,24 @@
                         <!-- Filters -->
                         <form method="GET" action="{{ route('approval.pending') }}" class="mb-4">
                             <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="branch_id" class="form-label">Branch</label>
-                                    <select class="form-select" id="branch_id" name="branch_id" {{ $branch_access == 0 ? 'disabled' : '' }}>
-                                        @if($branch_access == 1)
+                                @if(session('branch_id') == -1)
+                                    <div class="col-md-6">
+                                        <label for="branch_id" class="form-label">Branch</label>
+                                        <select class="form-select" id="branch_id" name="branch_id">
                                             <option value="">All Branches</option>
-                                        @endif
-                                        @foreach($branches as $branch)
-                                            <option value="{{ $branch->branch_id }}"
-                                                    {{ $selectedBranch == $branch->branch_id ? 'selected' : '' }}>
-                                                {{ $branch->Name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @if($branch_access == 0)
+                                            @foreach($branches as $branch)
+                                                <option value="{{ $branch->branch_id }}"
+                                                        {{ $selectedBranch == $branch->branch_id ? 'selected' : '' }}>
+                                                    {{ $branch->Name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                @endif
+                                <div class="{{ session('branch_id') == -1 ? 'col-md-6' : 'col-md-12' }}">
+                                    @if(session('branch_id') != -1)
                                         <input type="hidden" name="branch_id" value="{{ session('branch_id') }}">
                                     @endif
-                                </div>
-                                <div class="col-md-6">
                                     <label for="type" class="form-label">Type</label>
                                     <select class="form-select" id="type" name="type">
                                         <option value="">All Types</option>
@@ -118,7 +118,9 @@
                                             <th>Date & Time</th>
                                             <th>User</th>
                                             <th class="text-center">View</th>
-                                            <th class="text-center">Actions</th>
+                                            @if(session('branch_id') == -1)
+                                                <th class="text-center">Actions</th>
+                                            @endif
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -149,23 +151,25 @@
                                                         <i class="ri-eye-line"></i>
                                                     </button>
                                                 </td>
-                                                <td class="text-center action-buttons">
-                                                    <button class="btn btn-success btn-sm me-1" 
-                                                            onclick="approveRequest({{ $approval->id }})"
-                                                            title="Approve">
-                                                        <i class="ri-check-line"></i> Approve
-                                                    </button>
-                                                    <button class="btn btn-danger btn-sm me-1" 
-                                                            onclick="rejectRequest({{ $approval->id }})"
-                                                            title="Reject">
-                                                        <i class="ri-close-line"></i> Reject
-                                                    </button>
-                                                    <button class="btn btn-warning btn-sm" 
-                                                            onclick="callbackRequest({{ $approval->id }})"
-                                                            title="Callback">
-                                                        <i class="ri-phone-line"></i> Callback
-                                                    </button>
-                                                </td>
+                                                @if(session('branch_id') == -1)
+                                                    <td class="text-center action-buttons">
+                                                        <button class="btn btn-success btn-sm me-1" 
+                                                                onclick="approveRequest({{ $approval->id }})"
+                                                                title="Approve">
+                                                            <i class="ri-check-line"></i> Approve
+                                                        </button>
+                                                        <button class="btn btn-danger btn-sm me-1" 
+                                                                onclick="rejectRequest({{ $approval->id }})"
+                                                                title="Reject">
+                                                            <i class="ri-close-line"></i> Reject
+                                                        </button>
+                                                        <button class="btn btn-warning btn-sm" 
+                                                                onclick="callbackRequest({{ $approval->id }})"
+                                                                title="Callback">
+                                                            <i class="ri-phone-line"></i> Callback
+                                                        </button>
+                                                    </td>
+                                                @endif
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -277,12 +281,15 @@
         let currentAction = null;
 
         $(document).ready(function() {
+            var isHeadOffice = {{ session('branch_id') == -1 ? 'true' : 'false' }};
+            var nonSortableColumns = isHeadOffice ? [0, 5, 6] : [0, 5]; // Adjust based on visible columns
+            
             var table = $('#pendingApprovalTable').DataTable({
                 "pageLength": 25,
                 "responsive": false,
                 "order": [[ 3, "desc" ]], // Sort by date column
                 "columnDefs": [
-                    { "orderable": false, "targets": [0, 5, 6] } // Disable sorting for expand and action columns
+                    { "orderable": false, "targets": nonSortableColumns } // Disable sorting for expand and action columns
                 ]
             });
             

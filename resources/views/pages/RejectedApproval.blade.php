@@ -60,24 +60,24 @@
                         <!-- Filters -->
                         <form method="GET" action="{{ route('approval.rejected') }}" class="mb-4">
                             <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label for="branch_id" class="form-label">Branch</label>
-                                    <select class="form-select" id="branch_id" name="branch_id" {{ $branch_access == 0 ? 'disabled' : '' }}>
-                                        @if($branch_access == 1)
+                                @if(session('branch_id') == -1)
+                                    <div class="col-md-4">
+                                        <label for="branch_id" class="form-label">Branch</label>
+                                        <select class="form-select" id="branch_id" name="branch_id">
                                             <option value="">All Branches</option>
-                                        @endif
-                                        @foreach($branches as $branch)
-                                            <option value="{{ $branch->branch_id }}"
-                                                    {{ $selectedBranch == $branch->branch_id ? 'selected' : '' }}>
-                                                {{ $branch->Name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @if($branch_access == 0)
+                                            @foreach($branches as $branch)
+                                                <option value="{{ $branch->branch_id }}"
+                                                        {{ $selectedBranch == $branch->branch_id ? 'selected' : '' }}>
+                                                    {{ $branch->Name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                @endif
+                                <div class="{{ session('branch_id') == -1 ? 'col-md-4' : 'col-md-6' }}">
+                                    @if(session('branch_id') != -1)
                                         <input type="hidden" name="branch_id" value="{{ session('branch_id') }}">
                                     @endif
-                                </div>
-                                <div class="col-md-4">
                                     <label for="type" class="form-label">Type</label>
                                     <select class="form-select" id="type" name="type">
                                         <option value="">All Types</option>
@@ -128,7 +128,9 @@
                                             <th>User</th>
                                             <th>Rejected By</th>
                                             <th>Reason</th>
-                                            <th>Action</th>
+                                            @if(session('branch_id') == -1)
+                                                <th>Action</th>
+                                            @endif
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -164,15 +166,17 @@
                                                         <small class="text-muted">{{ $rejected->comment ?? 'No reason provided' }}</small>
                                                     </div>
                                                 </td>
-                                                <td>
-                                                    @if($rejected->typeid == 401)
-                                                        <button onclick="undoRejection({{ $rejected->id }})" class="btn btn-sm btn-warning" title="Undo Rejection">
-                                                            <i class="ri-arrow-go-back-line"></i> Undo
-                                                        </button>
-                                                    @else
-                                                        <span class="text-muted">-</span>
-                                                    @endif
-                                                </td>
+                                                @if(session('branch_id') == -1)
+                                                    <td>
+                                                        @if($rejected->typeid == 401)
+                                                            <button onclick="undoRejection({{ $rejected->id }})" class="btn btn-sm btn-warning" title="Undo Rejection">
+                                                                <i class="ri-arrow-go-back-line"></i> Undo
+                                                            </button>
+                                                        @else
+                                                            <span class="text-muted">-</span>
+                                                        @endif
+                                                    </td>
+                                                @endif
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -202,12 +206,15 @@
     
     <script>
         $(document).ready(function() {
+            var isHeadOffice = {{ session('branch_id') == -1 ? 'true' : 'false' }};
+            var nonSortableColumns = isHeadOffice ? [0, 8] : [0]; // Adjust based on visible columns
+            
             var table = $('#rejectedApprovalTable').DataTable({
                 "pageLength": 25,
                 "responsive": false,
                 "order": [[ 4, "desc" ]], // Sort by rejected date column
                 "columnDefs": [
-                    { "orderable": false, "targets": [0, 8] } // Disable sorting for expand and action columns
+                    { "orderable": false, "targets": nonSortableColumns } // Disable sorting for expand and action columns
                 ]
             });
             
