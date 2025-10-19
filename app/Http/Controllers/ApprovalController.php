@@ -454,6 +454,62 @@ class ApprovalController extends Controller
                 }
             }
             
+            // Handle Customer Creation (Type 301)
+            if ($approval->typeid == 301) {
+                $requestData = json_decode($approval->data, true);
+                $customerData = $requestData['customer_data'];
+                
+                // Create customer using Eloquent model
+                $customer = new \App\Models\Customer();
+                foreach ($customerData as $key => $value) {
+                    $customer->$key = $value;
+                }
+                
+                if ($customer->save()) {
+                    $id = $customer->id;
+                    
+                    // Generate customer number
+                    customer_number($id);
+                    
+                    // Create customer log
+                    DB::table('customer_log')->insert([
+                        'customer_id' => $id,
+                        'customer_name' => $customerData['First_Name'] . ' ' . $customerData['Last_Name'],
+                        'date' => date('Y-m-d'),
+                        'time' => date('H:i:s'),
+                        'description' => 'Customer registration for ' . $customerData['First_Name'] . ' ' . $customerData['Last_Name'],
+                        'description_id' => $id,
+                        'comment' => ' ',
+                        'type' => 'Customer Registration',
+                        'user' => session('userid'),
+                        'branch_id' => $approval->branch_id,
+                    ]);
+                    
+                    // Send SMS if template exists
+                    $sms_template = DB::table('sms_template')
+                        ->where('type', 'customer_registration')
+                        ->where('status', 1)
+                        ->where('branch_id', $approval->branch_id)
+                        ->first();
+                    
+                    if ($sms_template) {
+                        $customer_table = DB::table('customer')->where('idCustomer', $id)->first();
+                        $placeholders = [
+                            '@Member_No@' => $customer_table->cus_number,
+                            '@Member_Name@' => $customer_table->First_Name . ' ' . $customer_table->Last_Name,
+                        ];
+                        
+                        $sms_text = $sms_template->template;
+                        foreach ($placeholders as $placeholder => $value) {
+                            $sms_text = str_replace($placeholder, $value, $sms_text);
+                        }
+                        
+                        // Log SMS (assuming smsLogController exists)
+                        // $this->smsLogController->index($id, $sms_text, "Customer Registration");
+                    }
+                }
+            }
+            
             // Handle Loan Approval (Type 401)
             if ($approval->typeid == 401) {
                 $requestData = json_decode($approval->data, true);
@@ -1064,6 +1120,163 @@ class ApprovalController extends Controller
             <div class="alert alert-info mt-3">
                 <i class="ri-information-line me-2"></i>
                 <strong>Note:</strong> Approving this will update the user\'s access privileges.
+            </div>
+            ';
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getCustomerCreationDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 301) {
+                return response()->json(['success' => false, 'message' => 'Customer creation request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $customerData = $requestData['customer_data'] ?? [];
+            
+            $html = '
+            <div class="alert alert-info">
+                <i class="ri-user-add-line me-2"></i><strong>New Customer Creation Request</strong>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="mb-3"><i class="ri-user-line me-2"></i>Personal Information</h6>
+                    <table class="table table-bordered table-sm">
+                        <tbody>
+                            <tr>
+                                <th style="width: 45%;">Full Name</th>
+                                <td><strong>' . htmlspecialchars(($customerData['Title'] ?? '') . ' ' . ($customerData['First_Name'] ?? '') . ' ' . ($customerData['Last_Name'] ?? '')) . '</strong></td>
+                            </tr>
+                            <tr>
+                                <th>NIC</th>
+                                <td>' . htmlspecialchars($customerData['Nic'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Gender</th>
+                                <td>' . htmlspecialchars($customerData['Gender'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Date of Birth</th>
+                                <td>' . htmlspecialchars($customerData['Dob'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Civil Status</th>
+                                <td>' . htmlspecialchars($customerData['civil_status'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Risk Level</th>
+                                <td><span class="badge bg-warning">' . htmlspecialchars($customerData['Customer_Risk_Level'] ?? 'N/A') . '</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="col-md-6">
+                    <h6 class="mb-3"><i class="ri-contacts-line me-2"></i>Contact Information</h6>
+                    <table class="table table-bordered table-sm">
+                        <tbody>
+                            <tr>
+                                <th style="width: 45%;">Email</th>
+                                <td>' . htmlspecialchars($customerData['Email'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Contact No</th>
+                                <td>' . htmlspecialchars($customerData['Contact_No'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Contact No 2</th>
+                                <td>' . htmlspecialchars($customerData['contact_number_2'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Landline</th>
+                                <td>' . htmlspecialchars($customerData['Landline'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Current Address</th>
+                                <td>' . htmlspecialchars(($customerData['Address'] ?? '') . ' ' . ($customerData['Address_02'] ?? '') . ' ' . ($customerData['Address_03'] ?? '')) . '</td>
+                            </tr>
+                            <tr>
+                                <th>City / State</th>
+                                <td>' . htmlspecialchars(($customerData['City'] ?? '') . ' / ' . ($customerData['State'] ?? '')) . '</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <h6 class="mb-3"><i class="ri-briefcase-line me-2"></i>Occupation Information</h6>
+                    <table class="table table-bordered table-sm">
+                        <tbody>
+                            <tr>
+                                <th style="width: 45%;">Job Position</th>
+                                <td>' . htmlspecialchars($customerData['occu_job_position'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Monthly Salary</th>
+                                <td><strong>' . htmlspecialchars($customerData['occu_monthly_salary'] ?? 'N/A') . '</strong></td>
+                            </tr>
+                            <tr>
+                                <th>Office Address</th>
+                                <td>' . htmlspecialchars(($customerData['occu_address_01'] ?? '') . ' ' . ($customerData['occu_address_02'] ?? '')) . '</td>
+                            </tr>
+                            <tr>
+                                <th>Office Contact</th>
+                                <td>' . htmlspecialchars($customerData['occu_contact_no'] ?? 'N/A') . '</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="col-md-6">
+                    <h6 class="mb-3"><i class="ri-shield-user-line me-2"></i>Guardian Information</h6>
+                    <table class="table table-bordered table-sm">
+                        <tbody>
+                            <tr>
+                                <th style="width: 45%;">Guardian Name</th>
+                                <td>' . htmlspecialchars(($customerData['Gua_title'] ?? '') . ' ' . ($customerData['Gua_name'] ?? 'N/A')) . '</td>
+                            </tr>
+                            <tr>
+                                <th>NIC</th>
+                                <td>' . htmlspecialchars($customerData['Gua_nic'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Relation</th>
+                                <td>' . htmlspecialchars($customerData['Gua_relation'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Occupation</th>
+                                <td>' . htmlspecialchars($customerData['Gua_occu'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Contact</th>
+                                <td>' . htmlspecialchars($customerData['Gua_contact'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Address</th>
+                                <td>' . htmlspecialchars($customerData['Gua_address'] ?? 'N/A') . '</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
+                <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
             </div>
             ';
             

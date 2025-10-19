@@ -801,6 +801,7 @@ Route::get('/approval/designation-details/{id}','\App\Http\Controllers\ApprovalC
 Route::get('/approval/user-creation-details/{id}','\App\Http\Controllers\ApprovalController@getUserCreationDetails')->name('approval.user_creation_details');
 Route::get('/approval/user-details-update-details/{id}','\App\Http\Controllers\ApprovalController@getUserDetailsUpdateDetails')->name('approval.user_details_update_details');
 Route::get('/approval/user-privilege-change-details/{id}','\App\Http\Controllers\ApprovalController@getUserPrivilegeChangeDetails')->name('approval.user_privilege_change_details');
+Route::get('/approval/customer-creation-details/{id}','\App\Http\Controllers\ApprovalController@getCustomerCreationDetails')->name('approval.customer_creation_details');
 Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalController@undoRejection')->name('approval.undo_rejection');
 
 

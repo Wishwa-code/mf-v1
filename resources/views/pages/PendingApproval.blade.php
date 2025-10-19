@@ -333,6 +333,9 @@
             } else if (typeId == 103) {
                 // User Privilege Change - Show privilege change details modal
                 showUserPrivilegeChangeDetails(id);
+            } else if (typeId == 301) {
+                // Customer Creation - Show customer creation details modal
+                showCustomerCreationDetails(id);
             } else {
                 // Other types - show alert for now
                 alert(`View details for ${type} request #${id} (Type ID: ${typeId})`);
@@ -548,6 +551,42 @@
                     $('#loanDetailsContent').html(`
                         <div class="alert alert-danger" role="alert">
                             <i class="ri-error-warning-line me-2"></i>Error loading privilege change details. Please try again.
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function showCustomerCreationDetails(approvalId) {
+            $('#loanDetailsModal').modal('show');
+            $('#loanDetailsModalLabel').html('<i class="ri-user-add-line me-2"></i>Customer Creation Details');
+            $('#loanDetailsContent').html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-info" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading customer creation details...</p>
+                </div>
+            `);
+            
+            $.ajax({
+                url: `/approval/customer-creation-details/${approvalId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#loanDetailsContent').html(response.html);
+                    } else {
+                        $('#loanDetailsContent').html(`
+                            <div class="alert alert-danger" role="alert">
+                                <i class="ri-error-warning-line me-2"></i>Error: ${response.message}
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#loanDetailsContent').html(`
+                        <div class="alert alert-danger" role="alert">
+                            <i class="ri-error-warning-line me-2"></i>Error loading customer creation details. Please try again.
                         </div>
                     `);
                 }

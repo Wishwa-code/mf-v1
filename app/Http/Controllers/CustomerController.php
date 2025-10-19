@@ -184,8 +184,77 @@ class CustomerController extends Controller
 
 
 
+            // Store customer data for approval instead of direct save
+            $customerData = [
+                'Title' => $customer->Title,
+                'Customer_Group_idCustomer_Group' => $customer->Customer_Group_idCustomer_Group,
+                'cus_number' => $customer->cus_number,
+                'First_Name' => $customer->First_Name,
+                'Last_Name' => $customer->Last_Name,
+                'Email' => $customer->Email,
+                'Contact_No' => $customer->Contact_No,
+                'contact_number_2' => $customer->contact_number_2,
+                'business_registration' => $customer->business_registration,
+                'Nic' => $customer->Nic,
+                'Gender' => $customer->Gender,
+                'Dob' => $customer->Dob,
+                'Address' => $customer->Address,
+                'Address_02' => $customer->Address_02,
+                'Address_03' => $customer->Address_03,
+                'Per_Address_01' => $customer->Per_Address_01,
+                'Per_Address_02' => $customer->Per_Address_02,
+                'Per_Address_03' => $customer->Per_Address_03,
+                'City' => $customer->City,
+                'State' => $customer->State,
+                'Landline' => $customer->Landline,
+                'Note' => $customer->Note,
+                'Longitude' => $customer->Longitude,
+                'Latitude' => $customer->Latitude,
+                'Gua_title' => $customer->Gua_title,
+                'Gua_name' => $customer->Gua_name,
+                'Guardian_gender' => $customer->Guardian_gender,
+                'Gua_relation' => $customer->Gua_relation,
+                'Gua_occu' => $customer->Gua_occu,
+                'Gua_contact' => $customer->Gua_contact,
+                'Gua_address' => $customer->Gua_address,
+                'Gua_nic' => $customer->Gua_nic,
+                'Customer_Risk_Level' => $customer->Customer_Risk_Level,
+                'civil_status' => $customer->civil_status,
+                'occu_job_position' => $customer->occu_job_position,
+                'occu_monthly_salary' => $customer->occu_monthly_salary,
+                'occu_address_01' => $customer->occu_address_01,
+                'occu_address_02' => $customer->occu_address_02,
+                'occu_address_03' => $customer->occu_address_03,
+                'occu_contact_no' => $customer->occu_contact_no,
+                'occu_longitude' => $customer->occu_longitude,
+                'occu_latitude' => $customer->occu_latitude,
+                'route_id' => $customer->route_id,
+                'branch_id' => $customer->branch_id,
+                'Cus_phto' => $customer->Cus_phto,
+            ];
+
+            $requestData = [
+                'customer_data' => $customerData,
+            ];
+
+            // Create approval request
+            DB::table('approval_request')->insert([
+                'type' => 'Customer Creation',
+                'typeid' => 301,
+                'description' => 'Customer Creation: ' . $customer->First_Name . ' ' . $customer->Last_Name . ' (NIC: ' . $customer->Nic . ')',
+                'data' => json_encode($requestData),
+                'userid' => session('userid'),
+                'branch_id' => session('branch_id'),
+                'data_time' => now(),
+                'status' => 0
+            ]);
+
+            return response()->json(['message' => 'Customer creation request sent for approval!', 'id' => '0'], 200);
+
+            // OLD CODE - keeping for approval handler reference
+            /*
             if ($customer->save()) {
-                $id = $customer->id; // Assuming 'idCustomer' is the primary key column name
+                $id = $customer->id;
                 $request = new Request([
                     'customer_id' => $id,
                     'description' => 'Customer registration for '.$request->f_name.' '.$request->last_name,
@@ -193,8 +262,6 @@ class CustomerController extends Controller
                     'comment' => ' ',
                     'type' => 'Customer Registration',
                 ]);
-
-                // Call the store method of CustomerLogController
                 $this->customerLogController->store($request);
                 // If the data is saved successfully, return a success response
 
@@ -228,6 +295,7 @@ class CustomerController extends Controller
                 // If the data failed to save, return an error response
                 return response()->json(['message' => 'Failed to save data'], 500);
             }
+            */
         }
 
 
