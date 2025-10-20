@@ -447,7 +447,7 @@ class LoansController
 
         // inputs
         $request->validate([
-            'q'        => 'required|string|min:2', // name / NIC / contact / cus_number
+            'q' => 'required|min:1', // or remove min:2 if unnecessary
             'per_page' => 'nullable|integer|min:1|max:200',
             'order'    => 'nullable|in:asc,desc',
         ]);

@@ -378,47 +378,44 @@ class CenterController extends Controller
 
         $route = tableWithBranch('route')->get();
 
-        // ✅ Check if there are any payments on the selected date
         $hasPayments = DB::table('customer_payments')
             ->whereDate('Date', $date)
             ->exists();
 
         $collection = DB::table('installments')
-            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
-            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
-            ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
-            ->leftJoin('customer_payments', function ($join) use ($date) {
-                $join->on('installments.Customer_Loan_idCustomer_Loan', '=', 'customer_payments.Customer_Loan_idCustomer_Loan')
-                    ->whereDate('customer_payments.Date', $date);
+            ->join('customer_loan as cl', 'installments.Customer_Loan_idCustomer_Loan', '=', 'cl.idCustomer_Loan')
+            ->join('customer as c', 'cl.Customer_idCustomer', '=', 'c.idCustomer')
+            ->leftJoin('route as r', 'c.route_id', '=', 'r.id_route')
+            ->leftJoin('customer_payments as cp', function ($join) use ($date) {
+                $join->on('installments.Customer_Loan_idCustomer_Loan', '=', 'cp.Customer_Loan_idCustomer_Loan')
+                    ->whereDate('cp.Date', $date);
             })
             ->select(
-                'route.name as route_name',
-                'customer.cus_number as customer_number',
-                DB::raw("CONCAT(customer.First_Name, ' ', customer.Last_Name) as customer_name"),
-                'customer_loan.Loan_No as loan_number',
+                'r.name as route_name',
+                'c.cus_number as customer_number',
+                DB::raw("CONCAT(c.First_Name, ' ', c.Last_Name) as customer_name"),
+                'cl.Loan_No as loan_number',
                 'installments.Installment_Amount as installment_amount',
-                DB::raw('SUM(customer_payments.Amount) as paid_amount')
+                DB::raw('SUM(cp.Amount) as paid_amount')
             )
             ->when($date, fn($q) => $q->whereDate('installments.Installment_Date', $date))
-            ->when($route_id && $route_id != '0', fn($q) => $q->where('customer.route_id', $route_id))
-            ->when(!$hasPayments, function ($q) {
-                $q->where('customer_loan.Status', 0);
-            })
-            ->where('customer_loan.Status', 0) // ✅ Always apply this filter
+            ->when($route_id && $route_id != '0', fn($q) => $q->where('c.route_id', $route_id))
+            ->where('cl.Status', 0) // ✅ Only active (ongoing) loans
             ->groupBy(
-                'route.name',
-                'customer.cus_number',
-                'customer.First_Name',
-                'customer.Last_Name',
-                'customer_loan.Loan_No',
+                'r.name',
+                'c.cus_number',
+                'c.First_Name',
+                'c.Last_Name',
+                'cl.Loan_No',
                 'installments.Installment_Amount'
             )
-            ->orderBy('route.name')
-            ->orderBy('customer.cus_number')
+            ->orderBy('r.name')
+            ->orderBy('c.cus_number')
             ->get();
 
         return view('pages.RouteWiseCollection', compact('date', 'route', 'route_id', 'collection'));
     }
+
 
 
 
