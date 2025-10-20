@@ -1124,8 +1124,10 @@
                         success: function(response) {
                             Swal.fire({
                                 position: "center",
-                                icon: "success",
-                                title: "Successfully updated!",
+                                icon: "info",
+                                title: "Approval Required!",
+                                text: "Customer update request sent to head office for approval!",
+                                confirmButtonText: "OK"
                             }).then(function () {
                                 window.location.reload();
                             });
@@ -1172,13 +1174,15 @@
                             if (xhr.status === 200) {
                                 Swal.fire({
                                     position: "center",
-                                    icon: "success",
-                                    title: "Successfully saved!",
+                                    icon: "info",
+                                    title: "Approval Required!",
+                                    text: "Document upload request sent to head office for approval!",
+                                    confirmButtonText: "OK"
                                 }).then(function () {
                                     window.location.reload();
                                 });
                             } else {
-                                Swal.fire("Error!", "Failed to save data!", "error");
+                                Swal.fire("Error!", "Failed to send request!", "error");
                             }
                         },
                         error: function(xhr, status, error) {
@@ -1247,8 +1251,10 @@
                         success: function(response) {
                             Swal.fire({
                                 position: "center",
-                                icon: "success",
-                                title: "Successfully saved!",
+                                icon: "info",
+                                title: "Approval Required!",
+                                text: "Document upload request sent to head office for approval!",
+                                confirmButtonText: "OK"
                             }).then(function () {
                                 window.location.reload();
                             });

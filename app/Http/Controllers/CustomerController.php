@@ -69,14 +69,43 @@ class CustomerController extends Controller
 
 // $documentPath now contains the path to the stored file relative to the 'public' disk
 
-        insertWithBranch('customer_documents', [
-            'Customer_idCustomer' => $customer,
-            'Description' => $description,
-            'Path' => $documentPath,
-        ]);
+    // Get customer details for description
+    $customerData = tableWithBranch('customer')
+        ->where('idCustomer', $customer)
+        ->first();
+    
+    $customerName = $customerData ? ($customerData->First_Name . ' ' . $customerData->Last_Name) : 'Unknown';
+    
+    // Store document upload data for approval
+    $requestData = [
+        'customer_id' => $customer,
+        'description' => $description,
+        'document_path' => $documentPath,
+    ];
 
+    // Create approval request
+    DB::table('approval_request')->insert([
+        'type' => 'Customer Document Upload',
+        'typeid' => 305,
+        'description' => 'Upload Document: ' . $description . ' (Customer: ' . $customerName . ')',
+        'data' => json_encode($requestData),
+        'userid' => session('userid'),
+        'branch_id' => session('branch_id'),
+        'data_time' => now(),
+        'status' => 0
+    ]);
 
-        return response()->json(['message' => 'Document saved successfully'], 200);
+    return response()->json(['message' => 'Document upload request sent for approval!'], 200);
+    
+    // OLD CODE - keeping for approval handler reference
+    /*
+    insertWithBranch('customer_documents', [
+        'Customer_idCustomer' => $customer,
+        'Description' => $description,
+        'Path' => $documentPath,
+    ]);
+    return response()->json(['message' => 'Document saved successfully'], 200);
+    */
     }
 
     /**
@@ -482,8 +511,48 @@ class CustomerController extends Controller
      */
     public function destroy(string $id)
     {
+        // Get document data before requesting deletion
+        $document = tableWithBranch('customer_documents')
+            ->where('idCustomer_Documents', '=', $id)
+            ->first();
+        
+        if (!$document) {
+            return response()->json(['message' => 'Document not found'], 404);
+        }
+        
+        // Get customer details for description
+        $customer = tableWithBranch('customer')
+            ->where('idCustomer', $document->Customer_idCustomer)
+            ->first();
+        
+        $customerName = $customer ? ($customer->First_Name . ' ' . $customer->Last_Name) : 'Unknown';
+        
+        // Store document delete data for approval
+        $requestData = [
+            'document_id' => $id,
+            'document_data' => (array)$document,
+            'customer_id' => $document->Customer_idCustomer,
+        ];
+
+        // Create approval request
+        DB::table('approval_request')->insert([
+            'type' => 'Customer Document Delete',
+            'typeid' => 305,
+            'description' => 'Delete Document: ' . $document->Description . ' (Customer: ' . $customerName . ')',
+            'data' => json_encode($requestData),
+            'userid' => session('userid'),
+            'branch_id' => session('branch_id'),
+            'data_time' => now(),
+            'status' => 0
+        ]);
+        
+        return response()->json(['message' => 'Document delete request sent for approval!'], 200);
+        
+        // OLD CODE - keeping for approval handler reference
+        /*
         tableWithBranch('customer_documents')->where('idCustomer_Documents', '=', $id)->delete();
         return response()->json(['message' => 'Data deleted successfully'], 200);
+        */
     }
 
     public function updateCustomer(Request $request) {

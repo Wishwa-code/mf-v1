@@ -581,6 +581,33 @@ class ApprovalController extends Controller
                 }
             }
             
+            // Handle Customer Document Upload/Delete (Type 305)
+            if ($approval->typeid == 305) {
+                $requestData = json_decode($approval->data, true);
+                
+                // Check if this is a delete or upload request
+                if (isset($requestData['document_id'])) {
+                    // Document Delete
+                    $documentId = $requestData['document_id'];
+                    DB::table('customer_documents')
+                        ->where('idCustomer_Documents', $documentId)
+                        ->where('branch_id', $approval->branch_id)
+                        ->delete();
+                } else if (isset($requestData['document_path'])) {
+                    // Document Upload
+                    $customerId = $requestData['customer_id'];
+                    $description = $requestData['description'];
+                    $documentPath = $requestData['document_path'];
+                    
+                    DB::table('customer_documents')->insert([
+                        'Customer_idCustomer' => $customerId,
+                        'Description' => $description,
+                        'Path' => $documentPath,
+                        'branch_id' => $approval->branch_id,
+                    ]);
+                }
+            }
+            
             // Handle Loan Approval (Type 401)
             if ($approval->typeid == 401) {
                 $requestData = json_decode($approval->data, true);
@@ -1668,6 +1695,92 @@ class ApprovalController extends Controller
                     </tr>
                 </tbody>
             </table>
+            
+            <div class="mt-3">
+                <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
+                <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
+            </div>
+            ';
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getCustomerDocumentDeleteDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 305) {
+                return response()->json(['success' => false, 'message' => 'Document request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            
+            // Check if this is upload or delete
+            $isUpload = isset($requestData['document_path']);
+            $isDelete = isset($requestData['document_id']);
+            
+            if ($isDelete) {
+                $documentData = $requestData['document_data'] ?? [];
+                $customerId = $requestData['customer_id'] ?? null;
+            } else {
+                // For upload, create documentData from request
+                $documentData = [
+                    'Description' => $requestData['description'] ?? 'N/A',
+                    'Path' => $requestData['document_path'] ?? 'N/A',
+                ];
+                $customerId = $requestData['customer_id'] ?? null;
+            }
+            
+            // Get customer details
+            $customer = DB::table('customer')
+                ->where('idCustomer', $customerId)
+                ->where('branch_id', $approval->branch_id)
+                ->first();
+            
+            $customerName = $customer ? ($customer->First_Name . ' ' . $customer->Last_Name) : 'Unknown';
+            $customerNumber = $customer->cus_number ?? 'N/A';
+            
+            $alertClass = $isDelete ? 'alert-danger' : 'alert-info';
+            $iconClass = $isDelete ? 'ri-file-damage-line' : 'ri-file-upload-line';
+            $title = $isDelete ? 'Customer Document Delete Request' : 'Customer Document Upload Request';
+            $subtitle = $isDelete ? 'Review document details before approving deletion' : 'Review document details before approving upload';
+            
+            $html = '
+            <div class="' . $alertClass . '">
+                <i class="' . $iconClass . ' me-2"></i><strong>' . $title . '</strong>
+                <p class="mb-0 mt-2"><small>' . $subtitle . '</small></p>
+            </div>
+            
+            <h6 class="mb-3">Document Information</h6>
+            
+            <table class="table table-bordered">
+                <tbody>
+                    <tr>
+                        <th style="width: 35%;">Customer</th>
+                        <td><strong>' . htmlspecialchars($customerName) . '</strong> (' . htmlspecialchars($customerNumber) . ')</td>
+                    </tr>
+                    <tr>
+                        <th>Document Description</th>
+                        <td>' . htmlspecialchars($documentData['Description'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Document Path</th>
+                        <td><small class="text-muted">' . htmlspecialchars($documentData['Path'] ?? 'N/A') . '</small></td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="alert alert-warning mt-3">
+                <strong>⚠️ Warning:</strong> Approving this request will ' . ($isDelete ? 'permanently delete this document from the system' : 'upload this document to the customer profile') . '.
+            </div>
             
             <div class="mt-3">
                 <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
