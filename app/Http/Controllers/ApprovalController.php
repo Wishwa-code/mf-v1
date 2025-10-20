@@ -351,36 +351,49 @@ class ApprovalController extends Controller
             // Handle User Details Update (Type 102)
             if ($approval->typeid == 102) {
                 $requestData = json_decode($approval->data, true);
-                $updateData = $requestData['update_data'];
-                $newBranches = $requestData['new_branches'];
-                $branchesChanged = $requestData['branches_changed'];
                 
-                $userId = $updateData['user_id'];
-                
-                // Update main user record
-                DB::table('user')
-                    ->where('id', $userId)
-                    ->update([
-                        'Epf_no' => $updateData['Epf_no'],
-                        'Designation' => $updateData['Designation'],
-                        'Nic' => $updateData['Nic'],
-                        'Full_Name' => $updateData['Full_Name'],
-                        'TP' => $updateData['TP'],
-                        'lending_officer' => $updateData['lending_officer'],
-                        'collector' => $updateData['collector'],
-                        'branch_id' => $updateData['branch_id'],
-                        'branch_access' => $updateData['branch_access'],
-                        'cashier' => $updateData['cashier'],
-                    ]);
-                
-                // Sync branches if changed
-                if ($branchesChanged) {
-                    DB::table('user_has_branches')->where('user_id', $userId)->delete();
-                    foreach ($newBranches as $branch_id) {
-                        DB::table('user_has_branches')->insert([
-                            'user_id' => $userId,
-                            'branch_id' => (int)$branch_id,
+                // Check if this is a status-only change or full update
+                if (isset($requestData['new_data']) && isset($requestData['new_data']['Status'])) {
+                    // Status-only change (active/inactive toggle)
+                    $userId = $requestData['user_id'];
+                    $newStatus = $requestData['new_data']['Status'];
+                    
+                    DB::table('user')
+                        ->where('id', $userId)
+                        ->update(['Status' => $newStatus]);
+                } else {
+                    // Full user detail update
+                    $updateData = $requestData['update_data'];
+                    $newBranches = $requestData['new_branches'];
+                    $branchesChanged = $requestData['branches_changed'];
+                    
+                    $userId = $updateData['user_id'];
+                    
+                    // Update main user record
+                    DB::table('user')
+                        ->where('id', $userId)
+                        ->update([
+                            'Epf_no' => $updateData['Epf_no'],
+                            'Designation' => $updateData['Designation'],
+                            'Nic' => $updateData['Nic'],
+                            'Full_Name' => $updateData['Full_Name'],
+                            'TP' => $updateData['TP'],
+                            'lending_officer' => $updateData['lending_officer'],
+                            'collector' => $updateData['collector'],
+                            'branch_id' => $updateData['branch_id'],
+                            'branch_access' => $updateData['branch_access'],
+                            'cashier' => $updateData['cashier'],
                         ]);
+                    
+                    // Sync branches if changed
+                    if ($branchesChanged) {
+                        DB::table('user_has_branches')->where('user_id', $userId)->delete();
+                        foreach ($newBranches as $branch_id) {
+                            DB::table('user_has_branches')->insert([
+                                'user_id' => $userId,
+                                'branch_id' => (int)$branch_id,
+                            ]);
+                        }
                     }
                 }
             }
@@ -1142,6 +1155,57 @@ class ApprovalController extends Controller
             }
             
             $requestData = json_decode($approval->data, true);
+            
+            // Check if this is a status-only change or full update
+            $isStatusChange = isset($requestData['new_data']) && isset($requestData['new_data']['Status']);
+            
+            if ($isStatusChange) {
+                // Status-only change (active/inactive toggle)
+                $userId = $requestData['user_id'];
+                $oldData = $requestData['old_data'];
+                $newStatus = $requestData['new_data']['Status'];
+                $actionType = $requestData['action_type'] ?? 'Status Change';
+                
+                $user = DB::table('user')->where('id', $userId)->first();
+                $userName = $user ? $user->Full_Name : ($oldData['Full_Name'] ?? 'Unknown');
+                $statusText = $newStatus == '1' ? 'Active' : 'Inactive';
+                $oldStatusText = ($oldData['Status'] ?? '0') == '1' ? 'Active' : 'Inactive';
+                
+                $html = '
+                <div class="alert alert-info">
+                    <i class="ri-user-settings-line me-2"></i><strong>' . htmlspecialchars($actionType) . '</strong>
+                    <p class="mb-0 mt-2"><small>Review the status change before approving</small></p>
+                </div>
+                
+                <h6 class="mb-3">User: <strong>' . htmlspecialchars($userName) . '</strong></h6>
+                
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 25%;">Field</th>
+                            <th style="width: 37.5%;">Current Value</th>
+                            <th style="width: 37.5%;">New Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th>Status</th>
+                            <td><span class="badge ' . ($oldStatusText == 'Active' ? 'bg-success' : 'bg-danger') . '">' . $oldStatusText . '</span></td>
+                            <td><strong><span class="badge ' . ($statusText == 'Active' ? 'bg-success' : 'bg-danger') . '">' . $statusText . '</span></strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="mt-3">
+                    <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
+                    <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
+                </div>
+                ';
+                
+                return response()->json(['success' => true, 'html' => $html]);
+            }
+            
+            // Full user detail update
             $updateData = $requestData['update_data'] ?? [];
             
             // Get current user data for comparison
