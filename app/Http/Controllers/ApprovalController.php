@@ -1778,6 +1778,20 @@ class ApprovalController extends Controller
                 </tbody>
             </table>
             
+            <div class="mt-3">
+                <h6 class="mb-2">Document Preview</h6>
+                <div class="border rounded p-3 bg-light text-center">
+                    ' . ($documentData['Path'] ? '
+                        <a href="/storage/' . htmlspecialchars($documentData['Path']) . '" target="_blank" class="btn btn-primary btn-sm me-2">
+                            <i class="ri-eye-line me-1"></i>View Document
+                        </a>
+                        <a href="/storage/' . htmlspecialchars($documentData['Path']) . '" download class="btn btn-outline-secondary btn-sm">
+                            <i class="ri-download-line me-1"></i>Download
+                        </a>
+                    ' : '<p class="text-muted mb-0">No document available</p>') . '
+                </div>
+            </div>
+            
             <div class="alert alert-warning mt-3">
                 <strong>⚠️ Warning:</strong> Approving this request will ' . ($isDelete ? 'permanently delete this document from the system' : 'upload this document to the customer profile') . '.
             </div>
