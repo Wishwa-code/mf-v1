@@ -193,7 +193,7 @@ class SmsController extends Controller
         if (!preg_match('/^\d{9}$/', $nsn)) return [null, 'Number must be 9 digits'];
         if ($nsn[0] !== '7') return [null, 'Not mobile'];
         $prefix = substr($nsn, 0, 2);
-        $valid = ['70','71','72','75','76','77','78'];
+        $valid = ['70','71','72','74','75','76','77','78'];
         if (!in_array($prefix, $valid, true)) return [null, "Invalid prefix {$prefix}"];
         return ['94' . $nsn, null];
     }

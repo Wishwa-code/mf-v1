@@ -419,6 +419,13 @@ class UserController extends Controller
             );
         }
 
+        if (!Schema::hasColumn('company', 'inv_customer_number')) {
+            DB::statement("
+        ALTER TABLE `company`
+        ADD COLUMN `inv_customer_number` VARCHAR(45) NOT NULL DEFAULT '1'
+    ");
+        }
+
 
 
         $loan=tableWithBranch('customer_loan')->where('Status','!=','1')->get();
