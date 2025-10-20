@@ -313,6 +313,12 @@ class CapitalBalanceController extends Controller
             'collector_txn_modes',
             'fund_request_columns',
             'disbursement_columns',
+            'document_upload_restriction',
+            'guarantees_restriction',
+            'change_product_details',
+            'first_installment_daily',
+            'first_installment_weekly',
+            'first_installment_monthly',
         ];
 
         $rows = DB::table($this->table)
@@ -339,6 +345,8 @@ class CapitalBalanceController extends Controller
                         'payment_member_name','loan_disbursement_policy','payment_backdate','loan_order',
                         'max_allowed_loans','document_types','collector_txn_modes',
                         'fund_request_columns','disbursement_columns',
+                        'document_upload_restriction','guarantees_restriction','change_product_details',
+                        'first_installment_daily','first_installment_weekly','first_installment_monthly',
                     ];
                     $isFixed = in_array($key, $fixedKeys, true);
 

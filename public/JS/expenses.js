@@ -53,6 +53,7 @@ const saveExpenses = (e) => {
   const amount = $("#expences_amount").val();
   const bank = $("#bank").val();
   const category = $("#category").val();
+  const branchId = $("#branch_selector").val();
 
   Swal.fire({
     title: "Are you sure?",
@@ -76,7 +77,8 @@ const saveExpenses = (e) => {
             date: date,
             bank: bank,
             category: category,
-            amount: amount
+            amount: amount,
+            branch_id: branchId
         },
         success: function (data, textStatus, xhr) {
               if (xhr.status === 200) {

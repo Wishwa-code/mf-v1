@@ -709,6 +709,7 @@ class CustomerController extends Controller
         $tableAccountNames = $request->input('tableAccountNames');
         $tableAccountNumbers = $request->input('tableAccountNumbers');
         $tableBranches = $request->input('tableBranches');
+        $tableBankCodes = $request->input('tableBankCodes');
 
 
 
@@ -718,6 +719,7 @@ class CustomerController extends Controller
                 $tableAccountName = $tableAccountNames[$index];
                 $tableAccountNumber = $tableAccountNumbers[$index];
                 $tableBranch = $tableBranches[$index];
+                $tableBankCode = $tableBankCodes[$index] ?? null;
 
 
                 // Prepare the bank data for insertion
@@ -727,6 +729,7 @@ class CustomerController extends Controller
                     'account_name' => $tableAccountName, // Account name
                     'account_number' => $tableAccountNumber, // Account number
                     'branch' => $tableBranch, // Bank branch
+                    'bank_code' => $tableBankCode, // Bank code
                 ];
 
 // Use the insertWithBranch helper function to insert the bank data
@@ -757,6 +760,7 @@ class CustomerController extends Controller
         $tableAccountNames = $request->input('accountName');
         $tableAccountNumbers = $request->input('accountNumber');
         $tableBranches = $request->input('branch');
+        $tableBankCode = $request->input('bankCode');
 
         // Prepare the bank data for insertion
         $documentData = [
@@ -765,6 +769,7 @@ class CustomerController extends Controller
             'account_name' => $tableAccountNames, // Account name
             'account_number' => $tableAccountNumbers, // Account number
             'branch' => $tableBranches, // Bank branch
+            'bank_code' => $tableBankCode, // Bank code
         ];
 
 // Use the insertWithBranch helper function to insert the bank data

@@ -74,7 +74,7 @@ class ApprovalController extends Controller
         
         // Apply type filtering
         if (!empty($selectedType)) {
-            $query->where('ar.type', $selectedType);
+            $query->where('ar.typeid', $selectedType);
         }
         
         $pendingApprovals = $query->orderBy('ar.data_time', 'desc')->get();
@@ -412,6 +412,36 @@ class ApprovalController extends Controller
                 }
             }
             
+            // Handle Designation Privileges Update (Type 201)
+            if ($approval->typeid == 201) {
+                $requestData = json_decode($approval->data, true);
+                $designationId = $requestData['designation_id'];
+                
+                // Check if this is a details update or privileges update
+                if (isset($requestData['update_type']) && $requestData['update_type'] === 'details') {
+                    // Update designation details (name, max amounts, etc.)
+                    $newData = $requestData['new_data'];
+                    DB::table('designation')
+                        ->where('idDesignation', $designationId)
+                        ->update([
+                            'name' => $newData['name'],
+                            'desi_level' => $newData['desi_level'],
+                            'loan_creat' => $newData['loan_creat'],
+                            'loan_issue' => $newData['loan_issue'],
+                            'max_create_amount' => $newData['max_create_amount'],
+                            'max_issue_amount' => $newData['max_issue_amount'],
+                        ]);
+                } else {
+                    // Update designation privileges
+                    $privileges = $requestData['privileges'];
+                    DB::table('designation')
+                        ->where('idDesignation', $designationId)
+                        ->update([
+                            'privileges' => json_encode($privileges)
+                        ]);
+                }
+            }
+            
             // Handle Loan Approval (Type 401)
             if ($approval->typeid == 401) {
                 $requestData = json_decode($approval->data, true);
@@ -421,6 +451,40 @@ class ApprovalController extends Controller
                     ->where('idCustomer_Loan', $loan_id)
                     ->where('branch_id', $approval->branch_id)
                     ->update(['Status' => '-1']);
+            }
+            
+            // Handle Loan Rejection (Type 402)
+            if ($approval->typeid == 402) {
+                $requestData = json_decode($approval->data, true);
+                $loan_id = $requestData['loan_id'];
+                $reason = $requestData['reason'];
+                $customer_id = $requestData['customer_id'];
+                
+                // Update loan status to rejected
+                DB::table('customer_loan')
+                    ->where('idCustomer_Loan', $loan_id)
+                    ->where('branch_id', $approval->branch_id)
+                    ->update(['Status' => '-2', 'reason' => $reason]);
+                
+                // Log to customer log
+                $customer = DB::table('customer')
+                    ->where('idCustomer', $customer_id)
+                    ->where('branch_id', $approval->branch_id)
+                    ->first();
+                
+                $logData = [
+                    'customer_id' => $customer_id,
+                    'customer_name' => ($customer->First_Name ?? '') . ' ' . ($customer->Last_Name ?? ''),
+                    'date' => date('Y-m-d'),
+                    'time' => date('H:i:s'),
+                    'description' => "Delete Loan ({$loan_id})\nReason : {$reason}",
+                    'description_id' => $loan_id,
+                    'comment' => ' ',
+                    'type' => 'Delete Loan',
+                    'user' => session('userid'),
+                ];
+                
+                insertWithBranch('customer_log', $logData);
             }
             
             // Update approval status
@@ -537,6 +601,459 @@ class ApprovalController extends Controller
                 'otherCharges',
                 'approvalLevels'
             ))->render();
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getDesignationDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request')->where('id', $approvalId)->first();
+            
+            if (!$approval || $approval->typeid != 201) {
+                return response()->json(['success' => false, 'message' => 'Designation approval request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $designationId = $requestData['designation_id'];
+            
+            // Get current designation from database
+            $currentDesignation = DB::table('designation')
+                ->where('idDesignation', $designationId)
+                ->first();
+            
+            $html = '';
+            
+            // Check if this is a details update or privileges update
+            if (isset($requestData['update_type']) && $requestData['update_type'] === 'details') {
+                // Details update - show old vs new comparison
+                $oldData = $requestData['old_data'];
+                $newData = $requestData['new_data'];
+                
+                $html = '
+                <div class="alert alert-info">
+                    <i class="ri-information-line me-2"></i><strong>Designation Details Update Request</strong>
+                </div>
+                
+                <table class="table table-bordered">
+                    <thead class="table-secondary">
+                        <tr>
+                            <th style="width: 33%;">Field</th>
+                            <th style="width: 33%;" class="text-danger">Current Value</th>
+                            <th style="width: 33%;" class="text-success">Requested Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Designation Name</strong></td>
+                            <td class="text-danger">' . htmlspecialchars($oldData['name']) . '</td>
+                            <td class="text-success">' . htmlspecialchars($newData['name']) . '</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Max Create Amount</strong></td>
+                            <td class="text-danger">' . number_format($oldData['max_create_amount'], 2) . '</td>
+                            <td class="text-success">' . number_format($newData['max_create_amount'], 2) . '</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Max Issue Amount</strong></td>
+                            <td class="text-danger">' . number_format($oldData['max_issue_amount'], 2) . '</td>
+                            <td class="text-success">' . number_format($newData['max_issue_amount'], 2) . '</td>
+                        </tr>
+                    </tbody>
+                </table>
+                ';
+            } else {
+                // Privileges update - show old vs new privileges comparison
+                $oldPrivileges = $requestData['old_privileges'] ?? [];
+                $newPrivileges = $requestData['privileges'] ?? [];
+                
+                // Get all unique keys
+                $allKeys = array_unique(array_merge(array_keys($oldPrivileges), array_keys($newPrivileges)));
+                sort($allKeys);
+                
+                $html = '
+                <div class="alert alert-info">
+                    <i class="ri-information-line me-2"></i><strong>Designation: ' . htmlspecialchars($requestData['designation_name']) . ' - Privileges Update Request</strong>
+                </div>
+                
+                <table class="table table-bordered table-sm">
+                    <thead class="table-secondary">
+                        <tr>
+                            <th>Permission</th>
+                            <th class="text-center text-danger">Current</th>
+                            <th class="text-center text-success">Requested</th>
+                            <th class="text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
+                
+                $changesCount = 0;
+                foreach ($allKeys as $key) {
+                    $oldVal = $oldPrivileges[$key] ?? 0;
+                    $newVal = $newPrivileges[$key] ?? 0;
+                    
+                    if ($oldVal != $newVal) {
+                        $changesCount++;
+                        $statusBadge = $newVal == 1 ? '<span class="badge bg-success">Enabled</span>' : '<span class="badge bg-danger">Disabled</span>';
+                        $oldIcon = $oldVal == 1 ? '<i class="ri-checkbox-circle-fill text-success"></i>' : '<i class="ri-close-circle-fill text-danger"></i>';
+                        $newIcon = $newVal == 1 ? '<i class="ri-checkbox-circle-fill text-success"></i>' : '<i class="ri-close-circle-fill text-danger"></i>';
+                        
+                        $html .= '
+                        <tr>
+                            <td>' . htmlspecialchars(ucwords(str_replace('_', ' ', $key))) . '</td>
+                            <td class="text-center">' . $oldIcon . '</td>
+                            <td class="text-center">' . $newIcon . '</td>
+                            <td class="text-center">' . $statusBadge . '</td>
+                        </tr>';
+                    }
+                }
+                
+                if ($changesCount == 0) {
+                    $html .= '<tr><td colspan="4" class="text-center text-muted">No changes detected</td></tr>';
+                }
+                
+                $html .= '
+                    </tbody>
+                </table>
+                <div class="alert alert-secondary mt-3">
+                    <strong>Total Changes:</strong> ' . $changesCount . ' permission(s)
+                </div>';
+            }
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getLoanRejectionDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 402) {
+                return response()->json(['success' => false, 'message' => 'Loan rejection request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $loan_id = $requestData['loan_id'];
+            $customer_name = $requestData['customer_name'];
+            $loan_no = $requestData['loan_no'];
+            $amount = $requestData['amount'];
+            $category_name = $requestData['category_name'];
+            $reason = $requestData['reason'];
+            
+            $html = '
+            <div class="alert alert-danger">
+                <i class="ri-alert-line me-2"></i><strong>Loan Deletion/Rejection Request</strong>
+                <p class="mb-0 mt-2"><small>This action will permanently reject/delete the loan and update its status.</small></p>
+            </div>
+            
+            <table class="table table-bordered">
+                <tbody>
+                    <tr>
+                        <th style="width: 35%;">Customer Name</th>
+                        <td><strong>' . htmlspecialchars($customer_name) . '</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Loan Number</th>
+                        <td>' . htmlspecialchars($loan_no) . '</td>
+                    </tr>
+                    <tr>
+                        <th>Loan Amount</th>
+                        <td><strong class="text-primary">' . number_format($amount, 2) . '</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Product/Category</th>
+                        <td>' . htmlspecialchars($category_name) . '</td>
+                    </tr>
+                    <tr>
+                        <th>Rejection Reason</th>
+                        <td>
+                            <div class="alert alert-warning mb-0">
+                                <i class="ri-information-line me-2"></i>' . nl2br(htmlspecialchars($reason)) . '
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Requested By</th>
+                        <td>' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Request Date</th>
+                        <td>' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="alert alert-info mt-3">
+                <i class="ri-information-line me-2"></i>
+                <strong>Note:</strong> Approving this request will:
+                <ul class="mb-0 mt-2">
+                    <li>Set loan status to <strong>Rejected (-2)</strong></li>
+                    <li>Create an entry in customer log</li>
+                    <li>This action cannot be undone automatically</li>
+                </ul>
+            </div>
+            ';
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getUserCreationDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 101) {
+                return response()->json(['success' => false, 'message' => 'User creation request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $userData = $requestData['user_data'] ?? [];
+            
+            $html = '
+            <div class="alert alert-info">
+                <i class="ri-user-add-line me-2"></i><strong>New User Creation Request</strong>
+            </div>
+            
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 35%;">Field</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th>Full Name</th>
+                        <td><strong>' . htmlspecialchars($userData['Full_Name'] ?? 'N/A') . '</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Email</th>
+                        <td>' . htmlspecialchars($userData['email'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Designation</th>
+                        <td><span class="badge bg-primary">' . htmlspecialchars($userData['Designation'] ?? 'N/A') . '</span></td>
+                    </tr>
+                    <tr>
+                        <th>Contact</th>
+                        <td>' . htmlspecialchars($userData['TP'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>NIC</th>
+                        <td>' . htmlspecialchars($userData['Nic'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>EPF Number</th>
+                        <td>' . htmlspecialchars($userData['Epf_no'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Branch Access</th>
+                        <td>' . ($userData['branch_access'] == 1 ? '<span class="badge bg-success">Yes</span>' : '<span class="badge bg-secondary">No</span>') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Requested By</th>
+                        <td>' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Request Date</th>
+                        <td>' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</td>
+                    </tr>
+                </tbody>
+            </table>
+            ';
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getUserDetailsUpdateDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 102) {
+                return response()->json(['success' => false, 'message' => 'User update request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $updateData = $requestData['update_data'] ?? [];
+            
+            // Get current user data for comparison
+            $user = DB::table('user')->where('id', $updateData['user_id'])->first();
+            
+            $html = '
+            <div class="alert alert-warning">
+                <i class="ri-user-settings-line me-2"></i><strong>User Details Update Request</strong>
+                <p class="mb-0 mt-2"><small>Review the changes before approving</small></p>
+            </div>
+            
+            <h6 class="mb-3">User: <strong>' . htmlspecialchars($updateData['Full_Name'] ?? 'N/A') . '</strong></h6>
+            
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 25%;">Field</th>
+                        <th style="width: 37.5%;">Current Value</th>
+                        <th style="width: 37.5%;">New Value</th>
+                    </tr>
+                </thead>
+                <tbody>';
+            
+            $fields = [
+                'Full_Name' => 'Full Name',
+                'email' => 'Email',
+                'TP' => 'Contact',
+                'Nic' => 'NIC',
+                'Epf_no' => 'EPF Number',
+                'Designation' => 'Designation',
+            ];
+            
+            foreach ($fields as $key => $label) {
+                if (isset($updateData[$key])) {
+                    $oldVal = $user->$key ?? 'N/A';
+                    $newVal = $updateData[$key] ?? 'N/A';
+                    
+                    if ($oldVal != $newVal) {
+                        $html .= '
+                        <tr>
+                            <th>' . htmlspecialchars($label) . '</th>
+                            <td>' . htmlspecialchars($oldVal) . '</td>
+                            <td><strong class="text-primary">' . htmlspecialchars($newVal) . '</strong></td>
+                        </tr>';
+                    }
+                }
+            }
+            
+            // Check for branch changes
+            if (isset($requestData['branches_changed']) && $requestData['branches_changed']) {
+                $html .= '
+                <tr>
+                    <th>Branches</th>
+                    <td colspan="2"><span class="badge bg-info">Branch assignments will be updated</span></td>
+                </tr>';
+            }
+            
+            $html .= '
+                </tbody>
+            </table>
+            
+            <div class="mt-3">
+                <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
+                <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
+            </div>
+            ';
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getUserPrivilegeChangeDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 103) {
+                return response()->json(['success' => false, 'message' => 'Privilege change request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $userId = $requestData['user_id'];
+            $newPrivileges = $requestData['privileges'] ?? [];
+            
+            // Get current user and their privileges
+            $user = DB::table('user')->where('id', $userId)->first();
+            $currentPrivileges = DB::table('user_privileges_has_user')
+                ->where('user_id', $userId)
+                ->pluck('value', 'permission_key')
+                ->toArray();
+            
+            $html = '
+            <div class="alert alert-warning">
+                <i class="ri-shield-user-line me-2"></i><strong>User Privilege Change Request</strong>
+            </div>
+            
+            <h6 class="mb-3">User: <strong>' . htmlspecialchars($user->Full_Name ?? 'N/A') . '</strong> (' . htmlspecialchars($requestData['user_email'] ?? '') . ')</h6>
+            
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 40%;">Permission</th>
+                        <th style="width: 30%;">Current</th>
+                        <th style="width: 30%;">New</th>
+                    </tr>
+                </thead>
+                <tbody>';
+            
+            $changesCount = 0;
+            // Privileges are stored as flat key-value pairs
+            foreach ($newPrivileges as $key => $value) {
+                if (empty($key)) continue;
+                
+                $newValue = (int)$value;
+                $currentValue = (int)($currentPrivileges[$key] ?? 0);
+                
+                if ($currentValue != $newValue) {
+                    $changesCount++;
+                    $currentIcon = $currentValue == 1 ? '<i class="ri-checkbox-circle-fill text-success"></i> Enabled' : '<i class="ri-close-circle-fill text-danger"></i> Disabled';
+                    $newIcon = $newValue == 1 ? '<i class="ri-checkbox-circle-fill text-success"></i> Enabled' : '<i class="ri-close-circle-fill text-danger"></i> Disabled';
+                    
+                    $html .= '
+                    <tr>
+                        <td>' . htmlspecialchars(ucwords(str_replace('_', ' ', $key))) . '</td>
+                        <td>' . $currentIcon . '</td>
+                        <td><strong>' . $newIcon . '</strong></td>
+                    </tr>';
+                }
+            }
+            
+            if ($changesCount == 0) {
+                $html .= '<tr><td colspan="3" class="text-center text-muted">No privilege changes detected</td></tr>';
+            }
+            
+            $html .= '
+                </tbody>
+            </table>
+            
+            <div class="mt-3">
+                <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
+                <p class="text-muted mb-1"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
+                <p class="text-muted mb-0"><strong>Total Changes:</strong> ' . $changesCount . ' permission(s)</p>
+            </div>
+            
+            <div class="alert alert-info mt-3">
+                <i class="ri-information-line me-2"></i>
+                <strong>Note:</strong> Approving this will update the user\'s access privileges.
+            </div>
+            ';
             
             return response()->json(['success' => true, 'html' => $html]);
         } catch (\Exception $e) {

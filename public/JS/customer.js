@@ -309,6 +309,7 @@ function save_bank(id, callback) {
         formData.append('tableAccountNames[]', row.find('td').eq(1).text().trim());
         formData.append('tableAccountNumbers[]', row.find('td').eq(2).text().trim());
         formData.append('tableBranches[]', row.find('td').eq(3).text().trim());
+        formData.append('tableBankCodes[]', row.find('td').eq(4).text().trim());
     });
 
     $.ajax({

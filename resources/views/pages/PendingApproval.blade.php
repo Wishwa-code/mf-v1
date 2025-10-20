@@ -21,6 +21,28 @@
         .table-responsive {
             overflow-x: auto;
         }
+        
+        /* Expand/Collapse icon styling */
+        .details-control {
+            cursor: pointer;
+            color: #007bff;
+            font-size: 1.2rem;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        .details-control:hover {
+            color: #0056b3;
+        }
+        
+        /* Child row styling */
+        .child-row-content {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 3px solid #007bff;
+        }
+        .child-row-content strong {
+            color: #495057;
+        }
     </style>
 @endsection
 
@@ -90,10 +112,10 @@
                                 <table id="pendingApprovalTable" class="table table-striped table-bordered nowrap" style="width:100%">
                                     <thead>
                                         <tr>
+                                            <th class="text-center" style="width: 30px;"></th>
                                             <th>Branch</th>
                                             <th>Type</th>
                                             <th>Date & Time</th>
-                                            <th>Description</th>
                                             <th>User</th>
                                             <th class="text-center">View</th>
                                             <th class="text-center">Actions</th>
@@ -101,7 +123,10 @@
                                     </thead>
                                     <tbody>
                                         @foreach($pendingApprovals as $approval)
-                                            <tr>
+                                            <tr data-description="{{ htmlspecialchars($approval->description, ENT_QUOTES, 'UTF-8') }}">
+                                                <td class="details-control text-center">
+                                                    <i class="ri-add-circle-line"></i>
+                                                </td>
                                                 <td>
                                                     <span class="badge bg-primary">{{ $approval->branch_name ?? 'N/A' }}</span>
                                                 </td>
@@ -111,11 +136,6 @@
                                                 <td>
                                                     <small>{{ date('d/m/Y', strtotime($approval->data_time)) }}</small><br>
                                                     <small class="text-muted">{{ date('h:i A', strtotime($approval->data_time)) }}</small>
-                                                </td>
-                                                <td>
-                                                    <div style="max-width: 300px;">
-                                                        <strong>{{ $approval->description }}</strong>
-                                                    </div>
                                                 </td>
                                                 <td>
                                                     <span class="text-primary">
@@ -191,6 +211,31 @@
         </div>
     </div>
 
+    <!-- Designation Details Modal -->
+    <div class="modal fade" id="designationDetailsModal" tabindex="-1" aria-labelledby="designationDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="designationDetailsModalLabel">
+                        <i class="ri-shield-user-line me-2"></i>Designation Change Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="designationDetailsContent">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-warning" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3">Loading designation details...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Action Modal -->
     <div class="modal fade" id="actionModal" tabindex="-1" aria-labelledby="actionModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -232,13 +277,33 @@
         let currentAction = null;
 
         $(document).ready(function() {
-            $('#pendingApprovalTable').DataTable({
+            var table = $('#pendingApprovalTable').DataTable({
                 "pageLength": 25,
-                "responsive": true,
-                "order": [[ 2, "desc" ]], // Sort by date column
+                "responsive": false,
+                "order": [[ 3, "desc" ]], // Sort by date column
                 "columnDefs": [
-                    { "orderable": false, "targets": [5, 6] } // Disable sorting for View and Actions columns
+                    { "orderable": false, "targets": [0, 5, 6] } // Disable sorting for expand and action columns
                 ]
+            });
+            
+            // Add event listener for expand/collapse icon
+            $('#pendingApprovalTable tbody').on('click', 'td.details-control', function() {
+                var tr = $(this).closest('tr');
+                var row = table.row(tr);
+                var icon = $(this).find('i');
+                
+                if (row.child.isShown()) {
+                    // Close the row
+                    row.child.hide();
+                    tr.removeClass('shown');
+                    icon.removeClass('ri-subtract-line').addClass('ri-add-circle-line');
+                } else {
+                    // Open the row
+                    var description = tr.data('description');
+                    row.child('<div class="child-row-content"><strong>Description:</strong> ' + description + '</div>').show();
+                    tr.addClass('shown');
+                    icon.removeClass('ri-add-circle-line').addClass('ri-subtract-line');
+                }
             });
         });
 
@@ -246,6 +311,21 @@
             if (typeId == 401) {
                 // Loan Approval - Show loan details modal
                 showLoanDetails(id);
+            } else if (typeId == 402) {
+                // Loan Rejection - Show loan rejection details modal
+                showLoanRejectionDetails(id);
+            } else if (typeId == 201) {
+                // Designation update - Show designation details modal
+                showDesignationDetails(id);
+            } else if (typeId == 101) {
+                // User Creation - Show user creation details modal
+                showUserCreationDetails(id);
+            } else if (typeId == 102) {
+                // User Details Update - Show user update details modal
+                showUserDetailsUpdateDetails(id);
+            } else if (typeId == 103) {
+                // User Privilege Change - Show privilege change details modal
+                showUserPrivilegeChangeDetails(id);
             } else {
                 // Other types - show alert for now
                 alert(`View details for ${type} request #${id} (Type ID: ${typeId})`);
@@ -282,6 +362,185 @@
                     $('#loanDetailsContent').html(`
                         <div class="alert alert-danger" role="alert">
                             <i class="ri-error-warning-line me-2"></i>Error loading loan details. Please try again.
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function showDesignationDetails(approvalId) {
+            $('#designationDetailsModal').modal('show');
+            $('#designationDetailsContent').html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading designation details...</p>
+                </div>
+            `);
+            
+            $.ajax({
+                url: `/approval/designation-details/${approvalId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#designationDetailsContent').html(response.html);
+                    } else {
+                        $('#designationDetailsContent').html(`
+                            <div class="alert alert-danger" role="alert">
+                                <i class="ri-error-warning-line me-2"></i>Error: ${response.message}
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#designationDetailsContent').html(`
+                        <div class="alert alert-danger" role="alert">
+                            <i class="ri-error-warning-line me-2"></i>Error loading designation details. Please try again.
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function showLoanRejectionDetails(approvalId) {
+            $('#loanDetailsModal').modal('show');
+            $('#loanDetailsModalLabel').html('<i class="ri-delete-bin-line me-2"></i>Loan Rejection Details');
+            $('#loanDetailsContent').html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-danger" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading loan rejection details...</p>
+                </div>
+            `);
+            
+            $.ajax({
+                url: `/approval/loan-rejection-details/${approvalId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#loanDetailsContent').html(response.html);
+                    } else {
+                        $('#loanDetailsContent').html(`
+                            <div class="alert alert-danger" role="alert">
+                                <i class="ri-error-warning-line me-2"></i>Error: ${response.message}
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#loanDetailsContent').html(`
+                        <div class="alert alert-danger" role="alert">
+                            <i class="ri-error-warning-line me-2"></i>Error loading loan rejection details. Please try again.
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function showUserCreationDetails(approvalId) {
+            $('#loanDetailsModal').modal('show');
+            $('#loanDetailsModalLabel').html('<i class="ri-user-add-line me-2"></i>User Creation Details');
+            $('#loanDetailsContent').html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading user creation details...</p>
+                </div>
+            `);
+            
+            $.ajax({
+                url: `/approval/user-creation-details/${approvalId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#loanDetailsContent').html(response.html);
+                    } else {
+                        $('#loanDetailsContent').html(`
+                            <div class="alert alert-danger" role="alert">
+                                <i class="ri-error-warning-line me-2"></i>Error: ${response.message}
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#loanDetailsContent').html(`
+                        <div class="alert alert-danger" role="alert">
+                            <i class="ri-error-warning-line me-2"></i>Error loading user creation details. Please try again.
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function showUserDetailsUpdateDetails(approvalId) {
+            $('#loanDetailsModal').modal('show');
+            $('#loanDetailsModalLabel').html('<i class="ri-user-settings-line me-2"></i>User Details Update');
+            $('#loanDetailsContent').html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading user update details...</p>
+                </div>
+            `);
+            
+            $.ajax({
+                url: `/approval/user-details-update-details/${approvalId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#loanDetailsContent').html(response.html);
+                    } else {
+                        $('#loanDetailsContent').html(`
+                            <div class="alert alert-danger" role="alert">
+                                <i class="ri-error-warning-line me-2"></i>Error: ${response.message}
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#loanDetailsContent').html(`
+                        <div class="alert alert-danger" role="alert">
+                            <i class="ri-error-warning-line me-2"></i>Error loading user update details. Please try again.
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function showUserPrivilegeChangeDetails(approvalId) {
+            $('#loanDetailsModal').modal('show');
+            $('#loanDetailsModalLabel').html('<i class="ri-shield-user-line me-2"></i>User Privilege Change');
+            $('#loanDetailsContent').html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-success" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading privilege change details...</p>
+                </div>
+            `);
+            
+            $.ajax({
+                url: `/approval/user-privilege-change-details/${approvalId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#loanDetailsContent').html(response.html);
+                    } else {
+                        $('#loanDetailsContent').html(`
+                            <div class="alert alert-danger" role="alert">
+                                <i class="ri-error-warning-line me-2"></i>Error: ${response.message}
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#loanDetailsContent').html(`
+                        <div class="alert alert-danger" role="alert">
+                            <i class="ri-error-warning-line me-2"></i>Error loading privilege change details. Please try again.
                         </div>
                     `);
                 }

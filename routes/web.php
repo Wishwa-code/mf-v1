@@ -339,6 +339,7 @@ Route::post('/income','\App\Http\Controllers\ReportController@saveexpenses')->na
 Route::get('/view_income','\App\Http\Controllers\ReportController@viewincome')->name('report.viewincome');
 
 Route::get('/expenses','\App\Http\Controllers\ReportController@create')->name('report.create');
+Route::post('/get-branch-expense-data','\App\Http\Controllers\ReportController@getBranchExpenseData')->name('report.getBranchExpenseData');
 Route::post('/expenses_categories', '\App\Http\Controllers\ReportController@store')->name('expenses_categories.store');
 Route::delete('/expenses_categories/{id}', '\App\Http\Controllers\ReportController@destroy')->name('categories.destroy');
 
@@ -795,6 +796,11 @@ Route::post('/approve_request','\App\Http\Controllers\ApprovalController@approve
 Route::post('/reject_request','\App\Http\Controllers\ApprovalController@reject')->name('approval.reject');
 Route::post('/callback_request','\App\Http\Controllers\ApprovalController@callback')->name('approval.callback');
 Route::get('/approval/loan-details/{id}','\App\Http\Controllers\ApprovalController@getLoanDetails')->name('approval.loan_details');
+Route::get('/approval/loan-rejection-details/{id}','\App\Http\Controllers\ApprovalController@getLoanRejectionDetails')->name('approval.loan_rejection_details');
+Route::get('/approval/designation-details/{id}','\App\Http\Controllers\ApprovalController@getDesignationDetails')->name('approval.designation_details');
+Route::get('/approval/user-creation-details/{id}','\App\Http\Controllers\ApprovalController@getUserCreationDetails')->name('approval.user_creation_details');
+Route::get('/approval/user-details-update-details/{id}','\App\Http\Controllers\ApprovalController@getUserDetailsUpdateDetails')->name('approval.user_details_update_details');
+Route::get('/approval/user-privilege-change-details/{id}','\App\Http\Controllers\ApprovalController@getUserPrivilegeChangeDetails')->name('approval.user_privilege_change_details');
 Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalController@undoRejection')->name('approval.undo_rejection');
 
 

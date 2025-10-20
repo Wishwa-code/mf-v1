@@ -230,6 +230,94 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Loan Creation Restrictions Card -->
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h5 class="mb-3">Loan Creation Restrictions</h5>
+                        <hr>
+                        <small class="text-muted d-block mb-3">Configure restrictions and requirements for loan creation process.</small>
+                        
+                        <!-- Document Upload Restriction -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Document Upload Restriction</label>
+                            <div class="d-flex gap-2">
+                                <select id="document_upload_restriction" class="form-select" style="max-width: 300px;">
+                                    <option value="" disabled selected>-- Select Option --</option>
+                                    <option value="required">Required</option>
+                                    <option value="not_required">Not Required</option>
+                                </select>
+                            </div>
+                            <small class="text-muted">Specify whether document uploads are mandatory during loan creation.</small>
+                        </div>
+
+                        <hr>
+                        <!-- Guarantees Restriction -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Guarantees</label>
+                            <div class="d-flex gap-2">
+                                <select id="guarantees_restriction" class="form-select" style="max-width: 300px;">
+                                    <option value="" disabled selected>-- Select Option --</option>
+                                    <option value="required">Required</option>
+                                    <option value="not_required">Not Required</option>
+                                </select>
+                            </div>
+                            <small class="text-muted">Specify whether guarantees are mandatory during loan creation.</small>
+                        </div>
+
+                        <hr>
+                        <!-- Change Product Details -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Change Product Details</label>
+                            <div class="d-flex gap-2">
+                                <select id="change_product_details" class="form-select" style="max-width: 300px;">
+                                    <option value="" disabled selected>-- Select Option --</option>
+                                    <option value="editable">Editable</option>
+                                    <option value="not_editable">Not Editable</option>
+                                </select>
+                            </div>
+                            <small class="text-muted">Control whether product details can be modified after loan creation.</small>
+                        </div>
+
+                        <hr>
+                        <!-- First Installment Date Restrictions -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">First Installment Date - Maximum Days After Issue Date</label>
+                            <small class="text-muted d-block mb-2">Set how many days after the Issue Date the first installment date can be set for each loan type.</small>
+                            
+                            <!-- Daily Loans -->
+                            <div class="mb-3">
+                                <label class="form-label">Daily Loans (max days)</label>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <input type="number" id="first_installment_daily" class="form-control" min="0" max="365" style="max-width: 150px;" placeholder="Days">
+                                    <span class="text-muted">days</span>
+                                </div>
+                            </div>
+
+                            <!-- Weekly Loans -->
+                            <div class="mb-3">
+                                <label class="form-label">Weekly Loans (max days)</label>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <input type="number" id="first_installment_weekly" class="form-control" min="0" max="365" style="max-width: 150px;" placeholder="Days">
+                                    <span class="text-muted">days</span>
+                                </div>
+                            </div>
+
+                            <!-- Monthly Loans -->
+                            <div class="mb-3">
+                                <label class="form-label">Monthly Loans (max days)</label>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <input type="number" id="first_installment_monthly" class="form-control" min="0" max="365" style="max-width: 150px;" placeholder="Days">
+                                    <span class="text-muted">days</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="btnUpdateLoanRestrictions" class="btn btn-primary">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Update Restrictions
+                        </button>
+                    </div>
+                </div>
             </div>
             <div class="col-6">
                 <div class="card">
@@ -496,6 +584,35 @@
                 save_setting('collector_txn_modes', JSON.stringify(selected));
             });
 
+            // Loan Creation Restrictions
+            $('#btnUpdateLoanRestrictions').on('click', function (e) {
+                e.preventDefault();
+                
+                const documentUpload = $('#document_upload_restriction').val();
+                const guarantees = $('#guarantees_restriction').val();
+                const changeProduct = $('#change_product_details').val();
+                const dailyDays = $('#first_installment_daily').val();
+                const weeklyDays = $('#first_installment_weekly').val();
+                const monthlyDays = $('#first_installment_monthly').val();
+
+                // Validate numeric fields
+                if (!dailyDays || dailyDays < 0 || dailyDays > 365) {
+                    Swal.fire("Warning", "Daily loans max days must be between 0 and 365.", "warning");
+                    return;
+                }
+                if (!weeklyDays || weeklyDays < 0 || weeklyDays > 365) {
+                    Swal.fire("Warning", "Weekly loans max days must be between 0 and 365.", "warning");
+                    return;
+                }
+                if (!monthlyDays || monthlyDays < 0 || monthlyDays > 365) {
+                    Swal.fire("Warning", "Monthly loans max days must be between 0 and 365.", "warning");
+                    return;
+                }
+
+                // Save all settings
+                saveLoanRestrictions(documentUpload, guarantees, changeProduct, dailyDays, weeklyDays, monthlyDays);
+            });
+
         });
 
 
@@ -721,6 +838,26 @@
                         $('.collector-mode').prop('checked', false);
                         modes.forEach(v => $(`.collector-mode[value="${v}"]`).prop('checked', true));
                     }
+
+                    // Loan Creation Restrictions
+                    if (items.document_upload_restriction) {
+                        $('#document_upload_restriction').val(items.document_upload_restriction);
+                    }
+                    if (items.guarantees_restriction) {
+                        $('#guarantees_restriction').val(items.guarantees_restriction);
+                    }
+                    if (items.change_product_details) {
+                        $('#change_product_details').val(items.change_product_details);
+                    }
+                    if (items.first_installment_daily) {
+                        $('#first_installment_daily').val(items.first_installment_daily);
+                    }
+                    if (items.first_installment_weekly) {
+                        $('#first_installment_weekly').val(items.first_installment_weekly);
+                    }
+                    if (items.first_installment_monthly) {
+                        $('#first_installment_monthly').val(items.first_installment_monthly);
+                    }
                 },
                 error: function (xhr) {
                     console.error('Settings load error:', xhr.responseText || xhr.statusText);
@@ -760,6 +897,64 @@
                     error: function (xhr) {
                         Swal.fire("Error", xhr.responseJSON?.message || "Failed to update setting", "error");
                     }
+                });
+            });
+        };
+
+        // Save all loan restriction settings at once
+        const saveLoanRestrictions = (documentUpload, guarantees, changeProduct, dailyDays, weeklyDays, monthlyDays) => {
+            Swal.fire({
+                title: "Are you sure?",
+                text: "Update all loan creation restrictions?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, Update All",
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                // Prepare all settings to save
+                const settings = [
+                    { key: 'document_upload_restriction', value: documentUpload },
+                    { key: 'guarantees_restriction', value: guarantees },
+                    { key: 'change_product_details', value: changeProduct },
+                    { key: 'first_installment_daily', value: dailyDays },
+                    { key: 'first_installment_weekly', value: weeklyDays },
+                    { key: 'first_installment_monthly', value: monthlyDays },
+                ];
+
+                let completedCount = 0;
+                let hasError = false;
+
+                // Save each setting
+                settings.forEach(setting => {
+                    $.ajax({
+                        type: "POST",
+                        url: "/settings/upsert",
+                        headers: {
+                            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                        },
+                        data: setting,
+                        success: function () {
+                            completedCount++;
+                            if (completedCount === settings.length && !hasError) {
+                                Swal.fire({
+                                    position: "center",
+                                    icon: "success",
+                                    title: "All loan restrictions updated!",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                            }
+                        },
+                        error: function (xhr) {
+                            if (!hasError) {
+                                hasError = true;
+                                Swal.fire("Error", xhr.responseJSON?.message || "Failed to update loan restrictions", "error");
+                            }
+                        }
+                    });
                 });
             });
         };

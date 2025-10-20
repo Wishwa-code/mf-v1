@@ -1126,22 +1126,57 @@ class UserController extends Controller
     }
 
     public function updatedesignation(Request $request){
+        // Get current designation for comparison
         $designation = DB::table('designation')
-            ->where('idDesignation', '=', $request->id) // specify the column name here
+            ->where('idDesignation', '=', $request->id)
             ->where('branch_id', session('branch_id'))
-            ->update([
-                'name' => $request->designation,
-                'desi_level' => $request->desiLevel,
-                'loan_creat' => $request->loanCreate,
-                'loan_issue' => $request->loanApprove,
-                'max_create_amount' => $request->maxCreateAmount,
-                'max_issue_amount' => $request->maxIssueAmount,
-            ]);
+            ->first();
 
-        if ($designation){
-            return response()->json(['data' => $designation], 200);
+        if (!$designation){
+            return response()->json(['error' => 'Designation not found'], 404);
         }
-        return response()->json(['data' => $designation], 404);
+
+        // Store old values for comparison
+        $oldData = [
+            'name' => $designation->name,
+            'desi_level' => $designation->desi_level,
+            'loan_creat' => $designation->loan_creat,
+            'loan_issue' => $designation->loan_issue,
+            'max_create_amount' => $designation->max_create_amount,
+            'max_issue_amount' => $designation->max_issue_amount,
+        ];
+
+        // Store new values
+        $newData = [
+            'name' => $request->designation,
+            'desi_level' => $request->desiLevel,
+            'loan_creat' => $request->loanCreate,
+            'loan_issue' => $request->loanApprove,
+            'max_create_amount' => $request->maxCreateAmount,
+            'max_issue_amount' => $request->maxIssueAmount,
+        ];
+
+        // Store designation details update data for approval
+        $requestData = [
+            'designation_id' => $request->id,
+            'old_data' => $oldData,
+            'new_data' => $newData,
+            'update_type' => 'details'
+        ];
+
+        // Create approval request
+        DB::table('approval_request')->insert([
+            'type' => 'Designation Privileges Update',
+            'typeid' => 201,
+            'description' => 'Designation Details Update: ' . $request->designation . ' (Max Create: ' . $request->maxCreateAmount . ', Max Approve: ' . $request->maxIssueAmount . ')',
+            'data' => json_encode($requestData),
+            'userid' => session('userid'),
+            'branch_id' => session('branch_id'),
+            'data_time' => now(),
+            'status' => 0
+        ]);
+
+        return response()->json(['status' => 'success', 'message' => 'Designation update request sent for approval!'], 200);
     }
 
     // Save designation privileges JSON
@@ -1164,13 +1199,30 @@ class UserController extends Controller
             return response()->json(['error' => 'Designation not found'], 404);
         }
 
-        DB::table('designation')
-            ->where('idDesignation', $designationId)
-            ->update([
-                'privileges' => json_encode($privileges)
-            ]);
+        // Get old privileges for comparison
+        $oldPrivileges = $designation->privileges ? json_decode($designation->privileges, true) : [];
 
-        return response()->json(['status' => 'success']);
+        // Store designation privilege change data for approval
+        $requestData = [
+            'designation_id' => $designationId,
+            'privileges' => $privileges,
+            'old_privileges' => $oldPrivileges,
+            'designation_name' => $designation->name
+        ];
+
+        // Create approval request
+        DB::table('approval_request')->insert([
+            'type' => 'Designation Privileges Update',
+            'typeid' => 201,
+            'description' => 'Designation Privileges Update: ' . $designation->name,
+            'data' => json_encode($requestData),
+            'userid' => session('userid'),
+            'branch_id' => session('branch_id'),
+            'data_time' => now(),
+            'status' => 0
+        ]);
+
+        return response()->json(['status' => 'success', 'message' => 'Designation privilege change request sent for approval!']);
     }
 
     // Load designation privileges JSON
