@@ -653,6 +653,25 @@ class ApprovalController extends Controller
                 insertWithBranch('customer_log', $logData);
             }
             
+            // Handle Loan Installment Modification (Type 403)
+            if ($approval->typeid == 403) {
+                $requestData = json_decode($approval->data, true);
+                $loanId = $requestData['loan_id'];
+                $installments = $requestData['installments'];
+                
+                // Update each installment
+                foreach ($installments as $installment) {
+                    DB::table('installments')
+                        ->where('Customer_Loan_idCustomer_Loan', $loanId)
+                        ->where('No', $installment['no'])
+                        ->where('branch_id', $approval->branch_id)
+                        ->update([
+                            'Installment_Date' => $installment['installment_date'],
+                            'Panelty_date' => $installment['penalty_date'],
+                        ]);
+                }
+            }
+            
             // Handle Expense Delete (Type 603)
             if ($approval->typeid == 603) {
                 $requestData = json_decode($approval->data, true);
@@ -1794,6 +1813,106 @@ class ApprovalController extends Controller
             
             <div class="alert alert-warning mt-3">
                 <strong>⚠️ Warning:</strong> Approving this request will ' . ($isDelete ? 'permanently delete this document from the system' : 'upload this document to the customer profile') . '.
+            </div>
+            
+            <div class="mt-3">
+                <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
+                <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
+            </div>
+            ';
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getLoanInstallmentModificationDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 403) {
+                return response()->json(['success' => false, 'message' => 'Loan installment modification request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $loanId = $requestData['loan_id'];
+            $customerId = $requestData['customer_id'];
+            $changes = $requestData['changes'] ?? [];
+            
+            // Get loan details
+            $loan = DB::table('customer_loan')
+                ->where('idCustomer_Loan', $loanId)
+                ->where('branch_id', $approval->branch_id)
+                ->first();
+            
+            // Get customer details
+            $customer = DB::table('customer')
+                ->where('idCustomer', $customerId)
+                ->where('branch_id', $approval->branch_id)
+                ->first();
+            
+            $customerName = $customer ? ($customer->First_Name . ' ' . $customer->Last_Name) : 'Unknown';
+            $loanNumber = $loan->Loan_No ?? 'N/A';
+            
+            $html = '
+            <div class="alert alert-warning">
+                <i class="ri-calendar-schedule-line me-2"></i><strong>Loan Installment Modification Request</strong>
+                <p class="mb-0 mt-2"><small>Review installment date changes before approving</small></p>
+            </div>
+            
+            <h6 class="mb-3">Loan Information</h6>
+            
+            <table class="table table-bordered">
+                <tbody>
+                    <tr>
+                        <th style="width: 35%;">Loan Number</th>
+                        <td><strong>' . htmlspecialchars($loanNumber) . '</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Customer</th>
+                        <td>' . htmlspecialchars($customerName) . '</td>
+                    </tr>
+                    <tr>
+                        <th>Modified Installments</th>
+                        <td><strong class="text-primary">' . count($changes) . ' installment(s)</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h6 class="mb-2 mt-4">Installment Changes</h6>
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Installment #</th>
+                            <th>Old Date</th>
+                            <th>New Date</th>
+                            <th>Old Penalty Date</th>
+                            <th>New Penalty Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
+            
+            foreach ($changes as $change) {
+                $html .= '
+                        <tr>
+                            <td><strong>#' . htmlspecialchars($change['no']) . '</strong></td>
+                            <td>' . htmlspecialchars($change['old_installment_date']) . '</td>
+                            <td><strong class="text-primary">' . htmlspecialchars($change['new_installment_date']) . '</strong></td>
+                            <td>' . htmlspecialchars($change['old_penalty_date']) . '</td>
+                            <td><strong class="text-primary">' . htmlspecialchars($change['new_penalty_date']) . '</strong></td>
+                        </tr>';
+            }
+            
+            $html .= '
+                    </tbody>
+                </table>
             </div>
             
             <div class="mt-3">

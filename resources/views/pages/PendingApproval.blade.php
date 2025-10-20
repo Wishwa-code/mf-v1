@@ -321,6 +321,9 @@
             } else if (typeId == 402) {
                 // Loan Rejection - Show loan rejection details modal
                 showLoanRejectionDetails(id);
+            } else if (typeId == 403) {
+                // Loan Installment Modification - Show installment modification details
+                showLoanInstallmentModificationDetails(id);
             } else if (typeId == 201) {
                 // Designation update - Show designation details modal
                 showDesignationDetails(id);
@@ -455,6 +458,42 @@
                     $('#loanDetailsContent').html(`
                         <div class="alert alert-danger" role="alert">
                             <i class="ri-error-warning-line me-2"></i>Error loading loan rejection details. Please try again.
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function showLoanInstallmentModificationDetails(approvalId) {
+            $('#loanDetailsModal').modal('show');
+            $('#loanDetailsModalLabel').html('<i class="ri-calendar-schedule-line me-2"></i>Loan Installment Modification');
+            $('#loanDetailsContent').html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading installment modification details...</p>
+                </div>
+            `);
+            
+            $.ajax({
+                url: `/approval/loan-installment-modification-details/${approvalId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#loanDetailsContent').html(response.html);
+                    } else {
+                        $('#loanDetailsContent').html(`
+                            <div class="alert alert-danger" role="alert">
+                                <i class="ri-error-warning-line me-2"></i>Error: ${response.message}
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#loanDetailsContent').html(`
+                        <div class="alert alert-danger" role="alert">
+                            <i class="ri-error-warning-line me-2"></i>Error loading installment modification details. Please try again.
                         </div>
                     `);
                 }

@@ -1431,7 +1431,6 @@ class LoanController extends Controller
             'panelty_date_count' => $panelty_date_count,
             'saturday_sunday' => $saturday_sunday
         ]);
-
     }
 
     public function updateInstallments(Request $request)
@@ -1442,7 +1441,67 @@ class LoanController extends Controller
             'installments' => 'required',
         ]);
 
-        // Loop through each installment and update in the database
+        // Get loan details for description
+        $loan = DB::table('customer_loan')
+            ->where('idCustomer_Loan', $request->loan_id)
+            ->where('branch_id', session('branch_id'))
+            ->first();
+        
+        if (!$loan) {
+            return response()->json(['message' => 'Loan not found'], 404);
+        }
+        
+        // Get customer name
+        $customer = DB::table('customer')
+            ->where('idCustomer', $loan->Customer_idCustomer)
+            ->first();
+        
+        $customerName = $customer ? ($customer->First_Name . ' ' . $customer->Last_Name) : 'Unknown';
+        
+        // Get current installments for comparison
+        $currentInstallments = [];
+        foreach ($request->installments as $installment) {
+            $current = DB::table('installments')
+                ->where('Customer_Loan_idCustomer_Loan', $request->loan_id)
+                ->where('No', $installment['no'])
+                ->where('branch_id', session('branch_id'))
+                ->first();
+            
+            if ($current) {
+                $currentInstallments[] = [
+                    'no' => $installment['no'],
+                    'old_installment_date' => $current->Installment_Date,
+                    'new_installment_date' => $installment['installment_date'],
+                    'old_penalty_date' => $current->Panelty_date,
+                    'new_penalty_date' => $installment['penalty_date'],
+                ];
+            }
+        }
+        
+        // Store installment modification data for approval
+        $requestData = [
+            'loan_id' => $request->loan_id,
+            'customer_id' => $loan->Customer_idCustomer,
+            'installments' => $request->installments,
+            'changes' => $currentInstallments,
+        ];
+
+        // Create approval request
+        DB::table('approval_request')->insert([
+            'type' => 'Loan Installment Modification',
+            'typeid' => 403,
+            'description' => 'Loan Installment Modification: Loan #' . $request->loan_id . ' (Customer: ' . $customerName . ', ' . count($request->installments) . ' installment(s))',
+            'data' => json_encode($requestData),
+            'userid' => session('userid'),
+            'branch_id' => session('branch_id'),
+            'data_time' => now(),
+            'status' => 0
+        ]);
+
+        return response()->json(['message' => 'Installment modification request sent for approval!']);
+        
+        // OLD CODE - keeping for approval handler reference
+        /*
         foreach ($request->installments as $installment) {
             DB::table('installments')->where('Customer_Loan_idCustomer_Loan', $request->loan_id)
                 ->where('No', $installment['no'])
@@ -1452,8 +1511,8 @@ class LoanController extends Controller
                     'Panelty_date' => $installment['penalty_date'],
                 ]);
         }
-
         return response()->json(['message' => 'Installments updated successfully!']);
+        */
     }
 
 
