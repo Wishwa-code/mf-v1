@@ -461,16 +461,7 @@ class LoansController
             ->join('loan_category as lc', 'cl.Loan_Category_idLoan_Category', '=', 'lc.idLoan_Category')
             ->where('cl.branch_id', $branchId)
             ->where('cl.Status', 0) // 🔒 only ongoing loans
-            ->where(function ($w) use ($qstr) {
-                $like = '%'.$qstr.'%';
-                $w->where('c.Nic', 'LIKE', $like)
-                    ->orWhere('c.Contact_No', 'LIKE', $like)
-                    ->orWhere('c.contact_number_2', 'LIKE', $like)
-                    ->orWhere('c.cus_number', 'LIKE', $like)
-                    ->orWhere('c.First_Name', 'LIKE', $like)
-                    ->orWhere('c.Last_Name', 'LIKE', $like)
-                    ->orWhere(DB::raw("CONCAT(c.First_Name,' ',c.Last_Name)"), 'LIKE', $like);
-            })
+            ->where('cl.Customer_idCustomer', '=', $qstr) // ✅ Exact match on Customer ID
             ->select([
                 // Only required fields
                 'cl.idCustomer_Loan',

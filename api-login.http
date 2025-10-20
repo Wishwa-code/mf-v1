@@ -1,7 +1,10 @@
-#### Login
+######## Login
 #POST http://127.0.0.1:8000/api/login
 #Content-Type: application/json
 #
-#{ "email": "admin@gmail.com", "password": "123" }
+#{ "email": "admin@gmail.com", "password": "Asipiya@#$123" }
 
 
+GET http://127.0.0.1:8000/api/payments/2/receipt
+Authorization: Bearer 1|WOEeXwHkp7VlUUkOh8ngAnxo4FUhcPvbWcds9lxNb5afa563
+Content-Type: application/json

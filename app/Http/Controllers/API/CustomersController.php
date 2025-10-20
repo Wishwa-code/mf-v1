@@ -17,10 +17,10 @@ class CustomersController
     public function index(Request $request)
     {
         $branchId = (int) $request->attributes->get('branch_id');
-        $perPage  = (int) $request->query('per_page', 10);
         $search   = trim((string) $request->query('search', ''));
         $routeId  = $request->query('route_id');
-        $status   = $request->query('status'); // nullable
+        $status   = $request->query('status'); // optional, but we'll default to 1
+        $perPage = (int) $request->query('per_page', 100);
 
         // Subquery: aggregated groups per customer
         $groupsSub = DB::table('group_has_customer as ghc')
@@ -34,6 +34,7 @@ class CustomersController
                 $j->on('gsub.cus_id', '=', 'c.idCustomer');
             })
             ->where('c.branch_id', $branchId)
+            ->where('c.Status', 1) // ✅ Only active customers
             ->select([
                 'c.idCustomer',
                 'c.Customer_Group_idCustomer_Group',
@@ -92,9 +93,11 @@ class CustomersController
         if ($routeId) {
             $q->where('c.route_id', $routeId);
         }
+
         if ($status !== null && $status !== '') {
             $q->where('c.Status', $status);
         }
+
         if ($search !== '') {
             $like = '%' . $search . '%';
             $q->where(function ($w) use ($like) {
@@ -106,13 +109,15 @@ class CustomersController
             });
         }
 
-        $items = $q->paginate($perPage);
+        // ✅ Get all records (no pagination)
+        $items = $q->get();
 
         return response()->json([
             'status' => 'success',
-            'customers' => $items, // paginator
+            'customers' => $items,
         ], 200);
     }
+
 
     /**
      * GET /api/customers/{id}

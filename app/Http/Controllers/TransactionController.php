@@ -73,6 +73,7 @@ class TransactionController extends Controller
                 'customer_loan.Installment_Count as Installment_Count',
                 'customer_loan.capital_balance as capital_balance',
                 'customer_loan.Installment_Amount as Installment_Amount',
+                'customer_loan.saving_amount as saving_amount',
                 'customer_loan.Vehicle_No as Vehicle_No',
                 DB::raw('COUNT(installments.idInstallments) as Installment_Count'),
                 DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
@@ -97,6 +98,7 @@ class TransactionController extends Controller
                 'customer_loan.idCustomer_Loan',
                 'customer_loan.capital_balance',
                 'customer_loan.Installment_Amount',
+                'customer_loan.saving_amount',
                 'subquery.group_name'
             );
 
@@ -1127,18 +1129,18 @@ class TransactionController extends Controller
 
     public function dailyreport(Request $request){
         $center = tableWithBranch('center')->get();
-    $routes = tableWithBranch('route')->get(); // route list
+        $routes = tableWithBranch('route')->get(); // route list
 
         // NOTE: Don't early-return when center table is empty. Keep going with LEFT JOINs so data still loads.
         // Get center_details from request; can be null (means "All").
         $center_details = $request->center_details;
 
-    // selected product
+        // selected product
         $product_filter = $request->get('product_filter');
-    // selected route
-    $route_filter = $request->get('route_filter');
-    // selected collector
-    $collector_filter = $request->get('collector_filter');
+        // selected route
+        $route_filter = $request->get('route_filter');
+        // selected collector
+        $collector_filter = $request->get('collector_filter');
 
         // Loan Query
         $loanQuery = tableWithBranch('installments','installments')

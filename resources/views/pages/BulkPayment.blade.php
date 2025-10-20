@@ -254,12 +254,9 @@
 
                             <div class="col-lg-3">
                                 <div class="mb-3">
-                                    <label for="simpleinput" class="form-label">Group</label>
+                                    <label for="group" class="form-label">Group</label>
                                     <select class="form-control select2" id="group">
                                         <option value="0">All</option>
-                                        @foreach($group as $item)
-                                            <option value="{{$item->idCustomer_Group}}">{{ $item->Group_No }}-{{ $item->Name }}</option>
-                                        @endforeach
                                     </select>
                                 </div>
                             </div>
@@ -301,6 +298,40 @@
                                     <button type="button" class="btn btn-danger" onclick="load_payment_table();"><i class="bi bi-search"></i> </button>
                                 </div>
                             </div>
+
+                            {{-- Order By (Bulk Payments) --}}
+                            <div class="d-flex align-items-center gap-2 flex-wrap ms-2">
+                                <label class="form-label mb-0">Order By:</label>
+
+                                <div class="btn-group" role="group" aria-label="Order By">
+                                    {{-- Customer Name --}}
+                                    <button type="button" class="btn btn-outline-secondary order-btn {{ $order_by==='name_asc' ? 'active' : '' }}"  data-order="name_asc"  title="Customer Name A→Z">
+                                        <i class="bi bi-sort-alpha-down"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary order-btn {{ $order_by==='name_desc' ? 'active' : '' }}" data-order="name_desc" title="Customer Name Z→A">
+                                        <i class="bi bi-sort-alpha-up"></i>
+                                    </button>
+
+                                    {{-- Loan No --}}
+                                    <button type="button" class="btn btn-outline-secondary order-btn {{ $order_by==='loan_asc' ? 'active' : '' }}"  data-order="loan_asc"  title="Loan No ↑">
+                                        <i class="bi bi-sort-numeric-down"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary order-btn {{ $order_by==='loan_desc' ? 'active' : '' }}" data-order="loan_desc" title="Loan No ↓">
+                                        <i class="bi bi-sort-numeric-up"></i>
+                                    </button>
+
+                                    {{-- Create Order (PK) --}}
+                                    <button type="button" class="btn btn-outline-secondary order-btn {{ $order_by==='create_asc' ? 'active' : '' }}"  data-order="create_asc"  title="Create order ↑ (older first)">
+                                        <i class="bi bi-sort-down"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary order-btn {{ $order_by==='create_desc' ? 'active' : '' }}" data-order="create_desc" title="Create order ↓ (newer first)">
+                                        <i class="bi bi-sort-up"></i>
+                                    </button>
+                                </div>
+
+                                <input type="hidden" id="repayment_sheet_key" value="{{ $sheetKey }}">  {{-- e.g. "bp" --}}
+                            </div>
+
                         </div>
                         <hr>
 {{--                        <div class="container">--}}
@@ -349,7 +380,7 @@
                                             <thead class="bg-light">
                                             <tr>
                                                 <th scope="col">Loan No</th>
-                                                <th scope="col">Member NIC</th>
+                                                <th scope="col">Member Name</th>
                                                 <th scope="col">Center</th>
                                                 <th scope="col">Group</th>
                                                 <th scope="col">Loan Amount</th>
@@ -360,7 +391,7 @@
                                                 <th scope="col">Today Installment</th>
                                                 <th scope="col">Date</th>
                                                 <th scope="col" class="amount-column">Amount</th>
-                                                <th scope="col">Member Name</th>
+                                                <th scope="col">Member Nic</th>
                                                 <th scope="col">Type</th>
                                             </tr>
                                             </thead>
@@ -846,7 +877,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
     <script src="../JS/validate.js"></script>
-    <script src="../JS/bulk_payment.js?n=18"></script>
+    <script src="../JS/bulk_payment.js?n=19"></script>
     <script>
         $('#loan_number_search').on('change', function () {
             load_payment_table();
@@ -977,9 +1008,72 @@
                 Swal.fire("Error!", "You have to complete pending payments before reducing capital!", "error");
             }
         }
+        // When center is changed, load its groups dynamically
+        $('#center_details').on('change', function () {
+            const centerId = $(this).val();
+            const $groupSelect = $('#group');
+
+            $groupSelect.html('<option value="0">Loading...</option>'); // temporary
+
+            if (centerId === "0" || !centerId) {
+                $groupSelect.html('<option value="0">All</option>');
+                $groupSelect.trigger('change');
+                return;
+            }
+
+            $.ajax({
+                url: '/get-groups-by-center/' + centerId,
+                type: 'GET',
+                success: function (data) {
+                    $groupSelect.empty().append('<option value="0">All</option>');
+
+                    if (data && data.length > 0) {
+                        data.forEach(group => {
+                            $groupSelect.append(
+                                `<option value="${group.idCustomer_Group}">
+                            ${group.Group_No} - ${group.Name}
+                        </option>`
+                            );
+                        });
+                    } else {
+                        $groupSelect.append('<option value="0">No groups found</option>');
+                    }
+
+                    // Refresh Select2
+                    $groupSelect.trigger('change');
+                },
+                error: function () {
+                    $groupSelect.html('<option value="0">Error loading groups</option>');
+                }
+            });
+        });
 
     </script>
+    <script>
+        $(document).on('click', '.order-btn', function () {
+            const val = $(this).data('order');
+            const sheetKey = $('#repayment_sheet_key').val() || 'bp';
+            const token = $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').first().val();
 
+            $('.order-btn').removeClass('active');
+            $(this).addClass('active');
+
+            $.ajax({
+                type: 'POST',
+                url: '/settings/upsert',
+                headers: { 'X-CSRF-TOKEN': token },
+                data: { key: `repayment_order_${sheetKey}`, value: val },
+                success: function () {
+                    // Re-load table; no need to pass order_by – controller will read saved value
+                    load_payment_table();
+                },
+                error: function (xhr) {
+                    const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to save order';
+                    alert(msg);
+                }
+            });
+        });
+    </script>
 
 @endsection
 

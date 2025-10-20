@@ -28,6 +28,10 @@
             margin: 0 !important;
             padding: 0 !important;
         }
+        /* keep the Select2 menu above the Bootstrap modal */
+        .modal.show .select2-container--open {
+            z-index: 2000 !important;  /* higher than Bootstrap modal (1055) */
+        }
 
 
     </style>
@@ -51,13 +55,19 @@
                                     <div class="d-flex flex-column align-items-start mb-3">
                                         <h4 class="page-title mb-3">Loan Product</h4>
 
-                                        <!-- File input -->
+{{--                                        <!-- File input -->--}}
                                         <label style="color: red">Upload Excel</label>
                                         <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="form-control mb-2 w-50">
 
                                         <!-- Upload button, aligned below the file input -->
                                         <input type="button" onclick="upload_excel()" class="btn btn-success mt-2" value="Upload">
+
+                                        <button type="button" class="btn btn-primary" id="openCloneModal">
+                                            <i class="fas fa-random me-1"></i> Clone / Merge Products to Other Branches
+                                        </button>
                                     </div>
+                                    {{-- Button to open modal --}}
+
                                     <div class="table-responsive-sm">
                                         <table id="productTable" class="display nowrap table table-striped table-bordered" style="width:100%">
                                             <thead class="sticky-top bg-purple">
@@ -140,8 +150,62 @@
         </div>
 
 
-        <!-- Modal HTML -->
-        <!-- Modal HTML -->
+        <div class="modal fade" id="cloneProductsModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">Clone / Merge Products to Other Branches</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true"></span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+                        <form id="cloneProductsForm">
+                            @csrf
+
+                            <div class="row g-3">
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Source Branch</label>
+                                    <select id="source_branch_id" class="form-select" required></select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Target Branches</label>
+                                    <select id="target_branch_ids" class="form-select" multiple required></select>
+                                    <small class="text-muted">Select one or more branches (cannot include the source).</small>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold d-block mb-1">Merge Mode</label>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="merge_mode" id="mergeSkip" value="skip" checked>
+                                        <label class="form-check-label" for="mergeSkip">Skip if exists</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="merge_mode" id="mergeOverwrite" value="overwrite">
+                                        <label class="form-check-label" for="mergeOverwrite">Overwrite if exists</label>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button class="btn btn-primary" id="runCloneBtn">
+                            <i class="fas fa-play-circle me-1"></i> Run Clone
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
         <!-- Modal HTML -->
         <div class="modal fade" id="info-modal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
             <div class="modal-dialog">
@@ -278,6 +342,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
 
@@ -640,5 +705,141 @@
                 $('#saving_amount').closest('.col-md-6').show();
             }
         }
+    </script>
+
+    <script>
+        (function() {
+            const modalEl = document.getElementById('cloneProductsModal');
+            const $source = $('#source_branch_id');
+            const $targets = $('#target_branch_ids');
+
+            // Open modal
+            $('#openCloneModal').on('click', function() {
+                $('#cloneProductsModal').modal('show');
+            });
+
+            function initSelect2() {
+                const $modal = $('#cloneProductsModal');
+
+                $('#source_branch_id').select2({
+                    placeholder: 'Select source branch',
+                    width: '100%',
+                    dropdownParent: $modal
+                });
+
+                $('#target_branch_ids').select2({
+                    placeholder: 'Select target branches',
+                    width: '100%',
+                    dropdownParent: $modal
+                });
+            }
+
+
+            // Load branches (id, text)
+            async function loadBranches() {
+                try {
+                    const res = await fetch('{{ route('api.branches') }}');
+                    const data = await res.json();
+
+                    $source.empty();
+                    $targets.empty();
+
+                    $source.append(new Option('— Select —', '', true, false)).trigger('change');
+                    data.forEach(b => {
+                        $source.append(new Option(b.text, b.id, false, false));
+                        $targets.append(new Option(b.text, b.id, false, false));
+                    });
+
+                    $source.trigger('change');
+                    $targets.trigger('change');
+                } catch (e) {
+                    console.error(e);
+                    Swal.fire('Error', 'Failed to load branches.', 'error');
+                }
+            }
+
+            // Prevent selecting source in targets
+            $source.on('change', function() {
+                const src = $(this).val();
+                const selectedTargets = $targets.val() || [];
+                if (src && selectedTargets.includes(src)) {
+                    $targets.val(selectedTargets.filter(v => v !== src)).trigger('change');
+                }
+            });
+
+            // Submit
+            $('#runCloneBtn').on('click', async function() {
+                const source_branch_id = $source.val();
+                const target_branch_ids = $targets.val() || [];
+                const merge_mode = $('input[name="merge_mode"]:checked').val();
+                const token = $('meta[name="csrf-token"]').attr('content') || $('[name="_token"]').val();
+
+                if (!source_branch_id) {
+                    Swal.fire('Required', 'Please select a source branch.', 'warning'); return;
+                }
+                if (target_branch_ids.length === 0) {
+                    Swal.fire('Required', 'Please select at least one target branch.', 'warning'); return;
+                }
+                if (target_branch_ids.includes(source_branch_id)) {
+                    Swal.fire('Invalid', 'Source branch cannot be a target.', 'error'); return;
+                }
+
+                try {
+                    const resp = await fetch('{{ route('loan-category.clone') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token
+                        },
+                        body: JSON.stringify({
+                            source_branch_id,
+                            target_branch_ids,
+                            merge_mode
+                            // If you ever want to restrict to certain product IDs:
+                            // category_ids: [/* IDs here */]
+                        })
+                    });
+
+                    const json = await resp.json();
+
+                    if (!resp.ok) {
+                        throw new Error(json?.message || 'Request failed');
+                    }
+
+                    // Show brief summary
+                    let html = '';
+                    if (json?.summary?.per_target) {
+                        html += '<ul class="text-start">';
+                        Object.entries(json.summary.per_target).forEach(([bid, stats]) => {
+                            if (stats.skipped_same_branch) {
+                                html += `<li><b>Branch ${bid}</b>: skipped (same as source)</li>`;
+                            } else {
+                                html += `<li><b>Branch ${bid}</b>: created ${stats.created || 0}, overwritten ${stats.overwritten || 0}, skipped ${stats.skipped || 0}</li>`;
+                            }
+                        });
+                        html += '</ul>';
+                    }
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Clone complete',
+                        html: html || 'Products cloned/merged successfully.'
+                    });
+
+                    $('#cloneProductsModal').modal('hide');
+
+                } catch (err) {
+                    console.error(err);
+                    Swal.fire('Error', err.message || 'Clone failed.', 'error');
+                }
+            });
+
+            // On modal show, init and load
+            $('#cloneProductsModal').on('shown.bs.modal', function () {
+                initSelect2();
+                loadBranches();
+            });
+
+        })();
     </script>
 @endsection

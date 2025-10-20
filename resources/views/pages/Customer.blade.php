@@ -316,7 +316,7 @@
                                     </div>
                                 </div>
                             </div>
-<hr>
+                            <hr>
 
                             <div class="row">
                                 <div class="card border-secondary border">
@@ -448,7 +448,7 @@
 
 
                             <button type="button" class="btn btn-success" style="float: right" onclick="validateSubmitCustomer(event)"><i
-                                    class="bi bi-save"></i>&nbsp;&nbsp;Save Customer</button>
+                                        class="bi bi-save"></i>&nbsp;&nbsp;Save Customer</button>
                         </div>
 
 
@@ -511,13 +511,13 @@
 
 
             @if($company->customer_num_type == "Format")
-                // Get the original format string
-                var originalFormat = '{{ $newnum }}';
+            // Get the original format string
+            var originalFormat = '{{ $newnum }}';
 
 
-                // Update the label with the new formatted string
-                document.getElementById('formatted_num').innerText = originalFormat.replace('Customize No', value);
-                document.getElementById('formatted_num_use').innerText = originalFormat.replace('Customize No', value);
+            // Update the label with the new formatted string
+            document.getElementById('formatted_num').innerText = originalFormat.replace('Customize No', value);
+            document.getElementById('formatted_num_use').innerText = originalFormat.replace('Customize No', value);
             @endif
 
 
@@ -861,7 +861,7 @@
                     const dropdown = $('#otherDocDescription');
                     dropdown.empty();
                     dropdown.append('<option value="">Select Document Type</option>');
-                    
+
                     documentTypes.forEach(function(type) {
                         dropdown.append(`<option value="${type}">${type}</option>`);
                     });
@@ -872,7 +872,7 @@
                     const dropdown = $('#otherDocDescription');
                     dropdown.empty();
                     dropdown.append('<option value="">Select Document Type</option>');
-                    
+
                     getDefaultDocumentTypes().forEach(function(type) {
                         dropdown.append(`<option value="${type}">${type}</option>`);
                     });
