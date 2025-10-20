@@ -1254,6 +1254,33 @@ class ApprovalController extends Controller
                 }
             }
             
+            // Add checkbox fields with checkmark icons
+            $checkboxFields = [
+                'lending_officer' => 'Lending Officer',
+                'collector' => 'Collecting Officer',
+                'cashier' => 'Cashier',
+                'branch_access' => 'Branch Access',
+            ];
+            
+            foreach ($checkboxFields as $key => $label) {
+                if (isset($updateData[$key])) {
+                    $oldVal = ($user->$key ?? 0) == 1;
+                    $newVal = ($updateData[$key] ?? 0) == 1;
+                    
+                    if ($oldVal != $newVal) {
+                        $oldDisplay = $oldVal ? '<i class="ri-checkbox-circle-fill text-success"></i> Yes' : '<i class="ri-close-circle-fill text-danger"></i> No';
+                        $newDisplay = $newVal ? '<i class="ri-checkbox-circle-fill text-success"></i> Yes' : '<i class="ri-close-circle-fill text-danger"></i> No';
+                        
+                        $html .= '
+                        <tr>
+                            <th>' . htmlspecialchars($label) . '</th>
+                            <td>' . $oldDisplay . '</td>
+                            <td><strong class="text-primary">' . $newDisplay . '</strong></td>
+                        </tr>';
+                    }
+                }
+            }
+            
             // Check for branch changes
             if (isset($requestData['branches_changed']) && $requestData['branches_changed']) {
                 $html .= '
