@@ -806,6 +806,12 @@ Route::get('/approval/designation-details/{id}','\App\Http\Controllers\ApprovalC
 Route::get('/approval/user-creation-details/{id}','\App\Http\Controllers\ApprovalController@getUserCreationDetails')->name('approval.user_creation_details');
 Route::get('/approval/user-details-update-details/{id}','\App\Http\Controllers\ApprovalController@getUserDetailsUpdateDetails')->name('approval.user_details_update_details');
 Route::get('/approval/user-privilege-change-details/{id}','\App\Http\Controllers\ApprovalController@getUserPrivilegeChangeDetails')->name('approval.user_privilege_change_details');
+Route::get('/approval/customer-creation-details/{id}','\App\Http\Controllers\ApprovalController@getCustomerCreationDetails')->name('approval.customer_creation_details');
+Route::get('/approval/customer-update-details/{id}','\App\Http\Controllers\ApprovalController@getCustomerDetailsUpdateDetails')->name('approval.customer_update_details');
+Route::get('/approval/expense-delete-details/{id}','\App\Http\Controllers\ApprovalController@getExpenseDeleteDetails')->name('approval.expense_delete_details');
+Route::get('/approval/customer-status-change-details/{id}','\App\Http\Controllers\ApprovalController@getCustomerStatusChangeDetails')->name('approval.customer_status_change_details');
+Route::get('/approval/customer-document-delete-details/{id}','\App\Http\Controllers\ApprovalController@getCustomerDocumentDeleteDetails')->name('approval.customer_document_delete_details');
+Route::get('/approval/loan-installment-modification-details/{id}','\App\Http\Controllers\ApprovalController@getLoanInstallmentModificationDetails')->name('approval.loan_installment_modification_details');
 Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalController@undoRejection')->name('approval.undo_rejection');
 
 

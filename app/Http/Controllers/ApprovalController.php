@@ -66,11 +66,15 @@ class ApprovalController extends Controller
             ->where('ar.status', 0); // Pending status
             
         // Apply branch filtering
-        if ($branch_access == 0) {
+        // If not head office (-1), force filter to user's branch only
+        if ($user_branch_id != -1) {
+            // Non-head office users can only see their own branch data
             $query->where('ar.branch_id', $user_branch_id);
         } elseif (!empty($selectedBranch)) {
+            // Head office can filter by selected branch
             $query->where('ar.branch_id', $selectedBranch);
         }
+        // If head office and no branch selected, show all branches
         
         // Apply type filtering
         if (!empty($selectedType)) {
@@ -144,11 +148,15 @@ class ApprovalController extends Controller
             ->where('ar.status', 1); // Approved status
             
         // Apply branch filtering
-        if ($branch_access == 0) {
+        // If not head office (-1), force filter to user's branch only
+        if ($user_branch_id != -1) {
+            // Non-head office users can only see their own branch data
             $query->where('ar.branch_id', $user_branch_id);
         } elseif (!empty($selectedBranch)) {
+            // Head office can filter by selected branch
             $query->where('ar.branch_id', $selectedBranch);
         }
+        // If head office and no branch selected, show all branches
         
         // Apply type filtering
         if (!empty($selectedType)) {
@@ -230,11 +238,15 @@ class ApprovalController extends Controller
             ->where('ar.status', 2); // Rejected status
             
         // Apply branch filtering
-        if ($branch_access == 0) {
+        // If not head office (-1), force filter to user's branch only
+        if ($user_branch_id != -1) {
+            // Non-head office users can only see their own branch data
             $query->where('ar.branch_id', $user_branch_id);
         } elseif (!empty($selectedBranch)) {
+            // Head office can filter by selected branch
             $query->where('ar.branch_id', $selectedBranch);
         }
+        // If head office and no branch selected, show all branches
         
         // Apply type filtering
         if (!empty($selectedType)) {
@@ -339,36 +351,49 @@ class ApprovalController extends Controller
             // Handle User Details Update (Type 102)
             if ($approval->typeid == 102) {
                 $requestData = json_decode($approval->data, true);
-                $updateData = $requestData['update_data'];
-                $newBranches = $requestData['new_branches'];
-                $branchesChanged = $requestData['branches_changed'];
                 
-                $userId = $updateData['user_id'];
-                
-                // Update main user record
-                DB::table('user')
-                    ->where('id', $userId)
-                    ->update([
-                        'Epf_no' => $updateData['Epf_no'],
-                        'Designation' => $updateData['Designation'],
-                        'Nic' => $updateData['Nic'],
-                        'Full_Name' => $updateData['Full_Name'],
-                        'TP' => $updateData['TP'],
-                        'lending_officer' => $updateData['lending_officer'],
-                        'collector' => $updateData['collector'],
-                        'branch_id' => $updateData['branch_id'],
-                        'branch_access' => $updateData['branch_access'],
-                        'cashier' => $updateData['cashier'],
-                    ]);
-                
-                // Sync branches if changed
-                if ($branchesChanged) {
-                    DB::table('user_has_branches')->where('user_id', $userId)->delete();
-                    foreach ($newBranches as $branch_id) {
-                        DB::table('user_has_branches')->insert([
-                            'user_id' => $userId,
-                            'branch_id' => (int)$branch_id,
+                // Check if this is a status-only change or full update
+                if (isset($requestData['new_data']) && isset($requestData['new_data']['Status'])) {
+                    // Status-only change (active/inactive toggle)
+                    $userId = $requestData['user_id'];
+                    $newStatus = $requestData['new_data']['Status'];
+                    
+                    DB::table('user')
+                        ->where('id', $userId)
+                        ->update(['Status' => $newStatus]);
+                } else {
+                    // Full user detail update
+                    $updateData = $requestData['update_data'];
+                    $newBranches = $requestData['new_branches'];
+                    $branchesChanged = $requestData['branches_changed'];
+                    
+                    $userId = $updateData['user_id'];
+                    
+                    // Update main user record
+                    DB::table('user')
+                        ->where('id', $userId)
+                        ->update([
+                            'Epf_no' => $updateData['Epf_no'],
+                            'Designation' => $updateData['Designation'],
+                            'Nic' => $updateData['Nic'],
+                            'Full_Name' => $updateData['Full_Name'],
+                            'TP' => $updateData['TP'],
+                            'lending_officer' => $updateData['lending_officer'],
+                            'collector' => $updateData['collector'],
+                            'branch_id' => $updateData['branch_id'],
+                            'branch_access' => $updateData['branch_access'],
+                            'cashier' => $updateData['cashier'],
                         ]);
+                    
+                    // Sync branches if changed
+                    if ($branchesChanged) {
+                        DB::table('user_has_branches')->where('user_id', $userId)->delete();
+                        foreach ($newBranches as $branch_id) {
+                            DB::table('user_has_branches')->insert([
+                                'user_id' => $userId,
+                                'branch_id' => (int)$branch_id,
+                            ]);
+                        }
                     }
                 }
             }
@@ -442,6 +467,160 @@ class ApprovalController extends Controller
                 }
             }
             
+            // Handle Customer Creation (Type 301)
+            if ($approval->typeid == 301) {
+                $requestData = json_decode($approval->data, true);
+                $customerData = $requestData['customer_data'];
+                
+                // Create customer using Eloquent model
+                $customer = new \App\Models\Customer();
+                foreach ($customerData as $key => $value) {
+                    $customer->$key = $value;
+                }
+                
+                if ($customer->save()) {
+                    $id = $customer->id;
+                    
+                    // Generate customer number
+                    customer_number($id);
+                    
+                    // Create customer log
+                    DB::table('customer_log')->insert([
+                        'customer_id' => $id,
+                        'customer_name' => $customerData['First_Name'] . ' ' . $customerData['Last_Name'],
+                        'date' => date('Y-m-d'),
+                        'time' => date('H:i:s'),
+                        'description' => 'Customer registration for ' . $customerData['First_Name'] . ' ' . $customerData['Last_Name'],
+                        'description_id' => $id,
+                        'comment' => ' ',
+                        'type' => 'Customer Registration',
+                        'user' => session('userid'),
+                        'branch_id' => $approval->branch_id,
+                    ]);
+                    
+                    // Send SMS if template exists
+                    $sms_template = DB::table('sms_template')
+                        ->where('type', 'customer_registration')
+                        ->where('status', 1)
+                        ->where('branch_id', $approval->branch_id)
+                        ->first();
+                    
+                    if ($sms_template) {
+                        $customer_table = DB::table('customer')->where('idCustomer', $id)->first();
+                        $placeholders = [
+                            '@Member_No@' => $customer_table->cus_number,
+                            '@Member_Name@' => $customer_table->First_Name . ' ' . $customer_table->Last_Name,
+                        ];
+                        
+                        $sms_text = $sms_template->template;
+                        foreach ($placeholders as $placeholder => $value) {
+                            $sms_text = str_replace($placeholder, $value, $sms_text);
+                        }
+                        
+                        // Log SMS (assuming smsLogController exists)
+                        // $this->smsLogController->index($id, $sms_text, "Customer Registration");
+                    }
+                }
+            }
+            
+            // Handle Customer Details Update (Type 302)
+            if ($approval->typeid == 302) {
+                $requestData = json_decode($approval->data, true);
+                $customerId = $requestData['customer_id'];
+                $newData = $requestData['new_data'];
+                
+                // Update customer with new data (direct DB update for reliability)
+                DB::table('customer')
+                    ->where('idCustomer', $customerId)
+                    ->where('branch_id', $approval->branch_id)
+                    ->update($newData);
+                
+                // Regenerate customer number
+                customer_number($customerId);
+                
+                // Create customer log
+                DB::table('customer_log')->insert([
+                    'customer_id' => $customerId,
+                    'customer_name' => $newData['First_Name'] . ' ' . $newData['Last_Name'],
+                    'date' => date('Y-m-d'),
+                    'time' => date('H:i:s'),
+                    'description' => 'Customer Update',
+                    'description_id' => $customerId,
+                    'comment' => ' ',
+                    'type' => 'Customer Update',
+                    'user' => session('userid'),
+                    'branch_id' => $approval->branch_id,
+                ]);
+            }
+            
+            // Handle Customer Status Change (Type 304)
+            if ($approval->typeid == 304) {
+                $requestData = json_decode($approval->data, true);
+                $customerId = $requestData['customer_id'];
+                $newStatus = $requestData['new_status'];
+                $note = $requestData['note'];
+                $actionType = $requestData['action_type'];
+                $actionDescription = $requestData['action_description'];
+                
+                // Update customer status
+                DB::table('customer')
+                    ->where('idCustomer', $customerId)
+                    ->where('branch_id', $approval->branch_id)
+                    ->update([
+                        'Status' => $newStatus,
+                        'Comment' => $note
+                    ]);
+                
+                // Get customer details for logging
+                $customer = DB::table('customer')
+                    ->where('idCustomer', $customerId)
+                    ->where('branch_id', $approval->branch_id)
+                    ->first();
+                
+                // Create customer log
+                if ($customer) {
+                    DB::table('customer_log')->insert([
+                        'customer_id' => $customerId,
+                        'customer_name' => $customer->First_Name . ' ' . $customer->Last_Name,
+                        'date' => date('Y-m-d'),
+                        'time' => date('H:i:s'),
+                        'description' => $note ?? $actionDescription,
+                        'description_id' => $customerId,
+                        'comment' => ' ',
+                        'type' => $actionType,
+                        'user' => session('userid'),
+                        'branch_id' => $approval->branch_id,
+                    ]);
+                }
+            }
+            
+            // Handle Customer Document Upload/Delete (Type 305)
+            if ($approval->typeid == 305) {
+                $requestData = json_decode($approval->data, true);
+                
+                // Check if this is a delete or upload request
+                if (isset($requestData['document_id'])) {
+                    // Document Delete
+                    $documentId = $requestData['document_id'];
+                    DB::table('customer_documents')
+                        ->where('idCustomer_Documents', $documentId)
+                        ->where('branch_id', $approval->branch_id)
+                        ->delete();
+                } else if (isset($requestData['document_path'])) {
+                    // Document Upload
+                    $customerId = $requestData['customer_id'];
+                    $description = $requestData['description'];
+                    $documentPath = $requestData['document_path'];
+                    
+                    DB::table('customer_documents')->insert([
+                        'Customer_idCustomer' => $customerId,
+                        'Description' => $description,
+                        'Path' => $documentPath,
+                        'branch_id' => $approval->branch_id,
+                    ]);
+                }
+            }
+            
             // Handle Loan Approval (Type 401)
             if ($approval->typeid == 401) {
                 $requestData = json_decode($approval->data, true);
@@ -451,6 +630,18 @@ class ApprovalController extends Controller
                     ->where('idCustomer_Loan', $loan_id)
                     ->where('branch_id', $approval->branch_id)
                     ->update(['Status' => '-1']);
+            }
+            
+            // Handle Loan Approval (Type 401)
+            if ($approval->typeid == 401) {
+                $requestData = json_decode($approval->data, true);
+                $loan_id = $requestData['loan_id'];
+                
+                // Update loan status from -3 (pending HO approval) to 0 (current/active loan)
+                DB::table('customer_loan')
+                    ->where('idCustomer_Loan', $loan_id)
+                    ->where('branch_id', $approval->branch_id)
+                    ->update(['Status' => '0']);
             }
             
             // Handle Loan Rejection (Type 402)
@@ -485,6 +676,83 @@ class ApprovalController extends Controller
                 ];
                 
                 insertWithBranch('customer_log', $logData);
+            }
+            
+            // Handle Loan Installment Modification (Type 403)
+            if ($approval->typeid == 403) {
+                $requestData = json_decode($approval->data, true);
+                $loanId = $requestData['loan_id'];
+                $installments = $requestData['installments'];
+                
+                // Update each installment
+                foreach ($installments as $installment) {
+                    DB::table('installments')
+                        ->where('Customer_Loan_idCustomer_Loan', $loanId)
+                        ->where('No', $installment['no'])
+                        ->where('branch_id', $approval->branch_id)
+                        ->update([
+                            'Installment_Date' => $installment['installment_date'],
+                            'Panelty_date' => $installment['penalty_date'],
+                        ]);
+                }
+            }
+            
+            // Handle Expense Delete (Type 603)
+            if ($approval->typeid == 603) {
+                $requestData = json_decode($approval->data, true);
+                $expenseId = $requestData['expense_id'];
+                $expenseData = $requestData['expense_data'];
+                $bankIdData = $requestData['bank_id_data'];
+                
+                // Re-fetch to ensure data is current
+                $last_expenses = DB::table('expences')
+                    ->where('id', $expenseId)
+                    ->where('branch_id', $approval->branch_id)
+                    ->first();
+                
+                if ($last_expenses) {
+                    $bank_id = DB::table('company_bank_accounts')
+                        ->where('acc_type_group', 'Expenses')
+                        ->where('Idbank', $last_expenses->category_id)
+                        ->first();
+                    
+                    if ($bank_id) {
+                        $reason = 'Delete Expense : (' . $last_expenses->reason . ')';
+                        
+                        // Create bank logs for deletion
+                        DB::table('bank_log')->insert([
+                            'bank_id' => $last_expenses->bank_id,
+                            'type' => 'Expenses',
+                            'reason' => $reason,
+                            'cheque_no' => '-',
+                            'date_time' => now(),
+                            'debit_credit' => 'debit',
+                            'amount' => $last_expenses->amount,
+                            'other_bank_id' => $bank_id->Idbank,
+                            'user_id' => session('userid'),
+                            'branch_id' => $approval->branch_id,
+                        ]);
+                        
+                        DB::table('bank_log')->insert([
+                            'bank_id' => $bank_id->Idbank,
+                            'type' => 'Expenses',
+                            'reason' => $reason,
+                            'cheque_no' => '-',
+                            'date_time' => now(),
+                            'debit_credit' => 'credit',
+                            'amount' => $last_expenses->amount,
+                            'other_bank_id' => $last_expenses->bank_id,
+                            'user_id' => session('userid'),
+                            'branch_id' => $approval->branch_id,
+                        ]);
+                    }
+                    
+                    // Delete the expense
+                    DB::table('expences')
+                        ->where('id', $expenseId)
+                        ->where('branch_id', $approval->branch_id)
+                        ->delete();
+                }
             }
             
             // Update approval status
@@ -899,6 +1167,57 @@ class ApprovalController extends Controller
             }
             
             $requestData = json_decode($approval->data, true);
+            
+            // Check if this is a status-only change or full update
+            $isStatusChange = isset($requestData['new_data']) && isset($requestData['new_data']['Status']);
+            
+            if ($isStatusChange) {
+                // Status-only change (active/inactive toggle)
+                $userId = $requestData['user_id'];
+                $oldData = $requestData['old_data'];
+                $newStatus = $requestData['new_data']['Status'];
+                $actionType = $requestData['action_type'] ?? 'Status Change';
+                
+                $user = DB::table('user')->where('id', $userId)->first();
+                $userName = $user ? $user->Full_Name : ($oldData['Full_Name'] ?? 'Unknown');
+                $statusText = $newStatus == '1' ? 'Active' : 'Inactive';
+                $oldStatusText = ($oldData['Status'] ?? '0') == '1' ? 'Active' : 'Inactive';
+                
+                $html = '
+                <div class="alert alert-info">
+                    <i class="ri-user-settings-line me-2"></i><strong>' . htmlspecialchars($actionType) . '</strong>
+                    <p class="mb-0 mt-2"><small>Review the status change before approving</small></p>
+                </div>
+                
+                <h6 class="mb-3">User: <strong>' . htmlspecialchars($userName) . '</strong></h6>
+                
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 25%;">Field</th>
+                            <th style="width: 37.5%;">Current Value</th>
+                            <th style="width: 37.5%;">New Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th>Status</th>
+                            <td><span class="badge ' . ($oldStatusText == 'Active' ? 'bg-success' : 'bg-danger') . '">' . $oldStatusText . '</span></td>
+                            <td><strong><span class="badge ' . ($statusText == 'Active' ? 'bg-success' : 'bg-danger') . '">' . $statusText . '</span></strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="mt-3">
+                    <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
+                    <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
+                </div>
+                ';
+                
+                return response()->json(['success' => true, 'html' => $html]);
+            }
+            
+            // Full user detail update
             $updateData = $requestData['update_data'] ?? [];
             
             // Get current user data for comparison
@@ -942,6 +1261,33 @@ class ApprovalController extends Controller
                             <th>' . htmlspecialchars($label) . '</th>
                             <td>' . htmlspecialchars($oldVal) . '</td>
                             <td><strong class="text-primary">' . htmlspecialchars($newVal) . '</strong></td>
+                        </tr>';
+                    }
+                }
+            }
+            
+            // Add checkbox fields with checkmark icons
+            $checkboxFields = [
+                'lending_officer' => 'Lending Officer',
+                'collector' => 'Collecting Officer',
+                'cashier' => 'Cashier',
+                'branch_access' => 'Branch Access',
+            ];
+            
+            foreach ($checkboxFields as $key => $label) {
+                if (isset($updateData[$key])) {
+                    $oldVal = ($user->$key ?? 0) == 1;
+                    $newVal = ($updateData[$key] ?? 0) == 1;
+                    
+                    if ($oldVal != $newVal) {
+                        $oldDisplay = $oldVal ? '<i class="ri-checkbox-circle-fill text-success"></i> Yes' : '<i class="ri-close-circle-fill text-danger"></i> No';
+                        $newDisplay = $newVal ? '<i class="ri-checkbox-circle-fill text-success"></i> Yes' : '<i class="ri-close-circle-fill text-danger"></i> No';
+                        
+                        $html .= '
+                        <tr>
+                            <th>' . htmlspecialchars($label) . '</th>
+                            <td>' . $oldDisplay . '</td>
+                            <td><strong class="text-primary">' . $newDisplay . '</strong></td>
                         </tr>';
                     }
                 }
@@ -1052,6 +1398,629 @@ class ApprovalController extends Controller
             <div class="alert alert-info mt-3">
                 <i class="ri-information-line me-2"></i>
                 <strong>Note:</strong> Approving this will update the user\'s access privileges.
+            </div>
+            ';
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getCustomerCreationDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 301) {
+                return response()->json(['success' => false, 'message' => 'Customer creation request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $customerData = $requestData['customer_data'] ?? [];
+            
+            $html = '
+            <div class="alert alert-info">
+                <i class="ri-user-add-line me-2"></i><strong>New Customer Creation Request</strong>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="mb-3"><i class="ri-user-line me-2"></i>Personal Information</h6>
+                    <table class="table table-bordered table-sm">
+                        <tbody>
+                            <tr>
+                                <th style="width: 45%;">Full Name</th>
+                                <td><strong>' . htmlspecialchars(($customerData['Title'] ?? '') . ' ' . ($customerData['First_Name'] ?? '') . ' ' . ($customerData['Last_Name'] ?? '')) . '</strong></td>
+                            </tr>
+                            <tr>
+                                <th>NIC</th>
+                                <td>' . htmlspecialchars($customerData['Nic'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Gender</th>
+                                <td>' . htmlspecialchars($customerData['Gender'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Date of Birth</th>
+                                <td>' . htmlspecialchars($customerData['Dob'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Civil Status</th>
+                                <td>' . htmlspecialchars($customerData['civil_status'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Risk Level</th>
+                                <td><span class="badge bg-warning">' . htmlspecialchars($customerData['Customer_Risk_Level'] ?? 'N/A') . '</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="col-md-6">
+                    <h6 class="mb-3"><i class="ri-contacts-line me-2"></i>Contact Information</h6>
+                    <table class="table table-bordered table-sm">
+                        <tbody>
+                            <tr>
+                                <th style="width: 45%;">Email</th>
+                                <td>' . htmlspecialchars($customerData['Email'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Contact No</th>
+                                <td>' . htmlspecialchars($customerData['Contact_No'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Contact No 2</th>
+                                <td>' . htmlspecialchars($customerData['contact_number_2'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Landline</th>
+                                <td>' . htmlspecialchars($customerData['Landline'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Current Address</th>
+                                <td>' . htmlspecialchars(($customerData['Address'] ?? '') . ' ' . ($customerData['Address_02'] ?? '') . ' ' . ($customerData['Address_03'] ?? '')) . '</td>
+                            </tr>
+                            <tr>
+                                <th>City / State</th>
+                                <td>' . htmlspecialchars(($customerData['City'] ?? '') . ' / ' . ($customerData['State'] ?? '')) . '</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <h6 class="mb-3"><i class="ri-briefcase-line me-2"></i>Occupation Information</h6>
+                    <table class="table table-bordered table-sm">
+                        <tbody>
+                            <tr>
+                                <th style="width: 45%;">Job Position</th>
+                                <td>' . htmlspecialchars($customerData['occu_job_position'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Monthly Salary</th>
+                                <td><strong>' . htmlspecialchars($customerData['occu_monthly_salary'] ?? 'N/A') . '</strong></td>
+                            </tr>
+                            <tr>
+                                <th>Office Address</th>
+                                <td>' . htmlspecialchars(($customerData['occu_address_01'] ?? '') . ' ' . ($customerData['occu_address_02'] ?? '')) . '</td>
+                            </tr>
+                            <tr>
+                                <th>Office Contact</th>
+                                <td>' . htmlspecialchars($customerData['occu_contact_no'] ?? 'N/A') . '</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="col-md-6">
+                    <h6 class="mb-3"><i class="ri-shield-user-line me-2"></i>Guardian Information</h6>
+                    <table class="table table-bordered table-sm">
+                        <tbody>
+                            <tr>
+                                <th style="width: 45%;">Guardian Name</th>
+                                <td>' . htmlspecialchars(($customerData['Gua_title'] ?? '') . ' ' . ($customerData['Gua_name'] ?? 'N/A')) . '</td>
+                            </tr>
+                            <tr>
+                                <th>NIC</th>
+                                <td>' . htmlspecialchars($customerData['Gua_nic'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Relation</th>
+                                <td>' . htmlspecialchars($customerData['Gua_relation'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Occupation</th>
+                                <td>' . htmlspecialchars($customerData['Gua_occu'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Contact</th>
+                                <td>' . htmlspecialchars($customerData['Gua_contact'] ?? 'N/A') . '</td>
+                            </tr>
+                            <tr>
+                                <th>Address</th>
+                                <td>' . htmlspecialchars($customerData['Gua_address'] ?? 'N/A') . '</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
+                <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
+            </div>
+            ';
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getCustomerDetailsUpdateDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 302) {
+                return response()->json(['success' => false, 'message' => 'Customer update request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $oldData = $requestData['old_data'] ?? [];
+            $newData = $requestData['new_data'] ?? [];
+            
+            $html = '
+            <div class="alert alert-warning">
+                <i class="ri-user-settings-line me-2"></i><strong>Customer Details Update Request</strong>
+                <p class="mb-0 mt-2"><small>Review the changes before approving</small></p>
+            </div>
+            
+            <h6 class="mb-3">Customer: <strong>' . htmlspecialchars(($newData['First_Name'] ?? '') . ' ' . ($newData['Last_Name'] ?? '')) . '</strong></h6>
+            
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 25%;">Field</th>
+                        <th style="width: 37.5%;">Current Value</th>
+                        <th style="width: 37.5%;">New Value</th>
+                    </tr>
+                </thead>
+                <tbody>';
+            
+            $fields = [
+                'First_Name' => 'First Name',
+                'Last_Name' => 'Last Name',
+                'Email' => 'Email',
+                'Contact_No' => 'Contact Number',
+                'Nic' => 'NIC',
+                'Gender' => 'Gender',
+                'Dob' => 'Date of Birth',
+                'Address' => 'Address Line 1',
+                'City' => 'City',
+                'State' => 'State',
+                'Landline' => 'Landline',
+                'Gua_name' => 'Guardian Name',
+                'Gua_contact' => 'Guardian Contact',
+                'occu_job_position' => 'Job Position',
+                'occu_monthly_salary' => 'Monthly Salary',
+                'Cus_phto' => 'Customer Photo',
+            ];
+            
+            $changesCount = 0;
+            foreach ($fields as $key => $label) {
+                if (isset($newData[$key])) {
+                    $oldVal = $oldData[$key] ?? 'N/A';
+                    $newVal = $newData[$key] ?? 'N/A';
+                    
+                    if ($oldVal != $newVal) {
+                        $changesCount++;
+                        
+                        // Special handling for photo field
+                        if ($key === 'Cus_phto') {
+                            $oldDisplay = '<span class="text-muted">No photo</span>';
+                            if ($oldVal && $oldVal !== 'N/A') {
+                                $oldPhotoUrl = '/storage/' . $oldVal;
+                                $oldDisplay = '<img src="' . htmlspecialchars($oldPhotoUrl) . '" alt="Current Photo" style="max-width: 150px; max-height: 150px; border: 2px solid #ddd; border-radius: 5px; cursor: pointer;" onclick="window.open(this.src, \'_blank\')"><br><small class="text-muted">Click to enlarge</small>';
+                            }
+                            
+                            $newDisplay = '<span class="badge bg-success">📷 New photo</span>';
+                            if ($newVal && $newVal !== 'N/A') {
+                                $newPhotoUrl = '/storage/' . $newVal;
+                                $newDisplay = '<img src="' . htmlspecialchars($newPhotoUrl) . '" alt="New Photo" style="max-width: 150px; max-height: 150px; border: 2px solid #28a745; border-radius: 5px; cursor: pointer;" onclick="window.open(this.src, \'_blank\')"><br><small class="text-success">📷 New photo - Click to enlarge</small>';
+                            }
+                            
+                            $html .= '
+                            <tr>
+                                <th>' . htmlspecialchars($label) . '</th>
+                                <td style="padding: 10px;">' . $oldDisplay . '</td>
+                                <td style="padding: 10px;">' . $newDisplay . '</td>
+                            </tr>';
+                        } else {
+                            $html .= '
+                            <tr>
+                                <th>' . htmlspecialchars($label) . '</th>
+                                <td>' . htmlspecialchars($oldVal) . '</td>
+                                <td><strong class="text-primary">' . htmlspecialchars($newVal) . '</strong></td>
+                            </tr>';
+                        }
+                    }
+                }
+            }
+            
+            if ($changesCount == 0) {
+                $html .= '<tr><td colspan="3" class="text-center text-muted">No changes detected</td></tr>';
+            }
+            
+            $html .= '
+                </tbody>
+            </table>
+            
+            <div class="mt-3">
+                <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
+                <p class="text-muted mb-1"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
+                <p class="text-muted mb-0"><strong>Total Changes:</strong> ' . $changesCount . ' field(s)</p>
+            </div>
+            ';
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getExpenseDeleteDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 603) {
+                return response()->json(['success' => false, 'message' => 'Expense delete request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $expenseData = $requestData['expense_data'] ?? [];
+            $bankIdData = $requestData['bank_id_data'] ?? [];
+            
+            $html = '
+            <div class="alert alert-danger">
+                <i class="ri-delete-bin-line me-2"></i><strong>Expense Delete Request</strong>
+                <p class="mb-0 mt-2"><small>Review the expense details before approving deletion</small></p>
+            </div>
+            
+            <h6 class="mb-3">Expense Details</h6>
+            
+            <table class="table table-bordered">
+                <tbody>
+                    <tr>
+                        <th style="width: 35%;">Category</th>
+                        <td><strong>' . htmlspecialchars($bankIdData['Bank_Name'] ?? 'N/A') . '</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Reason/Description</th>
+                        <td>' . htmlspecialchars($expenseData['reason'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Amount</th>
+                        <td><strong class="text-danger">Rs. ' . number_format($expenseData['amount'] ?? 0, 2) . '</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Payment Type</th>
+                        <td>' . htmlspecialchars($expenseData['payment_type'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Date</th>
+                        <td>' . htmlspecialchars($expenseData['date'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Cheque Number</th>
+                        <td>' . htmlspecialchars($expenseData['cheque_no'] ?? '-') . '</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="alert alert-warning mt-3">
+                <strong>⚠️ Warning:</strong> Approving this request will permanently delete this expense entry and create reversal bank log entries.
+            </div>
+            
+            <div class="mt-3">
+                <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
+                <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
+            </div>
+            ';
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getCustomerStatusChangeDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 304) {
+                return response()->json(['success' => false, 'message' => 'Status change request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $customerData = $requestData['customer_data'] ?? [];
+            $oldStatus = $requestData['old_status'];
+            $newStatus = $requestData['new_status'];
+            $note = $requestData['note'] ?? '';
+            $actionType = $requestData['action_type'];
+            $actionDescription = $requestData['action_description'];
+            
+            $oldStatusText = $oldStatus == 1 ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-danger">Blacklisted</span>';
+            $newStatusText = $newStatus == 1 ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-danger">Blacklisted</span>';
+            
+            $alertClass = $newStatus == 0 ? 'alert-danger' : 'alert-success';
+            $iconClass = $newStatus == 0 ? 'ri-user-unfollow-line' : 'ri-user-follow-line';
+            
+            $html = '
+            <div class="alert ' . $alertClass . '">
+                <i class="' . $iconClass . ' me-2"></i><strong>' . htmlspecialchars($actionType) . ' Request</strong>
+                <p class="mb-0 mt-2"><small>Review customer status change before approving</small></p>
+            </div>
+            
+            <h6 class="mb-3">Customer Information</h6>
+            
+            <table class="table table-bordered">
+                <tbody>
+                    <tr>
+                        <th style="width: 35%;">Customer Name</th>
+                        <td><strong>' . htmlspecialchars(($customerData['First_Name'] ?? '') . ' ' . ($customerData['Last_Name'] ?? '')) . '</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Customer Number</th>
+                        <td>' . htmlspecialchars($customerData['cus_number'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>NIC</th>
+                        <td>' . htmlspecialchars($customerData['Nic'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Contact Number</th>
+                        <td>' . htmlspecialchars($customerData['Contact_No'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Current Status</th>
+                        <td>' . $oldStatusText . '</td>
+                    </tr>
+                    <tr>
+                        <th>New Status</th>
+                        <td><strong>' . $newStatusText . '</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Reason/Note</th>
+                        <td>' . htmlspecialchars($note) . '</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="mt-3">
+                <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
+                <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
+            </div>
+            ';
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getCustomerDocumentDeleteDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 305) {
+                return response()->json(['success' => false, 'message' => 'Document request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            
+            // Check if this is upload or delete
+            $isUpload = isset($requestData['document_path']);
+            $isDelete = isset($requestData['document_id']);
+            
+            if ($isDelete) {
+                $documentData = $requestData['document_data'] ?? [];
+                $customerId = $requestData['customer_id'] ?? null;
+            } else {
+                // For upload, create documentData from request
+                $documentData = [
+                    'Description' => $requestData['description'] ?? 'N/A',
+                    'Path' => $requestData['document_path'] ?? 'N/A',
+                ];
+                $customerId = $requestData['customer_id'] ?? null;
+            }
+            
+            // Get customer details
+            $customer = DB::table('customer')
+                ->where('idCustomer', $customerId)
+                ->where('branch_id', $approval->branch_id)
+                ->first();
+            
+            $customerName = $customer ? ($customer->First_Name . ' ' . $customer->Last_Name) : 'Unknown';
+            $customerNumber = $customer->cus_number ?? 'N/A';
+            
+            $alertClass = $isDelete ? 'alert-danger' : 'alert-info';
+            $iconClass = $isDelete ? 'ri-file-damage-line' : 'ri-file-upload-line';
+            $title = $isDelete ? 'Customer Document Delete Request' : 'Customer Document Upload Request';
+            $subtitle = $isDelete ? 'Review document details before approving deletion' : 'Review document details before approving upload';
+            
+            $html = '
+            <div class="' . $alertClass . '">
+                <i class="' . $iconClass . ' me-2"></i><strong>' . $title . '</strong>
+                <p class="mb-0 mt-2"><small>' . $subtitle . '</small></p>
+            </div>
+            
+            <h6 class="mb-3">Document Information</h6>
+            
+            <table class="table table-bordered">
+                <tbody>
+                    <tr>
+                        <th style="width: 35%;">Customer</th>
+                        <td><strong>' . htmlspecialchars($customerName) . '</strong> (' . htmlspecialchars($customerNumber) . ')</td>
+                    </tr>
+                    <tr>
+                        <th>Document Description</th>
+                        <td>' . htmlspecialchars($documentData['Description'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Document Path</th>
+                        <td><small class="text-muted">' . htmlspecialchars($documentData['Path'] ?? 'N/A') . '</small></td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="mt-3">
+                <h6 class="mb-2">Document Preview</h6>
+                <div class="border rounded p-3 bg-light text-center">
+                    ' . ($documentData['Path'] ? '
+                        <a href="/storage/' . htmlspecialchars($documentData['Path']) . '" target="_blank" class="btn btn-primary btn-sm me-2">
+                            <i class="ri-eye-line me-1"></i>View Document
+                        </a>
+                        <a href="/storage/' . htmlspecialchars($documentData['Path']) . '" download class="btn btn-outline-secondary btn-sm">
+                            <i class="ri-download-line me-1"></i>Download
+                        </a>
+                    ' : '<p class="text-muted mb-0">No document available</p>') . '
+                </div>
+            </div>
+            
+            <div class="alert alert-warning mt-3">
+                <strong>⚠️ Warning:</strong> Approving this request will ' . ($isDelete ? 'permanently delete this document from the system' : 'upload this document to the customer profile') . '.
+            </div>
+            
+            <div class="mt-3">
+                <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
+                <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
+            </div>
+            ';
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getLoanInstallmentModificationDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 403) {
+                return response()->json(['success' => false, 'message' => 'Loan installment modification request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $loanId = $requestData['loan_id'];
+            $customerId = $requestData['customer_id'];
+            $changes = $requestData['changes'] ?? [];
+            
+            // Get loan details
+            $loan = DB::table('customer_loan')
+                ->where('idCustomer_Loan', $loanId)
+                ->where('branch_id', $approval->branch_id)
+                ->first();
+            
+            // Get customer details
+            $customer = DB::table('customer')
+                ->where('idCustomer', $customerId)
+                ->where('branch_id', $approval->branch_id)
+                ->first();
+            
+            $customerName = $customer ? ($customer->First_Name . ' ' . $customer->Last_Name) : 'Unknown';
+            $loanNumber = $loan->Loan_No ?? 'N/A';
+            
+            $html = '
+            <div class="alert alert-warning">
+                <i class="ri-calendar-schedule-line me-2"></i><strong>Loan Installment Modification Request</strong>
+                <p class="mb-0 mt-2"><small>Review installment date changes before approving</small></p>
+            </div>
+            
+            <h6 class="mb-3">Loan Information</h6>
+            
+            <table class="table table-bordered">
+                <tbody>
+                    <tr>
+                        <th style="width: 35%;">Loan Number</th>
+                        <td><strong>' . htmlspecialchars($loanNumber) . '</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Customer</th>
+                        <td>' . htmlspecialchars($customerName) . '</td>
+                    </tr>
+                    <tr>
+                        <th>Modified Installments</th>
+                        <td><strong class="text-primary">' . count($changes) . ' installment(s)</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h6 class="mb-2 mt-4">Installment Changes</h6>
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Installment #</th>
+                            <th>Old Date</th>
+                            <th>New Date</th>
+                            <th>Old Penalty Date</th>
+                            <th>New Penalty Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
+            
+            foreach ($changes as $change) {
+                $html .= '
+                        <tr>
+                            <td><strong>#' . htmlspecialchars($change['no']) . '</strong></td>
+                            <td>' . htmlspecialchars($change['old_installment_date']) . '</td>
+                            <td><strong class="text-primary">' . htmlspecialchars($change['new_installment_date']) . '</strong></td>
+                            <td>' . htmlspecialchars($change['old_penalty_date']) . '</td>
+                            <td><strong class="text-primary">' . htmlspecialchars($change['new_penalty_date']) . '</strong></td>
+                        </tr>';
+            }
+            
+            $html .= '
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-3">
+                <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
+                <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
             </div>
             ';
             

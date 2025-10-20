@@ -18,8 +18,10 @@ function updateStatusUser (user_id) {
                 success: function (data) {
                     Swal.fire({
                         position: 'center',
-                        icon: 'success',
-                        title: 'Successfully changed user status !'
+                        icon: 'info',
+                        title: 'Approval Required!',
+                        text: 'User status change request sent to head office for approval!',
+                        confirmButtonText: 'OK'
                     }).then(function() {
                         window.location.reload();
                     });

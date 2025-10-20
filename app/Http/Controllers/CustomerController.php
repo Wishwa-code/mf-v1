@@ -69,14 +69,43 @@ class CustomerController extends Controller
 
 // $documentPath now contains the path to the stored file relative to the 'public' disk
 
-        insertWithBranch('customer_documents', [
-            'Customer_idCustomer' => $customer,
-            'Description' => $description,
-            'Path' => $documentPath,
-        ]);
+    // Get customer details for description
+    $customerData = tableWithBranch('customer')
+        ->where('idCustomer', $customer)
+        ->first();
+    
+    $customerName = $customerData ? ($customerData->First_Name . ' ' . $customerData->Last_Name) : 'Unknown';
+    
+    // Store document upload data for approval
+    $requestData = [
+        'customer_id' => $customer,
+        'description' => $description,
+        'document_path' => $documentPath,
+    ];
 
+    // Create approval request
+    DB::table('approval_request')->insert([
+        'type' => 'Customer Document Upload',
+        'typeid' => 305,
+        'description' => 'Upload Document: ' . $description . ' (Customer: ' . $customerName . ')',
+        'data' => json_encode($requestData),
+        'userid' => session('userid'),
+        'branch_id' => session('branch_id'),
+        'data_time' => now(),
+        'status' => 0
+    ]);
 
-        return response()->json(['message' => 'Document saved successfully'], 200);
+    return response()->json(['message' => 'Document upload request sent for approval!'], 200);
+    
+    // OLD CODE - keeping for approval handler reference
+    /*
+    insertWithBranch('customer_documents', [
+        'Customer_idCustomer' => $customer,
+        'Description' => $description,
+        'Path' => $documentPath,
+    ]);
+    return response()->json(['message' => 'Document saved successfully'], 200);
+    */
     }
 
     /**
@@ -184,8 +213,77 @@ class CustomerController extends Controller
 
 
 
+            // Store customer data for approval instead of direct save
+            $customerData = [
+                'Title' => $customer->Title,
+                'Customer_Group_idCustomer_Group' => $customer->Customer_Group_idCustomer_Group,
+                'cus_number' => $customer->cus_number,
+                'First_Name' => $customer->First_Name,
+                'Last_Name' => $customer->Last_Name,
+                'Email' => $customer->Email,
+                'Contact_No' => $customer->Contact_No,
+                'contact_number_2' => $customer->contact_number_2,
+                'business_registration' => $customer->business_registration,
+                'Nic' => $customer->Nic,
+                'Gender' => $customer->Gender,
+                'Dob' => $customer->Dob,
+                'Address' => $customer->Address,
+                'Address_02' => $customer->Address_02,
+                'Address_03' => $customer->Address_03,
+                'Per_Address_01' => $customer->Per_Address_01,
+                'Per_Address_02' => $customer->Per_Address_02,
+                'Per_Address_03' => $customer->Per_Address_03,
+                'City' => $customer->City,
+                'State' => $customer->State,
+                'Landline' => $customer->Landline,
+                'Note' => $customer->Note,
+                'Longitude' => $customer->Longitude,
+                'Latitude' => $customer->Latitude,
+                'Gua_title' => $customer->Gua_title,
+                'Gua_name' => $customer->Gua_name,
+                'Guardian_gender' => $customer->Guardian_gender,
+                'Gua_relation' => $customer->Gua_relation,
+                'Gua_occu' => $customer->Gua_occu,
+                'Gua_contact' => $customer->Gua_contact,
+                'Gua_address' => $customer->Gua_address,
+                'Gua_nic' => $customer->Gua_nic,
+                'Customer_Risk_Level' => $customer->Customer_Risk_Level,
+                'civil_status' => $customer->civil_status,
+                'occu_job_position' => $customer->occu_job_position,
+                'occu_monthly_salary' => $customer->occu_monthly_salary,
+                'occu_address_01' => $customer->occu_address_01,
+                'occu_address_02' => $customer->occu_address_02,
+                'occu_address_03' => $customer->occu_address_03,
+                'occu_contact_no' => $customer->occu_contact_no,
+                'occu_longitude' => $customer->occu_longitude,
+                'occu_latitude' => $customer->occu_latitude,
+                'route_id' => $customer->route_id,
+                'branch_id' => $customer->branch_id,
+                'Cus_phto' => $customer->Cus_phto,
+            ];
+
+            $requestData = [
+                'customer_data' => $customerData,
+            ];
+
+            // Create approval request
+            DB::table('approval_request')->insert([
+                'type' => 'Customer Creation',
+                'typeid' => 301,
+                'description' => 'Customer Creation: ' . $customer->First_Name . ' ' . $customer->Last_Name . ' (NIC: ' . $customer->Nic . ')',
+                'data' => json_encode($requestData),
+                'userid' => session('userid'),
+                'branch_id' => session('branch_id'),
+                'data_time' => now(),
+                'status' => 0
+            ]);
+
+            return response()->json(['message' => 'Customer creation request sent for approval!', 'id' => '0'], 200);
+
+            // OLD CODE - keeping for approval handler reference
+            /*
             if ($customer->save()) {
-                $id = $customer->id; // Assuming 'idCustomer' is the primary key column name
+                $id = $customer->id;
                 $request = new Request([
                     'customer_id' => $id,
                     'description' => 'Customer registration for '.$request->f_name.' '.$request->last_name,
@@ -193,8 +291,6 @@ class CustomerController extends Controller
                     'comment' => ' ',
                     'type' => 'Customer Registration',
                 ]);
-
-                // Call the store method of CustomerLogController
                 $this->customerLogController->store($request);
                 // If the data is saved successfully, return a success response
 
@@ -228,6 +324,7 @@ class CustomerController extends Controller
                 // If the data failed to save, return an error response
                 return response()->json(['message' => 'Failed to save data'], 500);
             }
+            */
         }
 
 
@@ -414,8 +511,48 @@ class CustomerController extends Controller
      */
     public function destroy(string $id)
     {
+        // Get document data before requesting deletion
+        $document = tableWithBranch('customer_documents')
+            ->where('idCustomer_Documents', '=', $id)
+            ->first();
+        
+        if (!$document) {
+            return response()->json(['message' => 'Document not found'], 404);
+        }
+        
+        // Get customer details for description
+        $customer = tableWithBranch('customer')
+            ->where('idCustomer', $document->Customer_idCustomer)
+            ->first();
+        
+        $customerName = $customer ? ($customer->First_Name . ' ' . $customer->Last_Name) : 'Unknown';
+        
+        // Store document delete data for approval
+        $requestData = [
+            'document_id' => $id,
+            'document_data' => (array)$document,
+            'customer_id' => $document->Customer_idCustomer,
+        ];
+
+        // Create approval request
+        DB::table('approval_request')->insert([
+            'type' => 'Customer Document Delete',
+            'typeid' => 305,
+            'description' => 'Delete Document: ' . $document->Description . ' (Customer: ' . $customerName . ')',
+            'data' => json_encode($requestData),
+            'userid' => session('userid'),
+            'branch_id' => session('branch_id'),
+            'data_time' => now(),
+            'status' => 0
+        ]);
+        
+        return response()->json(['message' => 'Document delete request sent for approval!'], 200);
+        
+        // OLD CODE - keeping for approval handler reference
+        /*
         tableWithBranch('customer_documents')->where('idCustomer_Documents', '=', $id)->delete();
         return response()->json(['message' => 'Data deleted successfully'], 200);
+        */
     }
 
     public function updateCustomer(Request $request) {
@@ -437,7 +574,7 @@ class CustomerController extends Controller
 
         // Assuming you have the request object available
         $data = [
-            'title' => $request->title,
+            'Title' => $request->title,
             'First_Name' => $request->f_name,
             'Last_Name' => $request->last_name,
             'Email' => $request->email,
@@ -476,30 +613,49 @@ class CustomerController extends Controller
             'route_id' => $request->root,
         ];
 
-// Only set Cus_phto if a new file was uploaded (keeps existing photo otherwise)
         if ($documentPath) {
             $data['Cus_phto'] = $documentPath;
         }
 
-// Use the new helper function to update the customer record
-        updateWithBranch('customer', 'idCustomer', $request->id, $data);
+// Get old customer data for comparison
+    $oldCustomer = DB::table('customer')->where('idCustomer', $request->id)->first();
+    
+    // Store customer update data for approval
+    $requestData = [
+        'customer_id' => $request->id,
+        'old_data' => (array)$oldCustomer,
+        'new_data' => $data,
+        'photo_path' => $documentPath,
+    ];
 
+    // Create approval request
+    DB::table('approval_request')->insert([
+        'type' => 'Customer Details Update',
+        'typeid' => 302,
+        'description' => 'Customer Update: ' . $request->f_name . ' ' . $request->last_name . ' (NIC: ' . $request->nic . ')',
+        'data' => json_encode($requestData),
+        'userid' => session('userid'),
+        'branch_id' => session('branch_id'),
+        'data_time' => now(),
+        'status' => 0
+    ]);
 
-//        customer_number($request->id);
+    return response()->json(['message' => 'Customer update request sent for approval!'], 200);
 
-        $request = new Request([
-            'customer_id' =>  $request->id,
-            'description' => 'Customer Update',
-            'description_id' =>  $request->id,
-            'comment' => ' ',
-            'type' => 'Customer Update',
-        ]);
-
-        // Call the store method of CustomerLogController
-        $this->customerLogController->store($request);
-
-        // Optionally, return a response
-        return response()->json(['message' => 'Customer updated successfully'], 200);
+    // OLD CODE - keeping for approval handler reference
+    /*
+    updateWithBranch('customer', 'idCustomer', $request->id, $data);
+    customer_number($request->id);
+    $request = new Request([
+        'customer_id' =>  $request->id,
+        'description' => 'Customer Update',
+        'description_id' =>  $request->id,
+        'comment' => ' ',
+        'type' => 'Customer Update',
+    ]);
+    $this->customerLogController->store($request);
+    return response()->json(['message' => 'Customer updated successfully'], 200);
+    */
     }
 
     public function updateCustomerLocation(Request $request) {
@@ -601,23 +757,50 @@ class CustomerController extends Controller
         // Toggle the status
         $newStatus = $customer->Status == 1 ? 0 : 1;
 
-// Determine the action description
+        // Determine the action description
         $actionDescription = $newStatus == 1 ? 'Removed from Blacklist' : 'Added to Blacklist';
 
         // Determine the action type
         $type = $newStatus == 1 ? 'Remove Blacklist' : 'Blacklist';
 
-// Update the status and note in the database
+        // Store blacklist change data for approval
+        $requestData = [
+            'customer_id' => $id,
+            'customer_data' => (array)$customer,
+            'old_status' => $customer->Status,
+            'new_status' => $newStatus,
+            'note' => $note,
+            'action_type' => $type,
+            'action_description' => $actionDescription,
+        ];
+
+        // Create approval request
+        DB::table('approval_request')->insert([
+            'type' => 'Customer Status Change',
+            'typeid' => 304,
+            'description' => $type . ': ' . $customer->First_Name . ' ' . $customer->Last_Name . ' (NIC: ' . $customer->Nic . ')',
+            'data' => json_encode($requestData),
+            'userid' => session('userid'),
+            'branch_id' => session('branch_id'),
+            'data_time' => now(),
+            'status' => 0
+        ]);
+
+        return response()->json([
+            'message' => 'Status change request sent for approval!',
+            'requiresApproval' => true
+        ], 200);
+
+        // OLD CODE - keeping for approval handler reference
+        /*
         $updated = updateWithBranch('customer', 'idCustomer', $id, [
             'Status' => $newStatus,
             'Comment' => $note
         ]);
 
-// Get customer details
         $customer_table = tableWithBranch('customer')->where('idCustomer', $id)->first();
         $user_id = (int)session('userid');
 
-// Log the action
         DB::table('customer_log')->insert([
             'customer_id' => $id,
             'customer_name' => $customer_table->First_Name.' '.$customer_table->Last_Name,
@@ -631,8 +814,6 @@ class CustomerController extends Controller
             'branch_id' => session('branch_id')
         ]);
 
-
-        // Check if update was successful
         if ($updated) {
             return response()->json([
                 'message' => 'Status updated successfully',
@@ -641,11 +822,10 @@ class CustomerController extends Controller
         } else {
             return response()->json([
                 'message' => 'Failed to update status'
-            ], 500); // Return server error if update fails
+            ], 500);
         }
+        */
     }
-
-
 
     public function load_customers(string $id){
         $customer = tableWithBranch('customer','customer')

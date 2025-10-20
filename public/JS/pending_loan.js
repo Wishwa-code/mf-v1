@@ -1220,13 +1220,15 @@ function delete_loan(){
                         if (xhr.status === 200) {
                             Swal.fire({
                                 position: "center",
-                                icon: "success",
-                                title: "Successfully Deleted !",
+                                icon: "info",
+                                title: "Approval Required!",
+                                text: "Loan rejection request sent to head office for approval!",
+                                confirmButtonText: "OK"
                             }).then(function () {
                                 window.location.reload();
                             });
                         } else {
-                            Swal.fire("Error!", "Failed to delete loan!", "error");
+                            Swal.fire("Error!", "Failed to send request!", "error");
                         }
                     },
                 });

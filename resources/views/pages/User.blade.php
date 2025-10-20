@@ -606,13 +606,15 @@
                                 if (response.success) {
                                     Swal.fire({
                                         position: "center",
-                                        icon: "success",
-                                        title: "Successfully updated !",
+                                        icon: "info",
+                                        title: "Approval Required!",
+                                        text: "User details update request sent to head office for approval!",
+                                        confirmButtonText: "OK"
                                     }).then(function () {
                                         window.location.reload();
                                     });
                                 } else {
-                                    Swal.fire('Error', 'Failed to update user details', 'error');
+                                    Swal.fire('Error', 'Failed to send request!', 'error');
                                 }
                             },
                             error: function (err) {

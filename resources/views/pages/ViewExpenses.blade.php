@@ -260,13 +260,15 @@
                             if (xhr.status === 200) {
                                 Swal.fire({
                                     position: "center",
-                                    icon: "success",
-                                    title: "Successfully deleted!",
+                                    icon: "info",
+                                    title: "Approval Required!",
+                                    text: "Expense delete request sent to head office for approval!",
+                                    confirmButtonText: "OK"
                                 }).then(function () {
                                     window.location.reload();
                                 });
                             } else {
-                                Swal.fire("Error!", "Failed to delete data!", "error");
+                                Swal.fire("Error!", "Failed to send request!", "error");
                             }
                         },
                     });
