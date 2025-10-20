@@ -293,7 +293,7 @@ class ChartOfAccountController extends Controller
 
             return response()->json(['status' => 'success', 'message' => 'Manual Journal saved successfully!']);
         } catch (\Exception $e) {
-            \Log::error($e->getMessage());
+            Log::error($e->getMessage());
             return response()->json(['status' => 'error', 'message' => 'Failed to save Manual Journal.']);
         }
     }
@@ -373,20 +373,34 @@ class ChartOfAccountController extends Controller
 
 
 
-    public function fetchLedger($account)
+    public function fetchLedger($account, Request $request)
     {
-        // Fetch matching records from the `manual_journal_has_amount` table
-        $data = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        $query = tableWithBranch('company_bank_has_log','company_bank_has_log')
             ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
             ->where('Bank_Account_Id', '=',$account) // Match records starting with accountCode
-            ->orderBy('id')
-            ->get();
+            ->orderBy('id');
+
+        // Optional filters: date range takes precedence, then today filter; default is no filter
+        $start = $request->get('start_date');
+        $end = $request->get('end_date');
+        if ($start && $end) {
+            // normalize to day bounds
+            $startDT = Carbon::parse($start)->startOfDay();
+            $endDT = Carbon::parse($end)->endOfDay();
+            $query = $query->whereBetween('company_bank_has_log.Date_Time', [$startDT, $endDT]);
+        } elseif ($request->has('todayfilter') && (string)$request->get('todayfilter') === '1') {
+            $todayStart = Carbon::today();
+            $todayEnd = Carbon::today()->endOfDay();
+            $query = $query->whereBetween('company_bank_has_log.Date_Time', [$todayStart, $todayEnd]);
+        }
+
+        $data = $query->get();
+        
         // Replace NULL values with '-'
         $data->transform(function ($item) {
             $item->account_name = $item->account_name ?? '-';
             return $item;
         });
-
 
         // Return data as JSON
         return response()->json($data);
@@ -537,22 +551,34 @@ class ChartOfAccountController extends Controller
         $date_to = $request->date_to ?? now()->toDateString(); // Default to today
         $account_id = $request->account_id;
 
-        // Fetch matching records from the `manual_journal_has_amount` table
-        $data = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        // Base query
+        $query = tableWithBranch('company_bank_has_log','company_bank_has_log')
             ->leftjoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
-            ->where('Bank_Account_Id', '=',$account_id) // Match records starting with accountCode
-            ->whereDate('Date_Time','<=',$date_to) // Filter by date range
-            ->orderBy('id')
-            ->get();
+            ->where('Bank_Account_Id', '=', $account_id)
+            ->whereDate('Date_Time','<=', $date_to)
+            ->orderBy('id');
 
-        // Replace NULL values with '-'
+        // If client explicitly asks for pagination, return Laravel paginator under 'item'
+        // Keep backward compatibility: when not requested, return the original array
+        $wantsPagination = $request->boolean('paginate') || $request->has('per_page');
+        if ($wantsPagination) {
+            $perPage = (int) $request->input('per_page', 25);
+            // reasonable bounds
+            if ($perPage < 1) { $perPage = 1; }
+            if ($perPage > 200) { $perPage = 200; }
+
+            $paginator = $query->paginate($perPage);
+            return response()->json([
+                'item' => $paginator,
+            ]);
+        }
+
+        // Default: old behavior (no pagination)
+        $data = $query->get();
         $data->transform(function ($item) {
             $item->account_name = $item->account_name ?? '-';
             return $item;
         });
-
-
-        // Return data as JSON
         return response()->json($data);
 
 

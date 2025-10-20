@@ -356,6 +356,7 @@
                                     <th scope="col">Member No</th>
 
                                     <th scope="col">Loan Amount</th>
+                                    <th scope="col">Due Amount</th>
 {{--                                    <th scope="col">Total Loan Balance</th>--}}
 {{--                                    <th scope="col">Balance Until Today</th>--}}
                                     <th scope="col">Today Installment</th>

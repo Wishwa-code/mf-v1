@@ -58,12 +58,15 @@
                         <div class="d-flex flex-column align-items-start mb-3">
                             <h4 class="page-title mb-3">Customer Details</h4>
 
+                            @php $isHeadOffice = session('branch_id') == -1; @endphp
+                            @if(!$isHeadOffice)
                             <!-- File input -->
                             <label style="color: red">Upload Excel</label>
                             <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="form-control mb-2 w-50">
 
                             <!-- Upload button, aligned below the file input -->
                             <input type="button" onclick="upload_excel()" class="btn btn-success mt-2" value="Upload">
+                            @endif
                         </div>
 
 
@@ -73,6 +76,7 @@
                             <tr>
                                 <th>Center</th>
                                 <th>Group Name</th>
+                                <th>Branch Name</th>
                                 <th>Customer No</th>
                                 <th>Customer Name</th>
                                 <th>Nic</th>
@@ -92,6 +96,7 @@
                                 <tr>
                                     <td>{{ $customer->center_name ?? '-' }}</td>
                                     <td>{{ $customer->group_name ?? '-' }}</td>
+                                    <td>{{ $customer->branch_name }}</td>
                                     <td>{{ $customer->cus_number }}</td>
                                     <td>{{ $customer->First_Name }} {{ $customer->Last_Name }}</td>
                                     <td>{{ $customer->Nic }}</td>
@@ -107,14 +112,21 @@
                                     </td>
 
                                     @if($customer->Status == "1")
-                                        <td class="text-center"><span class="badge bg-primary">Active</span></td>
+                                        <td class="text-center">
+                                            <span class="badge bg-primary">Active</span>
+                                        </td>
                                         <td><button class="btn btn-warning" onclick="change_status({{$customer->idCustomer}})">Move To Blacklist</button></td>
                                     @else
-                                        <td class="text-center"><span class="badge bg-danger">Blacklisted</span></td>
+                                        <td class="text-center">
+                                            <span class="badge bg-danger">Blacklisted</span>
+                                        </td>
                                         <td><button class="btn btn-warning" disabled>Move To Blacklist</button></td>
                                     @endif
                                     <td>
                                         <div class="d-flex justify-content-center">
+                                            <button type="button" class="btn btn-light" onclick="viewCustomer({{$customer->idCustomer}})" title="View Customer Details">
+                                                <i class="bi bi-eye fs-4"></i>
+                                            </button>
                                             <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#view-modal" onclick="load_document({{$customer->idCustomer}});">
                                                 <i class="bi bi-envelope-check fs-4"></i>
                                             </button>
@@ -651,7 +663,7 @@
                         text: '<i class="bi bi-clipboard"></i> Copy',
                         className: 'btn btn-secondary',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4]
+                            columns: [0, 1, 2, 3, 4, 5]
                         },
                         filename: companyName // Use the modified company name
                     },
@@ -660,7 +672,7 @@
                         text: '<i class="bi bi-file-earmark-spreadsheet"></i> CSV',
                         className: 'btn btn-success',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4]
+                            columns: [0, 1, 2, 3, 4, 5]
                         },
                         filename: companyName // Use the modified company name
                     },
@@ -669,7 +681,7 @@
                         text: '<i class="bi bi-file-earmark-excel"></i> Excel',
                         className: 'btn btn-primary',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4]
+                            columns: [0, 1, 2, 3, 4, 5]
                         },
                         filename: companyName // Use the modified company name
                     },
@@ -678,7 +690,7 @@
                         text: '<i class="bi bi-file-earmark-pdf"></i> PDF',
                         className: 'btn btn-danger',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4]
+                            columns: [0, 1, 2, 3, 4, 5]
                         },
                         filename: companyName // Use the modified company name
                     },
@@ -687,7 +699,7 @@
                         text: '<i class="bi bi-printer"></i> Print',
                         className: 'btn btn-info',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4]
+                            columns: [0, 1, 2, 3, 4, 5]
                         },
                         filename: companyName // Use the modified company name
                     }
@@ -979,6 +991,10 @@
                     });
                 }
             });
+        }
+
+        function viewCustomer(id) {
+            window.location.href = '/kyc/' + id;
         }
 
 

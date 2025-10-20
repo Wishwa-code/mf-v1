@@ -1188,9 +1188,10 @@ class TransactionController extends Controller
                 DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date <= CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as Total_Balance_until'),
                 DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date = CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as Today_installment'),
                 DB::raw('ROUND(SUM(CASE WHEN installments.Installment_Date < CURDATE() THEN installments.Total_Balance ELSE 0 END), 2) as arrease'),
-                DB::raw('(SELECT Saving_Account_Balance FROM Loan_Log 
-          WHERE Loan_Log.Loan_ID = customer_loan.idCustomer_Loan 
-          ORDER BY Loan_Log.Loan_Log_ID DESC LIMIT 1) as last_saving_balance'),
+                DB::raw('MAX(installments.Installment_Date) as loan_ending_date'),
+                DB::raw('(SELECT IFNULL(SUM(Balance), 0) FROM customer_saving_accounts 
+          WHERE customer_saving_accounts.Customer_Id = customer.idCustomer 
+          AND customer_saving_accounts.Status = 1) as last_saving_balance'),
                 'customer.route_id as customer_route_id'
             )
             ->groupBy(

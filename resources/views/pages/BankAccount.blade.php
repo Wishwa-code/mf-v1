@@ -37,6 +37,13 @@
             height: 100%;
         }
 
+        /* selected filter button gray */
+        .selected-filter {
+            background-color: #6c757d !important; /* bootstrap secondary gray */
+            color: #fff !important;
+            border-color: #6c757d !important;
+        }
+
     </style>
 @endsection
 
@@ -137,7 +144,7 @@
                                                                 <td style="text-align: center">
                                                                     <button type="button" class="btn btn-success"  data-bs-toggle="modal"
                                                                             style="background-color: white; color: #5691FF; border:none"
-                                                                            data-bs-target="#standard-modal" onclick="view_log({{$item->Idbank}}, '{{$item->Bank_Name}}', '{{$item->Account_Name}}', '{{$item->Account_No}}')"><i
+                                                                            data-bs-target="#standard-modal" onclick="view_log({{$item->Idbank}}, '{{$item->Bank_Name}}', '{{$item->Account_Name}}', '{{$item->Account_No}}', true)"><i
                                                                                 class="bi bi-eye fs-4"></i></button>
 {{--                                                                    <button type="button" class="btn btn-success" data-bs-toggle="modal"--}}
 {{--                                                                            style="background-color: white; color: #5691FF; border:none"--}}
@@ -149,7 +156,7 @@
                                                                 <td style="text-align: center">
                                                                     <button type="button" class="btn btn-success"  data-bs-toggle="modal"
                                                                             style="background-color: white; color: #5691FF; border:none"
-                                                                            data-bs-target="#standard-modal" onclick="view_log({{$item->Idbank}}, '{{$item->Bank_Name}}', '{{$item->Account_Name}}', '{{$item->Account_No}}')"><i
+                                                                            data-bs-target="#standard-modal" onclick="view_log({{$item->Idbank}}, '{{$item->Bank_Name}}', '{{$item->Account_Name}}', '{{$item->Account_No}}', true)"><i
                                                                                 class="bi bi-eye fs-4"></i></button>
                                                                     <button type="button" class="btn btn-success"
                                                                             style="background-color: white; color: #5691FF; border:none"
@@ -205,7 +212,19 @@
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-lg-12">
-                                <div class="d-flex mb-3">
+                                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                                    <button class="btn btn-warning me-2" id="load_today" onclick="view_log_today()">
+                                        <i class="fas fa-calendar-day"></i> Load Today Data
+                                    </button>
+                                    <div class="d-flex align-items-center me-2">
+                                        <input type="date" class="form-control" id="log_start_date" />
+                                    </div>
+                                    <div class="d-flex align-items-center me-2">
+                                        <input type="date" class="form-control" id="log_end_date" />
+                                    </div>
+                                    <button class="btn btn-info me-2" id="load_range" onclick="view_log_range()">
+                                        <i class="fas fa-calendar-alt"></i> Load Date Range
+                                    </button>
                                     <button class="btn btn-success me-2" id="download_excel">
                                         <i class="fas fa-file-excel"></i> Download Excel
                                     </button>
@@ -329,20 +348,110 @@
     <script>
         // Replace special characters in the company name
         var companyName = {!! json_encode(session('company_name')) !!}.replace(/&/g, ' And ') + " Bank Details Report";
+        // keep last selected account for quick reload
+        var lastViewedAccount = { id: null, bankName: '', accountName: '', accountNumber: '' };
 
-        // Function to download table as Excel
+        // Build rows for export (numbers with 2 decimals)
+        function fmtNum(v){
+            if (v === null || v === undefined || v === "") return "";
+            const n = Number(v);
+            return isNaN(n) ? v : n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // Download Excel: always fetch FULL data from legacy API (no filters)
         document.getElementById('download_excel').addEventListener('click', function () {
-            let table = document.getElementById('bank_table_log');
-            let wb = XLSX.utils.table_to_book(table, {sheet: "Sheet JS"});
-            XLSX.writeFile(wb, companyName+".xlsx");
+            if (!lastViewedAccount.id){
+                Swal.fire("Info", "Open a bank log first to choose the account", "info");
+                return;
+            }
+
+            $.ajax({
+                type: 'GET',
+                url: '/bank/view_log/' + lastViewedAccount.id, // no params -> full data
+                headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr('content') },
+                beforeSend: function(){
+                    // simple feedback
+                    Swal.fire({ title: 'Preparing Excel...', didOpen: () => Swal.showLoading(), allowOutsideClick: false, allowEscapeKey: false, showConfirmButton: false });
+                },
+                success: function(data){
+                    const headers = ["Date Time","Type","Description","Note","Debit","Credit","Balance","Contra Account","Reconciliation No","User"];
+                    const aoa = [headers];
+                    (data.item || []).forEach(function(log){
+                        aoa.push([
+                            log.Date_Time,
+                            log.Type,
+                            log.Description,
+                            log.Note,
+                            fmtNum(log.Debit),
+                            fmtNum(log.Credit),
+                            fmtNum(log.Balance),
+                            (log.Account_Name ?? '-'),
+                            log.reconsilation_status,
+                            log.Full_Name
+                        ]);
+                    });
+
+                    const ws = XLSX.utils.aoa_to_sheet(aoa);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, 'Full');
+                    XLSX.writeFile(wb, companyName+"-Full.xlsx");
+                    Swal.close();
+                },
+                error: function(){
+                    Swal.close();
+                    Swal.fire("Error", "Failed to prepare Excel", "error");
+                }
+            });
         });
 
-        // Function to download table as PDF
+        // Download PDF: always fetch FULL data from legacy API (no filters)
         document.getElementById('download_pdf').addEventListener('click', function () {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.autoTable({ html: '#bank_table_log' });
-            doc.save(companyName+".pdf");
+            if (!lastViewedAccount.id){
+                Swal.fire("Info", "Open a bank log first to choose the account", "info");
+                return;
+            }
+
+            $.ajax({
+                type: 'GET',
+                url: '/bank/view_log/' + lastViewedAccount.id, // no params -> full data
+                headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr('content') },
+                beforeSend: function(){
+                    Swal.fire({ title: 'Preparing PDF...', didOpen: () => Swal.showLoading(), allowOutsideClick: false, allowEscapeKey: false, showConfirmButton: false });
+                },
+                success: function(data){
+                    const { jsPDF } = window.jspdf;
+                    // Landscape to fit columns
+                    const doc = new jsPDF('l','pt');
+                    const headers = ["Date Time","Type","Description","Note","Debit","Credit","Balance","Contra Account","Reconciliation No","User"];
+                    const body = (data.item || []).map(function(log){
+                        return [
+                            log.Date_Time,
+                            log.Type,
+                            log.Description,
+                            log.Note,
+                            fmtNum(log.Debit),
+                            fmtNum(log.Credit),
+                            fmtNum(log.Balance),
+                            (log.Account_Name ?? '-'),
+                            log.reconsilation_status,
+                            log.Full_Name
+                        ];
+                    });
+
+                    doc.autoTable({
+                        head: [headers],
+                        body,
+                        styles: { fontSize: 8 },
+                        headStyles: { fillColor: [86, 145, 255] }
+                    });
+                    doc.save(companyName+"-Full.pdf");
+                    Swal.close();
+                },
+                error: function(){
+                    Swal.close();
+                    Swal.fire("Error", "Failed to prepare PDF", "error");
+                }
+            });
         });
 
         let maxAmount = 0;
@@ -358,6 +467,63 @@
         function openTopUpModal(bankId){
             document.getElementById("bankId_2").value = bankId;
             document.getElementById("transferAmount_2").value = "";
+        }
+
+        // Trigger loading today's data for the last viewed account
+        function view_log_today(){
+            if(!lastViewedAccount.id){
+                Swal.fire("Info", "Open a bank log first, then use 'Load Today Data'", "info");
+                return;
+            }
+            view_log(lastViewedAccount.id, lastViewedAccount.bankName, lastViewedAccount.accountName, lastViewedAccount.accountNumber, true);
+        }
+
+        // Trigger loading a date range for the last viewed account
+        function view_log_range(){
+            if(!lastViewedAccount.id){
+                Swal.fire("Info", "Open a bank log first, then choose a date range", "info");
+                return;
+            }
+            const sRaw = document.getElementById('log_start_date').value.trim();
+            const eRaw = document.getElementById('log_end_date').value.trim();
+            if(!sRaw || !eRaw){
+                Swal.fire("Info", "Please select both start and end dates", "info");
+                return;
+            }
+            const sISO = normalizeDateToISO(sRaw);
+            const eISO = normalizeDateToISO(eRaw);
+            if(!sISO || !eISO){
+                Swal.fire("Error", "Please pick dates or use dd/mm/yyyy", "error");
+                return;
+            }
+            if(new Date(sISO) > new Date(eISO)){
+                Swal.fire("Error", "Start date cannot be after end date", "error");
+                return;
+            }
+            // todayOnly false, pass start/end
+            view_log(lastViewedAccount.id, lastViewedAccount.bankName, lastViewedAccount.accountName, lastViewedAccount.accountNumber, false, sISO, eISO);
+        }
+
+        // Accept both dd/mm/yyyy and yyyy-mm-dd, return yyyy-mm-dd
+        function normalizeDateToISO(input){
+            // native date input yields yyyy-mm-dd, accept directly
+            if(/^\d{4}-\d{2}-\d{2}$/.test(input)){
+                return input;
+            }
+            // Parse dd/mm/yyyy
+            const dmy = input;
+            const m = dmy.match(/^([0-2]?\d|3[01])\/(0?\d|1[0-2])\/(\d{4})$/);
+            if(!m) return null;
+            let day = m[1].padStart(2,'0');
+            let month = m[2].padStart(2,'0');
+            const year = m[3];
+            // Basic validity check using Date
+            const iso = `${year}-${month}-${day}`;
+            const d = new Date(iso);
+            if(Number.isNaN(d.getTime())) return null;
+            // Ensure no rollover (e.g., 31/02)
+            if(d.getUTCFullYear() != Number(year) || (d.getUTCMonth()+1) != Number(month) || d.getUTCDate() != Number(day)) return null;
+            return iso;
         }
 
         // Transfer Function with Validation and SweetAlert Confirmation

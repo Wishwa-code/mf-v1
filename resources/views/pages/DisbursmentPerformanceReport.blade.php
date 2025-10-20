@@ -255,7 +255,7 @@
 <td>${row.Group_name}</td>
 <td>${row.route_name || ''}</td>
             <td>${row.create_date}</td>
-            <td>${row.disburse_date}</td>
+            <td>${row.Status != -1 ? row.disburse_date : '-'}</td>
             <td>${row.time}</td>
             <td>${row.product_name}-${row.Product_code}</td>
             <td>${row.Amount}</td>
@@ -265,7 +265,7 @@
             <td>${row.capital_balance}</td>
             <td>${row.Other_Amount_Balance}</td>
             <td>${row.Balance_Amount}</td>
-            <td>${row.Status == 0 ? 'Ongoing' : (row.Status == 1 ? 'Settled' : '')}</td>
+            <td>${row.Status == -1 ? 'Pending' : (row.Status == 0 ? 'Ongoing' : (row.Status == 1 ? 'Settled' : ''))}</td>
             <td>
                 <a href="/loanview/${row.idCustomer_Loan}" target="_blank" class="btn btn-warning">
                     <i class="bi bi-eye"></i>

@@ -70,7 +70,7 @@ class LoanController extends Controller
             $user_id = (int) session('userid');
 
             $loan = new Loan();
-
+            $loan->created_at = Carbon::now();
             $date = Carbon::now()->toDateString();
 
             $customer_id      = $request->customer_id;
@@ -107,6 +107,112 @@ class LoanController extends Controller
             if ($currentActiveLoans >= $maxAllowedLoans) {
                 DB::rollBack();
                 return response()->json(['message' => "Customer already has maximum allowed loans ({$maxAllowedLoans}). Current active loans: {$currentActiveLoans}"], 422);
+            }
+
+            // Check guarantees restriction
+            $guaranteesRestriction = DB::table('app_settings')->where('key', 'guarantees_restriction')->value('value') ?? 'not_required';
+            if ($guaranteesRestriction === 'required') {
+                // Get the required guarantee count from the loan product
+                $loanProduct = tableWithBranch('loan_category')
+                    ->where('idLoan_Category', $request->loan_cate_id)
+                    ->first();
+                
+                if ($loanProduct && $loanProduct->Guarantee_count > 0) {
+                    $requiredGuaranteeCount = (int) $loanProduct->Guarantee_count;
+                    $witnessesArray = $request->input('witnessesArray', []);
+                    
+                    // Count valid guarantors (cus_id not empty or "0")
+                    $validGuarantorCount = 0;
+                    foreach ($witnessesArray as $witness) {
+                        if (isset($witness['cus_id']) && $witness['cus_id'] !== '0' && !empty($witness['cus_id'])) {
+                            $validGuarantorCount++;
+                        }
+                    }
+                    
+                    // Ensure ALL required guarantors are provided
+                    if ($validGuarantorCount < $requiredGuaranteeCount) {
+                        DB::rollBack();
+                        return response()->json([
+                            'message' => "All required guarantors must be added. This loan requires {$requiredGuaranteeCount} guarantor(s). (Currently added: {$validGuarantorCount})"
+                        ], 422);
+                    }
+                }
+            }
+
+            // Check document upload restriction
+            $documentUploadRestriction = DB::table('app_settings')->where('key', 'document_upload_restriction')->value('value') ?? 'not_required';
+            if ($documentUploadRestriction === 'required') {
+                // Check if this loan category has required documents
+                $requiredDocumentsCount = tableWithBranch('required_documents')
+                    ->where('Loan_Category_idLoan_Category', $request->loan_cate_id)
+                    ->count();
+                
+                if ($requiredDocumentsCount > 0) {
+                    // Get the count of uploaded documents from the request
+                    $uploadedDocumentsCount = (int) $request->input('uploaded_documents_count', 0);
+                    
+                    // Ensure ALL required documents are uploaded
+                    if ($uploadedDocumentsCount < $requiredDocumentsCount) {
+                        DB::rollBack();
+                        return response()->json([
+                            'message' => "All required documents must be uploaded. Please upload all {$requiredDocumentsCount} required document(s) before proceeding. (Currently uploaded: {$uploadedDocumentsCount})"
+                        ], 422);
+                    }
+                }
+            }
+
+            // Check first installment date restriction
+            $issueDate = $request->input('issue_date');
+            $installments = $request->input('installment', []);
+            
+            if ($issueDate && !empty($installments)) {
+                // Get the first installment date
+                $firstInstallment = is_array($installments) ? reset($installments) : null;
+                $firstInstallmentDate = $firstInstallment['installmentDate'] ?? null;
+                
+                if ($firstInstallmentDate) {
+                    // Get loan product to determine the loan type
+                    $loanProduct = tableWithBranch('loan_category')
+                        ->where('idLoan_Category', $request->loan_cate_id)
+                        ->first();
+                    
+                    if ($loanProduct) {
+                        $interestPeriod = $loanProduct->Interest_period;
+                        $settingKey = null;
+                        
+                        // Map Interest_period to the appropriate setting key
+                        if (in_array($interestPeriod, ['Daily', 'Per Day'])) {
+                            $settingKey = 'first_installment_daily';
+                        } elseif (in_array($interestPeriod, ['Weekly', 'Per Week'])) {
+                            $settingKey = 'first_installment_weekly';
+                        } elseif (in_array($interestPeriod, ['Per Month', 'Monthly'])) {
+                            $settingKey = 'first_installment_monthly';
+                        }
+                        
+                        if ($settingKey) {
+                            // Get the maximum allowed days from settings
+                            $maxDays = (int) DB::table('app_settings')
+                                ->where('key', $settingKey)
+                                ->value('value');
+                            
+                            if ($maxDays > 0) {
+                                // Calculate the difference in days
+                                $issueDateObj = new \DateTime($issueDate);
+                                $firstInstallmentDateObj = new \DateTime($firstInstallmentDate);
+                                $daysDifference = $issueDateObj->diff($firstInstallmentDateObj)->days;
+                                
+                                // Check if the first installment date exceeds the allowed days
+                                if ($daysDifference > $maxDays) {
+                                    DB::rollBack();
+                                    $loanTypeText = str_replace(['Per ', 'Per'], '', $interestPeriod);
+                                    return response()->json([
+                                        'message' => "The first installment date cannot be more than {$maxDays} days from the issue date for {$loanTypeText} loans. Current difference: {$daysDifference} days."
+                                    ], 422);
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             if ($type_loan_number == "") {
@@ -998,7 +1104,62 @@ class LoanController extends Controller
 
         $loan_saving_balance=tableWithBranch('Customer_Saving_Accounts')->where('Loan_Id','=',$id)->value('Balance');
 
-        $exists=DB::table('reshedule')->where('loan_id', $loan->idCustomer_Loan)->exists() ? 1 : 0;
+        // Guard against legacy reshedule tables missing 'loan_id' column
+        $exists = 0;
+        try {
+            if (Schema::hasTable('reshedule') && Schema::hasColumn('reshedule', 'loan_id')) {
+                $exists = DB::table('reshedule')->where('loan_id', $loan->idCustomer_Loan)->exists() ? 1 : 0;
+            }
+        } catch (\Throwable $e) {
+            $exists = 0; // Fallback silently to avoid breaking the view
+        }
+
+        // Fetch customer summary data (route, center, group, group members)
+        $customerSummary = tableWithBranch('customer', 'customer')
+            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->leftJoin('route', 'center.route_id', '=', 'route.id_route')
+            ->where('customer.idCustomer', $loan->Customer_idCustomer)
+            ->select(
+                'customer.idCustomer',
+                DB::raw('COALESCE(route.name, "-") as route_name'),
+                DB::raw('COALESCE(route.root_code, "-") as route_code'),
+                DB::raw('COALESCE(center.No, "-") as center_no'),
+                DB::raw('COALESCE(center.Name, "-") as center_name'),
+                DB::raw('COALESCE(customer_group.Group_No, "-") as group_no'),
+                DB::raw('COALESCE(customer_group.Name, "-") as group_name'),
+                'group_has_customer.group_id',
+                'route.collection_type',
+                'route.collection_date'
+            )
+            ->first();
+
+        // Fetch other customers in the same group
+        $groupMembers = collect();
+        if ($customerSummary && $customerSummary->group_id) {
+            $isHeadOffice = (int)session('branch_id') === -1;
+            $branch_id = session('branch_id');
+            
+            if ($isHeadOffice) {
+                $groupMembers = DB::table('customer as c')
+                    ->join('group_has_customer as ghc', 'ghc.cus_id', '=', 'c.idCustomer')
+                    ->where('ghc.group_id', $customerSummary->group_id)
+                    ->where('c.idCustomer', '!=', $loan->Customer_idCustomer)
+                    ->select('c.idCustomer', 'c.cus_number', 'c.First_Name', 'c.Last_Name', 'c.Nic', 'c.Contact_No')
+                    ->orderBy('c.First_Name')
+                    ->get();
+            } else {
+                $groupMembers = DB::table('customer as c')
+                    ->join('group_has_customer as ghc', 'ghc.cus_id', '=', 'c.idCustomer')
+                    ->where('c.branch_id', $branch_id)
+                    ->where('ghc.group_id', $customerSummary->group_id)
+                    ->where('c.idCustomer', '!=', $loan->Customer_idCustomer)
+                    ->select('c.idCustomer', 'c.cus_number', 'c.First_Name', 'c.Last_Name', 'c.Nic', 'c.Contact_No')
+                    ->orderBy('c.First_Name')
+                    ->get();
+            }
+        }
 
 
         $latest = DB::table('extra_charger')
@@ -1038,6 +1199,9 @@ class LoanController extends Controller
             'payment_delete_status',
             'loan_saving_balance',
             'extraChargelatestBalance'
+            'customerSummary',
+            'groupMembers'
+
         ));
     }
 
@@ -1555,18 +1719,35 @@ class LoanController extends Controller
             return;
         }
 
-        // Add the three new columns if they’re missing (safe to call repeatedly)
-        if (!Schema::hasColumn('reshedule', 'loan_id')) {
-            Schema::table('reshedule', fn (Blueprint $t) => $t
-                ->unsignedBigInteger('loan_id')->nullable()->index()->after('idReschedule'));
-        }
-        if (!Schema::hasColumn('reshedule', 'created_by')) {
-            Schema::table('reshedule', fn (Blueprint $t) => $t
-                ->unsignedBigInteger('created_by')->nullable()->index()->after('collector_id'));
-        }
-        if (!Schema::hasColumn('reshedule', 'created_at')) {
-            Schema::table('reshedule', fn (Blueprint $t) => $t
-                ->timestamp('created_at')->nullable()->after('created_by'));
+        // Add the new columns if they’re missing (safe to call repeatedly) without relying on column order
+        if (Schema::hasTable('reshedule')) {
+            if (!Schema::hasColumn('reshedule', 'loan_id')) {
+                try {
+                    Schema::table('reshedule', function (Blueprint $t) {
+                        $t->unsignedBigInteger('loan_id')->nullable()->index();
+                    });
+                } catch (\Throwable $e) {
+                    // ignore if fails due to permissions or legacy engine
+                }
+            }
+            if (!Schema::hasColumn('reshedule', 'created_by')) {
+                try {
+                    Schema::table('reshedule', function (Blueprint $t) {
+                        $t->unsignedBigInteger('created_by')->nullable()->index();
+                    });
+                } catch (\Throwable $e) {
+                    // ignore
+                }
+            }
+            if (!Schema::hasColumn('reshedule', 'created_at')) {
+                try {
+                    Schema::table('reshedule', function (Blueprint $t) {
+                        $t->timestamp('created_at')->nullable();
+                    });
+                } catch (\Throwable $e) {
+                    // ignore
+                }
+            }
         }
     }
 

@@ -6,6 +6,7 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.2.3/css/buttons.dataTables.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css">
+    <link href="{{ asset('css/ho-dashboard.css') }}" rel="stylesheet">
 
     <style>
         .style-tr>td {
@@ -16,13 +17,55 @@
             background-color: #d9edf7; /* Light blue color */
             color: #31708f; /* Darker blue text for contrast */
         }
+        /* Reduce branch card height */
+        .branch-card {
+            height: 180px !important; /* Reduced from default */
+        }
+        .branch-card .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 10px;
+        }
+        .branch-card .metric-card {
+            padding: 8px !important;
+            font-size: 0.85rem !important;
+        }
+        .branch-card .metric-value {
+            font-size: 1.1rem !important;
+        }
+        /* Adjust back card for reduced height */
+        .branch-card .card-back {
+            height: 180px !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+        .branch-card .switch-icon i {
+            font-size: 2rem;
+        }
+        .branch-card .switch-text {
+            font-size: 1rem;
+            margin: 8px 0 4px;
+        }
+        .branch-card .switch-subtitle {
+            font-size: 0.8rem;
+        }
     </style>
 @endsection
 
 
 @section('content')
-    <div>
-        <div class="row mt-3">
+    @php $isHeadOffice = session('branch_id') == -1; @endphp
+    
+    @if($isHeadOffice)
+        @include('ho-center')
+    @else
+    <div class="container-fluid">
+
+         <div class="row mt-3">
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
@@ -34,6 +77,7 @@
                             <tr>
                                 <th>Route</th>
                                 <th>Center No</th>
+                                <th>Branch</th>
                                 <th>Center Name</th>
                                 <th>Contact Number</th>
                                 <th>Address</th>
@@ -50,6 +94,7 @@
                                 <tr class="style-tr">
                                     <td>{{$item->name ?? '-'}}</td>
                                     <td>{{$item->No}}</td>
+                                    <td>{{$item->branch_name ?? '-'}}</td>
                                     <td>{{$item->Name}}</td>
                                     <td>{{$item->Contact_no}}</td>
                                     <td>{{$item->Address}}</td>
@@ -77,11 +122,8 @@
 
                     </div> <!-- end card-->
                 </div> <!-- end col -->
-
-
             </div>
             <!-- end row -->
-
         </div>
 
 
@@ -199,7 +241,7 @@
                         text: '<i class="bi bi-clipboard"></i> Copy',
                         className: 'btn btn-secondary',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5]
+                            columns: [0, 1, 2, 3, 4, 5, 6]
                         },
                         filename: companyName
                     },
@@ -208,7 +250,7 @@
                         text: '<i class="bi bi-file-earmark-spreadsheet"></i> CSV',
                         className: 'btn btn-success',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5]
+                            columns: [0, 1, 2, 3, 4, 5, 6]
                         },
                         filename: companyName
                     },
@@ -217,7 +259,7 @@
                         text: '<i class="bi bi-file-earmark-excel"></i> Excel',
                         className: 'btn btn-primary',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5]
+                            columns: [0, 1, 2, 3, 4, 5, 6]
                         },
                         filename: companyName
                     },
@@ -226,7 +268,7 @@
                         text: '<i class="bi bi-file-earmark-pdf"></i> PDF',
                         className: 'btn btn-danger',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5]
+                            columns: [0, 1, 2, 3, 4, 5, 6]
                         },
                         customize: function(doc) {
                             doc.defaultStyle.fontSize = 10; // Example customization
@@ -239,7 +281,7 @@
                         text: '<i class="bi bi-printer"></i> Print',
                         className: 'btn btn-info',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5]
+                            columns: [0, 1, 2, 3, 4, 5, 6]
                         },
                         filename: companyName
                     }
@@ -280,7 +322,27 @@
             $('[data-bs-toggle="tooltip"]').tooltip();
         });
 
-
+        // Branch switching functionality (reload current page)
+        document.querySelectorAll('.branch-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const id = card.getAttribute('data-branch');
+                if(!id) return;
+                fetch('/update-branch', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').getAttribute('content')},
+                    body:JSON.stringify({branch_id:id})
+                }).then(r=>{
+                    if(!r.ok) throw new Error('Switch failed');
+                    return r.json().catch(()=>({}));
+                }).then(()=>{
+                    window.location.reload()
+                }).catch(()=>{
+                    alert('Failed to switch branch');
+                });
+            });
+        });
 
     </script>
+    </div>
+    @endif
 @endsection

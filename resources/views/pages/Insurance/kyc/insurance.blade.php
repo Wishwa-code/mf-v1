@@ -1,3 +1,5 @@
+@php $isHeadOffice = session('branch_id') == -1; @endphp
+@if(!$isHeadOffice)
 <div class="card p-4">
     <h5 class="mb-4 text-primary">
         <i class="fas fa-shield-alt me-2"></i>Request Insurance
@@ -59,8 +61,11 @@
         </button>
     </div>
 </div>
+@endif
 
+@if(!$isHeadOffice)
 <hr class="my-5">
+@endif
 
 <div class="card p-4">
     <h5 class="mb-3 text-primary"><i class="fas fa-history me-2"></i>Insurance Request History</h5>
@@ -88,6 +93,7 @@
 </div>
 
 
+@if(!$isHeadOffice)
 <!-- Add Category Modal -->
 <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -157,6 +163,7 @@
         </div>
     </div>
 </div>
+@endif
 
 <!-- View Evidence Modal -->
 <div class="modal fade" id="viewEvidenceModal" tabindex="-1" aria-hidden="true">
