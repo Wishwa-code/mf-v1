@@ -150,13 +150,14 @@ const saveLoanCategory = (e) => {
 
 
 
+
     var othercharges = [];
 
     // Iterate over table rows
     $('#otherchargetable tbody tr').each(function() {
         var rowData = [];
 
-        var $columns = $(this).find('td:nth-child(1), td:nth-child(2), td:nth-child(3)');
+        var $columns = $(this).find('td:nth-child(1), td:nth-child(2), td:nth-child(3), td:nth-child(4)');
 
         // Iterate over selected columns
         $columns.each(function() {
@@ -247,7 +248,8 @@ const saveLoanCategory = (e) => {
                             saving_payment:saving_payment,
                             default_loan_duration_period:default_loan_duration_period,
                             collection_date_type:collection_date_type,
-                            penalty_method:penalty_method
+                            penalty_method:penalty_method,
+
                         },
                         success: function (data, textStatus, xhr) {
                             if (xhr.status === 200) {

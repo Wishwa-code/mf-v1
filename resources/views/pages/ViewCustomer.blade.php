@@ -390,7 +390,7 @@
 
                             <div class="mb-3">
                                 <label for="simpleinput" class="form-label">Customer Photo</label>
-                                <input type="file" id="cus_phto" name="cus_phto" class="form-control" accept="image/*" capture="environment">
+                                <input type="file" id="cus_phto" name="cus_phto" class="form-control" accept="image/*">
                                 <button type="button" onclick="openGlobalCamera('#cus_phto')" class="btn btn-outline-secondary mt-1">📷</button>
                             </div>
 

@@ -211,138 +211,356 @@ class ExcelController extends Controller
         //
     }
 
+
     public function uploadExcelCustomer(Request $request)
     {
         $data = $request->excelData;
 
-        $skipped = [];
-        $insertedCustomers = []; // 👈 New array to keep track of new inserts
-
-        foreach ($data as $key => $row) {
-            if (DB::table('customer')
-                ->where('cus_number', '=', $row[3])
-                ->where('branch_id', '=', session('branch_id'))
-                ->exists()) {
-                $skipped[] = $row[3];
-                continue;
-            }
-
-            $customer = new Customer();
-            $customer->Title = $row[4] ?? '-';
-            $customer->Customer_Group_idCustomer_Group = 1;
-            $customer->cus_number = $row[3] ?? '';
-            $customer->First_Name = $row[5] ?? '-';
-            $customer->Last_Name = $row[6] ?? '-';
-            $customer->Email = $row[7] ?? '-';
-            $customer->Contact_No = $row[8] ?? '-';
-            $customer->Nic = $row[10] ?? '-';
-            $customer->Gender = $row[11] ?? '-';
-            $customer->Dob = $row[12] ?? '-';
-            $customer->Address = $row[13] ?? '-';
-            $customer->Address_02 = $row[14] ?? '-';
-            $customer->Address_03 = $row[15] ?? '-';
-            $customer->Per_Address_01 = $row[16] ?? '-';
-            $customer->Per_Address_02 = $row[17] ?? '-';
-            $customer->Per_Address_03 = $row[18] ?? '-';
-            $customer->City = $row[19] ?? '-';
-            $customer->State = $row[20] ?? '-';
-            $customer->Landline = $row[21] ?? '-';
-            $customer->Gua_title = $row[22] ?? '-';
-            $customer->Gua_name = $row[23] ?? '-';
-            $customer->Guardian_gender = $row[24] ?? '-';
-            $customer->Gua_relation = $row[25] ?? '-';
-            $customer->Gua_occu = $row[26] ?? '-';
-            $customer->Gua_contact = $row[27] ?? '-';
-            $customer->Gua_address = $row[28] ?? '-';
-            $customer->Gua_nic = $row[29] ?? '-';
-            $customer->Customer_Risk_Level = "1";
-            $customer->civil_status = $row[30] ?? '-';
-            $customer->branch_id = session('branch_id');
-            $customer->save();
-
-            $insertedCustomers[$row[3]] = $customer->idCustomer; // 👈 Remember this insert
-
-            if (isset($row[37])) {
-                $documentData = [
-                    'cus_id' => $customer->idCustomer,
-                    'bank_name' => $row[37],
-                    'account_name' => $row[38],
-                    'account_number' => $row[39],
-                    'branch' => session('branch_id'),
-                ];
-                insertWithBranch('customer_has_bank', $documentData);
-            }
+        if (!is_array($data) || empty($data)) {
+            return response()->json(['error' => 'No Excel data provided.'], 422);
         }
-//
-        Log::info("Skipped Customers: ", $skipped);
 
-//        DB::table('group_has_customer')
-//            ->where('branch_id', session('branch_id'))
-//            ->delete();
+        $branchId   = (int) session('branch_id');
+        $branchName = (string) session('branch_name');
 
-        $routeData = [
-            'name' => session('branch_name'),
-            'root_code' => 'P001',
-            'id_officer' => '1',
-        ];
-        $route_id = insertWithBranch('route', $routeData);
+        // Caches to minimize DB hits
+        $routeCacheByName   = []; // [route_name] => id_route
+        $centerCacheByName  = []; // [center_name] => idCenter
+        $groupCacheByKey    = []; // ["{$centerId}|{$group_no}"] => idCustomer_Group
 
-        foreach ($data as $key => $row) {
-            $customer=DB::table('customer')
-                ->where('cus_number', '=', $row[3])
-                ->where('branch_id', '=', session('branch_id'))
+        $skippedCusNumbers  = [];
+        $createdRoutes      = 0;
+        $updatedCustomers   = 0;
+        $insertedCustomers  = 0;
+
+        // --- Helpers -------------------------------------------------------------
+
+        // Always take the last column as collection_date TEXT (your requirement)
+        $getCollectionLabelFromRow = function (array $row) {
+            $lastIdx = array_key_last($row);
+            $raw     = $row[$lastIdx] ?? null;
+            $label   = is_string($raw) || is_numeric($raw) ? trim((string)$raw) : '';
+            return $label !== '' ? $label : '-'; // ensure NOT NULL
+        };
+
+        $nextRouteCode = function (int $branchId) {
+            // Generate next root_code like R001, R002 per-branch
+            $max = DB::table('route')
+                ->where('branch_id', $branchId)
+                ->where('root_code', 'LIKE', 'R%')
+                ->selectRaw("MAX(CAST(SUBSTRING(root_code, 2) AS UNSIGNED)) AS max_no")
+                ->value('max_no');
+
+            $n = (int) $max + 1;
+            return 'R' . str_pad((string) $n, 3, '0', STR_PAD_LEFT);
+        };
+
+        // Note: $collectionLabel is TEXT (e.g., "1ST WEEK MON")
+        $getOrCreateRoute = function (string $routeName, string $collectionLabel) use (
+            $branchId, &$routeCacheByName, $nextRouteCode, &$createdRoutes
+        ) {
+            $name = trim($routeName);
+            if ($name === '' || $name === '-') {
+                $name = 'DEFAULT';
+            }
+
+            // Cache check
+            if (isset($routeCacheByName[$name])) {
+                return $routeCacheByName[$name];
+            }
+
+            // Try find existing (unique per branch by name)
+            $existing = DB::table('route')
+                ->where('branch_id', $branchId)
+                ->where('name', $name)
                 ->first();
-            if ($customer){
-                $center_name = $row[1] ?? "Default";  // Assuming center_name is in the 3rd column
-                $center_no = $row[1] ?? "Default";
-                $center = tableWithBranch('center')->where('Name', '=', $center_name)->first();
-                if (!$center) {
-                    $centerData = [
-                        'No' => $center_no,
-                        'Name' => $center_name,
-                        'Contact_no' => '-',
-                        'Address' => '-',
-                        'Route' => '-',
-                        'Center_incharge' => 1,
-                        'Location' => '-',
-                        'Groups' => "0",
-                        'Members' => "0",
-                        'route_id' => $route_id,
-                    ];
-                    $center_id = insertWithBranch('center', $centerData);
-                } else {
-                    $center_id = $center->idCenter;
-                }
 
-                // Handle Group creation or fetching existing one
-                $group_name = $row[2] ?? "Default";  // Assuming group_name is in the same column
-                $group = tableWithBranch('customer_group')->where('Group_No', '=', $group_name)->where('center_id', '=', $center_id)->first();
-                if (!$group) {
-                    $groupData = [
-                        'Group_No' => $group_name,
-                        'Name' => $group_name,
-                        'Leader_name' => '-',
-                        'Contact_no' => '-',
-                        'center_id' => $center_id,
-                    ];
-                    $group_id = insertWithBranch('customer_group', $groupData);
-                } else {
-                    $group_id = $group->idCustomer_Group;
+            if ($existing) {
+                // If existing has empty collection_date, backfill it (do not overwrite non-empty)
+                if (empty($existing->collection_date)) {
+                    DB::table('route')
+                        ->where('id_route', $existing->id_route)
+                        ->update([
+                            'collection_date' => $collectionLabel, // TEXT
+                            'updated_at'      => now(),
+                        ]);
                 }
-
-                // Link customer to group
-                insertWithBranch('group_has_customer', [
-                    'cus_id' => $customer->idCustomer,
-                    'group_id' => $group_id
-                ]);
+                $routeCacheByName[$name] = (int) $existing->id_route;
+                return (int) $existing->id_route;
             }
+
+            // Create new route with TEXT collection_date
+            $id = DB::table('route')->insertGetId([
+                'name'             => $name,
+                'root_code'        => $nextRouteCode($branchId),
+                'id_officer'       => 1,
+                'branch_id'        => $branchId,
+                'collection_type'  => 'fixed',
+                'collection_date'  => $collectionLabel, // store label as-is
+
+            ]);
+
+            $routeCacheByName[$name] = (int) $id;
+            $createdRoutes++;
+            return (int) $id;
+        };
+
+        $getOrCreateCenter = function (string $centerName, int $routeId) use (
+            $branchId, &$centerCacheByName
+        ) {
+            $name = trim($centerName) !== '' ? trim($centerName) : 'Default';
+
+            if (isset($centerCacheByName[$name])) {
+                return $centerCacheByName[$name];
+            }
+
+            $center = DB::table('center')
+                ->where('branch_id', $branchId)
+                ->where('Name', $name)
+                ->first();
+
+            if ($center) {
+                $centerCacheByName[$name] = (int) $center->idCenter;
+                return (int) $center->idCenter;
+            }
+
+            $centerId = DB::table('center')->insertGetId([
+                'No'              => $name,
+                'Name'            => $name,
+                'Contact_no'      => '-',
+                'Address'         => '-',
+                'Route'           => '-',
+                'Center_incharge' => 1,
+                'Location'        => '-',
+                'Groups'          => '0',
+                'Members'         => '0',
+                'route_id'        => $routeId,
+                'branch_id'       => $branchId,
+
+            ]);
+
+            $centerCacheByName[$name] = (int) $centerId;
+            return (int) $centerId;
+        };
+
+        $getOrCreateGroup = function (string $groupNo, int $centerId) use (
+            $branchId, &$groupCacheByKey
+        ) {
+            $gn = trim($groupNo) !== '' ? trim($groupNo) : 'Default';
+            $key = "{$centerId}|{$gn}";
+            if (isset($groupCacheByKey[$key])) {
+                return $groupCacheByKey[$key];
+            }
+
+            $group = DB::table('customer_group')
+                ->where('branch_id', $branchId)
+                ->where('center_id', $centerId)
+                ->where('Group_No', $gn)
+                ->first();
+
+            if ($group) {
+                $groupCacheByKey[$key] = (int) $group->idCustomer_Group;
+                return (int) $group->idCustomer_Group;
+            }
+
+            $groupId = DB::table('customer_group')->insertGetId([
+                'Group_No'   => $gn,
+                'Name'       => $gn,
+                'Leader_name'=> '-',
+                'Contact_no' => '-',
+                'center_id'  => $centerId,
+                'branch_id'  => $branchId,
+
+            ]);
+
+            $groupCacheByKey[$key] = (int) $groupId;
+            return (int) $groupId;
+        };
+
+        // --- Pass 1: Create/Update Customers (with Route assignment) -------------
+        DB::beginTransaction();
+        try {
+            foreach ($data as $row) {
+                // Mapping (0-based):
+                //  1: center_name
+                //  2: group_no
+                //  3: cus_number
+                //  4: Title
+                //  5: First_Name
+                //  6: Last_Name
+                //  7: Email
+                //  8: Contact_No
+                // 10: Nic
+                // 11: Gender
+                // 12: Dob
+                // 13..15: Address lines
+                // 16..18: Per_Address_*
+                // 19: City
+                // 20: State
+                // 21: Landline
+                // 22..29: Guardian fields
+                // 30: civil_status
+                // 37..39: bank details
+                // 41: Route name (fixed)
+                // last column of row: collection_date TEXT (dynamic)
+
+                $cusNumber = $row[3] ?? null;
+                if (!$cusNumber) { continue; }
+
+                $routeNameRaw    = $row[41] ?? 'DEFAULT';
+                $collectionLabel = $getCollectionLabelFromRow($row); // <-- TEXT from last column
+                $routeId         = $getOrCreateRoute((string)$routeNameRaw, $collectionLabel);
+
+                // If customer exists, update route_id and continue
+                $existsId = DB::table('customer')
+                    ->where('cus_number', $cusNumber)
+                    ->where('branch_id', $branchId)
+                    ->value('idCustomer');
+
+                if ($existsId) {
+                    DB::table('customer')
+                        ->where('idCustomer', $existsId)
+                        ->update([
+                            'route_id'   => $routeId,
+
+                        ]);
+                    $updatedCustomers++;
+                    continue;
+                }
+
+                // Create customer
+                $customer = new Customer();
+                $customer->Title       = $row[4]  ?? '-';
+                $customer->Customer_Group_idCustomer_Group = 1;
+                $customer->cus_number  = $cusNumber;
+                $customer->First_Name  = $row[5]  ?? '-';
+                $customer->Last_Name   = $row[6]  ?? '-';
+                $customer->Email       = $row[7]  ?? '-';
+                $customer->Contact_No  = $row[8]  ?? '-';
+                $customer->Nic         = $row[10] ?? '-';
+                $customer->Gender      = $row[11] ?? '-';
+                $customer->Dob         = $row[12] ?? '-'; // leave as-is since your values are provided
+                $customer->Address     = $row[13] ?? '-';
+                $customer->Address_02  = $row[14] ?? '-';
+                $customer->Address_03  = $row[15] ?? '-';
+                $customer->Per_Address_01 = $row[16] ?? '-';
+                $customer->Per_Address_02 = $row[17] ?? '-';
+                $customer->Per_Address_03 = $row[18] ?? '-';
+                $customer->City        = $row[19] ?? '-';
+                $customer->State       = $row[20] ?? '-';
+                $customer->Landline    = $row[21] ?? '-';
+                $customer->Gua_title   = $row[22] ?? '-';
+                $customer->Gua_name    = $row[23] ?? '-';
+                $customer->Guardian_gender = $row[24] ?? '-';
+                $customer->Gua_relation = $row[25] ?? '-';
+                $customer->Gua_occu     = $row[26] ?? '-';
+                $customer->Gua_contact  = $row[27] ?? '-';
+                $customer->Gua_address  = $row[28] ?? '-';
+                $customer->Gua_nic      = $row[29] ?? '-';
+                $customer->Customer_Risk_Level = "1";
+                $customer->civil_status = $row[30] ?? '-';
+                $customer->branch_id    = $branchId;
+                $customer->route_id     = $routeId; // 🔗 assign route
+                $customer->save();
+
+                $insertedCustomers++;
+
+                // Optional bank info — ensure cus_id never null
+                if (isset($row[37]) && trim((string)$row[37]) !== '') {
+                    $customerId = method_exists($customer, 'getKey') ? $customer->getKey() : ($customer->idCustomer ?? $customer->id ?? null);
+                    if ($customerId) {
+                        DB::table('customer_has_bank')->insert([
+                            'cus_id'         => $customerId,
+                            'bank_name'      => $row[37],
+                            'account_name'   => $row[38] ?? '-',
+                            'account_number' => $row[39] ?? '-',
+                            'branch'         => $branchId,
+
+                        ]);
+                    }
+                }
+            }
+
+            // --- Pass 2: Center/Group linking (uses same route for the row) -------
+            foreach ($data as $row) {
+                $cusNumber = $row[3] ?? null;
+                if (!$cusNumber) { continue; }
+
+                $customer = DB::table('customer')
+                    ->where('cus_number', $cusNumber)
+                    ->where('branch_id', $branchId)
+                    ->first();
+
+                if (!$customer) {
+                    $skippedCusNumbers[] = $cusNumber;
+                    continue;
+                }
+
+                $routeNameRaw    = $row[41] ?? 'DEFAULT';
+                $collectionLabel = $getCollectionLabelFromRow($row); // <-- TEXT from last column
+                $routeId         = $getOrCreateRoute((string)$routeNameRaw, $collectionLabel);
+
+                // Center (index 1) and Group (index 2)
+                $centerName = $row[1] ?? 'Default';
+                $groupNo    = $row[2] ?? 'Default';
+
+                $centerId = $getOrCreateCenter((string)$centerName, $routeId);
+                $groupId  = $getOrCreateGroup((string)$groupNo, $centerId);
+
+                // Link customer to group (avoid duplicates)
+                $existsLink = DB::table('group_has_customer')
+                    ->where('branch_id', $branchId)
+                    ->where('cus_id', $customer->idCustomer)
+                    ->where('group_id', $groupId)
+                    ->exists();
+
+                if (!$existsLink) {
+                    DB::table('group_has_customer')->insert([
+                        'cus_id'     => $customer->idCustomer,
+                        'group_id'   => $groupId,
+                        'branch_id'  => $branchId,
+
+                    ]);
+                }
+
+                // Ensure customer's route_id is set (in case Pass 1 updated existing)
+                if ((int)($customer->route_id ?? 0) !== $routeId) {
+                    DB::table('customer')
+                        ->where('idCustomer', $customer->idCustomer)
+                        ->update(['route_id' => $routeId, 'updated_at' => now()]);
+                }
+            }
+
+            DB::commit();
+
+            Log::info('Customer Excel Upload Summary', [
+                'branch_id'         => $branchId,
+                'created_routes'    => $createdRoutes,
+                'inserted_customers'=> $insertedCustomers,
+                'updated_customers' => $updatedCustomers,
+                'skipped_customers' => $skippedCusNumbers,
+            ]);
+
+            return response()->json([
+                'message'             => 'Data processed successfully.',
+                'created_routes'      => $createdRoutes,
+                'inserted_customers'  => $insertedCustomers,
+                'updated_customers'   => $updatedCustomers,
+                'skipped_customers'   => $skippedCusNumbers,
+            ], 200);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Customer Excel Upload Failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json(['error' => 'Upload failed: ' . $e->getMessage()], 500);
         }
-
-
-
-
-        return response()->json(['message' => 'Data processed successfully.'], 200);
     }
+
+
+
 
     public function uploadExcelProduct(Request $request)
     {

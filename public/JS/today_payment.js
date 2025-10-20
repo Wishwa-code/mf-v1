@@ -204,6 +204,7 @@ function payment_model(cus_id, topic, loan_id,Today_installment) {
         method: 'GET',
         success: function(response) {
             let savings=parseFloat(response.savings);
+            let extraChargelatestBalance=parseFloat(response.extraChargelatestBalance);
             $.each(response.item, function (index, item) {
                 let Total_Balance=parseFloat(item.Total_Balance);
 
@@ -212,10 +213,14 @@ function payment_model(cus_id, topic, loan_id,Today_installment) {
                 let Installment_Amount=parseFloat(item.Today_installment);
                 let Total_Paid_Amount=parseFloat(item.Total_Paid_Amount);
 
+
                 $('#loan_balance').val(Total_Balance.toFixed(2));
                 $('#today_arrese').val(arrease.toFixed(2));
                 $('#total_outstanding').val(Total_Balance_until.toFixed(2));
-                $('#total_loan_balance').val(Total_Balance.toFixed(2));
+                $('#total_loan_balance').val(
+                    (parseFloat(Total_Balance) + parseFloat(extraChargelatestBalance)).toFixed(2)
+                );
+
                 $('#total_savings_balance').val(savings.toFixed(2));
                 $('#ins_amount').val(Installment_Amount.toFixed(2));
                 $('#tot_paid_amount').val(Total_Paid_Amount.toFixed(2));
@@ -591,6 +596,7 @@ function payment() {
                         contentType: false,
                         success: function (data, textStatus, xhr) {
                             let payment_id = data.payment_id;
+                            alert(payment_id);
                             if (xhr.status === 200) {
                                 Swal.fire({
                                     position: "center",
@@ -605,6 +611,16 @@ function payment() {
                                         $("#payment_amount").val("");
                                         $("#payment_amount_2").val("");
                                         $('.btn-success').prop('disabled', false);
+                                    } else if (payment_id === 2) {
+                                        let payment_amount = $('#payment_amount').val();
+                                        Swal.fire({
+                                            title: "Extra Charge Paid!",
+                                            text: `An extra charge of ${payment_amount} has been successfully paid.`,
+                                            icon: "info",
+                                            confirmButtonText: "OK",
+                                        }).then(() => {
+                                            window.location.reload();
+                                        });
                                     }else{
                                         load_payment_reciept(payment_id);
                                     }

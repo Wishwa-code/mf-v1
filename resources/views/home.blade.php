@@ -243,7 +243,7 @@
                 $loan_completion_percentage = $all_loan > 0 ? round(($setteled_loan_Count / $all_loan) * 100, 2) : 0;
             @endphp
 
-        <div class="container-fluid py-4">
+            <div class="container-fluid py-4">
 
             {{-- Welcome Banner --}}
             <div class="row mb-4">
@@ -266,7 +266,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
             {{-- Statistic Cards --}}
             <div class="row">
@@ -281,24 +280,123 @@
                     ];
                 @endphp
 
-                @foreach($cards as $index => $card)
-                    <div class="col-md-3 mb-4">
-                        <a href="{{ $card['link'] }}" class="text-decoration-none">
-                            <div class="glass-card card text-white shadow animated-card" style="background-color: {{ $card['bg'] }};">
+                    @foreach($cards as $index => $card)
+                        <div class="col-md-3 mb-4">
+                            <a href="{{ $card['link'] }}" class="text-decoration-none">
+                                <div class="glass-card card text-white shadow animated-card" style="background-color: {{ $card['bg'] }};">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="text-uppercase">{{ $card['title'] }} {!! $card['count'] !== '' ? '('.$card['count'].')' : '' !!}</h6>
+                                                <h4><span id="stat-card-{{ $index }}"></span></h4>
+                                            </div>
+                                            <i class="{{ $card['icon'] }} fs-2"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    @endforeach
+
+                    {{-- Summary Cards --}}
+                    @php
+                        $extra = [
+                            ['title' => 'Today Installment', 'value' => $todayinstallment, 'color' => '#1e3c72'],
+                            ['title' => 'Total Arrears', 'value' => $arrease, 'color' => '#ef473a'],
+                            ['title' => 'Cheque Payments', 'value' => $checqueamount, 'color' => '#3498db'],
+                            ['title' => 'Due Outstanding (Installment Due + Arrears)', 'value' => ($todayinstallment + $arrease), 'color' => '#0072ff'],
+                            ['title' => 'Today Collected Amount', 'value' => $todaycollected, 'color' => '#ef803a'],
+                            ['title' => 'Total Outstanding', 'value' => $totalOutstanding, 'color' => '#01503c'],
+                            ['title' => 'Penalty Balance', 'value' => $penaltyBalance, 'color' => '#c0392b'],
+                        ];
+                    @endphp
+
+                    @foreach($extra as $i => $item)
+                        <div class="col-md-2 mb-4">
+                            @if($item['title'] === 'Total Outstanding')
+                                <a href="#" onclick="showTotalOutstandingModal()" class="text-decoration-none">
+                                    <div class="glass-card card text-white shadow animated-card" style="background-color: {{ $item['color'] }};">
+                                        <div class="card-body">
+                                            <h6 class="text-uppercase">{{ $item['title'] }}</h6>
+                                            <h4><span id="extra-card-{{ $i }}"></span></h4>
+                                        </div>
+                                    </div>
+                                </a>
+                            @elseif($item['title'] === 'Penalty Balance')
+                                <a href="#" onclick="showPenaltyBalanceModal()" class="text-decoration-none">
+                                    <div class="glass-card card text-white shadow animated-card" style="background-color: {{ $item['color'] }};">
+                                        <div class="card-body">
+                                            <h6 class="text-uppercase">{{ $item['title'] }}</h6>
+                                            <h4><span id="extra-card-{{ $i }}"></span></h4>
+                                        </div>
+                                    </div>
+                                </a>
+                            @else
+                                <div class="glass-card card text-white shadow animated-card" style="background-color: {{ $item['color'] }};">
+                                    <div class="card-body">
+                                        <h6 class="text-uppercase">{{ $item['title'] }}</h6>
+                                        <h4><span id="extra-card-{{ $i }}"></span></h4>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+
+                    {{-- Combined Not-Paid Card --}}
+                    <div class="col-md-6 col-lg-5 mb-4">
+                        <a href="#" onclick="showWeeklyNotPaidModal()" class="text-decoration-none">
+                            <div class="glass-card card text-white shadow animated-card" style="background: linear-gradient(135deg, #8e44ad, #2c3e50);">
                                 <div class="card-body">
+                                    <h6 class="text-uppercase mb-3">This Week Not-Paid</h6>
+                                    <div class="row g-3 align-items-stretch">
+                                        <div class="col-4">
+                                            <div class="text-center">
+                                                <h4><span id="weekly-unpaid-count"></span></h4>
+                                                <small class="text-light">Installments</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="text-center">
+                                                <h4><span id="weekly-unpaid-headcount"></span></h4>
+                                                <small class="text-light">Customers</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="text-center">
+                                                <h4><span id="weekly-unpaid-amount"></span></h4>
+                                                <small class="text-light">Amount</small>
+                                            </div>
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
                                             <h6 class="text-uppercase">{{ $card['title'] }} {!! $card['count'] !== '' ? '('.$card['count'].')' : '' !!}</h6>
                                             <h4><span id="stat-card-{{ $index }}"></span></h4>
                                         </div>
-                                        <i class="{{ $card['icon'] }} fs-2"></i>
                                     </div>
                                 </div>
                             </div>
                         </a>
                     </div>
-                @endforeach
+                </div>
 
+                {{-- Charts --}}
+                <div class="row">
+                    {{-- <div class="col-lg-12 mb-4">
+                        <div class="glass-card card shadow animated-card">
+                            <div class="card-body p-0">
+                                <h5 class="card-title p-3">📈 Live Currency Exchange (USD to LKR)</h5>
+                                <div class="tradingview-widget-container">
+                                    <div id="tradingview_advanced"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> --}}
+
+
+                    <div class="col-lg-6 mb-4">
+                        <div class="glass-card card shadow animated-card">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">📈 Monthly Payments</h5>
+                                <div id="monthly-revenue-chart" style="height: 300px;"></div>
                 {{-- Summary Cards --}}
                 @php
                     // Make sure these vars exist in the controller or set 0 defaults
@@ -349,6 +447,15 @@
                             </div>
                         @endif
                     </div>
+
+                    <div class="col-lg-6 mb-4">
+                        <div class="glass-card card shadow animated-card">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">💼 Loan Status</h5>
+                                <div id="loan-type-chart" style="height: 300px;"></div>
+                            </div>
+                        </div>
+                    </div>
                     @endforeach
 
                 {{-- Combined Not-Paid Card --}}
@@ -397,42 +504,112 @@
                 </div> --}}
 
 
-                <div class="col-lg-6 mb-4">
-                    <div class="glass-card card shadow animated-card">
-                        <div class="card-body">
-                            <h5 class="card-title mb-3">📈 Monthly Payments</h5>
-                            <div id="monthly-revenue-chart" style="height: 300px;"></div>
+                    <div class="col-lg-6 mb-4">
+                        <div class="glass-card card shadow animated-card">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">📊 Weekly Comparison</h5>
+                                <div id="bar-comparison-chart" style="height: 300px;"></div>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="col-lg-6 mb-4">
-                    <div class="glass-card card shadow animated-card">
-                        <div class="card-body">
-                            <h5 class="card-title mb-3">💼 Loan Status</h5>
-                            <div id="loan-type-chart" style="height: 300px;"></div>
+                    <div class="col-lg-3 mb-4">
+                        <div class="glass-card card shadow animated-card">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">✅ Loan Completion</h5>
+                                <div id="radial-progress-chart" style="height: 300px;"></div>
+                            </div>
                         </div>
                     </div>
+
+                    {{-- <div class="col-lg-3 mb-4">
+                        <div class="glass-card card shadow animated-card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title mb-3">📟 Profit Gauge</h5>
+                                <div id="profit-gauge" style="height: 200px;"></div>
+                                <h4 class="mt-3 text-success fw-bold" id="profit-display">0</h4>
+                            </div>
+                        </div>
+                    </div> --}}
+
+
+
                 </div>
 
-                <div class="col-lg-6 mb-4">
-                    <div class="glass-card card shadow animated-card">
-                        <div class="card-body">
-                            <h5 class="card-title mb-3">📊 Weekly Comparison</h5>
-                            <div id="bar-comparison-chart" style="height: 300px;"></div>
+
+                @if($shortcut_count > 0)
+                    <div class="row mt-5">
+                        <div class="col-12 mb-3">
+                            <div class="glass-card card border-0 shadow-sm animated-card"
+                                 style="background: rgba(255,255,255,0.15); backdrop-filter: blur(6px);">
+                                <div class="card-body d-flex justify-content-between align-items-center">
+                                    <h4 class="mb-0 text-dark fw-bold">Quick Access Shortcuts</h4>
+                                    {{--                                <i class="ri-apps-line fs-4 text-muted"></i>--}}
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                @endif
 
-                <div class="col-lg-3 mb-4">
-                    <div class="glass-card card shadow animated-card">
-                        <div class="card-body">
-                            <h5 class="card-title mb-3">✅ Loan Completion</h5>
-                            <div id="radial-progress-chart" style="height: 300px;"></div>
+                @php
+                    $colors = ['#f1c40f', '#2ecc71', '#e67e22', '#3498db', '#9b59b6', '#1abc9c', '#34495e', '#e74c3c'];
+                @endphp
+
+                <style>
+                    .shortcut-tile {
+                        border-radius: 12px;
+                        transition: all 0.25s ease-in-out;
+                        color: white;
+                    }
+                    .shortcut-tile:hover {
+                        transform: translateY(-4px);
+                        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+                    }
+                    .shortcut-icon {
+                        font-size: 1.8rem;
+                    }
+                    .shortcut-label {
+                        font-size: 0.9rem;
+                        font-weight: 500;
+                        margin-top: 6px;
+                    }
+                </style>
+
+                <div class="row g-3">
+                    @foreach($shortcut as $index => $item)
+                        @php
+                            $url = "/";
+                            $name = "";
+                            $icon = "";
+                            $bgColor = $colors[$index % count($colors)];
+
+                            switch($item->name) {
+                                case "Add_Customer": $url = "/customers"; $name = "Add Customer"; $icon = "fas fa-user-plus"; break;
+                                case "View_Customer": $url = "/showcustomers"; $name = "View Customers"; $icon = "fas fa-users"; break;
+                                case "Assign_Customers_to_group": $url = "/customergroupassign"; $name = "Assign to Group"; $icon = "fas fa-user-friends"; break;
+                                case "View_Products": $url = "/viewproduct"; $name = "View Products"; $icon = "fas fa-box-open"; break;
+                                case "Pending_Loans": $url = "/pendingloan"; $name = "Pending Loans"; $icon = "fas fa-hourglass-half"; break;
+                                case "Current_Loans": $url = "/payment_step_1"; $name = "Current Loans"; $icon = "fas fa-hand-holding-usd"; break;
+                                case "Loan_In_arrears": $url = "/latePayment"; $name = "Loan Arrears"; $icon = "fas fa-exclamation-triangle"; break;
+                                case "Add_Repayment": $url = "/payment"; $name = "Add Repayment"; $icon = "fas fa-money-check-alt"; break;
+                                case "Repayment_details": $url = "/viewpayment"; $name = "View Repayment"; $icon = "fas fa-file-invoice-dollar"; break;
+                                case "Collector_wise_collections": $url = "/collection"; $name = "Agent Collections"; $icon = "fas fa-user-tie"; break;
+                                case "Loan_Calculator": $url = "/calculator"; $name = "Loan Calculator"; $icon = "fas fa-calculator"; break;
+                                case "Add_Expenses": $url = "/expenses"; $name = "Add Expenses"; $icon = "fas fa-receipt"; break;
+                                case "Add_Income": $url = "/income"; $name = "Add Income"; $icon = "fas fa-hand-holding-usd"; break;
+                            }
+                        @endphp
+
+                        <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                            <a href="{{ $url }}" class="text-decoration-none">
+                                <div class="shortcut-tile text-center p-3 shadow-sm animated-card" style="background-color: {{ $bgColor }};">
+                                    <i class="{{ $icon }} shortcut-icon"></i>
+                                    <div class="shortcut-label">{{ $name }}</div>
+                                </div>
+                            </a>
                         </div>
-                    </div>
+                    @endforeach
                 </div>
-
                 {{-- <div class="col-lg-3 mb-4">
                     <div class="glass-card card shadow animated-card">
                         <div class="card-body text-center">
@@ -444,85 +621,176 @@
                 </div> --}}
 
 
-
             </div>
+        </div>
+        <button id="startLoanProcess" hidden>Start Processing Loans</button>
 
+        <!-- Total Outstanding Modal -->
+        <div class="modal fade" id="totalOutstandingModal" tabindex="-1" aria-labelledby="totalOutstandingModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content modern-modal">
+                    <div class="modal-header modern-modal-header" style="background: #ffffff; color: #2d3748; border-bottom: 1px solid #e2e8f0;">
+                        <div class="d-flex align-items-center">
+                            <div class="modal-icon-container me-3" style="background: #edf2f7; color: #01503c;">
+                                <i class="ri-money-dollar-circle-line fs-4"></i>
+                            </div>
+                            <div>
+                                <h4 class="modal-title mb-0" id="totalOutstandingModalLabel">💰 Total Outstanding</h4>
+                                <small class="text-muted">Complete loan portfolio overview</small>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body modern-modal-body">
+                        <!-- Loading State -->
+                        <div id="outstanding-loading" class="d-none">
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+                                <h5 class="text-muted">Loading outstanding loans...</h5>
+                                <div class="skeleton-loader mt-4">
+                                    <div class="skeleton-row"></div>
+                                    <div class="skeleton-row"></div>
+                                    <div class="skeleton-row"></div>
+                                </div>
+                            </div>
+                        </div>
 
-            @if($shortcut_count > 0)
-                <div class="row mt-5">
-                    <div class="col-12 mb-3">
-                        <div class="glass-card card border-0 shadow-sm animated-card"
-                             style="background: rgba(255,255,255,0.15); backdrop-filter: blur(6px);">
-                            <div class="card-body d-flex justify-content-between align-items-center">
-                                <h4 class="mb-0 text-dark fw-bold">Quick Access Shortcuts</h4>
-{{--                                <i class="ri-apps-line fs-4 text-muted"></i>--}}
+                        <!-- Table Container -->
+                        <div id="outstanding-content">
+                            <div class="table-responsive modern-table-container">
+                                <table class="table modern-table mb-0" id="outstanding_table_modal">
+                                    <thead class="modern-table-header">
+                                    <tr>
+                                        <th>Loan ID</th>
+                                        <th>Customer ID</th>
+                                        <th>Customer Name</th>
+                                        <th class="text-end" title="Loan Amount - Capital amount">Capital Amount</th>
+                                        <th class="text-end" title="Full Loan Amount - Capital and interest">Full Loan Amount</th>
+                                        <th class="text-end" title="Total Outstanding Amount - Capital balance + interest balance">Total Outstanding</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <!-- Data will be loaded via AJAX -->
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                 </div>
-            @endif
-
-            @php
-                $colors = ['#f1c40f', '#2ecc71', '#e67e22', '#3498db', '#9b59b6', '#1abc9c', '#34495e', '#e74c3c'];
-            @endphp
-
-            <style>
-                .shortcut-tile {
-                    border-radius: 12px;
-                    transition: all 0.25s ease-in-out;
-                    color: white;
-                }
-                .shortcut-tile:hover {
-                    transform: translateY(-4px);
-                    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
-                }
-                .shortcut-icon {
-                    font-size: 1.8rem;
-                }
-                .shortcut-label {
-                    font-size: 0.9rem;
-                    font-weight: 500;
-                    margin-top: 6px;
-                }
-            </style>
-
-            <div class="row g-3">
-                @foreach($shortcut as $index => $item)
-                    @php
-                        $url = "/";
-                        $name = "";
-                        $icon = "";
-                        $bgColor = $colors[$index % count($colors)];
-
-                        switch($item->name) {
-                            case "Add_Customer": $url = "/customers"; $name = "Add Customer"; $icon = "fas fa-user-plus"; break;
-                            case "View_Customer": $url = "/showcustomers"; $name = "View Customers"; $icon = "fas fa-users"; break;
-                            case "Assign_Customers_to_group": $url = "/customergroupassign"; $name = "Assign to Group"; $icon = "fas fa-user-friends"; break;
-                            case "View_Products": $url = "/viewproduct"; $name = "View Products"; $icon = "fas fa-box-open"; break;
-                            case "Pending_Loans": $url = "/pendingloan"; $name = "Pending Loans"; $icon = "fas fa-hourglass-half"; break;
-                            case "Current_Loans": $url = "/payment_step_1"; $name = "Current Loans"; $icon = "fas fa-hand-holding-usd"; break;
-                            case "Loan_In_arrears": $url = "/latePayment"; $name = "Loan Arrears"; $icon = "fas fa-exclamation-triangle"; break;
-                            case "Add_Repayment": $url = "/payment"; $name = "Add Repayment"; $icon = "fas fa-money-check-alt"; break;
-                            case "Repayment_details": $url = "/viewpayment"; $name = "View Repayment"; $icon = "fas fa-file-invoice-dollar"; break;
-                            case "Collector_wise_collections": $url = "/collection"; $name = "Agent Collections"; $icon = "fas fa-user-tie"; break;
-                            case "Loan_Calculator": $url = "/calculator"; $name = "Loan Calculator"; $icon = "fas fa-calculator"; break;
-                            case "Add_Expenses": $url = "/expenses"; $name = "Add Expenses"; $icon = "fas fa-receipt"; break;
-                            case "Add_Income": $url = "/income"; $name = "Add Income"; $icon = "fas fa-hand-holding-usd"; break;
-                        }
-                    @endphp
-
-                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
-                        <a href="{{ $url }}" class="text-decoration-none">
-                            <div class="shortcut-tile text-center p-3 shadow-sm animated-card" style="background-color: {{ $bgColor }};">
-                                <i class="{{ $icon }} shortcut-icon"></i>
-                                <div class="shortcut-label">{{ $name }}</div>
-                            </div>
-                        </a>
-                    </div>
-                @endforeach
             </div>
+        </div>
 
+        <!-- Weekly Not Paid Modal -->
+        <div class="modal fade" id="weeklyNotPaidModal" tabindex="-1" aria-labelledby="weeklyNotPaidModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content modern-modal">
+                    <div class="modal-header modern-modal-header" style="background: #ffffff; color: #2d3748; border-bottom: 1px solid #e2e8f0;">
+                        <div class="d-flex align-items-center">
+                            <div class="modal-icon-container me-3" style="background: #fef5e7; color: #f39c12;">
+                                <i class="ri-calendar-event-line fs-4"></i>
+                            </div>
+                            <div>
+                                <h4 class="modal-title mb-0" id="weeklyNotPaidModalLabel">📅 This Week Not-Paid</h4>
+                                <small class="text-muted">Loans with missed payments this week</small>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body modern-modal-body">
+                        <!-- Loading State -->
+                        <div id="weekly-loading" class="d-none">
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-warning mb-3" style="width: 3rem; height: 3rem;"></div>
+                                <h5 class="text-muted">Loading weekly unpaid loans...</h5>
+                                <div class="skeleton-loader mt-4">
+                                    <div class="skeleton-row"></div>
+                                    <div class="skeleton-row"></div>
+                                    <div class="skeleton-row"></div>
+                                </div>
+                            </div>
+                        </div>
 
+                        <!-- Table Container -->
+                        <div id="weekly-content">
+                            <div class="table-responsive modern-table-container">
+                                <table class="table modern-table mb-0" id="weekly_not_paid_table_modal">
+                                    <thead class="modern-table-header modern-table-warning">
+                                    <tr>
+                                        <th>Loan ID</th>
+                                        <th>Customer ID</th>
+                                        <th>Customer Name</th>
+                                        <th class="text-end" title="Loan Amount - Capital amount">Capital Amount</th>
+                                        <th class="text-end" title="Full Loan Amount - Capital + interest">Full Loan Amount</th>
+                                        <th class="text-end" title="This Week Not Paid Amount">Week Not Paid</th>
+                                        <th class="text-end" title="Total Not Paid Amount - Arrears">Total Arrears</th>
+                                        <th class="text-center" title="Not Paid Installment Count">Unpaid Count</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <!-- Data will be loaded via AJAX -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Penalty Balance Modal -->
+        <div class="modal fade" id="penaltyBalanceModal" tabindex="-1" aria-labelledby="penaltyBalanceModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content modern-modal">
+                    <div class="modal-header modern-modal-header" style="background: #ffffff; color: #2d3748; border-bottom: 1px solid #e2e8f0;">
+                        <div class="d-flex align-items-center">
+                            <div class="modal-icon-container me-3" style="background: #fed7d7; color: #c53030;">
+                                <i class="ri-error-warning-line fs-4"></i>
+                            </div>
+                            <div>
+                                <h4 class="modal-title mb-0" id="penaltyBalanceModalLabel">⚠️ Penalty Balance</h4>
+                                <small class="text-muted">Outstanding penalty charges</small>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body modern-modal-body">
+                        <!-- Loading State -->
+                        <div id="penalty-loading" class="d-none">
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-danger mb-3" style="width: 3rem; height: 3rem;"></div>
+                                <h5 class="text-muted">Loading penalty balances...</h5>
+                                <div class="skeleton-loader mt-4">
+                                    <div class="skeleton-row"></div>
+                                    <div class="skeleton-row"></div>
+                                    <div class="skeleton-row"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Table Container -->
+                        <div id="penalty-content">
+                            <div class="table-responsive modern-table-container">
+                                <table class="table modern-table mb-0" id="penalty_balance_table_modal">
+                                    <thead class="modern-table-header modern-table-danger">
+                                    <tr>
+                                        <th>Loan ID</th>
+                                        <th>Customer ID</th>
+                                        <th>Customer Name</th>
+                                        <th class="text-end" title="Loan Amount - Capital amount">Capital Amount</th>
+                                        <th class="text-end" title="Full Loan Amount - Capital and interest">Full Loan Amount</th>
+                                        <th class="text-end" title="Total Outstanding Amount - Capital balance + interest balance">Total Outstanding</th>
+                                        <th class="text-end" title="Penalty Balance">Penalty Balance</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <!-- Data will be loaded via AJAX -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         </div>
         <button id="startLoanProcess" hidden>Start Processing Loans</button>
@@ -766,6 +1034,13 @@
             });
             if (!weeklyCountAnim.error) weeklyCountAnim.start();
 
+            // Animate weekly unpaid metrics
+            const weeklyCountAnim = new countUp.CountUp('weekly-unpaid-count', {{ $weeklyUnpaidCount }}, {
+                separator: ',',
+                decimalPlaces: 0
+            });
+            if (!weeklyCountAnim.error) weeklyCountAnim.start();
+
             // Headcount (distinct customers)
             const weeklyHeadAnim = new countUp.CountUp('weekly-unpaid-headcount', {{ $weeklyUnpaidCustomerCount ?? 0 }}, {
                 separator: ',',
@@ -779,6 +1054,11 @@
             });
             if (!weeklyAmountAnim.error) weeklyAmountAnim.start();
 
+            const weeklyAmountAnim = new countUp.CountUp('weekly-unpaid-amount', {{ $weeklyUnpaidAmount }}, {
+                separator: ',',
+                decimalPlaces: 2
+            });
+            if (!weeklyAmountAnim.error) weeklyAmountAnim.start();
 
             // Monthly Area Chart
             new ApexCharts(document.querySelector("#monthly-revenue-chart"), {
@@ -1006,17 +1286,20 @@
 
     <script>
         let outstandingTable = null;
+
         
         function showTotalOutstandingModal() {
             // Show modal with loading state
             $('#totalOutstandingModal').modal('show');
             $('#outstanding-loading').removeClass('d-none');
             $('#outstanding-content').addClass('d-none');
+
             
             // Destroy existing DataTable if it exists
             if (outstandingTable) {
                 outstandingTable.destroy();
             }
+
             
             // Fetch data via AJAX
             $.get('/total-outstanding-data', function(response) {
@@ -1038,6 +1321,7 @@
                         `;
                     });
                     $('#outstanding_table_modal tbody').html(tbody);
+
                     
                     // Initialize DataTable with export buttons
                     outstandingTable = $('#outstanding_table_modal').DataTable({
@@ -1072,6 +1356,7 @@
                 $('#outstanding_table_modal tbody').html('<tr><td colspan="6" class="text-center text-danger">Error loading data</td></tr>');
             });
         }
+
         
         // Cleanup when modal is hidden
         $('#totalOutstandingModal').on('hidden.bs.modal', function () {
@@ -1085,17 +1370,20 @@
     <script>
         let weeklyNotPaidTable = null;
         let penaltyBalanceTable = null;
+
         
         function showWeeklyNotPaidModal() {
             // Show modal with loading state
             $('#weeklyNotPaidModal').modal('show');
             $('#weekly-loading').removeClass('d-none');
             $('#weekly-content').addClass('d-none');
+
             
             // Destroy existing DataTable if it exists
             if (weeklyNotPaidTable) {
                 weeklyNotPaidTable.destroy();
             }
+
             
             // Fetch data via AJAX
             $.get('/weekly-not-paid-data', function(response) {
@@ -1119,6 +1407,7 @@
                         `;
                     });
                     $('#weekly_not_paid_table_modal tbody').html(tbody);
+
                     
                     // Initialize DataTable with export buttons
                     weeklyNotPaidTable = $('#weekly_not_paid_table_modal').DataTable({
@@ -1154,17 +1443,20 @@
                 $('#weekly_not_paid_table_modal tbody').html('<tr><td colspan="8" class="text-center text-danger">Error loading data</td></tr>');
             });
         }
+
         
         function showPenaltyBalanceModal() {
             // Show modal with loading state
             $('#penaltyBalanceModal').modal('show');
             $('#penalty-loading').removeClass('d-none');
             $('#penalty-content').addClass('d-none');
+
             
             // Destroy existing DataTable if it exists
             if (penaltyBalanceTable) {
                 penaltyBalanceTable.destroy();
             }
+
             
             // Fetch data via AJAX
             $.get('/penalty-balance-data', function(response) {
@@ -1187,6 +1479,7 @@
                         `;
                     });
                     $('#penalty_balance_table_modal tbody').html(tbody);
+
                     
                     // Initialize DataTable with export buttons
                     penaltyBalanceTable = $('#penalty_balance_table_modal').DataTable({
@@ -1221,6 +1514,7 @@
                 $('#penalty_balance_table_modal tbody').html('<tr><td colspan="7" class="text-center text-danger">Error loading data</td></tr>');
             });
         }
+
         
         // Cleanup when modals are hidden
         $('#weeklyNotPaidModal').on('hidden.bs.modal', function () {
@@ -1229,6 +1523,7 @@
                 weeklyNotPaidTable = null;
             }
         });
+
         
         $('#penaltyBalanceModal').on('hidden.bs.modal', function () {
             if (penaltyBalanceTable) {

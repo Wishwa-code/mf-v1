@@ -663,7 +663,7 @@
                                                 <div class="row mb-3 section-break">
                                                     <div class="col-12">
                                                         <div class="section-title">
-                                                            Loan Charge
+                                                            Loan Charge (On Loan Disbursement)
                                                         </div>
                                                     </div>
                                                 </div>
@@ -689,23 +689,44 @@
                                                     <div class="col-12">
                                                         <!-- Total Loan Charges with value -->
                                                         <div class="row mb-3">
-                                                            <div class="col-6 fw-bold">Total Loan Charges</div>
-                                                            <div class="col-6 fw-bold text-left" id="total_loan_charge">0.00</div>
+                                                            <div class="col-6 fw-bold"  style="color: red">Total Loan Charges (On Loan Disbursement)</div>
+                                                            <div class="col-6 fw-bold text-left" id="total_loan_charge"  style="color: red">0.00</div>
                                                         </div>
+
+
+                                                        <div class="row mb-3 section-break">
+                                                            <div class="col-12">
+                                                                <div class="section-title">
+                                                                    Loan Charge (As First Installment)
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <div>
+                                                                <div class="table-responsive-sm border border-1">
+                                                                    <table class="table table-centered mb-0" id="first_installment_table">
+                                                                        <thead>
+                                                                        <tr>
+                                                                            <th>Description</th>
+                                                                            <th>Type</th>
+                                                                            <th style="float: right;">Amount</th>
+                                                                        </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div> <!-- end table-responsive-->
+                                                            </div> <!-- end card-body-->
+                                                        </div> <!-- end card-->
+                                                        <br><br>
+                                                        <div class="row mb-3">
+                                                            <div class="col-6 fw-bold" style="color: red">Total Loan Charges (As First Installment)</div>
+                                                            <div class="col-6 fw-bold text-left" id="total_loan_charge_first_installment" style="color: red">0.00</div>
+                                                        </div>
+
                                                         <!-- Loan Charges Balance checkbox -->
                                                         <div class="row mb-3">
                                                             <div class="col-12 fw-bold d-flex align-items-center">
-{{--                                                                <div class="col-6 fw-bold">Total Other Charges In Loan</div>--}}
-{{--                                                                <div class="btn-group ms-2" role="group" aria-label="Checkbox group">--}}
-{{--                                                                    <input type="checkbox" class="form-check-input" id="loanChargesBalance" onchange="checkLoanChargesBalance()">--}}
-{{--                                                                    <label class="form-check-label ms-2" for="loanChargesBalance">Add Loan Charges to the Capital</label>--}}
-
-{{--                                                                    <input type="checkbox" class="form-check-input ms-3" id="deductCharges" onchange="checkAnotherCheckbox('deductCharges')">--}}
-{{--                                                                    <label class="form-check-label ms-2" for="deductCharges">Deduct Other Charges from Capital</label>--}}
-
-{{--                                                                    <input type="checkbox" class="form-check-input ms-3" id="separateCharges" onchange="checkAnotherCheckbox('separateCharges')" checked>--}}
-{{--                                                                    <label class="form-check-label ms-2" for="separateCharges">Loan Charges Separate from Loan</label>--}}
-{{--                                                                </div>--}}
                                                                 <div class="col-6 fw-bold">Total Other Charges In Loan</div>
                                                                 <div class="btn-group ms-2" role="group" aria-label="Checkbox group">
                                                                     <input type="checkbox" class="form-check-input" id="loanChargesBalance" onchange="checkLoanChargesBalance()">
@@ -1123,10 +1144,11 @@
 
 @section('script')
     <script src="../JS/validate.js"></script>
-    <script src="../JS/issueloan.js?n=15"></script>
+    <script src="../JS/issueloan.js?n=16"></script>
     <script>
         var route_collection_type="";
         var route_collection_date="";
+        var collection_date_type_global="";
         var canEditProductDetails = true; // Global flag for product details editing
         
         $(document).ready(function() {
@@ -1386,8 +1408,9 @@
         }
 
 
-        function load_doc_charge(){
-            let id=$("#package_details").val();
+        function load_doc_charge() {
+            let id = $("#package_details").val();
+
             $.ajax({
                 type: "GET",
                 url: "/loancategory/cost/" + id,
@@ -1395,55 +1418,83 @@
                     "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                 },
                 success: function (data, textStatus, xhr) {
-                    if (xhr.status === 200) {
-                        // Process other charges
-                        var otherChargesTable = $('#loan_charge_table tbody');
-                        otherChargesTable.empty(); // Clear existing rows
-                        var totalAmount = 0; // Initialize total amount
+                    if (xhr.status !== 200) return;
 
-                        data.other_charges.forEach(function(charge) {
-                            let charge_type = charge.charge_type;
-                            let amount = parseFloat(charge.Amount);
+                    // Cache DOM
+                    const $loanTblBody    = $('#loan_charge_table tbody');
+                    const $firstTblBody   = $('#first_installment_table tbody'); // <-- ensure this table exists in your blade
+                    const $loanTotalEl    = $('#total_loan_charge');
+                    const $firstTotalEl   = $('#total_loan_charge_first_installment');
 
-                            // Check if the amount is valid
-                            if (!isNaN(amount)) {
-                                amount = amount.toFixed(2); // Format as 2 decimal places
+                    // Clear tables
+                    $loanTblBody.empty();
+                    $firstTblBody.empty();
 
-                                if(charge_type === "Percentage") {
-                                    let loan_amount = parseFloat($("#loan_amount").val());
+                    // Totals
+                    let totalLoanCharges = 0;
+                    let totalFirstInst   = 0;
 
-                                    // Check if loan_amount is valid before performing calculations
-                                    if (!isNaN(loan_amount)) {
-                                        let new_loan_amount = loan_amount * (amount / 100);
-                                        amount = new_loan_amount.toFixed(2); // Update the amount with the percentage value
-                                        charge_type = charge_type + " (" + charge.Amount + "%)";
-                                        console.log(amount);
-                                    } else {
-                                        console.warn("Invalid loan amount");
-                                        amount = '0.00'; // Default value if loan amount is invalid
-                                    }
-                                }
+                    // Helpers
+                    const n2 = (v) => (isNaN(v) ? '0.00' : Number(v).toFixed(2));
+                    const readLoanAmount = () => {
+                        const v = parseFloat($("#loan_amount").val());
+                        return isNaN(v) ? null : v;
+                    };
 
-                                // Create a new table row with valid data
-                                var row = $('<tr></tr>');
-                                row.append('<td>' + charge.Description + '</td>');
-                                row.append('<td>' + charge_type + '</td>');
-                                row.append('<td class="text-end">' + amount + '</td>');
-                                otherChargesTable.append(row);
-                                totalAmount += parseFloat(amount); // Add to total if valid
+                    (data.other_charges || []).forEach(function (charge) {
+                        let { Description, Amount, charge_type, deduction_type } = charge;
+
+                        // base numeric amount
+                        let numericAmount = parseFloat(Amount);
+                        if (isNaN(numericAmount)) {
+                            console.warn("Invalid charge amount for:", charge);
+                            return; // skip
+                        }
+
+                        let displayType = charge_type;
+                        let finalAmount = numericAmount;
+
+                        // Handle percentage against loan amount
+                        if (charge_type === "Percentage") {
+                            const loanAmt = readLoanAmount();
+                            if (loanAmt === null) {
+                                console.warn("Invalid loan amount; percentage charge set to 0.00");
+                                finalAmount = 0;
                             } else {
-                                console.warn("Invalid charge amount for:", charge);
+                                finalAmount = loanAmt * (numericAmount / 100);
+                                displayType = `Percentage (${n2(numericAmount)}%)`;
                             }
-                        });
+                        }
 
-                        $('#total_loan_charge').text(totalAmount.toFixed(2));
-                    }
+                        const amountText = n2(finalAmount);
+
+                        // Build row
+                        const $row = $('<tr></tr>');
+                        $row.append('<td>' + (Description ?? '') + '</td>');
+                        $row.append('<td>' + displayType + '</td>');
+                        $row.append('<td class="text-end">' + amountText + '</td>');
+
+                        // Route to correct table by deduction_type
+                        if (deduction_type === "On Loan Disbursement") {
+                            $loanTblBody.append($row);
+                            totalLoanCharges += finalAmount;
+                        } else {
+                            // default to "As First Installment"
+                            $firstTblBody.append($row);
+                            totalFirstInst += finalAmount;
+                        }
+                    });
+
+                    // Update totals
+                    $loanTotalEl.text(n2(totalLoanCharges));
+                    $firstTotalEl.text(n2(totalFirstInst));
                 },
-                error: function(xhr, textStatus, errorThrown) {
+                error: function (xhr, textStatus, errorThrown) {
                     console.log("Error:", errorThrown);
                 }
             });
         }
+
 
 
         function load_product_details(id) {
@@ -1485,7 +1536,7 @@
                         $('#penalty_date').val(product.Panelty_date);
                         $('#guarantee_count').val(product.Guarantee_count);
                         $('#collection_date_type').val(product.collection_date_type || 'same_as_installment').trigger('change');
-
+                        collection_date_type_global=product.collection_date_type;
 
                         toggleFields();
 
@@ -2164,7 +2215,7 @@
             // ===== Your existing code starts here =====
             let Collection_Type      = $('#repayment_type').val();
             let penalty_date         = $('#penalty_date').val();
-            let collection_date_type = $("#collection_date_type").val();
+            let collection_date_type = collection_date_type_global;
 
             $("#load_div").slideDown();
             $('#panelty_date').text("Installment Date + " + penalty_date + " Days");
@@ -2350,7 +2401,8 @@
             const loanAmountFrom = parseFloat($("#loan_amount_from").val());
             const loanAmountTo = parseFloat($("#loan_amount_to").val());
 
-            let collection_date_type = $("#collection_date_type").val();
+
+
 
 
             /* ---------- date helpers (define once in this scope) ---------- */
@@ -2388,8 +2440,9 @@
                 };
             }
 
+
             if (route_collection_type === "fixed") {
-                if (collection_date_type === "according_to_route") {
+                if (collection_date_type_global === "according_to_route") {
                     // ===== header with Collection Date + Difference =====
                     $('#installment_table thead').empty();
                     const theadContent = `
@@ -2885,7 +2938,7 @@
                    // Append the header content to the table
                    $('#installment_table').prepend(theadContent);
 
-
+                   let firstInstCharge = parseFloat($('#total_loan_charge_first_installment').text()) || 0;
 
 
                    if(loan_type==="Daily"){
@@ -2952,6 +3005,8 @@
 
                            let count=1;
 
+
+
                            installmentDates.forEach(function(date) {
                                let currentDate = new Date(date);
 
@@ -2975,25 +3030,51 @@
                                    principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
                                    let saving_amount_show = EMI + parseFloat(saving_amount_value);
 
-                                   var row = '<tr>' +
-                                       '<td>' + count + '</td>' +
-                                       '<td>' + date + '</td>' +
-                                       '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + panelty_date + '</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                       '<td class="text-center">' +
-                                       '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                       '</td>' +
-                                       '</tr>';
+                                   if(firstInstCharge>0){
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
+
+
+                                       count++;
+                                       firstInstCharge=0;
+                                   }else{
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
+                                   }
 
                                    tableBody.append(row);
 
@@ -3009,26 +3090,53 @@
 
                                } else{
 
-                                   // Create the row
-                                   var row = '<tr>' +
-                                       '<td>' + count + '</td>' +
-                                       '<td>' + date + '</td>' +
-                                       '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + panelty_date + '</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                       '<td class="text-center">' +
-                                       '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                       '</td>' +
-                                       '</tr>';
+                                   if(firstInstCharge>0){
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
+
+
+                                       count++;
+                                       firstInstCharge=0;
+                                   }else{
+                                       // Create the row
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
+                                   }
+
 
                                    tableBody.append(row);
                                }
@@ -3130,25 +3238,54 @@
                                        principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
                                        let saving_amount_show = EMI + parseFloat(saving_amount_value);
 
-                                       var row = '<tr>' +
-                                           '<td>' + count + '</td>' +
-                                           '<td>' + date + '</td>' +
-                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + panelty_date + '</td>' +
-                                           '<td class="text-end">0.00</td>' +
-                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                           '<td class="text-end">0.00</td>' +
-                                           '<td class="text-end">0.00</td>' +
-                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                           '<td class="text-center">' +
-                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                           '</td>' +
-                                           '</tr>';
+
+                                       if(firstInstCharge>0){
+                                           var row = '<tr>' +
+                                               '<td>' + count + '</td>' +
+                                               '<td>' + date + '</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + panelty_date + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-center">' +
+                                               '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                               '</td>' +
+                                               '</tr>';
+
+
+                                           count++;
+                                           firstInstCharge=0;
+                                       }else{
+                                           var row = '<tr>' +
+                                               '<td>' + count + '</td>' +
+                                               '<td>' + date + '</td>' +
+                                               '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + panelty_date + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                               '<td class="text-center">' +
+                                               '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                               '</td>' +
+                                               '</tr>';
+                                       }
+
+
 
                                        tableBody.append(row);
 
@@ -3164,25 +3301,54 @@
 
                                    }else{
 
-                                       var row = '<tr>' +
-                                           '<td>' + count + '</td>' +
-                                           '<td>' + date + '</td>' +
-                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + panelty_date + '</td>' +
-                                           '<td class="text-end">0.00</td>' +
-                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                           '<td class="text-end">0.00</td>' +
-                                           '<td class="text-end">0.00</td>' +
-                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                           '<td class="text-center">' +
-                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                           '</td>' +
-                                           '</tr>';
+
+                                       if(firstInstCharge>0){
+                                           var row = '<tr>' +
+                                               '<td>' + count + '</td>' +
+                                               '<td>' + date + '</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + panelty_date + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-center">' +
+                                               '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                               '</td>' +
+                                               '</tr>';
+
+
+                                           count++;
+                                           firstInstCharge=0;
+                                       }else{
+                                           var row = '<tr>' +
+                                               '<td>' + count + '</td>' +
+                                               '<td>' + date + '</td>' +
+                                               '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + panelty_date + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                               '<td class="text-center">' +
+                                               '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                               '</td>' +
+                                               '</tr>';
+                                       }
+
+
 
                                        tableBody.append(row);
                                    }
@@ -3277,25 +3443,56 @@
                                        principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
                                        let saving_amount_show = EMI + parseFloat(saving_amount_value);
 
-                                       var row = '<tr>' +
-                                           '<td>' + count + '</td>' +
-                                           '<td>' + date + '</td>' +
-                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + panelty_date + '</td>' +
-                                           '<td class="text-end">0.00</td>' +
-                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                           '<td class="text-end">0.00</td>' +
-                                           '<td class="text-end">0.00</td>' +
-                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                           '<td class="text-center">' +
-                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                           '</td>' +
-                                           '</tr>';
+
+                                       if(firstInstCharge>0){
+                                           var row = '<tr>' +
+                                               '<td>' + count + '</td>' +
+                                               '<td>' + date + '</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + panelty_date + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-center">' +
+                                               '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                               '</td>' +
+                                               '</tr>';
+
+
+                                           count++;
+                                           firstInstCharge=0;
+                                       }else{
+                                           var row = '<tr>' +
+                                               '<td>' + count + '</td>' +
+                                               '<td>' + date + '</td>' +
+                                               '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + panelty_date + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                               '<td class="text-center">' +
+                                               '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                               '</td>' +
+                                               '</tr>';
+                                       }
+
+
+
+
 
                                        tableBody.append(row);
 
@@ -3310,25 +3507,53 @@
                                        }
 
                                    }else{
-                                       var row = '<tr>' +
-                                           '<td>' + count + '</td>' +
-                                           '<td>' + date + '</td>' +
-                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + panelty_date + '</td>' +
-                                           '<td class="text-end">0.00</td>' +
-                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                           '<td class="text-end">0.00</td>' +
-                                           '<td class="text-end">0.00</td>' +
-                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                           '<td class="text-center">' +
-                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                           '</td>' +
-                                           '</tr>';
+
+                                       if(firstInstCharge>0){
+                                           var row = '<tr>' +
+                                               '<td>' + count + '</td>' +
+                                               '<td>' + date + '</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + panelty_date + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-center">' +
+                                               '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                               '</td>' +
+                                               '</tr>';
+
+
+                                           count++;
+                                           firstInstCharge=0;
+                                       }else{
+                                           var row = '<tr>' +
+                                               '<td>' + count + '</td>' +
+                                               '<td>' + date + '</td>' +
+                                               '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + panelty_date + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                               '<td class="text-center">' +
+                                               '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                               '</td>' +
+                                               '</tr>';
+
+                                       }
 
                                        tableBody.append(row);
                                    }
@@ -3436,25 +3661,53 @@
                                        principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
                                        let saving_amount_show = EMI + parseFloat(saving_amount_value);
 
-                                       var row = '<tr>' +
-                                           '<td>' + count + '</td>' +
-                                           '<td>' + date + '</td>' +
-                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + panelty_date + '</td>' +
-                                           '<td class="text-end">0.00</td>' +
-                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                           '<td class="text-end">0.00</td>' +
-                                           '<td class="text-end">0.00</td>' +
-                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                           '<td class="text-center">' +
-                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                           '</td>' +
-                                           '</tr>';
+                                       if(firstInstCharge>0){
+                                           var row = '<tr>' +
+                                               '<td>' + count + '</td>' +
+                                               '<td>' + date + '</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + panelty_date + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-center">' +
+                                               '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                               '</td>' +
+                                               '</tr>';
+
+
+                                           count++;
+                                           firstInstCharge=0;
+                                       }else{
+                                           var row = '<tr>' +
+                                               '<td>' + count + '</td>' +
+                                               '<td>' + date + '</td>' +
+                                               '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + panelty_date + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                               '<td class="text-center">' +
+                                               '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                               '</td>' +
+                                               '</tr>';
+                                       }
+
+
 
                                        tableBody.append(row);
 
@@ -3468,25 +3721,53 @@
                                            span.addClass('bg-danger text-warning').text('-');
                                        }
                                    }else{
-                                       var row = '<tr>' +
-                                           '<td>' + count + '</td>' +
-                                           '<td>' + date + '</td>' +
-                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + panelty_date + '</td>' +
-                                           '<td class="text-end">0.00</td>' +
-                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                           '<td class="text-end">0.00</td>' +
-                                           '<td class="text-end">0.00</td>' +
-                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                           '<td class="text-center">' +
-                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                           '</td>' +
-                                           '</tr>';
+
+                                       if(firstInstCharge>0){
+                                           var row = '<tr>' +
+                                               '<td>' + count + '</td>' +
+                                               '<td>' + date + '</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + panelty_date + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                               '<td class="text-center">' +
+                                               '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                               '</td>' +
+                                               '</tr>';
+
+
+                                           count++;
+                                           firstInstCharge=0;
+                                       }else{
+                                           var row = '<tr>' +
+                                               '<td>' + count + '</td>' +
+                                               '<td>' + date + '</td>' +
+                                               '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + panelty_date + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">0.00</td>' +
+                                               '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                               '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                               '<td class="text-center">' +
+                                               '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                               '</td>' +
+                                               '</tr>';
+                                       }
+
 
                                        tableBody.append(row);
                                    }
@@ -3587,25 +3868,52 @@
                                    principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
                                    let saving_amount_show = EMI + parseFloat(saving_amount_value);
 
-                                   var row = '<tr>' +
-                                       '<td>' + count + '</td>' +
-                                       '<td>' + date + '</td>' +
-                                       '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + panelty_date + '</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                       '<td class="text-center">' +
-                                       '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                       '</td>' +
-                                       '</tr>';
+                                   if(firstInstCharge>0){
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
+
+
+                                       count++;
+                                       firstInstCharge=0;
+                                   }else {
+
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
+                                   }
 
                                    tableBody.append(row);
 
@@ -3620,26 +3928,51 @@
                                    }
 
                                }else{
-                                   var row = '<tr>' +
-                                       '<td>' + count + '</td>' +
-                                       '<td>' + date + '</td>' +
-                                       '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + panelty_date + '</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                       '<td class="text-center">' +
-                                       '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                       '</td>' +
-                                       '</tr>';
+                                   if(firstInstCharge>0){
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
 
+
+                                       count++;
+                                       firstInstCharge=0;
+                                   }else {
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
+                                   }
                                    tableBody.append(row);
                                }
 
@@ -3740,26 +4073,52 @@
                                    principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
                                    let saving_amount_show = EMI + parseFloat(saving_amount_value);
 
-                                   var row = '<tr>' +
-                                       '<td>' + count + '</td>' +
-                                       '<td>' + date + '</td>' +
-                                       '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + panelty_date + '</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                       '<td class="text-center">' +
-                                       '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                       '</td>' +
-                                       '</tr>';
+                                   if(firstInstCharge>0){
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
 
+
+                                       count++;
+                                       firstInstCharge=0;
+                                   }else {
+
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
+                                   }
                                    tableBody.append(row);
 
                                    var span = tableBody.children('tr:last-child').find('span');
@@ -3773,26 +4132,52 @@
                                    }
 
                                }else{
-                                   var row = '<tr>' +
-                                       '<td>' + count + '</td>' +
-                                       '<td>' + date + '</td>' +
-                                       '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + panelty_date + '</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                       '<td class="text-center">' +
-                                       '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                       '</td>' +
-                                       '</tr>';
 
+                                   if(firstInstCharge>0){
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
+
+
+                                       count++;
+                                       firstInstCharge=0;
+                                   }else {
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
+                                   }
                                    tableBody.append(row);
                                }
 
@@ -3880,26 +4265,52 @@
                                    principal_balance = parseFloat((principal_balance - capital_amt).toFixed(2));
                                    let saving_amount_show = EMI + parseFloat(saving_amount_value);
 
-                                   var row = '<tr>' +
-                                       '<td>' + count + '</td>' +
-                                       '<td>' + date + '</td>' +
-                                       '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + panelty_date + '</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
-                                       '<td class="text-center">' +
-                                       '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                       '</td>' +
-                                       '</tr>';
 
+                                   if(firstInstCharge>0){
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
+
+
+                                       count++;
+                                       firstInstCharge=0;
+                                   }else {
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + capital_amt.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + interest_amt.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + EMI.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + saving_amount_show.toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
+                                   }
                                    tableBody.append(row);
 
                                    var span = tableBody.children('tr:last-child').find('span');
@@ -3912,26 +4323,51 @@
                                        span.addClass('bg-danger text-warning').text('-');
                                    }
                                }else{
-                                   var row = '<tr>' +
-                                       '<td>' + count + '</td>' +
-                                       '<td>' + date + '</td>' +
-                                       '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + panelty_date + '</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">0.00</td>' +
-                                       '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
-                                       '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
-                                       '<td class="text-center">' +
-                                       '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
-                                       '</td>' +
-                                       '</tr>';
+                                   if(firstInstCharge>0){
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + firstInstCharge.toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
 
+
+                                       count++;
+                                       firstInstCharge=0;
+                                   }else {
+                                       var row = '<tr>' +
+                                           '<td>' + count + '</td>' +
+                                           '<td>' + date + '</td>' +
+                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(capital_amount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(interest_amount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + panelty_date + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">0.00</td>' +
+                                           '<td class="text-end">' + parseFloat(installmentAmount).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_value).toFixed(2) + '</td>' +
+                                           '<td class="text-end">' + parseFloat(saving_amount_show).toFixed(2) + '</td>' +
+                                           '<td class="text-center">' +
+                                           '<span class="px-1" style="background-color: #ff0000; border-radius: 10px; color: #ff0000;">-</span>' +
+                                           '</td>' +
+                                           '</tr>';
+                                   }
                                    tableBody.append(row);
                                }
 

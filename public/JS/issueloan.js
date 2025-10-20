@@ -326,72 +326,82 @@ function save_loan(){
     // if (saving==="Yes"){
 
 // Iterate over each row of the table
-        $('#installment_table tbody tr').each(function() {
-            // Initialize an empty object to store row data
-            var rowData = {};
+    $('#installment_table tbody tr').each(function() {
+        var rowData = {};
 
-            // Iterate over each cell of the row
-            $(this).find('td').each(function(index) {
-                // Get the text content of the cell
-                var cellData = $(this).text();
+        $(this).find('td').each(function(index) {
+            var cellData = $(this).text().trim();
 
-                // Assign the cell data to the corresponding property of the row data object
-                // Assuming the order of cells matches the order of headers in the table
-                switch(index) {
-                    case 0:
-                        rowData.No = cellData; // Add No column data
-                        break;
-                    case 1:
-                        rowData.installmentDate = cellData;
-                        break;
-                    case 2:
-                        rowData.installmentAmount = cellData;
-                        break;
-                    case 3:
-                        rowData.capitalAmount = cellData;
-                        break;
-                    case 4:
-                        rowData.interestAmount = cellData;
-                        break;
-                    case 5:
-                        rowData.panaltyDate = cellData;
-                        break;
-                    case 6:
-                        rowData.panaltyAmount = cellData;
-                        break;
-                    case 7:
-                        rowData.savingAmount = cellData;
-                        break;
-                    case 8:
-                        rowData.totalAmount = cellData;
-                        break;
-                    case 9:
-                        rowData.paidAmount = cellData;
-                        break;
-                    case 10:
-                        rowData.panaltyBalance = cellData;
-                        break;
-                    case 11:
-                        rowData.installmentBalance = cellData;
-                        break;
-                    case 12:
-                        rowData.savingBalance = cellData;
-                        break;
-                    case 13:
-                        rowData.totalBalance = cellData;
-                        break;
-                    case 14:
+            // ===== Normal column mapping =====
+            switch(index) {
+                case 0:
+                    rowData.No = cellData;
+                    break;
+                case 1:
+                    rowData.installmentDate = cellData;
+                    break;
+                case 2:
+                    rowData.installmentAmount = cellData;
+                    break;
+                case 3:
+                    rowData.capitalAmount = cellData;
+                    break;
+                case 4:
+                    rowData.interestAmount = cellData;
+                    break;
+                case 5:
+                    rowData.panaltyDate = cellData;
+                    break;
+                case 6:
+                    rowData.panaltyAmount = cellData;
+                    break;
+                case 7:
+                    rowData.savingAmount = cellData;
+                    break;
+                case 8:
+                    rowData.totalAmount = cellData;
+                    break;
+                case 9:
+                    rowData.paidAmount = cellData;
+                    break;
+                case 10:
+                    rowData.panaltyBalance = cellData;
+                    break;
+                case 11:
+                    rowData.installmentBalance = cellData;
+                    break;
+                case 12:
+                    rowData.savingBalance = cellData;
+                    break;
+                case 13:
+                    rowData.totalBalance = cellData;
+                    break;
+                // ===== NEW columns for "fixed" + "according_to_route" =====
+                case 14:
+                    if (route_collection_type === "fixed" && collection_date_type_global === "according_to_route") {
+                        rowData.collectionDate = cellData;
+                    } else {
                         rowData.status = cellData;
-                        break;
-                    default:
-                        break;
-                }
-
-            });
-
-            // Push the row data object to the table data array
-            installment.push(rowData);
+                    }
+                    break;
+                case 15:
+                    if (route_collection_type === "fixed" && collection_date_type_global === "according_to_route") {
+                        rowData.difference = cellData;
+                    }
+                    break;
+                case 16:
+                    if (route_collection_type === "fixed" && collection_date_type_global === "according_to_route") {
+                        rowData.status = cellData;
+                    }
+                    break;
+                default:
+                    break;
+            }
         });
+
+        installment.push(rowData);
+    });
+
 
     // Initialize an empty array to store table data
     loan_charge_table=[];
@@ -464,6 +474,19 @@ function save_loan(){
         })
 
     }else{
+
+        // === NEW: Prepare loan details (fallbacks) ===
+        const loanDetails = {
+            Loan_No: (type_loan_number && type_loan_number !== '') ? type_loan_number : loan_number_txt,
+            Amount: Number(loan_amount) || 0,
+            Interest_Rate: Number(interest) || 0,
+            Installment_Count: Number(ins_count) || 0,
+            Interest_Amount: Number(interest_amount) || 0,
+        };
+
+
+
+
         // Count how many documents have files uploaded
         let uploadedDocumentsCount = 0;
         $('input[type="file"]').each(function() {
@@ -526,15 +549,36 @@ function save_loan(){
                         saving:saving,
                         repayment_duration_period:repayment_duration_period,
                         type_loan_number:type_loan_number,
+                        route_collection_type:route_collection_type,
+                        collection_date_type_global:collection_date_type_global,
                         uploaded_documents_count:uploadedDocumentsCount
                     },
                     success: function (data, textStatus, xhr) {
                         if (xhr.status === 200) {
                             if (data.item==="1"){
                                 Swal.fire("Error!", "This loan number already exist !", "error");
-                            }else{
-                                save_doc(data.item);
+                                return;
                             }
+
+                            // === NEW: Merge server-returned details if provided ===
+                            if (data.loan) {
+                                if (data.loan.loan_no)        loanDetails.Loan_No = data.loan.loan_no;
+                                if (data.loan.amount)         loanDetails.Amount = Number(data.loan.amount);
+                                if (data.loan.interest_rate)  loanDetails.Interest_Rate = Number(data.loan.interest_rate);
+                                if (data.loan.installments)   loanDetails.Installment_Count = Number(data.loan.installments);
+                                if (data.loan.interest_amt)   loanDetails.Interest_Amount = Number(data.loan.interest_amt);
+                            }
+
+                            // === NEW: customer merge ===
+                            if (data.customer) {
+                                loanDetails.Customer_No   = data.customer.cus_number || '-';
+                                loanDetails.Customer_Name = data.customer.name
+                                    || [data.customer.first_name, data.customer.last_name].filter(Boolean).join(' ')
+                                    || '-';
+                            }
+
+                            // proceed to file upload + final success popup with details
+                            save_doc(data.item, loanDetails);
                         } else {
                             Swal.fire("Error!", "Failed to save data!", "error");
                         }
@@ -552,93 +596,138 @@ function save_loan(){
     }
 }
 
-function save_doc(id) {
+function save_doc(id, loanDetails) {
+    const fmt2 = (n) => new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n || 0));
+
+    // Build a beautiful, centered details card
+    const detailsHTML = `
+        <div style="text-align:center; margin-top:10px;">
+            <h3 style="margin-bottom:15px; color:#1A2942; font-weight:600;">Loan Created Successfully</h3>
+            <table style="
+                width:90%;
+                margin:0 auto;
+                border-collapse:collapse;
+                background:#f9f9f9;
+                border-radius:8px;
+                box-shadow:0 0 4px rgba(0,0,0,0.1);
+                overflow:hidden;
+                font-size:15px;
+            ">
+                <tbody>
+                    <tr style="background:#eef2f5;">
+                        <td style="padding:8px 15px; text-align:left; font-weight:600; width:40%;">Customer No</td>
+                        <td style="padding:8px 15px; text-align:left;">${loanDetails?.Customer_No ?? '-'}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 15px; text-align:left; font-weight:600;">Customer Name</td>
+                        <td style="padding:8px 15px; text-align:left;">${loanDetails?.Customer_Name ?? '-'}</td>
+                    </tr>
+                    <tr style="background:#eef2f5;">
+                        <td style="padding:8px 15px; text-align:left; font-weight:600;">Loan No</td>
+                        <td style="padding:8px 15px; text-align:left;">${loanDetails?.Loan_No ?? '-'}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 15px; text-align:left; font-weight:600;">Amount</td>
+                        <td style="padding:8px 15px; text-align:left;">${fmt2(loanDetails?.Amount)}</td>
+                    </tr>
+                    <tr style="background:#eef2f5;">
+                        <td style="padding:8px 15px; text-align:left; font-weight:600;">Interest Rate</td>
+                        <td style="padding:8px 15px; text-align:left;">${fmt2(loanDetails?.Interest_Rate)}%</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 15px; text-align:left; font-weight:600;">Installments</td>
+                        <td style="padding:8px 15px; text-align:left;">${loanDetails?.Installment_Count ?? '-'}</td>
+                    </tr>
+                    <tr style="background:#eef2f5;">
+                        <td style="padding:8px 15px; text-align:left; font-weight:600;">Interest Amount</td>
+                        <td style="padding:8px 15px; text-align:left;">${fmt2(loanDetails?.Interest_Amount)}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="margin-top:15px; font-size:14px; color:#666;">
+                You will be redirected to the <b>Loan Approval</b> page shortly...
+            </p>
+        </div>
+    `;
+
     var formData = new FormData();
-    let documentName_check = [];
     $('input[type="file"]').each(function(index, element) {
         var file = element.files[0];
         var documentName = $(element).closest('tr').find('td:first').text().trim();
         var checked = $(`#check${index + 1}`).prop('checked') ? 1 : 0;
 
         if (documentName !== '') {
-            // Append file if selected
-            if (file) {
-                formData.append('documents[]', file);
-            }
-            // Always append document name and checked status
+            if (file) formData.append('documents[]', file);
             formData.append('documentNames[]', documentName);
             formData.append('issue_checked[]', checked);
-            documentName_check.push(documentName);
         }
     });
-    console.log(documentName_check);
-    // Append the general ID
     formData.append('id', id);
 
     Swal.fire({
         title: 'Processing...',
-        html: '<p>The loan issuing process may take some time depending on your document upload sizes.</p><div id="progress-container" style="width: 100%; background-color: #e9ecef; border-radius: 0.25rem;"><div id="progress-bar" style="width: 0%; height: 20px; background-color: #1A2942; border-radius: 0.25rem;"></div></div>',
+        html: `
+            <p>The loan issuing process may take some time depending on your document upload sizes.</p>
+            <div id="progress-container" style="width: 100%; background-color: #e9ecef; border-radius: 0.25rem;">
+                <div id="progress-bar" style="width: 0%; height: 20px; background-color: #1A2942; border-radius: 0.25rem;"></div>
+            </div>`,
         allowOutsideClick: false,
         showConfirmButton: false,
-        didOpen: () => {
-            Swal.showLoading();
-        }
+        didOpen: () => { Swal.showLoading(); }
     });
 
     $.ajax({
         url: "/save-files",
         method: "POST",
-        headers: {
-            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-        },
+        headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") },
         data: formData,
         contentType: false,
         processData: false,
         xhr: function() {
             var xhr = new window.XMLHttpRequest();
-            // Upload progress
             xhr.upload.addEventListener("progress", function(evt) {
                 if (evt.lengthComputable) {
-                    var percentComplete = evt.loaded / evt.total;
-                    var percentValue = Math.round(percentComplete * 100);
-
-                    // Update progress bar
+                    var percentValue = Math.round((evt.loaded / evt.total) * 100);
                     $('#progress-bar').css('width', percentValue + '%');
                 }
             }, false);
             return xhr;
         },
-        success: function(response) {
-            // Close the loading message
+        success: function() {
             Swal.close();
-
             Swal.fire({
                 position: "center",
                 icon: "success",
                 title: "Success!",
-                html: '<p style="color:#1A2942;">The saving process is completed successfully.<br>You will now be redirected to the loan approval page automatically.</p>',
+                html: detailsHTML,
                 showConfirmButton: false,
-                timer: 3000
-            }).then(function () {
+                timer: 15000,          // ⏱ stays visible for 15 seconds
+                timerProgressBar: true,
+                didOpen: () => {
+                    const swalContainer = Swal.getHtmlContainer();
+                    if (swalContainer) swalContainer.style.textAlign = "center";
+                }
+            }).then(() => {
                 window.location.href = "/pendingloan";
             });
         },
-        error: function(xhr, status, error) {
-            // Close the loading message
+        error: function() {
             Swal.close();
             Swal.fire({
                 position: "center",
                 icon: "success",
                 title: "Success!",
-                html: '<p style="color:#1A2942;">The saving process is completed successfully.<br>You will now be redirected to the loan approval page automatically.</p>',
+                html: detailsHTML + '<p style="color:#b94a48;margin-top:6px;">(Document upload failed, but the loan was created.)</p>',
                 showConfirmButton: false,
-                timer: 3000
-            }).then(function () {
+                timer: 15000,
+                timerProgressBar: true
+            }).then(() => {
                 window.location.href = "/pendingloan";
             });
         }
     });
 }
+
 
 
 

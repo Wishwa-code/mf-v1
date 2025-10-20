@@ -800,7 +800,6 @@ class ChartOfAccountController extends Controller
 
         $system_expenses = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
             ->join('company_bank_has_log', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.Bank_Account_Id')
-            ->where('company_bank_accounts.Bank_Type', '=', 'ChartOfAccount')
             ->where('acc_type_group', '=', 'Expenses')
             ->whereBetween('company_bank_has_log.Date_Time', [$date_from_2, $date_to_2])
             ->select(

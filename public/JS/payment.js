@@ -242,7 +242,7 @@ function saveExtraCharge() {
     const date = $('#extra_date').val();
     const description = $('#extra_description').val();
     const amount = $('#extra_amount').val();
-    const bank_id = $('#bank_id').val();
+
 
     if (!date || !description || !amount) {
         Swal.fire({
@@ -270,7 +270,6 @@ function saveExtraCharge() {
                     loan_id: loanId,
                     date: date,
                     description: description,
-                    bank_id: bank_id,
                     amount: amount
                 },
                 success: function (res) {

@@ -503,84 +503,73 @@ class LoanController extends Controller
 
             $saving_check = $request->saving;
 
-            if ($saving_check == "Yes") {
-                foreach ($request->installment as $item) {
-                    $customerLoanId    = $id;
-                    $no                = $item['No'];
-                    $installmentDate   = $item['installmentDate'];
-                    $installmentAmount = $item['installmentAmount'];
-                    $capitalAmount     = $item['capitalAmount'];
-                    $interestAmount    = $item['interestAmount'];
-                    $panaltyDate       = $item['panaltyDate'];
-                    $panaltyAmount     = $item['panaltyAmount'];
-                    $savingAmount      = $item['savingAmount'];
-                    $totalAmount       = $item['totalAmount'];
+            // Flags sent from the frontend
+            $routeCollectionType = (string) $request->input('route_collection_type', '-');
+            $collectionDateMode  = (string) $request->input('collection_date_type_global', '-');
 
-                    $paidAmount        = "0.00";
-                    $panaltyBalance    = $item['panaltyBalance'];
-                    $savingBalance     = $item['savingBalance'];
-                    $installmentBalance= $item['installmentBalance'];
-                    $totalBalance      = $item['totalBalance'];
+// Only use the two extra fields in this mode:
+            $useRouteCollection = ($routeCollectionType === 'fixed' && $collectionDateMode === 'according_to_route');
 
-                    DB::table('installments')->insert([
-                        'Customer_Loan_idCustomer_Loan' => $customerLoanId,
-                        'No'                 => $no,
-                        'Installment_Date'   => $installmentDate,
-                        'Installment_Amount' => $installmentAmount,
-                        'capital_amount'     => $capitalAmount,
-                        'interest_amount'    => $interestAmount,
-                        'Panalty_Amount'     => $panaltyAmount,
-                        'Saving_amount'      => $savingAmount,
-                        'Total_Amount'       => $totalAmount,
-                        'Paid_Amount'        => $paidAmount,
-                        'Panalty_Balance'    => $panaltyBalance,
-                        'Interest_Balance'   => $interestAmount,
-                        'capital_balance'    => $capitalAmount,
-                        'Total_Balance'      => $totalBalance,
-                        'Saving_balance'     => $savingBalance,
-                        'Status'             => '0',
-                        'Panelty_date'       => $panaltyDate,
-                        'Panelty_status'     => '0',
-                        'branch_id'          => session('branch_id')
-                    ]);
+            foreach ($request->installment as $item) {
+                $customerLoanId     = $id;
+                $no                 = $item['No'];
+                $installmentDate    = $item['installmentDate'];
+                $installmentAmount  = $item['installmentAmount'];
+                $capitalAmount      = $item['capitalAmount'];
+                $interestAmount     = $item['interestAmount'];
+                $panaltyDate        = $item['panaltyDate'];
+                $panaltyAmount      = $item['panaltyAmount'];
+                $totalAmount        = $item['totalAmount'];
+
+                $paidAmount         = "0.00";
+                $panaltyBalance     = $item['panaltyBalance'];
+                $installmentBalance = $item['installmentBalance'];
+                $totalBalance       = $item['totalBalance'];
+
+                // From UI (only meaningful in 'fixed' + 'according_to_route')
+                $collectionDate = $useRouteCollection ? ($item['collectionDate'] ?? null) : null;   // e.g. "2025-08-04"
+                $difference     = $useRouteCollection
+                    ? (isset($item['difference']) && $item['difference'] !== '' ? (int)$item['difference'] : null)
+                    : null;
+
+                // Base payload (common)
+                $insert = [
+                    'Customer_Loan_idCustomer_Loan' => $customerLoanId,
+                    'No'                 => $no,
+                    'Installment_Date'   => $installmentDate,
+                    'Installment_Amount' => $installmentAmount,
+                    'capital_amount'     => $capitalAmount,
+                    'interest_amount'    => $interestAmount,
+                    'Panalty_Amount'     => $panaltyAmount,
+                    'Total_Amount'       => $totalAmount,
+                    'Paid_Amount'        => $paidAmount,
+                    'Panalty_Balance'    => $panaltyBalance,
+                    'Interest_Balance'   => $interestAmount,
+                    'capital_balance'    => $capitalAmount,
+                    'Total_Balance'      => $totalBalance,
+                    'Status'             => '0',
+                    'Panelty_date'       => $panaltyDate,
+                    'Panelty_status'     => '0',
+                    'branch_id'          => session('branch_id'),
+
+                    // Always present in schema; set them by mode
+                    'Collection_Date'    => $collectionDate,   // null if not the route-based mode
+                    'Collection_Diff'    => $difference,       // null if not the route-based mode
+                ];
+
+                // Savings on/off
+                if (($saving_check ?? 'No') === "Yes") {
+                    $insert['Saving_amount']  = $item['savingAmount'];
+                    $insert['Saving_balance'] = $item['savingBalance'];
+                } else {
+                    // Ensure zeros if columns exist and you want explicit values when saving is off
+                    $insert['Saving_amount']  = 0.00;
+                    $insert['Saving_balance'] = 0.00;
                 }
-            } else {
-                foreach ($request->installment as $item) {
-                    $customerLoanId    = $id;
-                    $no                = $item['No'];
-                    $installmentDate   = $item['installmentDate'];
-                    $installmentAmount = $item['installmentAmount'];
-                    $capitalAmount     = $item['capitalAmount'];
-                    $interestAmount    = $item['interestAmount'];
-                    $panaltyDate       = $item['panaltyDate'];
-                    $panaltyAmount     = $item['panaltyAmount'];
-                    $totalAmount       = $item['totalAmount'];
-                    $paidAmount        = "0.00";
-                    $panaltyBalance    = $item['panaltyBalance'];
-                    $installmentBalance= $item['installmentBalance'];
-                    $totalBalance      = $item['totalBalance'];
 
-                    DB::table('installments')->insert([
-                        'Customer_Loan_idCustomer_Loan' => $customerLoanId,
-                        'No'                 => $no,
-                        'Installment_Date'   => $installmentDate,
-                        'Installment_Amount' => $installmentAmount,
-                        'capital_amount'     => $capitalAmount,
-                        'interest_amount'    => $interestAmount,
-                        'Panalty_Amount'     => $panaltyAmount,
-                        'Total_Amount'       => $totalAmount,
-                        'Paid_Amount'        => $paidAmount,
-                        'Panalty_Balance'    => $panaltyBalance,
-                        'Interest_Balance'   => $interestAmount,
-                        'capital_balance'    => $capitalAmount,
-                        'Total_Balance'      => $totalBalance,
-                        'Status'             => '0',
-                        'Panelty_date'       => $panaltyDate,
-                        'Panelty_status'     => '0',
-                        'branch_id'          => session('branch_id')
-                    ]);
-                }
+                DB::table('installments')->insert($insert);
             }
+
 
             // $HolidayController=new HolidayController();
             // $HolidayController->store($id);
@@ -665,7 +654,50 @@ class LoanController extends Controller
 
             DB::commit();
 
-            return response()->json(['item' => $id, 'installment' => $request->installment, 'type' => $type], 200);
+            // Fetch customer once
+            $customer = tableWithBranch('customer', 'customer')
+                ->select([
+                    'idCustomer',
+                    'cus_number',
+                    'Title',
+                    'First_Name',
+                    'Last_Name',
+                    'Email',
+                    'Contact_No',
+                    'contact_number_2',
+                    'Nic',
+                    'Gender',
+                    'Dob',
+                ])
+                ->where('idCustomer', $customer_id)
+                ->first();
+
+            $customerPayload = null;
+            if ($customer) {
+                $fullName = trim(implode(' ', array_filter([
+                    $customer->First_Name,
+                    $customer->Last_Name
+                ])));
+
+                $customerPayload = [
+                    'cus_number'       => (string) $customer->cus_number,
+                    'name'             => $fullName,
+                ];
+            }
+
+            return response()->json([
+                'item' => $loan->getKey(),
+                'type' => $type,
+                'loan' => [
+                    'loan_no'           => $loan->Loan_No,
+                    'amount'            => $loan->Amount,
+                    'interest_rate'     => $loan->Interest_Rate,
+                    'installments'      => $loan->Installment_Count,
+                    'interest_amt'      => $loan->Interest_Amount,
+                ],
+                'customer' => $customerPayload,
+            ], 200);
+
         } catch (\Throwable $e) {
             DB::rollBack();
             // You can log the error if needed:
@@ -1129,6 +1161,17 @@ class LoanController extends Controller
             }
         }
 
+
+        $latest = DB::table('extra_charger')
+            ->where('loan_id', $loan->idCustomer_Loan)
+            ->orderByDesc('id_extra_charger')
+            ->first();
+        $extraChargelatestBalance=0;
+        if($latest){
+            $extraChargelatestBalance = (float)$latest->balance ?? 0;
+        }
+
+
         // Pass the data to the view with compact and handle potential nulls
         return view('pages.LoanView', compact(
             'type',
@@ -1155,8 +1198,10 @@ class LoanController extends Controller
             'Saving_amountSum',
             'payment_delete_status',
             'loan_saving_balance',
+            'extraChargelatestBalance'
             'customerSummary',
             'groupMembers'
+
         ));
     }
 
@@ -1782,12 +1827,6 @@ class LoanController extends Controller
 
         return response()->json($data);
     }
-
-
-
-
-
-
 
 
 }

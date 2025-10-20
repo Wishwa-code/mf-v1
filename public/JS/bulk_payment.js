@@ -259,7 +259,8 @@ function load_payment_table(page = 1, includeTotals = false) {
 
             // inject table rows once (fast)
             $('#loan_table tbody').html(rowsHTML);
-
+// ✅ Apply typing disable rule for all date_bulk fields
+            enforceDateBulkRules();
             // “Total Today Installment” — only recompute when includeTotals = true
             if (includeTotals) {
                 let tot = 0;
@@ -279,6 +280,47 @@ function load_payment_table(page = 1, includeTotals = false) {
         error: function (_xhr, _t, err) {
             console.error('load_payment_table error:', err);
         }
+    });
+}
+
+
+
+function enforceDateBulkRules() {
+    const today = new Date().toISOString().split("T")[0];
+    const backdateSetting = window.APP_SETTINGS?.payment_backdate;
+    let minDate = today;
+    if (backdateSetting === "enabled") {
+        const lastYear = new Date();
+        lastYear.setFullYear(lastYear.getFullYear() - 1);
+        minDate = lastYear.toISOString().split("T")[0];
+    }
+
+    $('input[name="date_bulk"]').each(function () {
+        const el = this;
+
+        // set min/max every time, just in case
+        el.setAttribute("max", today);
+        el.setAttribute("min", minDate);
+        el.setAttribute("inputmode", "none");
+
+        // block typing and pasting
+        el.addEventListener('keydown', e => e.preventDefault());
+        el.addEventListener('keypress', e => e.preventDefault());
+        el.addEventListener('keyup', e => e.preventDefault());
+        el.addEventListener('paste', e => e.preventDefault());
+        el.addEventListener('input', e => e.preventDefault());
+
+        // show native date picker on focus/click (for Chrome/Edge)
+        const openPicker = () => { if (typeof el.showPicker === "function") el.showPicker(); };
+        el.addEventListener('focus', openPicker);
+        el.addEventListener('click', openPicker);
+
+        // enforce min/max range
+        el.addEventListener('change', () => {
+            if (!el.value) return;
+            if (el.value > today)   el.value = today;
+            if (el.value < minDate) el.value = minDate;
+        });
     });
 }
 

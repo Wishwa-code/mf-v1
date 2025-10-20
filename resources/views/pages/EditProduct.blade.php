@@ -380,6 +380,15 @@
                                                 <div id="amountError" style="color: red;"></div>
                                             </div>
                                         </div>
+                                        <div class="col-lg-6">
+                                            <div class="mb-3">
+                                                <label for="deduction_type" class="form-label">Deduction Type</label>
+                                                <select class="form-control" id="deduction_type">
+                                                    <option value="On Loan Disbursement">On Loan Disbursement</option>
+                                                    <option value="As First Installment">As First Installment</option>
+                                                </select>
+                                            </div>
+                                        </div>
                                     </div>
                                     <button type="button" class="btn btn-primary" id="addChargesBtn">Add Charges
                                     </button>
@@ -391,6 +400,7 @@
                                             <th>Description</th>
                                             <th>Type</th>
                                             <th>Amount</th>
+                                            <th>Deduction Type</th> <!-- NEW -->
                                             <th>Action</th>
                                         </tr>
                                         </thead>
@@ -572,6 +582,7 @@
                     <td>${row.Description}</td>
                     <td>${row.charge_type}</td>
                     <td>${row.Amount}</td>
+                    <td>${row.deduction_type}</td>
                     <td>
                         <button type="button" class="btn btn-success delete-row" style="background-color: white; color: #ff0000; border: none">
                             <i class="bi bi-trash fs-3"></i>
@@ -917,6 +928,7 @@
             let penalty_method = $("#penalty_method").val();
             let collection_date_type = $("#collection_date_type").val();
 
+
             if (enable_saving === "No") {
                 saving_amount = 0.00;
             }
@@ -967,6 +979,7 @@
                     $(cols[0]).text(),
                     $(cols[1]).text(),
                     $(cols[2]).text(),
+                    $(cols[3]).text(),
                 ]);
             });
 
@@ -1031,6 +1044,7 @@
                             saving_payment,
                             penalty_method,
                             collection_date_type,
+
                         },
                         success: function (res, status, xhr) {
                             if (xhr.status === 200) {
@@ -1097,6 +1111,7 @@
             var description = document.getElementById('otherChargesDescription').value;
             var amount = document.getElementById('otherChargesAmount').value;
             var charge_type = document.getElementById('charge_type').value;
+            var deduction_type = document.getElementById('deduction_type').value;
 
             if (charge_type === "Amount") {
                 document.getElementById('otherChargesAmount').value = parseFloat(amount).toFixed(2);
@@ -1113,6 +1128,7 @@
                     '<td>' + description + '</td>' +
                     '<td>' + charge_type + '</td>' +
                     '<td>' + amount + '</td>' +
+                    '<td>' + deduction_type + '</td>' +
                     '<td><button type="button" class="btn btn-success delete-row" style="background-color: white; color: #ff0000; border: none"><i class="bi bi-trash fs-3"></i></button></td>' +
                     '</tr>';
 
