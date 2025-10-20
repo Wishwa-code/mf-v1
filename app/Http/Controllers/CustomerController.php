@@ -505,7 +505,7 @@ class CustomerController extends Controller
 
         // Assuming you have the request object available
         $data = [
-            'title' => $request->title,
+            'Title' => $request->title,
             'First_Name' => $request->f_name,
             'Last_Name' => $request->last_name,
             'Email' => $request->email,
@@ -544,30 +544,49 @@ class CustomerController extends Controller
             'route_id' => $request->root,
         ];
 
-// Only set Cus_phto if a new file was uploaded (keeps existing photo otherwise)
         if ($documentPath) {
             $data['Cus_phto'] = $documentPath;
         }
 
-// Use the new helper function to update the customer record
-        updateWithBranch('customer', 'idCustomer', $request->id, $data);
+// Get old customer data for comparison
+    $oldCustomer = DB::table('customer')->where('idCustomer', $request->id)->first();
+    
+    // Store customer update data for approval
+    $requestData = [
+        'customer_id' => $request->id,
+        'old_data' => (array)$oldCustomer,
+        'new_data' => $data,
+        'photo_path' => $documentPath,
+    ];
 
+    // Create approval request
+    DB::table('approval_request')->insert([
+        'type' => 'Customer Details Update',
+        'typeid' => 302,
+        'description' => 'Customer Update: ' . $request->f_name . ' ' . $request->last_name . ' (NIC: ' . $request->nic . ')',
+        'data' => json_encode($requestData),
+        'userid' => session('userid'),
+        'branch_id' => session('branch_id'),
+        'data_time' => now(),
+        'status' => 0
+    ]);
 
-        customer_number($request->id);
+    return response()->json(['message' => 'Customer update request sent for approval!'], 200);
 
-        $request = new Request([
-            'customer_id' =>  $request->id,
-            'description' => 'Customer Update',
-            'description_id' =>  $request->id,
-            'comment' => ' ',
-            'type' => 'Customer Update',
-        ]);
-
-        // Call the store method of CustomerLogController
-        $this->customerLogController->store($request);
-
-        // Optionally, return a response
-        return response()->json(['message' => 'Customer updated successfully'], 200);
+    // OLD CODE - keeping for approval handler reference
+    /*
+    updateWithBranch('customer', 'idCustomer', $request->id, $data);
+    customer_number($request->id);
+    $request = new Request([
+        'customer_id' =>  $request->id,
+        'description' => 'Customer Update',
+        'description_id' =>  $request->id,
+        'comment' => ' ',
+        'type' => 'Customer Update',
+    ]);
+    $this->customerLogController->store($request);
+    return response()->json(['message' => 'Customer updated successfully'], 200);
+    */
     }
 
     public function updateCustomerLocation(Request $request) {

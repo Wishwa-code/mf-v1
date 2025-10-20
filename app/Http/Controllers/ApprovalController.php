@@ -510,6 +510,36 @@ class ApprovalController extends Controller
                 }
             }
             
+            // Handle Customer Details Update (Type 302)
+            if ($approval->typeid == 302) {
+                $requestData = json_decode($approval->data, true);
+                $customerId = $requestData['customer_id'];
+                $newData = $requestData['new_data'];
+                
+                // Update customer with new data (direct DB update for reliability)
+                DB::table('customer')
+                    ->where('idCustomer', $customerId)
+                    ->where('branch_id', $approval->branch_id)
+                    ->update($newData);
+                
+                // Regenerate customer number
+                customer_number($customerId);
+                
+                // Create customer log
+                DB::table('customer_log')->insert([
+                    'customer_id' => $customerId,
+                    'customer_name' => $newData['First_Name'] . ' ' . $newData['Last_Name'],
+                    'date' => date('Y-m-d'),
+                    'time' => date('H:i:s'),
+                    'description' => 'Customer Update',
+                    'description_id' => $customerId,
+                    'comment' => ' ',
+                    'type' => 'Customer Update',
+                    'user' => session('userid'),
+                    'branch_id' => $approval->branch_id,
+                ]);
+            }
+            
             // Handle Loan Approval (Type 401)
             if ($approval->typeid == 401) {
                 $requestData = json_decode($approval->data, true);
@@ -1277,6 +1307,122 @@ class ApprovalController extends Controller
             <div class="mt-3">
                 <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
                 <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
+            </div>
+            ';
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getCustomerDetailsUpdateDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 302) {
+                return response()->json(['success' => false, 'message' => 'Customer update request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $oldData = $requestData['old_data'] ?? [];
+            $newData = $requestData['new_data'] ?? [];
+            
+            $html = '
+            <div class="alert alert-warning">
+                <i class="ri-user-settings-line me-2"></i><strong>Customer Details Update Request</strong>
+                <p class="mb-0 mt-2"><small>Review the changes before approving</small></p>
+            </div>
+            
+            <h6 class="mb-3">Customer: <strong>' . htmlspecialchars(($newData['First_Name'] ?? '') . ' ' . ($newData['Last_Name'] ?? '')) . '</strong></h6>
+            
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 25%;">Field</th>
+                        <th style="width: 37.5%;">Current Value</th>
+                        <th style="width: 37.5%;">New Value</th>
+                    </tr>
+                </thead>
+                <tbody>';
+            
+            $fields = [
+                'First_Name' => 'First Name',
+                'Last_Name' => 'Last Name',
+                'Email' => 'Email',
+                'Contact_No' => 'Contact Number',
+                'Nic' => 'NIC',
+                'Gender' => 'Gender',
+                'Dob' => 'Date of Birth',
+                'Address' => 'Address Line 1',
+                'City' => 'City',
+                'State' => 'State',
+                'Landline' => 'Landline',
+                'Gua_name' => 'Guardian Name',
+                'Gua_contact' => 'Guardian Contact',
+                'occu_job_position' => 'Job Position',
+                'occu_monthly_salary' => 'Monthly Salary',
+                'Cus_phto' => 'Customer Photo',
+            ];
+            
+            $changesCount = 0;
+            foreach ($fields as $key => $label) {
+                if (isset($newData[$key])) {
+                    $oldVal = $oldData[$key] ?? 'N/A';
+                    $newVal = $newData[$key] ?? 'N/A';
+                    
+                    if ($oldVal != $newVal) {
+                        $changesCount++;
+                        
+                        // Special handling for photo field
+                        if ($key === 'Cus_phto') {
+                            $oldDisplay = '<span class="text-muted">No photo</span>';
+                            if ($oldVal && $oldVal !== 'N/A') {
+                                $oldPhotoUrl = '/storage/' . $oldVal;
+                                $oldDisplay = '<img src="' . htmlspecialchars($oldPhotoUrl) . '" alt="Current Photo" style="max-width: 150px; max-height: 150px; border: 2px solid #ddd; border-radius: 5px; cursor: pointer;" onclick="window.open(this.src, \'_blank\')"><br><small class="text-muted">Click to enlarge</small>';
+                            }
+                            
+                            $newDisplay = '<span class="badge bg-success">📷 New photo</span>';
+                            if ($newVal && $newVal !== 'N/A') {
+                                $newPhotoUrl = '/storage/' . $newVal;
+                                $newDisplay = '<img src="' . htmlspecialchars($newPhotoUrl) . '" alt="New Photo" style="max-width: 150px; max-height: 150px; border: 2px solid #28a745; border-radius: 5px; cursor: pointer;" onclick="window.open(this.src, \'_blank\')"><br><small class="text-success">📷 New photo - Click to enlarge</small>';
+                            }
+                            
+                            $html .= '
+                            <tr>
+                                <th>' . htmlspecialchars($label) . '</th>
+                                <td style="padding: 10px;">' . $oldDisplay . '</td>
+                                <td style="padding: 10px;">' . $newDisplay . '</td>
+                            </tr>';
+                        } else {
+                            $html .= '
+                            <tr>
+                                <th>' . htmlspecialchars($label) . '</th>
+                                <td>' . htmlspecialchars($oldVal) . '</td>
+                                <td><strong class="text-primary">' . htmlspecialchars($newVal) . '</strong></td>
+                            </tr>';
+                        }
+                    }
+                }
+            }
+            
+            if ($changesCount == 0) {
+                $html .= '<tr><td colspan="3" class="text-center text-muted">No changes detected</td></tr>';
+            }
+            
+            $html .= '
+                </tbody>
+            </table>
+            
+            <div class="mt-3">
+                <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
+                <p class="text-muted mb-1"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
+                <p class="text-muted mb-0"><strong>Total Changes:</strong> ' . $changesCount . ' field(s)</p>
             </div>
             ';
             
