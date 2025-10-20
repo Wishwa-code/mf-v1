@@ -282,15 +282,13 @@
 
                             <div class="col-lg-3">
                                 <div class="mb-3">
-                                    <label for="simpleinput" class="form-label">Group</label>
+                                    <label for="group" class="form-label">Group</label>
                                     <select class="form-control select2" id="group">
                                         <option value="0">All</option>
-                                        @foreach($group as $item)
-                                            <option value="{{$item->idCustomer_Group}}">{{ $item->Group_No }}-{{ $item->Name }}</option>
-                                        @endforeach
                                     </select>
                                 </div>
                             </div>
+
                             <div class="col-lg-3">
                                 <div class="mb-3">
                                     <label for="simpleinput" class="form-label">Customer</label>
@@ -512,7 +510,10 @@
                             </div>
                             <input type="hidden" id="loan_balance"  class="form-control">
                             <div class="col-sm-8">
-                                <input type="date" id="payment_date" value="{{ date('Y-m-d') }}" class="form-control">
+                                <input type="date" id="payment_date"
+                                       value="{{ date('Y-m-d') }}" class="form-control"
+                                       inputmode="none" onkeydown="return false" onpaste="return false">
+
                             </div>
                         </div>
 
@@ -727,7 +728,10 @@
                             <div class="col-md-6">
                                 <div>
                                     <label for="payment_date_2" class="form-label fw-bold">Payment Date:</label>
-                                    <input type="date" id="payment_date_2" value="{{ date('Y-m-d') }}" class="form-control">
+                                    <input type="date" id="payment_date_2"
+                                           value="{{ date('Y-m-d') }}" class="form-control"
+                                           inputmode="none" onkeydown="return false" onpaste="return false" >
+
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -1162,14 +1166,12 @@
     <script src="../JS/today_payment.js?n=29"></script>
 
     <script>
-        /*** Payment Date Limits (respects APP_SETTINGS.payment_backdate) ***/
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             const ids = ["payment_date", "payment_date_2"];
             const allowBackdate = window.APP_SETTINGS?.payment_backdate === "enabled";
-
             const today = new Date().toISOString().split("T")[0];
-            let minDate = today;
 
+            let minDate = today;
             if (allowBackdate) {
                 const lastYear = new Date();
                 lastYear.setFullYear(lastYear.getFullYear() - 1);
@@ -1179,11 +1181,34 @@
             ids.forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;
+
                 el.setAttribute("max", today);
                 el.setAttribute("min", minDate);
+
+                // ✅ Always disable typing/pasting (regardless of backdate)
+                el.addEventListener('keydown', e => e.preventDefault());
+                el.addEventListener('keypress', e => e.preventDefault());
+                el.addEventListener('keyup', e => e.preventDefault());
+                el.addEventListener('paste', e => e.preventDefault());
+                el.addEventListener('input', e => e.preventDefault());
+                el.setAttribute("inputmode", "none"); // hides keyboard on mobile
+
+                // ✅ Allow picker to open normally
+                el.addEventListener('focus', () => {
+                    if (typeof el.showPicker === "function") el.showPicker();
+                });
+
+                // ✅ Clamp to min/max if changed through picker
+                el.addEventListener('change', () => {
+                    if (!el.value) return;
+                    if (el.value > today)   el.value = today;
+                    if (el.value < minDate) el.value = minDate;
+                });
             });
         });
     </script>
+
+
 
     <script>
         // collectorId from session
@@ -1673,7 +1698,48 @@
                 console.warn('Duplicate id="ins_id" found in DOM. Consider renaming one (e.g., ins_id_2).');
             }
         });
+        // When center is changed, load its groups dynamically
+        $('#center_details').on('change', function () {
+            const centerId = $(this).val();
+            const $groupSelect = $('#group');
+
+            $groupSelect.html('<option value="0">Loading...</option>'); // temporary
+
+            if (centerId === "0" || !centerId) {
+                $groupSelect.html('<option value="0">All</option>');
+                $groupSelect.trigger('change');
+                return;
+            }
+
+            $.ajax({
+                url: '/get-groups-by-center/' + centerId,
+                type: 'GET',
+                success: function (data) {
+                    $groupSelect.empty().append('<option value="0">All</option>');
+
+                    if (data && data.length > 0) {
+                        data.forEach(group => {
+                            $groupSelect.append(
+                                `<option value="${group.idCustomer_Group}">
+                            ${group.Group_No} - ${group.Name}
+                        </option>`
+                            );
+                        });
+                    } else {
+                        $groupSelect.append('<option value="0">No groups found</option>');
+                    }
+
+                    // Refresh Select2
+                    $groupSelect.trigger('change');
+                },
+                error: function () {
+                    $groupSelect.html('<option value="0">Error loading groups</option>');
+                }
+            });
+        });
+
     </script>
+
 
 @endsection
 

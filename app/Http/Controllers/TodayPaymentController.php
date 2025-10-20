@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendPaymentSmsJob;
 use App\Models\Expenses;
 use Carbon\Carbon;
 use Illuminate\Database\Schema\Blueprint;
@@ -104,7 +105,9 @@ class TodayPaymentController extends Controller
         }
         $loanQuery->orderBy('customer_loan.idCustomer_Loan', 'asc'); // Add this line to order by loan number
         $loan = $loanQuery->get();
-        return view('pages.BulkPayment', compact('group','loan', 'route', 'center', 'customers', 'company'));
+        $sheetKey  = 'bp';
+        $order_by  = DB::table('app_settings')->where('key', "repayment_order_{$sheetKey}")->value('value') ?? 'name_asc';
+        return view('pages.BulkPayment', compact('group','loan', 'route', 'center', 'customers', 'company','sheetKey', 'order_by'));
     }
 
     /**
@@ -499,7 +502,6 @@ class TodayPaymentController extends Controller
 
 
 
-
         $loan = $loanQuery->get();
 
 
@@ -520,6 +522,11 @@ class TodayPaymentController extends Controller
         $user_id        = (int) session('userid');
         $perPage        = (int) ($request->get('per_page', 10));
         $includeTotals  = (bool) $request->get('include_totals', false); // ← only compute when true
+
+
+
+        // 🔑 Saved order (sheet-scoped for Bulk Payments)
+        $orderBy = DB::table('app_settings')->where('key', 'repayment_order_bp')->value('value') ?? 'name_asc';
 
         // Collector & bank
         $collector = '0';
@@ -663,6 +670,35 @@ class TodayPaymentController extends Controller
             $loanQuery->where('customer_loan.idCustomer_Loan', $loan_number);
         }
 
+
+
+        // ✅ Apply saved ordering BEFORE paginate()
+        switch ($orderBy) {
+            case 'name_desc':
+                $loanQuery->orderByRaw("CONCAT(customer.First_Name, ' ', customer.Last_Name) DESC");
+                break;
+
+            case 'loan_asc':
+                $loanQuery->orderBy('customer_loan.Loan_No', 'ASC');
+                break;
+            case 'loan_desc':
+                $loanQuery->orderBy('customer_loan.Loan_No', 'DESC');
+                break;
+
+            case 'create_asc':
+                $loanQuery->orderBy('customer_loan.idCustomer_Loan', 'ASC');
+                break;
+            case 'create_desc':
+                $loanQuery->orderBy('customer_loan.idCustomer_Loan', 'DESC');
+                break;
+
+            case 'name_asc':
+            default:
+                $loanQuery->orderByRaw("CONCAT(customer.First_Name, ' ', customer.Last_Name) ASC");
+                break;
+        }
+
+
         // ---- Paginate (distinct on PK) ----
         $loanQuery->distinct('customer_loan.idCustomer_Loan');
         $loan = $loanQuery->paginate($perPage);
@@ -714,6 +750,17 @@ class TodayPaymentController extends Controller
 
 
     public function create_view($id){
+
+        $latest = DB::table('extra_charger')
+            ->where('loan_id', $id)
+            ->orderByDesc('id_extra_charger')
+            ->first();
+        $extraChargelatestBalance=0;
+        if($latest){
+            $extraChargelatestBalance = (float)$latest->balance ?? 0;
+        }
+
+
         $loan = DB::table('installments')
             ->where('Customer_Loan_idCustomer_Loan','=',$id)
             ->select(
@@ -738,7 +785,7 @@ class TodayPaymentController extends Controller
 
         $last_log = DB::table('Loan_Log')->where('Loan_ID','=',$id)->orderBy('Loan_Log_ID', 'desc')->first();
 
-        return response()->json(['item' => $loan,'saving' => $saving,'savings'=>$last_log->Saving_Account_Balance], 200);
+        return response()->json(['item' => $loan,'saving' => $saving,'savings'=>$last_log->Saving_Account_Balance,'extraChargelatestBalance'=>$extraChargelatestBalance], 200);
     }
 
     /**
@@ -765,6 +812,126 @@ class TodayPaymentController extends Controller
 
 
         $bank_account_company_chq = $request->bank_account_company;
+
+
+
+        $latest = DB::table('extra_charger')
+            ->where('loan_id', $loan_id)
+            ->orderByDesc('id_extra_charger')
+            ->first();
+
+        if ($latest && (float)$latest->balance > 0) {
+
+            DB::transaction(function () use (&$payment_amount, $latest, $loan_id) {
+
+                // Get latest Loan_Log balances
+                $latestLog = DB::table('Loan_Log')
+                    ->where('Loan_ID', $loan_id)
+                    ->orderByDesc('Loan_Log_ID') // latest log
+                    ->first();
+
+                $penaltyBalance   = $latestLog->Panelty_Balance ?? 0;
+                $interestBalance  = $latestLog->Interest_Balance ?? 0;
+                $capitalBalance   = $latestLog->Capital_Balance ?? 0;
+                $savingBalance    = $latestLog->Saving_Account_Balance ?? 0;
+                $totalPending     = $latestLog->Total_Pending_Balance ?? 0;
+
+                $latestBalance = (float)$latest->balance;
+
+                $now = Carbon::now();
+                $date = $now->toDateString();
+                $time = $now->toTimeString();
+                $user_id = session('userid');
+                $branch_id = session('branch_id');
+
+                // Common data for extra_charger
+                $commonData = [
+                    'loan_id'     => $loan_id,
+                    'date'        => $date,
+                    'time'        => $time,
+                    'description' => 'Payment adjustment for -'.$latest->description,
+                    'user_id'     => $user_id,
+                    'branch_id'   => $branch_id,
+                ];
+                Log::info($payment_amount);
+                Log::info($latestBalance);
+                if ($payment_amount <= $latestBalance) {
+                    // Payment fully absorbed by this extra_charger row
+                    $newBalance = $latestBalance - $payment_amount;
+
+                    // Insert new extra_charger row
+                    DB::table('extra_charger')->insert(array_merge($commonData, [
+                        'amount'  => -$payment_amount,
+                        'balance' => $newBalance,
+                    ]));
+
+                    // Insert Loan_Log with latest balances
+                    DB::table('Loan_Log')->insert([
+                        'Loan_ID' => $loan_id,
+                        'Date_Time' => $now->toDateTimeString(),
+                        'Type' => 'Extra Payment',
+                        'Type_ID' => 0,
+                        'Description' => 'Extra payment applied from Extra Charger',
+                        'Amount' => $payment_amount,
+                        'Panelty_Payment' => 0,
+                        'Interest_Payment' => 0,
+                        'Capital_Payment' => 0,
+                        'Savings_Payment' => 0,
+                        'Extra_Payment' => $payment_amount,
+                        'Panelty_Balance' => $penaltyBalance,
+                        'Interest_Balance' => $interestBalance,
+                        'Capital_Balance' => $capitalBalance,
+                        'Total_Pending_Balance' => $totalPending - $payment_amount,
+                        'Saving_Account_Balance' => $savingBalance,
+                        'Extra_Balance' => $newBalance,
+                        'User_idUser' => $user_id,
+                        'branch_id' => $branch_id
+                    ]);
+
+                    $payment_amount = 0;
+
+
+                } else {
+                    // Payment larger than extra_charger balance
+                    DB::table('extra_charger')->insert(array_merge($commonData, [
+                        'amount'  => -$latestBalance,
+                        'balance' => 0,
+                    ]));
+
+                    // Insert Loan_Log with latest balances
+                    DB::table('Loan_Log')->insert([
+                        'Loan_ID' => $loan_id,
+                        'Date_Time' => $now->toDateTimeString(),
+                        'Type' => 'Extra Payment',
+                        'Type_ID' => 0,
+                        'Description' => 'Extra payment applied from Extra Charger',
+                        'Amount' => $latestBalance,
+                        'Panelty_Payment' => 0,
+                        'Interest_Payment' => 0,
+                        'Capital_Payment' => 0,
+                        'Savings_Payment' => 0,
+                        'Extra_Payment' => $latestBalance,
+                        'Panelty_Balance' => $penaltyBalance,
+                        'Interest_Balance' => $interestBalance,
+                        'Capital_Balance' => $capitalBalance,
+                        'Total_Pending_Balance' => $totalPending - $latestBalance,
+                        'Saving_Account_Balance' => $savingBalance,
+                        'Extra_Balance' => 0,
+                        'User_idUser' => $user_id,
+                        'branch_id' => $branch_id
+                    ]);
+
+                    $payment_amount -= $latestBalance;
+                }
+            });
+        }
+
+        if ($payment_amount==0){
+            return response()->json(['item' => 'success', 'id' => '1', 'test' => "1", 'payment_id' => 2], 200);
+        }
+
+
+
 
         if ($request->extraAmount > 0){
 
@@ -1398,7 +1565,14 @@ class TodayPaymentController extends Controller
                         $loan_number_txt = str_replace($placeholder, $value, $loan_number_txt);
                     }
                     if ($sms_status == '1') {
-                        $this->smsLogController->index($loan->Customer_idCustomer, $loan_number_txt, "Customer Loan Payment");
+                        DB::afterCommit(function () use ($loan, $loan_number_txt, $savedId) {
+                            dispatch(new SendPaymentSmsJob(
+                                paymentId: (int)$savedId,
+                                loanId: (int)$loan->idCustomer_Loan ?? (int)$loan->idCustomer_Loan ?? 0, // ensure numeric
+                                customerId: (int)$loan->Customer_idCustomer,
+                                message: $loan_number_txt
+                            ))->onQueue('sms');
+                        });
                     }
 
                 }
@@ -2210,9 +2384,15 @@ class TodayPaymentController extends Controller
                     }
                     Log::info($sms_status);
                     if ($sms_status == '1') {
-                        $this->smsLogController->index($loan->Customer_idCustomer, $loan_number_txt, "Customer Loan Payment");
+                        DB::afterCommit(function () use ($loan, $loan_number_txt, $savedId) {
+                            dispatch(new SendPaymentSmsJob(
+                                paymentId: (int)$savedId,
+                                loanId: (int)$loan->idCustomer_Loan ?? (int)$loan->idCustomer_Loan ?? 0, // ensure numeric
+                                customerId: (int)$loan->Customer_idCustomer,
+                                message: $loan_number_txt
+                            ))->onQueue('sms');
+                        });
                     }
-
                 }
 
 
@@ -3780,91 +3960,110 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
         return response()->json($loanDetailsArray);
     }
 
+
+
     public function saveExtraCharge(Request $request)
     {
         try {
             DB::beginTransaction();
 
-            $customer_loan = tableWithBranch('customer_loan')
-                ->where('idCustomer_Loan', $request->loan_id)
+            // --- Basic manual checks ---
+            if (empty($request->loan_id) || empty($request->amount)) {
+                return response()->json(['status' => 'error', 'message' => 'Loan ID and Amount are required.']);
+            }
+
+            // --- Prepare values ---
+            $loanId      = (int)$request->loan_id;
+            $amount      = (float)$request->amount;
+            $description = $request->description ?? '';
+            $date        = $request->date ? Carbon::parse($request->date)->toDateString() : now()->toDateString();
+            $userId      = (int)session('userid');
+            $branchId    = (int)session('branch_id');
+
+            // --- Lock last record for consistency ---
+            $lastRow = DB::table('extra_charger')
+                ->where('loan_id', $loanId)
+                ->orderByDesc('id_extra_charger')
+                ->lockForUpdate()
                 ->first();
 
-            $customer = tableWithBranch('customer')
-                ->where('idCustomer', $customer_loan->Customer_idCustomer)
-                ->first();
+            $currentBalance = $lastRow ? (float)$lastRow->balance : 0.0;
+            $newBalance     = $currentBalance + $amount;
 
-            $cate = tableWithBranch('income_category')
-                ->where('description', 'Other')
-                ->first();
-
-            $expenses = new Expenses();
-            $expenses->type = "Income";
-            $expenses->reason = "Other loan charges for loan number: ({$customer_loan->Loan_No}), Customer name: ({$customer->First_Name} {$customer->Last_Name})";
-            $expenses->date = date('Y-m-d');
-            $expenses->amount = $request->amount;
-            $expenses->category_id = $cate->id;
-            $expenses->bank_id = $request->bank_id;
-            $expenses->user_id = session('userid');
-            $expenses->branch_id = session('branch_id');
-            $expenses->save();
-
-            // Insert into extra_charger
-            DB::table('extra_charger')->insert([
-                'loan_id' => $request->loan_id,
-                'date' => $request->date,
-                'time' => now()->format('H:i:s'),
-                'description' => $request->description,
-                'amount' => $request->amount,
-                'bank_id' => $request->bank_id,
-                'expences_id' => $expenses->id,
-                'user_id' => session('userid'),
-                'branch_id' => session('branch_id')
+            // --- Insert new extra charge record ---
+            $id = DB::table('extra_charger')->insertGetId([
+                'loan_id'     => $loanId,
+                'date'        => $date,
+                'time'        => now()->format('H:i:s'),
+                'description' => $description,
+                'user_id'     => $userId,
+                'branch_id'   => $branchId,
+                'amount'      => $amount,
+                'balance'     => $newBalance,
             ]);
 
-            $bank_id = tableWithBranch('company_bank_accounts')
-                ->where('Bank_Type', 'System_default_9')
+            // --- Add comment for audit trail ---
+            DB::table('loan_comment')->insert([
+                'comment' => 'Extra Charges ' . number_format($amount, 2),
+                'loan_id' => $loanId,
+                'user_id' => $userId,
+                'date'    => now()->toDateString(),
+                'time'    => now()->toTimeString(),
+            ]);
+
+            // --- Get latest Loan_Log balances ---
+            $latestLog = DB::table('Loan_Log')
+                ->where('Loan_ID', $loanId)
+                ->orderByDesc('Loan_Log_ID')
                 ->first();
 
-            $company_bank = $request->bank_id;
-            $sumAmount = $request->amount;
-            $bank_log_doc_comment = 'Extra Charges - ' . $request->description;
+            $penaltyBalance   = $latestLog->Panelty_Balance ?? 0;
+            $interestBalance  = $latestLog->Interest_Balance ?? 0;
+            $capitalBalance   = $latestLog->Capital_Balance ?? 0;
+            $savingBalance    = $latestLog->Saving_Account_Balance ?? 0;
+            $totalPending     = $latestLog->Total_Pending_Balance ?? 0;
+            $extraBalance     = $newBalance; // latest extra balance including this payment
 
-            $this->bankLogController->index(
-                $company_bank,
-                "Loan Document Charges",
-                $bank_log_doc_comment,
-                "-",
-                "debit",
-                $sumAmount,
-                $bank_id->Idbank
-            );
-
-            $this->bankLogController->index(
-                $bank_id->Idbank,
-                "Loan Document Charges",
-                $bank_log_doc_comment,
-                "-",
-                "credit",
-                $sumAmount,
-                $company_bank
-            );
-
-            DB::table('loan_comment')->insert([
-                'comment' => "Extra Loan Document Charges",
-                'loan_id' => $request->loan_id,
-                'user_id' => session('userid'),
-                'date' => now()->toDateString(),
-                'time' => now()->toTimeString(),
+            // --- Insert Loan_Log for this extra charge ---
+            DB::table('Loan_Log')->insert([
+                'Loan_ID' => $loanId,
+                'Date_Time' => now()->toDateTimeString(),
+                'Type' => 'Extra Charge',
+                'Type_ID' => $id,
+                'Description' => 'Extra charge added: ' . $description,
+                'Amount' => $amount,
+                'Panelty_Payment' => 0,
+                'Interest_Payment' => 0,
+                'Capital_Payment' => 0,
+                'Savings_Payment' => 0,
+                'Extra_Payment' => 0,
+                'Panelty_Balance' => $penaltyBalance,
+                'Interest_Balance' => $interestBalance,
+                'Capital_Balance' => $capitalBalance,
+                'Total_Pending_Balance' => $totalPending + $amount,
+                'Saving_Account_Balance' => $savingBalance,
+                'Extra_Balance' => $extraBalance,
+                'User_idUser' => $userId,
+                'branch_id' => $branchId
             ]);
 
             DB::commit();
-            return response()->json(['status' => 'success']);
-        } catch (\Exception $e) {
+
+            $created = DB::table('extra_charger')->where('id_extra_charger', $id)->first();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Extra charge saved successfully.',
+                'data'    => $created
+            ]);
+
+        } catch (\Throwable $e) {
             DB::rollBack();
-            Log::info($e->getMessage());
+            Log::error('saveExtraCharge failed', ['error' => $e->getMessage()]);
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
+
 
     public function getExtraCharges(Request $request)
     {
@@ -3984,7 +4183,78 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
     }
 
 
+    public function doubleEntries(Request $request, $loanId)
+    {
+        // ensure numeric id
+        $loanId = (int) $loanId;
+
+        if ($loanId <= 0) {
+            return response()->json(['error' => 'Invalid loan id'], 400);
+        }
+
+        // fetch the full loan row (not just value)
+        $loan = tableWithBranch('customer_loan')
+            ->where('idCustomer_Loan', $loanId)
+            ->first();
+
+        if (!$loan) {
+            return response()->json(['error' => "Loan not found for id: {$loanId}"], 404);
+        }
+
+        // get actual loan number used in descriptions
+        $loan_no = trim((string)($loan->Loan_No ?? ''));
+
+        if ($loan_no === '') {
+            return response()->json(['error' => 'Loan number missing from loan record'], 400);
+        }
+
+        // like pattern, match exactly as in your logs
+        $like = "%Loan Number : {$loan_no}%";
+
+        $rows = DB::table('company_bank_has_log as log')
+            ->leftJoin('company_bank_accounts as acc', 'log.Bank_Account_Id', '=', 'acc.Idbank')
+            ->leftJoin('company_bank_accounts as contra_acc', 'log.contra_account', '=', 'contra_acc.Idbank')
+            ->select([
+                'log.id',
+                'log.Bank_Account_Id',
+                'acc.Account_Name as account_name',
+                'log.Debit',
+                'log.Credit',
+                'log.contra_account',
+                DB::raw("COALESCE(contra_acc.Account_Name, '') as contra_account_name"),
+                'log.Date_Time',
+                'log.Type',
+                'log.Description',
+                'log.branch_id'
+            ])
+            ->where('log.Description', 'like', $like)
+            // scope to same branch (optional but recommended)
+            ->when(session('branch_id'), function($q) {
+                $q->where('log.branch_id', session('branch_id'));
+            })
+            ->orderBy('log.Date_Time', 'asc')
+            ->get();
+
+        $data = $rows->map(function($r) {
+            return [
+                'id' => $r->id,
+                'account_name' => $r->account_name ?? '',
+                'debit' => (float) ($r->Debit ?? 0),
+                'credit' => (float) ($r->Credit ?? 0),
+                'contra_account' => $r->contra_account_name ?? '',
+                'raw_contra_id' => $r->contra_account ?? null,
+                'date_time' => $r->Date_Time ?? null,
+                'type' => $r->Type ?? null,
+                'description' => $r->Description ?? null,
+            ];
+        })->toArray();
+
+        return response()->json(['data' => $data], 200);
+    }
 
 
 
 }
+
+
+

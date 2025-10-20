@@ -376,6 +376,16 @@
                                                 <div id="amountError" style="color: red;"></div>
                                             </div>
                                         </div>
+                                        <div class="col-lg-6">
+                                            <div class="mb-3">
+                                                <label for="deduction_type" class="form-label">Deduction Type</label>
+                                                <select class="form-control" id="deduction_type">
+                                                    <option value="On Loan Disbursement">On Loan Disbursement</option>
+                                                    <option value="As First Installment">As First Installment</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
                                     </div>
                                     <button type="button" class="btn btn-primary" id="addChargesBtn">Add Charges
                                     </button>
@@ -387,9 +397,11 @@
                                             <th>Description</th>
                                             <th>Type</th>
                                             <th>Amount</th>
+                                            <th>Deduction Type</th> <!-- NEW -->
                                             <th>Action</th>
                                         </tr>
                                         </thead>
+
                                         <tbody>
 
                                         </tbody>
@@ -515,8 +527,9 @@
 @endsection
 
 @section('script')
-    <script src="{{ asset('../JS/loan_category.js') }}"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ asset('../JS/loan_category.js') }}"></script>
+
 
 
     <script>
@@ -806,48 +819,53 @@
         }
 
         document.getElementById('addChargesBtn').addEventListener('click', function () {
-            // Get values from input fields
-            var description = document.getElementById('otherChargesDescription').value;
-            var amount = document.getElementById('otherChargesAmount').value;
-            var charge_type = document.getElementById('charge_type').value;
-
-            if (charge_type === "Amount") {
-                document.getElementById('otherChargesAmount').value = parseFloat(amount).toFixed(2);
-            } else if (charge_type === "Percentage") { // Assuming the other option is "Percentage"
-                document.getElementById('otherChargesAmount').value = amount; // Update the input field with percentage value
-            }
+            // Get values
+            var description   = document.getElementById('otherChargesDescription').value.trim();
+            var amount        = document.getElementById('otherChargesAmount').value.trim();
+            var charge_type   = document.getElementById('charge_type').value;
+            var deductionType = document.getElementById('deduction_type').value; // NEW
 
             if (!description || !amount) {
                 Swal.fire("Error!", "Please enter details !", "error");
-            } else {
-
-                // Create a new table row
-                var newRow = '<tr>' +
-                    '<td>' + description + '</td>' +
-                    '<td>' + charge_type + '</td>' +
-                    '<td>' + amount + '</td>' +
-                    '<td><button type="button" class="btn btn-success delete-row" style="background-color: white; color: #ff0000; border: none"><i class="bi bi-trash fs-3"></i></button></td>' +
-                    '</tr>';
-
-                // Append the new row to the table body
-                document.getElementById('otherchargetable').getElementsByTagName('tbody')[0].insertAdjacentHTML(
-                    'beforeend', newRow);
-
-                // Clear the input fields
-                document.getElementById('otherChargesDescription').value = '';
-                document.getElementById('otherChargesAmount').value = '';
+                return;
             }
 
+            // Normalize amount format based on type
+            if (charge_type === "Amount") {
+                amount = parseFloat(amount).toFixed(2);
+            } else {
+                // Percentage: keep raw number (your validateAmount caps at 99)
+                amount = amount;
+            }
 
-            // Add event listener to delete button of the new row
-            var deleteButtons = document.querySelectorAll('.delete-row');
-            deleteButtons.forEach(function (button) {
+            // Build row (note: Deduction Type column is added)
+            var newRow = `
+        <tr data-charge-type="${charge_type}" data-deduction-type="${deductionType}">
+            <td>${description}</td>
+            <td>${charge_type}</td>
+            <td>${amount}</td>
+            <td>${deductionType}</td>           <!-- NEW -->
+            <td>
+                <button type="button" class="btn btn-success delete-row" style="background-color: white; color: #ff0000; border: none">
+                    <i class="bi bi-trash fs-3"></i>
+                </button>
+            </td>
+        </tr>`;
+
+            document.querySelector('#otherchargetable tbody').insertAdjacentHTML('beforeend', newRow);
+
+            // Clear inputs
+            document.getElementById('otherChargesDescription').value = '';
+            document.getElementById('otherChargesAmount').value = '';
+
+            // Wire delete
+            document.querySelectorAll('.delete-row').forEach(function (button) {
                 button.addEventListener('click', function () {
-                    var row = this.closest('tr');
-                    row.remove();
+                    this.closest('tr').remove();
                 });
             });
         });
+
 
 
         document.getElementById('addDocBtn').addEventListener('click', function () {

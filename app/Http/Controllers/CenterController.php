@@ -541,6 +541,16 @@ class CenterController extends Controller
 
 
 
+    public function getGroupsByCenter($centerId)
+    {
+        $groups = DB::table('customer_group')
+            ->where('center_id', $centerId)
+            ->select('idCustomer_Group', 'Group_No', 'Name')
+            ->orderBy('Group_No', 'asc')
+            ->get();
+
+        return response()->json($groups);
+    }
 
 
 

@@ -410,7 +410,7 @@ class UserController extends Controller
         $deleted_loan_Count = tableWithBranch('customer_loan')->where('Status','=','-2')->count();
         $setteled_loan_current_Amount = tableWithBranch('customer_loan')->where('Status','=','1')->sum('Amount');
         $portfolio = tableWithBranch('installments')->sum('capital_balance');
-        
+
         // Current month lending amount - from 1st of current month to today
         $currentMonthStart = date('Y-m-01'); // First day of current month
         $today = date('Y-m-d');
@@ -418,7 +418,7 @@ class UserController extends Controller
             ->whereBetween('Date_Time', [$currentMonthStart, $today])
             ->where('Status', '0') // Only disbursed loans
             ->sum('Amount');
-            
+
         $todayinstallment = tableWithBranch('customer_loan', 'customer_loan')
             ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
             ->where('installments.Installment_Date', '=', date('Y-m-d'))
@@ -465,7 +465,7 @@ class UserController extends Controller
         $arrease = $loanQuery_2->arrease;
         $totalBalanceUntil = $loanQuery_2->Total_Balance_until;
         $totalBalanceUntil=$totalBalanceUntil+$checqueamount;
-        
+
         // Total Outstanding: capital balance + interest balance where status = 0
         $totalOutstanding = tableWithBranch('installments','installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
@@ -485,7 +485,7 @@ class UserController extends Controller
             ->where('customer_loan.Status', '=', '0')
             ->first();
         $penaltyBalance = $penaltyBalance->penalty_balance ?? 0;
-        
+
         $userid=session('userid');
 
         $getuser = DB::table('user_privileges_has_user')->where('user_id', $userid)->where('permission_key','=','dashboard')->first();
@@ -661,7 +661,31 @@ class UserController extends Controller
         return response()->json(['data' => $totalOutstandingData]);
     }
 
+        return response()->json(['data' => $weeklyNotPaidData]);
+    }
 
+    public function penaltyBalanceData()
+    {
+        $penaltyBalanceData = tableWithBranch('installments','installments')
+            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->select(
+                'customer_loan.idCustomer_Loan as loan_id',
+                'customer.idCustomer as customer_id',
+                DB::raw('CONCAT(customer.First_Name, " ", customer.Last_Name) as customer_name'),
+                'customer_loan.Amount as capital_amount',
+                'customer_loan.Total_Loan_Amount as full_loan_amount',
+                DB::raw('SUM(installments.capital_balance + installments.Interest_Balance) as total_outstanding'),
+                DB::raw('SUM(installments.Panalty_Balance) as penalty_balance')
+            )
+            ->where('customer_loan.Status', '=', '0')
+            ->where('installments.Panalty_Balance', '>', 0)
+            ->groupBy('customer_loan.idCustomer_Loan', 'customer.idCustomer', 'customer.First_Name', 'customer.Last_Name', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount')
+            ->havingRaw('penalty_balance > 0')
+            ->orderBy('penalty_balance', 'DESC')
+            ->get();
+
+        return response()->json(['data' => $penaltyBalanceData]);
     public function weeklyNotPaidData()
     {
         // Get current week date range

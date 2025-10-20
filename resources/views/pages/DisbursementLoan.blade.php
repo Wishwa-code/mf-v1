@@ -950,6 +950,7 @@
                 {k:'reason',l:'Reason'},
                 {k:'lending_officer',l:'Lending Officer'},
                 {k:'user',l:'User'},
+                {k:'disbursement_amount',l:'Disbursement Amount'}, // <-- NEW
                 {k:'status',l:'Status'}
             ]; 
             const activeOrder = currentDisbursementColumns.length ? currentDisbursementColumns : getDefaultDisbursementColumns();
@@ -1017,20 +1018,26 @@
         }
 
         function exportDisbursementSheetExcel() {
-            const cfg = getDisbursementConfig();
-            const table = $('#loan_table').DataTable();
-            const rows  = table.rows().data();
-            const wb = XLSX.utils.book_new();
+            const cfg  = getDisbursementConfig();
+            const table= $('#loan_table').DataTable();
+            const rows = table.rows().data();
+            const wb   = XLSX.utils.book_new();
+
             const colDefs = {
                 loan_no:{label:'Loan Number', fn:r=>r[0]},
                 nic:{label:'NIC', fn:r=>r[10]},
                 customer_name:{label:'Customer Name', fn:r=>r[8]},
                 amount:{label:'Amount', fn:r=> (parseFloat(r[12].replace(/[^0-9.-]+/g,''))||0)},
+                disbursement_amount:{label:'Disbursement Amount', fn:r=>{
+                        const total = (parseFloat(r[12].replace(/[^0-9.-]+/g,''))||0);
+                        const doc   = (parseFloat(r[13].replace(/[^0-9.-]+/g,''))||0);
+                        return total - doc;
+                    }},
                 received_by:{label:'Received By', fn:()=>''},
                 center_name:{label:'Center Name', fn:r=>r[6]},
                 interest:{label:'Loan Interest', fn:r=>r[14]},
                 weeks:{label:'Number Of Weeks', fn:r=>r[15]},
-                doc_charge:{label:'Document Charge', fn:r=>r[13]},
+                doc_charge:{label:'Document Charge', fn:r=> (parseFloat(r[13].replace(/[^0-9.-]+/g,''))||0)},
                 collector_name:{label:'Collector Name', fn:r=>r[4]},
                 route_name:{label:'Route', fn:r=>r[2]},
                 bank_details:{label:'Bank Details', fn:()=>''},
@@ -1044,18 +1051,71 @@
                 user:{label:'User', fn:r=>r[19]},
                 status:{label:'Status', fn:r=>r[20]}
             };
+
             const activeKeys = cfg.length ? cfg : getDefaultDisbursementColumns();
             let header=['#']; activeKeys.forEach(k=> header.push(colDefs[k].label));
-            let dataRows=[header]; let rowData=[]; let customerIds=[]; let totalAmount=0;
-            for(let i=0;i<rows.length;i++){ const row=rows[i]; const idCustomer=row[22]; rowData.push({idCustomer,row}); customerIds.push(idCustomer);}            
+
+            let dataRows=[header];
+            let rowData=[], customerIds=[];
+            let totalAmount=0, totalDisb=0;
+
+            for(let i=0;i<rows.length;i++){
+                const row=rows[i];
+                const idCustomer=row[22];
+                rowData.push({idCustomer,row});
+                customerIds.push(idCustomer);
+            }
+
             $.ajax({
-                url:'/get-customer-bank-details', type:'POST', dataType:'json', data:{ customer_ids: customerIds, _token:$('meta[name="csrf-token"]').attr('content')},
+                url:'/get-customer-bank-details', type:'POST',
+                dataType:'json',
+                data:{ customer_ids: customerIds, _token:$('meta[name="csrf-token"]').attr('content')},
                 success:function(resp){
-                    rowData.forEach((rec,idx)=>{ let line=[idx+1]; activeKeys.forEach(k=>{ if(k==='bank_details') line.push(resp[String(rec.idCustomer).trim()]||''); else if(k==='amount'){ const amt=colDefs.amount.fn(rec.row); totalAmount+=amt; line.push(amt.toFixed(2)); } else line.push(colDefs[k]?colDefs[k].fn(rec.row):''); }); dataRows.push(line); });
-                    if(activeKeys.includes('amount')){ dataRows.push([]); const totalRow=new Array(header.length).fill(''); const aI=header.indexOf('Amount'); if(aI>-1){ totalRow[Math.max(1,aI-1)]='Total Amount'; totalRow[aI]=totalAmount.toFixed(2);} dataRows.push(totalRow);}                    
-                    const ws = XLSX.utils.aoa_to_sheet(dataRows); XLSX.utils.book_append_sheet(wb, ws, 'Disbursement Sheet'); XLSX.writeFile(wb, 'Disbursement_Sheet.xlsx');
-                }, error:()=> console.error('Error loading bank details for Excel') });
+                    rowData.forEach((rec,idx)=>{
+                        const line=[idx+1];
+                        activeKeys.forEach(k=>{
+                            if(k==='bank_details'){
+                                line.push(resp[String(rec.idCustomer).trim()]||'');
+                            }else{
+                                const val = colDefs[k].fn(rec.row);
+                                // keep running totals if present
+                                if(k==='amount') totalAmount += Number(val||0);
+                                if(k==='disbursement_amount') totalDisb += Number(val||0);
+                                // format numbers
+                                if(['amount','disbursement_amount','doc_charge'].includes(k)){
+                                    line.push(Number(val||0).toFixed(2));
+                                }else{
+                                    line.push(val);
+                                }
+                            }
+                        });
+                        dataRows.push(line);
+                    });
+
+                    // totals row(s)
+                    if(activeKeys.includes('amount') || activeKeys.includes('disbursement_amount')){
+                        dataRows.push([]);
+                        const totalRow=new Array(header.length).fill('');
+                        // show both totals if both columns selected
+                        if(activeKeys.includes('amount')){
+                            const aI = header.indexOf('Amount');
+                            if(aI>-1){ totalRow[Math.max(1,aI-1)]='Total Amount'; totalRow[aI]= totalAmount.toFixed(2); }
+                        }
+                        if(activeKeys.includes('disbursement_amount')){
+                            const dI = header.indexOf('Disbursement Amount');
+                            if(dI>-1){ totalRow[Math.max(1,dI-1)]='Total Disbursement'; totalRow[dI]= totalDisb.toFixed(2); }
+                        }
+                        dataRows.push(totalRow);
+                    }
+
+                    const ws = XLSX.utils.aoa_to_sheet(dataRows);
+                    XLSX.utils.book_append_sheet(wb, ws, 'Disbursement Sheet');
+                    XLSX.writeFile(wb, 'Disbursement_Sheet.xlsx');
+                },
+                error:()=> console.error('Error loading bank details for Excel')
+            });
         }
+
 
         // Helper function to strip HTML tags and get clean text
         function stripHtml(html) {
@@ -1069,17 +1129,22 @@
             const cfg = getDisbursementConfig();
             const table = $('#loan_table').DataTable();
             const rows  = table.rows().data();
-            // Auto-sizing columns (no fixed widths), same approach as Fund Request PDF
+
             const colDefs = {
                 loan_no:{label:'Loan Number', fn:r=>r[0]},
                 nic:{label:'NIC', fn:r=>r[10]},
                 customer_name:{label:'Customer Name', fn:r=>r[8]},
                 amount:{label:'Amount', fn:r=> (parseFloat(r[12].replace(/[^0-9.-]+/g,''))||0)},
+                disbursement_amount:{label:'Disbursement Amount', fn:r=>{
+                        const total = (parseFloat(r[12].replace(/[^0-9.-]+/g,''))||0);
+                        const doc   = (parseFloat(r[13].replace(/[^0-9.-]+/g,''))||0);
+                        return total - doc;
+                    }},
                 received_by:{label:'Received By', fn:()=>''},
                 center_name:{label:'Center Name', fn:r=>r[6]},
                 interest:{label:'Loan Interest', fn:r=>r[14]},
                 weeks:{label:'Number Of Weeks', fn:r=>r[15]},
-                doc_charge:{label:'Document Charge', fn:r=>r[13]},
+                doc_charge:{label:'Document Charge', fn:r=> (parseFloat(r[13].replace(/[^0-9.-]+/g,''))||0)},
                 collector_name:{label:'Collector Name', fn:r=>r[4]},
                 route_name:{label:'Route', fn:r=>r[2]},
                 bank_details:{label:'Bank Details', fn:()=>''},
@@ -1093,43 +1158,57 @@
                 user:{label:'User', fn:r=>r[19]},
                 status:{label:'Status', fn:r=>stripHtml(r[20])}
             };
+
             const activeKeys = cfg.length ? cfg : getDefaultDisbursementColumns();
             let header=['#']; activeKeys.forEach(k=> header.push(colDefs[k].label));
-            let bodyRows=[]; let rowData=[]; let customerIds=[]; let totalAmount=0;
-            for(let i=0;i<rows.length;i++){ const row=rows[i]; const idCustomer=row[22]; rowData.push({idCustomer,row}); customerIds.push(idCustomer);}            
+
+            let bodyRows=[], rowData=[], customerIds=[];
+            let totalAmount=0, totalDisb=0;
+
+            for(let i=0;i<rows.length;i++){
+                const row=rows[i];
+                const idCustomer=row[22];
+                rowData.push({idCustomer,row});
+                customerIds.push(idCustomer);
+            }
+
             $.ajax({
-                url:'/get-customer-bank-details', type:'POST', data:{customer_ids:customerIds,_token:$('meta[name="csrf-token"]').attr('content')},
+                url:'/get-customer-bank-details', type:'POST',
+                data:{customer_ids:customerIds,_token:$('meta[name="csrf-token"]').attr('content')},
                 success:function(resp){
-                    // Build rows with dynamic columns and running total (like Fund Request)
                     rowData.forEach((rec,idx)=>{
                         const line=[idx+1];
                         activeKeys.forEach(k=>{
                             if(k==='bank_details'){
                                 line.push(resp[String(rec.idCustomer).trim()]||'');
-                            }else if(k==='amount'){
-                                const amt=colDefs.amount.fn(rec.row);
-                                totalAmount+=amt;
-                                line.push(amt.toFixed(2));
                             }else{
-                                line.push(colDefs[k]? colDefs[k].fn(rec.row):'');
+                                const val = colDefs[k].fn(rec.row);
+                                if(k==='amount') totalAmount += Number(val||0);
+                                if(k==='disbursement_amount') totalDisb += Number(val||0);
+                                if(['amount','disbursement_amount','doc_charge'].includes(k)){
+                                    line.push((Number(val||0)).toFixed(2));
+                                }else{
+                                    line.push(val);
+                                }
                             }
                         });
                         bodyRows.push(line);
                     });
 
-                    // Add total row if amount included
-                    if(activeKeys.includes('amount')){
+                    if(activeKeys.includes('amount') || activeKeys.includes('disbursement_amount')){
                         bodyRows.push(new Array(header.length).fill(''));
                         const totalRow=new Array(header.length).fill('');
-                        const amtIdx = header.indexOf('Amount');
-                        if(amtIdx>-1){
-                            totalRow[amtIdx] = totalAmount.toFixed(2);
-                            totalRow[Math.max(1, amtIdx-1)] = 'Total Amount';
+                        if(activeKeys.includes('amount')){
+                            const aI = header.indexOf('Amount');
+                            if(aI>-1){ totalRow[Math.max(1,aI-1)]='Total Amount'; totalRow[aI]= totalAmount.toFixed(2); }
+                        }
+                        if(activeKeys.includes('disbursement_amount')){
+                            const dI = header.indexOf('Disbursement Amount');
+                            if(dI>-1){ totalRow[Math.max(1,dI-1)]='Total Disbursement'; totalRow[dI]= totalDisb.toFixed(2); }
                         }
                         bodyRows.push(totalRow);
                     }
 
-                    // Create PDF with auto-sized table (no columnStyles), same pattern as Fund Request
                     const pdf=new window.jspdf.jsPDF('landscape','mm','a4');
                     const dateTime=getColomboDateTime();
                     const pageWidth=pdf.internal.pageSize.getWidth();
@@ -1154,6 +1233,7 @@
                 error:()=> console.error('Error loading bank details')
             });
         }
+
 
         // Reorder helpers for config modals
         function moveConfigItemUp(containerId, itemId){

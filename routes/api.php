@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\API\{AuthController, DirectoryController, CollectionsController, LoansController,CustomersController,PaymentsController};
+use App\Http\Controllers\API\{AuthController, DirectoryController, CollectionsController, LoansController,CustomersController,PaymentsController,RoutesController};
 use App\Http\Middleware\ApplyBranchFromUser;
 
 Route::post('/login', [AuthController::class, 'apiLogin']);
@@ -27,5 +27,11 @@ Route::middleware(['auth:sanctum', ApplyBranchFromUser::class])->group(function 
     Route::get('/customers', [CustomersController::class, 'index']);
     Route::get('/customers/{id}', [CustomersController::class, 'show'])->whereNumber('id');
     Route::post('/loans/{id}/payments', [PaymentsController::class, 'storeLoanPayment'])->whereNumber('id');
+
+    Route::get('/routes', [RoutesController::class, 'index']);
+    Route::get('/routes/{id}/customers', [RoutesController::class, 'customers'])->whereNumber('id');
+    Route::get('/payments/{id}/receipt', [PaymentsController::class, 'paymentReceipt'])
+        ->whereNumber('id');
+
 });
 

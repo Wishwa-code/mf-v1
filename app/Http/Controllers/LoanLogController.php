@@ -11,10 +11,35 @@ class LoanLogController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index($Loan_ID,$Type,$Type_ID,$Description,$Amount,$Panelty_Payment,$Interest_Payment,$Capital_Payment,$Savings_Payment,$Panelty_Balance,$Interest_Balance,$Capital_Balance,$Total_Pending_Balance,$Saving_Account_Balance)
-    {
+    public function index(
+        $Loan_ID,
+        $Type,
+        $Type_ID,
+        $Description,
+        $Amount,
+        $Panelty_Payment,
+        $Interest_Payment,
+        $Capital_Payment,
+        $Savings_Payment,
+        $Panelty_Balance,
+        $Interest_Balance,
+        $Capital_Balance,
+        $Total_Pending_Balance,
+        $Saving_Account_Balance
+    ) {
         $user_id = (int)session('userid');
-        // Insert the data into the Savings_Account_Log table
+
+        // Get latest Loan_Log for this Loan_ID
+        $latestLog = DB::table('Loan_Log')
+            ->where('Loan_ID', $Loan_ID)
+            ->orderByDesc('Loan_Log_ID')
+            ->first();
+
+        // Get last extra payment and balance
+        $Extra_Payment = $latestLog->Extra_Payment ?? 0;
+        $Extra_Balance = $latestLog->Extra_Balance ?? 0;
+
+        // Insert new Loan_Log row
         DB::table('Loan_Log')->insert([
             'Loan_ID' => $Loan_ID,
             'Date_Time' => date('Y-m-d H:i:s'),
@@ -26,15 +51,18 @@ class LoanLogController extends Controller
             'Interest_Payment' => $Interest_Payment,
             'Capital_Payment' => $Capital_Payment,
             'Savings_Payment' => $Savings_Payment,
+            'Extra_Payment' => $Extra_Payment,
             'Panelty_Balance' => $Panelty_Balance,
             'Interest_Balance' => $Interest_Balance,
             'Capital_Balance' => $Capital_Balance,
-            'Total_Pending_Balance' => $Total_Pending_Balance,
+            'Total_Pending_Balance' => $Total_Pending_Balance+$Extra_Balance,
             'Saving_Account_Balance' => $Saving_Account_Balance,
+            'Extra_Balance' => $Extra_Balance,
             'User_idUser' => $user_id,
             'branch_id' => session('branch_id')
         ]);
     }
+
 
     /**
      * Show the form for creating a new resource.

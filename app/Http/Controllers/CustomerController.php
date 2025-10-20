@@ -485,7 +485,7 @@ class CustomerController extends Controller
         updateWithBranch('customer', 'idCustomer', $request->id, $data);
 
 
-        customer_number($request->id);
+//        customer_number($request->id);
 
         $request = new Request([
             'customer_id' =>  $request->id,

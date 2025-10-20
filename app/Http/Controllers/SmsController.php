@@ -23,7 +23,7 @@ class SmsController extends Controller
         $customer = tableWithBranch('customer')->where('idCustomer', $customer_id)->first();
 
         if (!$company || !$customer) {
-            return response()->json(['error' => 'Company or Customer not found'], 404);
+            return response()->json(['error' => 'Company or Customer not found'], 200);
         }
 
         // Ensure provider column exists (your comment mentioned "status" but the code checks provider)
@@ -34,7 +34,7 @@ class SmsController extends Controller
         // 1) Normalize & validate customer phone number to "94xxxxxxxxx" (no plus)
         [$normalized, $err] = $this->normalizeSriLankanMobile($customer->Contact_No);
         if ($err) {
-            return response()->json(['error' => "Invalid mobile number for SMS: {$err}"], 422);
+            return response()->json(['error' => "Invalid mobile number for SMS: {$err}"], 200);
         }
 
         try {
@@ -57,11 +57,11 @@ class SmsController extends Controller
                             Session::put('token', $dialogToken);
                             Session::put('userData', $responseData['userData'] ?? []);
                         } else {
-                            return response()->json(['error' => 'Dialog login failed: no token'], 500);
+                            return response()->json(['error' => 'Dialog login failed: no token'], 200);
                         }
                     } catch (\Exception $e) {
                         Log::error('Dialog SMS Login Error: ' . $e->getMessage());
-                        return response()->json(['error' => 'Dialog login failed'], 500);
+                        return response()->json(['error' => 'Dialog login failed'], 200);
                     }
                 }
 
@@ -94,7 +94,7 @@ class SmsController extends Controller
                     }
                     return response()->json($responseData);
                 } catch (\Exception $e) {
-                    return response()->json(['error' => $e->getMessage()], 500);
+                    return response()->json(['error' => $e->getMessage()], 200);
                 }
 
             } else {
@@ -121,11 +121,11 @@ class SmsController extends Controller
                             Session::put('hutch_access_token', $accessToken);
                             Session::put('hutch_refresh_token', $data['refreshToken'] ?? null);
                         } else {
-                            return response()->json(['error' => 'Hutch login failed: no accessToken'], 500);
+                            return response()->json(['error' => 'Hutch login failed: no accessToken'], 200);
                         }
                     } catch (\Exception $e) {
                         Log::error('Hutch SMS Login Error: ' . $e->getMessage());
-                        return response()->json(['error' => 'Hutch login failed'], 500);
+                        return response()->json(['error' => 'Hutch login failed'], 200);
                     }
                 }
 
@@ -159,11 +159,11 @@ class SmsController extends Controller
                     }
                     return response()->json($result);
                 } catch (\Exception $e) {
-                    return response()->json(['error' => $e->getMessage()], 500);
+                    return response()->json(['error' => $e->getMessage()], 200);
                 }
             }
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Unhandled error: ' . $e->getMessage()], 500);
+            return response()->json(['error' => 'Unhandled error: ' . $e->getMessage()], 200);
         }
     }
 
