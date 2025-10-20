@@ -252,10 +252,37 @@ class UserController extends Controller
 
         if ($getuser) {
             $newStatus = $getuser->Status == "1" ? "0" : "1"; // Toggle the Status
-            DB::table('user')->where('id', $id)->update(['Status' => $newStatus]); // Access Status as an object property
+            $actionType = $newStatus == "1" ? "Activate User" : "Deactivate User";
+            
+            // Store user status change data for approval
+            $requestData = [
+                'user_id' => $id,
+                'old_data' => (array)$getuser,
+                'new_data' => ['Status' => $newStatus],
+                'action_type' => $actionType,
+            ];
+
+            // Create approval request (use type 102 - User Details Update)
+            DB::table('approval_request')->insert([
+                'type' => 'User Details Update',
+                'typeid' => 102,
+                'description' => $actionType . ': ' . $getuser->Full_Name . ' (ID: ' . $id . ')',
+                'data' => json_encode($requestData),
+                'userid' => session('userid'),
+                'branch_id' => session('branch_id'),
+                'data_time' => now(),
+                'status' => 0
+            ]);
+            
+            return response()->json(['message' => 'User status change request sent for approval!'], 200);
+            
+            // OLD CODE - keeping for approval handler reference
+            /*
+            DB::table('user')->where('id', $id)->update(['Status' => $newStatus]);
             return response()->json(['message' => 'Data updated successfully'], 200);
+            */
         } else {
-            return response()->json(['message' => 'Customer not found'], 404);
+            return response()->json(['message' => 'User not found'], 404);
         }
     }
 

@@ -60,24 +60,24 @@
                         <!-- Filters -->
                         <form method="GET" action="{{ route('approval.pending') }}" class="mb-4">
                             <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="branch_id" class="form-label">Branch</label>
-                                    <select class="form-select" id="branch_id" name="branch_id" {{ $branch_access == 0 ? 'disabled' : '' }}>
-                                        @if($branch_access == 1)
+                                @if(session('branch_id') == -1)
+                                    <div class="col-md-6">
+                                        <label for="branch_id" class="form-label">Branch</label>
+                                        <select class="form-select" id="branch_id" name="branch_id">
                                             <option value="">All Branches</option>
-                                        @endif
-                                        @foreach($branches as $branch)
-                                            <option value="{{ $branch->branch_id }}"
-                                                    {{ $selectedBranch == $branch->branch_id ? 'selected' : '' }}>
-                                                {{ $branch->Name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @if($branch_access == 0)
+                                            @foreach($branches as $branch)
+                                                <option value="{{ $branch->branch_id }}"
+                                                        {{ $selectedBranch == $branch->branch_id ? 'selected' : '' }}>
+                                                    {{ $branch->Name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                @endif
+                                <div class="{{ session('branch_id') == -1 ? 'col-md-6' : 'col-md-12' }}">
+                                    @if(session('branch_id') != -1)
                                         <input type="hidden" name="branch_id" value="{{ session('branch_id') }}">
                                     @endif
-                                </div>
-                                <div class="col-md-6">
                                     <label for="type" class="form-label">Type</label>
                                     <select class="form-select" id="type" name="type">
                                         <option value="">All Types</option>
@@ -118,7 +118,9 @@
                                             <th>Date & Time</th>
                                             <th>User</th>
                                             <th class="text-center">View</th>
-                                            <th class="text-center">Actions</th>
+                                            @if(session('branch_id') == -1)
+                                                <th class="text-center">Actions</th>
+                                            @endif
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -149,23 +151,25 @@
                                                         <i class="ri-eye-line"></i>
                                                     </button>
                                                 </td>
-                                                <td class="text-center action-buttons">
-                                                    <button class="btn btn-success btn-sm me-1" 
-                                                            onclick="approveRequest({{ $approval->id }})"
-                                                            title="Approve">
-                                                        <i class="ri-check-line"></i> Approve
-                                                    </button>
-                                                    <button class="btn btn-danger btn-sm me-1" 
-                                                            onclick="rejectRequest({{ $approval->id }})"
-                                                            title="Reject">
-                                                        <i class="ri-close-line"></i> Reject
-                                                    </button>
-                                                    <button class="btn btn-warning btn-sm" 
-                                                            onclick="callbackRequest({{ $approval->id }})"
-                                                            title="Callback">
-                                                        <i class="ri-phone-line"></i> Callback
-                                                    </button>
-                                                </td>
+                                                @if(session('branch_id') == -1)
+                                                    <td class="text-center action-buttons">
+                                                        <button class="btn btn-success btn-sm me-1" 
+                                                                onclick="approveRequest({{ $approval->id }})"
+                                                                title="Approve">
+                                                            <i class="ri-check-line"></i> Approve
+                                                        </button>
+                                                        <button class="btn btn-danger btn-sm me-1" 
+                                                                onclick="rejectRequest({{ $approval->id }})"
+                                                                title="Reject">
+                                                            <i class="ri-close-line"></i> Reject
+                                                        </button>
+                                                        <button class="btn btn-warning btn-sm" 
+                                                                onclick="callbackRequest({{ $approval->id }})"
+                                                                title="Callback">
+                                                            <i class="ri-phone-line"></i> Callback
+                                                        </button>
+                                                    </td>
+                                                @endif
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -277,12 +281,15 @@
         let currentAction = null;
 
         $(document).ready(function() {
+            var isHeadOffice = {{ session('branch_id') == -1 ? 'true' : 'false' }};
+            var nonSortableColumns = isHeadOffice ? [0, 5, 6] : [0, 5]; // Adjust based on visible columns
+            
             var table = $('#pendingApprovalTable').DataTable({
                 "pageLength": 25,
                 "responsive": false,
                 "order": [[ 3, "desc" ]], // Sort by date column
                 "columnDefs": [
-                    { "orderable": false, "targets": [0, 5, 6] } // Disable sorting for expand and action columns
+                    { "orderable": false, "targets": nonSortableColumns } // Disable sorting for expand and action columns
                 ]
             });
             
@@ -314,6 +321,9 @@
             } else if (typeId == 402) {
                 // Loan Rejection - Show loan rejection details modal
                 showLoanRejectionDetails(id);
+            } else if (typeId == 403) {
+                // Loan Installment Modification - Show installment modification details
+                showLoanInstallmentModificationDetails(id);
             } else if (typeId == 201) {
                 // Designation update - Show designation details modal
                 showDesignationDetails(id);
@@ -326,6 +336,21 @@
             } else if (typeId == 103) {
                 // User Privilege Change - Show privilege change details modal
                 showUserPrivilegeChangeDetails(id);
+            } else if (typeId == 301) {
+                // Customer Creation - Show customer creation details modal
+                showCustomerCreationDetails(id);
+            } else if (typeId == 302) {
+                // Customer Details Update - Show customer update details modal
+                showCustomerDetailsUpdateDetails(id);
+            } else if (typeId == 304) {
+                // Customer Status Change - Show status change details modal
+                showCustomerStatusChangeDetails(id);
+            } else if (typeId == 305) {
+                // Customer Document Delete - Show document delete details modal
+                showCustomerDocumentDeleteDetails(id);
+            } else if (typeId == 603) {
+                // Expense Delete - Show expense delete details modal
+                showExpenseDeleteDetails(id);
             } else {
                 // Other types - show alert for now
                 alert(`View details for ${type} request #${id} (Type ID: ${typeId})`);
@@ -439,6 +464,42 @@
             });
         }
 
+        function showLoanInstallmentModificationDetails(approvalId) {
+            $('#loanDetailsModal').modal('show');
+            $('#loanDetailsModalLabel').html('<i class="ri-calendar-schedule-line me-2"></i>Loan Installment Modification');
+            $('#loanDetailsContent').html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading installment modification details...</p>
+                </div>
+            `);
+            
+            $.ajax({
+                url: `/approval/loan-installment-modification-details/${approvalId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#loanDetailsContent').html(response.html);
+                    } else {
+                        $('#loanDetailsContent').html(`
+                            <div class="alert alert-danger" role="alert">
+                                <i class="ri-error-warning-line me-2"></i>Error: ${response.message}
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#loanDetailsContent').html(`
+                        <div class="alert alert-danger" role="alert">
+                            <i class="ri-error-warning-line me-2"></i>Error loading installment modification details. Please try again.
+                        </div>
+                    `);
+                }
+            });
+        }
+
         function showUserCreationDetails(approvalId) {
             $('#loanDetailsModal').modal('show');
             $('#loanDetailsModalLabel').html('<i class="ri-user-add-line me-2"></i>User Creation Details');
@@ -541,6 +602,186 @@
                     $('#loanDetailsContent').html(`
                         <div class="alert alert-danger" role="alert">
                             <i class="ri-error-warning-line me-2"></i>Error loading privilege change details. Please try again.
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function showCustomerCreationDetails(approvalId) {
+            $('#loanDetailsModal').modal('show');
+            $('#loanDetailsModalLabel').html('<i class="ri-user-add-line me-2"></i>Customer Creation Details');
+            $('#loanDetailsContent').html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-info" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading customer creation details...</p>
+                </div>
+            `);
+            
+            $.ajax({
+                url: `/approval/customer-creation-details/${approvalId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#loanDetailsContent').html(response.html);
+                    } else {
+                        $('#loanDetailsContent').html(`
+                            <div class="alert alert-danger" role="alert">
+                                <i class="ri-error-warning-line me-2"></i>Error: ${response.message}
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#loanDetailsContent').html(`
+                        <div class="alert alert-danger" role="alert">
+                            <i class="ri-error-warning-line me-2"></i>Error loading customer creation details. Please try again.
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function showCustomerDetailsUpdateDetails(approvalId) {
+            $('#loanDetailsModal').modal('show');
+            $('#loanDetailsModalLabel').html('<i class="ri-user-settings-line me-2"></i>Customer Details Update');
+            $('#loanDetailsContent').html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading customer update details...</p>
+                </div>
+            `);
+            
+            $.ajax({
+                url: `/approval/customer-update-details/${approvalId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#loanDetailsContent').html(response.html);
+                    } else {
+                        $('#loanDetailsContent').html(`
+                            <div class="alert alert-danger" role="alert">
+                                <i class="ri-error-warning-line me-2"></i>Error: ${response.message}
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#loanDetailsContent').html(`
+                        <div class="alert alert-danger" role="alert">
+                            <i class="ri-error-warning-line me-2"></i>Error loading customer update details. Please try again.
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function showCustomerStatusChangeDetails(approvalId) {
+            $('#loanDetailsModal').modal('show');
+            $('#loanDetailsModalLabel').html('<i class="ri-user-settings-line me-2"></i>Customer Status Change');
+            $('#loanDetailsContent').html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading status change details...</p>
+                </div>
+            `);
+            
+            $.ajax({
+                url: `/approval/customer-status-change-details/${approvalId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#loanDetailsContent').html(response.html);
+                    } else {
+                        $('#loanDetailsContent').html(`
+                            <div class="alert alert-danger" role="alert">
+                                <i class="ri-error-warning-line me-2"></i>Error: ${response.message}
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#loanDetailsContent').html(`
+                        <div class="alert alert-danger" role="alert">
+                            <i class="ri-error-warning-line me-2"></i>Error loading status change details. Please try again.
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function showCustomerDocumentDeleteDetails(approvalId) {
+            $('#loanDetailsModal').modal('show');
+            $('#loanDetailsModalLabel').html('<i class="ri-file-damage-line me-2"></i>Customer Document Delete');
+            $('#loanDetailsContent').html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-danger" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading document delete details...</p>
+                </div>
+            `);
+            
+            $.ajax({
+                url: `/approval/customer-document-delete-details/${approvalId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#loanDetailsContent').html(response.html);
+                    } else {
+                        $('#loanDetailsContent').html(`
+                            <div class="alert alert-danger" role="alert">
+                                <i class="ri-error-warning-line me-2"></i>Error: ${response.message}
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#loanDetailsContent').html(`
+                        <div class="alert alert-danger" role="alert">
+                            <i class="ri-error-warning-line me-2"></i>Error loading document delete details. Please try again.
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function showExpenseDeleteDetails(approvalId) {
+            $('#loanDetailsModal').modal('show');
+            $('#loanDetailsModalLabel').html('<i class="ri-delete-bin-line me-2"></i>Expense Delete Details');
+            $('#loanDetailsContent').html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-danger" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading expense delete details...</p>
+                </div>
+            `);
+            
+            $.ajax({
+                url: `/approval/expense-delete-details/${approvalId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#loanDetailsContent').html(response.html);
+                    } else {
+                        $('#loanDetailsContent').html(`
+                            <div class="alert alert-danger" role="alert">
+                                <i class="ri-error-warning-line me-2"></i>Error: ${response.message}
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#loanDetailsContent').html(`
+                        <div class="alert alert-danger" role="alert">
+                            <i class="ri-error-warning-line me-2"></i>Error loading expense delete details. Please try again.
                         </div>
                     `);
                 }

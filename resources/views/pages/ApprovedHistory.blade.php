@@ -60,24 +60,24 @@
                         <!-- Filters -->
                         <form method="GET" action="{{ route('approval.approved') }}" class="mb-4">
                             <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label for="branch_id" class="form-label">Branch</label>
-                                    <select class="form-select" id="branch_id" name="branch_id" {{ $branch_access == 0 ? 'disabled' : '' }}>
-                                        @if($branch_access == 1)
+                                @if(session('branch_id') == -1)
+                                    <div class="col-md-4">
+                                        <label for="branch_id" class="form-label">Branch</label>
+                                        <select class="form-select" id="branch_id" name="branch_id">
                                             <option value="">All Branches</option>
-                                        @endif
-                                        @foreach($branches as $branch)
-                                            <option value="{{ $branch->branch_id }}"
-                                                    {{ $selectedBranch == $branch->branch_id ? 'selected' : '' }}>
-                                                {{ $branch->Name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @if($branch_access == 0)
+                                            @foreach($branches as $branch)
+                                                <option value="{{ $branch->branch_id }}"
+                                                        {{ $selectedBranch == $branch->branch_id ? 'selected' : '' }}>
+                                                    {{ $branch->Name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                @endif
+                                <div class="{{ session('branch_id') == -1 ? 'col-md-4' : 'col-md-6' }}">
+                                    @if(session('branch_id') != -1)
                                         <input type="hidden" name="branch_id" value="{{ session('branch_id') }}">
                                     @endif
-                                </div>
-                                <div class="col-md-4">
                                     <label for="type" class="form-label">Type</label>
                                     <select class="form-select" id="type" name="type">
                                         <option value="">All Types</option>
