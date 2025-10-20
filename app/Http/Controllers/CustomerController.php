@@ -688,23 +688,50 @@ class CustomerController extends Controller
         // Toggle the status
         $newStatus = $customer->Status == 1 ? 0 : 1;
 
-// Determine the action description
+        // Determine the action description
         $actionDescription = $newStatus == 1 ? 'Removed from Blacklist' : 'Added to Blacklist';
 
         // Determine the action type
         $type = $newStatus == 1 ? 'Remove Blacklist' : 'Blacklist';
 
-// Update the status and note in the database
+        // Store blacklist change data for approval
+        $requestData = [
+            'customer_id' => $id,
+            'customer_data' => (array)$customer,
+            'old_status' => $customer->Status,
+            'new_status' => $newStatus,
+            'note' => $note,
+            'action_type' => $type,
+            'action_description' => $actionDescription,
+        ];
+
+        // Create approval request
+        DB::table('approval_request')->insert([
+            'type' => 'Customer Status Change',
+            'typeid' => 304,
+            'description' => $type . ': ' . $customer->First_Name . ' ' . $customer->Last_Name . ' (NIC: ' . $customer->Nic . ')',
+            'data' => json_encode($requestData),
+            'userid' => session('userid'),
+            'branch_id' => session('branch_id'),
+            'data_time' => now(),
+            'status' => 0
+        ]);
+
+        return response()->json([
+            'message' => 'Status change request sent for approval!',
+            'requiresApproval' => true
+        ], 200);
+
+        // OLD CODE - keeping for approval handler reference
+        /*
         $updated = updateWithBranch('customer', 'idCustomer', $id, [
             'Status' => $newStatus,
             'Comment' => $note
         ]);
 
-// Get customer details
         $customer_table = tableWithBranch('customer')->where('idCustomer', $id)->first();
         $user_id = (int)session('userid');
 
-// Log the action
         DB::table('customer_log')->insert([
             'customer_id' => $id,
             'customer_name' => $customer_table->First_Name.' '.$customer_table->Last_Name,
@@ -718,8 +745,6 @@ class CustomerController extends Controller
             'branch_id' => session('branch_id')
         ]);
 
-
-        // Check if update was successful
         if ($updated) {
             return response()->json([
                 'message' => 'Status updated successfully',
@@ -728,11 +753,10 @@ class CustomerController extends Controller
         } else {
             return response()->json([
                 'message' => 'Failed to update status'
-            ], 500); // Return server error if update fails
+            ], 500);
         }
+        */
     }
-
-
 
     public function load_customers(string $id){
         $customer = tableWithBranch('customer','customer')

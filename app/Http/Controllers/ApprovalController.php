@@ -540,6 +540,47 @@ class ApprovalController extends Controller
                 ]);
             }
             
+            // Handle Customer Status Change (Type 304)
+            if ($approval->typeid == 304) {
+                $requestData = json_decode($approval->data, true);
+                $customerId = $requestData['customer_id'];
+                $newStatus = $requestData['new_status'];
+                $note = $requestData['note'];
+                $actionType = $requestData['action_type'];
+                $actionDescription = $requestData['action_description'];
+                
+                // Update customer status
+                DB::table('customer')
+                    ->where('idCustomer', $customerId)
+                    ->where('branch_id', $approval->branch_id)
+                    ->update([
+                        'Status' => $newStatus,
+                        'Comment' => $note
+                    ]);
+                
+                // Get customer details for logging
+                $customer = DB::table('customer')
+                    ->where('idCustomer', $customerId)
+                    ->where('branch_id', $approval->branch_id)
+                    ->first();
+                
+                // Create customer log
+                if ($customer) {
+                    DB::table('customer_log')->insert([
+                        'customer_id' => $customerId,
+                        'customer_name' => $customer->First_Name . ' ' . $customer->Last_Name,
+                        'date' => date('Y-m-d'),
+                        'time' => date('H:i:s'),
+                        'description' => $note ?? $actionDescription,
+                        'description_id' => $customerId,
+                        'comment' => ' ',
+                        'type' => $actionType,
+                        'user' => session('userid'),
+                        'branch_id' => $approval->branch_id,
+                    ]);
+                }
+            }
+            
             // Handle Loan Approval (Type 401)
             if ($approval->typeid == 401) {
                 $requestData = json_decode($approval->data, true);
@@ -1547,6 +1588,86 @@ class ApprovalController extends Controller
             <div class="alert alert-warning mt-3">
                 <strong>⚠️ Warning:</strong> Approving this request will permanently delete this expense entry and create reversal bank log entries.
             </div>
+            
+            <div class="mt-3">
+                <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
+                <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
+            </div>
+            ';
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getCustomerStatusChangeDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 304) {
+                return response()->json(['success' => false, 'message' => 'Status change request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $customerData = $requestData['customer_data'] ?? [];
+            $oldStatus = $requestData['old_status'];
+            $newStatus = $requestData['new_status'];
+            $note = $requestData['note'] ?? '';
+            $actionType = $requestData['action_type'];
+            $actionDescription = $requestData['action_description'];
+            
+            $oldStatusText = $oldStatus == 1 ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-danger">Blacklisted</span>';
+            $newStatusText = $newStatus == 1 ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-danger">Blacklisted</span>';
+            
+            $alertClass = $newStatus == 0 ? 'alert-danger' : 'alert-success';
+            $iconClass = $newStatus == 0 ? 'ri-user-unfollow-line' : 'ri-user-follow-line';
+            
+            $html = '
+            <div class="alert ' . $alertClass . '">
+                <i class="' . $iconClass . ' me-2"></i><strong>' . htmlspecialchars($actionType) . ' Request</strong>
+                <p class="mb-0 mt-2"><small>Review customer status change before approving</small></p>
+            </div>
+            
+            <h6 class="mb-3">Customer Information</h6>
+            
+            <table class="table table-bordered">
+                <tbody>
+                    <tr>
+                        <th style="width: 35%;">Customer Name</th>
+                        <td><strong>' . htmlspecialchars(($customerData['First_Name'] ?? '') . ' ' . ($customerData['Last_Name'] ?? '')) . '</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Customer Number</th>
+                        <td>' . htmlspecialchars($customerData['cus_number'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>NIC</th>
+                        <td>' . htmlspecialchars($customerData['Nic'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Contact Number</th>
+                        <td>' . htmlspecialchars($customerData['Contact_No'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Current Status</th>
+                        <td>' . $oldStatusText . '</td>
+                    </tr>
+                    <tr>
+                        <th>New Status</th>
+                        <td><strong>' . $newStatusText . '</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Reason/Note</th>
+                        <td>' . htmlspecialchars($note) . '</td>
+                    </tr>
+                </tbody>
+            </table>
             
             <div class="mt-3">
                 <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
