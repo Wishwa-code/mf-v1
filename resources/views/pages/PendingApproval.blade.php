@@ -339,6 +339,9 @@
             } else if (typeId == 302) {
                 // Customer Details Update - Show customer update details modal
                 showCustomerDetailsUpdateDetails(id);
+            } else if (typeId == 603) {
+                // Expense Delete - Show expense delete details modal
+                showExpenseDeleteDetails(id);
             } else {
                 // Other types - show alert for now
                 alert(`View details for ${type} request #${id} (Type ID: ${typeId})`);
@@ -626,6 +629,42 @@
                     $('#loanDetailsContent').html(`
                         <div class="alert alert-danger" role="alert">
                             <i class="ri-error-warning-line me-2"></i>Error loading customer update details. Please try again.
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function showExpenseDeleteDetails(approvalId) {
+            $('#loanDetailsModal').modal('show');
+            $('#loanDetailsModalLabel').html('<i class="ri-delete-bin-line me-2"></i>Expense Delete Details');
+            $('#loanDetailsContent').html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-danger" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading expense delete details...</p>
+                </div>
+            `);
+            
+            $.ajax({
+                url: `/approval/expense-delete-details/${approvalId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#loanDetailsContent').html(response.html);
+                    } else {
+                        $('#loanDetailsContent').html(`
+                            <div class="alert alert-danger" role="alert">
+                                <i class="ri-error-warning-line me-2"></i>Error: ${response.message}
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#loanDetailsContent').html(`
+                        <div class="alert alert-danger" role="alert">
+                            <i class="ri-error-warning-line me-2"></i>Error loading expense delete details. Please try again.
                         </div>
                     `);
                 }

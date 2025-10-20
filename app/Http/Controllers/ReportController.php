@@ -411,6 +411,34 @@ class ReportController extends Controller
                 ->where('acc_type_group','=','Expenses')
                 ->where('Idbank','=',$last_expenses->category_id)
                 ->first();
+            
+            // Get bank name for description
+            $bankName = $bank_id ? $bank_id->Bank_Name : 'Unknown';
+            
+            // Store expense delete data for approval
+            $requestData = [
+                'expense_id' => $id,
+                'expense_data' => (array)$last_expenses,
+                'bank_id_data' => $bank_id ? (array)$bank_id : null,
+            ];
+
+            // Create approval request
+            DB::table('approval_request')->insert([
+                'type' => 'Expense Delete',
+                'typeid' => 603,
+                'description' => 'Expense Delete: ' . $last_expenses->reason . ' (Amount: ' . $last_expenses->amount . ', Category: ' . $bankName . ')',
+                'data' => json_encode($requestData),
+                'userid' => session('userid'),
+                'branch_id' => session('branch_id'),
+                'data_time' => now(),
+                'status' => 0
+            ]);
+            
+            // Redirect with success message
+            return redirect()->back()->with('success', 'Expense delete request sent for approval!');
+            
+            // OLD CODE - keeping for approval handler reference
+            /*
             $reason='Delete Expense : ('.$last_expenses->reason.')';
             $this->bankLogController->index($last_expenses->bank_id,"Expenses",$reason,"-","debit",$last_expenses->amount,$bank_id->Idbank);
             $this->bankLogController->index($bank_id->Idbank,"Expenses",$reason,"-","credit",$last_expenses->amount,$last_expenses->bank_id);
@@ -419,6 +447,7 @@ class ReportController extends Controller
                 ->where('id', $id)
                 ->where('branch_id', session('branch_id'))
                 ->delete();
+            */
         }
 
 

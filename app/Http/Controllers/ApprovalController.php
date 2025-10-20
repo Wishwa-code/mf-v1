@@ -585,6 +585,64 @@ class ApprovalController extends Controller
                 insertWithBranch('customer_log', $logData);
             }
             
+            // Handle Expense Delete (Type 603)
+            if ($approval->typeid == 603) {
+                $requestData = json_decode($approval->data, true);
+                $expenseId = $requestData['expense_id'];
+                $expenseData = $requestData['expense_data'];
+                $bankIdData = $requestData['bank_id_data'];
+                
+                // Re-fetch to ensure data is current
+                $last_expenses = DB::table('expences')
+                    ->where('id', $expenseId)
+                    ->where('branch_id', $approval->branch_id)
+                    ->first();
+                
+                if ($last_expenses) {
+                    $bank_id = DB::table('company_bank_accounts')
+                        ->where('acc_type_group', 'Expenses')
+                        ->where('Idbank', $last_expenses->category_id)
+                        ->first();
+                    
+                    if ($bank_id) {
+                        $reason = 'Delete Expense : (' . $last_expenses->reason . ')';
+                        
+                        // Create bank logs for deletion
+                        DB::table('bank_log')->insert([
+                            'bank_id' => $last_expenses->bank_id,
+                            'type' => 'Expenses',
+                            'reason' => $reason,
+                            'cheque_no' => '-',
+                            'date_time' => now(),
+                            'debit_credit' => 'debit',
+                            'amount' => $last_expenses->amount,
+                            'other_bank_id' => $bank_id->Idbank,
+                            'user_id' => session('userid'),
+                            'branch_id' => $approval->branch_id,
+                        ]);
+                        
+                        DB::table('bank_log')->insert([
+                            'bank_id' => $bank_id->Idbank,
+                            'type' => 'Expenses',
+                            'reason' => $reason,
+                            'cheque_no' => '-',
+                            'date_time' => now(),
+                            'debit_credit' => 'credit',
+                            'amount' => $last_expenses->amount,
+                            'other_bank_id' => $last_expenses->bank_id,
+                            'user_id' => session('userid'),
+                            'branch_id' => $approval->branch_id,
+                        ]);
+                    }
+                    
+                    // Delete the expense
+                    DB::table('expences')
+                        ->where('id', $expenseId)
+                        ->where('branch_id', $approval->branch_id)
+                        ->delete();
+                }
+            }
+            
             // Update approval status
             DB::table('approval_request')
                 ->where('id', $id)
@@ -1423,6 +1481,76 @@ class ApprovalController extends Controller
                 <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
                 <p class="text-muted mb-1"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
                 <p class="text-muted mb-0"><strong>Total Changes:</strong> ' . $changesCount . ' field(s)</p>
+            </div>
+            ';
+            
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    public function getExpenseDeleteDetails($approvalId)
+    {
+        try {
+            $approval = DB::table('approval_request as ar')
+                ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
+                ->select('ar.*', 'u.Full_Name as user_full_name')
+                ->where('ar.id', $approvalId)
+                ->first();
+            
+            if (!$approval || $approval->typeid != 603) {
+                return response()->json(['success' => false, 'message' => 'Expense delete request not found.']);
+            }
+            
+            $requestData = json_decode($approval->data, true);
+            $expenseData = $requestData['expense_data'] ?? [];
+            $bankIdData = $requestData['bank_id_data'] ?? [];
+            
+            $html = '
+            <div class="alert alert-danger">
+                <i class="ri-delete-bin-line me-2"></i><strong>Expense Delete Request</strong>
+                <p class="mb-0 mt-2"><small>Review the expense details before approving deletion</small></p>
+            </div>
+            
+            <h6 class="mb-3">Expense Details</h6>
+            
+            <table class="table table-bordered">
+                <tbody>
+                    <tr>
+                        <th style="width: 35%;">Category</th>
+                        <td><strong>' . htmlspecialchars($bankIdData['Bank_Name'] ?? 'N/A') . '</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Reason/Description</th>
+                        <td>' . htmlspecialchars($expenseData['reason'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Amount</th>
+                        <td><strong class="text-danger">Rs. ' . number_format($expenseData['amount'] ?? 0, 2) . '</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Payment Type</th>
+                        <td>' . htmlspecialchars($expenseData['payment_type'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Date</th>
+                        <td>' . htmlspecialchars($expenseData['date'] ?? 'N/A') . '</td>
+                    </tr>
+                    <tr>
+                        <th>Cheque Number</th>
+                        <td>' . htmlspecialchars($expenseData['cheque_no'] ?? '-') . '</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="alert alert-warning mt-3">
+                <strong>⚠️ Warning:</strong> Approving this request will permanently delete this expense entry and create reversal bank log entries.
+            </div>
+            
+            <div class="mt-3">
+                <p class="text-muted mb-1"><strong>Requested By:</strong> ' . htmlspecialchars($approval->user_full_name ?? 'N/A') . '</p>
+                <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
             </div>
             ';
             
