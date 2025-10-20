@@ -688,9 +688,6 @@ class UserController extends Controller
         return response()->json(['data' => $totalOutstandingData]);
     }
 
-        return response()->json(['data' => $weeklyNotPaidData]);
-    }
-
     public function penaltyBalanceData()
     {
         $penaltyBalanceData = tableWithBranch('installments','installments')
@@ -713,6 +710,8 @@ class UserController extends Controller
             ->get();
 
         return response()->json(['data' => $penaltyBalanceData]);
+    }
+
     public function weeklyNotPaidData()
     {
         // Get current week date range
@@ -745,30 +744,6 @@ class UserController extends Controller
             ->get();
 
         return response()->json(['data' => $weeklyNotPaidData]);
-    }
-
-    public function penaltyBalanceData()
-    {
-        $penaltyBalanceData = tableWithBranch('installments','installments')
-            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
-            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
-            ->select(
-                'customer_loan.idCustomer_Loan as loan_id',
-                'customer.idCustomer as customer_id',
-                DB::raw('CONCAT(customer.First_Name, " ", customer.Last_Name) as customer_name'),
-                'customer_loan.Amount as capital_amount',
-                'customer_loan.Total_Loan_Amount as full_loan_amount',
-                DB::raw('SUM(installments.capital_balance + installments.Interest_Balance) as total_outstanding'),
-                DB::raw('SUM(installments.Panalty_Balance) as penalty_balance')
-            )
-            ->where('customer_loan.Status', '=', '0')
-            ->where('installments.Panalty_Balance', '>', 0)
-            ->groupBy('customer_loan.idCustomer_Loan', 'customer.idCustomer', 'customer.First_Name', 'customer.Last_Name', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount')
-            ->havingRaw('penalty_balance > 0')
-            ->orderBy('penalty_balance', 'DESC')
-            ->get();
-
-        return response()->json(['data' => $penaltyBalanceData]);
     }
 
 
