@@ -935,6 +935,128 @@ $banner = DB::select($query);
 
 
             @if($privilege)
+                @php $isHeadOffice = session('branch_id') == -1; @endphp
+                @if($isHeadOffice)
+                    {{-- Head Office restricted menu: Dashboard, View Customer, KYC, View Center --}}
+                    @if(optional($privilege)->dashboard == 1)
+                        <li class="side-nav-item">
+                            <a href="/" class="side-nav-link">
+                                <i class="ri-dashboard-3-line"></i>
+                                <span> Dashboard </span>
+                            </a>
+                        </li>
+                    @endif
+                    
+                    @if(optional($privilege)->customer == 1 && (optional($privilege)->view_customer == 1 || optional($privilege)->kyc == 1))
+                        <li class="side-nav-item">
+                            <a data-bs-toggle="collapse" href="#customer" aria-expanded="false"
+                               aria-controls="customer" class="side-nav-link">
+                                <i class="ri-group-2-line"></i>
+                                <span> Customer </span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse" id="customer">
+                                <ul class="side-nav-second-level">
+                                    @if(optional($privilege)->view_customer == 1)
+                                        <li><a href="/showcustomers">View Customer</a></li>
+                                    @endif
+                                    @if(optional($privilege)->kyc == 1)
+                                        <li><a href="/kyc">KYC</a></li>
+                                    @endif
+                                </ul>
+                            </div>
+                        </li>
+                    @endif
+
+                    @if(optional($privilege)->loan_center == 1 && optional($privilege)->view_center == 1)
+                        <li class="side-nav-item">
+                            <a data-bs-toggle="collapse" href="#center" aria-expanded="false" aria-controls="center"
+                               class="side-nav-link">
+                                <i class="bi bi-building"></i>
+                                <span> Loan Center </span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse" id="center">
+                                <ul class="side-nav-second-level">
+                                    <li><a href="/viewcenter">View Center</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    @endif
+
+                    @if(optional($privilege)->account_center == 1)
+                        <li class="side-nav-item">
+                            <a data-bs-toggle="collapse" href="#account" aria-expanded="false" aria-controls="center" class="side-nav-link">
+                                <i class="bi bi-universal-access"></i>
+                                <span> Account Center </span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse" id="account">
+                                <ul class="side-nav-second-level">
+                                    @if(optional($privilege)->bank_cash_account == 1)
+                                        <li>
+                                            <a href="/bank_account">Bank/Cash Account</a>
+                                        </li>
+                                    @endif
+                                    @if(optional($privilege)->internal_bank_transfer == 1)
+                                        <li>
+                                            <a href="/InnerBankTransfer">Internal Account Transfer</a>
+                                        </li>
+                                    @endif
+                                </ul>
+                            </div>
+                        </li>
+                    @endif
+
+                    @if(optional($privilege)->account_department == 1)
+                        <li class="side-nav-item">
+                            <a data-bs-toggle="collapse" href="#accountmanagement" aria-expanded="false" aria-controls="center" class="side-nav-link">
+                                <i class="bi bi-bank"></i>
+                                <span> Account Department </span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse" id="accountmanagement">
+                                <ul class="side-nav-second-level">
+                                    @if(optional($privilege)->manual_journal == 1)
+                                        <li>
+                                            <a href="/ManualJournal">Manual Journal</a>
+                                        </li>
+                                    @endif
+                                    @if(optional($privilege)->chart_of_account == 1)
+                                        <li>
+                                            <a href="/ChartOfAccount">Chart Of Account</a>
+                                        </li>
+                                    @endif
+                                </ul>
+                            </div>
+                        </li>
+                    @endif
+
+                    @if(optional($privilege)->expenses == 1)
+                        <li class="side-nav-item">
+                            <a data-bs-toggle="collapse" href="#expences" aria-expanded="false" aria-controls="expences"
+                               class="side-nav-link">
+                                <i class="ri-briefcase-line"></i>
+                                <span> Expenses </span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse" id="expences">
+                                <ul class="side-nav-second-level">
+                                    @if(optional($privilege)->add_expenses == 1)
+                                        <li>
+                                            <a href="/expenses">Add Expenses</a>
+                                        </li>
+                                    @endif
+{{--                                    @if(optional($privilege)->view_expenses == 1)
+                                        <li>
+                                            <a href="/view_expenses">View Expenses</a>
+                                        </li>
+                                    @endif--}}
+                                </ul>
+                            </div>
+                        </li>
+                    @endif
+                @else
                 @if(optional($privilege)->dashboard == 1)
                     <li class="side-nav-item">
                         <a href="/" class="side-nav-link">
@@ -1574,6 +1696,25 @@ $banner = DB::select($query);
                                 </div>
                             </li>
                     @endif
+
+                @endif {{-- end isHeadOffice condition --}}
+
+                {{-- Approval menu - Available to all users --}}
+                <li class="side-nav-item">
+                    <a data-bs-toggle="collapse" href="#approval" aria-expanded="false" aria-controls="approval"
+                       class="side-nav-link">
+                        <i class="ri-checkbox-circle-line"></i>
+                        <span> Approval </span>
+                        <span class="menu-arrow"></span>
+                    </a>
+                    <div class="collapse" id="approval">
+                        <ul class="side-nav-second-level">
+                            <li><a href="/pending_approval">Pending Approval</a></li>
+                            <li><a href="/approved_history">Approved History</a></li>
+                            <li><a href="/rejected_approval">Rejected Approval</a></li>
+                        </ul>
+                    </div>
+                </li>
 
             @endif
         </ul>

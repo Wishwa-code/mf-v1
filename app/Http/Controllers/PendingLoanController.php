@@ -82,9 +82,17 @@ class PendingLoanController extends Controller
             GROUP BY loan_id) as approval_subquery'),
                 'customer_loan.idCustomer_Loan', '=', 'approval_subquery.loan_id')
             ->where('customer_loan.Status', '=', $status)
-            ->whereNotNull('approval_subquery.loan_id')  // Ensure at least one approval exists
-            ->where('approval_subquery.pending_approvals', '>', 0)  // Ensure there are still pending approvals
-            ->select(
+            ->whereNotNull('approval_subquery.loan_id');
+        
+        // For status -3 (awaiting head office), all internal approvals are done
+        if ($status == '-3') {
+            $loanQuery->whereRaw('COALESCE(approval_subquery.pending_approvals, 0) = 0');
+        } else {
+            // For other statuses, show only loans with pending approvals
+            $loanQuery->where('approval_subquery.pending_approvals', '>', 0);
+        }
+        
+        $loanQuery = $loanQuery->select(
                 'customer_loan.*',
                 'loan_category.Name as loan_name',
                 'customer.*',
@@ -316,7 +324,7 @@ class PendingLoanController extends Controller
             $userController = new UserController();
 
             // Call the create_panelty function
-            $userController->create_panelty();
+            // $userController->create_panelty();
 
             // Check if any rows were affected
             if ($affected) {
@@ -393,35 +401,59 @@ class PendingLoanController extends Controller
      */
     public function destroy(string $id,Request $request)
     {
-        $affected = DB::table('customer_loan')
-            ->where('idCustomer_Loan', $id)
-            ->where('branch_id', session('branch_id'))
-            ->update(['Status' => '-2','reason' => $request->reason_for_dlt]);
-
-
-
-        $customer_loan=tableWithBranch('customer_loan')
+        // Get loan details for approval request
+        $customer_loan = tableWithBranch('customer_loan')
             ->where('idCustomer_Loan','=',$id)
             ->first();
 
+        if (!$customer_loan) {
+            return response()->json(['error' => 'Loan not found'], 404);
+        }
 
-        $request = new Request([
+        // Get customer details
+        $customer = DB::table('customer')
+            ->where('idCustomer', $customer_loan->Customer_idCustomer)
+            ->where('branch_id', session('branch_id'))
+            ->first();
+
+        // Get loan category details
+        $loan_category = DB::table('loan_category')
+            ->where('idLoan_Category', $customer_loan->Loan_Category_idLoan_Category)
+            ->where('branch_id', session('branch_id'))
+            ->first();
+
+        // Store loan rejection data for approval
+        $requestData = [
+            'loan_id' => $id,
             'customer_id' => $customer_loan->Customer_idCustomer,
-            'description' => "Delete Loan ({$id})\nReason : {$request->reason_for_dlt}",
-            'description_id' => $id,
-            'comment' => ' ',
-            'type' => 'Delete Loan',
+            'reason' => $request->reason_for_dlt,
+            'customer_name' => $customer->First_Name . ' ' . $customer->Last_Name,
+            'loan_no' => $customer_loan->Loan_No,
+            'amount' => $customer_loan->Amount,
+            'category_name' => $loan_category->Name ?? 'N/A',
+        ];
+
+        $description = 'Loan Rejection: ' . $customer->First_Name . ' ' . $customer->Last_Name . 
+                       ' | Loan No: ' . $customer_loan->Loan_No . 
+                       ' | Amount: ' . $customer_loan->Amount . 
+                       ' | Reason: ' . $request->reason_for_dlt;
+
+        // Create approval request
+        DB::table('approval_request')->insert([
+            'type' => 'Loan Rejection',
+            'typeid' => 402,
+            'description' => $description,
+            'data' => json_encode($requestData),
+            'userid' => session('userid'),
+            'branch_id' => session('branch_id'),
+            'data_time' => now(),
+            'status' => 0
         ]);
 
-        // Call the store method of CustomerLogController
-        $this->customerLogController->store($request);
-
-        // Check if any rows were affected
-        if ($affected) {
-            return response()->json(['message' => 'User updated successfully'],200);
-        } else {
-            return response()->json(['error' => 'User not found'], 404);
-        }
+        return response()->json([
+            'need_approval' => true,
+            'message' => 'Loan rejection request sent for approval!'
+        ], 200);
     }
 
 
@@ -547,10 +579,54 @@ class PendingLoanController extends Controller
         });
 
         if ($allApproved) {
+            $loan_id = $request->loan_id;
+            
+            $customer_loan = tableWithBranch('customer_loan')
+                ->where('idCustomer_Loan', '=', $loan_id)
+                ->first();
+            
+            if ($customer_loan) {
+                $customer = tableWithBranch('customer')
+                    ->where('idCustomer', '=', $customer_loan->Customer_idCustomer)
+                    ->first();
+                
+                $loan_category = tableWithBranch('loan_category')
+                    ->where('idLoan_Category', '=', $customer_loan->Loan_Category_idLoan_Category)
+                    ->first();
+                
+                $requestData = [
+                    'loan_id' => $loan_id,
+                    'customer_id' => $customer_loan->Customer_idCustomer,
+                    'loan_no' => $customer_loan->Loan_No,
+                    'amount' => $customer_loan->Amount,
+                ];
+                
+                $description = 'Loan Approval: ' . $customer->First_Name . ' ' . $customer->Last_Name . 
+                               ' | Loan No: ' . $customer_loan->Loan_No . 
+                               ' | Amount: ' . $customer_loan->Amount .
+                               ' | Category: ' . $loan_category->Name;
+                
+                DB::table('approval_request')->insert([
+                    'type' => 'Loan Approval',
+                    'typeid' => 401,
+                    'description' => $description,
+                    'data' => json_encode($requestData),
+                    'userid' => session('userid'),
+                    'branch_id' => session('branch_id'),
+                    'data_time' => now(),
+                    'status' => 0
+                ]);
+                
+                DB::table('customer_loan')
+                    ->where('idCustomer_Loan', $loan_id)
+                    ->where('branch_id', session('branch_id'))
+                    ->update(['Status' => '-3']);
+            }
+            
             return response()->json([
                 'item'     => $affected,
-                'redirect' => true,
-                'url'      => url('/loan_disbursement')
+                'redirect' => false,
+                'message'  => 'All approvals completed. Loan sent to head office for final approval!'
             ], 200);
         }
 
@@ -1142,48 +1218,40 @@ class PendingLoanController extends Controller
             return response()->json(['message' => 'Loan deleted successfully. Disbursement reversed, data archived.', 'audit_id' => $payload['audit_id'] ?? null], 200);
 
         } else {
-            // Create approval request
-            if (!Schema::hasTable('loan_delete_requests')) {
-                DB::statement("
-                CREATE TABLE IF NOT EXISTS `loan_delete_requests` (
-                  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-                  `loan_id` BIGINT UNSIGNED NOT NULL,
-                  `branch_id` BIGINT UNSIGNED NOT NULL,
-                  `requested_by` BIGINT UNSIGNED NOT NULL,
-                  `requested_at` DATETIME NOT NULL,
-                  `status` ENUM('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING',
-                  `approved_by` BIGINT UNSIGNED NULL,
-                  `approved_at` DATETIME NULL,
-                  `audit_id` BIGINT UNSIGNED NULL,
-                  `context` JSON NULL,
-                  PRIMARY KEY (`id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-            ");
-            }
-
-            // inside else {  // Create approval request
+            // Create centralized approval request (Type 402)
             $loan = tableWithBranch('customer_loan')->where('idCustomer_Loan', $loanId)->first();
             if (!$loan) return response()->json(['error' => 'Loan not found'], 404);
 
             $customer = tableWithBranch('customer')->where('idCustomer', $loan->Customer_idCustomer)->first();
             $product  = tableWithBranch('loan_category')->where('idLoan_Category', $loan->Loan_Category_idLoan_Category)->first();
 
-            $reqId = DB::table('loan_delete_requests')->insertGetId([
-                'loan_id'      => $loanId,
-                'branch_id'    => $branchId,
-                'requested_by' => $userId,
-                'requested_at' => now(),
-                'status'       => 'PENDING',
-                'context'      => json_encode([
-                    'Loan_No'       => $loan->Loan_No,
-                    'Amount'        => (string)$loan->Amount,
-                    'Customer_Id'   => $customer->idCustomer ?? null,
-                    'Customer_Name' => trim(($customer->First_Name ?? '').' '.($customer->Last_Name ?? '')),
-                    'Product'       => $product->Name ?? null,
-                    // 'Reason'      => $request->input('delete_reason') ?? null,  // if you capture a reason
-                ], JSON_UNESCAPED_UNICODE),
-            ]);
+            // Store loan rejection data for centralized approval
+            $requestData = [
+                'loan_id' => $loanId,
+                'customer_id' => $loan->Customer_idCustomer,
+                'reason' => $request->input('reason_for_dlt', 'Loan deletion requested'),
+                'customer_name' => trim(($customer->First_Name ?? '') . ' ' . ($customer->Last_Name ?? '')),
+                'loan_no' => $loan->Loan_No,
+                'amount' => $loan->Amount,
+                'category_name' => $product->Name ?? 'N/A',
+            ];
 
+            $description = 'Loan Rejection: ' . trim(($customer->First_Name ?? '') . ' ' . ($customer->Last_Name ?? '')) . 
+                           ' | Loan No: ' . $loan->Loan_No . 
+                           ' | Amount: ' . $loan->Amount . 
+                           ' | Product: ' . ($product->Name ?? 'N/A');
+
+            // Create approval request in centralized table
+            $reqId = DB::table('approval_request')->insertGetId([
+                'type' => 'Loan Rejection',
+                'typeid' => 402,
+                'description' => $description,
+                'data' => json_encode($requestData),
+                'userid' => $userId,
+                'branch_id' => $branchId,
+                'data_time' => now(),
+                'status' => 0
+            ]);
 
             return response()->json(['need_approval' => true, 'request_id' => $reqId], 200);
         }

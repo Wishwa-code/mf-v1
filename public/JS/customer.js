@@ -212,7 +212,19 @@ const saveCustomer = (e) => {
                 success: function (data, textStatus, xhr) {
                     if (xhr.status === 200) {
                         if (data.id === "0") {
-                            Swal.fire("Error!", data.message, "error");
+                            // Check if it's an approval request (success) or actual error
+                            if (data.message && data.message.toLowerCase().includes('approval')) {
+                                Swal.fire({
+                                    icon: "info",
+                                    title: "Approval Required!",
+                                    text: data.message,
+                                    confirmButtonText: "OK"
+                                }).then(function () {
+                                    window.location.reload();
+                                });
+                            } else {
+                                Swal.fire("Error!", data.message, "error");
+                            }
                         } else {
                             // Proceed to document and bank saving
                             save_doc(data.id, function () {
@@ -309,6 +321,7 @@ function save_bank(id, callback) {
         formData.append('tableAccountNames[]', row.find('td').eq(1).text().trim());
         formData.append('tableAccountNumbers[]', row.find('td').eq(2).text().trim());
         formData.append('tableBranches[]', row.find('td').eq(3).text().trim());
+        formData.append('tableBankCodes[]', row.find('td').eq(4).text().trim());
     });
 
     $.ajax({

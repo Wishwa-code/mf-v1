@@ -8,6 +8,8 @@ function load_table(page = 1) {
     let center_details = $("#center_details").val();
     let route = $("#route").val();
     let loan_number_search = $("#loan_number_search").val();
+    let from_date = $("#from_date").val();
+    let to_date = $("#to_date").val();
 
     $.ajax({
         type: "GET",
@@ -21,7 +23,9 @@ function load_table(page = 1) {
             center_details: center_details,
             route: route,
             loan_number_search: loan_number_search,
-            customer: customer
+            customer: customer,
+            from_date: from_date,
+            to_date: to_date
         },
         success: function(response) {
             let data = response.item.data; // paginated data
@@ -87,6 +91,11 @@ function load_table(page = 1) {
                         <td>${formatName(item.First_Name, item.Last_Name)}</td>
                         <td>${item.loan_name}</td>
                         <td>${parseFloat(item.Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td>${(function(){
+                            const due = (item.Installment_Amount ?? item.due_amount ?? item.installment_amount ?? 0);
+                            const n = parseFloat(due) || 0;
+                            return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        })()}</td>
                         <td>${parseFloat(item.capital_balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td>${parseFloat(item.Total_Loan_Amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td>${(

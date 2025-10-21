@@ -21,6 +21,19 @@
                         <div class="d-flex justify-content-between mb-3">
                             <h4 class="page-title">Expense Details</h4>
                         </div>
+
+                        @if(session('branch_id') == -1)
+                        <div class="mb-3">
+                            <label for="branch_selector" class="form-label">Select Branch<span class="required-asterisk">*</span></label>
+                            <select id="branch_selector" class="form-control select2">
+                                <option value="">-- Select Branch --</option>
+                                @foreach($branches as $branch)
+                                    <option value="{{ $branch->branch_id }}">{{ $branch->Name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        @endif
+
                         <div class="mb-3" hidden>
                             <label for="simpleinput" class="form-label">Type<span class="required-asterisk">*</span></label>
                             <select id="type">
@@ -226,5 +239,62 @@
                 }
             });
         });
+
+        // Branch selector for head office
+        @if(session('branch_id') == -1)
+        $('#branch_selector').on('change', function() {
+            const branchId = $(this).val();
+            
+            if (!branchId) {
+                $('#category').empty().append('<option value="">-- Select Branch First --</option>');
+                $('#bank').empty().append('<option value="">-- Select Branch First --</option>');
+                return;
+            }
+
+            $.ajax({
+                url: '/get-branch-expense-data',
+                type: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                data: { branch_id: branchId },
+                success: function(response) {
+                    // Update categories dropdown
+                    $('#category').empty();
+                    if (response.categories.length > 0) {
+                        response.categories.forEach(function(cat) {
+                            $('#category').append(
+                                $('<option></option>').val(cat.Idbank).text(cat.Bank_Name)
+                            );
+                        });
+                    } else {
+                        $('#category').append('<option value="">No categories found</option>');
+                    }
+                    $('#category').trigger('change');
+
+                    // Update banks dropdown
+                    $('#bank').empty();
+                    if (response.banks.length > 0) {
+                        response.banks.forEach(function(bank) {
+                            $('#bank').append(
+                                $('<option></option>').val(bank.Idbank).text(bank.Bank_Name + '-' + bank.Account_No)
+                            );
+                        });
+                    } else {
+                        $('#bank').append('<option value="">No banks found</option>');
+                    }
+                    $('#bank').trigger('change');
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Failed to load branch data: ' + xhr.responseText,
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            });
+        });
+        @endif
     </script>
 @endsection

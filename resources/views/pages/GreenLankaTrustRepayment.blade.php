@@ -381,9 +381,9 @@
                                             <tr class="group-row">
                                                 <td class="flexible-loan-no">{{ $item->Loan_No }}</td>
                                                 <td class="flexible-name">{{ format_member_name($item->customer_name, $item->customer_lastname, $name_mode ?? 'with_initial') }}</td>
-                                                <td>{{ number_format($item->Loan_Amount, 2) }}</td>
-                                                <td>{{ number_format($item->Installment_Amount, 2) }}</td>
-                                                <td>{{ number_format($item->Balance_Amount, 2) }}</td>
+                                                <td class="flexible-number">{{ number_format($item->Loan_Amount, 2) }}</td>
+                                                <td class="flexible-number">{{ number_format($item->Installment_Amount, 2) }}</td>
+                                                <td class="flexible-number">{{ number_format($item->Balance_Amount, 2) }}</td>
                                                 @for ($i = 1; $i < 6; $i++)
                                                     <td class="paid-amount"></td>
                                                     <td class="correct-column"></td>
@@ -445,34 +445,47 @@
 
             // Dynamically shrink font so full text fits within the cell width (no wrap)
         function fitTextCells(rootDoc, selector, maxPx, minPx, stepPx = 0.5) {
-                const nodes = rootDoc.querySelectorAll(selector);
-                nodes.forEach(node => {
-                    // Start from max and shrink until it fits
-                    let size = maxPx;
+            const nodes = rootDoc.querySelectorAll(selector);
+            nodes.forEach(node => {
+                let size = maxPx;
+                node.style.fontSize = size + 'px';
+                node.style.whiteSpace = 'nowrap';
+                node.style.overflow = 'hidden';
+                node.style.wordBreak = 'normal';
+
+                if (!node.clientWidth) return;
+
+                const epsilon = 0.5;
+                while (size > minPx && (node.scrollWidth - node.clientWidth) > epsilon) {
+                    size -= stepPx;
                     node.style.fontSize = size + 'px';
-            node.style.whiteSpace = 'nowrap';
-            node.style.overflow = 'hidden';
-                    // Safety: reset word-break to normal
-                    node.style.wordBreak = 'normal';
+                }
 
-                    // If there is no width yet (detached), skip
-                    if (!node.clientWidth) return;
+                if ((node.scrollWidth - node.clientWidth) > epsilon) {
+                    node.style.whiteSpace = 'normal';
+                    node.style.wordBreak = 'break-word';
+                }
+            });
+        }
 
-                    // Shrink until fits or min reached
-                    // Add a small epsilon to account for border/padding rounding
-                    const epsilon = 0.5;
-                    while (size > minPx && (node.scrollWidth - node.clientWidth) > epsilon) {
-                        size -= stepPx;
-                        node.style.fontSize = size + 'px';
-                    }
+        // Function for print view
+        function fitPrintTextCells(rootDoc, selector, maxPx, minPx, stepPx = 0.5) {
+            const nodes = rootDoc.querySelectorAll(selector);
+            nodes.forEach(node => {
+                let size = maxPx;
+                node.style.fontSize = size + 'px';
+                node.style.whiteSpace = 'nowrap';
+                node.style.wordBreak = 'normal';
 
-                    // Fallback: allow wrap if still overflowing at min size
-                    if ((node.scrollWidth - node.clientWidth) > epsilon) {
-                        node.style.whiteSpace = 'normal';
-                        node.style.wordBreak = 'break-word';
-                    }
-                });
-            }
+                if (!node.clientWidth) return;
+                
+                const safetyMargin = 4; // pixels
+                while (size > minPx && (node.scrollWidth > (node.clientWidth - safetyMargin))) {
+                    size -= stepPx;
+                    node.style.fontSize = size + 'px';
+                }
+            });
+        }
 
             function calculateTotals() {
                 let totalLoanAmount = 0;
@@ -537,6 +550,7 @@
                 fitTextCells(document, 'td.flexible-loan-no', 14, 9);
                 fitTextCells(document, 'td.flexible-name', 14, 9);
                 fitTextCells(document, 'td.flexible-group-total', 14, 9); // Group total auto size
+                fitTextCells(document, 'td.flexible-number', 14, 9);
             }
             fitScreen();
 
@@ -727,6 +741,7 @@
                         <table>
                                 ${printColgroup}
                                 <thead>
+                                    ${ groupBlocks.length === 0 ? `
                                     <tr class="thead-bar">
                                         <td colspan="15" style="border:none; padding:0 0 2px 0;">
                                             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ccc; padding-bottom:2px; margin-bottom:2px;">
@@ -736,6 +751,7 @@
                                             <h2>Repayment Sheet (${centerDetails})</h2>
                                         </td>
                                     </tr>
+                                    ` : '' }
                                     <!-- Summary table header: Title + 5 x (Paid/Correct) -->
                                     <tr>
                                         <th colspan="5">Title</th>
@@ -860,9 +876,11 @@
                     // Fit inside the print window before printing
                     const doc = printWindow.document;
                     // Base print sizes are smaller; keep readable minimums
-                    fitTextCells(doc, 'td.flexible-loan-no', 11, 8, 0.5);
-                    fitTextCells(doc, 'td.flexible-name', 11, 8, 0.5);
-                    fitTextCells(doc, 'td.flexible-group-total', 11, 8, 0.5); // Group total print auto size
+                    // Only apply for pdf
+                    fitPrintTextCells(doc, 'td.flexible-loan-no', 11, 8, 0.5);
+                    fitPrintTextCells(doc, 'td.flexible-name', 11, 8, 0.5);
+                    fitPrintTextCells(doc, 'td.flexible-group-total', 11, 8, 0.5);
+                    fitPrintTextCells(doc, 'td.flexible-number', 11, 8, 0.5);
 
                     printWindow.focus();
                     printWindow.print();

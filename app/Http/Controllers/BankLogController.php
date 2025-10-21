@@ -15,6 +15,7 @@ class BankLogController extends Controller
     public function index($bank_id,$type,$description,$note,$system,$amount,$contra_account, $payment_id = 0,$reconsilation_status = "0")
     {
         $user_id = (int)session('userid');
+        $isHeadOffice = (int)session('branch_id') === -1;
 // Create a new BankLog entry
         $BankLog = new BankLog();
         $BankLog->Bank_Account_Id = $bank_id;
@@ -23,13 +24,19 @@ class BankLogController extends Controller
         $BankLog->Description = $description;
         $BankLog->Note = $note;
 
-        $currentBalance = tableWithBranch('company_bank_accounts')->where('Idbank', '=', $bank_id)->value('Account_Balance');
+        // For head office or cross-branch operations, don't filter by branch
+        if ($isHeadOffice) {
+            $currentBalance = DB::table('company_bank_accounts')->where('Idbank', '=', $bank_id)->value('Account_Balance');
+            $bank = DB::table('company_bank_accounts')->where('Idbank', '=', $bank_id)->first();
+        } else {
+            $currentBalance = tableWithBranch('company_bank_accounts')->where('Idbank', '=', $bank_id)->value('Account_Balance');
+            $bank = tableWithBranch('company_bank_accounts')->where('Idbank', '=', $bank_id)->first();
+        }
 
         if (!$currentBalance) {
             $currentBalance = 0.00; // Default balance if no records exist
         }
 
-        $bank = tableWithBranch('company_bank_accounts')->where('Idbank', '=', $bank_id)->first();
         $acc_type=$bank->acc_type_group;
         if ($type == "Account Creation") {
             $BankLog->Credit = '0.00';
@@ -54,9 +61,15 @@ class BankLogController extends Controller
                 $BankLog->Balance=$new_current_balance;
 
                 // Update the account balance
-                updateWithBranch('company_bank_accounts', 'Idbank', $bank_id, [
-                    'Account_Balance' => $new_current_balance
-                ]);
+                if ($isHeadOffice) {
+                    DB::table('company_bank_accounts')->where('Idbank', $bank_id)->update([
+                        'Account_Balance' => $new_current_balance
+                    ]);
+                } else {
+                    updateWithBranch('company_bank_accounts', 'Idbank', $bank_id, [
+                        'Account_Balance' => $new_current_balance
+                    ]);
+                }
             } else {
                 $BankLog->Credit = $amount;
                 $BankLog->Debit = '0.00';
@@ -74,26 +87,45 @@ class BankLogController extends Controller
                 $BankLog->Balance=$new_current_balance;
 
                 // Update the account balance
-                updateWithBranch('company_bank_accounts', 'Idbank', $bank_id, [
-                    'Account_Balance' => $new_current_balance
-                ]);
+                if ($isHeadOffice) {
+                    DB::table('company_bank_accounts')->where('Idbank', $bank_id)->update([
+                        'Account_Balance' => $new_current_balance
+                    ]);
+                } else {
+                    updateWithBranch('company_bank_accounts', 'Idbank', $bank_id, [
+                        'Account_Balance' => $new_current_balance
+                    ]);
+                }
             }
         }
 
         $BankLog->User = $user_id;
 
-        $prefix = tableWithBranch('company_bank_accounts')
-            ->where('Idbank', '=', $bank_id)
-            ->value('tracking_no'); // e.g. 'EL' or null
+        if ($isHeadOffice) {
+            $prefix = DB::table('company_bank_accounts')
+                ->where('Idbank', '=', $bank_id)
+                ->value('tracking_no');
+        } else {
+            $prefix = tableWithBranch('company_bank_accounts')
+                ->where('Idbank', '=', $bank_id)
+                ->value('tracking_no');
+        }
 
 
 // Now your prefix generation logic...
 
         if ($prefix!='-') {
-            $lastTrackingNo = tableWithBranch('company_bank_has_log')
-                ->where('log_tracking_no', 'like', $prefix . '%')
-                ->orderByDesc('log_tracking_no')
-                ->value('log_tracking_no');
+            if ($isHeadOffice) {
+                $lastTrackingNo = DB::table('company_bank_has_log')
+                    ->where('log_tracking_no', 'like', $prefix . '%')
+                    ->orderByDesc('log_tracking_no')
+                    ->value('log_tracking_no');
+            } else {
+                $lastTrackingNo = tableWithBranch('company_bank_has_log')
+                    ->where('log_tracking_no', 'like', $prefix . '%')
+                    ->orderByDesc('log_tracking_no')
+                    ->value('log_tracking_no');
+            }
 
             if ($lastTrackingNo) {
                 $numberPart = (int)substr($lastTrackingNo, strlen($prefix));

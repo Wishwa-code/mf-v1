@@ -277,6 +277,13 @@
             align-items: center;
             justify-content: center;
         }
+        /* selected filter button gray */
+        .selected-filter {
+            background-color: #6c757d !important; /* bootstrap secondary gray */
+            color: #fff !important;
+            border-color: #6c757d !important;
+        }
+
         /* Enhanced Ledger Modal Styling */
         .ledger-modal {
             width: 95vw;             /* Almost full viewport width */
@@ -642,6 +649,20 @@
                 <button class="close" id="closeHistoryModal">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                    <button class="btn btn-warning me-2" id="load_today_ledger" onclick="view_ledger_today()">
+                        <i class="fas fa-calendar-day"></i> Load Today Data
+                    </button>
+                    <div class="d-flex align-items-center me-2">
+                        <input type="date" class="form-control" id="ledger_start_date" />
+                    </div>
+                    <div class="d-flex align-items-center me-2">
+                        <input type="date" class="form-control" id="ledger_end_date" />
+                    </div>
+                    <button class="btn btn-info me-2" id="load_range_ledger" onclick="view_ledger_range()">
+                        <i class="fas fa-calendar-alt"></i> Load Date Range
+                    </button>
+                </div>
                 <table  id="financialReportTable" class="table">
                     <thead>
                     <tr>
@@ -1092,6 +1113,15 @@
             const accTypeGroup = $(this).data('acc-type-group');
             const primary_account_name = $(this).data('primary_account_name');
 
+            // Store for filter reuse
+            window.currentLedgerAccount = {
+                id: account,
+                name: accountName,
+                type: accountType,
+                group: accTypeGroup,
+                primaryName: primary_account_name
+            };
+
             // ✅ Set the modal header dynamically
             if(primary_account_name==='-'){
                 $("#ledgerAccountTitle").html(`<b>${accountName} - ${accountType} - ${accTypeGroup}</b>`);
@@ -1099,10 +1129,48 @@
                 $("#ledgerAccountTitle").html(`<b>${accountName} - ${accountType} - ${accTypeGroup} / Sub Account Of ${primary_account_name}</b>`);
             }
 
+            // Load today's data by default
+            loadLedgerData(account, true);
+        });
+
+        function loadLedgerData(account, todayOnly = false, startDate = null, endDate = null) {
+            let url = `/manual_journal/ledger/${account}`;
+            const params = [];
+            if (todayOnly) params.push("todayfilter=1");
+            if (startDate && endDate) {
+                params.push("start_date=" + encodeURIComponent(startDate));
+                params.push("end_date=" + encodeURIComponent(endDate));
+            }
+            if (params.length) url += "?" + params.join("&");
+
+            // Prefill date inputs to today on open
+            if (todayOnly || (!startDate && !endDate)) {
+                try {
+                    const today = new Date();
+                    const yyyy = today.getFullYear();
+                    const mm = String(today.getMonth()+1).padStart(2,'0');
+                    const dd = String(today.getDate()).padStart(2,'0');
+                    const iso = `${yyyy}-${mm}-${dd}`;
+                    const s = document.getElementById('ledger_start_date');
+                    const e = document.getElementById('ledger_end_date');
+                    if (s) s.value = iso;
+                    if (e) e.value = iso;
+                } catch (e) {}
+            }
+
             // Fetch ledger data via AJAX
             $.ajax({
-                url: `/manual_journal/ledger/${account}`,
+                url,
                 method: "GET",
+                beforeSend: function(){
+                    // show loading row while fetching data
+                    const $modalTable = $("#financialReportTable");
+                    const $modalTableBody = $("#financialReportTable tbody");
+                    if ($.fn.DataTable.isDataTable($modalTable)) {
+                        $modalTable.DataTable().destroy();
+                    }
+                    $modalTableBody.html('<tr><td colspan="10" style="text-align:center;">Loading ...</td></tr>');
+                },
                 success: function (response) {
                     const $modalTable = $("#financialReportTable");
                     const $modalTableBody = $("#financialReportTable tbody");
@@ -1116,7 +1184,7 @@
                     $modalTableBody.empty(); // Clear any existing rows
 
                     if (response.length === 0) {
-                        $modalTableBody.html("<tr><td colspan='8' class='text-center'>No records found</td></tr>");
+                        $modalTableBody.html("<tr><td colspan='10' class='text-center'>No records found</td></tr>");
                     } else {
                         // Populate the modal table with fetched data
                         response.forEach((item) => {
@@ -1165,6 +1233,19 @@
                         });
                     }
 
+                    // Toggle selected filter highlight
+                    try {
+                        const todayBtn = document.getElementById('load_today_ledger');
+                        const rangeBtn = document.getElementById('load_range_ledger');
+                        if (todayOnly && todayBtn) {
+                            todayBtn.classList.add('selected-filter');
+                            if (rangeBtn) rangeBtn.classList.remove('selected-filter');
+                        } else if (startDate && endDate && rangeBtn) {
+                            rangeBtn.classList.add('selected-filter');
+                            if (todayBtn) todayBtn.classList.remove('selected-filter');
+                        }
+                    } catch(e) {}
+
                     // ✅ Dynamically Adjust Modal Height based on DataTable rows
                     let newHeight = Math.min(response.length * 40 + 300, $(window).height() - 100);
                     $modalContent.css({ "max-height": newHeight + "px", "overflow-y": "auto" });
@@ -1173,10 +1254,39 @@
                     $('#accountHistoryModal').css('display', 'flex');
                 },
                 error: function () {
+                    // show error row
+                    const $modalTableBody = $("#financialReportTable tbody");
+                    $modalTableBody.html('<tr><td colspan="10" style="text-align:center;color:#dc3545;">Failed to load data</td></tr>');
                     Swal.fire("Error", "Failed to fetch ledger details.", "error");
                 }
             });
-        });
+        }
+
+        function view_ledger_today(){
+            if(!window.currentLedgerAccount){
+                Swal.fire("Info", "Open a ledger first, then use 'Load Today Data'", "info");
+                return;
+            }
+            loadLedgerData(window.currentLedgerAccount.id, true);
+        }
+
+        function view_ledger_range(){
+            if(!window.currentLedgerAccount){
+                Swal.fire("Info", "Open a ledger first, then choose a date range", "info");
+                return;
+            }
+            const s = document.getElementById('ledger_start_date').value;
+            const e = document.getElementById('ledger_end_date').value;
+            if(!s || !e){
+                Swal.fire("Info", "Please select both start and end dates", "info");
+                return;
+            }
+            if(new Date(s) > new Date(e)){
+                Swal.fire("Error", "Start date cannot be after end date", "error");
+                return;
+            }
+            loadLedgerData(window.currentLedgerAccount.id, false, s, e);
+        }
 
 
 

@@ -691,21 +691,21 @@
                                 maxIssueAmount: maxIssueAmount
                             },
                             success: function(response) {
-                                Swal.fire({
-                                    position: "center",
-                                    icon: "success",
-                                    title: "Successfully updated!",
-                                }).then(function () {
-                                    // Update the dropdown option data
-                                    const option = $(`#userid option[value="${designationId}"]`);
-                                    option.attr('data-name', designation);
-                                    option.attr('data-max-create', parseFloat(maxCreateAmount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
-                                    option.attr('data-max-approve', parseFloat(maxIssueAmount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
-                                    option.text(designation);
-                                    
-                                    // Refresh the overview display
-                                    showDesignationOverview(document.getElementById('userid'));
-                                });
+                                if (response.status === 'success' && response.message) {
+                                    Swal.fire({
+                                        position: "center",
+                                        icon: "info",
+                                        title: "Sent for Approval!",
+                                        text: response.message,
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        position: "center",
+                                        icon: "info",
+                                        title: "Sent for Approval!",
+                                        text: "Designation update request sent for approval!",
+                                    });
+                                }
                             },
                             error: function(xhr, status, error) {
                                 console.error('Error updating data:', error);

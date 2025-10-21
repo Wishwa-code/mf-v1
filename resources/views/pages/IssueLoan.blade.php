@@ -1149,11 +1149,29 @@
         var route_collection_type="";
         var route_collection_date="";
         var collection_date_type_global="";
+        var canEditProductDetails = true; // Global flag for product details editing
+        
         $(document).ready(function() {
             let x = ["#installment_amount","#offer_decided"];
             decimalFormat(x);
 
             fetchHolidays();
+            
+            // Check if product details can be edited
+            $.get("/settings/all", function(settings) {
+                if (settings.items.change_product_details === 'not_editable') {
+                    canEditProductDetails = false;
+                    
+                    // Show informational message
+                    $('.card-body h3:first').after(
+                        '<div class="alert alert-warning alert-dismissible fade show mt-3" role="alert">' +
+                        '<i class="mdi mdi-alert-outline me-2"></i>' +
+                        '<strong>Notice:</strong> Product details cannot be modified. You must use the default values from the selected loan product.' +
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+                        '</div>'
+                    );
+                }
+            });
 
         });
 
@@ -1551,6 +1569,44 @@
 
 
                         generateWitnessTabs(product.Guarantee_count);
+                        
+                        // Check if product details can be edited
+                        if (!canEditProductDetails) {
+                            // Disable ALL product-related input fields
+                            $('#loan_amount').prop('disabled', true).prop('readonly', true);
+                            $('#loan_interest').prop('disabled', true).prop('readonly', true);
+                            $('#interest_period_count').prop('disabled', true).prop('readonly', true); // Loan Period
+                            $('#loan_period').prop('disabled', true).prop('readonly', true); // Repayment Duration
+                            $('#guarantee_count').prop('disabled', true).prop('readonly', true);
+                            $('#penalty_percentage').prop('disabled', true).prop('readonly', true);
+                            $('#penalty_date').prop('disabled', true).prop('readonly', true);
+                            $('#installment_amount').prop('disabled', true).prop('readonly', true);
+                            $('#offer_decided').prop('disabled', true).prop('readonly', true);
+                            
+                            // Disable ALL product-related select/dropdown fields
+                            $('#interest_method').prop('disabled', true);
+                            $('#interest_period').prop('disabled', true);
+                            $('#duration_period').prop('disabled', true);
+                            $('#repayment_duration_period').prop('disabled', true);
+                            $('#repayment_type').prop('disabled', true);
+                            $('#penalty_period').prop('disabled', true);
+                            $('#months').prop('disabled', true);
+                            $('#collection_date_type').prop('disabled', true);
+                            
+                            // Add visual styling to ALL disabled text inputs
+                            $('#loan_amount, #loan_interest, #interest_period_count, #loan_period, #guarantee_count, #penalty_percentage, #penalty_date, #installment_amount, #offer_decided').css({
+                                'background-color': '#f8f9fa',
+                                'cursor': 'not-allowed',
+                                'border': '1px solid #dee2e6'
+                            });
+                            
+                            // Add visual styling to ALL disabled dropdowns
+                            $('#interest_method, #interest_period, #duration_period, #repayment_duration_period, #repayment_type, #penalty_period, #months, #collection_date_type').css({
+                                'background-color': '#f8f9fa',
+                                'cursor': 'not-allowed',
+                                'pointer-events': 'none'
+                            });
+                        }
                         $('#witness1').addClass('active show');
                         $('a[href="#witness1"]').tab('show');
                         changeCategory();

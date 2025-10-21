@@ -487,6 +487,13 @@ function save_loan(){
 
 
 
+        // Count how many documents have files uploaded
+        let uploadedDocumentsCount = 0;
+        $('input[type="file"]').each(function() {
+            if (this.files && this.files[0]) {
+                uploadedDocumentsCount++;
+            }
+        });
 
         Swal.fire({
             title: "Are you sure?",
@@ -544,6 +551,7 @@ function save_loan(){
                         type_loan_number:type_loan_number,
                         route_collection_type:route_collection_type,
                         collection_date_type_global:collection_date_type_global,
+                        uploaded_documents_count:uploadedDocumentsCount
                     },
                     success: function (data, textStatus, xhr) {
                         if (xhr.status === 200) {

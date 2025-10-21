@@ -118,6 +118,18 @@
                                     <input type="text" class="form-control" id="loan_number_search" onkeyup="load_table();">
                                 </div>
                             </div>
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="from_date" class="form-label">From Date (Disbursement)</label>
+                                    <input type="date" class="form-control" id="from_date">
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="mb-3">
+                                    <label for="to_date" class="form-label">To Date (Disbursement)</label>
+                                    <input type="date" class="form-control" id="to_date">
+                                </div>
+                            </div>
                             <div class="col-lg-3 d-flex align-items-center"> <!-- Align button vertically in the center -->
                                 <button type="button" class="btn btn-danger w-100" onclick="load_table();">
                                     <i class="bi bi-search"></i> Search
@@ -137,6 +149,7 @@
                                     <th>Customer</th>
                                     <th>Loan Category</th>
                                     <th>Loan Amount</th>
+                                    <th>Due Amount</th>
                                     <th>Capital Balance</th>
                                     <th>Total Amount</th>
                                     <th>Total Balance</th>
@@ -463,7 +476,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
     <script src="../JS/validate.js"></script>
-    <script src="../JS/payment.js?n=100"></script>
+    <script src="../JS/payment.js?n=101"></script>
     <script>
         $(function() {
 
