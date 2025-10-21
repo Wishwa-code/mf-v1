@@ -80,6 +80,7 @@ class LoanController extends Controller
             $maxId = DB::table('customer_loan')->where('branch_id', session('branch_id'))->count('idCustomer_Loan') ?? 1;
             $maxId++;
             $type = $request->loan_type;
+
             $company = tableWithBranch('company')->first();
             $branch_no = $company->branch;
             $loan_format = $company->loan_format;
@@ -333,6 +334,53 @@ class LoanController extends Controller
                  DEFAULT 'Daily'"
                 );
             }
+
+
+            if ($type == "0") {
+                DB::transaction(function () use ($branch_no, $product_code, $customer_id) {
+                    // 1) Lock the company row for this branch to avoid race conditions
+                    $company = DB::table('company')
+                        ->where('branch_id', session('branch_id'))
+                        ->lockForUpdate()
+                        ->first();
+
+                    $nextSeq = (int) $company->inv_customer_number;          // current value
+                    // If you want zero-padding like 00001, uncomment the next line:
+                    // $seqTxt = str_pad((string)$nextSeq, 5, '0', STR_PAD_LEFT);
+                    $seqTxt = (string) $nextSeq;
+
+                    // 2) Build the customer number using the locked value
+                    $customer_number_txt = $branch_no . '/' . $product_code->Product_code . '/' . $seqTxt;
+
+                    // 3) Log the old value (read with the same branch scope)
+                    $customer_old_details = tableWithBranch('customer')
+                        ->where('idCustomer', '=', $customer_id)
+                        ->first();
+
+                    // 4) Update the customer record
+                    updateWithBranch('customer', 'idCustomer', $customer_id, [
+                        'cus_number' => $customer_number_txt
+                    ]);
+
+                    // 5) Add a customer log
+                    $CustomerLogController = new CustomerLogController();
+                    $req = new Request([
+                        'customer_id'    => $customer_id,
+                        'description'    => "Customer Number Changed (Individual Loan) From " . ($customer_old_details->cus_number ?? 'N/A') . " To " . $customer_number_txt,
+                        'description_id' => $customer_id,
+                        'comment'        => 'Change Customer Number',
+                        'type'           => 'Customer Update',
+                    ]);
+                    $CustomerLogController->store($req);
+
+                    // 6) Increment the sequence atomically
+                    DB::table('company')
+                        ->where('branch_id', session('branch_id'))
+                        ->update(['inv_customer_number' => DB::raw('inv_customer_number + 1')]);
+                });
+            }
+
+
 
             if (($request->interest_method ?? '') === 'Reducing Balance') {
                 $sumCapital = 0.0;
