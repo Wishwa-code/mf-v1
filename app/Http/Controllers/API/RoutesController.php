@@ -68,11 +68,28 @@ class RoutesController
         // Optional: allow sorting direction, default desc
         $order = strtolower($request->query('order', 'desc')) === 'asc' ? 'asc' : 'desc';
 
+        // Subquery: pick the latest active loan (Status=0) per customer
+        $latestActiveLoan = DB::table('customer_loan as l1')
+            ->select('l1.Customer_idCustomer', DB::raw('MAX(l1.idCustomer_Loan) as latest_loan_id'))
+            ->where('l1.Status', 0)
+            ->groupBy('l1.Customer_idCustomer');
+
         $customers = DB::table('customer as c')
+            // Only customers who have an active loan (inner join with subquery)
+            ->joinSub($latestActiveLoan, 'al', function ($join) {
+                $join->on('al.Customer_idCustomer', '=', 'c.idCustomer');
+            })
+            ->join('customer_loan as l', 'l.idCustomer_Loan', '=', 'al.latest_loan_id')
             ->where('c.branch_id', $branchId)
             ->where('c.route_id', $id)
-            ->where('c.Status', 1)          // 🔒 only status = 1
-            ->select('c.*')
+            ->where('c.Status', 1) // only active customers
+            ->select(
+                'c.idCustomer as idCustomer',
+                'c.First_Name as First_Name',
+                'c.Last_Name as Last_Name',
+                'l.Loan_No as cus_number',          // keep the frontend field name
+                'l.idCustomer_Loan as Loan_ID'
+            )
             ->orderBy('c.idCustomer', $order)
             ->get();
 
@@ -82,5 +99,6 @@ class RoutesController
             'customers' => $customers,
         ], 200);
     }
+
 
 }
