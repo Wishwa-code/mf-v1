@@ -366,10 +366,6 @@
                                                 <h4><span id="weekly-unpaid-amount"></span></h4>
                                                 <small class="text-light">Amount</small>
                                             </div>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <h6 class="text-uppercase">{{ $card['title'] }} {!! $card['count'] !== '' ? '('.$card['count'].')' : '' !!}</h6>
-                                            <h4><span id="stat-card-{{ $index }}"></span></h4>
                                         </div>
                                     </div>
                                 </div>
@@ -391,61 +387,13 @@
                         </div>
                     </div> --}}
 
-
                     <div class="col-lg-6 mb-4">
                         <div class="glass-card card shadow animated-card">
                             <div class="card-body">
                                 <h5 class="card-title mb-3">📈 Monthly Payments</h5>
                                 <div id="monthly-revenue-chart" style="height: 300px;"></div>
-                {{-- Summary Cards --}}
-                @php
-                    // Make sure these vars exist in the controller or set 0 defaults
-                    $todayinstallment = $todayinstallment ?? 0;
-                    $arrease          = $arrease ?? 0;
-                    $checqueamount    = $checqueamount ?? 0;
-                    $todaycollected   = $todaycollected ?? 0;
-                    $penaltyBalance   = $penaltyBalance ?? 0;
-                    $totalOutstanding   = $totalOutstanding ?? 0;
-
-                    $extra = [
-                        ['title' => 'Today Installment', 'value' => $todayinstallment, 'color' => '#1e3c72'],
-                        ['title' => 'Total Arrears', 'value' => $arrease, 'color' => '#ef473a'],
-                        ['title' => 'Cheque Payments', 'value' => $checqueamount, 'color' => '#3498db'],
-                        ['title' => 'Due Outstanding (Installment Due + Arrears)', 'value' => ($todayinstallment + $arrease), 'color' => '#0072ff'],
-                        ['title' => 'Today Collected Amount', 'value' => $todaycollected, 'color' => '#ef803a'],
-                        ['title' => 'Total Outstanding', 'value' => $totalOutstanding, 'color' => '#01503c'],
-                        ['title' => 'Penalty Balance', 'value' => $penaltyBalance, 'color' => '#c0392b'],
-                    ];
-                @endphp
-
-                @foreach($extra as $i => $item)
-                    <div class="col-md-2 mb-4">
-                        @if($item['title'] === 'Total Outstanding')
-                            <a href="#" onclick="showTotalOutstandingModal()" class="text-decoration-none">
-                                <div class="glass-card card text-white shadow animated-card" style="background-color: {{ $item['color'] }};">
-                                    <div class="card-body">
-                                        <h6 class="text-uppercase">{{ $item['title'] }}</h6>
-                                        <h4><span id="extra-card-{{ $i }}"></span></h4>
-                                    </div>
-                                </div>
-                            </a>
-                        @elseif($item['title'] === 'Penalty Balance')
-                            <a href="#" onclick="showPenaltyBalanceModal()" class="text-decoration-none">
-                                <div class="glass-card card text-white shadow animated-card" style="background-color: {{ $item['color'] }};">
-                                    <div class="card-body">
-                                        <h6 class="text-uppercase">{{ $item['title'] }}</h6>
-                                        <h4><span id="extra-card-{{ $i }}"></span></h4>
-                                    </div>
-                                </div>
-                            </a>
-                        @else
-                            <div class="glass-card card text-white shadow animated-card" style="background-color: {{ $item['color'] }};">
-                                <div class="card-body">
-                                    <h6 class="text-uppercase">{{ $item['title'] }}</h6>
-                                    <h4><span id="extra-card-{{ $i }}"></span></h4>
-                                </div>
                             </div>
-                        @endif
+                        </div>
                     </div>
 
                     <div class="col-lg-6 mb-4">
@@ -456,52 +404,6 @@
                             </div>
                         </div>
                     </div>
-                    @endforeach
-
-                {{-- Combined Not-Paid Card --}}
-                <div class="col-md-6 col-lg-5 mb-4">
-                    <a href="#" onclick="showWeeklyNotPaidModal()" class="text-decoration-none">
-                        <div class="glass-card card text-white shadow animated-card" style="background: linear-gradient(135deg, #8e44ad, #2c3e50);">
-                            <div class="card-body">
-                                <h6 class="text-uppercase mb-3">This Week Not-Paid</h6>
-                                <div class="row g-3 align-items-stretch">
-                                    <div class="col-4">
-                                        <div class="text-center">
-                                            <h4><span id="weekly-unpaid-count"></span></h4>
-                                            <small class="text-light">Installments</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-4">
-                                        <div class="text-center">
-                                            <h4><span id="weekly-unpaid-headcount"></span></h4>
-                                            <small class="text-light">Customers</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-4">
-                                        <div class="text-center">
-                                            <h4><span id="weekly-unpaid-amount"></span></h4>
-                                            <small class="text-light">Amount</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            </div>
-
-            {{-- Charts --}}
-            <div class="row">
-                {{-- <div class="col-lg-12 mb-4">
-                    <div class="glass-card card shadow animated-card">
-                        <div class="card-body p-0">
-                            <h5 class="card-title p-3">📈 Live Currency Exchange (USD to LKR)</h5>
-                            <div class="tradingview-widget-container">
-                                <div id="tradingview_advanced"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div> --}}
 
 
                     <div class="col-lg-6 mb-4">
@@ -1034,25 +936,12 @@
             });
             if (!weeklyCountAnim.error) weeklyCountAnim.start();
 
-            // Animate weekly unpaid metrics
-            const weeklyCountAnim = new countUp.CountUp('weekly-unpaid-count', {{ $weeklyUnpaidCount }}, {
-                separator: ',',
-                decimalPlaces: 0
-            });
-            if (!weeklyCountAnim.error) weeklyCountAnim.start();
-
             // Headcount (distinct customers)
             const weeklyHeadAnim = new countUp.CountUp('weekly-unpaid-headcount', {{ $weeklyUnpaidCustomerCount ?? 0 }}, {
                 separator: ',',
                 decimalPlaces: 0
             });
             if (!weeklyHeadAnim.error) weeklyHeadAnim.start();
-
-            const weeklyAmountAnim = new countUp.CountUp('weekly-unpaid-amount', {{ $weeklyUnpaidAmount }}, {
-                separator: ',',
-                decimalPlaces: 2
-            });
-            if (!weeklyAmountAnim.error) weeklyAmountAnim.start();
 
             const weeklyAmountAnim = new countUp.CountUp('weekly-unpaid-amount', {{ $weeklyUnpaidAmount }}, {
                 separator: ',',
