@@ -1625,6 +1625,13 @@ $banner = DB::select($query);
                                                                 <a href="/repaymntseet9">Repayment Sheet 09</a>
                                                             </li>
                                                         {{-- @endif --}}
+
+                                                        {{-- Repayment Sheet 10 --}}
+                                                        {{-- @if(optional($privilege)->repayment_sheet_10== 1) --}}
+                                                            <li>
+                                                                <a href="/RepaymentSheet10">Repayment Sheet 10</a>
+                                                            </li>
+                                                        {{-- @endif --}}
                                                 </ul>
                                             </div>
                                         </li>
