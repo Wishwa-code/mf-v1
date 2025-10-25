@@ -25,7 +25,7 @@
         }
 
         th, td {
-            padding: 10px;
+            padding: 15px 10px;
             text-align: center;
             border: 2px solid black; /* Set border thickness and color */
             font-size: 14px;
@@ -554,7 +554,7 @@
             printWindow.document.write('<style>');
             printWindow.document.write('body { font-family: Arial, sans-serif; margin: 0; padding: 0; }');
             printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; }');
-            printWindow.document.write('#repaymentTable td { padding: 5px; border: 2px solid #000; text-align: center; }');
+            printWindow.document.write('#repaymentTable td { padding: 12px 5px; border: 2px solid #000; text-align: center; }');
             printWindow.document.write('#repaymentTable th { padding: 20px 5px; border: 2px solid #000; text-align: center; }'); // Thicker, bold borders with more vertical padding
             printWindow.document.write('@page { size: landscape; margin: 0.5in; }');
             printWindow.document.write('</style></head><body>');
@@ -583,7 +583,7 @@
             printWindow.document.write('<style>');
             printWindow.document.write('body { font-family: Arial, sans-serif; margin: 10px; font-size: 9px; }');
             printWindow.document.write('table { width: 100%; border-collapse: collapse; font-size: 8px; table-layout: auto; }');
-            printWindow.document.write('td { border: 1px solid #000; padding: 4px; text-align: center; word-wrap: break-word; }');
+            printWindow.document.write('td { border: 1px solid #000; padding: 10px 4px; text-align: center; word-wrap: break-word; }');
             printWindow.document.write('th { border: 1px solid #000; padding: 15px 4px; text-align: center; word-wrap: break-word; }');
             printWindow.document.write('.collection-column-5, .collection-column-6, .collection-column-7, .collection-column-8, .other-column-5, .other-column-6, .other-column-7, .other-column-8, .collection-header-5, .collection-header-6, .collection-header-7, .collection-header-8 { display: none; }');
             printWindow.document.write('table.show-eight-collections .collection-column-5, table.show-eight-collections .collection-column-6, table.show-eight-collections .collection-column-7, table.show-eight-collections .collection-column-8, table.show-eight-collections .collection-header-5, table.show-eight-collections .collection-header-6, table.show-eight-collections .collection-header-7, table.show-eight-collections .collection-header-8 { display: table-cell; }');
