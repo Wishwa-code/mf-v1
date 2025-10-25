@@ -34,6 +34,7 @@
         th {
             background-color: #fffdfd;
             color: black;
+            padding: 20px 10px;
         }
 
         tfoot td {
@@ -142,6 +143,10 @@
                 text-align: center;
             }
 
+            #repaymentTable th {
+                padding: 15px 5px;
+            }
+
             @page {
                 size: landscape; /* Set landscape orientation for print */
                 margin: 0.5in; /* Adjust margins as needed */
@@ -155,6 +160,10 @@
             table, th, td {
                 font-size: 8px !important;
                 padding: 1px !important;
+            }
+
+            th {
+                padding: 15px 1px !important;
             }
 
             th, td {
@@ -545,7 +554,8 @@
             printWindow.document.write('<style>');
             printWindow.document.write('body { font-family: Arial, sans-serif; margin: 0; padding: 0; }');
             printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; }');
-            printWindow.document.write('#repaymentTable th, #repaymentTable td { padding: 5px; border: 2px solid #000; text-align: center; }'); // Thicker, bold borders
+            printWindow.document.write('#repaymentTable td { padding: 5px; border: 2px solid #000; text-align: center; }');
+            printWindow.document.write('#repaymentTable th { padding: 20px 5px; border: 2px solid #000; text-align: center; }'); // Thicker, bold borders with more vertical padding
             printWindow.document.write('@page { size: landscape; margin: 0.5in; }');
             printWindow.document.write('</style></head><body>');
             printWindow.document.write('<h1>Repayment Sheet for ' + currentMonth + '('+center_details+')</h1>');
@@ -573,7 +583,8 @@
             printWindow.document.write('<style>');
             printWindow.document.write('body { font-family: Arial, sans-serif; margin: 10px; font-size: 9px; }');
             printWindow.document.write('table { width: 100%; border-collapse: collapse; font-size: 8px; table-layout: auto; }');
-            printWindow.document.write('th, td { border: 1px solid #000; padding: 4px; text-align: center; word-wrap: break-word; }');
+            printWindow.document.write('td { border: 1px solid #000; padding: 4px; text-align: center; word-wrap: break-word; }');
+            printWindow.document.write('th { border: 1px solid #000; padding: 15px 4px; text-align: center; word-wrap: break-word; }');
             printWindow.document.write('.collection-column-5, .collection-column-6, .collection-column-7, .collection-column-8, .other-column-5, .other-column-6, .other-column-7, .other-column-8, .collection-header-5, .collection-header-6, .collection-header-7, .collection-header-8 { display: none; }');
             printWindow.document.write('table.show-eight-collections .collection-column-5, table.show-eight-collections .collection-column-6, table.show-eight-collections .collection-column-7, table.show-eight-collections .collection-column-8, table.show-eight-collections .collection-header-5, table.show-eight-collections .collection-header-6, table.show-eight-collections .collection-header-7, table.show-eight-collections .collection-header-8 { display: table-cell; }');
             printWindow.document.write('table.show-eight-collections .other-column, table.show-eight-collections .other-column-5, table.show-eight-collections .other-column-6, table.show-eight-collections .other-column-7, table.show-eight-collections .other-column-8 { display: none; }');
