@@ -564,8 +564,8 @@ function processDaySkip($loan, $installment, $holidayDate, $companySetting,$bran
 
     function customer_number($cus_id)
     {
-        // Load the customer (unscoped or explicitly scoped)—must include branch_id
-        $customer = tableWithBranch('customer')->where('idCustomer', $cus_id)->first();
+        // Load the customer without branch scoping (works across branches for HO approval)
+        $customer = DB::table('customer')->where('idCustomer', $cus_id)->first();
         if (!$customer) { return; }
 
         $old_cus_number = $customer->cus_number ?? null;
@@ -775,8 +775,10 @@ function processDaySkip($loan, $installment, $holidayDate, $companySetting,$bran
                 $customer_number_txt = str_replace($placeholder, (string)$value, $customer_number_txt);
             }
 
-            // Update using the customer's branch (not the session)
-            updateWithBranch('customer', 'idCustomer', $cus_id, ['cus_number' => $customer_number_txt]);
+            // Update directly without branch filter (allows HO to update customer numbers in any branch)
+            DB::table('customer')
+                ->where('idCustomer', $cus_id)
+                ->update(['cus_number' => $customer_number_txt]);
             $new_cus_number = $customer_number_txt;
 
             // Log the change (safe to keep as-is)

@@ -481,10 +481,7 @@ class ApprovalController extends Controller
                 if ($customer->save()) {
                     $customerId = $customer->id;
                     
-                    // Generate customer number
-                    customer_number($customerId);
-                    
-                    // Create customer log
+                    // Create customer log FIRST (required by customer_number function)
                     DB::table('customer_log')->insert([
                         'customer_id' => $customerId,
                         'customer_name' => $customerData['First_Name'] . ' ' . $customerData['Last_Name'],
@@ -497,6 +494,9 @@ class ApprovalController extends Controller
                         'user' => session('userid'),
                         'branch_id' => $approval->branch_id,
                     ]);
+                    
+                    // Generate customer number AFTER log creation
+                    customer_number($customerId);
                     
                     // Send SMS if template exists
                     $sms_template = DB::table('sms_template')
