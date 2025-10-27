@@ -325,6 +325,11 @@
                                     <tbody class="page-break">
                                     @foreach($groupPair as $group_name => $group)
                                         <tr><td colspan="18"><strong>Group No: {{ $group_name }}</strong></td></tr>
+                                        @php
+                                            $memberCount = $group->count();
+                                            $totalRows = 6;
+                                        @endphp
+                                        {{-- Display existing members --}}
                                         @foreach($group as $item)
                                             <tr class="group-row">
                                                 <td>{{ $item->cus_number }}</td>
@@ -341,6 +346,15 @@
                                                 @endfor
                                             </tr>
                                         @endforeach
+                                        {{-- Fill remaining rows to make 6 total --}}
+                                        @for ($j = $memberCount; $j < $totalRows; $j++)
+                                            <tr class="group-row">
+                                                @for ($k = 0; $k < 18; $k++)
+                                                    <td>&nbsp;</td>
+                                                @endfor
+                                            </tr>
+                                        @endfor
+                                        {{-- Group Total Row --}}
                                         <tr class="group-row" style="font-weight: bold;">
                                             <td colspan="2">Group Total</td>
                                             <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
@@ -348,14 +362,6 @@
                                             <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
                                             <td colspan="13"></td>
                                         </tr>
-                                        {{-- Empty 7 Rows --}}
-                                        @for ($j = 0; $j < 2; $j++)
-                                            <tr class="group-row">
-                                                @for ($k = 0; $k < 18; $k++)
-                                                    <td>&nbsp;</td>
-                                                @endfor
-                                            </tr>
-                                        @endfor
                                     @endforeach
                                     </tbody>
                                     @endforeach
