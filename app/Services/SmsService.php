@@ -29,7 +29,7 @@ class SmsService
 
         if (!preg_match('/^\d{9}$/', $nsn)) throw new \InvalidArgumentException('Number must be 9 digits');
         if ($nsn[0] !== '7') throw new \InvalidArgumentException('Not a mobile prefix');
-        if (!in_array(substr($nsn,0,2), ['70','71','72','75','76','77','78'], true))
+        if (!in_array(substr($nsn,0,2), ['70','71','72','74','75','76','77','78'], true))
             throw new \InvalidArgumentException('Unknown mobile prefix');
 
         return '94'.$nsn;

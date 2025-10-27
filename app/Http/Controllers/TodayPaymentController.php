@@ -853,8 +853,7 @@ class TodayPaymentController extends Controller
                     'user_id'     => $user_id,
                     'branch_id'   => $branch_id,
                 ];
-                Log::info($payment_amount);
-                Log::info($latestBalance);
+
                 if ($payment_amount <= $latestBalance) {
                     // Payment fully absorbed by this extra_charger row
                     $newBalance = $latestBalance - $payment_amount;
@@ -2905,70 +2904,162 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
         $loan_number_search = $request->loan_number_search;
         $payment_type = $request->payment_type;
 
-        $loanQuery = tableWithBranch('customer_payments','customer_payments')
+        // -------- NORMAL PAYMENTS ----------
+        $normalPayments = tableWithBranch('customer_payments','customer_payments')
             ->join('customer_loan', 'customer_payments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->join('user', 'customer_payments.User_idUser', '=', 'user.id')
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
-            ->select(
-                'customer_payments.*',
-                'customer.cus_number as cus_number',
-                'customer_loan.Loan_No as Loan_No',
-                'center.Name as center_name',
-                'center.Location as Location',
-                'customer.First_Name as customer_name',
-                'customer.Last_Name as customer_lastname',
-                'customer.Nic as NIC',
-                'customer_group.Group_No as group_no',
-                'customer_group.Name as group_name',
-                'user.Full_Name as Full_Name',
-                'customer_payments.idCustomer_Payments as Inv_no'
-            );
+            ->select([
+                // core
+                'customer_payments.idCustomer_Payments     as Inv_no',
+                'customer_payments.Date                    as pay_date',
+                'customer_payments.time                    as pay_time',
+                'customer_payments.Payment_type            as pay_method',
+                'customer_payments.Amount                  as pay_amount',
+                'customer_payments.comment                 as pay_comment',
+                'customer_payments.status                  as pay_status',
+                'customer_payments.Slip                    as slip_path',
 
-        // Check if search_box is provided, if yes, ignore the date range filter
-        if (!empty($loan_number_search)) {
-            $loanQuery->where('customer_loan.idCustomer_Loan', '=', $loan_number_search);
+                // relations
+                'customer.cus_number       as cus_number',
+                'customer.First_Name       as customer_name',
+                'customer.Last_Name        as customer_lastname',
+                'customer.Nic              as NIC',
+
+                'customer_loan.idCustomer_Loan as loan_id',
+                'customer_loan.Loan_No         as Loan_No',
+
+                'customer_group.Group_No   as group_no',
+                'customer_group.Name       as group_name',
+                'customer_group.idCustomer_Group as group_id',
+
+                'center.Name              as center_name',
+                'center.Location          as Location',
+                'center.idCenter          as center_id',
+
+                'customer.idCustomer      as customer_id',
+
+                'user.Full_Name           as Full_Name',
+                'user.id                  as user_id',
+
+                // tag
+                DB::raw("'normal' as row_type")
+            ]);
+
+        // -------- EXTRA PAYMENTS ----------
+        $extraPayments = tableWithBranch('extra_charger','extra_charger')
+            ->join('customer_loan', 'extra_charger.loan_id', '=', 'customer_loan.idCustomer_Loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin('user', 'extra_charger.user_id', '=', 'user.id')
+            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->where('extra_charger.amount', '<', 0) // ✅ only negative values (actual paid ones)
+            ->select([
+                DB::raw("CONCAT('EXTRA-', extra_charger.id_extra_charger) as Inv_no"),
+                'extra_charger.date            as pay_date',
+                'extra_charger.time            as pay_time',
+                DB::raw("'Extra Payment'        as pay_method"),
+                'extra_charger.amount          as pay_amount',
+                'extra_charger.description     as pay_comment',
+                DB::raw("'0'                    as pay_status"),
+                DB::raw("NULL                   as slip_path"),
+
+                'customer.cus_number           as cus_number',
+                'customer.First_Name           as customer_name',
+                'customer.Last_Name            as customer_lastname',
+                'customer.Nic                  as NIC',
+
+                'customer_loan.idCustomer_Loan as loan_id',
+                'customer_loan.Loan_No         as Loan_No',
+
+                'customer_group.Group_No       as group_no',
+                'customer_group.Name           as group_name',
+                'customer_group.idCustomer_Group as group_id',
+
+                'center.Name                  as center_name',
+                'center.Location              as Location',
+                'center.idCenter              as center_id',
+
+                'customer.idCustomer          as customer_id',
+
+                'user.Full_Name               as Full_Name',
+                'user.id                      as user_id',
+
+                DB::raw("'extra' as row_type")
+            ]);
+
+
+        // wrap union
+        $unionQuery = DB::query()->fromSub(
+            $normalPayments->unionAll($extraPayments),
+            'payments_all'
+        );
+
+        // ---------- FILTERS ----------
+
+        // loan number filter
+        if (!empty($loan_number_search) && $loan_number_search != '0') {
+            $unionQuery->where('loan_id', '=', $loan_number_search);
         }
 
-
-        // Apply filters if not equal to '0'
+        // center filter
         if ($center_details != '0') {
-            $loanQuery->where('center.idCenter', '=', $center_details);
+            $unionQuery->where('center_id', '=', $center_details);
         }
 
+        // group filter
         if ($group != '0') {
-            $loanQuery->where('customer_group.idCustomer_Group', '=', $group);
+            $unionQuery->where('group_id', '=', $group);
         }
 
+        // customer filter
         if ($customer != '0') {
-            $loanQuery->where('customer.idCustomer', '=', $customer);
+            $unionQuery->where('customer_id', '=', $customer);
         }
 
+        // user/agent filter
         if ($user != '0') {
-            $loanQuery->where('user.id', '=', $user);
+            $unionQuery->where('user_id', '=', $user);
         }
 
+        // payment type filter (Cash / Bank Deposit / Cheque / etc.)
         if ($payment_type != '0') {
-            $loanQuery->where('customer_payments.Payment_type', '=', $payment_type);
+            $unionQuery->where('pay_method', '=', $payment_type);
         }
-        $loanQuery->whereBetween('customer_payments.date', [$date, $date_to]);
 
-        $loanQuery->orderBy('idCustomer_Payments', 'asc');
+        // date filter
+        $unionQuery->whereBetween('pay_date', [$date, $date_to]);
 
-        // Fetch the results
-        $loan = $loanQuery->get();
+        // order
+        $unionQuery
+            ->orderBy('loan_id', 'asc')
+            ->orderBy('pay_date', 'asc')
+            ->orderBy('pay_time', 'asc')
+            ->orderBy('row_type', 'asc'); // 'extra' > 'normal' alphabetically, so 'extra' will come AFTER 'normal'
 
+
+        $loan = $unionQuery->get();
+
+        // delete permission
         $user_id = (int)session('userid');
-        $payment_delete=DB::table('user')->where('id','=',$user_id)->first();
-        $payment_delete_status=0;
+        $payment_delete = DB::table('user')->where('id','=',$user_id)->first();
+        $payment_delete_status = 0;
         if ($payment_delete){
-            $payment_delete_status=(int) $payment_delete->payment_delete;
+            $payment_delete_status = (int)$payment_delete->payment_delete;
         }
 
-        return response()->json(['item' => $loan, 'test' => $date,'payment_delete_status'=>$payment_delete_status], 200);
+        return response()->json([
+            'item' => $loan,
+            'test' => $date,
+            'payment_delete_status' => $payment_delete_status
+        ], 200);
     }
+
+
 
 
     public function view_date_wise_installment(Request $request)
