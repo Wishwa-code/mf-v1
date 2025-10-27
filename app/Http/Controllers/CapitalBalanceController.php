@@ -321,11 +321,20 @@ class CapitalBalanceController extends Controller
             'first_installment_monthly',
         ];
 
+        // Get fixed keys
         $rows = DB::table($this->table)
             ->whereIn('key', $keys)
             ->pluck('value', 'key');
 
-        return response()->json(['items' => $rows], 200);
+        // Get all headoffice_approval_* keys
+        $approvalRows = DB::table($this->table)
+            ->where('key', 'LIKE', 'headoffice_approval_%')
+            ->pluck('value', 'key');
+
+        // Merge both collections
+        $allSettings = $rows->merge($approvalRows);
+
+        return response()->json(['items' => $allSettings], 200);
     }
 
 
@@ -352,8 +361,11 @@ class CapitalBalanceController extends Controller
                     // Sheet-scoped keys (ONLY) — e.g. empty_row_count_rs9, repayment_order_bp
                     $isSheetEmptyRows = preg_match('/^empty_row_count_[A-Za-z0-9_]+$/', $key) === 1;
                     $isSheetOrderBy   = preg_match('/^repayment_order_[A-Za-z0-9_]+$/', $key) === 1;
+                    
+                    // Head office approval keys — e.g. headoffice_approval_101, headoffice_approval_302
+                    $isHeadOfficeApproval = preg_match('/^headoffice_approval_[0-9]+$/', $key) === 1;
 
-                    if (!$isFixed && !$isSheetEmptyRows && !$isSheetOrderBy) {
+                    if (!$isFixed && !$isSheetEmptyRows && !$isSheetOrderBy && !$isHeadOfficeApproval) {
                         return $fail('Invalid key.');
                     }
 
@@ -432,6 +444,13 @@ class CapitalBalanceController extends Controller
                         ];
                         if (!in_array($value, $allowed, true)) {
                             return $fail('Invalid value for repayment_order.');
+                        }
+                        return;
+                    }
+                    
+                    if ($isHeadOfficeApproval) {
+                        if (!in_array($value, ['required', 'not_required'], true)) {
+                            return $fail('Head office approval must be either required or not_required.');
                         }
                         return;
                     }
