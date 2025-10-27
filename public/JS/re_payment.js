@@ -30,74 +30,98 @@ function load_payment_table() {
             payment_type: payment_type
         },
         success: function (data, textStatus, xhr) {
-            console.log(data);
             if (xhr.status === 200) {
                 var tableBody = $('#loan_table tbody');
-                tableBody.empty(); // Clear existing rows
+                tableBody.empty();
 
                 let totalAmount = 0.0;
 
                 data.item.forEach(function (item) {
-                    var amount = parseFloat(item.Amount);
 
-                    // Only add to totalAmount if the payment status is not 0
-                    if (item.status == '0') {
-                        totalAmount += amount;
+                    let amount = parseFloat(item.pay_amount || 0);
+
+                    if (item.pay_status == '0') {
+                        // Always add positive value to total
+                        totalAmount += Math.abs(amount);
                     }
 
-                    var formattedAmount = amount.toLocaleString(undefined, {
+
+                    var formattedAmount = Math.abs(amount).toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
                     });
 
-                    var viewButton = item.Slip ?
-                        `<button type="button" class="btn btn-success btn-sm ${item.status != '0' ? 'disabled' : ''}" onclick="viewSlip('${item.Slip}')">
-                            <i class="bi bi-eye"></i>
-                        </button>` :
-                        `<button type="button" class="btn btn-success btn-sm disabled">
-                            <i class="bi bi-eye"></i>
-                        </button>`;
 
-                    var addButton = `<button type="button" class="btn btn-primary btn-sm ${item.status != '0' ? 'disabled' : ''}" onclick="addSlip(${item.idCustomer_Payments})">
-                            <i class="bi bi-plus"></i>
-                        </button>`;
+                    // build buttons ONLY for normal rows
+                    let viewButton    = '';
+                    let addButton     = '';
+                    let paymentButton = '';
+                    let undoButton    = '';
 
-                    var paymentButton = `<button type="button" class="btn btn-warning btn-sm ${item.status != '0' ? 'disabled' : ''}" onclick="payment_slip(${item.idCustomer_Payments})">
+                    if (item.row_type === 'normal') {
+
+                        // view slip button
+                        viewButton = item.slip_path
+                            ? `<button type="button" class="btn btn-success btn-sm ${item.pay_status != '0' ? 'disabled' : ''}" onclick="viewSlip('${item.slip_path}')">
+                   <i class="bi bi-eye"></i>
+               </button>`
+                            : `<button type="button" class="btn btn-success btn-sm disabled">
+                   <i class="bi bi-eye"></i>
+               </button>`;
+
+                        // add slip button
+                        addButton = `<button type="button" class="btn btn-primary btn-sm ${item.pay_status != '0' ? 'disabled' : ''}" onclick="addSlip('${item.Inv_no}')">
+                        <i class="bi bi-plus"></i>
+                     </button>`;
+
+                        // print receipt / view receipt btn
+                        paymentButton = `<button type="button" class="btn btn-warning btn-sm ${item.pay_status != '0' ? 'disabled' : ''}" onclick="payment_slip(${item.loan_id})">
                             <i class="bi bi-file-earmark-text"></i>
-                        </button>`;
-                    var undoButton="";
-                    if (data.payment_delete_status===1){
-                        undoButton = `<button type="button" class="btn btn-danger btn-sm ${item.status != '0' ? 'disabled' : ''}" onclick="undo_payment(${item.idCustomer_Payments})">
-                            <i class="bi bi-trash"></i>
-                        </button>`;
+                         </button>`;
+
+                        // undo button (only if user has permission)
+                        if (data.payment_delete_status === 1) {
+                            undoButton = `<button type="button" class="btn btn-danger btn-sm ${item.pay_status != '0' ? 'disabled' : ''}" onclick="undo_payment(${item.Inv_no})">
+                              <i class="bi bi-trash"></i>
+                          </button>`;
+                        }
                     }
 
+                    // highlight extra rows (light yellow) like you already did
+                    let highlightStyle = (item.row_type === 'extra')
+                        ? "background-color:#fff7e6;"
+                        : "";
 
-                    var row = `<tr>
-<td style="vertical-align: middle">${item.Inv_no}</td>
-                        <td style="vertical-align: middle">${item.center_name || item.center_no ? (item.center_name || '-') + ' (' + (item.center_no || '-') + ')' : '-'}</td>
-                        <td style="vertical-align: middle">${item.Location || '-'}</td>
-                        <td style="vertical-align: middle">${item.group_name || item.group_no ? (item.group_name || '-') + ' (' + (item.group_no || '-') + ')' : '-'}</td>
-                        <td style="vertical-align: middle">${item.cus_number}</td>
-                        <td style="vertical-align: middle">${item.Loan_No}</td>
-                        <td style="vertical-align: middle">${item.customer_name} ${item.customer_lastname}</td>
-                        <td style="vertical-align: middle">${item.Date}</td>
-                        <td style="vertical-align: middle">${item.Payment_type}</td>
-                        <td style="vertical-align: middle">${formattedAmount}</td>
-                        <td style="vertical-align: middle">${item.Full_Name}</td>
-                        <td style="vertical-align: middle">${item.comment}</td>
-                        <td style="vertical-align: middle">
-                            <div class="d-flex flex-nowrap gap-2">
-                                ${viewButton}
-                                ${addButton}
-                                ${paymentButton}
-                                ${undoButton}
-                            </div>
-                        </td>
-                    </tr>`;
-                    // ${undoButton}
-                    tableBody.append(row);
+                    var row = `<tr style="${highlightStyle}">
+        <td style="vertical-align: middle">${safe(item.Inv_no)}</td>
+        <td style="vertical-align: middle">${safe(item.center_name)}</td>
+        <td style="vertical-align: middle">${safe(item.Location)}</td>
+        <td style="vertical-align: middle">${
+                        (safe(item.group_name) || safe(item.group_no))
+                            ? `${safe(item.group_name)} (${safe(item.group_no)})`
+                            : ''
+                    }</td>
+        <td style="vertical-align: middle">${safe(item.cus_number)}</td>
+        <td style="vertical-align: middle">${safe(item.Loan_No)}</td>
+        <td style="vertical-align: middle">${safe(item.customer_name)} ${safe(item.customer_lastname)}</td>
+        <td style="vertical-align: middle">${safe(item.pay_date)}</td>
+        <td style="vertical-align: middle">${safe(item.pay_method)}</td>
+        <td style="vertical-align: middle">${formattedAmount}</td>
+        <td style="vertical-align: middle">${safe(item.Full_Name)}</td>
+        <td style="vertical-align: middle">${safe(item.pay_comment)}</td>
+        <td style="vertical-align: middle">
+            <div class="d-flex flex-nowrap gap-2">
+                ${viewButton}
+                ${addButton}
+                ${paymentButton}
+                ${undoButton}
+            </div>
+        </td>
+    </tr>`;
+
+                    $('#loan_table tbody').append(row);
                 });
+
 
                 $("#tot_amount").text(totalAmount.toLocaleString(undefined, {
                     minimumFractionDigits: 2,
@@ -109,6 +133,10 @@ function load_payment_table() {
             console.log("Error:", errorThrown);
         }
     });
+}
+
+function safe(v) {
+    return (v === null || v === undefined) ? '' : v;
 }
 
 

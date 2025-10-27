@@ -864,3 +864,97 @@ Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalContr
         ->name('loan.double-entries');
 
 });
+
+
+
+// use Illuminate\Support\Facades\DB;
+// use Illuminate\Support\Facades\Log;
+// use App\Services\SmsService;
+
+// Route::get('/one-off/resend-failed-sms', function (Request $request, SmsService $smsService) {
+//     // ---- One-off controls ----
+//     $branchId = (int) (session('branch_id') ?? 0);         // uses current login’s branch
+//     $date     = $request->query('date', '2025-10-21'); // optional ?date=YYYY-MM-DD
+//     $limit    = (int) $request->query('limit', 69);             // optional ?limit=NN
+
+//     if ($branchId === 0) {
+//         return response()->json(['ok' => false, 'msg' => 'No branch in session.'], 400);
+//     }
+
+//     // Load company/provider/mask
+//     $company  = DB::table('company')->where('branch_id', $branchId)->first();
+//     if (! $company) {
+//         return response()->json(['ok' => false, 'msg' => 'Company not found for branch.'], 404);
+//     }
+//     $provider = $company->provider ?? config('sms.provider', 'Dialog');
+//     $mask     = $company->mask     ?? config('sms.mask', 'DefaultMask');
+
+//     // 1) Claim rows atomically so we don’t double-send if clicked twice
+//     $claimed = DB::update("
+//         UPDATE sms
+//           SET status = 'retrying', updated_at = NOW()
+//          WHERE branch_id = ? AND `date` = ? AND status = 'failed'
+//          ORDER BY id
+//          LIMIT ?
+//     ", [$branchId, $date, $limit]);
+
+//     if ($claimed === 0) {
+//         return response()->json(['ok' => true, 'claimed' => 0, 'msg' => 'No failed SMS for given date.']);
+//     }
+
+//     // 2) Fetch claimed rows (status=retrying)
+//     $rows = DB::table('sms')
+//         ->where('branch_id', $branchId)
+//         ->whereDate('date', $date)
+//         ->where('status', 'retrying')
+//         ->orderBy('id')
+//         ->limit($limit)
+//         ->get(['id','cus_id','cus_name','contact_no','message','type']);
+
+//     $sent = 0; $fail = 0;
+//     foreach ($rows as $row) {
+//         $respArray = null; $ok = false;
+
+//         try {
+//             // send via your SmsService (handles normalization + provider routing)
+//             $resp = $smsService->send($provider, $mask, (string)$row->contact_no, (string)$row->message);
+
+//             // normalize to array for storage
+//             if (is_array($resp))          $respArray = $resp;
+//             elseif (is_object($resp))     $respArray = json_decode(json_encode($resp), true);
+//             elseif (is_string($resp))     $respArray = ['raw' => $resp];
+//             else                          $respArray = ['unknown' => $resp];
+
+//             // success heuristic (Dialog vs Hutch) — same as your job
+//             $ok = ($provider === 'Dialog')
+//                 ? (($respArray['status'] ?? null) === 'success')
+//                 : (($respArray['serverRef'] ?? null) !== null);
+
+//         } catch (\Throwable $e) {
+//             $respArray = ['error' => $e->getMessage(), 'class' => get_class($e)];
+//             Log::info('[SMS][OneOffResend] Exception', ['sms_id' => $row->id, 'err' => $e->getMessage()]);
+//         }
+
+//         // update row outcome
+//         DB::table('sms')->where('id', $row->id)->update([
+//             'status'            => $ok ? 'sent' : 'failed',
+//             'provider_response' => json_encode($respArray),
+//             'updated_at'        => now(),
+//         ]);
+
+//         $ok ? $sent++ : $fail++;
+//         // gentle pacing (optional)
+//         usleep(300_000); // 300ms
+//     }
+
+//     return response()->json([
+//         'ok'       => true,
+//         'branch'   => $branchId,
+//         'date'     => $date,
+//         'claimed'  => $claimed,
+//         'sent'     => $sent,
+//         'failed'   => $fail,
+//         'provider' => $provider,
+//         'mask'     => $mask,
+//     ]);
+// })->middleware(['auth']); // keep it protected
