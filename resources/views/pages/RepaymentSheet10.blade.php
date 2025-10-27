@@ -321,51 +321,74 @@
                                 </tr>
                                 </thead>
                                 <tbody>
-                                @foreach($grouped_loans->chunk(2) as $groupPair)
-                                    <tbody class="page-break">
-                                    @foreach($groupPair as $group_name => $group)
-                                        <tr><td colspan="18"><strong>Group No: {{ $group_name }}</strong></td></tr>
-                                        @php
-                                            $memberCount = $group->count();
-                                            $totalRows = 6;
-                                        @endphp
-                                        {{-- Display existing members --}}
-                                        @foreach($group as $item)
-                                            <tr class="group-row">
-                                                <td>{{ $item->cus_number }}</td>
-                                                <td class="fixed-name">{{ format_member_name($item->customer_name, $item->customer_lastname, $name_mode ?? 'with_initial') }}</td>
-                                                <td>{{ number_format($item->Loan_Amount, 2) }}</td>
-                                                <td>{{ number_format($item->Installment_Amount, 2) }}</td>
-                                                <td>{{ number_format($item->Balance_Amount, 2) }}</td>
-                                                <td class="fixed-name contact-no">{{ $item->Contact_No }}</td>
-                                                <td></td>
-                                                <td>{{ $item->Installment_Count }}</td>
-                                                @for ($i = 1; $i <= 5; $i++)
-                                                    <td class="paid-amount"></td>
-                                                    <td class="correct-column"></td>
-                                                @endfor
-                                            </tr>
-                                        @endforeach
-                                        {{-- Fill remaining rows to make 6 total --}}
-                                        @for ($j = $memberCount; $j < $totalRows; $j++)
-                                            <tr class="group-row">
-                                                @for ($k = 0; $k < 18; $k++)
-                                                    <td>&nbsp;</td>
-                                                @endfor
-                                            </tr>
-                                        @endfor
-                                        {{-- Group Total Row --}}
-                                        <tr class="group-row" style="font-weight: bold;">
-                                            <td colspan="2">Group Total</td>
-                                            <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
-                                            <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
-                                            <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
-                                            <td colspan="13"></td>
+                                @php
+                                    $actualGroupCount = $grouped_loans->count();
+                                    $totalGroupsToShow = 5;
+                                    $groupIndex = 0;
+                                @endphp
+                                {{-- Display actual groups --}}
+                                @foreach($grouped_loans as $group_name => $group)
+                                    @php $groupIndex++; @endphp
+                                    <tr><td colspan="18"><strong>Group No: {{ $group_name }}</strong></td></tr>
+                                    @php
+                                        $memberCount = $group->count();
+                                        $totalRows = 6;
+                                    @endphp
+                                    {{-- Display existing members --}}
+                                    @foreach($group as $item)
+                                        <tr class="group-row">
+                                            <td>{{ $item->cus_number }}</td>
+                                            <td class="fixed-name">{{ format_member_name($item->customer_name, $item->customer_lastname, $name_mode ?? 'with_initial') }}</td>
+                                            <td>{{ number_format($item->Loan_Amount, 2) }}</td>
+                                            <td>{{ number_format($item->Installment_Amount, 2) }}</td>
+                                            <td>{{ number_format($item->Balance_Amount, 2) }}</td>
+                                            <td class="fixed-name contact-no">{{ $item->Contact_No }}</td>
+                                            <td></td>
+                                            <td>{{ $item->Installment_Count }}</td>
+                                            @for ($i = 1; $i <= 5; $i++)
+                                                <td class="paid-amount"></td>
+                                                <td class="correct-column"></td>
+                                            @endfor
                                         </tr>
                                     @endforeach
-                                    </tbody>
-                                    @endforeach
-                                    </tbody>
+                                    {{-- Fill remaining rows to make 6 total --}}
+                                    @for ($j = $memberCount; $j < $totalRows; $j++)
+                                        <tr class="group-row">
+                                            @for ($k = 0; $k < 18; $k++)
+                                                <td>&nbsp;</td>
+                                            @endfor
+                                        </tr>
+                                    @endfor
+                                    {{-- Group Total Row --}}
+                                    <tr class="group-row" style="font-weight: bold;">
+                                        <td colspan="2">Group Total</td>
+                                        <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
+                                        <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
+                                        <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
+                                        <td colspan="13"></td>
+                                    </tr>
+                                @endforeach
+                                {{-- Fill remaining groups to make 5 total --}}
+                                @for ($g = $groupIndex; $g < $totalGroupsToShow; $g++)
+                                    <tr><td colspan="18"><strong>Group No: {{ str_pad($g + 1, 3, '0', STR_PAD_LEFT) }}</strong></td></tr>
+                                    {{-- 6 empty member rows --}}
+                                    @for ($j = 0; $j < 6; $j++)
+                                        <tr class="group-row">
+                                            @for ($k = 0; $k < 18; $k++)
+                                                <td>&nbsp;</td>
+                                            @endfor
+                                        </tr>
+                                    @endfor
+                                    {{-- Empty Group Total Row --}}
+                                    <tr class="group-row" style="font-weight: bold;">
+                                        <td colspan="2">Group Total</td>
+                                        <td>0.00</td>
+                                        <td>0.00</td>
+                                        <td>0.00</td>
+                                        <td colspan="13"></td>
+                                    </tr>
+                                @endfor
+                                </tbody>
                             </table>
 
                             <br><br>
