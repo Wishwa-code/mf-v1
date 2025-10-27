@@ -25,7 +25,7 @@
         }
 
         th, td {
-            padding: 10px;
+            padding: 15px 10px;
             text-align: center;
             border: 2px solid black; /* Set border thickness and color */
             font-size: 14px;
@@ -34,6 +34,7 @@
         th {
             background-color: #fffdfd;
             color: black;
+            padding: 20px 10px;
         }
 
         tfoot td {
@@ -90,6 +91,14 @@
             background-color: #d32f2f;
         }
 
+        .attendance-row {
+            display: table-row;
+        }
+
+        #repaymentTable.hide-attendance .attendance-row {
+            display: none;
+        }
+
         .select2-container--default .select2-selection--single {
             background-color: #fff;
             border: 1px solid #ccc;
@@ -142,6 +151,10 @@
                 text-align: center;
             }
 
+            #repaymentTable th {
+                padding: 15px 5px;
+            }
+
             @page {
                 size: landscape; /* Set landscape orientation for print */
                 margin: 0.5in; /* Adjust margins as needed */
@@ -155,6 +168,10 @@
             table, th, td {
                 font-size: 8px !important;
                 padding: 1px !important;
+            }
+
+            th {
+                padding: 15px 1px !important;
             }
 
             th, td {
@@ -227,6 +244,7 @@
                                 <button id="landscapePrint" class="btn btn-secondary"><i class="bi bi-printer"></i> Landscape Print</button>
                                 <button id="downloadExcel" class="btn btn-success"><i class="bi bi-file-earmark-excel"></i> Download Excel</button>
                                 <button id="toggleCollectionMode" type="button" class="btn btn-outline-dark"><i class="bi bi-grid-3x3"></i> Show 8 Collections</button>
+                                <button id="toggleAttendance" type="button" class="btn btn-outline-dark"><i class="bi bi-eye-slash"></i> Hide Attendance</button>
                             </div>
                         </div>
 
@@ -339,11 +357,11 @@
                                     <td id="total-arrears"></td>
                                     <td colspan="16"></td>
                                 </tr>
-                                <tr><td><strong>Present</strong></td><td colspan="23"></td></tr>
-                                <tr><td><strong>Late</strong></td><td colspan="23"></td></tr>
-                                <tr><td><strong>Informed</strong></td><td colspan="23"></td></tr>
-                                <tr><td><strong>Absent</strong></td><td colspan="23"></td></tr>
-                                <tr><td><strong>%</strong></td><td colspan="23"></td></tr>
+                                <tr class="attendance-row"><td><strong>Present</strong></td><td colspan="23"></td></tr>
+                                <tr class="attendance-row"><td><strong>Late</strong></td><td colspan="23"></td></tr>
+                                <tr class="attendance-row"><td><strong>Informed</strong></td><td colspan="23"></td></tr>
+                                <tr class="attendance-row"><td><strong>Absent</strong></td><td colspan="23"></td></tr>
+                                <tr class="attendance-row"><td><strong>%</strong></td><td colspan="23"></td></tr>
                                 <tr><td><strong>Executive</strong></td><td colspan="23"></td></tr>
                                 <tr><td><strong>Cashier</strong></td><td colspan="23"></td></tr>
                                 <tr><td><strong>Manager</strong></td><td colspan="23"></td></tr>
@@ -366,7 +384,9 @@
 
     <script>
         const COLLECTION_MODE_KEY = 'daily-repayment-collection-mode';
+        const ATTENDANCE_MODE_KEY = 'daily-repayment-attendance-mode';
         let showEightCollections = false;
+        let hideAttendance = false;
 
         try {
             const savedValue = localStorage.getItem(COLLECTION_MODE_KEY);
@@ -375,6 +395,15 @@
             }
         } catch (error) {
             console.warn('DailyRepayment: unable to read localStorage', error);
+        }
+
+        try {
+            const savedAttendance = localStorage.getItem(ATTENDANCE_MODE_KEY);
+            if (savedAttendance === 'true') {
+                hideAttendance = true;
+            }
+        } catch (error) {
+            console.warn('DailyRepayment: unable to read attendance localStorage', error);
         }
 
 
@@ -508,6 +537,34 @@
                 syncCollectionMode();
             }
 
+            // Attendance toggle functionality
+            const $attendanceToggle = $('#toggleAttendance');
+
+            if ($attendanceToggle.length) {
+                const syncAttendanceMode = () => {
+                    $('#repaymentTable').toggleClass('hide-attendance', hideAttendance);
+                    const iconClass = hideAttendance ? 'bi-eye' : 'bi-eye-slash';
+                    const label = hideAttendance ? 'Show Attendance' : 'Hide Attendance';
+                    $attendanceToggle.html(`<i class="bi ${iconClass}"></i> ${label}`);
+                    $attendanceToggle
+                        .removeClass('btn-outline-dark btn-primary btn-secondary')
+                        .addClass(hideAttendance ? 'btn-primary' : 'btn-outline-dark');
+
+                    try {
+                        localStorage.setItem(ATTENDANCE_MODE_KEY, String(hideAttendance));
+                    } catch (error) {
+                        console.warn('DailyRepayment: unable to persist attendance localStorage', error);
+                    }
+                };
+
+                $attendanceToggle.on('click', function () {
+                    hideAttendance = !hideAttendance;
+                    syncAttendanceMode();
+                });
+
+                syncAttendanceMode();
+            }
+
             // Download Excel functionality
             $('#downloadExcel').click(function() {
                 // Convert HTML table to a workbook object
@@ -545,7 +602,10 @@
             printWindow.document.write('<style>');
             printWindow.document.write('body { font-family: Arial, sans-serif; margin: 0; padding: 0; }');
             printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; }');
-            printWindow.document.write('#repaymentTable th, #repaymentTable td { padding: 5px; border: 2px solid #000; text-align: center; }'); // Thicker, bold borders
+            printWindow.document.write('#repaymentTable td { padding: 12px 5px; border: 2px solid #000; text-align: center; }');
+            printWindow.document.write('#repaymentTable th { padding: 20px 5px; border: 2px solid #000; text-align: center; }'); // Thicker, bold borders with more vertical padding
+            printWindow.document.write('.attendance-row { display: table-row; }');
+            printWindow.document.write('#repaymentTable.hide-attendance .attendance-row { display: none; }');
             printWindow.document.write('@page { size: landscape; margin: 0.5in; }');
             printWindow.document.write('</style></head><body>');
             printWindow.document.write('<h1>Repayment Sheet for ' + currentMonth + '('+center_details+')</h1>');
@@ -564,6 +624,9 @@
             if (showEightCollections) {
                 table.classList.add('show-eight-collections');
             }
+            if (hideAttendance) {
+                table.classList.add('hide-attendance');
+            }
 
             table.querySelectorAll('.portrait-hide').forEach(col => col.style.display = '');
 
@@ -573,10 +636,13 @@
             printWindow.document.write('<style>');
             printWindow.document.write('body { font-family: Arial, sans-serif; margin: 10px; font-size: 9px; }');
             printWindow.document.write('table { width: 100%; border-collapse: collapse; font-size: 8px; table-layout: auto; }');
-            printWindow.document.write('th, td { border: 1px solid #000; padding: 4px; text-align: center; word-wrap: break-word; }');
+            printWindow.document.write('td { border: 1px solid #000; padding: 10px 4px; text-align: center; word-wrap: break-word; }');
+            printWindow.document.write('th { border: 1px solid #000; padding: 15px 4px; text-align: center; word-wrap: break-word; }');
             printWindow.document.write('.collection-column-5, .collection-column-6, .collection-column-7, .collection-column-8, .other-column-5, .other-column-6, .other-column-7, .other-column-8, .collection-header-5, .collection-header-6, .collection-header-7, .collection-header-8 { display: none; }');
             printWindow.document.write('table.show-eight-collections .collection-column-5, table.show-eight-collections .collection-column-6, table.show-eight-collections .collection-column-7, table.show-eight-collections .collection-column-8, table.show-eight-collections .collection-header-5, table.show-eight-collections .collection-header-6, table.show-eight-collections .collection-header-7, table.show-eight-collections .collection-header-8 { display: table-cell; }');
             printWindow.document.write('table.show-eight-collections .other-column, table.show-eight-collections .other-column-5, table.show-eight-collections .other-column-6, table.show-eight-collections .other-column-7, table.show-eight-collections .other-column-8 { display: none; }');
+            printWindow.document.write('.attendance-row { display: table-row; }');
+            printWindow.document.write('table.hide-attendance .attendance-row { display: none; }');
             printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
             printWindow.document.write('</style>');
 

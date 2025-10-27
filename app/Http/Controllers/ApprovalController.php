@@ -479,24 +479,24 @@ class ApprovalController extends Controller
                 }
                 
                 if ($customer->save()) {
-                    $id = $customer->id;
+                    $customerId = $customer->id;
                     
-                    // Generate customer number
-                    customer_number($id);
-                    
-                    // Create customer log
+                    // Create customer log FIRST (required by customer_number function)
                     DB::table('customer_log')->insert([
-                        'customer_id' => $id,
+                        'customer_id' => $customerId,
                         'customer_name' => $customerData['First_Name'] . ' ' . $customerData['Last_Name'],
                         'date' => date('Y-m-d'),
                         'time' => date('H:i:s'),
                         'description' => 'Customer registration for ' . $customerData['First_Name'] . ' ' . $customerData['Last_Name'],
-                        'description_id' => $id,
+                        'description_id' => $customerId,
                         'comment' => ' ',
                         'type' => 'Customer Registration',
                         'user' => session('userid'),
                         'branch_id' => $approval->branch_id,
                     ]);
+                    
+                    // Generate customer number AFTER log creation
+                    customer_number($customerId);
                     
                     // Send SMS if template exists
                     $sms_template = DB::table('sms_template')
@@ -506,7 +506,7 @@ class ApprovalController extends Controller
                         ->first();
                     
                     if ($sms_template) {
-                        $customer_table = DB::table('customer')->where('idCustomer', $id)->first();
+                        $customer_table = DB::table('customer')->where('idCustomer', $customerId)->first();
                         $placeholders = [
                             '@Member_No@' => $customer_table->cus_number,
                             '@Member_Name@' => $customer_table->First_Name . ' ' . $customer_table->Last_Name,
@@ -518,7 +518,7 @@ class ApprovalController extends Controller
                         }
                         
                         // Log SMS (assuming smsLogController exists)
-                        // $this->smsLogController->index($id, $sms_text, "Customer Registration");
+                        // $this->smsLogController->index($customerId, $sms_text, "Customer Registration");
                     }
                 }
             }
@@ -637,11 +637,11 @@ class ApprovalController extends Controller
                 $requestData = json_decode($approval->data, true);
                 $loan_id = $requestData['loan_id'];
                 
-                // Update loan status from -3 (pending HO approval) to 0 (current/active loan)
+                // Update loan status from -3 (pending HO approval) to -1 (pending disbursement)
                 DB::table('customer_loan')
                     ->where('idCustomer_Loan', $loan_id)
                     ->where('branch_id', $approval->branch_id)
-                    ->update(['Status' => '0']);
+                    ->update(['Status' => '-1']);
             }
             
             // Handle Loan Rejection (Type 402)
