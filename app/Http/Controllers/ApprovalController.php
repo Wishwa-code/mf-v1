@@ -637,11 +637,11 @@ class ApprovalController extends Controller
                 $requestData = json_decode($approval->data, true);
                 $loan_id = $requestData['loan_id'];
                 
-                // Update loan status from -3 (pending HO approval) to 0 (current/active loan)
+                // Update loan status from -3 (pending HO approval) to -1 (pending disbursement)
                 DB::table('customer_loan')
                     ->where('idCustomer_Loan', $loan_id)
                     ->where('branch_id', $approval->branch_id)
-                    ->update(['Status' => '0']);
+                    ->update(['Status' => '-1']);
             }
             
             // Handle Loan Rejection (Type 402)
