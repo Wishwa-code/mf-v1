@@ -1246,7 +1246,7 @@ class LoanController extends Controller
             'Saving_amountSum',
             'payment_delete_status',
             'loan_saving_balance',
-            'extraChargelatestBalance'
+            'extraChargelatestBalance',
             'customerSummary',
             'groupMembers'
 

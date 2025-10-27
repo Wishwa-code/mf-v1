@@ -480,10 +480,184 @@
 
 
 
+
                     </div>
                 </div>
             </div>
 
+        </div>
+
+        <!-- Head Office Approval Section -->
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="mb-3">Head Office Approval</h5>
+                        <hr>
+                        <small class="text-muted d-block mb-3">Configure which approval types require head office approval.</small>
+
+                        <!-- User Management -->
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2">User Management</h6>
+                            <div class="list-group">
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>User Creation</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_101" data-type="101">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>User Details Update</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_102" data-type="102">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>User Privilege Change</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_103" data-type="103">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>User Designation Change</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_104" data-type="104">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Designation Management -->
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2">Designation Management</h6>
+                            <div class="list-group">
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Designation Privileges Update</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_201" data-type="201">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Customer Management -->
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2">Customer Management</h6>
+                            <div class="list-group">
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Customer Creation</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_301" data-type="301">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Customer Details Update</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_302" data-type="302">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Customer Status Change</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_303" data-type="303">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Customer Blacklist</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_304" data-type="304">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Customer Document Update</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_305" data-type="305">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Loan Management -->
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2">Loan Management</h6>
+                            <div class="list-group">
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Loan Approval</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_401" data-type="401">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Loan Rejection</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_402" data-type="402">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Loan Modification</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_403" data-type="403">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Financial Transactions -->
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2">Financial Transactions</h6>
+                            <div class="list-group">
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Bank Account Transfer</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_501" data-type="501">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Payment Undo</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_502" data-type="502">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Payment Reversal</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_503" data-type="503">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Expenses -->
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2">Expenses</h6>
+                            <div class="list-group">
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Expense Creation</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_601" data-type="601">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Expense Approval</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_602" data-type="602">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Expense Modification</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_603" data-type="603">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="btnSaveAllApprovals" class="btn btn-primary mt-2">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Save All Approval Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 @endsection
@@ -582,6 +756,63 @@
 
                 // Save as JSON string
                 save_setting('collector_txn_modes', JSON.stringify(selected));
+            });
+
+            // Head Office Approval - Save All
+            $('#btnSaveAllApprovals').on('click', function (e) {
+                e.preventDefault();
+                
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "Update all head office approval settings?",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, Update All",
+                }).then((result) => {
+                    if (!result.isConfirmed) return;
+
+                    const settings = [];
+                    $('.approval-toggle').each(function() {
+                        const type = $(this).data('type');
+                        const isChecked = $(this).is(':checked');
+                        const value = isChecked ? 'required' : 'not_required';
+                        settings.push({ key: 'headoffice_approval_' + type, value: value });
+                    });
+
+                    let completedCount = 0;
+                    let hasError = false;
+
+                    settings.forEach(setting => {
+                        $.ajax({
+                            type: "POST",
+                            url: "/settings/upsert",
+                            headers: {
+                                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                            },
+                            data: setting,
+                            success: function () {
+                                completedCount++;
+                                if (completedCount === settings.length && !hasError) {
+                                    Swal.fire({
+                                        position: "center",
+                                        icon: "success",
+                                        title: "All approval settings updated!",
+                                        timer: 1500,
+                                        showConfirmButton: false
+                                    });
+                                }
+                            },
+                            error: function (xhr) {
+                                if (!hasError) {
+                                    hasError = true;
+                                    Swal.fire("Error", xhr.responseJSON?.message || "Failed to update approval settings", "error");
+                                }
+                            }
+                        });
+                    });
+                });
             });
 
             // Loan Creation Restrictions
@@ -858,6 +1089,15 @@
                     if (items.first_installment_monthly) {
                         $('#first_installment_monthly').val(items.first_installment_monthly);
                     }
+
+                    // Head Office Approval toggles
+                    $('.approval-toggle').each(function() {
+                        const type = $(this).data('type');
+                        const key = 'headoffice_approval_' + type;
+                        if (items[key]) {
+                            $(this).prop('checked', items[key] === 'required');
+                        }
+                    });
                 },
                 error: function (xhr) {
                     console.error('Settings load error:', xhr.responseText || xhr.statusText);
