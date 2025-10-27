@@ -634,6 +634,16 @@
             });
         });
 
+        function shortComment(fullText) {
+            if (!fullText) return '';
+            fullText = fullText.trim();
+
+            // Rule: take up to 30 chars (you can change 30)
+            if (fullText.length <= 30) {
+                return fullText;
+            }
+            return fullText.substring(0, 30) + '...';
+        }
 
 
         // Function to print receipt (assuming it's defined elsewhere)
@@ -749,100 +759,146 @@
             const date = document.getElementById('select_date').value;
             const totalPendingAmount = document.getElementById('tot_amount').innerText;
 
-            // Extract table rows
+            function shortComment(fullText) {
+                if (!fullText) return '';
+                fullText = fullText.trim();
+                if (fullText.length <= 30) {
+                    return fullText;
+                }
+                return fullText.substring(0, 30) + '...';
+            }
+
+            // Build table rows for print
             let tableData = '';
             const tableRows = document.querySelectorAll('#loan_table tbody tr');
+
             tableRows.forEach(row => {
                 const columns = row.querySelectorAll('td');
+
+                // columns:
+                // 0  Receipt No
+                // 1  Center No
+                // 2  Center Location
+                // 3  Group No
+                // 4  Customer Number
+                // 5  Loan Number
+                // 6  Customer Name
+                // 7  Date
+                // 8  Payment Method
+                // 9  Amount
+                //10  Agent
+                //11  Comment
+                //12  Action  <-- we'll SKIP
+
                 tableData += `<tr>`;
-                columns.forEach(col => {
-                    tableData += `<td>${col.innerText}</td>`;
-                });
+
+                for (let i = 0; i < columns.length; i++) {
+
+                    // skip Action col (last one)
+                    if (i === 12) {
+                        continue;
+                    }
+
+                    let cellText = columns[i].innerText || '';
+
+                    // shorten comment column only
+                    if (i === 11) {
+                        cellText = shortComment(cellText);
+                    }
+
+                    tableData += `<td>${cellText}</td>`;
+                }
+
                 tableData += `</tr>`;
             });
 
-            // Create full HTML for print
+            // Build print table header WITHOUT Action
+            const printHeader = `
+        <tr>
+            <th>Receipt No</th>
+            <th>Center No</th>
+            <th>Center Location</th>
+            <th>Group No</th>
+            <th>Customer Number</th>
+            <th>Loan Number</th>
+            <th>Customer Name</th>
+            <th>Date</th>
+            <th>Payment Method</th>
+            <th>Amount</th>
+            <th>Agent</th>
+            <th>Comment</th>
+        </tr>
+    `;
+
+            // Full printable HTML
             const printContent = `
-        <html>
-        <head>
-            <title>Repayment Collection Report</title>
-            <style>
-                @page {
-                    size: landscape;
-                    margin: 20mm;
-                }
-                body {
-                    font-family: Arial, sans-serif;
-                    font-size: 12px;
-                }
-                h1 {
-                    text-align: center;
-                    margin-bottom: 20px;
-                }
-                table {
-                    border-collapse: collapse;
-                    width: 100%;
-                    margin-bottom: 20px;
-                }
-                th, td {
-                    border: 1px solid #000;
-                    padding: 6px;
-                    text-align: center;
-                }
-                th {
-                    background-color: #f2f2f2;
-                }
-                .section-info td {
-                    border: none;
-                    padding: 4px 8px;
-                    text-align: left;
-                }
-                .total {
-                    text-align: right;
-                    font-weight: bold;
-                    margin-top: 20px;
-                }
-            </style>
-        </head>
-        <body>
-            <h1>Repayment Collection Report</h1>
+    <html>
+    <head>
+        <title>Repayment Collection Report</title>
+        <style>
+            @page {
+                size: landscape;
+                margin: 20mm;
+            }
+            body {
+                font-family: Arial, sans-serif;
+                font-size: 12px;
+            }
+            h1 {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            table {
+                border-collapse: collapse;
+                width: 100%;
+                margin-bottom: 20px;
+            }
+            th, td {
+                border: 1px solid #000;
+                padding: 6px;
+                text-align: center;
+                vertical-align: top;
+            }
+            th {
+                background-color: #f2f2f2;
+            }
+            .section-info td {
+                border: none;
+                padding: 4px 8px;
+                text-align: left;
+            }
+            .total {
+                text-align: right;
+                font-weight: bold;
+                margin-top: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Repayment Collection Report</h1>
 
-            <table class="section-info">
-                <tr><td><strong>Date:</strong></td><td>${date}</td></tr>
-                <tr><td><strong>Customer:</strong></td><td>${customer}</td></tr>
-                <tr><td><strong>Center:</strong></td><td>${center}</td></tr>
-                <tr><td><strong>Group:</strong></td><td>${group}</td></tr>
-                <tr><td><strong>Agent:</strong></td><td>${agent}</td></tr>
-            </table>
+        <table class="section-info">
+            <tr><td><strong>Date:</strong></td><td>${date}</td></tr>
+            <tr><td><strong>Customer:</strong></td><td>${customer}</td></tr>
+            <tr><td><strong>Center:</strong></td><td>${center}</td></tr>
+            <tr><td><strong>Group:</strong></td><td>${group}</td></tr>
+            <tr><td><strong>Agent:</strong></td><td>${agent}</td></tr>
+        </table>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Receipt No</th>
-                        <th>Center No</th>
-                        <th>Center Location</th>
-                        <th>Group No</th>
-                        <th>Customer Number</th>
-                        <th>Loan Number</th>
-                        <th>Customer Name</th>
-                        <th>Date</th>
-                        <th>Payment Method</th>
-                        <th>Amount</th>
-                        <th>Agent</th>
-                        <th>Comment</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${tableData}
-                </tbody>
-            </table>
+        <table>
+            <thead>
+                ${printHeader}
+            </thead>
+            <tbody>
+                ${tableData}
+            </tbody>
+        </table>
 
-            <div class="total">
-                <h3>Total Collected Amount: ${totalPendingAmount}</h3>
-            </div>
-        </body>
-        </html>
+        <div class="total">
+            <h3>Total Collected Amount: ${totalPendingAmount}</h3>
+        </div>
+    </body>
+    </html>
     `;
 
             // Open print window
@@ -852,6 +908,7 @@
             newWindow.focus();
             newWindow.print();
         }
+
 
 
 

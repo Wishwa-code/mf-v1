@@ -310,7 +310,33 @@ class UserController extends Controller
     }
 
 
+
     public function showdashboard(Store $session){
+
+
+//        // YOUR LOOPS (unchanged, as you asked)
+//
+//        $loans = tableWithBranch('customer_loan')->get();
+//
+//        foreach ($loans as $loan) {
+//            $ins_count_loan = (int)$loan->Installment_Count;
+//
+//            $installment_count = tableWithBranch('installments')
+//                ->where('Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
+//                ->count();
+//
+//            // your logic
+//            $ins_count_loan++;
+//
+//            if ($ins_count_loan != $installment_count) {
+//                $this->fixLoanInstallmentsOnce((int)$loan->idCustomer_Loan);
+//                $this->fixLoanInstallmentsOnce_2((int)$loan->idCustomer_Loan);
+//            }
+//        }
+
+
+
+
 
 
         if (!Auth::check()) {
@@ -659,6 +685,207 @@ class UserController extends Controller
             'weeklyUnpaidCount','weeklyUnpaidAmount','weeklyUnpaidCustomerCount','totalOutstanding','penaltyBalance'
         ));
     }
+    public function fixLoanInstallmentsOnce(int $loanId): void
+    {
+        DB::transaction(function () use ($loanId) {
+
+            // 1. Read current installments for this loan in No ASC
+            $rows = tableWithBranch('installments')
+                ->where('Customer_Loan_idCustomer_Loan', $loanId)
+                ->orderBy('No', 'asc')
+                ->lockForUpdate()
+                ->get();
+
+            if ($rows->isEmpty()) {
+                return;
+            }
+
+            // --- insert missing No=2 if No=3 exists ---
+            $hasNo2 = $rows->firstWhere('No', 2);
+            if (!$hasNo2) {
+                $row3 = $rows->firstWhere('No', 3);
+                if ($row3) {
+                    $row1 = $rows->firstWhere('No', 1);
+
+                    $intendedDate = Carbon::parse($row3->Installment_Date)->subDays(7);
+                    $paneltyDate  = $intendedDate->copy()->addDays(14);
+
+                    if ($row1) {
+                        $d1 = Carbon::parse($row1->Installment_Date);
+                        if ($intendedDate->lte($d1)) {
+                            $intendedDate = $d1->copy()->addDays(7);
+                            $paneltyDate  = $intendedDate->copy()->addDays(14);
+                        }
+                    }
+
+                    $d3 = Carbon::parse($row3->Installment_Date);
+                    if ($intendedDate->gte($d3)) {
+                        $intendedDate = $d3->copy()->subDays(7);
+                        $paneltyDate  = $intendedDate->copy()->addDays(14);
+                    }
+
+                    $existingDates = tableWithBranch('installments')
+                        ->where('Customer_Loan_idCustomer_Loan', $loanId)
+                        ->pluck('Installment_Date')
+                        ->map(fn($d) => Carbon::parse($d)->toDateString())
+                        ->toArray();
+
+                    while (in_array($intendedDate->toDateString(), $existingDates, true)) {
+                        $intendedDate->addDays(7);
+                        $paneltyDate  = $intendedDate->copy()->addDays(14);
+                    }
+
+                    tableWithBranch('installments')->insert([
+                        'Customer_Loan_idCustomer_Loan' => $row3->Customer_Loan_idCustomer_Loan,
+                        'branch_id'                     => $row3->branch_id,
+                        'No'                            => 2, // placeholder, we'll renumber
+                        'Installment_Date'              => $intendedDate->toDateString(),
+                        'Panelty_date'                  => $paneltyDate->toDateString(),
+                        'Installment_Amount'            => $row3->Installment_Amount,
+                        'capital_amount'                => $row3->capital_amount,
+                        'interest_amount'               => $row3->interest_amount,
+                        'Panalty_Amount'                => $row3->Panalty_Amount,
+                        'Saving_amount'                 => $row3->Saving_amount,
+                        'Total_Amount'                  => $row3->Total_Amount,
+                        'Paid_Amount'                   => $row3->Paid_Amount,
+                        'Panalty_Balance'               => $row3->Panalty_Balance,
+                        'Interest_Balance'              => $row3->Interest_Balance,
+                        'capital_balance'               => $row3->capital_balance,
+                        'Saving_balance'                => $row3->Saving_balance,
+                        'Total_Balance'                 => $row3->Total_Balance,
+                        'Status'                        => $row3->Status,
+                        'Panelty_status'                => $row3->Panelty_status,
+                        'Panelty_count'                 => $row3->Panelty_count,
+                        'Paid_Date'                     => $row3->Paid_Date,
+                    ]);
+                }
+            }
+
+            // 2. Refetch everything after insert
+            $all = tableWithBranch('installments')
+                ->where('Customer_Loan_idCustomer_Loan', $loanId)
+                ->lockForUpdate()
+                ->get();
+
+            if ($all->isEmpty()) {
+                return;
+            }
+
+            // STEP A: sort everyone by Installment_Date asc
+            $sortedByDate = $all->sortBy(function ($r) {
+                return Carbon::parse($r->Installment_Date)->timestamp;
+            })->values();
+
+            // STEP B: find unique balloon row (strict max interest)
+            $withInterest = $sortedByDate->map(function ($r) {
+                $raw = $r->interest_amount ?? 0;
+                $num = (float) str_replace(',', '', (string)$raw);
+                $r->_interest_numeric = $num;
+                return $r;
+            });
+
+            $maxInterest = $withInterest->max('_interest_numeric');
+            $maxRows = $withInterest->filter(function ($r) use ($maxInterest) {
+                return $r->_interest_numeric == $maxInterest;
+            });
+
+            $finalOrder = collect();
+
+            if ($maxRows->count() === 1) {
+                // unique high-interest row
+                $balloonRow   = $maxRows->first();
+                $balloonRowId = $balloonRow->idInstallments;
+
+                // take all others IN DATE ORDER first
+                foreach ($sortedByDate as $r) {
+                    if ($r->idInstallments !== $balloonRowId) {
+                        $finalOrder->push($r);
+                    }
+                }
+                // then push balloon row LAST
+                $finalOrder->push($balloonRow);
+            } else {
+                // no unique balloon row -> keep pure date order
+                $finalOrder = $sortedByDate;
+            }
+
+            // STEP C: renumber No = 1..n based on this final order
+            $n = 1;
+            foreach ($finalOrder as $r) {
+                tableWithBranch('installments')
+                    ->where('idInstallments', $r->idInstallments)
+                    ->update([
+                        'No' => $n
+                    ]);
+                $n++;
+            }
+        });
+    }
+
+
+
+    public function fixLoanInstallmentsOnce_2(int $loanId): void
+    {
+        DB::transaction(function () use ($loanId) {
+
+            // just reorder again (no insertion here)
+            $all = tableWithBranch('installments')
+                ->where('Customer_Loan_idCustomer_Loan', $loanId)
+                ->lockForUpdate()
+                ->get();
+
+            if ($all->isEmpty()) {
+                return;
+            }
+
+            // STEP A: sort all rows by Installment_Date asc
+            $sortedByDate = $all->sortBy(function ($r) {
+                return Carbon::parse($r->Installment_Date)->timestamp;
+            })->values();
+
+            // STEP B: find unique balloon row (highest interest)
+            $withInterest = $sortedByDate->map(function ($r) {
+                $raw = $r->interest_amount ?? 0;
+                $num = (float) str_replace(',', '', (string)$raw);
+                $r->_interest_numeric = $num;
+                return $r;
+            });
+
+            $maxInterest = $withInterest->max('_interest_numeric');
+            $maxRows = $withInterest->filter(function ($r) use ($maxInterest) {
+                return $r->_interest_numeric == $maxInterest;
+            });
+
+            $finalOrder = collect();
+
+            if ($maxRows->count() === 1) {
+                $balloonRow   = $maxRows->first();
+                $balloonRowId = $balloonRow->idInstallments;
+
+                foreach ($sortedByDate as $r) {
+                    if ($r->idInstallments !== $balloonRowId) {
+                        $finalOrder->push($r);
+                    }
+                }
+                $finalOrder->push($balloonRow);
+            } else {
+                $finalOrder = $sortedByDate;
+            }
+
+            // STEP C: renumber No = 1..n based on finalOrder
+            $n = 1;
+            foreach ($finalOrder as $r) {
+                tableWithBranch('installments')
+                    ->where('idInstallments', $r->idInstallments)
+                    ->update([
+                        'No' => $n
+                    ]);
+                $n++;
+            }
+        });
+    }
+
+
 
     public function logout()
     {

@@ -807,4 +807,3 @@ function processDaySkip($loan, $installment, $holidayDate, $companySetting,$bran
 
 
 
-
