@@ -713,6 +713,7 @@ Route::delete('/expenses_categories/{id}', '\App\Http\Controllers\ReportControll
 
     Route::get('/GreenLankaTrustRepayment', [TransactionController::class, 'GreenLankaTrustRepayment'])->name('transaction.GreenLankaTrustRepayment');
     Route::get('/DandDRepayment', [TransactionController::class, 'DandDRepayment'])->name('transaction.DandDRepayment');
+    Route::get('/RepaymentSheet10', [TransactionController::class, 'repaymentSheet10'])->name('transaction.RepaymentSheet10');
     Route::get('/dailyreport', [TransactionController::class, 'dailyreport'])->name('transaction.dailyreport');
 
 
