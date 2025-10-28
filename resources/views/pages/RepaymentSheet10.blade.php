@@ -367,6 +367,20 @@
                                         <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
                                         <td colspan="13"></td>
                                     </tr>
+                                    {{-- Page Total Row --}}
+                                    <tr class="group-row" style="font-weight: bold;">
+                                        <td colspan="2">Page Total</td>
+                                        @for ($k = 0; $k < 16; $k++)
+                                            <td></td>
+                                        @endfor
+                                    </tr>
+                                    {{-- Page Due Amount Row --}}
+                                    <tr class="group-row" style="font-weight: bold;">
+                                        <td colspan="2">Page Due Amount</td>
+                                        @for ($k = 0; $k < 16; $k++)
+                                            <td></td>
+                                        @endfor
+                                    </tr>
                                 @endforeach
                                 {{-- Fill remaining groups to make 5 total --}}
                                 @for ($g = $groupIndex; $g < $totalGroupsToShow; $g++)
@@ -386,6 +400,20 @@
                                         <td>0.00</td>
                                         <td>0.00</td>
                                         <td colspan="13"></td>
+                                    </tr>
+                                    {{-- Page Total Row --}}
+                                    <tr class="group-row" style="font-weight: bold;">
+                                        <td colspan="2">Page Total</td>
+                                        @for ($k = 0; $k < 16; $k++)
+                                            <td></td>
+                                        @endfor
+                                    </tr>
+                                    {{-- Page Due Amount Row --}}
+                                    <tr class="group-row" style="font-weight: bold;">
+                                        <td colspan="2">Page Due Amount</td>
+                                        @for ($k = 0; $k < 16; $k++)
+                                            <td></td>
+                                        @endfor
                                     </tr>
                                 @endfor
                                 </tbody>
