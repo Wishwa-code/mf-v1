@@ -338,7 +338,7 @@
                                     {{-- Display existing members --}}
                                     @foreach($group as $item)
                                         <tr class="group-row">
-                                            <td>{{ $item->cus_number }}</td>
+                                            <td style="text-align: left;">{{ $item->cus_number }}</td>
                                             <td class="fixed-name" style="text-align: left;">
                                                 {{ format_member_name($item->customer_first, $item->customer_lastname, $name_mode ?? 'with_initial') }}
                                             </td>
