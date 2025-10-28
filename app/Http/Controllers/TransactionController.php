@@ -1135,7 +1135,7 @@ class TransactionController extends Controller
         // ✅ Read ONLY the sheet-scoped order setting (default: name_asc)
         $order_by = DB::table('app_settings')
             ->where('key', "repayment_order_{$sheetKey}")
-            ->value('value') ?? 'name_asc';
+            ->value('value') ?? 'cus_number'; // Changed default to member number ordering
         // Check if $center is empty
         if ($center->isEmpty()) {
             // Handle the case when the center table has no values
