@@ -308,7 +308,7 @@
                                     <th rowspan="2">LOAN BALANCE</th>
                                     <th rowspan="2">Phone No</th>
                                     <th rowspan="2">NEW LOAN</th>
-                                    <th rowspan="2">No.Of Arreas</th>
+                                    <th rowspan="2">Arrears Amount</th>
                                     @for ($i = 1; $i <= 5; $i++)
                                         <th colspan="2">DATE</th>
                                     @endfor
@@ -344,7 +344,7 @@
                                             <td>{{ number_format($item->Balance_Amount, 2) }}</td>
                                             <td class="fixed-name contact-no">{{ $item->Contact_No }}</td>
                                             <td></td>
-                                            <td>{{ $item->Installment_Count }}</td>
+                                            <td>{{ number_format($item->arrease ?? 0, 2) }}</td>
                                             @for ($i = 1; $i <= 5; $i++)
                                                 <td class="paid-amount"></td>
                                                 <td class="correct-column"></td>
