@@ -201,6 +201,26 @@
 
                                 <button id="printButton" class="btn btn-primary"><i class="bi bi-printer"></i> Print</button>
                                 <button id="downloadExcel" class="btn btn-success"><i class="bi bi-file-earmark-excel"></i> Download Excel</button>
+                                
+                                @php
+                                    $pendingCount = 0;
+                                    $pendingTotal = 0;
+                                    foreach($chq as $item) {
+                                        if($item->chq_status === "0") {
+                                            $pendingCount++;
+                                            $pendingTotal += floatval(str_replace(',', '', $item->payment_amount));
+                                        }
+                                    }
+                                @endphp
+                                
+                                <div class="ms-auto d-flex gap-3">
+                                    <div class="badge bg-warning text-dark p-2" style="font-size: 14px;">
+                                        <i class="bi bi-clock-history"></i> Pending Cheques: <strong>{{ $pendingCount }}</strong>
+                                    </div>
+                                    <div class="badge bg-info text-dark p-2" style="font-size: 14px;">
+                                        <i class="bi bi-currency-dollar"></i> Total Amount: <strong>{{ number_format($pendingTotal, 2, '.', ',') }}</strong>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

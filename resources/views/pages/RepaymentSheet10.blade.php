@@ -106,7 +106,7 @@
         @media print {
             @page {
                 size: A4 landscape;
-                margin: 0.5in;
+                margin: 0.2in 0.4in 0 0.4in;
                 counter-increment: page;
             }
 
@@ -171,6 +171,7 @@
         @media print {
             body {
                 font-size: 12px !important;
+                margin: 0;
             }
 
             #repaymentTable {
@@ -308,7 +309,7 @@
                                     <th rowspan="2">LOAN BALANCE</th>
                                     <th rowspan="2">Phone No</th>
                                     <th rowspan="2">NEW LOAN</th>
-                                    <th rowspan="2">No.Of Arreas</th>
+                                    <th rowspan="2">Arrears Amount</th>
                                     @for ($i = 1; $i <= 5; $i++)
                                         <th colspan="2">DATE</th>
                                     @endfor
@@ -321,45 +322,97 @@
                                 </tr>
                                 </thead>
                                 <tbody>
-                                @foreach($grouped_loans->chunk(2) as $groupPair)
-                                    <tbody class="page-break">
-                                    @foreach($groupPair as $group_name => $group)
-                                        <tr><td colspan="18"><strong>Group No: {{ $group_name }}</strong></td></tr>
-                                        @foreach($group as $item)
-                                            <tr class="group-row">
-                                                <td>{{ $item->cus_number }}</td>
-                                                <td class="fixed-name">{{ format_member_name($item->customer_name, $item->customer_lastname, $name_mode ?? 'with_initial') }}</td>
-                                                <td>{{ number_format($item->Loan_Amount, 2) }}</td>
-                                                <td>{{ number_format($item->Installment_Amount, 2) }}</td>
-                                                <td>{{ number_format($item->Balance_Amount, 2) }}</td>
-                                                <td class="fixed-name contact-no">{{ $item->Contact_No }}</td>
-                                                <td></td>
-                                                <td>{{ $item->Installment_Count }}</td>
-                                                @for ($i = 1; $i <= 5; $i++)
-                                                    <td class="paid-amount"></td>
-                                                    <td class="correct-column"></td>
-                                                @endfor
-                                            </tr>
-                                        @endforeach
-                                        <tr class="group-row" style="font-weight: bold;">
-                                            <td colspan="2">Group Total</td>
-                                            <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
-                                            <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
-                                            <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
-                                            <td colspan="13"></td>
+                                @php
+                                    $actualGroupCount = $grouped_loans->count();
+                                    $totalGroupsToShow = 5;
+                                    $groupIndex = 0;
+                                @endphp
+                                {{-- Display actual groups --}}
+                                @foreach($grouped_loans as $group_name => $group)
+                                    @php $groupIndex++; @endphp
+                                    <tr><td colspan="18"><strong>Group No: {{ $group_name }}</strong></td></tr>
+                                    @php
+                                        $memberCount = $group->count();
+                                        $totalRows = 6;
+                                    @endphp
+                                    {{-- Display existing members --}}
+                                    @foreach($group as $item)
+                                        <tr class="group-row">
+                                            <td style="text-align: left;">{{ $item->cus_number }}</td>
+                                            <td class="fixed-name" style="text-align: left;">
+                                                {{ format_member_name($item->customer_first, $item->customer_lastname, $name_mode ?? 'with_initial') }}
+                                            </td>
+                                            <td>{{ number_format($item->Loan_Amount, 2) }}</td>
+                                            <td>{{ number_format($item->Installment_Amount, 2) }}</td>
+                                            <td>{{ number_format($item->Balance_Amount, 2) }}</td>
+                                            <td class="fixed-name contact-no">{{ $item->Contact_No }}</td>
+                                            <td></td>
+                                            <td>{{ number_format($item->arrease ?? 0, 2) }}</td>
+                                            @for ($i = 1; $i <= 5; $i++)
+                                                <td class="paid-amount"></td>
+                                                <td class="correct-column"></td>
+                                            @endfor
                                         </tr>
-                                        {{-- Empty 7 Rows --}}
-                                        @for ($j = 0; $j < 2; $j++)
-                                            <tr class="group-row">
-                                                @for ($k = 0; $k < 18; $k++)
-                                                    <td>&nbsp;</td>
-                                                @endfor
-                                            </tr>
-                                        @endfor
                                     @endforeach
-                                    </tbody>
-                                    @endforeach
-                                    </tbody>
+                                    {{-- Fill remaining rows to make 6 total --}}
+                                    @for ($j = $memberCount; $j < $totalRows; $j++)
+                                        <tr class="group-row">
+                                            @for ($k = 0; $k < 18; $k++)
+                                                <td>&nbsp;</td>
+                                            @endfor
+                                        </tr>
+                                    @endfor
+                                    {{-- Group Total Row --}}
+                                    <tr class="group-row" style="font-weight: bold;">
+                                        <td colspan="2">Group Total</td>
+                                        <td>{{ number_format($group->sum('Loan_Amount'), 2) }}</td>
+                                        <td>{{ number_format($group->sum('Installment_Amount'), 2) }}</td>
+                                        <td>{{ number_format($group->sum('Balance_Amount'), 2) }}</td>
+                                        <td colspan="13"></td>
+                                    </tr>
+                                @endforeach
+                                {{-- Fill remaining groups to make 5 total --}}
+                                @for ($g = $groupIndex; $g < $totalGroupsToShow; $g++)
+                                    <tr><td colspan="18"><strong>Group No: {{ str_pad($g + 1, 3, '0', STR_PAD_LEFT) }}</strong></td></tr>
+                                    {{-- 6 empty member rows --}}
+                                    @for ($j = 0; $j < 6; $j++)
+                                        <tr class="group-row">
+                                            @for ($k = 0; $k < 18; $k++)
+                                                <td>&nbsp;</td>
+                                            @endfor
+                                        </tr>
+                                    @endfor
+                                    {{-- Empty Group Total Row --}}
+                                    <tr class="group-row" style="font-weight: bold;">
+                                        <td colspan="2">Group Total</td>
+                                        <td>0.00</td>
+                                        <td>0.00</td>
+                                        <td>0.00</td>
+                                        <td colspan="13"></td>
+                                    </tr>
+                                @endfor
+                                {{-- Page Total Row (once per page after all groups) --}}
+                                <tr style="font-weight: bold; background-color: #f2f2f2;">
+                                    <td colspan="2">Page Total</td>
+                                    @for ($k = 0; $k < 16; $k++)
+                                        <td></td>
+                                    @endfor
+                                </tr>
+                                {{-- Page Due Amount Row (once per page after all groups) --}}
+                                <tr style="font-weight: bold; background-color: #f2f2f2;">
+                                    <td colspan="2">Page Due Amount</td>
+                                    @for ($k = 0; $k < 16; $k++)
+                                        <td></td>
+                                    @endfor
+                                </tr>
+                                {{-- Total Due Amount Row at the very end --}}
+                                <tr style="font-weight: bold; background-color: #f2f2f2;">
+                                    <td colspan="2">Total Due Amount</td>
+                                    @for ($k = 0; $k < 16; $k++)
+                                        <td></td>
+                                    @endfor
+                                </tr>
+                                </tbody>
                             </table>
 
                             <br><br>
@@ -679,7 +732,7 @@
 
                 printWindow.document.write('<html><head><title>Repayment Sheet</title>');
                 printWindow.document.write('<style>');
-                printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 10px; margin: 0.5in; }');
+                    printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 10px; margin: 0; }');
                 printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; font-size: 8px; }');
                 printWindow.document.write('#repaymentTable th, #repaymentTable td { border: 1px solid black; padding: 3px; text-align: center; font-size: 7px; }');
                 printWindow.document.write('#repaymentTable th { font-weight: bold; white-space: normal; word-wrap: break-word; }');
@@ -689,7 +742,7 @@
                 printWindow.document.write('#summaryTable th { border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; white-space: normal; word-wrap: break-word; font-size: 7px; }');
                 printWindow.document.write('#summaryTable td { border: 1px solid black; padding: 4px; text-align: center; white-space: nowrap; overflow: hidden; font-weight: normal; }');
                 printWindow.document.write('#summaryTable tbody td:first-child { text-align: left; font-weight: bold; white-space: normal; }');
-                printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
+                printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.2in 0.4in 0 0.4in; } }');
                 printWindow.document.write('</style>');
 
 

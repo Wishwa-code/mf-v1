@@ -211,6 +211,7 @@ Route::get('/penalty-balance-data','\App\Http\Controllers\UserController@penalty
     Route::post('/add_slip','\App\Http\Controllers\TodayPaymentController@addSlip')->name('payment_save.addSlip');
 //Route::post('/payment_save_today_2','\App\Http\Controllers\TodayPaymentController@edit')->name('payment_save.edit');
     Route::post('/update_reduce_balance','\App\Http\Controllers\TodayPaymentController@update_reduce_balance')->name('payment_save.update_reduce_balance');
+    Route::post('/check-cheque-number','\App\Http\Controllers\TodayPaymentController@checkChequeNumber')->name('payment_save.checkChequeNumber');
     Route::get('/deduct_report','\App\Http\Controllers\PaymentLoanController@deduct_report')->name('payment_step_1.deduct_report');
     Route::get('/deduct_report_view','\App\Http\Controllers\PaymentLoanController@deduct_report_view')->name('payment_step_1.deduct_report_view');
 

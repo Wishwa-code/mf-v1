@@ -969,6 +969,18 @@ class TodayPaymentController extends Controller
         $loan_category=tableWithBranch('loan_category')->where('idLoan_Category','=',$loan->Loan_Category_idLoan_Category)->first();
         if ($cheque_accept == "0") {
             if ($payment_type == "Cheque") {
+                // Validate unique cheque number
+                $existingCheque = DB::table('Cheque_payment')
+                    ->where('chq_number', $chq_number)
+                    ->where('branch_id', session('branch_id'))
+                    ->first();
+                
+                if ($existingCheque) {
+                    return response()->json([
+                        'item' => 'error',
+                        'message' => 'This cheque number already exists. Please enter a unique cheque number.'
+                    ], 422);
+                }
                 $slipPath = null;
                 if ($request->hasFile('file')) {
                     $file = $request->file('file');
@@ -4372,6 +4384,22 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
         return response()->json($data);
     }
 
+
+    public function checkChequeNumber(Request $request)
+    {
+        $chqNumber = $request->input('chq_number');
+        
+        if (!$chqNumber) {
+            return response()->json(['exists' => false]);
+        }
+        
+        $exists = DB::table('Cheque_payment')
+            ->where('chq_number', $chqNumber)
+            ->where('branch_id', session('branch_id'))
+            ->exists();
+        
+        return response()->json(['exists' => $exists]);
+    }
 
     public function doubleEntries(Request $request, $loanId)
     {
