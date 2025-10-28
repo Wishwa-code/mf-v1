@@ -1698,6 +1698,52 @@
                 console.warn('Duplicate id="ins_id" found in DOM. Consider renaming one (e.g., ins_id_2).');
             }
         });
+        // Real-time cheque number validation
+        let chequeValidationTimeout;
+        $('#chq_number, #chq_number_2').on('input', function() {
+            const chequeInput = $(this);
+            const chequeNumber = chequeInput.val().trim();
+            const feedbackId = chequeInput.attr('id') + '_feedback';
+            
+            // Remove existing feedback
+            $('#' + feedbackId).remove();
+            
+            if (!chequeNumber) {
+                return;
+            }
+            
+            // Clear previous timeout
+            clearTimeout(chequeValidationTimeout);
+            
+            // Add loading indicator
+            chequeInput.after('<small id="' + feedbackId + '" class="text-muted">Checking...</small>');
+            
+            // Debounce validation
+            chequeValidationTimeout = setTimeout(function() {
+                $.ajax({
+                    url: '/check-cheque-number',
+                    type: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    data: { chq_number: chequeNumber },
+                    success: function(response) {
+                        $('#' + feedbackId).remove();
+                        if (response.exists) {
+                            chequeInput.addClass('is-invalid');
+                            chequeInput.after('<small id="' + feedbackId + '" class="text-danger"><i class="bi bi-x-circle"></i> Cheque number already exists</small>');
+                        } else {
+                            chequeInput.removeClass('is-invalid').addClass('is-valid');
+                            chequeInput.after('<small id="' + feedbackId + '" class="text-success"><i class="bi bi-check-circle"></i> Available</small>');
+                        }
+                    },
+                    error: function() {
+                        $('#' + feedbackId).remove();
+                    }
+                });
+            }, 500);
+        });
+
         // When center is changed, load its groups dynamically
         $('#center_details').on('change', function () {
             const centerId = $(this).val();
