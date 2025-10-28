@@ -354,7 +354,7 @@ class CapitalBalanceController extends Controller
                         'max_allowed_loans','document_types','collector_txn_modes',
                         'fund_request_columns','disbursement_columns',
                         'document_upload_restriction','guarantees_restriction','change_product_details',
-                        'first_installment_daily','first_installment_weekly','first_installment_monthly',
+                        'first_installment_daily','first_installment_weekly','first_installment_monthly','recovery_account_status',
                     ];
                     $isFixed = in_array($key, $fixedKeys, true);
 
@@ -423,6 +423,13 @@ class CapitalBalanceController extends Controller
                             if (!is_array($decoded))                return $fail('Disbursement columns must be a JSON array.');
                             if (count($decoded) === 0)              return $fail('At least one column is required for disbursement.');
                         }
+
+                        // <-- NEW: recovery_account_status validation
+                        if ($key === 'recovery_account_status' &&
+                            !in_array($value, ['active','inactive'], true)) {
+                            return $fail('Invalid value for recovery_account_status.');
+                        }
+
                         return; // done for fixed keys
                     }
 
@@ -467,7 +474,7 @@ class CapitalBalanceController extends Controller
         $uid = auth()->id();
 
         $existing = DB::table($this->table)->where('key', $key)->first();
-
+        $oldValue = $existing->value ?? null; // keep old value for log
         if ($existing) {
             DB::table($this->table)
                 ->where('key', $key)
@@ -486,6 +493,22 @@ class CapitalBalanceController extends Controller
                 'updated_at' => now(),
             ]);
         }
+        $branchId = session('branch_id');
+        $ip     = $request->ip();
+        $agent  = $request->header('User-Agent');
+        // ---- Add User Log ----
+        DB::table('app_setting_log')->insert([
+            'user_id'     => $uid,
+            'setting_key' => $key,
+            'old_value'   => $oldValue,
+            'new_value'   => $value,
+            'changed_at'  => now(),
+            'branch_id'   => $branchId,
+            'ip_address'  => $ip,
+            'user_agent'  => $agent,
+        ]);
+
+        Cache::forget('app_settings');
 
         Cache::forget('app_settings');
         return response()->json(['success' => true], 200);

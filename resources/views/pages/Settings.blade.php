@@ -223,6 +223,8 @@
 
 
 
+
+
                                 </tbody>
                             </table>
 
@@ -318,6 +320,8 @@
                         </button>
                     </div>
                 </div>
+
+
             </div>
             <div class="col-6">
                 <div class="card">
@@ -476,6 +480,24 @@
                                 </button>
                             </div>
                             <small class="text-muted">Select which transaction modes are available when recording collector account transactions.</small>
+                        </div>
+
+                        <hr>
+                        <!-- Recovery Account Access -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Recovery Account Access</label>
+                            <div class="d-flex gap-2">
+                                <select id="recovery_account_status" class="form-select" style="max-width: 300px;">
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                                <button id="btnUpdateRecoveryAccount" class="btn btn-primary">
+                                    <i class="fa-solid fa-floppy-disk me-1"></i> Update
+                                </button>
+                            </div>
+                            <small class="text-muted">
+                                Control whether recovery account features are available in the system.
+                            </small>
                         </div>
 
 
@@ -758,6 +780,13 @@
                 save_setting('collector_txn_modes', JSON.stringify(selected));
             });
 
+            $('#btnUpdateRecoveryAccount').on('click', function (e) {
+                e.preventDefault();
+                const value = $('#recovery_account_status').val(); // 'active' | 'inactive'
+                save_setting('recovery_account_status', value);
+            });
+
+
             // Head Office Approval - Save All
             $('#btnSaveAllApprovals').on('click', function (e) {
                 e.preventDefault();
@@ -1009,6 +1038,12 @@
                 },
                 success: function (data) {
                     const items = data.items || {};
+
+                    // Recovery Account Access
+                    if (items.recovery_account_status) {
+                        $('#recovery_account_status').val(items.recovery_account_status); // 'active' | 'inactive'
+                    }
+
 
 // Payment Member Name
                     if (items.payment_member_name) {

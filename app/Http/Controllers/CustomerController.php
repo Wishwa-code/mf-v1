@@ -459,6 +459,69 @@ class CustomerController extends Controller
         return view('pages.ViewCustomerSaving', compact('customers','group','center','company'));
     }
 
+    public function recovery()
+    {
+        $recoveryAccounts = DB::table('recovery_account as ra')
+            ->join('customer as c', 'c.idCustomer', '=', 'ra.customer_id')
+            ->where('ra.branch_id', session('branch_id'))
+            ->select(
+                'ra.idRecovery_Account',
+                'ra.customer_id',
+                'c.cus_number',
+                DB::raw("CONCAT(c.First_Name, ' ', c.Last_Name) as customer_name"),
+                'c.Nic',
+                'c.Contact_No',
+                'ra.current_balance',
+                'ra.status'
+            )
+            ->get();
+
+        $company = DB::table('company')->first(); // you already seem to pass $company->company_name
+
+        return view('pages.recovery_accounts', compact('recoveryAccounts','company'));
+
+    }
+
+    public function logs($id)
+    {
+        $branchId = session('branch_id');
+
+        // Verify the recovery account exists in this branch
+        $account = DB::table('recovery_account')
+            ->where('idRecovery_Account', $id)
+            ->where('branch_id', $branchId)
+            ->first();
+
+        if (!$account) {
+            return response()->json([
+                'logs'    => [],
+                'message' => 'Not found or no access'
+            ], 404);
+        }
+
+        $logs = DB::table('recovery_account_log as ral')
+            ->leftJoin('customer_loan as cl', function($join) {
+                $join->on('ral.loan_id', '=', 'cl.idCustomer_Loan');
+            })
+            ->where('ral.recovery_account_id', $id)
+            ->where('ral.branch_id', $branchId)
+            ->orderBy('ral.idRecovery_Account_Log', 'desc')
+            ->get([
+                'ral.created_at',
+                'ral.action_type',
+                'ral.description',
+                'ral.amount',
+                'ral.balance_after',
+                'cl.Loan_No as loan_no',
+            ]);
+
+        return response()->json([
+            'logs' => $logs
+        ], 200);
+    }
+
+
+
 
 
     public function customer_saving($id){
