@@ -1188,7 +1188,7 @@ class LoanController extends Controller
         if ($customerSummary && $customerSummary->group_id) {
             $isHeadOffice = (int)session('branch_id') === -1;
             $branch_id = session('branch_id');
-            
+
             if ($isHeadOffice) {
                 $groupMembers = DB::table('customer as c')
                     ->join('group_has_customer as ghc', 'ghc.cus_id', '=', 'c.idCustomer')
@@ -1248,10 +1248,8 @@ class LoanController extends Controller
             'loan_saving_balance',
             'extraChargelatestBalance',
             'customerSummary',
-            'groupMembers'
-
-        ));
-    }
+            'groupMembers'));
+  }
 
 
 
