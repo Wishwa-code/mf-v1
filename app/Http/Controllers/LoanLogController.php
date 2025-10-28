@@ -25,7 +25,9 @@ class LoanLogController extends Controller
         $Interest_Balance,
         $Capital_Balance,
         $Total_Pending_Balance,
-        $Saving_Account_Balance
+        $Saving_Account_Balance,
+        $Recovery_Amount = 0,
+        $Recovery_Balance = 0
     ) {
         $user_id = (int)session('userid');
 
@@ -38,6 +40,8 @@ class LoanLogController extends Controller
         // Get last extra payment and balance
         $Extra_Payment = $latestLog->Extra_Payment ?? 0;
         $Extra_Balance = $latestLog->Extra_Balance ?? 0;
+
+
 
         // Insert new Loan_Log row
         DB::table('Loan_Log')->insert([
@@ -52,12 +56,14 @@ class LoanLogController extends Controller
             'Capital_Payment' => $Capital_Payment,
             'Savings_Payment' => $Savings_Payment,
             'Extra_Payment' => $Extra_Payment,
+            'Recovery_Amount' => $Recovery_Amount,
             'Panelty_Balance' => $Panelty_Balance,
             'Interest_Balance' => $Interest_Balance,
             'Capital_Balance' => $Capital_Balance,
             'Total_Pending_Balance' => $Total_Pending_Balance+$Extra_Balance,
             'Saving_Account_Balance' => $Saving_Account_Balance,
             'Extra_Balance' => $Extra_Balance,
+            'Recovery_Balance' => $Recovery_Balance,
             'User_idUser' => $user_id,
             'branch_id' => session('branch_id')
         ]);

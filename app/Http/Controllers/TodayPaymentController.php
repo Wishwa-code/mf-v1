@@ -172,6 +172,7 @@ class TodayPaymentController extends Controller
                 'customer_loan.Amount as Loan_Amount',
                 'customer_loan.idCustomer_Loan as idCustomer_Loan',
                 'customer_loan.type as type',
+                'customer_loan.Reducing_type as Reducing_type',
                 'customer_loan.Installment_Count as Installment_Count',
                 'customer_loan.capital_balance as capital_balance',
                 'customer_loan.Installment_Amount as Installment_Amount',
@@ -964,6 +965,7 @@ class TodayPaymentController extends Controller
         $loan = tableWithBranch('customer_loan')
             ->where('idCustomer_Loan', '=', $loan_id)
             ->first();
+        $customer_id=$loan->Customer_idCustomer;
         $loan_category=tableWithBranch('loan_category')->where('idLoan_Category','=',$loan->Loan_Category_idLoan_Category)->first();
         if ($cheque_accept == "0") {
             if ($payment_type == "Cheque") {
@@ -1096,6 +1098,7 @@ class TodayPaymentController extends Controller
 
         foreach ($loan as $loan_item) {
             $type = $loan_item->type;
+            $Reducing_type = $loan_item->Reducing_type;
 
             $loan_cate = DB::table('loan_category')->where('branch_id', session('branch_id'))->where('idLoan_Category', '=', $loan_item->Loan_Category_idLoan_Category)->first();
             $enable_saving_process = "No";
@@ -1104,7 +1107,13 @@ class TodayPaymentController extends Controller
             }
 
 
-            if ($type === "Flat Rate") {
+            if ($type === "Flat Rate" || $Reducing_type=="1") {
+
+                // Check recovery account setting
+                $recovery_setting = DB::table('app_settings')
+                    ->where('key', '=', 'recovery_account_status')
+                    ->first();
+                $recovery_status = $recovery_setting->value ?? 'inactive';
 
                 $installments = DB::table('installments')
                     ->where('Customer_Loan_idCustomer_Loan', '=', $loan_id)
@@ -1205,159 +1214,161 @@ class TodayPaymentController extends Controller
 
                 $current_payment_amount = $payment_amount;
 
-
-                foreach ($installments as $item) {
-                    if ($payment_amount > 0) {
-                        $Panalty_Balance = $item->Panalty_Balance;
-                        $Interest_Balance = $item->Interest_Balance;
-                        $capital_balance = $item->capital_balance;
-                        $Saving_balance = $item->Saving_balance;
-                        $Total_Balance = $item->Total_Balance;
-                        $Status = $item->Status;
-
-
-                        $idInstallments = $item->idInstallments;
+                if ($recovery_status !== 'active') {
+                    foreach ($installments as $item) {
+                        if ($payment_amount > 0) {
+                            $Panalty_Balance = $item->Panalty_Balance;
+                            $Interest_Balance = $item->Interest_Balance;
+                            $capital_balance = $item->capital_balance;
+                            $Saving_balance = $item->Saving_balance;
+                            $Total_Balance = $item->Total_Balance;
+                            $Status = $item->Status;
 
 
-                        if ($current_payment_amount >= ($Panalty_Balance + $Interest_Balance + $capital_balance + $Saving_balance)) {
-
-                            $Panalty_Balance_tot_paid += $Panalty_Balance;
-                            $Interest_Balance_tot_paid += $Interest_Balance;
-                            $capital_balance_tot_paid += $capital_balance;
-                            $Saving_balance_tot_paid += $Saving_balance;
+                            $idInstallments = $item->idInstallments;
 
 
-                            $New_Total_paid = $Total_Balance;
-                            $current_payment_amount -= $Total_Balance;
+                            if ($current_payment_amount >= ($Panalty_Balance + $Interest_Balance + $capital_balance + $Saving_balance)) {
 
-                            $Panalty_Balance = 0;
-                            $Interest_Balance = 0;
-                            $capital_balance = 0;
-                            $Saving_balance = 0;
-                            $Total_Balance = 0;
-                            $Status = "1";
-
-                        } else if ($current_payment_amount >= ($Panalty_Balance + $Interest_Balance + $capital_balance)) {
-
-                            $New_Saving_payment = $current_payment_amount - ($Panalty_Balance + $Interest_Balance + $capital_balance);
-                            $New_Saving_balance = $Saving_balance - $New_Saving_payment;
+                                $Panalty_Balance_tot_paid += $Panalty_Balance;
+                                $Interest_Balance_tot_paid += $Interest_Balance;
+                                $capital_balance_tot_paid += $capital_balance;
+                                $Saving_balance_tot_paid += $Saving_balance;
 
 
-                            $New_Total_paid = $Panalty_Balance + $Interest_Balance + $capital_balance + $New_Saving_payment;
+                                $New_Total_paid = $Total_Balance;
+                                $current_payment_amount -= $Total_Balance;
 
-                            $New_Total_Balance = $New_Saving_balance;
+                                $Panalty_Balance = 0;
+                                $Interest_Balance = 0;
+                                $capital_balance = 0;
+                                $Saving_balance = 0;
+                                $Total_Balance = 0;
+                                $Status = "1";
 
+                            } else if ($current_payment_amount >= ($Panalty_Balance + $Interest_Balance + $capital_balance)) {
 
-                            $current_payment_amount -= $New_Total_paid;
-
-                            $Panalty_Balance_tot_paid += $Panalty_Balance;
-                            $Interest_Balance_tot_paid += $Interest_Balance;
-                            $capital_balance_tot_paid += $capital_balance;
-                            $Saving_balance_tot_paid += $New_Saving_payment;
-
-                            $Panalty_Balance = 0;
-                            $Interest_Balance = 0;
-                            $capital_balance = 0;
-                            $Saving_balance = $New_Saving_balance;
-                            $Total_Balance = $New_Total_Balance;
-                        } else if ($current_payment_amount >= ($Panalty_Balance + $Interest_Balance)) {
-
-                            $New_Capital_payment = $current_payment_amount - ($Panalty_Balance + $Interest_Balance);
-                            $New_Capital_balance = $capital_balance - $New_Capital_payment;
+                                $New_Saving_payment = $current_payment_amount - ($Panalty_Balance + $Interest_Balance + $capital_balance);
+                                $New_Saving_balance = $Saving_balance - $New_Saving_payment;
 
 
-                            $New_Total_paid = $Panalty_Balance + $Interest_Balance + $New_Capital_payment;
+                                $New_Total_paid = $Panalty_Balance + $Interest_Balance + $capital_balance + $New_Saving_payment;
 
-                            $New_Total_Balance = $New_Capital_balance + $Saving_balance;
-
-
-                            $current_payment_amount -= $New_Total_paid;
+                                $New_Total_Balance = $New_Saving_balance;
 
 
-                            $Panalty_Balance_tot_paid += $Panalty_Balance;
-                            $Interest_Balance_tot_paid += $Interest_Balance;
-                            $capital_balance_tot_paid += $New_Capital_payment;
-                            $Saving_balance_tot_paid += 0.00;
+                                $current_payment_amount -= $New_Total_paid;
 
-                            $Panalty_Balance = 0;
-                            $Interest_Balance = 0;
-                            $capital_balance = $New_Capital_balance;
-                            $Total_Balance = $New_Total_Balance;
-                        } else if ($current_payment_amount >= ($Panalty_Balance)) {
+                                $Panalty_Balance_tot_paid += $Panalty_Balance;
+                                $Interest_Balance_tot_paid += $Interest_Balance;
+                                $capital_balance_tot_paid += $capital_balance;
+                                $Saving_balance_tot_paid += $New_Saving_payment;
 
-                            $New_Interest_payment = $current_payment_amount - ($Panalty_Balance);
-                            $New_Interest_balance = $Interest_Balance - $New_Interest_payment;
+                                $Panalty_Balance = 0;
+                                $Interest_Balance = 0;
+                                $capital_balance = 0;
+                                $Saving_balance = $New_Saving_balance;
+                                $Total_Balance = $New_Total_Balance;
+                            } else if ($current_payment_amount >= ($Panalty_Balance + $Interest_Balance)) {
 
-
-                            $New_Total_paid = $Panalty_Balance + $New_Interest_payment;
-
-                            $New_Total_Balance = $New_Interest_balance + $Saving_balance + $capital_balance;
+                                $New_Capital_payment = $current_payment_amount - ($Panalty_Balance + $Interest_Balance);
+                                $New_Capital_balance = $capital_balance - $New_Capital_payment;
 
 
-                            $current_payment_amount -= $New_Total_paid;
+                                $New_Total_paid = $Panalty_Balance + $Interest_Balance + $New_Capital_payment;
 
-                            $Panalty_Balance_tot_paid += $Panalty_Balance;
-                            $Interest_Balance_tot_paid += $New_Interest_payment;
-                            $capital_balance_tot_paid += 0.00;
-                            $Saving_balance_tot_paid += 0.00;
-
-                            $Panalty_Balance = 0;
-                            $Interest_Balance = $New_Interest_balance;
-                            $Total_Balance = $New_Total_Balance;
-                        } else {
-
-                            $New_Panelty_payment = $current_payment_amount;
-                            $New_Panelty_balance = $Panalty_Balance - $New_Panelty_payment;
+                                $New_Total_Balance = $New_Capital_balance + $Saving_balance;
 
 
-                            $New_Total_paid = $New_Panelty_payment;
-
-                            $New_Total_Balance = $Interest_Balance + $Saving_balance + $capital_balance + $New_Panelty_balance;
-
-                            $current_payment_amount -= $New_Total_paid;
-
-                            $Panalty_Balance_tot_paid += $New_Panelty_payment;
-                            $Interest_Balance_tot_paid += 0.00;
-                            $capital_balance_tot_paid += 0.00;
-                            $Saving_balance_tot_paid += 0.00;
+                                $current_payment_amount -= $New_Total_paid;
 
 
-                            $Panalty_Balance = $New_Panelty_balance;
-                            $Total_Balance = $New_Total_Balance;
-                        }
+                                $Panalty_Balance_tot_paid += $Panalty_Balance;
+                                $Interest_Balance_tot_paid += $Interest_Balance;
+                                $capital_balance_tot_paid += $New_Capital_payment;
+                                $Saving_balance_tot_paid += 0.00;
+
+                                $Panalty_Balance = 0;
+                                $Interest_Balance = 0;
+                                $capital_balance = $New_Capital_balance;
+                                $Total_Balance = $New_Total_Balance;
+                            } else if ($current_payment_amount >= ($Panalty_Balance)) {
+
+                                $New_Interest_payment = $current_payment_amount - ($Panalty_Balance);
+                                $New_Interest_balance = $Interest_Balance - $New_Interest_payment;
 
 
-                        DB::table('installments')
-                            ->where('idInstallments', $idInstallments)
-                            ->where('branch_id', session('branch_id'))
-                            ->update([
-                                'Status' => $Status,
-                                'Panelty_status' => '2',
-                                'Paid_Amount' => DB::raw('Paid_Amount + ' . $New_Total_paid),
-                                'Total_Balance' => $Total_Balance,
-                                'Panalty_Balance' => $Panalty_Balance,
+                                $New_Total_paid = $Panalty_Balance + $New_Interest_payment;
+
+                                $New_Total_Balance = $New_Interest_balance + $Saving_balance + $capital_balance;
+
+
+                                $current_payment_amount -= $New_Total_paid;
+
+                                $Panalty_Balance_tot_paid += $Panalty_Balance;
+                                $Interest_Balance_tot_paid += $New_Interest_payment;
+                                $capital_balance_tot_paid += 0.00;
+                                $Saving_balance_tot_paid += 0.00;
+
+                                $Panalty_Balance = 0;
+                                $Interest_Balance = $New_Interest_balance;
+                                $Total_Balance = $New_Total_Balance;
+                            } else {
+
+                                $New_Panelty_payment = $current_payment_amount;
+                                $New_Panelty_balance = $Panalty_Balance - $New_Panelty_payment;
+
+
+                                $New_Total_paid = $New_Panelty_payment;
+
+                                $New_Total_Balance = $Interest_Balance + $Saving_balance + $capital_balance + $New_Panelty_balance;
+
+                                $current_payment_amount -= $New_Total_paid;
+
+                                $Panalty_Balance_tot_paid += $New_Panelty_payment;
+                                $Interest_Balance_tot_paid += 0.00;
+                                $capital_balance_tot_paid += 0.00;
+                                $Saving_balance_tot_paid += 0.00;
+
+
+                                $Panalty_Balance = $New_Panelty_balance;
+                                $Total_Balance = $New_Total_Balance;
+                            }
+
+
+                            DB::table('installments')
+                                ->where('idInstallments', $idInstallments)
+                                ->where('branch_id', session('branch_id'))
+                                ->update([
+                                    'Status' => $Status,
+                                    'Panelty_status' => '2',
+                                    'Paid_Amount' => DB::raw('Paid_Amount + ' . $New_Total_paid),
+                                    'Total_Balance' => $Total_Balance,
+                                    'Panalty_Balance' => $Panalty_Balance,
+                                    'Interest_Balance' => $Interest_Balance,
+                                    'capital_balance' => $capital_balance,
+                                    'Saving_balance' => $Saving_balance,
+                                ]);
+
+
+                            DB::table('installment_log')->insert([
+                                'Installments_idInstallments' => $idInstallments,
+                                'Date' => $payment_date . ' ' . $time,
+                                'Description' => 'Payment : ' . $payment_amount,
+                                'Amount' => $New_Total_paid,
+                                'Panalty_Total' => $Panalty_Balance,
                                 'Interest_Balance' => $Interest_Balance,
-                                'capital_balance' => $capital_balance,
+                                'Capital_balance' => $capital_balance,
                                 'Saving_balance' => $Saving_balance,
+                                'Total_Balance' => $Total_Balance,
+                                'User_idUser' => $user_id,
+                                'branch_id' => session('branch_id')
                             ]);
 
-
-                        DB::table('installment_log')->insert([
-                            'Installments_idInstallments' => $idInstallments,
-                            'Date' => $payment_date . ' ' . $time,
-                            'Description' => 'Payment : ' . $payment_amount,
-                            'Amount' => $New_Total_paid,
-                            'Panalty_Total' => $Panalty_Balance,
-                            'Interest_Balance' => $Interest_Balance,
-                            'Capital_balance' => $capital_balance,
-                            'Saving_balance' => $Saving_balance,
-                            'Total_Balance' => $Total_Balance,
-                            'User_idUser' => $user_id,
-                            'branch_id' => session('branch_id')
-                        ]);
-
+                        }
                     }
                 }
+
 
 
                 $loan_log = DB::table('Loan_Log')
@@ -1391,15 +1402,103 @@ class TodayPaymentController extends Controller
                     $Total_Pending_Balance_Log = $Panelty_Balance_Log + $Interest_Balance_Log + $Capital_Balance_Log + $Saving_Balance_Log;
                 }
 
+                if ($recovery_status === 'active') {
 
-                $this->loanLogController->index(
-                    $loan_id, 'Customer Payment', $savedId,
-                    'Customer Payment', $payment_amount,
-                    $Panalty_Balance_tot_paid, $Interest_Balance_tot_paid,
-                    $capital_balance_tot_paid, $Saving_balance_tot_paid, $Panelty_Balance_Log,
-                    $Interest_Balance_Log, $Capital_Balance_Log, $Total_Pending_Balance_Log, $Saving_Balance_Log
-                );
-                $this->capitalBalanceController->index($loan_id);
+                    $branch_id   = session('branch_id');
+                    $user_id     = (int)session('userid');
+                    $now         = now();
+
+                    // Fetch existing recovery account for this customer
+                    $recoveryAccount = DB::table('recovery_account')
+                        ->where('customer_id', $customer_id)
+                        ->where('branch_id', $branch_id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($recoveryAccount) {
+                        $newBalance = (float)$recoveryAccount->current_balance + (float)$payment_amount;
+
+                        // Update recovery account balance
+                        DB::table('recovery_account')
+                            ->where('idRecovery_Account', $recoveryAccount->idRecovery_Account)
+                            ->update([
+                                'current_balance' => $newBalance,
+                                'updated_at'      => $now,
+                                'updated_by'      => $user_id,
+                            ]);
+
+                        // Log recovery transaction
+                        DB::table('recovery_account_log')->insert([
+                            'recovery_account_id' => $recoveryAccount->idRecovery_Account,
+                            'loan_id'             => $loan_id,
+                            'customer_id'         => $customer_id,
+                            'action_type'         => 'Payment Debit',
+                            'description'         => "Payment of {$payment_amount} added to recovery account.",
+                            'amount'              => $payment_amount,
+                            'balance_after'       => $newBalance,
+                            'created_at'          => $now,
+                            'created_by'          => $user_id,
+                            'branch_id'           => $branch_id,
+                        ]);
+
+                        // ---- Log in Loan_Log with updated recovery balance ----
+                        $this->loanLogController->index(
+                            $loan_id,
+                            'Customer Payment',
+                            $savedId,
+                            'Customer Payment',
+                            $payment_amount,
+                            0, 0, 0, 0,
+                            $Panelty_Balance_Log,
+                            $Interest_Balance_Log,
+                            $Capital_Balance_Log,
+                            $Total_Pending_Balance_Log,
+                            $Saving_Balance_Log,
+                            $payment_amount,     // Recovery_Amount = this payment
+                            $newBalance          // Recovery_Balance = updated total
+                        );
+                    } else {
+                        // No recovery account (edge case) — fallback to normal log
+                        $this->loanLogController->index(
+                            $loan_id,
+                            'Customer Payment',
+                            $savedId,
+                            'Customer Payment',
+                            $payment_amount,
+                            0, 0, 0, 0,
+                            $Panelty_Balance_Log,
+                            $Interest_Balance_Log,
+                            $Capital_Balance_Log,
+                            $Total_Pending_Balance_Log,
+                            $Saving_Balance_Log,
+                            $payment_amount,
+                            0
+                        );
+                    }
+
+                } else {
+                    // ---- Normal loan payment when recovery inactive ----
+                    $this->loanLogController->index(
+                        $loan_id,
+                        'Customer Payment',
+                        $savedId,
+                        'Customer Payment',
+                        $payment_amount,
+                        $Panalty_Balance_tot_paid,
+                        $Interest_Balance_tot_paid,
+                        $capital_balance_tot_paid,
+                        $Saving_balance_tot_paid,
+                        $Panelty_Balance_Log,
+                        $Interest_Balance_Log,
+                        $Capital_Balance_Log,
+                        $Total_Pending_Balance_Log,
+                        $Saving_Balance_Log
+                    );
+
+                    $this->capitalBalanceController->index($loan_id);
+                }
+
+
 
 
                 $loan_for_bank = tableWithBranch('customer_loan')

@@ -309,11 +309,85 @@ class UserController extends Controller
         //
     }
 
+    function syncRecoveryAccountsForBranch()
+    {
+        $branchId = session('branch_id');        // you already use session('branch_id') everywhere in your system
+        $userId   = session('userid');           // who is doing this sync
+        $now      = Carbon::now();
+
+        // 1. get all active customers in this branch
+        //    adjust "Status" column value if your active is '1'
+        $customers = DB::table('customer')
+            ->select('idCustomer')
+            ->where('branch_id', $branchId)
+            ->where('Status', '1')
+            ->get();
+
+        $createdCount = 0;
+
+        foreach ($customers as $cus) {
+            // 2. check if recovery_account already exists
+            $existing = DB::table('recovery_account')
+                ->where('customer_id', $cus->idCustomer)
+                ->where('branch_id', $branchId)
+                ->first();
+
+            if ($existing) {
+                continue; // already has account, skip
+            }
+
+            try {
+                DB::beginTransaction();
+
+                // 3. create recovery_account with 0 balance
+                $recoveryAccountId = DB::table('recovery_account')->insertGetId([
+                    'customer_id'      => $cus->idCustomer,
+                    'current_balance'  => 0.00,
+                    'status'           => 'Active',
+                    'created_at'       => $now,
+                    'updated_at'       => $now,
+                    'created_by'       => $userId,
+                    'updated_by'       => $userId,
+                    'branch_id'        => $branchId,
+                ]);
+
+                // 4. insert opening log row (action_type = OPEN)
+                DB::table('recovery_account_log')->insert([
+                    'recovery_account_id' => $recoveryAccountId,
+                    'loan_id'             => '0',
+                    'customer_id'         => $cus->idCustomer,
+                    'action_type'         => 'OPEN',
+                    'description'         => 'Recovery account created with opening balance 0.00',
+                    'amount'              => 0.00,
+                    'balance_after'       => 0.00,
+                    'created_at'          => $now,
+                    'created_by'          => $userId,
+                    'branch_id'           => $branchId,
+                ]);
+
+                DB::commit();
+
+                $createdCount++;
+
+            } catch (\Throwable $e) {
+                DB::rollBack();
+
+                Log::error('Failed to create recovery account', [
+                    'customer_id' => $cus->idCustomer,
+                    'branch_id'   => $branchId,
+                    'error'       => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $createdCount;
+    }
+
 
 
     public function showdashboard(Store $session){
 
-
+//            $this->syncRecoveryAccountsForBranch();
 //        // YOUR LOOPS (unchanged, as you asked)
 //
 //        $loans = tableWithBranch('customer_loan')->get();

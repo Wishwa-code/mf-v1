@@ -1094,6 +1094,9 @@ $banner = DB::select($query);
                                         <li>
                                             <a href="/showcustomerssaving">Customer Saving Acc.</a>
                                         </li>
+                                            <li>
+                                                <a href="/showcustomersrecovery">Customer Recovery Acc.</a>
+                                            </li>
                                     @endif
                                     @if(optional($privilege)->kyc == 1)
                                         <li>
