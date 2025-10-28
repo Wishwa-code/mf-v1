@@ -106,7 +106,7 @@
         @media print {
             @page {
                 size: A4 landscape;
-                margin: 0.5in;
+                margin: 0.2in 0.4in 0 0.4in;
                 counter-increment: page;
             }
 
@@ -171,6 +171,7 @@
         @media print {
             body {
                 font-size: 12px !important;
+                margin: 0;
             }
 
             #repaymentTable {
@@ -731,7 +732,7 @@
 
                 printWindow.document.write('<html><head><title>Repayment Sheet</title>');
                 printWindow.document.write('<style>');
-                printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 10px; margin: 0.5in; }');
+                    printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 10px; margin: 0; }');
                 printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; font-size: 8px; }');
                 printWindow.document.write('#repaymentTable th, #repaymentTable td { border: 1px solid black; padding: 3px; text-align: center; font-size: 7px; }');
                 printWindow.document.write('#repaymentTable th { font-weight: bold; white-space: normal; word-wrap: break-word; }');
@@ -741,7 +742,7 @@
                 printWindow.document.write('#summaryTable th { border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; white-space: normal; word-wrap: break-word; font-size: 7px; }');
                 printWindow.document.write('#summaryTable td { border: 1px solid black; padding: 4px; text-align: center; white-space: nowrap; overflow: hidden; font-weight: normal; }');
                 printWindow.document.write('#summaryTable tbody td:first-child { text-align: left; font-weight: bold; white-space: normal; }');
-                printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.5in; } }');
+                printWindow.document.write('@media print { @page { size: ' + orientation + '; margin: 0.2in 0.4in 0 0.4in; } }');
                 printWindow.document.write('</style>');
 
 
