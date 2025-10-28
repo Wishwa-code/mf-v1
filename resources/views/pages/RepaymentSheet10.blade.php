@@ -416,6 +416,13 @@
                                         @endfor
                                     </tr>
                                 @endfor
+                                {{-- Total Due Amount Row at the very end --}}
+                                <tr style="font-weight: bold; background-color: #f2f2f2;">
+                                    <td colspan="2">Total Due Amount</td>
+                                    @for ($k = 0; $k < 16; $k++)
+                                        <td></td>
+                                    @endfor
+                                </tr>
                                 </tbody>
                             </table>
 
