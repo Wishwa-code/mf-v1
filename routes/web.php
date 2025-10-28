@@ -108,6 +108,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/load_individual_customer','\App\Http\Controllers\CustomerController@load_individual_customer')->name('customers.load_individual_customer');
     Route::get('/customer_road_map/{id}','\App\Http\Controllers\CustomerController@customer_road_map')->name('customers.customer_road_map');
     Route::get('/showcustomerssaving','\App\Http\Controllers\CustomerController@edit_saving')->name('customers.edit_saving');
+
+    Route::get('/showcustomersrecovery','\App\Http\Controllers\CustomerController@recovery')->name('customers.recovery');
+    Route::get('/recovery-account/logs/{id}','\App\Http\Controllers\CustomerController@logs')->name('customers.logs');
+
     Route::get('/customer_saving/{id}','\App\Http\Controllers\CustomerController@customer_saving')->name('customers.customer_saving');
     Route::get('/get-account-transactions/{id}','\App\Http\Controllers\CustomerController@get_account_transactions')->name('customers.get_account_transactions');
 
@@ -540,7 +544,8 @@ Route::delete('/expenses_categories/{id}', '\App\Http\Controllers\ReportControll
 //Route::post('/upload-excel-customer', [\App\Http\Controllers\ExcelController::class, 'edit']);
     Route::post('/upload-excel-product', [\App\Http\Controllers\ExcelController::class, 'uploadExcelProduct']);
     Route::post('/upload-excel-loan', [\App\Http\Controllers\ExcelController::class, 'uploadExcelLoan']);
-    Route::post('/upload-excel-payment', [\App\Http\Controllers\ExcelController::class, 'uploadExcelPayment']);
+//    Route::post('/upload-excel-payment', [\App\Http\Controllers\ExcelController::class, 'uploadExcelPayment']);
+    Route::post('/upload-excel-payment', [\App\Http\Controllers\ExcelController::class, 'uploadExcelPaymentFinco']);
 //Route::post('/upload-excel-payment', [\App\Http\Controllers\ExcelController::class, 'balance_change']);
 
 

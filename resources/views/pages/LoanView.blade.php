@@ -323,6 +323,16 @@
         }
 
     </style>
+    <style>
+        /* Custom XXL Modal */
+        .modal-xxl {
+            max-width: 98% !important;  /* nearly full-screen width */
+        }
+        #loanLogTable th, #loanLogTable td {
+            white-space: nowrap;        /* prevent wrapping for better readability */
+            font-size: 13px;            /* slightly smaller font for big tables */
+        }
+    </style>
 
 @endsection
 
@@ -422,8 +432,6 @@
                                     <td>{{ number_format($extraChargelatestBalance, 2, '.', ',') }}</td>
                                     <td>{{ number_format($loan->Total_Loan_Amount-($total_paid_amount-$savingBalanceSum)+$Panalty_BalanceSum+($Panalty_Amount-$Panalty_BalanceSum)+$extraChargelatestBalance, 2, '.', ',') }}</td>
                                     <td>{{ $installments->last()->Installment_Date }}</td>
-                                    <td>{{ number_format($loan->Total_Loan_Amount-($total_paid_amount-$savingBalanceSum)+$Panalty_BalanceSum+($Panalty_Amount-$Panalty_BalanceSum), 2, '.', ',') }}</td>
-                                    <td>{{ $installments->isNotEmpty() ? $installments->last()->Installment_Date : '-' }}</td>
                                     <td style="color:
     {{ $loan->Status == -1 ? 'orange' : ($loan->Status == 0 ? 'red' : 'green') }};">
                                         <strong>
@@ -1177,8 +1185,9 @@
 
                 <!-- Loan Log Modal -->
                 <div class="modal fade" id="loanLogModal" tabindex="-1" aria-labelledby="loanLogModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-xl">
-                        <div class="modal-content">
+                    <div class="modal-dialog modal-xxl">
+
+                    <div class="modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title" id="loanLogModalLabel">Loan Log</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -1200,11 +1209,13 @@
                                             <th>Capital Payment</th>
                                             <th>Savings Payment</th>
                                             <th>Extra Payment</th>
+                                            <th>Recovery Payment</th>
                                             <th>Penalty Balance</th>
                                             <th>Interest Balance</th>
                                             <th>Capital Balance</th>
                                             <th>Savings Balance</th>
                                             <th>Extra Balance</th>
+                                            <th>Recovery Balance</th>
                                             <th>Total Pending Balance</th>
                                         </tr>
                                         </thead>
@@ -2063,11 +2074,13 @@
                                                 parseFloat(log.Capital_Payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                                                 parseFloat(log.Savings_Payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                                                 parseFloat(log.Extra_Payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                                parseFloat(log.Recovery_Amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                                                 parseFloat(log.Panelty_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                                                 parseFloat(log.Interest_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                                                 parseFloat(log.Capital_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                                                 parseFloat(log.Saving_Account_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                                                 parseFloat(log.Extra_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                                parseFloat(log.Recovery_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                                                 parseFloat(log.Total_Pending_Balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                                             ]).draw(false);
                                         });

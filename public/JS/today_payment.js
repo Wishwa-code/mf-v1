@@ -53,15 +53,29 @@ function load_payment_table(page = 1) {
                         modalButton = `<button type="button" class="btn btn-primary btn-sm d-flex align-items-center justify-content-center mx-1" value="Payment" data-bs-toggle="modal" data-bs-target="#issue-loan-modal" onclick="payment_model(${item.idCustomer},'${item.type}',${item.idCustomer_Loan},${item.Today_installment})" style="margin: 0 !important;">
         Payment
     </button>`;
-                    } else if (item.type === "Draft") {
+                    }
+
+                    if (item.type === "Draft") {
                         modalButton = `<button type="button" class="btn btn-primary btn-sm d-flex align-items-center justify-content-center mx-1" value="Payment" data-bs-toggle="modal" data-bs-target="#issue-loan-modal_2" onclick="payment_model_2(${item.idCustomer},${item.Total_Balance},${item.idCustomer_Loan},'${item.type}','${item.capital_balance}',${item.Total_Balance},${item.Total_Balance_until},${item.Today_installment},${item.arrease},${item.Installment_Amount})" style="margin: 0 !important;">
         Payment
     </button>`;
-                    } else if (item.type === "Reducing Balance") {
+                    }
+
+                    if (item.type === "Reducing Balance") {
                         modalButton = `<button type="button" class="btn btn-primary btn-sm d-flex align-items-center justify-content-center mx-1" value="Payment" data-bs-toggle="modal" data-bs-target="#issue-loan-modal_2" onclick="payment_model_3(${item.idCustomer},${item.Total_Balance},${item.idCustomer_Loan},'${item.type}','${item.capital_balance}',${item.Total_Balance},${item.Total_Balance_until},${item.Today_installment},${item.arrease},${item.Installment_Amount})" style="margin: 0 !important;">
         Payment
     </button>`;
                     }
+
+
+
+                    if (item.type === "Reducing Balance" && item.Reducing_type == '1') {
+                        modalButton = `<button type="button" class="btn btn-primary btn-sm d-flex align-items-center justify-content-center mx-1" value="Payment" data-bs-toggle="modal" data-bs-target="#issue-loan-modal" onclick="payment_model(${item.idCustomer},'${item.type}',${item.idCustomer_Loan},${item.Today_installment})" style="margin: 0 !important;">
+        Payment
+    </button>`;
+                    }
+
+
                     let viewmodel = `<a href="#" class="btn btn-warning btn-sm d-flex align-items-center justify-content-center mx-1" data-bs-toggle="modal" data-bs-target="#view_details_payment" onclick="load_data_model(${item.idCustomer_Loan})" style="border-radius: 5px;">
     <i class="bi bi-eye"></i>
 </a>`;
@@ -596,7 +610,7 @@ function payment() {
                         contentType: false,
                         success: function (data, textStatus, xhr) {
                             let payment_id = data.payment_id;
-                            alert(payment_id);
+
                             if (xhr.status === 200) {
                                 Swal.fire({
                                     position: "center",
