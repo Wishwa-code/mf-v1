@@ -763,6 +763,13 @@ function payment_2() {
                                     Swal.fire("Error!", "Failed to save data!", "error");
                                 }
                             },
+                            error: function(xhr, status, error) {
+                                if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.message) {
+                                    Swal.fire("Validation Error!", xhr.responseJSON.message, "error");
+                                } else {
+                                    Swal.fire("Error!", "Failed to process payment!", "error");
+                                }
+                            },
                         });
                     }
                 });
