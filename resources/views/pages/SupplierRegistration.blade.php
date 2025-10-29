@@ -421,12 +421,35 @@
     <script>
         $(document).ready(function() {
             const supplierListUrl = '{{ route('suppliers.index') }}';
+            const supplierSaveUrl = '{{ route('suppliers.store') }}';
+            const $supplierTableBody = $('#supplierTableBody');
+            const $searchInput = $('#searchSupplier');
+            const $submitBtn = $('.btn-create');
+            let supplierCache = [];
 
             const escapeHtml = (value) => $('<div>').text(value == null ? '' : value).html();
 
             const renderSuppliers = (items) => {
-                if (!Array.isArray(items) || !items.length) {
-                    $('#supplierTableBody').html(`
+                const searchValue = ($searchInput.val() || '').toLowerCase();
+                const filtered = Array.isArray(items)
+                    ? items.filter((supplier) => {
+                        if (!searchValue) {
+                            return true;
+                        }
+
+                        const haystack = [
+                            supplier.supplier_no,
+                            supplier.company_name,
+                            supplier.contact_number,
+                            supplier.address
+                        ].map((value) => (value || '').toLowerCase()).join(' ');
+
+                        return haystack.indexOf(searchValue) !== -1;
+                    })
+                    : [];
+
+                if (!filtered.length) {
+                    $supplierTableBody.html(`
                         <tr>
                             <td colspan="5" class="text-center py-4 text-muted">No suppliers found.</td>
                         </tr>
@@ -434,7 +457,7 @@
                     return;
                 }
 
-                const rows = items.map((supplier) => {
+                const rows = filtered.map((supplier) => {
                     const contact = supplier.contact_number ? supplier.contact_number : '-';
                     const address = supplier.address ? supplier.address : '-';
 
@@ -453,55 +476,95 @@
                     `;
                 }).join('');
 
-                $('#supplierTableBody').html(rows);
+                $supplierTableBody.html(rows);
+            };
+
+            const showLoadingRow = (text, cssClass) => {
+                $supplierTableBody.html(`
+                    <tr>
+                        <td colspan="5" class="text-center py-4 ${cssClass}">${text}</td>
+                    </tr>
+                `);
             };
 
             const loadSuppliers = () => {
-                $('#supplierTableBody').html(`
-                    <tr>
-                        <td colspan="5" class="text-center py-4 text-muted">Loading suppliers...</td>
-                    </tr>
-                `);
+                showLoadingRow('Loading suppliers...', 'text-muted');
 
                 $.ajax({
                     url: supplierListUrl,
                     method: 'GET',
                     success: function(response) {
-                        renderSuppliers(response.data || []);
+                        supplierCache = response.data || [];
+                        renderSuppliers(supplierCache);
                     },
                     error: function() {
-                        $('#supplierTableBody').html(`
-                            <tr>
-                                <td colspan="5" class="text-center py-4 text-danger">Failed to load suppliers.</td>
-                            </tr>
-                        `);
+                        supplierCache = [];
+                        showLoadingRow('Failed to load suppliers.', 'text-danger');
                     }
                 });
             };
 
-            // Form submission
+            const resetAttachmentLabels = () => {
+                $('.attachment-box p').text('Click to upload');
+            };
+
             $('#supplierForm').on('submit', function(e) {
                 e.preventDefault();
-                
-                Swal.fire({
-                    title: 'Success!',
-                    text: 'Supplier created successfully',
-                    icon: 'success',
-                    confirmButtonColor: '#667eea'
+
+                const formData = new FormData(this);
+                const form = this;
+
+                $submitBtn.prop('disabled', true);
+
+                $.ajax({
+                    url: supplierSaveUrl,
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        Swal.fire({
+                            title: 'Success!',
+                            text: response.message || 'Supplier created successfully',
+                            icon: 'success',
+                            confirmButtonColor: '#667eea'
+                        });
+
+                        form.reset();
+                        resetAttachmentLabels();
+                        loadSuppliers();
+                    },
+                    error: function(xhr) {
+                        let message = 'Failed to save supplier.';
+
+                        if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                            const firstError = Object.values(xhr.responseJSON.errors)[0] || [];
+                            if (firstError.length) {
+                                message = firstError[0];
+                            }
+                        } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+
+                        Swal.fire({
+                            title: 'Error',
+                            text: message,
+                            icon: 'error',
+                            confirmButtonColor: '#667eea'
+                        });
+                    },
+                    complete: function() {
+                        $submitBtn.prop('disabled', false);
+                    }
                 });
             });
 
-            // Search functionality
-            $('#searchSupplier').on('keyup', function() {
-                var value = $(this).val().toLowerCase();
-                $('#supplierTableBody tr').filter(function() {
-                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-                });
+            $searchInput.on('keyup', function() {
+                renderSuppliers(supplierCache);
             });
 
-            // File upload preview
             $('input[type="file"]').on('change', function() {
-                var fileName = $(this).val().split('\\').pop();
+                const fileName = $(this).val().split('\\').pop();
                 $(this).parent().find('p').text(fileName || 'Click to upload');
             });
 

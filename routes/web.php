@@ -879,6 +879,7 @@ Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalContr
         return view('pages.SupplierRegistration');
     })->name('supplier.registration');
     Route::get('/suppliers/list', [SupplierController::class, 'index'])->name('suppliers.index');
+    Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
 
 });
 // use App\Services\SmsService;
