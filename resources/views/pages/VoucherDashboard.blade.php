@@ -333,7 +333,7 @@
                                     <i class="ri-file-text-line"></i>
                                 </div>
                                 <div class="ms-3 flex-grow-1">
-                                    <div class="stat-value">0158</div>
+                                    <div class="stat-value">{{ sprintf('%04d', $stats['current_month_total'] ?? 0) }}</div>
                                     <div class="stat-label">Total Vouchers (Current Month)</div>
                                 </div>
                             </div>
@@ -346,7 +346,7 @@
                                     <i class="ri-calendar-line"></i>
                                 </div>
                                 <div class="ms-3 flex-grow-1">
-                                    <div class="stat-value">02</div>
+                                    <div class="stat-value">{{ sprintf('%02d', $stats['today_total'] ?? 0) }}</div>
                                     <div class="stat-label">Total Vouchers (Today)</div>
                                 </div>
                             </div>
@@ -359,7 +359,7 @@
                                     <i class="ri-alert-line"></i>
                                 </div>
                                 <div class="ms-3 flex-grow-1">
-                                    <div class="stat-value">02</div>
+                                    <div class="stat-value">{{ sprintf('%02d', $stats['expired_total'] ?? 0) }}</div>
                                     <div class="stat-label">Payment Expired Vouchers</div>
                                 </div>
                             </div>
@@ -372,7 +372,7 @@
                                     <i class="ri-time-line"></i>
                                 </div>
                                 <div class="ms-3 flex-grow-1">
-                                    <div class="stat-value">21</div>
+                                    <div class="stat-value">{{ sprintf('%02d', $stats['pending_total'] ?? 0) }}</div>
                                     <div class="stat-label">Pending Approvals</div>
                                 </div>
                             </div>
@@ -385,7 +385,7 @@
                                     <i class="ri-checkbox-circle-line"></i>
                                 </div>
                                 <div class="ms-3 flex-grow-1">
-                                    <div class="stat-value">21</div>
+                                    <div class="stat-value">{{ sprintf('%02d', $stats['approved_total'] ?? 0) }}</div>
                                     <div class="stat-label">Approved Vouchers</div>
                                 </div>
                             </div>
@@ -398,8 +398,8 @@
                                     <i class="ri-money-dollar-circle-line"></i>
                                 </div>
                                 <div class="ms-3 flex-grow-1">
-                                    <div class="stat-value">105600.00</div>
-                                    <div class="stat-label">Current month paid (56)</div>
+                                    <div class="stat-value">{{ number_format($stats['current_month_paid_amount'] ?? 0, 2) }}</div>
+                                    <div class="stat-label">Current month paid ({{ $stats['current_month_paid_count'] ?? 0 }})</div>
                                 </div>
                             </div>
                         </div>
@@ -409,41 +409,44 @@
                 <!-- Filter Section -->
                 <div class="card mb-4">
                     <div class="card-body filter-section">
-                        <h5 class="mb-3"><i class="ri-filter-3-line me-2"></i>Filters</h5>
-                        <div class="row">
-                            <div class="col-md-3">
-                                <label class="form-label">Date From</label>
-                                <input type="date" class="form-control" id="dateFrom">
+                        <form method="GET" action="{{ route('voucher.dashboard') }}">
+                            <h5 class="mb-3"><i class="ri-filter-3-line me-2"></i>Filters</h5>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <label class="form-label">Date From</label>
+                                    <input type="date" class="form-control" id="dateFrom" name="date_from" value="{{ $filters['date_from'] ?? '' }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Date To</label>
+                                    <input type="date" class="form-control" id="dateTo" name="date_to" value="{{ $filters['date_to'] ?? '' }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Status</label>
+                                    <select class="form-select" id="statusFilter" name="status">
+                                        @foreach($statusOptions as $value => $label)
+                                            <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Supplier</label>
+                                    <select class="form-select" id="supplierFilter" name="supplier_id">
+                                        <option value="">All Suppliers</option>
+                                        @foreach($suppliers as $supplier)
+                                            <option value="{{ $supplier->id }}" @selected((string)($filters['supplier_id'] ?? '') === (string)$supplier->id)>
+                                                {{ $supplier->company_name }}@if($supplier->supplier_no) ({{ $supplier->supplier_no }})@endif
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Date To</label>
-                                <input type="date" class="form-control" id="dateTo">
+                            <div class="row mt-3">
+                                <div class="col-md-12 text-end">
+                                    <a href="{{ route('voucher.dashboard') }}" class="btn btn-secondary me-2"><i class="ri-refresh-line me-2"></i>Reset</a>
+                                    <button type="submit" class="btn btn-primary"><i class="ri-search-line me-2"></i>Search</button>
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Status</label>
-                                <select class="form-select" id="statusFilter">
-                                    <option value="">All Status</option>
-                                    <option value="pending">Pending</option>
-                                    <option value="approved">Approved</option>
-                                    <option value="rejected">Rejected</option>
-                                    <option value="paid">Paid</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Supplier</label>
-                                <select class="form-select" id="supplierFilter">
-                                    <option value="">All Suppliers</option>
-                                    <option value="1">ABC Company Ltd</option>
-                                    <option value="2">XYZ Traders</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col-md-12 text-end">
-                                <button class="btn btn-secondary me-2"><i class="ri-refresh-line me-2"></i>Reset</button>
-                                <button class="btn btn-primary"><i class="ri-search-line me-2"></i>Search</button>
-                            </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
 
@@ -468,18 +471,23 @@
                                             </tr>
                                         </thead>
                                         <tbody id="pendingApprovalsBody">
-                                            <!-- Sample data -->
-                                            <tr>
-                                                <td>V001</td>
-                                                <td>S001</td>
-                                                <td>ABC Company Ltd</td>
-                                                <td>2025-01-15</td>
-                                                <td>Rs. 25,000</td>
-                                                <td>John Doe</td>
-                                                <td>Cash</td>
-                                                <td>2025-01-20</td>
-                                                <td><button class="btn btn-sm btn-success">View</button></td>
-                                            </tr>
+                                            @forelse($pendingApprovals as $voucher)
+                                                <tr>
+                                                    <td>{{ $voucher->voucher_no }}</td>
+                                                    <td>{{ $voucher->supplier_no ?? '—' }}</td>
+                                                    <td>{{ $voucher->supplier_label }}</td>
+                                                    <td>{{ $voucher->show_date ?? '—' }}</td>
+                                                    <td>Rs. {{ number_format($voucher->total_amount ?? 0, 2) }}</td>
+                                                    <td>{{ $voucher->user_name ?? '—' }}</td>
+                                                    <td>{{ $voucher->payment_account_label }}</td>
+                                                    <td>{{ $voucher->due_date ?? '—' }}</td>
+                                                    <td><button class="btn btn-sm btn-success" data-voucher-id="{{ $voucher->id }}">View</button></td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="9" class="text-center text-muted">No vouchers found.</td>
+                                                </tr>
+                                            @endforelse
                                         </tbody>
                                     </table>
                                 </div>
@@ -510,19 +518,24 @@
                                             </tr>
                                         </thead>
                                         <tbody id="pendingPaymentsBody">
-                                            <!-- Sample data -->
-                                            <tr>
-                                                <td>V002</td>
-                                                <td>S002</td>
-                                                <td>XYZ Traders</td>
-                                                <td>2025-01-14</td>
-                                                <td>Rs. 45,000</td>
-                                                <td>Jane Smith</td>
-                                                <td>Bank Transfer</td>
-                                                <td>Admin - 2025-01-15</td>
-                                                <td>2025-01-18</td>
-                                                <td><button class="btn btn-sm btn-success">View</button></td>
-                                            </tr>
+                                            @forelse($pendingPayments as $voucher)
+                                                <tr>
+                                                    <td>{{ $voucher->voucher_no }}</td>
+                                                    <td>{{ $voucher->supplier_no ?? '—' }}</td>
+                                                    <td>{{ $voucher->supplier_label }}</td>
+                                                    <td>{{ $voucher->show_date ?? '—' }}</td>
+                                                    <td>Rs. {{ number_format($voucher->total_amount ?? 0, 2) }}</td>
+                                                    <td>{{ $voucher->user_name ?? '—' }}</td>
+                                                    <td>{{ $voucher->payment_account_label }}</td>
+                                                    <td>{{ $voucher->approval_label }}</td>
+                                                    <td>{{ $voucher->due_date ?? '—' }}</td>
+                                                    <td><button class="btn btn-sm btn-success" data-voucher-id="{{ $voucher->id }}">View</button></td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="10" class="text-center text-muted">No vouchers found.</td>
+                                                </tr>
+                                            @endforelse
                                         </tbody>
                                     </table>
                                 </div>
@@ -552,46 +565,25 @@
                                     </tr>
                                 </thead>
                                 <tbody id="voucherTableBody">
-                                    <!-- Sample data -->
-                                    <tr>
-                                        <td><strong>VCH-2025-001</strong></td>
-                                        <td>2025-01-15</td>
-                                        <td>ABC Company Ltd</td>
-                                        <td>Office Supplies Purchase</td>
-                                        <td><strong>Rs. 45,000</strong></td>
-                                        <td><span class="status-badge status-approved">Approved</span></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-info" title="View"><i class="ri-eye-line"></i></button>
-                                            <button class="btn btn-sm btn-warning" title="Edit"><i class="ri-edit-line"></i></button>
-                                            <button class="btn btn-sm btn-primary" title="Print"><i class="ri-printer-line"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>VCH-2025-002</strong></td>
-                                        <td>2025-01-16</td>
-                                        <td>XYZ Traders</td>
-                                        <td>Equipment Maintenance</td>
-                                        <td><strong>Rs. 28,500</strong></td>
-                                        <td><span class="status-badge status-pending">Pending</span></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-info" title="View"><i class="ri-eye-line"></i></button>
-                                            <button class="btn btn-sm btn-warning" title="Edit"><i class="ri-edit-line"></i></button>
-                                            <button class="btn btn-sm btn-primary" title="Print"><i class="ri-printer-line"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>VCH-2025-003</strong></td>
-                                        <td>2025-01-17</td>
-                                        <td>Tech Solutions Inc</td>
-                                        <td>Software License</td>
-                                        <td><strong>Rs. 85,000</strong></td>
-                                        <td><span class="status-badge status-paid">Paid</span></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-info" title="View"><i class="ri-eye-line"></i></button>
-                                            <button class="btn btn-sm btn-warning" title="Edit"><i class="ri-edit-line"></i></button>
-                                            <button class="btn btn-sm btn-primary" title="Print"><i class="ri-printer-line"></i></button>
-                                        </td>
-                                    </tr>
+                                    @forelse($recentVouchers as $voucher)
+                                        <tr>
+                                            <td><strong>{{ $voucher->voucher_no }}</strong></td>
+                                            <td>{{ $voucher->show_date ?? '—' }}</td>
+                                            <td>{{ $voucher->supplier_label }}</td>
+                                            <td>{{ $voucher->description_label }}</td>
+                                            <td><strong>Rs. {{ number_format($voucher->total_amount ?? 0, 2) }}</strong></td>
+                                            <td><span class="status-badge {{ $voucher->status_class }}">{{ $voucher->status_label }}</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-info" title="View" data-voucher-id="{{ $voucher->id }}"><i class="ri-eye-line"></i></button>
+                                                <button class="btn btn-sm btn-warning" title="Edit" data-voucher-id="{{ $voucher->id }}"><i class="ri-edit-line"></i></button>
+                                                <button class="btn btn-sm btn-primary" title="Print" data-voucher-id="{{ $voucher->id }}"><i class="ri-printer-line"></i></button>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted">No vouchers found.</td>
+                                        </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
