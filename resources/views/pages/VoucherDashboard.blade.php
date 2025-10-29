@@ -91,8 +91,9 @@
         
         .stat-label {
             color: #6c757d;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
+            line-height: 1.4;
         }
         
         .voucher-table {
@@ -325,54 +326,80 @@
 
                 <!-- Statistics Cards -->
                 <div class="row mb-4">
-                    <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="col-lg-4 col-md-6 mb-3">
                         <div class="stat-card">
                             <div class="d-flex align-items-center">
                                 <div class="stat-icon" style="background-color: #e3f2fd; color: #1e88e5;">
                                     <i class="ri-file-text-line"></i>
                                 </div>
                                 <div class="ms-3 flex-grow-1">
-                                    <div class="stat-value">245</div>
-                                    <div class="stat-label">Total Vouchers</div>
+                                    <div class="stat-value">0158</div>
+                                    <div class="stat-label">Total Vouchers (Current Month)</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="col-lg-4 col-md-6 mb-3">
+                        <div class="stat-card">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon" style="background-color: #fff3cd; color: #ffc107;">
+                                    <i class="ri-calendar-line"></i>
+                                </div>
+                                <div class="ms-3 flex-grow-1">
+                                    <div class="stat-value">02</div>
+                                    <div class="stat-label">Total Vouchers (Today)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 mb-3">
+                        <div class="stat-card">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon" style="background-color: #ffe0e0; color: #dc3545;">
+                                    <i class="ri-alert-line"></i>
+                                </div>
+                                <div class="ms-3 flex-grow-1">
+                                    <div class="stat-value">02</div>
+                                    <div class="stat-label">Payment Expired Vouchers</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 mb-3">
                         <div class="stat-card">
                             <div class="d-flex align-items-center">
                                 <div class="stat-icon" style="background-color: #fff3cd; color: #ffc107;">
                                     <i class="ri-time-line"></i>
                                 </div>
                                 <div class="ms-3 flex-grow-1">
-                                    <div class="stat-value">18</div>
-                                    <div class="stat-label">Pending Approval</div>
+                                    <div class="stat-value">21</div>
+                                    <div class="stat-label">Pending Approvals</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="col-lg-4 col-md-6 mb-3">
                         <div class="stat-card">
                             <div class="d-flex align-items-center">
                                 <div class="stat-icon" style="background-color: #d1e7dd; color: #198754;">
                                     <i class="ri-checkbox-circle-line"></i>
                                 </div>
                                 <div class="ms-3 flex-grow-1">
-                                    <div class="stat-value">212</div>
-                                    <div class="stat-label">Approved</div>
+                                    <div class="stat-value">21</div>
+                                    <div class="stat-label">Approved Vouchers</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="col-lg-4 col-md-6 mb-3">
                         <div class="stat-card">
                             <div class="d-flex align-items-center">
-                                <div class="stat-icon" style="background-color: #f8d7da; color: #dc3545;">
+                                <div class="stat-icon" style="background-color: #e0f2fe; color: #0284c7;">
                                     <i class="ri-money-dollar-circle-line"></i>
                                 </div>
                                 <div class="ms-3 flex-grow-1">
-                                    <div class="stat-value">Rs. 1.2M</div>
-                                    <div class="stat-label">Total Amount</div>
+                                    <div class="stat-value">105600.00</div>
+                                    <div class="stat-label">Current month paid (56)</div>
                                 </div>
                             </div>
                         </div>
@@ -420,7 +447,91 @@
                     </div>
                 </div>
 
-                <!-- Vouchers Table -->
+                <!-- Pending Approvals Table -->
+                <div class="card mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="mb-3"><i class="ri-time-line me-2"></i>Pending Approvals</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-hover voucher-table">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Vouc No</th>
+                                                <th>Suppl No</th>
+                                                <th>Company / Supplier</th>
+                                                <th>Created Date</th>
+                                                <th>Amount</th>
+                                                <th>Created User</th>
+                                                <th>Payment Type</th>
+                                                <th>Payment Date</th>
+                                                <th>View Voucher</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pendingApprovalsBody">
+                                            <!-- Sample data -->
+                                            <tr>
+                                                <td>V001</td>
+                                                <td>S001</td>
+                                                <td>ABC Company Ltd</td>
+                                                <td>2025-01-15</td>
+                                                <td>Rs. 25,000</td>
+                                                <td>John Doe</td>
+                                                <td>Cash</td>
+                                                <td>2025-01-20</td>
+                                                <td><button class="btn btn-sm btn-success">View</button></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending Payments Table -->
+                <div class="card mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="mb-3"><i class="ri-file-list-line me-2"></i>Pending Payments (Approved but not paid)</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-hover voucher-table">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Voucher No</th>
+                                                <th>Supplier No</th>
+                                                <th>Company / Supplier</th>
+                                                <th>Created Date User</th>
+                                                <th>Amount</th>
+                                                <th>Create H User</th>
+                                                <th>Payment Type</th>
+                                                <th>Approved User and Date</th>
+                                                <th>Payment date</th>
+                                                <th>View Voucher</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pendingPaymentsBody">
+                                            <!-- Sample data -->
+                                            <tr>
+                                                <td>V002</td>
+                                                <td>S002</td>
+                                                <td>XYZ Traders</td>
+                                                <td>2025-01-14</td>
+                                                <td>Rs. 45,000</td>
+                                                <td>Jane Smith</td>
+                                                <td>Bank Transfer</td>
+                                                <td>Admin - 2025-01-15</td>
+                                                <td>2025-01-18</td>
+                                                <td><button class="btn btn-sm btn-success">View</button></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Vouchers Table -->
                 <div class="card">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
