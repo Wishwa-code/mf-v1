@@ -11,6 +11,7 @@ use App\Http\Controllers\LoanController;
 use App\Http\Controllers\PDFController;
 use App\Http\Controllers\PendingLoanController;
 use App\Http\Controllers\RouteController;
+use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TodayPaymentController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\ChartOfAccountController;
@@ -877,6 +878,7 @@ Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalContr
     Route::get('/SupplierRegistration', function () {
         return view('pages.SupplierRegistration');
     })->name('supplier.registration');
+    Route::get('/suppliers/list', [SupplierController::class, 'index'])->name('suppliers.index');
 
 });
 // use App\Services\SmsService;

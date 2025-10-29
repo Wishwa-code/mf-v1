@@ -403,17 +403,8 @@
                                         </tr>
                                     </thead>
                                     <tbody id="supplierTableBody">
-                                        <!-- Sample data -->
                                         <tr>
-                                            <td>SUP001</td>
-                                            <td>ABC Company Ltd</td>
-                                            <td>0771234567</td>
-                                            <td>123 Main St, Colombo</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-success"><i class="ri-eye-line"></i> View</button>
-                                                <button class="btn btn-sm btn-warning"><i class="ri-edit-line"></i> Edit</button>
-                                                <button class="btn btn-sm btn-info"><i class="ri-history-line"></i> History</button>
-                                            </td>
+                                            <td colspan="5" class="text-center py-4 text-muted">Loading suppliers...</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -426,9 +417,68 @@
     </div>
 @endsection
 
-@section('scripts')
+@section('script')
     <script>
         $(document).ready(function() {
+            const supplierListUrl = '{{ route('suppliers.index') }}';
+
+            const escapeHtml = (value) => $('<div>').text(value == null ? '' : value).html();
+
+            const renderSuppliers = (items) => {
+                if (!Array.isArray(items) || !items.length) {
+                    $('#supplierTableBody').html(`
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">No suppliers found.</td>
+                        </tr>
+                    `);
+                    return;
+                }
+
+                const rows = items.map((supplier) => {
+                    const contact = supplier.contact_number ? supplier.contact_number : '-';
+                    const address = supplier.address ? supplier.address : '-';
+
+                    return `
+                        <tr>
+                            <td>${escapeHtml(supplier.supplier_no)}</td>
+                            <td>${escapeHtml(supplier.company_name)}</td>
+                            <td>${escapeHtml(contact)}</td>
+                            <td>${escapeHtml(address)}</td>
+                            <td>
+                                <button class="btn btn-sm btn-success"><i class="ri-eye-line"></i> View</button>
+                                <button class="btn btn-sm btn-warning"><i class="ri-edit-line"></i> Edit</button>
+                                <button class="btn btn-sm btn-info"><i class="ri-history-line"></i> History</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                $('#supplierTableBody').html(rows);
+            };
+
+            const loadSuppliers = () => {
+                $('#supplierTableBody').html(`
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">Loading suppliers...</td>
+                    </tr>
+                `);
+
+                $.ajax({
+                    url: supplierListUrl,
+                    method: 'GET',
+                    success: function(response) {
+                        renderSuppliers(response.data || []);
+                    },
+                    error: function() {
+                        $('#supplierTableBody').html(`
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-danger">Failed to load suppliers.</td>
+                            </tr>
+                        `);
+                    }
+                });
+            };
+
             // Form submission
             $('#supplierForm').on('submit', function(e) {
                 e.preventDefault();
@@ -454,6 +504,8 @@
                 var fileName = $(this).val().split('\\').pop();
                 $(this).parent().find('p').text(fileName || 'Click to upload');
             });
+
+            loadSuppliers();
         });
     </script>
 @endsection
