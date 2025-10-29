@@ -415,6 +415,196 @@
             </div>
         </div>
     </div>
+
+    <!-- View Supplier Modal -->
+    <div class="modal fade" id="viewSupplierModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h5 class="modal-title"><i class="ri-eye-line me-2"></i>View Supplier Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="section-header">Basic Info</div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Supplier No:</strong>
+                            <p id="view_supplier_no"></p>
+                        </div>
+                        <div class="col-md-8">
+                            <strong>Company Name:</strong>
+                            <p id="view_company_name"></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Contact Number:</strong>
+                            <p id="view_contact_number"></p>
+                        </div>
+                        <div class="col-md-8">
+                            <strong>Address:</strong>
+                            <p id="view_address"></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Email:</strong>
+                            <p id="view_email"></p>
+                        </div>
+                    </div>
+
+                    <div class="section-header mt-4">Bank & Payment Details</div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Bank Name:</strong>
+                            <p id="view_bank_name"></p>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Branch:</strong>
+                            <p id="view_branch"></p>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Account Number:</strong>
+                            <p id="view_account_number"></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Account Holder Name:</strong>
+                            <p id="view_account_holder_name"></p>
+                        </div>
+                    </div>
+
+                    <div class="section-header mt-4">Advanced Info</div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Business Reg No:</strong>
+                            <p id="view_business_reg_no"></p>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Tax/VAT No:</strong>
+                            <p id="view_tax_vat_no"></p>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>NIC/Passport:</strong>
+                            <p id="view_nic_passport"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Supplier Modal -->
+    <div class="modal fade" id="editSupplierModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h5 class="modal-title"><i class="ri-edit-line me-2"></i>Edit Supplier</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editSupplierForm">
+                    <div class="modal-body">
+                        @csrf
+                        <input type="hidden" id="edit_supplier_id" name="supplier_id">
+                        
+                        <div class="section-header">Basic Info</div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Supplier / Vendor No</label>
+                                <input type="text" class="form-control" id="edit_supplier_no" name="supplier_no" required>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">Company / Supplier Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="edit_company_name" name="company_name" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Contact Number</label>
+                                <input type="tel" class="form-control" id="edit_contact_number" name="contact_number">
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">Address</label>
+                                <input type="text" class="form-control" id="edit_address" name="address">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="edit_email" name="email">
+                            </div>
+                        </div>
+
+                        <div class="section-header mt-4">Bank & Payment Details</div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Bank Name</label>
+                                <input type="text" class="form-control" id="edit_bank_name" name="bank_name">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Branch</label>
+                                <input type="text" class="form-control" id="edit_branch" name="branch">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Account Number</label>
+                                <input type="text" class="form-control" id="edit_account_number" name="account_number">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Account Holder Name</label>
+                                <input type="text" class="form-control" id="edit_account_holder_name" name="account_holder_name">
+                            </div>
+                        </div>
+
+                        <div class="section-header mt-4">Advanced Info (Optional)</div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Business Registration No</label>
+                                <input type="text" class="form-control" id="edit_business_reg_no" name="business_reg_no">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Tax / VAT No</label>
+                                <input type="text" class="form-control" id="edit_tax_vat_no" name="tax_vat_no">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">NIC / Passport No</label>
+                                <input type="text" class="form-control" id="edit_nic_passport" name="nic_passport">
+                            </div>
+                        </div>
+
+                        <div class="section-header mt-4">📎 Attachments (Optional - upload new files to replace)</div>
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label">File 1</label>
+                                <input type="file" class="form-control" name="file1">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">File 2</label>
+                                <input type="file" class="form-control" name="file2">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">File 3</label>
+                                <input type="file" class="form-control" name="file3">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">File 4</label>
+                                <input type="file" class="form-control" name="file4">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-create"><i class="ri-save-line me-2"></i>Update Supplier</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('script')
@@ -468,8 +658,8 @@
                             <td>${escapeHtml(contact)}</td>
                             <td>${escapeHtml(address)}</td>
                             <td>
-                                <button class="btn btn-sm btn-success"><i class="ri-eye-line"></i> View</button>
-                                <button class="btn btn-sm btn-warning"><i class="ri-edit-line"></i> Edit</button>
+                                <button class="btn btn-sm btn-success btn-view" data-id="${supplier.id}"><i class="ri-eye-line"></i> View</button>
+                                <button class="btn btn-sm btn-warning btn-edit" data-id="${supplier.id}"><i class="ri-edit-line"></i> Edit</button>
                                 <button class="btn btn-sm btn-info"><i class="ri-history-line"></i> History</button>
                             </td>
                         </tr>
@@ -566,6 +756,135 @@
             $('input[type="file"]').on('change', function() {
                 const fileName = $(this).val().split('\\').pop();
                 $(this).parent().find('p').text(fileName || 'Click to upload');
+            });
+
+            $(document).on('click', '.btn-view', function() {
+                const supplierId = $(this).data('id');
+                const supplierShowUrl = '{{ route('suppliers.show', ':id') }}'.replace(':id', supplierId);
+
+                $.ajax({
+                    url: supplierShowUrl,
+                    method: 'GET',
+                    success: function(response) {
+                        const supplier = response.data;
+                        
+                        $('#view_supplier_no').text(supplier.supplier_no || '-');
+                        $('#view_company_name').text(supplier.company_name || '-');
+                        $('#view_contact_number').text(supplier.contact_number || '-');
+                        $('#view_address').text(supplier.address || '-');
+                        $('#view_email').text(supplier.email || '-');
+                        $('#view_bank_name').text(supplier.bank_name || '-');
+                        $('#view_branch').text(supplier.branch || '-');
+                        $('#view_account_number').text(supplier.account_number || '-');
+                        $('#view_account_holder_name').text(supplier.account_holder_name || '-');
+                        $('#view_business_reg_no').text(supplier.business_reg_no || '-');
+                        $('#view_tax_vat_no').text(supplier.tax_vat_no || '-');
+                        $('#view_nic_passport').text(supplier.nic_passport || '-');
+
+                        $('#viewSupplierModal').modal('show');
+                    },
+                    error: function(xhr) {
+                        let message = 'Failed to load supplier details.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+                        Swal.fire({
+                            title: 'Error',
+                            text: message,
+                            icon: 'error',
+                            confirmButtonColor: '#667eea'
+                        });
+                    }
+                });
+            });
+
+            $(document).on('click', '.btn-edit', function() {
+                const supplierId = $(this).data('id');
+                const supplierShowUrl = '{{ route('suppliers.show', ':id') }}'.replace(':id', supplierId);
+
+                $.ajax({
+                    url: supplierShowUrl,
+                    method: 'GET',
+                    success: function(response) {
+                        const supplier = response.data;
+                        
+                        $('#edit_supplier_id').val(supplier.id);
+                        $('#edit_supplier_no').val(supplier.supplier_no || '');
+                        $('#edit_company_name').val(supplier.company_name || '');
+                        $('#edit_contact_number').val(supplier.contact_number || '');
+                        $('#edit_address').val(supplier.address || '');
+                        $('#edit_email').val(supplier.email || '');
+                        $('#edit_bank_name').val(supplier.bank_name || '');
+                        $('#edit_branch').val(supplier.branch || '');
+                        $('#edit_account_number').val(supplier.account_number || '');
+                        $('#edit_account_holder_name').val(supplier.account_holder_name || '');
+                        $('#edit_business_reg_no').val(supplier.business_reg_no || '');
+                        $('#edit_tax_vat_no').val(supplier.tax_vat_no || '');
+                        $('#edit_nic_passport').val(supplier.nic_passport || '');
+
+                        $('#editSupplierModal').modal('show');
+                    },
+                    error: function(xhr) {
+                        let message = 'Failed to load supplier details.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+                        Swal.fire({
+                            title: 'Error',
+                            text: message,
+                            icon: 'error',
+                            confirmButtonColor: '#667eea'
+                        });
+                    }
+                });
+            });
+
+            $('#editSupplierForm').on('submit', function(e) {
+                e.preventDefault();
+
+                const supplierId = $('#edit_supplier_id').val();
+                const supplierUpdateUrl = '{{ route('suppliers.update', ':id') }}'.replace(':id', supplierId);
+                const formData = new FormData(this);
+                formData.append('_method', 'PUT');
+
+                $.ajax({
+                    url: supplierUpdateUrl,
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        $('#editSupplierModal').modal('hide');
+                        
+                        Swal.fire({
+                            title: 'Success!',
+                            text: response.message || 'Supplier updated successfully',
+                            icon: 'success',
+                            confirmButtonColor: '#667eea'
+                        });
+
+                        loadSuppliers();
+                    },
+                    error: function(xhr) {
+                        let message = 'Failed to update supplier.';
+
+                        if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                            const firstError = Object.values(xhr.responseJSON.errors)[0] || [];
+                            if (firstError.length) {
+                                message = firstError[0];
+                            }
+                        } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+
+                        Swal.fire({
+                            title: 'Error',
+                            text: message,
+                            icon: 'error',
+                            confirmButtonColor: '#667eea'
+                        });
+                    }
+                });
             });
 
             loadSuppliers();
