@@ -575,8 +575,6 @@
                                             <td><span class="status-badge {{ $voucher->status_class }}">{{ $voucher->status_label }}</span></td>
                                             <td>
                                                 <button class="btn btn-sm btn-info" title="View" data-voucher-id="{{ $voucher->id }}"><i class="ri-eye-line"></i></button>
-                                                <button class="btn btn-sm btn-warning" title="Edit" data-voucher-id="{{ $voucher->id }}"><i class="ri-edit-line"></i></button>
-                                                <button class="btn btn-sm btn-primary" title="Print" data-voucher-id="{{ $voucher->id }}"><i class="ri-printer-line"></i></button>
                                             </td>
                                         </tr>
                                     @empty
