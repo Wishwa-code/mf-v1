@@ -869,12 +869,16 @@ Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalContr
     Route::get('double-entries/{loanId}', '\App\Http\Controllers\TodayPaymentController@doubleEntries')
         ->name('loan.double-entries');
 
+    // Payment Voucher Module
+    Route::get('/VoucherDashboard', function () {
+        return view('pages.VoucherDashboard');
+    })->name('voucher.dashboard');
+
+    Route::get('/SupplierRegistration', function () {
+        return view('pages.SupplierRegistration');
+    })->name('supplier.registration');
+
 });
-
-
-
-// use Illuminate\Support\Facades\DB;
-// use Illuminate\Support\Facades\Log;
 // use App\Services\SmsService;
 
 // Route::get('/one-off/resend-failed-sms', function (Request $request, SmsService $smsService) {
