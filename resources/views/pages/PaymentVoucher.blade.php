@@ -176,6 +176,7 @@
         .btn-create-voucher:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+            color: white;
         }
         
         .btn-view-file {
@@ -296,6 +297,40 @@
             background: linear-gradient(to right, transparent, #667eea, transparent);
             margin: 30px 0;
         }
+        
+        .btn-edit {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            font-weight: 600;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+        }
+        
+        .btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(66, 153, 225, 0.4);
+            color: white;
+        }
+        
+        .btn-save {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            font-weight: 600;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+        }
+        
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
+            color: white;
+        }
     </style>
 @endsection
 
@@ -331,7 +366,7 @@
                                     </div>
                                     
                                     <div class="row mb-3">
-                                        <div class="col-md-12">
+                                        <div class="col-md-8">
                                             <label for="debit_account" class="form-label">Debit Account</label>
                                             <select class="form-select" id="debit_account" name="debit_account">
                                                 <option value="">Select Account</option>
@@ -341,31 +376,29 @@
                                             </select>
                                             <small class="text-muted">(Vendor or expenses account)</small>
                                         </div>
-                                    </div>
-                                    
-                                    <div class="supplier-info-box">
-                                        <p class="text-muted mb-0" style="font-size: 14px;">
-                                            <i class="ri-information-line me-2"></i>If supplier selected, supplier details should show here
-                                        </p>
+                                        <div class="col-md-4">
+                                            <label for="due_date" class="form-label">Due Date</label>
+                                            <input type="date" class="form-control" id="due_date" name="due_date">
+                                        </div>
                                     </div>
                                 </div>
                                 
                                 <div class="col-md-6">
                                     <div class="row mb-3">
                                         <div class="col-md-6">
-                                            <label for="branch" class="form-label">Branch</label>
-                                            <input type="text" class="form-control" id="branch" name="branch" value="Kalutara" readonly>
+                                            <label class="form-label">Branch</label>
+                                            <div class="form-control" style="background-color: #f8f9fa; border: none;">Kalutara</div>
                                         </div>
                                         <div class="col-md-6">
-                                            <label for="date" class="form-label">Date</label>
-                                            <input type="date" class="form-control" id="date" name="date" value="2025-08-20">
+                                            <label class="form-label">Date</label>
+                                            <div class="form-control" style="background-color: #f8f9fa; border: none;">2025-08-20</div>
                                         </div>
                                     </div>
                                     
                                     <div class="row mb-3">
                                         <div class="col-md-6">
-                                            <label for="user" class="form-label">User</label>
-                                            <input type="text" class="form-control" id="user" name="user" value="Admin" readonly>
+                                            <label class="form-label">User</label>
+                                            <div class="form-control" style="background-color: #f8f9fa; border: none;">Admin</div>
                                         </div>
                                         <div class="col-md-6">
                                             <label for="credit_account" class="form-label">Credit Account</label>
@@ -376,12 +409,31 @@
                                             </select>
                                         </div>
                                     </div>
-                                    
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <label for="due_date" class="form-label">Due Date</label>
-                                            <input type="date" class="form-control" id="due_date" name="due_date">
-                                        </div>
+                                </div>
+                            </div>
+
+                            <!-- Supplier Details - Full Width -->
+                            <div class="card mb-4" style="border: 2px solid #e2e8f0; border-radius: 12px;">
+                                <div class="card-body" style="padding: 20px;">
+                                    <h6 class="mb-3"><i class="ri-information-line me-2"></i>Supplier Details</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <thead style="background: #f8f9fa;">
+                                                <tr>
+                                                    <th style="font-size: 13px;">Supplier No</th>
+                                                    <th style="font-size: 13px;">Company / Supplier</th>
+                                                    <th style="font-size: 13px;">Contact No</th>
+                                                    <th style="font-size: 13px;">Address</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="supplierListBody">
+                                                <tr>
+                                                    <td colspan="4" class="text-center text-muted" style="font-size: 13px; padding: 20px;">
+                                                        <i class="ri-information-line me-2"></i>Select a supplier from Debit Account
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
@@ -480,13 +532,6 @@
                             <!-- Amount Summary -->
                             <div class="row">
                                 <div class="col-md-6">
-                                    <div class="amount-in-words">
-                                        <label>Amount in words</label>
-                                        <div class="word-value" id="amountInWords">Zero</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-md-6">
                                     <div class="amount-summary">
                                         <div class="amount-row">
                                             <label>Total Amount</label>
@@ -506,12 +551,36 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="text-end mt-4">
-                                <button type="submit" class="btn btn-create-voucher">
-                                    <i class="ri-save-line me-2"></i>Create Voucher
-                                </button>
+                                
+                                <div class="col-md-6">
+                                    <div class="card mb-3" style="border: 2px solid #e2e8f0; border-radius: 12px;">
+                                        <div class="card-body" style="padding: 20px;">
+                                            <div class="amount-in-words">
+                                                <label>Amount in words</label>
+                                                <div class="word-value" id="amountInWords">Zero</div>
+                                            </div>
+                                            
+                                            <div class="mt-3">
+                                                <div class="d-flex gap-2">
+                                                    <button type="button" class="btn btn-edit flex-fill">
+                                                        <i class="ri-edit-line me-2"></i>Edit
+                                                    </button>
+                                                    <button type="button" class="btn btn-save flex-fill">
+                                                        <i class="ri-save-line me-2"></i>Save
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card" style="border: 2px solid #e2e8f0; border-radius: 12px;">
+                                        <div class="card-body" style="padding: 20px;">
+                                            <button type="submit" class="btn btn-create-voucher w-100">
+                                                <i class="ri-file-add-line me-2"></i>Create Voucher
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </form>
                     </div>
