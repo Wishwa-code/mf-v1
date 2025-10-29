@@ -335,6 +335,11 @@
 @endsection
 
 @section('content')
+    @php
+        $today = now()->format('Y-m-d');
+        $branchName = session('branch_name') ?? 'N/A';
+        $userName = session('username') ?? 'User';
+    @endphp
     <div class="container-fluid">
         <div class="row mt-3">
             <div class="col-12">
@@ -346,6 +351,9 @@
                     <div class="card-body">
                         <form id="voucherForm">
                             @csrf
+                            <input type="hidden" id="show_date" name="show_date" value="{{ $today }}">
+                            <input type="hidden" id="amountInWordsInput" name="amount_in_words" value="Zero">
+                            <input type="hidden" id="debit_account_id" name="debit_account_id" value="">
                             
                             <!-- Header Section -->
                             <div class="row mb-4">
@@ -353,7 +361,7 @@
                                     <div class="row mb-3">
                                         <div class="col-md-6">
                                             <label for="voucher_no" class="form-label">Voucher No</label>
-                                            <input type="text" class="form-control" id="voucher_no" name="voucher_no" placeholder="Auto generate">
+                                            <input type="text" class="form-control" id="voucher_no" name="voucher_no" placeholder="Auto generated" readonly>
                                         </div>
                                         <div class="col-md-6">
                                             <label for="type" class="form-label">Type</label>
@@ -368,11 +376,12 @@
                                     <div class="row mb-3">
                                         <div class="col-md-8">
                                             <label for="debit_account" class="form-label">Debit Account</label>
-                                            <select class="form-select" id="debit_account" name="debit_account">
-                                                <option value="">Select Account</option>
-                                                <option value="salary">Salary / Electricity / Supplier0001</option>
-                                                <option value="expenses">General Expenses</option>
-                                                <option value="supplier001">Supplier001</option>
+                                            <select class="form-select" id="debit_account" name="debit_account_type">
+                                                <option value="">Select account</option>
+                                                <option value="supplier">Supplier payable</option>
+                                                <option value="salary">Salary payable</option>
+                                                <option value="utility">Utility expense</option>
+                                                <option value="general_expense">General expense</option>
                                             </select>
                                             <small class="text-muted">(Vendor or expenses account)</small>
                                         </div>
@@ -381,24 +390,34 @@
                                             <input type="date" class="form-control" id="due_date" name="due_date">
                                         </div>
                                     </div>
+
+                                    <div class="row" id="supplierRow">
+                                        <div class="col-12">
+                                            <label for="supplier_id" class="form-label">Supplier</label>
+                                            <select class="form-select" id="supplier_id" name="supplier_id" disabled>
+                                                <option value="">Select supplier</option>
+                                            </select>
+                                            <small class="text-muted" id="supplierHelper">Required for supplier vouchers</small>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <div class="col-md-6">
                                     <div class="row mb-3">
                                         <div class="col-md-6">
                                             <label class="form-label">Branch</label>
-                                            <div class="form-control" style="background-color: #f8f9fa; border: none;">Kalutara</div>
+                                            <div class="form-control" style="background-color: #f8f9fa; border: none;" id="branchDisplay">{{ $branchName }}</div>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label">Date</label>
-                                            <div class="form-control" style="background-color: #f8f9fa; border: none;">2025-08-20</div>
+                                            <div class="form-control" style="background-color: #f8f9fa; border: none;" id="showDateDisplay" data-value="{{ $today }}">{{ $today }}</div>
                                         </div>
                                     </div>
                                     
                                     <div class="row mb-3">
                                         <div class="col-md-6">
                                             <label class="form-label">User</label>
-                                            <div class="form-control" style="background-color: #f8f9fa; border: none;">Admin</div>
+                                            <div class="form-control" style="background-color: #f8f9fa; border: none;" id="userDisplay">{{ $userName }}</div>
                                         </div>
                                         <div class="col-md-6">
                                             <label for="credit_account" class="form-label">Credit Account</label>
@@ -455,63 +474,15 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td class="text-center">1</td>
-                                            <td><input type="text" class="form-control" placeholder="Text field input" /></td>
-                                            <td><input type="number" class="form-control item-amount" placeholder="0.00" step="0.01" /></td>
-                                            <td><input type="text" class="form-control" placeholder="Number input field" /></td>
-                                            <td><input type="date" class="form-control" /></td>
+                                        <tr class="voucher-row" data-row="0">
+                                            <td class="text-center row-index">1</td>
+                                            <td><input type="text" class="form-control item-description" placeholder="Item description" /></td>
+                                            <td><input type="number" class="form-control item-amount" placeholder="0.00" step="0.01" min="0" /></td>
+                                            <td><input type="text" class="form-control item-invoice" placeholder="Invoice or bill no" /></td>
+                                            <td><input type="date" class="form-control item-date" /></td>
                                             <td>
-                                                <input type="file" class="form-control" multiple style="font-size: 12px;" />
+                                                <input type="file" class="form-control item-file" style="font-size: 12px;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
                                             </td>
-                                            <td>
-                                                <button type="button" class="btn btn-view-file btn-sm me-1">View</button>
-                                                <button type="button" class="btn btn-remove btn-sm">Remove</button>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="text-center">2</td>
-                                            <td><input type="text" class="form-control" /></td>
-                                            <td><input type="number" class="form-control item-amount" placeholder="0.00" step="0.01" /></td>
-                                            <td><input type="text" class="form-control" /></td>
-                                            <td><input type="date" class="form-control" /></td>
-                                            <td><input type="file" class="form-control" multiple style="font-size: 12px;" /></td>
-                                            <td>
-                                                <button type="button" class="btn btn-view-file btn-sm me-1">View</button>
-                                                <button type="button" class="btn btn-remove btn-sm">Remove</button>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="text-center">3</td>
-                                            <td><input type="text" class="form-control" /></td>
-                                            <td><input type="number" class="form-control item-amount" placeholder="0.00" step="0.01" /></td>
-                                            <td><input type="text" class="form-control" /></td>
-                                            <td><input type="date" class="form-control" /></td>
-                                            <td><input type="file" class="form-control" multiple style="font-size: 12px;" /></td>
-                                            <td>
-                                                <button type="button" class="btn btn-view-file btn-sm me-1">View</button>
-                                                <button type="button" class="btn btn-remove btn-sm">Remove</button>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="text-center">4</td>
-                                            <td><input type="text" class="form-control" /></td>
-                                            <td><input type="number" class="form-control item-amount" placeholder="0.00" step="0.01" /></td>
-                                            <td><input type="text" class="form-control" /></td>
-                                            <td><input type="date" class="form-control" /></td>
-                                            <td><input type="file" class="form-control" multiple style="font-size: 12px;" /></td>
-                                            <td>
-                                                <button type="button" class="btn btn-view-file btn-sm me-1">View</button>
-                                                <button type="button" class="btn btn-remove btn-sm">Remove</button>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="text-center">5</td>
-                                            <td><input type="text" class="form-control" /></td>
-                                            <td><input type="number" class="form-control item-amount" placeholder="0.00" step="0.01" /></td>
-                                            <td><input type="text" class="form-control" /></td>
-                                            <td><input type="date" class="form-control" /></td>
-                                            <td><input type="file" class="form-control" multiple style="font-size: 12px;" /></td>
                                             <td>
                                                 <button type="button" class="btn btn-view-file btn-sm me-1">View</button>
                                                 <button type="button" class="btn btn-remove btn-sm">Remove</button>
@@ -535,19 +506,19 @@
                                     <div class="amount-summary">
                                         <div class="amount-row">
                                             <label>Total Amount</label>
-                                            <input type="text" class="form-control" id="totalAmount" value="00.00" readonly>
+                                            <input type="text" class="form-control" id="totalAmount" name="total_amount" value="0.00" readonly>
                                         </div>
                                         <div class="amount-row">
                                             <label>Discount Amount</label>
-                                            <input type="number" class="form-control" id="discountAmount" value="0.00" step="0.01">
+                                            <input type="number" class="form-control" id="discountAmount" name="discount_amount" value="0.00" step="0.01" min="0">
                                         </div>
                                         <div class="amount-row">
                                             <label>Tax Amount</label>
-                                            <input type="number" class="form-control" id="taxAmount" value="0.00" step="0.01">
+                                            <input type="number" class="form-control" id="taxAmount" name="tax_amount" value="0.00" step="0.01" min="0">
                                         </div>
                                         <div class="amount-row total">
                                             <label>Sub Total Amount</label>
-                                            <input type="text" class="form-control" id="subTotalAmount" value="00.00" readonly>
+                                            <input type="text" class="form-control" id="subTotalAmount" name="sub_total_amount" value="0.00" readonly>
                                         </div>
                                     </div>
                                 </div>
@@ -592,120 +563,579 @@
 
 @section('script')
     <script>
-        $(document).ready(function() {
-            let rowCounter = 6;
+        $(function() {
+            const routes = {!! json_encode([
+                'store' => route('payment-vouchers.store'),
+                'nextNumber' => route('payment-vouchers.next-number'),
+                'suppliers' => route('suppliers.index'),
+            ]) !!};
 
-            // Calculate totals
-            function calculateTotals() {
-                let total = 0;
-                $('.item-amount').each(function() {
-                    const value = parseFloat($(this).val()) || 0;
-                    total += value;
-                });
-                
-                $('#totalAmount').val(total.toFixed(2));
-                
-                const discount = parseFloat($('#discountAmount').val()) || 0;
-                const tax = parseFloat($('#taxAmount').val()) || 0;
-                const subTotal = total - discount + tax;
-                
-                $('#subTotalAmount').val(subTotal.toFixed(2));
-                
-                // Convert to words
-                $('#amountInWords').text(numberToWords(subTotal));
+            const $voucherForm = $('#voucherForm');
+            const $itemsTableBody = $('#itemsTable tbody');
+            const $supplierSelect = $('#supplier_id');
+            const $supplierHelper = $('#supplierHelper');
+            const $amountWordsDisplay = $('#amountInWords');
+            const $amountWordsInput = $('#amountInWordsInput');
+            const $debitAccountId = $('#debit_account_id');
+            const $totalAmount = $('#totalAmount');
+            const $subTotalAmount = $('#subTotalAmount');
+            const $discountAmount = $('#discountAmount');
+            const $taxAmount = $('#taxAmount');
+            const $type = $('#type');
+            const $voucherNo = $('#voucher_no');
+            const $showDateDisplay = $('#showDateDisplay');
+            const $showDateHidden = $('#show_date');
+            const $submitBtn = $('.btn-create-voucher');
+
+            let suppliers = [];
+            let allowAutoWords = true;
+
+            bootstrapPage();
+
+            function bootstrapPage() {
+                renumberRows();
+                updateViewButtonState($itemsTableBody.find('tr').first());
+                $showDateHidden.val($showDateDisplay.data('value'));
+                fetchNextVoucherNumber();
+                loadSuppliers();
+                syncSupplierState();
+                calculateTotals();
             }
 
-            // Add new row
-            $('#addRowBtn').on('click', function() {
-                const newRow = `
+            function fetchNextVoucherNumber() {
+                $.getJSON(routes.nextNumber)
+                    .done(function(response) {
+                        if (response && response.data && response.data.voucher_no) {
+                            $voucherNo.val(response.data.voucher_no);
+                        }
+                    });
+            }
+
+            function loadSuppliers() {
+                $.getJSON(routes.suppliers)
+                    .done(function(response) {
+                        suppliers = response && response.data ? response.data : [];
+                        populateSupplierOptions();
+                    })
+                    .fail(function() {
+                        suppliers = [];
+                        populateSupplierOptions();
+                    });
+            }
+
+            function populateSupplierOptions() {
+                const current = $supplierSelect.val();
+                $supplierSelect.empty().append('<option value="">Select supplier</option>');
+                suppliers.forEach(function(supplier) {
+                    const name = supplier && supplier.company_name ? supplier.company_name : '';
+                    $supplierSelect.append(`<option value="${supplier.id}">${escapeHtml(name)}</option>`);
+                });
+
+                if (current && suppliers.some(function(item) { return String(item.id) === String(current); })) {
+                    $supplierSelect.val(current);
+                    renderSupplierDetails(getSupplierById(current));
+                } else {
+                    $supplierSelect.val('');
+                    resetSupplierDetails();
+                }
+
+                syncSupplierState();
+            }
+
+            function getSupplierById(id) {
+                return suppliers.find(function(item) {
+                    return String(item.id) === String(id);
+                });
+            }
+
+            function renderSupplierDetails(supplier) {
+                if (!supplier) {
+                    resetSupplierDetails();
+                    return;
+                }
+
+                const html = `
                     <tr>
-                        <td class="text-center">${rowCounter}</td>
-                        <td><input type="text" class="form-control" /></td>
-                        <td><input type="number" class="form-control item-amount" placeholder="0.00" step="0.01" /></td>
-                        <td><input type="text" class="form-control" /></td>
-                        <td><input type="date" class="form-control" /></td>
-                        <td><input type="file" class="form-control" multiple style="font-size: 12px;" /></td>
+                        <td>${escapeHtml(supplier && supplier.supplier_no ? supplier.supplier_no : '')}</td>
+                        <td>${escapeHtml(supplier && supplier.company_name ? supplier.company_name : '')}</td>
+                        <td>${escapeHtml(supplier && supplier.contact_number ? supplier.contact_number : '')}</td>
+                        <td>${escapeHtml(supplier && supplier.address ? supplier.address : '')}</td>
+                    </tr>
+                `;
+                $('#supplierListBody').html(html);
+            }
+
+            function resetSupplierDetails() {
+                $('#supplierListBody').html(`
+                    <tr>
+                        <td colspan="4" class="text-center text-muted" style="font-size: 13px; padding: 20px;">
+                            <i class="ri-information-line me-2"></i>Select a supplier to view details
+                        </td>
+                    </tr>
+                `);
+            }
+
+            function syncSupplierState() {
+                const isSupplierType = $type.val() === 'supplier';
+                $('#supplierRow').toggle(isSupplierType);
+                $supplierSelect.prop('disabled', !isSupplierType);
+                $supplierHelper.text(isSupplierType ? 'Required for supplier vouchers' : 'Disabled for non-supplier vouchers');
+
+                if ($type.val() === 'supplier') {
+                    $('#debit_account').val('supplier');
+                } else if ($type.val() === 'salary') {
+                    $('#debit_account').val('salary');
+                } else if ($type.val() === 'utility') {
+                    $('#debit_account').val('utility');
+                }
+
+                if (isSupplierType && $supplierSelect.val()) {
+                    renderSupplierDetails(getSupplierById($supplierSelect.val()));
+                }
+
+                if (!isSupplierType) {
+                    $supplierSelect.val('');
+                    resetSupplierDetails();
+                }
+
+                syncDebitAccountId();
+            }
+
+            function syncDebitAccountId() {
+                const supplierId = $supplierSelect.val();
+                const isSupplierType = $type.val() === 'supplier';
+                $debitAccountId.val(isSupplierType && supplierId ? supplierId : '');
+            }
+
+            function renumberRows() {
+                $itemsTableBody.find('tr').each(function(index) {
+                    $(this).attr('data-row', index);
+                    $(this).find('.row-index').text(index + 1);
+                });
+            }
+
+            function buildRowTemplate() {
+                return `
+                    <tr class="voucher-row" data-row="-1">
+                        <td class="text-center row-index"></td>
+                        <td><input type="text" class="form-control item-description" placeholder="Item description" /></td>
+                        <td><input type="number" class="form-control item-amount" placeholder="0.00" step="0.01" min="0" /></td>
+                        <td><input type="text" class="form-control item-invoice" placeholder="Invoice or bill no" /></td>
+                        <td><input type="date" class="form-control item-date" /></td>
+                        <td><input type="file" class="form-control item-file" style="font-size: 12px;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" /></td>
                         <td>
-                            <button type="button" class="btn btn-view-file btn-sm me-1">View</button>
+                            <button type="button" class="btn btn-view-file btn-sm me-1" disabled>View</button>
                             <button type="button" class="btn btn-remove btn-sm">Remove</button>
                         </td>
                     </tr>
                 `;
-                $('#itemsTable tbody').append(newRow);
-                rowCounter++;
+            }
+
+            function updateViewButtonState($row) {
+                const fileInput = $row.find('.item-file')[0];
+                const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+                $row.find('.btn-view-file').prop('disabled', !hasFile);
+            }
+
+            function calculateTotals() {
+                let total = 0;
+                $('.item-amount').each(function() {
+                    const value = parseFloat($(this).val());
+                    if (!isNaN(value) && value >= 0) {
+                        total += value;
+                    }
+                });
+
+                total = Number(total.toFixed(2));
+                const discount = sanitizeCurrencyInput($discountAmount);
+                const tax = sanitizeCurrencyInput($taxAmount);
+                const subTotal = Number((total - discount + tax).toFixed(2));
+
+                $totalAmount.val(total.toFixed(2));
+                $subTotalAmount.val(subTotal.toFixed(2));
+
+                const words = numberToWords(subTotal);
+                if (allowAutoWords) {
+                    $amountWordsDisplay.text(words);
+                    $amountWordsInput.val(words);
+                }
+            }
+
+            function sanitizeCurrencyInput($input) {
+                let value = parseFloat($input.val());
+                if (isNaN(value) || value < 0) {
+                    value = 0;
+                }
+                $input.val(value.toFixed(2));
+                return value;
+            }
+
+            function numberToWords(amount) {
+                if (!isFinite(amount)) {
+                    return 'Zero';
+                }
+
+                if (amount === 0) {
+                    return 'Zero';
+                }
+
+                const negative = amount < 0;
+                amount = Math.abs(amount);
+
+                const intPart = Math.floor(amount);
+                const decPart = Math.round((amount - intPart) * 100);
+
+                let words = convertInteger(intPart);
+                if (!words) {
+                    words = 'Zero';
+                }
+
+                if (decPart > 0) {
+                    words += ' and ' + decPart.toString().padStart(2, '0') + '/100';
+                }
+
+                return (negative ? 'Minus ' : '') + words;
+            }
+
+            function convertInteger(number) {
+                if (number === 0) {
+                    return '';
+                }
+
+                const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+                const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+                const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+                let result = '';
+
+                if (number >= 1000000) {
+                    result += convertInteger(Math.floor(number / 1000000)) + ' Million ';
+                    number %= 1000000;
+                }
+
+                if (number >= 1000) {
+                    result += convertInteger(Math.floor(number / 1000)) + ' Thousand ';
+                    number %= 1000;
+                }
+
+                if (number >= 100) {
+                    result += ones[Math.floor(number / 100)] + ' Hundred ';
+                    number %= 100;
+                }
+
+                if (number >= 20) {
+                    result += tens[Math.floor(number / 10)];
+                    if (number % 10) {
+                        result += ' ' + ones[number % 10];
+                    }
+                } else if (number >= 10) {
+                    result += teens[number - 10];
+                } else if (number > 0) {
+                    result += ones[number];
+                }
+
+                return result.trim();
+            }
+
+            function escapeHtml(text) {
+                if (text === undefined || text === null) {
+                    text = '';
+                }
+                return $('<div>').text(text).html();
+            }
+
+            function gatherItems() {
+                const items = [];
+                let hasInvalidAmount = false;
+                let hasMissingDescription = false;
+
+                $itemsTableBody.find('tr').each(function() {
+                    const $row = $(this);
+                    const description = $.trim($row.find('.item-description').val());
+                    const amountValue = parseFloat($row.find('.item-amount').val());
+                    const invoiceNo = $.trim($row.find('.item-invoice').val());
+                    const invoiceDate = $row.find('.item-date').val();
+
+                    const hasData = description || invoiceNo || invoiceDate || (!isNaN(amountValue) && amountValue > 0);
+
+                    if (!hasData) {
+                        $row.find('.item-amount').removeClass('is-invalid');
+                        $row.find('.item-description').removeClass('is-invalid');
+                        return;
+                    }
+
+                    $row.find('.item-amount').removeClass('is-invalid');
+                    if (!description) {
+                        hasMissingDescription = true;
+                        $row.find('.item-description').addClass('is-invalid');
+                        return;
+                    } else {
+                        $row.find('.item-description').removeClass('is-invalid');
+                    }
+
+                    if (isNaN(amountValue) || amountValue <= 0) {
+                        hasInvalidAmount = true;
+                        $row.find('.item-amount').addClass('is-invalid');
+                        return;
+                    }
+
+                    $row.find('.item-amount').removeClass('is-invalid');
+
+                    items.push({
+                        description: description,
+                        amount: amountValue,
+                        invoiceNo: invoiceNo,
+                        invoiceDate: invoiceDate,
+                        $row: $row
+                    });
+                });
+
+                if (hasInvalidAmount) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid Amount',
+                        text: 'Each item with details must include an amount greater than zero.',
+                        confirmButtonColor: '#667eea'
+                    });
+                    return null;
+                }
+
+                if (hasMissingDescription) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Missing Description',
+                        text: 'Each item must include a description.',
+                        confirmButtonColor: '#667eea'
+                    });
+                    return null;
+                }
+
+                if (items.length === 0) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'No Items',
+                        text: 'Add at least one voucher item before saving.',
+                        confirmButtonColor: '#667eea'
+                    });
+                    return null;
+                }
+
+                return items;
+            }
+
+            function buildFormData(items) {
+                const baseData = new FormData($voucherForm[0]);
+                const formData = new FormData();
+
+                baseData.forEach(function(value, key) {
+                    formData.append(key, value);
+                });
+
+                formData.set('total_amount', $totalAmount.val());
+                formData.set('discount_amount', $discountAmount.val());
+                formData.set('tax_amount', $taxAmount.val());
+                formData.set('sub_total_amount', $subTotalAmount.val());
+                formData.set('amount_in_words', $amountWordsInput.val());
+                formData.set('show_date', $showDateHidden.val());
+
+                items.forEach(function(item, index) {
+                    formData.append(`items[${index}][serial_no]`, index + 1);
+                    formData.append(`items[${index}][description]`, item.description);
+                    formData.append(`items[${index}][amount]`, item.amount.toFixed(2));
+
+                    if (item.invoiceNo) {
+                        formData.append(`items[${index}][invoice_no]`, item.invoiceNo);
+                    }
+
+                    if (item.invoiceDate) {
+                        formData.append(`items[${index}][invoice_date]`, item.invoiceDate);
+                    }
+
+                    const fileInput = item.$row.find('.item-file')[0];
+                    if (fileInput && fileInput.files && fileInput.files.length) {
+                        formData.append(`items[${index}][files]`, fileInput.files[0]);
+                    }
+                });
+
+                return formData;
+            }
+
+            function resetForm() {
+                const defaultDate = $showDateDisplay.data('value');
+                $voucherForm[0].reset();
+                $showDateHidden.val(defaultDate);
+                $itemsTableBody.html(buildRowTemplate());
+                renumberRows();
+                updateViewButtonState($itemsTableBody.find('tr').first());
+                resetSupplierDetails();
+                syncSupplierState();
+                allowAutoWords = true;
+                $('.btn-edit').prop('disabled', false);
+                $('.btn-save').prop('disabled', true);
+                $amountWordsDisplay.removeAttr('contenteditable');
+                calculateTotals();
+                fetchNextVoucherNumber();
+            }
+
+            $('#addRowBtn').on('click', function() {
+                $itemsTableBody.append(buildRowTemplate());
+                const $newRow = $itemsTableBody.find('tr').last();
+                updateViewButtonState($newRow);
+                renumberRows();
             });
 
-            // Remove row
             $(document).on('click', '.btn-remove', function() {
-                if ($('#itemsTable tbody tr').length > 1) {
-                    $(this).closest('tr').remove();
-                    calculateTotals();
-                } else {
+                if ($itemsTableBody.find('tr').length === 1) {
                     Swal.fire({
                         icon: 'warning',
                         title: 'Cannot Remove',
-                        text: 'At least one row is required',
+                        text: 'At least one row is required.',
                         confirmButtonColor: '#667eea'
                     });
+                    return;
                 }
-            });
 
-            // Calculate on input change
-            $(document).on('input', '.item-amount, #discountAmount, #taxAmount', function() {
+                $(this).closest('tr').remove();
+                renumberRows();
+                allowAutoWords = true;
                 calculateTotals();
             });
 
-            // Form submission
-            $('#voucherForm').on('submit', function(e) {
-                e.preventDefault();
-                
-                Swal.fire({
-                    title: 'Success!',
-                    text: 'Payment voucher created successfully',
-                    icon: 'success',
-                    confirmButtonColor: '#667eea'
-                });
+            $(document).on('change', '.item-file', function() {
+                updateViewButtonState($(this).closest('tr'));
             });
 
-            // Number to words conversion
-            function numberToWords(num) {
-                if (num === 0) return 'Zero';
-                
-                const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
-                const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-                const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
-                
-                function convertHundreds(n) {
-                    if (n === 0) return '';
-                    if (n < 10) return ones[n];
-                    if (n < 20) return teens[n - 10];
-                    if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 ? ' ' + ones[n % 10] : '');
-                    return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' ' + convertHundreds(n % 100) : '');
+            $(document).on('click', '.btn-view-file', function() {
+                const $row = $(this).closest('tr');
+                const fileInput = $row.find('.item-file')[0];
+
+                if (!fileInput || !fileInput.files || !fileInput.files.length) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'No File',
+                        text: 'Attach a file before viewing.',
+                        confirmButtonColor: '#667eea'
+                    });
+                    return;
                 }
-                
-                const intPart = Math.floor(num);
-                const decPart = Math.round((num - intPart) * 100);
-                
-                let result = '';
-                
-                if (intPart >= 1000000) {
-                    result += convertHundreds(Math.floor(intPart / 1000000)) + ' Million ';
-                    intPart %= 1000000;
+
+                const file = fileInput.files[0];
+                const url = URL.createObjectURL(file);
+                window.open(url, '_blank');
+                setTimeout(function() {
+                    URL.revokeObjectURL(url);
+                }, 5000);
+            });
+
+            $(document).on('input', '.item-amount', function() {
+                const value = parseFloat($(this).val());
+                if (value < 0) {
+                    $(this).val('');
                 }
-                if (intPart >= 1000) {
-                    result += convertHundreds(Math.floor(intPart / 1000)) + ' Thousand ';
-                    intPart %= 1000;
+                allowAutoWords = true;
+                calculateTotals();
+            });
+
+            $discountAmount.on('input', function() {
+                allowAutoWords = true;
+                calculateTotals();
+            });
+
+            $taxAmount.on('input', function() {
+                allowAutoWords = true;
+                calculateTotals();
+            });
+
+            $type.on('change', function() {
+                syncSupplierState();
+            });
+
+            $supplierSelect.on('change', function() {
+                const supplier = getSupplierById($(this).val());
+                renderSupplierDetails(supplier);
+                syncDebitAccountId();
+            });
+
+            $('.btn-edit').on('click', function() {
+                $amountWordsDisplay.attr('contenteditable', 'true').focus();
+                $(this).prop('disabled', true);
+                $('.btn-save').prop('disabled', false);
+                allowAutoWords = false;
+            });
+
+            $('.btn-save').on('click', function() {
+                const text = $.trim($amountWordsDisplay.text());
+                $amountWordsDisplay.removeAttr('contenteditable');
+                $amountWordsInput.val(text || 'Zero');
+                $(this).prop('disabled', true);
+                $('.btn-edit').prop('disabled', false);
+                allowAutoWords = false;
+            }).prop('disabled', true);
+
+            $voucherForm.on('submit', function(event) {
+                event.preventDefault();
+
+                if ($type.val() === 'supplier' && !$supplierSelect.val()) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Supplier Required',
+                        text: 'Select a supplier before creating this voucher.',
+                        confirmButtonColor: '#667eea'
+                    });
+                    return;
                 }
-                if (intPart > 0) {
-                    result += convertHundreds(intPart);
+
+                const wasAuto = allowAutoWords;
+                calculateTotals();
+                allowAutoWords = wasAuto;
+
+                const items = gatherItems();
+                if (!items) {
+                    return;
                 }
-                
-                if (decPart > 0) {
-                    result += ' and ' + decPart + '/100';
-                }
-                
-                return result.trim() || 'Zero';
-            }
+
+                const formData = buildFormData(items);
+
+                $submitBtn.prop('disabled', true).addClass('disabled');
+
+                $.ajax({
+                    url: routes.store,
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                })
+                    .done(function(response) {
+                        const message = response && response.message ? response.message : 'Payment voucher created successfully';
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: message,
+                            confirmButtonColor: '#667eea'
+                        }).then(function() {
+                            resetForm();
+                        });
+                    })
+                    .fail(function(xhr) {
+                        let text = 'Unable to create payment voucher. Please try again.';
+                        if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                            const errors = Object.values(xhr.responseJSON.errors).flat();
+                            text = errors.join('\n');
+                        } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                            text = xhr.responseJSON.message;
+                        }
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Request Failed',
+                            text: text,
+                            confirmButtonColor: '#667eea'
+                        });
+                    })
+                    .always(function() {
+                        $submitBtn.prop('disabled', false).removeClass('disabled');
+                    });
+            });
         });
     </script>
 @endsection
