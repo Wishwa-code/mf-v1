@@ -1032,6 +1032,24 @@ $banner = DB::select($query);
                         </li>
                     @endif
 
+                    <li class="side-nav-item">
+                        <a data-bs-toggle="collapse" href="#payment_voucher" aria-expanded="false" aria-controls="payment_voucher" class="side-nav-link">
+                            <i class="ri-file-list-3-line"></i>
+                            <span> Payment Voucher Module </span>
+                            <span class="menu-arrow"></span>
+                        </a>
+                        <div class="collapse" id="payment_voucher">
+                            <ul class="side-nav-second-level">
+                                <li>
+                                    <a href="/VoucherDashboard">Voucher Dashboard</a>
+                                </li>
+                                <li>
+                                    <a href="/SupplierRegistration">Supplier Registration</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
                     @if(optional($privilege)->expenses == 1)
                         <li class="side-nav-item">
                             <a data-bs-toggle="collapse" href="#expences" aria-expanded="false" aria-controls="expences"
@@ -1368,6 +1386,24 @@ $banner = DB::select($query);
                                 </div>
                             </li>
                     @endif
+
+                    <li class="side-nav-item">
+                        <a data-bs-toggle="collapse" href="#payment_voucher" aria-expanded="false" aria-controls="payment_voucher" class="side-nav-link">
+                            <i class="ri-file-list-3-line"></i>
+                            <span> Payment Voucher </span>
+                            <span class="menu-arrow"></span>
+                        </a>
+                        <div class="collapse" id="payment_voucher">
+                            <ul class="side-nav-second-level">
+                                <li>
+                                    <a href="/VoucherDashboard">Voucher Dashboard</a>
+                                </li>
+                                <li>
+                                    <a href="/SupplierRegistration">Supplier Registration</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
 
                     @if(optional($privilege)->loan_calculator == 1)
                         <li class="side-nav-item">
