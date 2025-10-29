@@ -262,6 +262,41 @@
             border-bottom-right-radius: 20px;
             border: none;
         }
+        
+        .info-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border: 1px solid #e8e8e8;
+        }
+        
+        .info-card .section-header {
+            margin: -20px -20px 20px -20px;
+            padding: 15px 20px;
+            border-radius: 16px 16px 0 0;
+        }
+        
+        .info-item {
+            margin-bottom: 15px;
+        }
+        
+        .info-item strong {
+            display: block;
+            color: #4a5568;
+            font-size: 13px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-item p {
+            color: #2d3748;
+            font-size: 15px;
+            margin: 0;
+            font-weight: 500;
+        }
     </style>
 @endsection
 
@@ -442,70 +477,100 @@
                     <h5 class="modal-title"><i class="ri-eye-line me-2"></i>View Supplier Details</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="section-header">Basic Info</div>
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Supplier No:</strong>
-                            <p id="view_supplier_no"></p>
+                <div class="modal-body" style="background: #f8f9fa;">
+                    <div class="info-card">
+                        <div class="section-header">Basic Info</div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <strong>Supplier No:</strong>
+                                    <p id="view_supplier_no"></p>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="info-item">
+                                    <strong>Company Name:</strong>
+                                    <p id="view_company_name"></p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-8">
-                            <strong>Company Name:</strong>
-                            <p id="view_company_name"></p>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <strong>Contact Number:</strong>
+                                    <p id="view_contact_number"></p>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="info-item">
+                                    <strong>Address:</strong>
+                                    <p id="view_address"></p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Contact Number:</strong>
-                            <p id="view_contact_number"></p>
-                        </div>
-                        <div class="col-md-8">
-                            <strong>Address:</strong>
-                            <p id="view_address"></p>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Email:</strong>
-                            <p id="view_email"></p>
-                        </div>
-                    </div>
-
-                    <div class="section-header mt-4">Bank & Payment Details</div>
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Bank Name:</strong>
-                            <p id="view_bank_name"></p>
-                        </div>
-                        <div class="col-md-4">
-                            <strong>Branch:</strong>
-                            <p id="view_branch"></p>
-                        </div>
-                        <div class="col-md-4">
-                            <strong>Account Number:</strong>
-                            <p id="view_account_number"></p>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Account Holder Name:</strong>
-                            <p id="view_account_holder_name"></p>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <strong>Email:</strong>
+                                    <p id="view_email"></p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="section-header mt-4">Advanced Info</div>
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <strong>Business Reg No:</strong>
-                            <p id="view_business_reg_no"></p>
+                    <div class="info-card">
+                        <div class="section-header">Bank & Payment Details</div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <strong>Bank Name:</strong>
+                                    <p id="view_bank_name"></p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <strong>Branch:</strong>
+                                    <p id="view_branch"></p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <strong>Account Number:</strong>
+                                    <p id="view_account_number"></p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <strong>Tax/VAT No:</strong>
-                            <p id="view_tax_vat_no"></p>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <strong>Account Holder Name:</strong>
+                                    <p id="view_account_holder_name"></p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <strong>NIC/Passport:</strong>
-                            <p id="view_nic_passport"></p>
+                    </div>
+
+                    <div class="info-card">
+                        <div class="section-header">Advanced Info</div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <strong>Business Reg No:</strong>
+                                    <p id="view_business_reg_no"></p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <strong>Tax/VAT No:</strong>
+                                    <p id="view_tax_vat_no"></p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <strong>NIC/Passport:</strong>
+                                    <p id="view_nic_passport"></p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -525,93 +590,101 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="editSupplierForm">
-                    <div class="modal-body">
+                    <div class="modal-body" style="background: #f8f9fa;">
                         @csrf
                         <input type="hidden" id="edit_supplier_id" name="supplier_id">
                         
-                        <div class="section-header">Basic Info</div>
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <label class="form-label">Supplier / Vendor No</label>
-                                <input type="text" class="form-control" id="edit_supplier_no" name="supplier_no" required>
+                        <div class="info-card">
+                            <div class="section-header">Basic Info</div>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Supplier / Vendor No</label>
+                                    <input type="text" class="form-control" id="edit_supplier_no" name="supplier_no" required>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label">Company / Supplier Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="edit_company_name" name="company_name" required>
+                                </div>
                             </div>
-                            <div class="col-md-8">
-                                <label class="form-label">Company / Supplier Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="edit_company_name" name="company_name" required>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Contact Number</label>
+                                    <input type="tel" class="form-control" id="edit_contact_number" name="contact_number">
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label">Address</label>
+                                    <input type="text" class="form-control" id="edit_address" name="address">
+                                </div>
                             </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <label class="form-label">Contact Number</label>
-                                <input type="tel" class="form-control" id="edit_contact_number" name="contact_number">
-                            </div>
-                            <div class="col-md-8">
-                                <label class="form-label">Address</label>
-                                <input type="text" class="form-control" id="edit_address" name="address">
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <label class="form-label">Email Address</label>
-                                <input type="email" class="form-control" id="edit_email" name="email">
-                            </div>
-                        </div>
-
-                        <div class="section-header mt-4">Bank & Payment Details</div>
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <label class="form-label">Bank Name</label>
-                                <input type="text" class="form-control" id="edit_bank_name" name="bank_name">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Branch</label>
-                                <input type="text" class="form-control" id="edit_branch" name="branch">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Account Number</label>
-                                <input type="text" class="form-control" id="edit_account_number" name="account_number">
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <label class="form-label">Account Holder Name</label>
-                                <input type="text" class="form-control" id="edit_account_holder_name" name="account_holder_name">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Email Address</label>
+                                    <input type="email" class="form-control" id="edit_email" name="email">
+                                </div>
                             </div>
                         </div>
 
-                        <div class="section-header mt-4">Advanced Info (Optional)</div>
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <label class="form-label">Business Registration No</label>
-                                <input type="text" class="form-control" id="edit_business_reg_no" name="business_reg_no">
+                        <div class="info-card">
+                            <div class="section-header">Bank & Payment Details</div>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Bank Name</label>
+                                    <input type="text" class="form-control" id="edit_bank_name" name="bank_name">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Branch</label>
+                                    <input type="text" class="form-control" id="edit_branch" name="branch">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Account Number</label>
+                                    <input type="text" class="form-control" id="edit_account_number" name="account_number">
+                                </div>
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Tax / VAT No</label>
-                                <input type="text" class="form-control" id="edit_tax_vat_no" name="tax_vat_no">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">NIC / Passport No</label>
-                                <input type="text" class="form-control" id="edit_nic_passport" name="nic_passport">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Account Holder Name</label>
+                                    <input type="text" class="form-control" id="edit_account_holder_name" name="account_holder_name">
+                                </div>
                             </div>
                         </div>
 
-                        <div class="section-header mt-4">📎 Attachments (Optional - upload new files to replace)</div>
-                        <div class="row mb-3">
-                            <div class="col-md-3">
-                                <label class="form-label">File 1</label>
-                                <input type="file" class="form-control" name="file1">
+                        <div class="info-card">
+                            <div class="section-header">Advanced Info (Optional)</div>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Business Registration No</label>
+                                    <input type="text" class="form-control" id="edit_business_reg_no" name="business_reg_no">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Tax / VAT No</label>
+                                    <input type="text" class="form-control" id="edit_tax_vat_no" name="tax_vat_no">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">NIC / Passport No</label>
+                                    <input type="text" class="form-control" id="edit_nic_passport" name="nic_passport">
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label">File 2</label>
-                                <input type="file" class="form-control" name="file2">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">File 3</label>
-                                <input type="file" class="form-control" name="file3">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">File 4</label>
-                                <input type="file" class="form-control" name="file4">
+                        </div>
+
+                        <div class="info-card">
+                            <div class="section-header">📎 Attachments (Optional - upload new files to replace)</div>
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">File 1</label>
+                                    <input type="file" class="form-control" name="file1">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">File 2</label>
+                                    <input type="file" class="form-control" name="file2">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">File 3</label>
+                                    <input type="file" class="form-control" name="file3">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">File 4</label>
+                                    <input type="file" class="form-control" name="file4">
+                                </div>
                             </div>
                         </div>
                     </div>
