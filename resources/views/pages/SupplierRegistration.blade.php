@@ -244,6 +244,24 @@
         .card-body {
             padding: 25px;
         }
+        
+        .modal-content {
+            border-radius: 20px;
+            border: none;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            border: none;
+        }
+        
+        .modal-footer {
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            border: none;
+        }
     </style>
 @endsection
 
