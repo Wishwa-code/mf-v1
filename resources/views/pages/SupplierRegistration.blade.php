@@ -255,12 +255,12 @@
                     <h3 class="mb-0"><i class="ri-building-line me-2"></i>Supplier / Vendor Registration</h3>
                 </div>
 
-                <form id="supplierForm">
-                    @csrf
-                    
-                    <!-- Basic Info Card -->
-                    <div class="card mb-4">
-                        <div class="card-body">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form id="supplierForm">
+                            @csrf
+                            
+                            <!-- Basic Info Section -->
                             <div class="section-header">
                                 Basic Info
                             </div>
@@ -292,13 +292,9 @@
                                     <input type="email" class="form-control" id="email" name="email">
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <!-- Bank & Payment Details Card -->
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <div class="section-header">
+                            <!-- Bank & Payment Details Section -->
+                            <div class="section-header mt-4">
                                 Bank & Payment Details
                             </div>
                             <div class="row mb-3">
@@ -322,13 +318,9 @@
                                     <input type="text" class="form-control" id="account_holder_name" name="account_holder_name">
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <!-- Advanced Info Card -->
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <div class="section-header">
+                            <!-- Advanced Info Section -->
+                            <div class="section-header mt-4">
                                 Advance Info (Optional)
                             </div>
                             <div class="row mb-3">
@@ -345,13 +337,9 @@
                                     <input type="text" class="form-control" id="nic_passport" name="nic_passport">
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <!-- Attachments Card -->
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <div class="section-header">
+                            <!-- Attachments Section -->
+                            <div class="section-header mt-4">
                                 📎 Attachments
                             </div>
                             <div class="row mb-3">
@@ -388,9 +376,9 @@
                             <div class="text-end mt-4">
                                 <button type="submit" class="btn btn-create"><i class="ri-save-line me-2"></i>Create Supplier</button>
                             </div>
-                        </div>
+                        </form>
                     </div>
-                </form>
+                </div>
 
                 <!-- Supplier List Card -->
                 <div class="card mb-4">
