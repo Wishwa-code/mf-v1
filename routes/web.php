@@ -888,6 +888,10 @@ Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalContr
         return view('pages.PendingVouchers');
     })->name('pending.vouchers');
 
+    Route::get('/ApprovedPayments', function () {
+        return view('pages.ApprovedPayments');
+    })->name('approved.payments');
+
     Route::get('/SupplierRegistration', function () {
         return view('pages.SupplierRegistration');
     })->name('supplier.registration');
