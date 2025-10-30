@@ -654,6 +654,77 @@
             </div>
         </div>
     </div>
+
+    <!-- View Voucher Modal -->
+    <div class="modal fade" id="viewVoucherModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); color: white;">
+                    <h5 class="modal-title"><i class="ri-eye-line me-2"></i>View Voucher Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Voucher No</label>
+                            <p class="form-control-plaintext" id="view_voucher_no">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Date</label>
+                            <p class="form-control-plaintext" id="view_date">-</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Supplier No</label>
+                            <p class="form-control-plaintext" id="view_supplier_no">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Supplier Name</label>
+                            <p class="form-control-plaintext" id="view_supplier_name">-</p>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Description</label>
+                        <p class="form-control-plaintext" id="view_description">-</p>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Amount</label>
+                            <p class="form-control-plaintext" id="view_amount">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Status</label>
+                            <p class="form-control-plaintext" id="view_status">-</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Payment Type</label>
+                            <p class="form-control-plaintext" id="view_payment_type">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Payment Date</label>
+                            <p class="form-control-plaintext" id="view_payment_date">-</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Created User</label>
+                            <p class="form-control-plaintext" id="view_created_user">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Approved By</label>
+                            <p class="form-control-plaintext" id="view_approved_by">-</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('scripts')

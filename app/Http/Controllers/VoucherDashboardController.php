@@ -21,28 +21,40 @@ class VoucherDashboardController extends Controller
         $filters = [
             'date_from' => $request->input('date_from'),
             'date_to' => $request->input('date_to'),
-            'status' => $request->input('status', ''),
+            'status' => $request->filled('status') ? $request->input('status') : null,
             'supplier_id' => $request->input('supplier_id'),
         ];
 
-        $voucherQueryFactory = function () use ($branchId, $filters) {
+        $baseFilters = [
+            'date_from' => $filters['date_from'],
+            'date_to' => $filters['date_to'],
+            'supplier_id' => $filters['supplier_id'],
+        ];
+
+        $statusFilter = $filters['status'] ?: null;
+
+        $voucherQueryFactory = function () use ($branchId, $baseFilters) {
             $query = DB::table('payment_vouchers')
                 ->where('payment_vouchers.branch_id', $branchId);
 
-            if (!empty($filters['date_from'])) {
-                $query->whereDate('payment_vouchers.show_date', '>=', $filters['date_from']);
+            if (!empty($baseFilters['date_from'])) {
+                $query->whereDate('payment_vouchers.show_date', '>=', $baseFilters['date_from']);
             }
 
-            if (!empty($filters['date_to'])) {
-                $query->whereDate('payment_vouchers.show_date', '<=', $filters['date_to']);
+            if (!empty($baseFilters['date_to'])) {
+                $query->whereDate('payment_vouchers.show_date', '<=', $baseFilters['date_to']);
             }
 
-            if (!empty($filters['status'])) {
-                $query->where('payment_vouchers.status', $filters['status']);
+            if (!empty($baseFilters['supplier_id'])) {
+                $query->where('payment_vouchers.supplier_id', $baseFilters['supplier_id']);
             }
 
-            if (!empty($filters['supplier_id'])) {
-                $query->where('payment_vouchers.supplier_id', $filters['supplier_id']);
+            return $query;
+        };
+
+        $applyStatusFilter = function ($query) use ($statusFilter) {
+            if ($statusFilter) {
+                $query->where('payment_vouchers.status', $statusFilter);
             }
 
             return $query;
@@ -51,31 +63,40 @@ class VoucherDashboardController extends Controller
         $startOfMonth = $now->copy()->startOfMonth()->toDateString();
         $endOfMonth = $now->copy()->endOfMonth()->toDateString();
 
-        $currentMonthTotal = ($voucherQueryFactory)()
-            ->whereBetween('payment_vouchers.show_date', [$startOfMonth, $endOfMonth])
-            ->count();
+        $currentMonthTotal = $applyStatusFilter(
+            ($voucherQueryFactory)()->whereBetween('payment_vouchers.show_date', [$startOfMonth, $endOfMonth])
+        )->count();
 
-        $todayTotal = ($voucherQueryFactory)()
-            ->whereDate('payment_vouchers.show_date', $today)
-            ->count();
+        $todayTotal = $applyStatusFilter(
+            ($voucherQueryFactory)()->whereDate('payment_vouchers.show_date', $today)
+        )->count();
 
-        $expiredCount = ($voucherQueryFactory)()
-            ->whereNotNull('payment_vouchers.due_date')
-            ->whereDate('payment_vouchers.due_date', '<', $today)
-            ->whereIn('payment_vouchers.status', ['draft', 'submitted', 'approved'])
-            ->count();
+        $expiredCount = $applyStatusFilter(
+            ($voucherQueryFactory)()
+                ->whereNotNull('payment_vouchers.due_date')
+                ->whereDate('payment_vouchers.due_date', '<', $today)
+                ->whereIn('payment_vouchers.status', ['draft', 'submitted', 'approved'])
+        )->count();
 
-        $pendingApprovalCount = ($voucherQueryFactory)()
-            ->where('payment_vouchers.status', 'submitted')
-            ->count();
+        $pendingApprovalCount = 0;
+        if (!$statusFilter || $statusFilter === 'submitted') {
+            $pendingApprovalCount = ($voucherQueryFactory)()
+                ->where('payment_vouchers.status', 'submitted')
+                ->count();
+        }
 
-        $approvedCount = ($voucherQueryFactory)()
-            ->where('payment_vouchers.status', 'approved')
-            ->count();
+        $approvedCount = 0;
+        if (!$statusFilter || $statusFilter === 'approved') {
+            $approvedCount = ($voucherQueryFactory)()
+                ->where('payment_vouchers.status', 'approved')
+                ->count();
+        }
 
-        $currentMonthPaidAggregate = ($voucherQueryFactory)()
-            ->where('payment_vouchers.status', 'paid')
-            ->whereBetween('payment_vouchers.show_date', [$startOfMonth, $endOfMonth])
+        $currentMonthPaidAggregate = $applyStatusFilter(
+            ($voucherQueryFactory)()
+                ->where('payment_vouchers.status', 'paid')
+                ->whereBetween('payment_vouchers.show_date', [$startOfMonth, $endOfMonth])
+        )
             ->selectRaw('COALESCE(SUM(payment_vouchers.total_amount), 0) as amount, COUNT(*) as cnt')
             ->first();
 
@@ -97,58 +118,66 @@ class VoucherDashboardController extends Controller
             'paid' => ['label' => 'Paid', 'class' => 'status-paid'],
         ];
 
-        $pendingApprovals = ($voucherQueryFactory)()
-            ->where('payment_vouchers.status', 'submitted')
-            ->leftJoin('suppliers', 'suppliers.id', '=', 'payment_vouchers.supplier_id')
-            ->orderByDesc('payment_vouchers.created_at')
-            ->limit(15)
-            ->get([
-                'payment_vouchers.id',
-                'payment_vouchers.voucher_no',
-                'payment_vouchers.show_date',
-                'payment_vouchers.due_date',
-                'payment_vouchers.total_amount',
-                'payment_vouchers.user_name',
-                'payment_vouchers.credit_account',
-                'suppliers.company_name',
-                'suppliers.supplier_no',
-            ])->map(function ($row) {
-                $row->supplier_label = $row->company_name ?: '—';
-                $row->payment_account_label = $this->formatPaymentAccount($row->credit_account);
-                return $row;
-            });
+        $pendingApprovals = collect();
+        if (!$statusFilter || $statusFilter === 'submitted') {
+            $pendingApprovals = ($voucherQueryFactory)()
+                ->where('payment_vouchers.status', 'submitted')
+                ->leftJoin('suppliers', 'suppliers.id', '=', 'payment_vouchers.supplier_id')
+                ->orderByDesc('payment_vouchers.created_at')
+                ->limit(15)
+                ->get([
+                    'payment_vouchers.id',
+                    'payment_vouchers.voucher_no',
+                    'payment_vouchers.show_date',
+                    'payment_vouchers.due_date',
+                    'payment_vouchers.total_amount',
+                    'payment_vouchers.user_name',
+                    'payment_vouchers.credit_account',
+                    'suppliers.company_name',
+                    'suppliers.supplier_no',
+                ])->map(function ($row) {
+                    $row->supplier_label = $row->company_name ?: '—';
+                    $row->payment_account_label = $this->formatPaymentAccount($row->credit_account);
+                    return $row;
+                });
+        }
 
-        $pendingPayments = ($voucherQueryFactory)()
-            ->where('payment_vouchers.status', 'approved')
-            ->leftJoin('suppliers', 'suppliers.id', '=', 'payment_vouchers.supplier_id')
-            ->orderByDesc('payment_vouchers.updated_at')
-            ->limit(15)
-            ->get([
-                'payment_vouchers.id',
-                'payment_vouchers.voucher_no',
-                'payment_vouchers.show_date',
-                'payment_vouchers.due_date',
-                'payment_vouchers.total_amount',
-                'payment_vouchers.user_name',
-                'payment_vouchers.credit_account',
-                'payment_vouchers.updated_by_name',
-                'payment_vouchers.updated_at',
-                'suppliers.company_name',
-                'suppliers.supplier_no',
-            ])->map(function ($row) {
-                $row->supplier_label = $row->company_name ?: '—';
-                $row->payment_account_label = $this->formatPaymentAccount($row->credit_account);
-                $row->approval_label = ($row->updated_by_name && $row->updated_at)
-                    ? trim($row->updated_by_name . ' - ' . Carbon::parse($row->updated_at)->toDateString())
-                    : '—';
-                return $row;
-            });
+        $pendingPayments = collect();
+        if (!$statusFilter || $statusFilter === 'approved') {
+            $pendingPayments = ($voucherQueryFactory)()
+                ->where('payment_vouchers.status', 'approved')
+                ->leftJoin('suppliers', 'suppliers.id', '=', 'payment_vouchers.supplier_id')
+                ->orderByDesc('payment_vouchers.updated_at')
+                ->limit(15)
+                ->get([
+                    'payment_vouchers.id',
+                    'payment_vouchers.voucher_no',
+                    'payment_vouchers.show_date',
+                    'payment_vouchers.due_date',
+                    'payment_vouchers.total_amount',
+                    'payment_vouchers.user_name',
+                    'payment_vouchers.credit_account',
+                    'payment_vouchers.updated_by_name',
+                    'payment_vouchers.updated_at',
+                    'suppliers.company_name',
+                    'suppliers.supplier_no',
+                ])->map(function ($row) {
+                    $row->supplier_label = $row->company_name ?: '—';
+                    $row->payment_account_label = $this->formatPaymentAccount($row->credit_account);
+                    $row->approval_label = ($row->updated_by_name && $row->updated_at)
+                        ? trim($row->updated_by_name . ' - ' . Carbon::parse($row->updated_at)->toDateString())
+                        : '—';
+                    return $row;
+                });
+        }
 
-        $recentVouchers = ($voucherQueryFactory)()
-            ->leftJoin('suppliers', 'suppliers.id', '=', 'payment_vouchers.supplier_id')
-            ->orderByDesc('payment_vouchers.show_date')
-            ->orderByDesc('payment_vouchers.id')
-            ->limit(25)
+        $recentVouchers = $applyStatusFilter(
+            ($voucherQueryFactory)()
+                ->leftJoin('suppliers', 'suppliers.id', '=', 'payment_vouchers.supplier_id')
+                ->orderByDesc('payment_vouchers.show_date')
+                ->orderByDesc('payment_vouchers.id')
+                ->limit(25)
+        )
             ->get([
                 'payment_vouchers.id',
                 'payment_vouchers.voucher_no',
