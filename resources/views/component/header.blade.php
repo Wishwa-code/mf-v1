@@ -1402,7 +1402,7 @@ $banner = DB::select($query);
                                     <a href="/VoucherDashboard">Voucher Dashboard</a>
                                 </li>
                                 <li>
-                                    <a href="/PaymentVoucher">Payment Voucher</a>
+                                    <a href="/PaymentVoucher">Create Voucher</a>
                                 </li>
                                 <li>
                                     <a href="/PendingVouchers">Pending Vouchers</a>
