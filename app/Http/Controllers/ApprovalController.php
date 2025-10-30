@@ -854,7 +854,65 @@ class ApprovalController extends Controller
             $lendingOfficer = DB::table('user')->where('id', $loan->lending_officer_id)->first();
             
             $installments = DB::table('installments')->where('Customer_Loan_idCustomer_Loan', $loan_id)->where('branch_id', $branch_id)->orderBy('idInstallments')->get();
-            $witnesses = DB::table('witness')->where('Customer_Loan_idCustomer_Loan', $loan_id)->where('branch_id', $branch_id)->get();
+            $witnesses = DB::table('witness')
+                ->where('Customer_Loan_idCustomer_Loan', $loan_id)
+                ->where('branch_id', $branch_id)
+                ->get()
+                ->map(function ($witness) use ($branch_id) {
+                    $displayType = $witness->type ?? 'Witness';
+
+                    if (($witness->type === 'Guarantor' || $witness->type === 'Guardian') && $witness->cus_id) {
+                        $guardian = DB::table('guardian')
+                            ->where('idGuardian', $witness->cus_id)
+                            ->where('branch_id', $branch_id)
+                            ->first();
+
+                        if ($guardian) {
+                            $witness->Name = $this->buildPersonName($guardian->First_Name ?? null, $guardian->Last_Name ?? null) ?: ($witness->Name ?? null);
+                            $witness->Nic = $guardian->Nic ?? $guardian->nic ?? ($witness->Nic ?? $witness->NIC ?? null);
+                            $witness->Mobile = $guardian->Contact_No ?? $guardian->Mobile ?? ($witness->Mobile ?? null);
+                            $witness->Address = $this->buildAddress([
+                                $guardian->Address ?? null,
+                                $guardian->Address_2 ?? $guardian->Address_02 ?? null,
+                                $guardian->Address_3 ?? $guardian->Address_03 ?? null,
+                            ]) ?? ($witness->Address ?? null);
+                        }
+                    } elseif ($witness->cus_id) {
+                        $customer = DB::table('customer')
+                            ->where('idCustomer', $witness->cus_id)
+                            ->where('branch_id', $branch_id)
+                            ->first();
+
+                        if ($customer) {
+                            $displayType = $witness->type === 'Customer' ? 'Cross Customer' : ($witness->type ?? 'Witness');
+                            $witness->Name = $this->buildPersonName($customer->First_Name ?? null, $customer->Last_Name ?? null) ?: ($witness->Name ?? null);
+                            $witness->Nic = $customer->Nic ?? ($witness->Nic ?? $witness->NIC ?? null);
+                            $witness->Mobile = $customer->Contact_No ?? $customer->Mobile_No ?? $customer->Mobile ?? ($witness->Mobile ?? null);
+                            $witness->Address = $this->buildAddress([
+                                $customer->Address ?? null,
+                                $customer->Address_02 ?? null,
+                                $customer->Address_03 ?? null,
+                            ]) ?? ($witness->Address ?? null);
+                        }
+                    }
+
+                    foreach (['Name', 'Nic', 'Mobile', 'Address'] as $field) {
+                        $value = $witness->$field ?? null;
+                        if (is_string($value)) {
+                            $value = trim($value);
+                        }
+                        $witness->$field = $value !== '' ? $value : null;
+                    }
+
+                    if (!isset($witness->Nic) && isset($witness->NIC)) {
+                        $witness->Nic = $witness->NIC;
+                    }
+
+                    $witness->display_type = $displayType === 'Customer' ? 'Cross Customer' : $displayType;
+
+                    return $witness;
+                })
+                ->values();
             $otherCharges = DB::table('loan_other_charges')->where('Customer_Loan_idCustomer_Loan', $loan_id)->where('branch_id', $branch_id)->get();
             $approvalLevels = DB::table('loan_has_approval')->where('loan_id', $loan_id)->where('branch_id', $branch_id)->get();
             
@@ -2028,6 +2086,33 @@ class ApprovalController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
         }
+    }
+
+    private function buildPersonName(?string $first, ?string $last): ?string
+    {
+        $first = trim((string)($first ?? ''));
+        $last = trim((string)($last ?? ''));
+
+        $fullName = trim($first . ' ' . $last);
+
+        return $fullName === '' ? null : $fullName;
+    }
+
+    private function buildAddress(array $parts): ?string
+    {
+        $formatted = [];
+
+        foreach ($parts as $part) {
+            if (is_string($part)) {
+                $part = trim($part);
+            }
+
+            if (!empty($part)) {
+                $formatted[] = $part;
+            }
+        }
+
+        return empty($formatted) ? null : implode(', ', $formatted);
     }
 
     public function undoRejection($id)

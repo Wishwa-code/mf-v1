@@ -1214,9 +1214,9 @@ class LoanController extends Controller
             ->where('loan_id', $loan->idCustomer_Loan)
             ->orderByDesc('id_extra_charger')
             ->first();
-        $extraChargelatestBalance=0;
-        if($latest){
-            $extraChargelatestBalance = (float)$latest->balance ?? 0;
+        $extraChargelatestBalance = 0;
+        if ($latest && isset($latest->balance)) {
+            $extraChargelatestBalance = (float) $latest->balance;
         }
 
 

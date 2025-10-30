@@ -756,9 +756,9 @@ class TodayPaymentController extends Controller
             ->where('loan_id', $id)
             ->orderByDesc('id_extra_charger')
             ->first();
-        $extraChargelatestBalance=0;
-        if($latest){
-            $extraChargelatestBalance = (float)$latest->balance ?? 0;
+        $extraChargelatestBalance = 0;
+        if ($latest && isset($latest->balance)) {
+            $extraChargelatestBalance = (float) $latest->balance;
         }
 
 
@@ -821,7 +821,7 @@ class TodayPaymentController extends Controller
             ->orderByDesc('id_extra_charger')
             ->first();
 
-        if ($latest && (float)$latest->balance > 0) {
+        if ($latest && isset($latest->balance) && (float) $latest->balance > 0) {
 
             DB::transaction(function () use (&$payment_amount, $latest, $loan_id) {
 
@@ -837,7 +837,7 @@ class TodayPaymentController extends Controller
                 $savingBalance    = $latestLog->Saving_Account_Balance ?? 0;
                 $totalPending     = $latestLog->Total_Pending_Balance ?? 0;
 
-                $latestBalance = (float)$latest->balance;
+                $latestBalance = (float) $latest->balance;
 
                 $now = Carbon::now();
                 $date = $now->toDateString();
