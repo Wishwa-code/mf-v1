@@ -421,7 +421,7 @@
                                 <tr>
                                     <td>{{ number_format($loan->Amount, 2, '.', ',') }}</td>
                                     <td>{{ number_format($loan->Total_Loan_Amount, 2, '.', ',') }}</td>
-                                    <td>{{ number_format($total_paid_amount-$savingBalanceSum, 2, '.', ',') }}</td>
+                                    <td>{{ number_format(max($total_paid_amount - $savingBalanceSum, 0), 2, '.', ',') }}</td>
                                     <td>{{ number_format($savingBalanceSum, 2, '.', ',') }}</td>
                                     <td>{{ number_format($total_paid_amount, 2, '.', ',') }}</td>
                                     <td>{{ number_format($Panalty_Amount-$Panalty_BalanceSum, 2, '.', ',') }}</td>
