@@ -884,6 +884,10 @@ Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalContr
     Route::post('/payment-vouchers', [PaymentVoucherController::class, 'store'])->name('payment-vouchers.store');
     Route::get('/payment-vouchers/{id}', [PaymentVoucherController::class, 'show'])->name('payment-vouchers.show');
 
+    Route::get('/PendingVouchers', function () {
+        return view('pages.PendingVouchers');
+    })->name('pending.vouchers');
+
     Route::get('/SupplierRegistration', function () {
         return view('pages.SupplierRegistration');
     })->name('supplier.registration');
