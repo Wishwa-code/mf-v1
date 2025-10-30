@@ -359,8 +359,12 @@
                                 @foreach($witnesses as $witness)
                                 <tr>
                                     <td>
-                                        <span class="badge {{ $witness->type == 'Guarantor' ? 'bg-danger' : 'bg-info' }}">
-                                            {{ $witness->type ?? 'N/A' }}
+                                        @php
+                                            $typeLabel = $witness->display_type ?? $witness->type ?? 'N/A';
+                                            $typeClass = $typeLabel === 'Guarantor' ? 'bg-danger' : ($typeLabel === 'Cross Customer' ? 'bg-info' : 'bg-secondary');
+                                        @endphp
+                                        <span class="badge {{ $typeClass }}">
+                                            {{ $typeLabel }}
                                         </span>
                                     </td>
                                     <td>{{ $witness->Name ?? 'N/A' }}</td>

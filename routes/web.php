@@ -9,11 +9,14 @@ use App\Http\Controllers\KYCController;
 use App\Http\Controllers\LoanCategoryController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\PDFController;
+use App\Http\Controllers\PaymentVoucherController;
 use App\Http\Controllers\PendingLoanController;
 use App\Http\Controllers\RouteController;
+use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TodayPaymentController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\ChartOfAccountController;
+use App\Http\Controllers\VoucherDashboardController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -869,12 +872,35 @@ Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalContr
     Route::get('double-entries/{loanId}', '\App\Http\Controllers\TodayPaymentController@doubleEntries')
         ->name('loan.double-entries');
 
+    // Payment Voucher Module
+    Route::get('/VoucherDashboard', [VoucherDashboardController::class, 'index'])->name('voucher.dashboard');
+
+    Route::get('/PaymentVoucher', function () {
+        return view('pages.PaymentVoucher');
+    })->name('payment.voucher');
+
+    Route::get('/payment-vouchers/list', [PaymentVoucherController::class, 'index'])->name('payment-vouchers.index');
+    Route::get('/payment-vouchers/next-number', [PaymentVoucherController::class, 'nextNumber'])->name('payment-vouchers.next-number');
+    Route::post('/payment-vouchers', [PaymentVoucherController::class, 'store'])->name('payment-vouchers.store');
+    Route::get('/payment-vouchers/{id}', [PaymentVoucherController::class, 'show'])->name('payment-vouchers.show');
+
+    Route::get('/PendingVouchers', function () {
+        return view('pages.PendingVouchers');
+    })->name('pending.vouchers');
+
+    Route::get('/ApprovedPayments', function () {
+        return view('pages.ApprovedPayments');
+    })->name('approved.payments');
+
+    Route::get('/SupplierRegistration', function () {
+        return view('pages.SupplierRegistration');
+    })->name('supplier.registration');
+    Route::get('/suppliers/list', [SupplierController::class, 'index'])->name('suppliers.index');
+    Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
+    Route::get('/suppliers/{id}', [SupplierController::class, 'show'])->name('suppliers.show');
+    Route::put('/suppliers/{id}', [SupplierController::class, 'update'])->name('suppliers.update');
+
 });
-
-
-
-// use Illuminate\Support\Facades\DB;
-// use Illuminate\Support\Facades\Log;
 // use App\Services\SmsService;
 
 // Route::get('/one-off/resend-failed-sms', function (Request $request, SmsService $smsService) {
