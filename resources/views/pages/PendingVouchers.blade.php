@@ -218,7 +218,10 @@
                                         <td><strong>Rs. 45,000.00</strong></td>
                                         <td>
                                             <button class="btn btn-sm btn-success" onclick="viewVoucher(1)">
-                                                <i class="ri-eye-line me-1"></i>View Voucher
+                                                <i class="ri-eye-line me-1"></i>View
+                                            </button>
+                                            <button class="btn btn-sm btn-primary" onclick="approveVoucher('V001')">
+                                                <i class="ri-checkbox-circle-line me-1"></i>Approve
                                             </button>
                                             <button class="btn btn-sm btn-info">
                                                 <i class="ri-money-dollar-circle-line me-1"></i>Payment
@@ -234,7 +237,10 @@
                                         <td><strong>Rs. 15,500.00</strong></td>
                                         <td>
                                             <button class="btn btn-sm btn-success" onclick="viewVoucher(2)">
-                                                <i class="ri-eye-line me-1"></i>View Voucher
+                                                <i class="ri-eye-line me-1"></i>View
+                                            </button>
+                                            <button class="btn btn-sm btn-primary" onclick="approveVoucher('V002')">
+                                                <i class="ri-checkbox-circle-line me-1"></i>Approve
                                             </button>
                                             <button class="btn btn-sm btn-info">
                                                 <i class="ri-money-dollar-circle-line me-1"></i>Payment
@@ -250,7 +256,10 @@
                                         <td><strong>Rs. 28,750.00</strong></td>
                                         <td>
                                             <button class="btn btn-sm btn-success" onclick="viewVoucher(3)">
-                                                <i class="ri-eye-line me-1"></i>View Voucher
+                                                <i class="ri-eye-line me-1"></i>View
+                                            </button>
+                                            <button class="btn btn-sm btn-primary" onclick="approveVoucher('V003')">
+                                                <i class="ri-checkbox-circle-line me-1"></i>Approve
                                             </button>
                                             <button class="btn btn-sm btn-info">
                                                 <i class="ri-money-dollar-circle-line me-1"></i>Payment
@@ -435,7 +444,32 @@
             $('#viewVoucherModal').modal('show');
         }
         
-        // Approve voucher button click handler
+        // Approve voucher from table
+        function approveVoucher(voucherNo) {
+            Swal.fire({
+                title: 'Approve Voucher?',
+                text: `Are you sure you want to approve voucher ${voucherNo}?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Approve',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Here you would send approval request to backend
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Approved!',
+                        text: `Voucher ${voucherNo} has been approved successfully.`,
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            });
+        }
+        
+        // Approve voucher button click handler from modal
         $(document).on('click', '#approveVoucherBtn', function() {
             const voucherNo = $('#modalVoucherNo').text();
             
