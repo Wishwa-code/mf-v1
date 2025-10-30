@@ -194,6 +194,58 @@ class VoucherDashboardController extends Controller
             ->orderBy('company_name')
             ->get(['id', 'supplier_no', 'company_name']);
 
+        $supplierLookup = $suppliers->mapWithKeys(function ($supplier) {
+            return [(string) $supplier->id => [
+                'company_name' => $supplier->company_name,
+                'supplier_no' => $supplier->supplier_no,
+            ]];
+        })->toArray();
+
+        $voucherIds = collect([
+            $pendingApprovals->pluck('id'),
+            $pendingPayments->pluck('id'),
+            $recentVouchers->pluck('id'),
+            $filteredVouchers->pluck('id'),
+        ])->flatten()->filter()->unique()->values();
+
+        $voucherDetails = collect();
+        if ($voucherIds->isNotEmpty()) {
+            $voucherDetails = DB::table('payment_vouchers')
+                ->where('payment_vouchers.branch_id', $branchId)
+                ->whereIn('payment_vouchers.id', $voucherIds)
+                ->leftJoin('suppliers', 'suppliers.id', '=', 'payment_vouchers.supplier_id')
+                ->select([
+                    'payment_vouchers.id',
+                    'payment_vouchers.voucher_no',
+                    'payment_vouchers.show_date',
+                    'payment_vouchers.due_date',
+                    'payment_vouchers.total_amount',
+                    'payment_vouchers.status',
+                    'payment_vouchers.credit_account',
+                    'payment_vouchers.user_name',
+                    'payment_vouchers.created_by_name',
+                    'payment_vouchers.updated_by_name',
+                    'payment_vouchers.updated_at',
+                    'payment_vouchers.supplier_id',
+                    DB::raw('(SELECT pvi.description FROM payment_voucher_items as pvi WHERE pvi.payment_voucher_id = payment_vouchers.id ORDER BY pvi.serial_no ASC LIMIT 1) as primary_description'),
+                    'suppliers.company_name as supplier_name',
+                    'suppliers.supplier_no as supplier_no',
+                ])
+                ->get()
+                ->map(function ($row) use ($statusMeta) {
+                    $row->status_label = $statusMeta[$row->status]['label'] ?? ucfirst((string) $row->status);
+                    $row->status_class = $statusMeta[$row->status]['class'] ?? 'status-pending';
+                    $row->payment_account_label = $this->formatPaymentAccount($row->credit_account);
+                    $row->approval_label = ($row->updated_by_name && $row->updated_at)
+                        ? trim($row->updated_by_name . ' - ' . Carbon::parse($row->updated_at)->toDateString())
+                        : null;
+                    return $row;
+                })
+                ->mapWithKeys(function ($row) {
+                    return [(string) $row->id => $row];
+                });
+        }
+
         $statusOptions = [
             '' => 'All Status',
             'draft' => 'Draft',
@@ -213,6 +265,9 @@ class VoucherDashboardController extends Controller
             'suppliers' => $suppliers,
             'filteredVouchers' => $filteredVouchers,
             'hasFilters' => $hasFilters,
+            'statusMeta' => $statusMeta,
+            'supplierLookup' => $supplierLookup,
+            'voucherDetails' => $voucherDetails->toArray(),
         ]);
     }
 

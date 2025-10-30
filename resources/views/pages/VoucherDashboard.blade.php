@@ -103,8 +103,8 @@
         }
         
         .table thead {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #f8f9fa;
+            color: #495057;
         }
         
         .table thead th {
@@ -113,6 +113,7 @@
             font-weight: 600;
             letter-spacing: 0.5px;
             font-size: 14px;
+            border-bottom: 2px solid #dee2e6;
         }
         
         .table tbody tr {
@@ -520,7 +521,7 @@
                                                     <td>{{ $voucher->user_name ?? '—' }}</td>
                                                     <td>{{ $voucher->payment_account_label }}</td>
                                                     <td>{{ $voucher->due_date ?? '—' }}</td>
-                                                    <td><button class="btn btn-sm btn-success" data-voucher-id="{{ $voucher->id }}">View</button></td>
+                                                    <td><button class="btn btn-sm btn-success view-voucher" data-voucher-id="{{ $voucher->id }}">View</button></td>
                                                 </tr>
                                             @empty
                                                 <tr>
@@ -568,7 +569,7 @@
                                                     <td>{{ $voucher->payment_account_label }}</td>
                                                     <td>{{ $voucher->approval_label }}</td>
                                                     <td>{{ $voucher->due_date ?? '—' }}</td>
-                                                    <td><button class="btn btn-sm btn-success" data-voucher-id="{{ $voucher->id }}">View</button></td>
+                                                    <td><button class="btn btn-sm btn-success view-voucher" data-voucher-id="{{ $voucher->id }}">View</button></td>
                                                 </tr>
                                             @empty
                                                 <tr>
@@ -613,7 +614,7 @@
                                             <td><strong>Rs. {{ number_format($voucher->total_amount ?? 0, 2) }}</strong></td>
                                             <td><span class="status-badge {{ $voucher->status_class }}">{{ $voucher->status_label }}</span></td>
                                             <td>
-                                                <button class="btn btn-sm btn-info" title="View" data-voucher-id="{{ $voucher->id }}"><i class="ri-eye-line"></i></button>
+                                                <button class="btn btn-sm btn-info view-voucher" title="View" data-voucher-id="{{ $voucher->id }}"><i class="ri-eye-line"></i></button>
                                             </td>
                                         </tr>
                                     @empty
@@ -766,15 +767,194 @@
     </div>
 @endsection
 
-@section('scripts')
+@section('script')
     <script>
+        const supplierMap = @json($supplierLookup ?? []);
+        const statusMetaMap = @json($statusMeta ?? []);
+        const voucherDetailsMap = @json($voucherDetails ?? []);
+        const paymentVoucherBaseUrl = @json(url('/payment-vouchers'));
+        const currencyFormatter = new Intl.NumberFormat('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const modalFieldSelectors = [
+            '#view_voucher_no',
+            '#view_date',
+            '#view_supplier_no',
+            '#view_supplier_name',
+            '#view_description',
+            '#view_amount',
+            '#view_status',
+            '#view_payment_type',
+            '#view_payment_date',
+            '#view_created_user',
+            '#view_approved_by'
+        ];
+
+        function formatPaymentAccount(value) {
+            if (!value) {
+                return '—';
+            }
+
+            return value
+                .toLowerCase()
+                .replace(/[-_]+/g, ' ')
+                .replace(/\b\w/g, function(match) {
+                    return match.toUpperCase();
+                });
+        }
+
+        function formatAmount(amount) {
+            var numeric = parseFloat(amount);
+            if (isNaN(numeric)) {
+                return '—';
+            }
+
+            return 'Rs. ' + currencyFormatter.format(numeric);
+        }
+
+        function formatStatus(status) {
+            if (!status) {
+                return '—';
+            }
+
+            if (statusMetaMap[status] && statusMetaMap[status].label) {
+                return statusMetaMap[status].label;
+            }
+
+            return status.charAt(0).toUpperCase() + status.slice(1);
+        }
+
+        function formatApproval(voucher) {
+            if (voucher.approval_label) {
+                return voucher.approval_label;
+            }
+
+            if (voucher.updated_by_name && voucher.updated_at) {
+                return voucher.updated_by_name + ' - ' + voucher.updated_at.substring(0, 10);
+            }
+
+            return '—';
+        }
+
+        function setModalText(selector, value) {
+            $(selector).text(value ? value : '—');
+        }
+
+        function normalizeVoucherData(voucher) {
+            if (!voucher) {
+                return null;
+            }
+
+            if (!voucher.status_label) {
+                voucher.status_label = formatStatus(voucher.status);
+            }
+
+            if (!voucher.payment_account_label) {
+                voucher.payment_account_label = formatPaymentAccount(voucher.credit_account);
+            }
+
+            if (!voucher.description_label && voucher.primary_description) {
+                voucher.description_label = voucher.primary_description;
+            }
+
+            if (!voucher.approval_label && voucher.updated_by_name && voucher.updated_at) {
+                voucher.approval_label = voucher.updated_by_name + ' - ' + voucher.updated_at.substring(0, 10);
+            }
+
+            return voucher;
+        }
+
+        function setModalLoading() {
+            modalFieldSelectors.forEach(function(selector) {
+                $(selector).text('Loading...');
+            });
+        }
+
+        function populateVoucherModal(voucher, items) {
+            if (!voucher || !voucher.id) {
+                throw new Error('Missing voucher data');
+            }
+
+            var supplier = supplierMap[String(voucher.supplier_id || '')] || {};
+            var firstItem = Array.isArray(items) && items.length ? items[0] : null;
+            var descriptionFallback = voucher.description_label || voucher.primary_description;
+            var statusLabel = voucher.status_label || formatStatus(voucher.status);
+            var paymentLabel = voucher.payment_account_label || formatPaymentAccount(voucher.credit_account);
+
+            setModalText('#view_voucher_no', voucher.voucher_no);
+            setModalText('#view_date', voucher.show_date);
+            setModalText('#view_supplier_no', voucher.supplier_no || supplier.supplier_no);
+            setModalText('#view_supplier_name', voucher.supplier_name || supplier.company_name);
+            setModalText('#view_description', descriptionFallback || (firstItem ? firstItem.description : null));
+            setModalText('#view_amount', formatAmount(voucher.total_amount || (firstItem ? firstItem.amount : null)));
+            setModalText('#view_status', statusLabel);
+            setModalText('#view_payment_type', paymentLabel);
+            setModalText('#view_payment_date', voucher.due_date);
+            setModalText('#view_created_user', voucher.user_name || voucher.created_by_name);
+            setModalText('#view_approved_by', formatApproval(voucher));
+        }
+
         $(document).ready(function() {
-            // Search functionality
             $('#searchVoucher').on('keyup', function() {
                 var value = $(this).val().toLowerCase();
                 $('#voucherTableBody tr').filter(function() {
-                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
                 });
+            });
+
+            $(document).on('click', '.view-voucher', function() {
+                var voucherId = $(this).data('voucher-id');
+                if (!voucherId) {
+                    return;
+                }
+                var mapKey = String(voucherId);
+                var cachedVoucher = normalizeVoucherData(voucherDetailsMap[mapKey] || voucherDetailsMap[voucherId]);
+
+                if (cachedVoucher) {
+                    try {
+                        populateVoucherModal(cachedVoucher, []);
+                        $('#viewVoucherModal').modal('show');
+                        return;
+                    } catch (error) {
+                        // fall through to ajax fallback
+                    }
+                }
+
+                setModalLoading();
+                $('#viewVoucherModal').modal('show');
+
+                $.get(paymentVoucherBaseUrl + '/' + voucherId)
+                    .done(function(response) {
+                        var data = response && response.data ? response.data : null;
+                        var voucher = normalizeVoucherData(data && data.voucher ? data.voucher : null);
+                        var items = data && data.items ? data.items : [];
+
+                        try {
+                            populateVoucherModal(voucher, items);
+                            if (voucher && voucher.id) {
+                                voucherDetailsMap[String(voucher.id)] = voucher;
+                            }
+                        } catch (error) {
+                            $('#viewVoucherModal').modal('hide');
+                            Swal.fire({
+                                title: 'Error',
+                                text: 'Voucher details are incomplete.',
+                                icon: 'error',
+                                confirmButtonColor: '#667eea'
+                            });
+                        }
+                    })
+                    .fail(function(xhr) {
+                        $('#viewVoucherModal').modal('hide');
+                        var message = 'Unable to load voucher. Please try again.';
+                        if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+                        Swal.fire({
+                            title: 'Error',
+                            text: message,
+                            icon: 'error',
+                            confirmButtonColor: '#667eea'
+                        });
+                    });
             });
         });
 
@@ -784,7 +964,7 @@
                 text: 'Voucher created successfully',
                 icon: 'success',
                 confirmButtonColor: '#667eea'
-            }).then(() => {
+            }).then(function() {
                 $('#addVoucherModal').modal('hide');
                 $('#voucherForm')[0].reset();
             });
