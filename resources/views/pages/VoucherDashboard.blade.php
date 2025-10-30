@@ -319,9 +319,9 @@
                 <div class="page-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <h3 class="mb-0"><i class="ri-file-list-3-line me-2"></i>Voucher Dashboard</h3>
-                        <button class="btn btn-add-voucher" data-bs-toggle="modal" data-bs-target="#addVoucherModal">
+                        <a href="/PaymentVoucher" class="btn btn-add-voucher">
                             <i class="ri-add-line me-2"></i>Create New Voucher
-                        </button>
+                        </a>
                     </div>
                 </div>
 
@@ -631,70 +631,6 @@
         </div>
     </div>
 
-    <!-- Add Voucher Modal -->
-    <div class="modal fade" id="addVoucherModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                    <h5 class="modal-title"><i class="ri-add-line me-2"></i>Create New Voucher</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="voucherForm">
-                        @csrf
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Voucher No</label>
-                                <input type="text" class="form-control" name="voucher_no" value="VCH-2025-004" readonly>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Date <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control" name="voucher_date" required>
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-12">
-                                <label class="form-label">Supplier <span class="text-danger">*</span></label>
-                                <select class="form-select" name="supplier_id" required>
-                                    <option value="">Select Supplier</option>
-                                    <option value="1">ABC Company Ltd</option>
-                                    <option value="2">XYZ Traders</option>
-                                    <option value="3">Tech Solutions Inc</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Description <span class="text-danger">*</span></label>
-                            <textarea class="form-control" name="description" rows="3" required></textarea>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Amount <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" name="amount" step="0.01" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Payment Method</label>
-                                <select class="form-select" name="payment_method">
-                                    <option value="cash">Cash</option>
-                                    <option value="cheque">Cheque</option>
-                                    <option value="bank_transfer">Bank Transfer</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Attachments</label>
-                            <input type="file" class="form-control" name="attachments[]" multiple>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" onclick="submitVoucher()">Save Voucher</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- View Voucher Modal -->
     <div class="modal fade" id="viewVoucherModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -957,17 +893,5 @@
                     });
             });
         });
-
-        function submitVoucher() {
-            Swal.fire({
-                title: 'Success!',
-                text: 'Voucher created successfully',
-                icon: 'success',
-                confirmButtonColor: '#667eea'
-            }).then(function() {
-                $('#addVoucherModal').modal('hide');
-                $('#voucherForm')[0].reset();
-            });
-        }
     </script>
 @endsection
