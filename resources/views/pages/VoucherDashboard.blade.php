@@ -447,6 +447,45 @@
                                 </div>
                             </div>
                         </form>
+
+                        @if($hasFilters)
+                            <div class="mt-4">
+                                <h5 class="mb-3"><i class="ri-search-line me-2"></i>Filtered Vouchers ({{ $filteredVouchers->count() }})</h5>
+
+                                @if($filteredVouchers->isNotEmpty())
+                                    <div class="table-responsive">
+                                        <table class="table table-hover voucher-table">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Voucher No</th>
+                                                    <th>Date</th>
+                                                    <th>Supplier</th>
+                                                    <th>Description</th>
+                                                    <th>Amount</th>
+                                                    <th>Status</th>
+                                                    <th>Payment Type</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($filteredVouchers as $voucher)
+                                                    <tr>
+                                                        <td><strong>{{ $voucher->voucher_no }}</strong></td>
+                                                        <td>{{ $voucher->show_date ?? '—' }}</td>
+                                                        <td>{{ $voucher->supplier_label }}</td>
+                                                        <td>{{ $voucher->description_label }}</td>
+                                                        <td><strong>Rs. {{ number_format($voucher->total_amount ?? 0, 2) }}</strong></td>
+                                                        <td><span class="status-badge {{ $voucher->status_class }}">{{ $voucher->status_label }}</span></td>
+                                                        <td>{{ $voucher->payment_account_label }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @else
+                                    <p class="text-muted mb-0">No vouchers found for the selected filters.</p>
+                                @endif
+                            </div>
+                        @endif
                     </div>
                 </div>
 
