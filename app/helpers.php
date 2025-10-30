@@ -562,201 +562,216 @@ function processDaySkip($loan, $installment, $holidayDate, $companySetting,$bran
 //    }
 //}
 
-    function customer_number($cus_id)
-    {
-        // Load the customer without branch scoping (works across branches for HO approval)
-        $customer = DB::table('customer')->where('idCustomer', $cus_id)->first();
-        if (!$customer) { return; }
+function customer_number($cus_id)
+{
+    // Load the customer without branch scoping (works across branches for HO approval)
+    $customer = DB::table('customer')->where('idCustomer', $cus_id)->first();
+    if (!$customer) { return; }
 
-        $old_cus_number = $customer->cus_number ?? null;
+    $old_cus_number = $customer->cus_number ?? null;
 
-        // Always derive the target branch from the CUSTOMER, not the session
-        $branchId = (int)($customer->branch_id ?? session('branch_id'));
+    // Always derive the target branch from the CUSTOMER, not the session
+    $branchId = (int)($customer->branch_id ?? session('branch_id'));
 
-        // Fetch the company row for the customer's branch
-        // (Avoid tableWithBranch() here if it forces the session branch)
-        $company = DB::table('company')->where('branch_id', $branchId)->first();
-        if (!$company) { return; }
+    // Fetch the company row for the customer's branch
+    $company = DB::table('company')->where('branch_id', $branchId)->first();
+    if (!$company) { return; }
 
-        $type = $company->customer_num_type;
+    $type = $company->customer_num_type;
 
-        if ($type === "Format") {
+    if ($type === "Format") {
 
-            $Branch_No = (string)($company->branch ?? 'B00');
+        $Branch_No = (string)($company->branch ?? 'B00');
 
-            // Get the specific "Customer Registration" log for this customer in its own branch
-            $customer_log = DB::table('customer_log')
-                ->where('branch_id', $branchId)
-                ->where('customer_id', $cus_id)
-                ->where('type', 'Customer Registration')
-                ->first();
+        // Get the specific "Customer Registration" log for this customer in its own branch
+        $customer_log = DB::table('customer_log')
+            ->where('branch_id', $branchId)
+            ->where('customer_id', $cus_id)
+            ->where('type', 'Customer Registration')
+            ->first();
 
-            // Defaults
-            $Auto_Id       = str_pad((int)($company->customer_num_start_from ?? 0), 3, '0', STR_PAD_LEFT);
-            $Day           = date('d');
-            $Month         = date('m');
-            $Year          = date('Y');
-            $MonthlyCount  = '00';
-            $RootlyCount   = '00';
+        // Defaults
+        $Auto_Id       = str_pad((int)($company->customer_num_start_from ?? 0), 3, '0', STR_PAD_LEFT);
+        $Day           = date('d');
+        $Month         = date('m');
+        $Year          = date('Y');
+        $MonthlyCount  = '00';
+        $RootlyCount   = '00';
 
-            if ($customer_log) {
-                try {
-                    // Global sequential index per BRANCH
-                    $last_logs_count = DB::table(DB::raw("
-                        (
-                          SELECT id, branch_id,
-                                 ROW_NUMBER() OVER (ORDER BY `date`, `time`, `id`) AS seq
-                          FROM customer_log
-                          WHERE type = 'Customer Registration'
-                            AND branch_id = {$branchId}
-                        ) AS t
-                    "))
-                        ->where('id', $customer_log->id)
-                        ->where('branch_id', $branchId)
-                        ->value('seq');
-
-                    $startFrom           = (int)($company->customer_num_start_from ?? 0);
-                    $next_customer_id    = $startFrom + (int)($last_logs_count ?? 0);
-                    $Auto_Id             = str_pad($next_customer_id, 3, '0', STR_PAD_LEFT);
-
-                    // Dates from the registration log
-                    $date  = $customer_log->date;
-                    $Day   = date('d', strtotime($date));
-                    $Month = date('m', strtotime($date));
-                    $Year  = date('Y', strtotime($date));
-
-                    // Monthly sequence (per BRANCH)
-                    $logDateYear  = (int)date('Y', strtotime($customer_log->date));
-                    $logDateMonth = (int)date('m', strtotime($customer_log->date));
-
-                    $MonthlyCount = DB::table(DB::raw("
-                        (
-                          SELECT id, branch_id,
-                                 ROW_NUMBER() OVER (ORDER BY `date`, `time`, `id`) AS seq
-                          FROM customer_log
-                          WHERE type = 'Customer Registration'
-                            AND YEAR(`date`) = {$logDateYear}
-                            AND MONTH(`date`) = {$logDateMonth}
-                            AND branch_id = {$branchId}
-                        ) AS t
-                    "))
-                        ->where('id', $customer_log->id)
-                        ->value('seq');
-
-                    $MonthlyCount = str_pad((string)($MonthlyCount ?? 0), 2, '0', STR_PAD_LEFT);
-
-                    // Route-wise sequence (per BRANCH + this route)
-                    $routeId = (int)($customer->route_id ?? 0);
-
-                    $RootlyCount = DB::table(DB::raw("
-                        (
-                          SELECT cl.id, cl.branch_id, r.id_route, c.idCustomer,
-                                 ROW_NUMBER() OVER (ORDER BY cl.date, cl.time, cl.id) AS seq
-                          FROM customer_log cl
-                          INNER JOIN customer c ON c.idCustomer = cl.customer_id
-                          INNER JOIN route r    ON r.id_route   = c.route_id
-                          WHERE cl.type = 'Customer Registration'
-                            AND r.id_route = {$routeId}
-                            AND cl.branch_id = {$branchId}
-                        ) AS t
-                    "))
-                        ->where('id', $customer_log->id)
-                        ->value('seq');
-
-                    $RootlyCount = str_pad((string)($RootlyCount ?? 0), 2, '0', STR_PAD_LEFT);
-
-                } catch (\Throwable $e) {
-                    \Log::warning('customer_number: seq calculations failed', [
-                        'cus_id'   => $cus_id,
-                        'branchId' => $branchId,
-                        'error'    => $e->getMessage(),
-                    ]);
-                    // keep defaults
-                }
-            }
-
-            // Route code (from the customer's route, within the customer's branch)
-            $root_code = DB::table('route')
-                ->where('branch_id', $branchId)
-                ->where('id_route', $customer->route_id)
-                ->value('root_code') ?? 'R00';
-
-            // ---- Group/Center (branch-safe) ----
-            $Group_No               = 'G00';
-            $Center_No              = 'C00';
-            $center_customer_count  = '00';
-
-            $customer_group = tableWithBranch('group_has_customer')
-                ->where('cus_id', $customer->idCustomer)
-                ->first();
-
-            if ($customer_group) {
-                $Group = DB::table('customer_group')
+        if ($customer_log) {
+            try {
+                // Global sequential index per BRANCH
+                $last_logs_count = DB::table(DB::raw("
+                    (
+                      SELECT id, branch_id,
+                             ROW_NUMBER() OVER (ORDER BY `date`, `time`, `id`) AS seq
+                      FROM customer_log
+                      WHERE type = 'Customer Registration'
+                        AND branch_id = {$branchId}
+                    ) AS t
+                "))
+                    ->where('id', $customer_log->id)
                     ->where('branch_id', $branchId)
-                    ->where('idCustomer_Group', $customer_group->group_id)
+                    ->value('seq');
+
+                $startFrom           = (int)($company->customer_num_start_from ?? 0);
+                $next_customer_id    = $startFrom + (int)($last_logs_count ?? 0);
+                $Auto_Id             = str_pad($next_customer_id, 3, '0', STR_PAD_LEFT);
+
+                // Dates from the registration log
+                $date  = $customer_log->date;
+                $Day   = date('d', strtotime($date));
+                $Month = date('m', strtotime($date));
+                $Year  = date('Y', strtotime($date));
+
+                // Monthly sequence (per BRANCH)
+                $logDateYear  = (int)date('Y', strtotime($customer_log->date));
+                $logDateMonth = (int)date('m', strtotime($customer_log->date));
+
+                $MonthlyCount = DB::table(DB::raw("
+                    (
+                      SELECT id, branch_id,
+                             ROW_NUMBER() OVER (ORDER BY `date`, `time`, `id`) AS seq
+                      FROM customer_log
+                      WHERE type = 'Customer Registration'
+                        AND YEAR(`date`) = {$logDateYear}
+                        AND MONTH(`date`) = {$logDateMonth}
+                        AND branch_id = {$branchId}
+                    ) AS t
+                "))
+                    ->where('id', $customer_log->id)
+                    ->value('seq');
+
+                $MonthlyCount = str_pad((string)($MonthlyCount ?? 0), 2, '0', STR_PAD_LEFT);
+
+                // Route-wise sequence (per BRANCH + this route)
+                $routeId = (int)($customer->route_id ?? 0);
+
+                $RootlyCount = DB::table(DB::raw("
+                    (
+                      SELECT cl.id, cl.branch_id, r.id_route, c.idCustomer,
+                             ROW_NUMBER() OVER (ORDER BY cl.date, cl.time, cl.id) AS seq
+                      FROM customer_log cl
+                      INNER JOIN customer c ON c.idCustomer = cl.customer_id
+                      INNER JOIN route r    ON r.id_route   = c.route_id
+                      WHERE cl.type = 'Customer Registration'
+                        AND r.id_route = {$routeId}
+                        AND cl.branch_id = {$branchId}
+                    ) AS t
+                "))
+                    ->where('id', $customer_log->id)
+                    ->value('seq');
+
+                $RootlyCount = str_pad((string)($RootlyCount ?? 0), 2, '0', STR_PAD_LEFT);
+
+            } catch (\Throwable $e) {
+                \Log::warning('customer_number: seq calculations failed', [
+                    'cus_id'   => $cus_id,
+                    'branchId' => $branchId,
+                    'error'    => $e->getMessage(),
+                ]);
+                // keep defaults
+            }
+        }
+
+        // Route code (from the customer's route, within the customer's branch)
+        $root_code = DB::table('route')
+            ->where('branch_id', $branchId)
+            ->where('id_route', $customer->route_id)
+            ->value('root_code') ?? 'R00';
+
+        // ---- Group/Center (branch-safe) ----
+        $Group_No               = 'G00';
+        $Center_No              = 'C00';
+        $center_customer_count  = '00';
+
+        $customer_group = tableWithBranch('group_has_customer')
+            ->where('cus_id', $customer->idCustomer)
+            ->first();
+
+        if ($customer_group) {
+            $Group = DB::table('customer_group')
+                ->where('branch_id', $branchId)
+                ->where('idCustomer_Group', $customer_group->group_id)
+                ->first();
+
+            if ($Group) {
+                $Group_No = $Group->Group_No ?? 'G00';
+
+                $center = DB::table('center')
+                    ->where('branch_id', $branchId)
+                    ->where('idCenter', $Group->center_id)
                     ->first();
 
-                if ($Group) {
-                    $Group_No = $Group->Group_No ?? 'G00';
+                $Center_No = $center->No ?? 'C00';
+                $centerId = (int)($Group->center_id ?? 0);
 
-                    $center = DB::table('center')
-                        ->where('branch_id', $branchId)
-                        ->where('idCenter', $Group->center_id)
-                        ->first();
+                try {
+                    // ---------- BASE: all members of this center ----------
+                    $base = DB::table('group_has_customer as ghc')
+                        ->join('customer as c', 'c.idCustomer', '=', 'ghc.cus_id')
+                        ->join('customer_group as cg', 'cg.idCustomer_Group', '=', 'ghc.group_id')
+                        ->where('cg.center_id', $centerId)
+                        ->where('c.branch_id', $branchId)
+                        ->groupBy('c.idCustomer', 'cg.center_id')
+                        ->selectRaw("
+                            c.idCustomer,
+                            cg.center_id
+                        ");
 
-                    $Center_No = $center->No ?? 'C00';
-                    $centerId = (int)($Group->center_id ?? 0);
+                    // ---------- RANK: compute row_number over the FULL center set ----------
+                    $ranked = DB::query()
+                        ->fromSub($base, 'base')
+                        ->selectRaw("
+                            base.idCustomer,
+                            base.center_id,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY base.center_id
+                                ORDER BY base.idCustomer
+                            ) AS seq
+                        ");
 
-                    try {
-                        // ---------- BASE: all members of this center ----------
-                        $base = DB::table('group_has_customer as ghc')
-                            ->join('customer as c', 'c.idCustomer', '=', 'ghc.cus_id')
-                            ->join('customer_group as cg', 'cg.idCustomer_Group', '=', 'ghc.group_id')
-                            ->where('cg.center_id', $centerId)
-                            ->where('c.branch_id', $branchId) // safe if customers are branch-scoped
-                            ->groupBy('c.idCustomer', 'cg.center_id')
-                            ->selectRaw("
-            c.idCustomer,
-            cg.center_id
-        ");
+                    // ---------- PICK: now filter to this customer ----------
+                    $centerSeq = DB::query()
+                        ->fromSub($ranked, 'r')
+                        ->where('r.idCustomer', $cus_id)
+                        ->value('seq');
 
-    // ---------- RANK: compute row_number over the FULL center set ----------
-                        $ranked = DB::query()
-                            ->fromSub($base, 'base')
-                            ->selectRaw("
-            base.idCustomer,
-            base.center_id,
-            ROW_NUMBER() OVER (
-                PARTITION BY base.center_id
-                ORDER BY base.idCustomer
-            ) AS seq
-        ");
+                    $center_customer_count = str_pad((string)($centerSeq ?? 0), 2, '0', STR_PAD_LEFT);
 
-
-                        // ---------- PICK: now filter to this customer ----------
-                        $centerSeq = DB::query()
-                            ->fromSub($ranked, 'r')
-                            ->where('r.idCustomer', $cus_id)
-                            ->value('seq'); // null if the customer isn't in that center
-
-                        $center_customer_count = str_pad((string)($centerSeq ?? 0), 2, '0', STR_PAD_LEFT);
-
-                    } catch (\Throwable $e) {
-                        \Log::warning('center_customer_count failed', [
-                            'center_id' => $centerId,
-                            'branch_id' => $branchId,
-                            'cus_id'    => $cus_id,
-                            'error'     => $e->getMessage(),
-                        ]);
-                        // keep "00"
-                    }
-
-
+                } catch (\Throwable $e) {
+                    \Log::warning('center_customer_count failed', [
+                        'center_id' => $centerId,
+                        'branch_id' => $branchId,
+                        'cus_id'    => $cus_id,
+                        'error'     => $e->getMessage(),
+                    ]);
+                    // keep "00"
                 }
             }
+        }
 
-            // ---- Build the final number ----
-            $placeholders = [
+        // --------------------------------------------------------------------
+        // 🔐 UNIQUE CUSTOMER NUMBER GENERATION
+        // --------------------------------------------------------------------
+
+        // We'll treat @Center_Cus_Count@ as the "conflict breaker".
+        // Build a helper closure so we can rebuild full number any time we bump the count.
+        $makeCustomerNumber = function($centerCountStr) use (
+            $company,
+            $Branch_No,
+            $root_code,
+            $Center_No,
+            $Group_No,
+            $Auto_Id,
+            $Day,
+            $Month,
+            $Year,
+            $MonthlyCount,
+            $RootlyCount
+        ) {
+
+            $placeholders_local = [
                 '@Branch_No@'        => $Branch_No,
                 '@Root@'             => $root_code,
                 '@Center_No@'        => $Center_No,
@@ -767,39 +782,91 @@ function processDaySkip($loan, $installment, $holidayDate, $companySetting,$bran
                 '@Year@'             => $Year,
                 '@CountMonthly@'     => $MonthlyCount,
                 '@RootlyCount@'      => $RootlyCount,
-                '@Center_Cus_Count@' => $center_customer_count,
+                '@Center_Cus_Count@' => $centerCountStr,
             ];
 
-            $customer_number_txt = $company->customer_format;
-            foreach ($placeholders as $placeholder => $value) {
-                $customer_number_txt = str_replace($placeholder, (string)$value, $customer_number_txt);
+            $txt = $company->customer_format;
+            foreach ($placeholders_local as $ph => $val) {
+                $txt = str_replace($ph, (string)$val, $txt);
+            }
+            return $txt;
+        };
+
+        // start with calculated center_customer_count
+        $currentSeqInt  = (int)$center_customer_count; // "03" -> 3
+        if ($currentSeqInt <= 0) {
+            $currentSeqInt = 1; // minimum 1 to avoid 00 duplicates everywhere
+        }
+
+        $finalCustomerNumber = null;
+        $safetyLoops = 0;
+
+        do {
+            $safetyLoops++;
+
+            // format seq again as 2 digits
+            $tryCenterSeq = str_pad((string)$currentSeqInt, 2, '0', STR_PAD_LEFT);
+
+            // build candidate number string
+            $candidate = $makeCustomerNumber($tryCenterSeq);
+
+            // check if this number already exists for ANY customer
+            $exists = DB::table('customer')
+                ->where('cus_number', $candidate)
+                ->where('idCustomer', '!=', $cus_id) // ignore self
+                ->exists();
+
+            if (!$exists) {
+                $finalCustomerNumber = $candidate;
+                break;
             }
 
-            // Update directly without branch filter (allows HO to update customer numbers in any branch)
-            DB::table('customer')
-                ->where('idCustomer', $cus_id)
-                ->update(['cus_number' => $customer_number_txt]);
-            $new_cus_number = $customer_number_txt;
+            // already taken -> bump and loop
+            $currentSeqInt++;
 
-            // Log the change (safe to keep as-is)
-            try {
-                $CustomerLogController = new CustomerLogController();
-                $request = new Request([
-                    'customer_id'    => $cus_id,
-                    'description'    => "Customer Number Changed From ".$old_cus_number." To ".$new_cus_number,
-                    'description_id' => $cus_id,
-                    'comment'        => 'Change Customer Number',
-                    'type'           => 'Customer Update',
+            // tiny hard stop to avoid infinite loop if something goes crazy
+            if ($safetyLoops > 2000) {
+                \Log::error('customer_number: too many attempts to find unique cus_number', [
+                    'cus_id'   => $cus_id,
+                    'branchId' => $branchId,
                 ]);
-                $CustomerLogController->store($request);
-            } catch (\Throwable $e) {
-                \Log::warning('customer_number: log store failed', [
-                    'cus_id' => $cus_id,
-                    'error'  => $e->getMessage(),
-                ]);
+                // fallback to candidate anyway (last generated)
+                $finalCustomerNumber = $candidate;
+                break;
             }
+
+        } while (true);
+
+        // --------------------------------------------------------------------
+        // ✅ SAVE + LOG
+        // --------------------------------------------------------------------
+
+        DB::table('customer')
+            ->where('idCustomer', $cus_id)
+            ->update(['cus_number' => $finalCustomerNumber]);
+
+        $new_cus_number = $finalCustomerNumber;
+
+        // Log the change
+        try {
+            $CustomerLogController = new CustomerLogController();
+            $request = new Request([
+                'customer_id'    => $cus_id,
+                'description'    => "Customer Number Changed From ".$old_cus_number." To ".$new_cus_number,
+                'description_id' => $cus_id,
+                'comment'        => 'Change Customer Number',
+                'type'           => 'Customer Update',
+            ]);
+            $CustomerLogController->store($request);
+        } catch (\Throwable $e) {
+            \Log::warning('customer_number: log store failed', [
+                'cus_id' => $cus_id,
+                'error'  => $e->getMessage(),
+            ]);
         }
     }
+}
+
 
 
 

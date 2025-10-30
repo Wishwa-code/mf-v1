@@ -1032,12 +1032,15 @@ class LoanController extends Controller
         $Saving_amountSum = $installments->sum('Saving_amount');
         $Panalty_BalanceSum = $installments->sum('Panalty_Balance');
         $Panalty_Amount = $installments->sum('Panalty_Amount');
-//        $Saving_balance = $installments->sum('Saving_balance');
+
 //        $savingBalanceSum=$Saving_amountSum-$Saving_balance;
         $last_log = DB::table('Loan_Log')->where('Loan_ID','=',$id)->orderBy('Loan_Log_ID', 'desc')->first();
         $savingBalanceSum=0.00;
         if ($last_log){
             $savingBalanceSum = $last_log->Saving_Account_Balance;
+        }
+        if ($savingBalanceSum==0){
+            $savingBalanceSum = $installments->sum('Saving_balance');
         }
 
         // Extracting installment IDs from installments

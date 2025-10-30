@@ -1496,148 +1496,147 @@ class TodayPaymentController extends Controller
                     );
 
                     $this->capitalBalanceController->index($loan_id);
-                }
 
+                    $loan_for_bank = tableWithBranch('customer_loan')
+                        ->where('idCustomer_Loan', '=', $loan_id)
+                        ->first();
+                    $bank_log_comment = "Loan Number : {$loan_for_bank->Loan_No}";
+                    $bank_account_company = $request->bank_account_company;
 
+                    $capital_id=tableWithBranch('company_bank_accounts')
+                        ->where('Bank_Type','=','System_default_1')
+                        ->first();
 
+                    $interest_id=tableWithBranch('company_bank_accounts')
+                        ->where('Bank_Type','=','System_default_2')
+                        ->first();
 
-                $loan_for_bank = tableWithBranch('customer_loan')
-                    ->where('idCustomer_Loan', '=', $loan_id)
-                    ->first();
-                $bank_log_comment = "Loan Number : {$loan_for_bank->Loan_No}";
-                $bank_account_company = $request->bank_account_company;
+                    $panelty_id=tableWithBranch('company_bank_accounts')
+                        ->where('Bank_Type','=','System_default_5')
+                        ->first();
 
-                $capital_id=tableWithBranch('company_bank_accounts')
-                    ->where('Bank_Type','=','System_default_1')
-                    ->first();
+                    $saving_id=tableWithBranch('company_bank_accounts')
+                        ->where('Bank_Type','=','System_default_10')
+                        ->first();
+                    if ($payment_type === "Bank Deposit") {
+                        if ($capital_balance_tot_paid>0){
+                            //capital
+                            $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Bank Deposit", "debit", $capital_balance_tot_paid,$capital_id->Idbank,$savedId);
+                            $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Bank Deposit", "credit", $capital_balance_tot_paid,$bank_account_company,$savedId);
+                        }
 
-                $interest_id=tableWithBranch('company_bank_accounts')
-                    ->where('Bank_Type','=','System_default_2')
-                    ->first();
+                        if($Interest_Balance_tot_paid>0){
+                            //interest
+                            $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Bank Deposit", "debit", $Interest_Balance_tot_paid,$interest_id->Idbank,$savedId);
+                            $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Bank Deposit", "credit", $Interest_Balance_tot_paid,$bank_account_company,$savedId);
+                        }
 
-                $panelty_id=tableWithBranch('company_bank_accounts')
-                    ->where('Bank_Type','=','System_default_5')
-                    ->first();
+                        if($Panalty_Balance_tot_paid>0){
+                            //panelty
+                            $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Bank Deposit", "debit", $Panalty_Balance_tot_paid,$panelty_id->Idbank,$savedId);
+                            $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Bank Deposit", "credit", $Panalty_Balance_tot_paid,$bank_account_company,$savedId);
+                        }
 
-                $saving_id=tableWithBranch('company_bank_accounts')
-                    ->where('Bank_Type','=','System_default_10')
-                    ->first();
-                if ($payment_type === "Bank Deposit") {
-                    if ($capital_balance_tot_paid>0){
-                        //capital
-                        $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Bank Deposit", "debit", $capital_balance_tot_paid,$capital_id->Idbank,$savedId);
-                        $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Bank Deposit", "credit", $capital_balance_tot_paid,$bank_account_company,$savedId);
-                    }
+                        if($Saving_balance_tot_paid>0){
+                            //saving
+                            $this->bankLogController->index($bank_account_company, "Loan Payment-Saving", $bank_log_comment, "Bank Deposit", "debit", $Saving_balance_tot_paid,$saving_id->Idbank,$savedId);
+                            $this->bankLogController->index($saving_id->Idbank, "Loan Payment-Saving", $bank_log_comment, "Bank Deposit", "credit", $Saving_balance_tot_paid,$bank_account_company,$savedId);
+                        }
+                    } else if ($payment_type === "Collector" || $payment_type === "Cashier") {
+                        if ($capital_balance_tot_paid>0){
+                            //capital
+                            $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Collector Deposit", "debit", $capital_balance_tot_paid,$capital_id->Idbank,$savedId);
+                            $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Collector Deposit", "credit", $capital_balance_tot_paid,$bank_account_company,$savedId);
+                        }
 
-                    if($Interest_Balance_tot_paid>0){
-                        //interest
-                        $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Bank Deposit", "debit", $Interest_Balance_tot_paid,$interest_id->Idbank,$savedId);
-                        $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Bank Deposit", "credit", $Interest_Balance_tot_paid,$bank_account_company,$savedId);
-                    }
+                        if($Interest_Balance_tot_paid>0){
+                            //interest
+                            $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Collector Deposit", "debit", $Interest_Balance_tot_paid,$interest_id->Idbank,$savedId);
+                            $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Collector Deposit", "credit", $Interest_Balance_tot_paid,$bank_account_company,$savedId);
+                        }
 
-                    if($Panalty_Balance_tot_paid>0){
-                        //panelty
-                        $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Bank Deposit", "debit", $Panalty_Balance_tot_paid,$panelty_id->Idbank,$savedId);
-                        $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Bank Deposit", "credit", $Panalty_Balance_tot_paid,$bank_account_company,$savedId);
-                    }
+                        if($Panalty_Balance_tot_paid>0){
+                            //panelty
+                            $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Collector Deposit", "debit", $Panalty_Balance_tot_paid,$panelty_id->Idbank,$savedId);
+                            $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Collector Deposit", "credit", $Panalty_Balance_tot_paid,$bank_account_company,$savedId);
+                        }
 
-                    if($Saving_balance_tot_paid>0){
-                        //saving
-                        $this->bankLogController->index($bank_account_company, "Loan Payment-Saving", $bank_log_comment, "Bank Deposit", "debit", $Saving_balance_tot_paid,$saving_id->Idbank,$savedId);
-                        $this->bankLogController->index($saving_id->Idbank, "Loan Payment-Saving", $bank_log_comment, "Bank Deposit", "credit", $Saving_balance_tot_paid,$bank_account_company,$savedId);
-                    }
-                } else if ($payment_type === "Collector" || $payment_type === "Cashier") {
-                    if ($capital_balance_tot_paid>0){
-                        //capital
-                        $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Collector Deposit", "debit", $capital_balance_tot_paid,$capital_id->Idbank,$savedId);
-                        $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Collector Deposit", "credit", $capital_balance_tot_paid,$bank_account_company,$savedId);
-                    }
+                        if($Saving_balance_tot_paid>0){
+                            //saving
+                            $this->bankLogController->index($bank_account_company, "Loan Payment-Saving", $bank_log_comment, "Collector Deposit", "debit", $Saving_balance_tot_paid,$saving_id->Idbank,$savedId);
+                            $this->bankLogController->index($saving_id->Idbank, "Loan Payment-Saving", $bank_log_comment, "Collector Deposit", "credit", $Saving_balance_tot_paid,$bank_account_company,$savedId);
+                        }
+                    } else if ($payment_type === "Cash") {
+                        $bank_account_company = DB::table('company_bank_accounts')
+                            ->where('branch_id', session('branch_id'))
+                            ->whereRaw('LOWER(Account_No) = ?', ['cash'])  // Case-insensitive comparison
+                            ->value('Idbank');
+                        if ($capital_balance_tot_paid>0){
+                            //capital
+                            $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Cash", "debit", $capital_balance_tot_paid,$capital_id->Idbank,$savedId);
+                            $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Cash", "credit", $capital_balance_tot_paid,$bank_account_company,$savedId);
+                        }
 
-                    if($Interest_Balance_tot_paid>0){
-                        //interest
-                        $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Collector Deposit", "debit", $Interest_Balance_tot_paid,$interest_id->Idbank,$savedId);
-                        $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Collector Deposit", "credit", $Interest_Balance_tot_paid,$bank_account_company,$savedId);
-                    }
+                        if($Interest_Balance_tot_paid>0){
+                            //interest
+                            $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Cash", "debit", $Interest_Balance_tot_paid,$interest_id->Idbank,$savedId);
+                            $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Cash", "credit", $Interest_Balance_tot_paid,$bank_account_company,$savedId);
+                        }
 
-                    if($Panalty_Balance_tot_paid>0){
-                        //panelty
-                        $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Collector Deposit", "debit", $Panalty_Balance_tot_paid,$panelty_id->Idbank,$savedId);
-                        $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Collector Deposit", "credit", $Panalty_Balance_tot_paid,$bank_account_company,$savedId);
-                    }
+                        if($Panalty_Balance_tot_paid>0){
+                            //panelty
+                            $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Cash", "debit", $Panalty_Balance_tot_paid,$panelty_id->Idbank,$savedId);
+                            $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Cash", "credit", $Panalty_Balance_tot_paid,$bank_account_company,$savedId);
+                        }
 
-                    if($Saving_balance_tot_paid>0){
-                        //saving
-                        $this->bankLogController->index($bank_account_company, "Loan Payment-Saving", $bank_log_comment, "Collector Deposit", "debit", $Saving_balance_tot_paid,$saving_id->Idbank,$savedId);
-                        $this->bankLogController->index($saving_id->Idbank, "Loan Payment-Saving", $bank_log_comment, "Collector Deposit", "credit", $Saving_balance_tot_paid,$bank_account_company,$savedId);
-                    }
-                } else if ($payment_type === "Cash") {
-                    $bank_account_company = DB::table('company_bank_accounts')
-                        ->where('branch_id', session('branch_id'))
-                        ->whereRaw('LOWER(Account_No) = ?', ['cash'])  // Case-insensitive comparison
-                        ->value('Idbank');
-                    if ($capital_balance_tot_paid>0){
-                        //capital
-                        $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Cash", "debit", $capital_balance_tot_paid,$capital_id->Idbank,$savedId);
-                        $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Cash", "credit", $capital_balance_tot_paid,$bank_account_company,$savedId);
-                    }
+                        if($Saving_balance_tot_paid>0){
+                            //saving
+                            $this->bankLogController->index($bank_account_company, "Loan Payment-Saving", $bank_log_comment, "Cash", "debit", $Saving_balance_tot_paid,$saving_id->Idbank,$savedId);
+                            $this->bankLogController->index($saving_id->Idbank, "Loan Payment-Saving", $bank_log_comment, "Cash", "credit", $Saving_balance_tot_paid,$bank_account_company,$savedId);
+                        }
+                    } else if ($payment_type === "Cheque") {
+                        DB::table('cheque_details')->insert([
+                            'Date_Time' => date('Y-m-d H:i:s'),
+                            'Type' => "Receive",
+                            'Company_Account' => $cheque_issue_bank,
+                            'Description' => "Customer payment",
+                            'Amount' => $payment_amount,
+                            'Cheque_No' => $chq_number,
+                            'Cheque_Type' => $chq_type,
+                            'Name_On_The_Cheque' => $name_on_cheque,
+                            'Cheque_Date' => $chq_date,
+                            'Status' => '0',
+                            'Note' => '-',
+                            'Payment_id' => $savedId,
+                            'branch_id' => session('branch_id')
+                        ]);
+                        if ($capital_balance_tot_paid>0){
+                            //capital
+                            $this->bankLogController->index($bank_account_company_chq, "Loan Payment-Capital", $bank_log_comment, "Cheque Deposit", "debit", $capital_balance_tot_paid,$capital_id->Idbank,$savedId);
+                            $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Cheque Deposit", "credit", $capital_balance_tot_paid,$bank_account_company_chq,$savedId);
+                        }
 
-                    if($Interest_Balance_tot_paid>0){
-                        //interest
-                        $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Cash", "debit", $Interest_Balance_tot_paid,$interest_id->Idbank,$savedId);
-                        $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Cash", "credit", $Interest_Balance_tot_paid,$bank_account_company,$savedId);
-                    }
+                        if($Interest_Balance_tot_paid>0){
+                            //interest
+                            $this->bankLogController->index($bank_account_company_chq, "Loan Payment-Interest", $bank_log_comment, "Cheque Deposit", "debit", $Interest_Balance_tot_paid,$interest_id->Idbank,$savedId);
+                            $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Cheque Deposit", "credit", $Interest_Balance_tot_paid,$bank_account_company_chq,$savedId);
+                        }
 
-                    if($Panalty_Balance_tot_paid>0){
-                        //panelty
-                        $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Cash", "debit", $Panalty_Balance_tot_paid,$panelty_id->Idbank,$savedId);
-                        $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Cash", "credit", $Panalty_Balance_tot_paid,$bank_account_company,$savedId);
-                    }
+                        if($Panalty_Balance_tot_paid>0){
+                            //panelty
+                            $this->bankLogController->index($bank_account_company_chq, "Loan Payment-Penalty", $bank_log_comment, "Cheque Deposit", "debit", $Panalty_Balance_tot_paid,$panelty_id->Idbank,$savedId);
+                            $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Cheque Deposit", "credit", $Panalty_Balance_tot_paid,$bank_account_company_chq,$savedId);
+                        }
 
-                    if($Saving_balance_tot_paid>0){
-                        //saving
-                        $this->bankLogController->index($bank_account_company, "Loan Payment-Saving", $bank_log_comment, "Cash", "debit", $Saving_balance_tot_paid,$saving_id->Idbank,$savedId);
-                        $this->bankLogController->index($saving_id->Idbank, "Loan Payment-Saving", $bank_log_comment, "Cash", "credit", $Saving_balance_tot_paid,$bank_account_company,$savedId);
-                    }
-                } else if ($payment_type === "Cheque") {
-                    DB::table('cheque_details')->insert([
-                        'Date_Time' => date('Y-m-d H:i:s'),
-                        'Type' => "Receive",
-                        'Company_Account' => $cheque_issue_bank,
-                        'Description' => "Customer payment",
-                        'Amount' => $payment_amount,
-                        'Cheque_No' => $chq_number,
-                        'Cheque_Type' => $chq_type,
-                        'Name_On_The_Cheque' => $name_on_cheque,
-                        'Cheque_Date' => $chq_date,
-                        'Status' => '0',
-                        'Note' => '-',
-                        'Payment_id' => $savedId,
-                        'branch_id' => session('branch_id')
-                    ]);
-                    if ($capital_balance_tot_paid>0){
-                        //capital
-                        $this->bankLogController->index($bank_account_company_chq, "Loan Payment-Capital", $bank_log_comment, "Cheque Deposit", "debit", $capital_balance_tot_paid,$capital_id->Idbank,$savedId);
-                        $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Cheque Deposit", "credit", $capital_balance_tot_paid,$bank_account_company_chq,$savedId);
-                    }
-
-                    if($Interest_Balance_tot_paid>0){
-                        //interest
-                        $this->bankLogController->index($bank_account_company_chq, "Loan Payment-Interest", $bank_log_comment, "Cheque Deposit", "debit", $Interest_Balance_tot_paid,$interest_id->Idbank,$savedId);
-                        $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Cheque Deposit", "credit", $Interest_Balance_tot_paid,$bank_account_company_chq,$savedId);
-                    }
-
-                    if($Panalty_Balance_tot_paid>0){
-                        //panelty
-                        $this->bankLogController->index($bank_account_company_chq, "Loan Payment-Penalty", $bank_log_comment, "Cheque Deposit", "debit", $Panalty_Balance_tot_paid,$panelty_id->Idbank,$savedId);
-                        $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Cheque Deposit", "credit", $Panalty_Balance_tot_paid,$bank_account_company_chq,$savedId);
-                    }
-
-                    if($Saving_balance_tot_paid>0){
-                        //saving
-                        $this->bankLogController->index($bank_account_company_chq, "Loan Payment-Saving", $bank_log_comment, "Cheque Deposit", "debit", $Saving_balance_tot_paid,$saving_id->Idbank,$savedId);
-                        $this->bankLogController->index($saving_id->Idbank, "Loan Payment-Saving", $bank_log_comment, "Cheque Deposit", "credit", $Saving_balance_tot_paid,$bank_account_company_chq,$savedId);
+                        if($Saving_balance_tot_paid>0){
+                            //saving
+                            $this->bankLogController->index($bank_account_company_chq, "Loan Payment-Saving", $bank_log_comment, "Cheque Deposit", "debit", $Saving_balance_tot_paid,$saving_id->Idbank,$savedId);
+                            $this->bankLogController->index($saving_id->Idbank, "Loan Payment-Saving", $bank_log_comment, "Cheque Deposit", "credit", $Saving_balance_tot_paid,$bank_account_company_chq,$savedId);
+                        }
                     }
                 }
+
+
                 $saving_account = tableWithBranch('Customer_Saving_Accounts')
                     ->where('Loan_Id', '=', $loan_id)
                     ->first();
