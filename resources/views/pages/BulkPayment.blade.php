@@ -379,8 +379,11 @@
                                         <table class="table table-striped table-bordered table-hover table-centered mb-0" id="loan_table" style="width: 100%;">
                                             <thead class="bg-light">
                                             <tr>
-                                                <th scope="col">Loan No</th>
+                                                <th scope="col">Member No</th>
                                                 <th scope="col">Member Name</th>
+                                                <th scope="col">Today Installment</th>
+                                                <th scope="col" class="amount-column">Amount</th>
+                                                <th scope="col">Installment Amount</th>
                                                 <th scope="col">Center</th>
                                                 <th scope="col">Group</th>
                                                 <th scope="col">Loan Amount</th>
@@ -388,13 +391,13 @@
                                                 <th scope="col">Loan Balance</th>
                                                 <th scope="col">Last Payment Amount</th>
                                                 <th scope="col">Last Payment Date</th>
-                                                <th scope="col">Today Installment</th>
                                                 <th scope="col">Date</th>
-                                                <th scope="col" class="amount-column">Amount</th>
-                                                <th scope="col">Member Nic</th>
+                                                <th scope="col">Member NIC</th>
+                                                <th scope="col">Loan No</th>
                                                 <th scope="col">Type</th>
                                             </tr>
                                             </thead>
+
                                             <tbody></tbody>
                                         </table>
                                     </div>
