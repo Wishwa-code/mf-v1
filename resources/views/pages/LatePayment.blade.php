@@ -217,7 +217,11 @@
                                         <option value="all">All</option>
                                         <option value="more_than_3">More than 3</option>
                                         <option value="maturity">More than 3 and maturity expired</option>
+                                        <option value="maturity7">Maturity +7 days</option>
+                                        <option value="maturity14">Maturity +14 days</option>
+                                        <option value="maturity21">Maturity +21 days</option>
                                     </select>
+
                                 </div>
                             </div>
 
