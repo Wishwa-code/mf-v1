@@ -1741,13 +1741,20 @@ class TodayPaymentController extends Controller
 
                     $arrears = $arrears ?? 0; // make sure it is numeric
 
+
+                    $loan_balance=DB::table('installments')
+                        ->where('installments.Customer_Loan_idCustomer_Loan', $loan_id)
+                        ->where('installments.Status', '=', '0')
+                        ->sum('installments.Total_Balance');
+                    $loan_balance=$loan_balance ?? 0;
+
                     $placeholders = [
                         '@Member_No@'        => $customer->cus_number,
                         '@Member_Name@'      => $customer->First_Name . ' ' . $customer->Last_Name,
                         '@Loan_No@'          => $loan->Loan_No,
                         '@Payment_Date@'     => $customer_payment->Date,
                         '@Paid_Amount@'      => number_format($customer_payment->Amount, 2, '.', ','),
-                        '@Loan_Balance@'     => number_format($loan->Balance_Amount, 2, '.', ','),
+                        '@Loan_Balance@'     => number_format($loan_balance, 2, '.', ','),
                         '@Capital_Balance@'  => number_format($loan->capital_balance, 2, '.', ','),
                         '@Pending_Total@'  => number_format($arrears, 2, '.', ','),
                     ];
@@ -3509,13 +3516,20 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
                 ->sum('installments.Total_Balance');
 
             $arrears = $arrears ?? 0; // make sure it is numeric
+
+            $loan_balance=DB::table('installments')
+                ->where('installments.Customer_Loan_idCustomer_Loan', $customer_payment->Customer_Loan_idCustomer_Loan)
+                ->where('installments.Status', '=', '0')
+                ->sum('installments.Total_Balance');
+            $loan_balance=$loan_balance ?? 0;
+
             $placeholders = [
                 '@Member_No@' => $customer->cus_number,
                 '@Member_Name@' => $customer->First_Name . ' ' . $customer->Last_Name,
                 '@Loan_No@' => $loan->Loan_No,
                 '@Payment_Date@' => $customer_payment->Date,
                 '@Paid_Amount@' => number_format($customer_payment->Amount, 2, '.', ','),
-                '@Loan_Balance@' => number_format($loan->Balance_Amount, 2, '.', ','),
+                '@Loan_Balance@' => number_format($loan_balance, 2, '.', ','),
                 '@Capital_Balance@' => number_format($loan->capital_balance, 2, '.', ','),
                 '@Pending_Total@'  => number_format($arrears, 2, '.', ','),
             ];
