@@ -1656,7 +1656,12 @@ class TodayPaymentController extends Controller
                         ->where('installments.Installment_Date', '<', date('Y-m-d'))
                         ->sum('installments.Total_Balance');
 
-                    $arrears = $arrears ?? 0; // make sure it is numeric
+                    $arrears = $arrears ?? 0;
+
+                    $loan_balance = DB::table('installments')
+                        ->where('Customer_Loan_idCustomer_Loan', $loan_id)
+                        ->sum('Total_Balance');
+                    $loan_balance = $loan_balance ?? 0;
 
                     $placeholders = [
                         '@Member_No@'        => $customer->cus_number,
@@ -1664,7 +1669,7 @@ class TodayPaymentController extends Controller
                         '@Loan_No@'          => $loan->Loan_No,
                         '@Payment_Date@'     => $customer_payment->Date,
                         '@Paid_Amount@'      => number_format($customer_payment->Amount, 2, '.', ','),
-                        '@Loan_Balance@'     => number_format($loan->Balance_Amount, 2, '.', ','),
+                        '@Loan_Balance@'     => number_format($loan_balance, 2, '.', ','),
                         '@Capital_Balance@'  => number_format($loan->capital_balance, 2, '.', ','),
                         '@Pending_Total@'  => number_format($arrears, 2, '.', ','),
                     ];
@@ -2477,13 +2482,19 @@ class TodayPaymentController extends Controller
                 $sms_template = DB::table('sms_template')->where('type', '=', 'loan_payment')->where('status', '=', '1')->first();
                 if ($sms_template) {
                     $customer = DB::table('customer')->where('idCustomer', '=', $loan->Customer_idCustomer)->first();
+
+                    $loan_balance = DB::table('installments')
+                        ->where('Customer_Loan_idCustomer_Loan', $loan_id)
+                        ->sum('Total_Balance');
+                    $loan_balance = $loan_balance ?? 0;
+
                     $placeholders = [
                         '@Member_No@' => $customer->cus_number,
                         '@Member_Name@' => $customer->First_Name . ' ' . $customer->Last_Name,
                         '@Loan_No@' => $loan->Loan_No,
                         '@Payment_Date@' => $customer_payment->Date,
                         '@Paid_Amount@' => number_format($customer_payment->Amount, 2, '.', ','),
-                        '@Loan_Balance@' => number_format($loan->Balance_Amount, 2, '.', ','),
+                        '@Loan_Balance@' => number_format($loan_balance, 2, '.', ','),
                         '@Capital_Balance@' => number_format($loan->capital_balance, 2, '.', ','),
                     ];
 
