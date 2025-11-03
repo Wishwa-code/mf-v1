@@ -265,7 +265,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Select Extra Charge Type</label>
-                            <select class="form-control shadow-sm" id="extra_charge_type" onchange="fillChargeDescription()">
+                            <select class="form-control shadow-sm" id="extra_charge_type">
                                 <option value="">-- Select Charge Type --</option>
                             </select>
                         </div>
