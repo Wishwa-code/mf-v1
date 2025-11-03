@@ -900,6 +900,13 @@ Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalContr
     Route::get('/suppliers/{id}', [SupplierController::class, 'show'])->name('suppliers.show');
     Route::put('/suppliers/{id}', [SupplierController::class, 'update'])->name('suppliers.update');
 
+    Route::get('/other-charges-codes', '\App\Http\Controllers\OtherChargesCodeController@index')->name('other-charges-codes.index');
+    Route::get('/other-charges-codes/list', '\App\Http\Controllers\OtherChargesCodeController@list')->name('other-charges-codes.list');
+    Route::post('/other-charges-codes', '\App\Http\Controllers\OtherChargesCodeController@store')->name('other-charges-codes.store');
+    Route::get('/other-charges-codes/{id}', '\App\Http\Controllers\OtherChargesCodeController@show')->name('other-charges-codes.show');
+    Route::put('/other-charges-codes/{id}', '\App\Http\Controllers\OtherChargesCodeController@update')->name('other-charges-codes.update');
+    Route::delete('/other-charges-codes/{id}', '\App\Http\Controllers\OtherChargesCodeController@destroy')->name('other-charges-codes.destroy');
+
 });
 // use App\Services\SmsService;
 
