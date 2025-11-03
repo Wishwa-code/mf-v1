@@ -964,6 +964,15 @@ class PendingLoanController extends Controller
             ->select('Customer_Loan_idCustomer_Loan', DB::raw('SUM(Amount) as processing_fee_received'))
             ->groupBy('Customer_Loan_idCustomer_Loan');
 
+        // Subquery: Extra Charger (negative amounts as positive)
+        $extra_charger_subquery = DB::table('extra_charger')
+            ->select('loan_id', DB::raw('SUM(ABS(amount)) as other_charges_amount'))
+            ->where('amount', '<', 0)
+            ->when(!empty($date_from) && !empty($date_to), function ($query) use ($date_from, $date_to) {
+                return $query->whereBetween('date', [$date_from, $date_to]);
+            })
+            ->groupBy('loan_id');
+
         // 🔹 Run Loan_Log separately
         $loanLogData = DB::table('Loan_Log')
             ->select(
@@ -996,6 +1005,9 @@ class PendingLoanController extends Controller
             ->leftJoinSub($loan_other_charges_subquery, 'loan_other_charges', function ($join) {
                 $join->on('customer_loan.idCustomer_Loan', '=', 'loan_other_charges.Customer_Loan_idCustomer_Loan');
             })
+            ->leftJoinSub($extra_charger_subquery, 'extra_charger', function ($join) {
+                $join->on('customer_loan.idCustomer_Loan', '=', 'extra_charger.loan_id');
+            })
             ->leftJoin(DB::raw('(SELECT Customer_idCustomer, COUNT(*) as loan_count FROM customer_loan GROUP BY Customer_idCustomer) as loan_count_table'),
                 'customer_loan.Customer_idCustomer', '=', 'loan_count_table.Customer_idCustomer')
             ->select(
@@ -1010,6 +1022,7 @@ class PendingLoanController extends Controller
                 DB::raw('COUNT(DISTINCT CASE WHEN loan_count_table.loan_count = 1 THEN customer_loan.Customer_idCustomer END) as new_clients'),
                 DB::raw('COUNT(DISTINCT CASE WHEN loan_count_table.loan_count > 1 THEN customer_loan.Customer_idCustomer END) as repeat_clients'),
                 DB::raw('COALESCE(SUM(installments.schedule_repayments), 0) as schedule_repayments'),
+                DB::raw('COALESCE(SUM(extra_charger.other_charges_amount), 0) as other_charges_amount'),
                 DB::raw('COALESCE(SUM(loan_other_charges.processing_fee_received), 0) as processing_fee_received')
             )
             ->whereIn('customer_loan.Status', [0, 1]);
@@ -1045,6 +1058,9 @@ class PendingLoanController extends Controller
             ->leftJoinSub($loan_other_charges_subquery, 'loan_other_charges', function ($join) {
                 $join->on('customer_loan.idCustomer_Loan', '=', 'loan_other_charges.Customer_Loan_idCustomer_Loan');
             })
+            ->leftJoinSub($extra_charger_subquery, 'extra_charger', function ($join) {
+                $join->on('customer_loan.idCustomer_Loan', '=', 'extra_charger.loan_id');
+            })
             ->select(
                 'center.Name as center_name',
                 'customer_loan.idCustomer_Loan as loan_id',
@@ -1055,6 +1071,7 @@ class PendingLoanController extends Controller
                 'customer_loan.Amount as loan_disbursement',
                 'customer_loan.Total_Loan_Amount as loan_amount',
                 'installments.schedule_repayments',
+                'extra_charger.other_charges_amount',
                 'loan_other_charges.processing_fee_received'
             )
             ->whereIn('customer_loan.Status', [0, 1]);
