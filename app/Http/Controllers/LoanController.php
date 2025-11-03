@@ -1223,8 +1223,31 @@ class LoanController extends Controller
         }
 
 
+        $loan_balance=DB::table('installments')
+            ->where('installments.Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
+            ->where('installments.Status', '=', '0')
+            ->sum('installments.Total_Balance');
+
+
+        $loan_balance=$loan_balance ?? 0;
+
+        $loan_Total_Amount=DB::table('installments')
+            ->where('installments.Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
+            ->sum('installments.Total_Amount');
+
+
+        $loan_Total_Amount=$loan_Total_Amount ?? 0;
+
+        $ins_count=DB::table('installments')
+            ->where('installments.Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
+            ->count();
+
+
         // Pass the data to the view with compact and handle potential nulls
         return view('pages.LoanView', compact(
+            'ins_count',
+            'loan_balance',
+            'loan_Total_Amount',
             'type',
             'exists',
             'id',
