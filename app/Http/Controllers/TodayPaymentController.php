@@ -4192,6 +4192,8 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             $date        = $request->date ? Carbon::parse($request->date)->toDateString() : now()->toDateString();
             $userId      = (int)session('userid');
             $branchId    = (int)session('branch_id');
+            $chargeCodeId = $request->other_charges_code_id ?? null;
+            $chargeCodeDescription = $request->other_charges_codes_discription ?? null;
 
             // --- Lock last record for consistency ---
             $lastRow = DB::table('extra_charger')
@@ -4213,6 +4215,8 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
                 'branch_id'   => $branchId,
                 'amount'      => $amount,
                 'balance'     => $newBalance,
+                'other_charges_code_id' => $chargeCodeId,
+                'other_charges_codes_discription' => $chargeCodeDescription,
             ]);
 
             // --- Add comment for audit trail ---
