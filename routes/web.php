@@ -10,6 +10,7 @@ use App\Http\Controllers\LoanCategoryController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\PDFController;
 use App\Http\Controllers\PaymentVoucherController;
+use App\Http\Controllers\PenaltyDeductionController;
 use App\Http\Controllers\PendingLoanController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\SupplierController;
@@ -899,6 +900,17 @@ Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalContr
     Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
     Route::get('/suppliers/{id}', [SupplierController::class, 'show'])->name('suppliers.show');
     Route::put('/suppliers/{id}', [SupplierController::class, 'update'])->name('suppliers.update');
+
+
+    Route::get('/penalty-deduction', [PenaltyDeductionController::class, 'index'])
+        ->name('penalty.deduction.index');
+
+    Route::post('/penalty-deduction/load', [PenaltyDeductionController::class, 'load'])
+        ->name('penalty.deduction.load');
+
+    Route::post('/penalty-deduction/deduct', [PenaltyDeductionController::class, 'deduct'])
+        ->name('penalty.deduction.apply');
+
 
 });
 // use App\Services\SmsService;
