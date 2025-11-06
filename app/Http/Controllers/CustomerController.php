@@ -140,7 +140,7 @@ class CustomerController extends Controller
 
 
 // Set final customer number with branch prefix
-            $customer->cus_number =  '-';
+            $customer->cus_number =  $request->cus_number;
             $customer->First_Name = $request->f_name;
             $customer->Last_Name = $request->last_name;
             $customer->Email = $request->email;

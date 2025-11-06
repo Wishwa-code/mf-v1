@@ -77,7 +77,8 @@ class LoanController extends Controller
             $type_loan_number = $request->type_loan_number;
 
             // Step 1: Fetch necessary data
-            $maxId = DB::table('customer_loan')->where('branch_id', session('branch_id'))->count('idCustomer_Loan') ?? 1;
+            $maxId = DB::table('customer_loan')->where('branch_id', session('branch_id'))->max('idCustomer_Loan') ?? 1;
+            Log::info($maxId);
             $maxId++;
             $type = $request->loan_type;
 
@@ -91,6 +92,7 @@ class LoanController extends Controller
             $loan_number_txt = $type_loan_number;
             // Format the ID with leading zeros (e.g., 001, 010, 100, etc.)
             $formatted_loan_id = str_pad($maxId, 3, '0', STR_PAD_LEFT);
+            Log::info($formatted_loan_id);
             $product_code = tableWithBranch('loan_category')
                 ->where('idLoan_Category', '=', $request->loan_cate_id)
                 ->first();

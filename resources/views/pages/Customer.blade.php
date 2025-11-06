@@ -530,6 +530,112 @@
 
     </script>
     <script>
+        $(function initLiveBankSelectors() {
+            // Upgrade #bank_name to <select id="bank_name">
+            (function ensureBankSelect(){
+                var $old = $('#bank_name');
+                if ($old.length && !$old.is('select')) {
+                    var $sel = $('<select/>', { id:'bank_name', class: $old.attr('class') || 'form-control' });
+                    $old.replaceWith($sel);
+                }
+            })();
+
+            // Upgrade #branch to <select id="branch">
+            (function ensureBranchSelect(){
+                var $old = $('#branch');
+                if ($old.length && !$old.is('select')) {
+                    var $sel = $('<select/>', { id:'branch', class: $old.attr('class') || 'form-control' });
+                    $old.replaceWith($sel);
+                }
+            })();
+
+            // Normalizers so display shows "Name (Code)" and we still get codes
+            function normalizeBankItem(it){
+                let code = it.code || it.id || '';
+                let name = it.name || '';
+                if (!name && it.text) {
+                    const raw = String(it.text).trim();
+                    const m = raw.match(/\s*\((\d{3,4})\)\s*$/);
+                    if (m) { if (!code) code = m[1]; name = raw.replace(m[0],'').trim(); }
+                    else { name = raw; }
+                }
+                if (!name && code) name = code;
+                return { id: code, code, name, text: `${name} (${code})` };
+            }
+            function normalizeBranchItem(br){
+                let code = br.branch_code || br.id || '';
+                let name = br.branch_name || '';
+                if (!name && br.text) {
+                    const raw = String(br.text).trim();
+                    const m = raw.match(/\s*\((\d{3,4})\)\s*$/);
+                    if (m) { if (!code) code = m[1]; name = raw.replace(m[0],'').trim(); }
+                    else { name = raw; }
+                }
+                if (!name && code) name = code;
+                return { id: code, branch_code: code, branch_name: name, text: `${name} (${code})` };
+            }
+
+            // BANK Select2
+            $('#bank_name').select2({
+                placeholder: 'Select Bank',
+                allowClear: true,
+                ajax: {
+                    url: '/lk-live/banks',
+                    dataType: 'json',
+                    delay: 200,
+                    data: params => ({ q: params.term || '' }),
+                    processResults: (data) => ({ results: (data.results||[]).map(normalizeBankItem) })
+                },
+                templateResult: item => item.text,
+                templateSelection: item => item.text,
+                minimumInputLength: 0,
+                width: '100%'
+            })
+                .on('select2:select', function(e){
+                    const item = normalizeBankItem(e.params.data);
+                    $('#bank_code').val(item.code);
+
+                    // Branch Select2 (depends on selected bank)
+                    $('#branch').prop('disabled', false).val(null).trigger('change').select2({
+                        placeholder: 'Select Branch',
+                        allowClear: true,
+                        ajax: {
+                            url: `/lk-live/banks/${item.code}/branches`,
+                            dataType: 'json',
+                            delay: 200,
+                            data: params => ({ q: params.term || '' }),
+                            processResults: (data) => ({ results: (data.results||[]).map(normalizeBranchItem) })
+                        },
+                        templateResult: br => br.text,
+                        templateSelection: br => br.text,
+                        minimumInputLength: 0,
+                        width: '100%'
+                    })
+                        .off('select2:select').on('select2:select', function(ev){
+                        const br = normalizeBranchItem(ev.params.data);
+                        // keep BRANCH CODE in the same #branch field (your requirement)
+                        $('#branch').data('selected-name', br.branch_name);
+                        $('#branch').val(br.branch_code);
+                        // ensure <option> exists so form submit has the code
+                        const $opt = $('#branch').find('option:selected');
+                        if ($opt.length === 0) {
+                            $('#branch').append(new Option(br.text, br.id, true, true)).trigger('change');
+                        }
+                    });
+                })
+                .on('select2:clear', function(){
+                    $('#bank_code').val('');
+                    $('#branch').val(null).trigger('change').prop('disabled', true).empty();
+                });
+
+            // Initially disabled
+            $('#branch').prop('disabled', true);
+        });
+    </script>
+
+
+
+    <script>
         $(document).ready(function() {
             // Load document types on page load
             loadDocumentTypes();
@@ -600,6 +706,8 @@
                 $(this).closest('tr').remove();
             });
         });
+
+
 
         function getBirthdayFromNIC(nic) {
             // nic -> dob, gender (using exact HTML logic)
@@ -819,11 +927,11 @@
                 // Append the new row to the table
                 $('#bank_table tbody').append(newRow);
 
-                // Clear the input fields
-                $('#bank_name').val('');
+                // Clear fields (also clear Select2 selection properly)
+                $('#bank_name').val(null).trigger('change');
                 $('#account_name').val('');
                 $('#account_number').val('');
-                $('#branch').val('');
+                $('#branch').val(null).trigger('change').prop('disabled', true).empty();
                 $('#bank_code').val('');
             });
 

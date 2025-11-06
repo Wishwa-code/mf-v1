@@ -1252,12 +1252,11 @@ $banner = DB::select($query);
                                                 <a href="/payment_step_1">Current Loans</a>
                                             </li>
 
-                                                <li>
-                                                    <a href="/penalty-deduction">Panelty Deduction</a>
-                                                </li>
-
+                                            <li>
+                                                <a href="/penalty-deduction">Panelty Deduction</a>
+                                            </li>
                                         @endif
-                                            @if(optional($privilege)->current_loan_delete == 1)
+                                        @if(optional($privilege)->current_loan_delete == 1)
                                                 <li>
                                                     <a href="loan_delete_requests">Delete Loans Approval</a>
                                                 </li>

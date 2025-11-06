@@ -6,6 +6,7 @@ use App\Http\Controllers\BankController;
 use App\Http\Controllers\CashFlowController;
 use App\Http\Controllers\CashierController;
 use App\Http\Controllers\KYCController;
+use App\Http\Controllers\LiveLankaPayController;
 use App\Http\Controllers\LoanCategoryController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\PDFController;
@@ -911,7 +912,9 @@ Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalContr
     Route::post('/penalty-deduction/deduct', [PenaltyDeductionController::class, 'deduct'])
         ->name('penalty.deduction.apply');
 
-
+    Route::get('/lk-live/banks', [LiveLankaPayController::class, 'banks']);
+    Route::get('/lk-live/banks/{bankCode}/branches', [LiveLankaPayController::class, 'branches']);
+    Route::get('/lk-live/health', [LiveLankaPayController::class, 'health']); // optional
 });
 // use App\Services\SmsService;
 
