@@ -874,72 +874,79 @@
             }
         }
 
-        $(document).ready(function() {
-            $('#addBankBtn').click(function() {
-                // Get the values from the input fields
-                var bankName = $('#bank_name').val();
-                var accountName = $('#account_name').val();
-                var accountNumber = $('#account_number').val();
-                var branchCode = $('#branch').val();
-                var bankCode = $('#bank_code').val();
+        $(document).ready(function () {
+            $('#addBankBtn').off('click').on('click', function () {
+                // --- Bank name / code from Select2 ---
+                const $bank = $('#bank_name');
+                const bankDataArr = ($bank.data('select2') && $bank.select2('data')) ? $bank.select2('data') : [];
+                const bankText = bankDataArr[0]?.text || $bank.val() || '';       // e.g. "Commercial Bank (7056)"
+                const bankCode = $('#bank_code').val() || bankDataArr[0]?.id || '';// e.g. "7056"
+                const bankName = String(bankText).replace(/\s*\(\d{3,4}\)\s*$/, '').trim(); // => "Commercial Bank"
 
-                // Validate input (optional)
-                if (bankName === '' || accountName === '' || accountNumber === '' || branchCode === '' || bankCode === '') {
+                // --- Other fields (as you already had) ---
+                const accountName   = $('#account_name').val();
+                const accountNumber = $('#account_number').val();
+
+                // Branch: you want the code in the table
+                const branchCode = $('#branch').val(); // select2 value is the code
+
+                // Basic validation
+                if (!bankName || !accountName || !accountNumber || !branchCode || !bankCode) {
                     Swal.fire("Error!", "All fields are required!", "error");
                     return;
                 }
 
-                // Check if the table already contains the same values
-                var isDuplicate = false;
-                $('#bank_table tbody tr').each(function() {
-                    var rowBankName = $(this).find('td').eq(0).text();
-                    var rowAccountName = $(this).find('td').eq(1).text();
-                    var rowAccountNumber = $(this).find('td').eq(2).text();
-                    var rowBranchCode = $(this).find('td').eq(3).text();
-                    var rowBankCode = $(this).find('td').eq(4).text();
-
-                    if (rowBankName === bankName && rowAccountName === accountName &&
-                        rowAccountNumber === accountNumber && rowBranchCode === branchCode && rowBankCode === bankCode) {
+                // Duplicate check (compares what’s shown in the table)
+                let isDuplicate = false;
+                $('#bank_table tbody tr').each(function () {
+                    const rowBankName     = $(this).find('td').eq(0).text();
+                    const rowAccountName  = $(this).find('td').eq(1).text();
+                    const rowAccountNo    = $(this).find('td').eq(2).text();
+                    const rowBranchCode   = $(this).find('td').eq(3).text();
+                    const rowBankCode     = $(this).find('td').eq(4).text();
+                    if (
+                        rowBankName    === bankName &&
+                        rowAccountName === accountName &&
+                        rowAccountNo   === accountNumber &&
+                        rowBranchCode  === branchCode &&
+                        rowBankCode    === bankCode
+                    ) {
                         isDuplicate = true;
-                        return false; // Break the loop
+                        return false;
                     }
                 });
-
                 if (isDuplicate) {
                     Swal.fire("Error!", "This bank account already exists in the table.", "error");
                     return;
                 }
 
-                // Create a new row with the input values and a remove button
-                var newRow = `
-            <tr>
-                <td>${bankName}</td>
-                <td>${accountName}</td>
-                <td>${accountNumber}</td>
-                <td>${branchCode}</td>
-                <td>${bankCode}</td>
-                <td>
-                    <button type="button" class="btn btn-danger remove-btn">Remove</button>
-                </td>
-            </tr>
-        `;
-
-                // Append the new row to the table
+                // Add row — first column now shows the BANK NAME (not the code)
+                const newRow = `
+      <tr>
+        <td>${bankName}</td>
+        <td>${accountName}</td>
+        <td>${accountNumber}</td>
+        <td>${branchCode}</td>
+        <td>${bankCode}</td>
+        <td><button type="button" class="btn btn-danger remove-btn">Remove</button></td>
+      </tr>
+    `;
                 $('#bank_table tbody').append(newRow);
 
-                // Clear fields (also clear Select2 selection properly)
-                $('#bank_name').val(null).trigger('change');
+                // Clear inputs & select2s
                 $('#account_name').val('');
                 $('#account_number').val('');
-                $('#branch').val(null).trigger('change').prop('disabled', true).empty();
                 $('#bank_code').val('');
+                $('#branch').val(null).trigger('change'); // select2 reset
+                $('#bank_name').val(null).trigger('change'); // select2 reset
             });
 
-            // Delegate the click event to the remove buttons
-            $('#bank_table').on('click', '.remove-btn', function() {
+            // keep your existing remove handler
+            $('#bank_table').on('click', '.remove-btn', function () {
                 $(this).closest('tr').remove();
             });
         });
+
 
         // Load document types from settings
         function loadDocumentTypes() {

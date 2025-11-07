@@ -912,6 +912,8 @@ Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalContr
     Route::post('/penalty-deduction/deduct', [PenaltyDeductionController::class, 'deduct'])
         ->name('penalty.deduction.apply');
 
+
+
     Route::get('/lk-live/banks', [LiveLankaPayController::class, 'banks']);
     Route::get('/lk-live/banks/{bankCode}/branches', [LiveLankaPayController::class, 'branches']);
     Route::get('/lk-live/health', [LiveLankaPayController::class, 'health']); // optional
