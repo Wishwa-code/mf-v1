@@ -93,6 +93,13 @@ class PenaltyDeductionController extends Controller
             $loanQ->where('cl.Customer_idCustomer', $customerId);
         }
 
+        $loanNo = trim((string)$request->input('loan_no', ''));
+
+        if ($loanNo !== '') {
+            $loanQ->where('cl.Loan_No', 'like', '%' . $loanNo . '%');
+        }
+
+
         // Only loans with positive penalty balance
         $rows = DB::query()->fromSub($loanQ, 'x')
             ->where('x.penalty_balance', '>', 0)
@@ -231,7 +238,8 @@ class PenaltyDeductionController extends Controller
             $Capital_Balance_Log_before  = $last_log->Capital_Balance ?? 0;
             $Saving_Balance_Log_before   = $last_log->Saving_Account_Balance ?? 0;
             $Total_Pending_Balance_Log_before = $last_log->Total_Pending_Balance ?? 0;
-
+            $Panelty_Balance_Log_before=$Panelty_Balance_Log_before-$applied;
+            $Total_Pending_Balance_Log_before=$Total_Pending_Balance_Log_before-$applied;
 // ---- Fetch NEW current balances AFTER deduction ----
             $newPenaltyBalance = (float) DB::table('installments')
                 ->where('Customer_Loan_idCustomer_Loan', $loanId)

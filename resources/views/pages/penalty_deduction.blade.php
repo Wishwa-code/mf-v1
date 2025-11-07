@@ -5,19 +5,36 @@
     <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.3/css/buttons.dataTables.min.css">
+    {{-- Use the Bootstrap 5 bundle for DataTables (includes Responsive + Buttons) --}}
+    <link rel="stylesheet" href="https://cdn.datatables.net/v/bs5/dt-1.13.8/r-2.5.0/b-2.4.2/datatables.min.css"/>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
     <style>
+        .page-title-box {
+            background: linear-gradient(135deg,#1A2942 0%, #2f4770 100%);
+            color: #fff; border-radius: 14px; padding: 16px 20px; box-shadow: 0 8px 24px rgba(0,0,0,.06);
+        }
+        .page-title { margin: 0; font-weight: 700; letter-spacing:.3px }
+        .filter-bar {
+            background: #fff; border: 1px solid #eef1f6; border-radius: 14px; padding: 12px;
+            box-shadow: 0 10px 30px rgba(26,41,66,.05);
+        }
+        .filter-bar .form-label { font-weight: 600; color: #334b74; }
+        .badge-soft { background: #eef2ff; color:#1A2942; border:1px solid #dfe8ff; border-radius: 999px; padding: .35rem .75rem; }
+        .stat-card {
+            border-radius: 14px; border: 1px solid #eef1f6; background:#fff; padding: 14px 16px;
+            box-shadow: 0 10px 30px rgba(26,41,66,.06);
+        }
+        .stat-title { color:#64748b; font-size:.8rem; text-transform:uppercase; letter-spacing:.04em }
+        .stat-value { font-size:1.15rem; font-weight:700; color:#1A2942 }
         .bg-purple th { color: #e1e1e1 !important; }
         .bg-purple { background-color: #1A2942 !important; color: #fff !important; }
-        #loan_table tr, #loan_table th, #loan_table td { margin:0 !important; padding:10px !important; }
-        .table-centered { margin:0 !important; padding:0 !important; }
-        #loan_table .btn { margin:0 !important; }
-        .badge-soft { background: #eef2ff; color:#1A2942; border:1px solid #dfe8ff; }
+        .table thead th { white-space: nowrap; }
+        table.dataTable.nowrap th, table.dataTable.nowrap td { white-space: nowrap; }
+        .btn-rounded { border-radius: 999px; }
     </style>
 @endsection
+
 
 @section('content')
     <div class="container-fluid">
@@ -27,50 +44,72 @@
                 </div>
             </div></div>
 
-        <div class="card">
-            <div class="card-body">
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-3">
-                        <label class="form-label">Group</label>
-                        <select class="form-control select2" id="filter_group">
-                            <option value="0">All</option>
-                            @foreach($group as $g)
-                                <option value="{{ $g->idCustomer_Group }}">{{ $g->Name }} - {{ $g->Leader_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Category</label>
-                        <select class="form-control select2" id="filter_category">
-                            <option value="0">All</option>
-                            @foreach($loan_category as $lc)
-                                <option value="{{ $lc->idLoan_Category }}">{{ $lc->Name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Customer</label>
-                        <select class="form-control select2" id="filter_customer">
-                            <option value="0">All</option>
-                            @foreach($customers as $c)
-                                <option value="{{ $c->idCustomer }}">{{ $c->First_Name }} {{ $c->Last_Name }} - {{ $c->Nic }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <button class="btn btn-danger" id="btn-search"><i class="bi bi-search"></i> Search</button>
-                    </div>
+        {{-- Filters --}}
+        <div class="filter-bar mt-3">
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-2">
+                    <label class="form-label">Loan No</label>
+                    <input type="text" id="filter_loan_no" class="form-control" placeholder="e.g. KI/DKTN/BL1/014">
                 </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label">Group</label>
+                    <select class="form-control select2" id="filter_group">
+                        <option value="0">All</option>
+                        @foreach($group as $g)
+                            <option value="{{ $g->idCustomer_Group }}">{{ $g->Name }} - {{ $g->Leader_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label">Category</label>
+                    <select class="form-control select2" id="filter_category">
+                        <option value="0">All</option>
+                        @foreach($loan_category as $lc)
+                            <option value="{{ $lc->idLoan_Category }}">{{ $lc->Name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label">Customer</label>
+                    <select class="form-control select2" id="filter_customer">
+                        <option value="0">All</option>
+                        @foreach($customers as $c)
+                            <option value="{{ $c->idCustomer }}">{{ $c->First_Name }} {{ $c->Last_Name }} - {{ $c->Nic }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-12 col-md-1 d-grid">
+                    <button class="btn btn-danger btn-rounded" id="btn-search">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </div>
+            </div>
+        </div>
 
-                <hr>
-
-                <div class="mb-2">
-                    <span class="badge badge-soft me-2">Loans with Penalty Only</span>
+        {{-- Summary --}}
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-title">Loans with Penalty</div>
+                    <div class="stat-value" id="stat_count">0</div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="stat-card d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-title">Total Penalty Balance</div>
+                        <div class="stat-value" id="stat_total_penalty">0.00</div>
+                    </div>
                     <span class="badge badge-soft" id="summary_badge">Count: 0 | Total Penalty: 0.00</span>
                 </div>
+            </div>
+        </div>
 
-                <div class="table-responsive-sm">
-                    <table class="table table-centered mb-0" id="loan_table">
+        {{-- Table --}}
+        <div class="card mt-3">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle nowrap" id="loan_table" style="width:100%">
                         <thead class="sticky-top bg-purple">
                         <tr>
                             <th>Loan No</th>
@@ -84,21 +123,19 @@
                             <th>Penalty Balance</th>
                             <th>Created</th>
                             <th>Maturity</th>
-                            <th style="width:110px;">Action</th>
+                            <th style="width:120px;">Action</th>
                         </tr>
                         </thead>
                         <tbody></tbody>
                     </table>
                 </div>
-
             </div>
         </div>
     </div>
 
-    <!-- CSRF -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
 @endsection
+
 
 @section('script')
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
@@ -164,6 +201,7 @@
                     group_id: $('#filter_group').val() || 0,
                     category_id: $('#filter_category').val() || 0,
                     customer_id: $('#filter_customer').val() || 0,
+                    loan_no: $('#filter_loan_no').val() || 0,
                 };
 
                 $.ajax({
