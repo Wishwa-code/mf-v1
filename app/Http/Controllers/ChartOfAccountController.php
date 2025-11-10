@@ -209,7 +209,7 @@ class ChartOfAccountController extends Controller
                     'updated_at' => now(),
                 ]);
             }
-
+            Log::info($request->date);
             foreach ($request->rows as $row) {
                 insertWithBranch('manual_journal_has_amount',[
                     'id_manual_journal' => $journalId,
@@ -227,14 +227,17 @@ class ChartOfAccountController extends Controller
                 $bank_id=tableWithBranch('company_bank_accounts')
                     ->where('Idbank','=',$firstNumber)
                     ->first();
-
+                $dateTime = $request->date . ' ' . now()->format('H:i:s');
                 if ($row['debit_amount']>0){
-                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","debit",$row['debit_amount'],'-');
+                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","debit",$row['debit_amount'],'-','0','0',$dateTime);
                 }
 
                 if ($row['credit_amount']>0){
-                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","credit",$row['credit_amount'],'-');
+                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","credit",$row['credit_amount'],'-','0','0',$dateTime);
                 }
+                $service = new BankBalanceService();
+                $service->updateRunningBalance($bank_id->Idbank);
+
             }
 
             return response()->json(['status' => 'success', 'message' => 'Manual Journal saved successfully.']);
