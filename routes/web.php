@@ -917,6 +917,11 @@ Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalContr
     Route::get('/lk-live/banks', [LiveLankaPayController::class, 'banks']);
     Route::get('/lk-live/banks/{bankCode}/branches', [LiveLankaPayController::class, 'branches']);
     Route::get('/lk-live/health', [LiveLankaPayController::class, 'health']); // optional
+
+    Route::get('/get-loan-ids', [LiveLankaPayController::class, 'getLoanIds']);
+    Route::get('/process-loan/{loanId}', [LiveLankaPayController::class, 'processLoan']);
+
+
 });
 // use App\Services\SmsService;
 

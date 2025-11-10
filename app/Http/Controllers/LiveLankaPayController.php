@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Throwable;
 
 class LiveLankaPayController extends Controller
 {
@@ -259,4 +261,135 @@ class LiveLankaPayController extends Controller
         }
         return null;
     }
+
+
+    public function getLoanIds(Request $request)
+    {
+        try {
+            $q = DB::table('installments')
+                ->select('Customer_Loan_idCustomer_Loan')
+                ->groupBy('Customer_Loan_idCustomer_Loan')
+                ->havingRaw('COUNT(*) >= 2');
+
+            // Optional branch scoping (safer on installments.branch_id)
+            if (session('branch_id') && session('branch_id') != -1) {
+                $q->where('installments.branch_id', session('branch_id'));
+            }
+
+            $loanIds = $q->pluck('Customer_Loan_idCustomer_Loan')->toArray();
+
+            return response()->json([
+                'ok'       => true,
+                'loan_ids' => $loanIds,
+                'count'    => count($loanIds),
+            ]);
+        } catch (Throwable $e) {
+            return response()->json(['ok' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * For a given loan:
+     * - Take last 2 installments by idInstallments DESC
+     * - Delete them
+     */
+    public function processLoan($loanId)
+    {
+        try {
+            // Optional branch permission check (based on installments)
+            if (session('branch_id') && session('branch_id') != -1) {
+                $sameBranch = DB::table('installments')
+                    ->where('Customer_Loan_idCustomer_Loan', $loanId)
+                    ->where('branch_id', session('branch_id'))
+                    ->exists();
+
+                if (!$sameBranch) {
+                    return response()->json([
+                        'ok' => false,
+                        'loan_id' => (int)$loanId,
+                        'skipped' => true,
+                        'reason' => 'Forbidden: different branch'
+                    ], 403);
+                }
+            }
+
+            // Must have at least 2 rows to delete
+            $count = DB::table('installments')
+                ->where('Customer_Loan_idCustomer_Loan', $loanId)
+                ->count();
+
+            if ($count < 2) {
+                return response()->json([
+                    'ok' => true,
+                    'loan_id' => (int)$loanId,
+                    'skipped' => true,
+                    'reason' => 'Less than 2 installments'
+                ]);
+            }
+
+            // Get last 2 by idInstallments DESC (exact requirement)
+            $lastTwoRows = DB::table('installments')
+                ->where('Customer_Loan_idCustomer_Loan', $loanId)
+                ->orderByDesc('idInstallments')
+                ->limit(2)
+                ->get(); // <-- Full rows (not just IDs)
+
+
+            DB::transaction(function () use ($lastTwoRows, $loanId) {
+
+                // 1. Delete the rows
+                $ids = $lastTwoRows->pluck('idInstallments')->all();
+                DB::table('installments')->whereIn('idInstallments', $ids)->delete();
+
+                // 2. Insert new rows again
+                foreach ($lastTwoRows as $row) {
+
+                    // EXAMPLE: set your new amounts here
+                    // 🔥 CHANGE THESE VALUES AS YOU NEED
+                    $newInstallmentAmount = $row->Installment_Amount; // same
+                    $newCapitalAmount     = $row->Capital_Amount;     // same
+                    $newInterestAmount    = $row->Interest_Amount;    // same
+
+                    DB::table('installments')->insert([
+                        'Customer_Loan_idCustomer_Loan' => $loanId,
+
+                        // keep original No or increment - your choice
+                        'No'                 => $row->No,
+                        'Installment_Date'   => $row->Installment_Date,
+
+                        // Your updated values:
+                        'Installment_Amount' => $newInstallmentAmount,
+                        'Capital_Amount'     => $newCapitalAmount,
+                        'Interest_Amount'    => $newInterestAmount,
+
+                        // Always reset payment status if needed:
+                        'Paid_Amount'        => 0,
+                        'Status'             => 0, // unpaid
+
+                        // keep loan branch + metadata
+                        'branch_id'          => $row->branch_id,
+                        'created_at'         => now(),
+                        'updated_at'         => now(),
+                    ]);
+                }
+            });
+
+
+            return response()->json([
+                'ok'            => true,
+                'loan_id'       => (int)$loanId,
+                'deleted'       => $lastTwo,
+                'deleted_count' => count($lastTwo),
+                'skipped'       => false
+            ]);
+        } catch (Throwable $e) {
+            return response()->json([
+                'ok' => false,
+                'loan_id' => (int)$loanId,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
 }
