@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -327,59 +328,108 @@ class LiveLankaPayController extends Controller
                 ]);
             }
 
-            // Get last 2 by idInstallments DESC (exact requirement)
-            $lastTwoRows = DB::table('installments')
+            // Fetch the last TWO rows by idInstallments (DESC)
+            $lastTwo = DB::table('installments')
                 ->where('Customer_Loan_idCustomer_Loan', $loanId)
                 ->orderByDesc('idInstallments')
                 ->limit(2)
-                ->get(); // <-- Full rows (not just IDs)
+                ->get()
+                ->values(); // reindex to [0,1]
 
+            DB::transaction(function () use ($lastTwo, $loanId) {
+                if ($lastTwo->isEmpty()) return;
 
-            DB::transaction(function () use ($lastTwoRows, $loanId) {
+                $last   = $lastTwo->get(0);                   // most recent row
+                $before = $lastTwo->count() > 1 ? $lastTwo->get(1) : null; // second most recent
 
-                // 1. Delete the rows
-                $ids = $lastTwoRows->pluck('idInstallments')->all();
-                DB::table('installments')->whereIn('idInstallments', $ids)->delete();
+                // 1) Delete the before-last row (if it exists and is unpaid)
+                if ($before) {
+                    $beforePaid = DB::table('installments')
+                        ->where('idInstallments', $before->idInstallments)
+                        ->where('Paid_Amount', '>=', 1)
+                        ->exists();
 
-                // 2. Insert new rows again
-                foreach ($lastTwoRows as $row) {
-
-                    // EXAMPLE: set your new amounts here
-                    // 🔥 CHANGE THESE VALUES AS YOU NEED
-                    $newInstallmentAmount = $row->Installment_Amount; // same
-                    $newCapitalAmount     = $row->Capital_Amount;     // same
-                    $newInterestAmount    = $row->Interest_Amount;    // same
-
-                    DB::table('installments')->insert([
-                        'Customer_Loan_idCustomer_Loan' => $loanId,
-
-                        // keep original No or increment - your choice
-                        'No'                 => $row->No,
-                        'Installment_Date'   => $row->Installment_Date,
-
-                        // Your updated values:
-                        'Installment_Amount' => $newInstallmentAmount,
-                        'Capital_Amount'     => $newCapitalAmount,
-                        'Interest_Amount'    => $newInterestAmount,
-
-                        // Always reset payment status if needed:
-                        'Paid_Amount'        => 0,
-                        'Status'             => 0, // unpaid
-
-                        // keep loan branch + metadata
-                        'branch_id'          => $row->branch_id,
-                        'created_at'         => now(),
-                        'updated_at'         => now(),
-                    ]);
+                    if (!$beforePaid) {
+                        DB::table('installments')
+                            ->where('idInstallments', $before->idInstallments)
+                            ->delete();
+                        DB::table('installments')
+                            ->where('idInstallments', $last->idInstallments)
+                            ->delete();
+                    }
                 }
+
+                $base = DB::table('installments')
+                    ->where('Customer_Loan_idCustomer_Loan', $loanId)
+                    ->orderByDesc('idInstallments')
+                    ->first();   // this returns the last row by idInstallments
+
+                if (!$base) return;
+
+                $newNo  = ((int)$base->No) + 1;
+                $newInstallmentDate = Carbon::parse($base->Installment_Date)->addDays(7)->format('Y-m-d');
+                $newPenaltyDate     = Carbon::parse($base->Panelty_date)->addDays(7)->format('Y-m-d');
+
+                $insert = [
+                    'Customer_Loan_idCustomer_Loan' => $loanId,
+                    'No'                 => $newNo,
+                    'Installment_Date'   => $newInstallmentDate,
+                    'Installment_Amount' => $base->Installment_Amount,
+                    'capital_amount'     => $base->capital_amount,
+                    'interest_amount'    => $base->interest_amount,
+                    'Panalty_Amount'     => $base->Panalty_Amount,
+                    'Total_Amount'       => $base->Total_Amount,
+                    'Paid_Amount'        => 0,
+                    'Panalty_Balance'    => $base->Panalty_Balance,
+                    'Interest_Balance'   => $base->Interest_Balance,
+                    'capital_balance'    => $base->capital_balance,
+                    'Total_Balance'      => $base->Total_Balance,
+                    'Status'             => '0',
+                    'Panelty_date'       => $newPenaltyDate,
+                    'Panelty_status'     => '0',
+                    'branch_id'          => session('branch_id'),
+                    // Collection Date falls back to Installment_Date
+//                    'Collection_Date'    => $newInstallmentDate,
+                    'Collection_Date'    => '-',
+                    'Collection_Diff'    => '0',
+                ];
+
+                DB::table('installments')->insert($insert);
+                $newNo  = $newNo + 1;
+                $newInstallmentDate = Carbon::parse($newInstallmentDate)->addDays(7)->format('Y-m-d');
+                $newPenaltyDate     = Carbon::parse($newPenaltyDate)->addDays(7)->format('Y-m-d');
+                $insert = [
+                    'Customer_Loan_idCustomer_Loan' => $loanId,
+                    'No'                 => $newNo,
+                    'Installment_Date'   => $newInstallmentDate,
+                    'Installment_Amount' => $base->Installment_Amount,
+                    'capital_amount'     => $base->capital_amount,
+                    'interest_amount'    => $base->interest_amount,
+                    'Panalty_Amount'     => $base->Panalty_Amount,
+                    'Total_Amount'       => $base->Total_Amount,
+                    'Paid_Amount'        => 0,
+                    'Panalty_Balance'    => $base->Panalty_Balance,
+                    'Interest_Balance'   => $base->Interest_Balance,
+                    'capital_balance'    => $base->capital_balance,
+                    'Total_Balance'      => $base->Total_Balance,
+                    'Status'             => '0',
+                    'Panelty_date'       => $newPenaltyDate,
+                    'Panelty_status'     => '0',
+                    'branch_id'          => session('branch_id'),
+                    // Collection Date falls back to Installment_Date
+//                    'Collection_Date'    => $newInstallmentDate,
+                    'Collection_Date'    => '-',
+                    'Collection_Diff'    => '0',
+                ];
+
+                DB::table('installments')->insert($insert);
+
             });
 
 
             return response()->json([
                 'ok'            => true,
                 'loan_id'       => (int)$loanId,
-                'deleted'       => $lastTwo,
-                'deleted_count' => count($lastTwo),
                 'skipped'       => false
             ]);
         } catch (Throwable $e) {

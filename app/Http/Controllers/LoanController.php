@@ -92,7 +92,6 @@ class LoanController extends Controller
             $loan_number_txt = $type_loan_number;
             // Format the ID with leading zeros (e.g., 001, 010, 100, etc.)
             $formatted_loan_id = str_pad($maxId, 3, '0', STR_PAD_LEFT);
-            Log::info($formatted_loan_id);
             $product_code = tableWithBranch('loan_category')
                 ->where('idLoan_Category', '=', $request->loan_cate_id)
                 ->first();
@@ -577,7 +576,9 @@ class LoanController extends Controller
                 $totalBalance       = $item['totalBalance'];
 
                 // From UI (only meaningful in 'fixed' + 'according_to_route')
-                $collectionDate = $useRouteCollection ? ($item['collectionDate'] ?? null) : null;   // e.g. "2025-08-04"
+                $collectionDate = $useRouteCollection
+                    ? ($item['collectionDate'] ?? $installmentDate)
+                    : $installmentDate;
                 $difference     = $useRouteCollection
                     ? (isset($item['difference']) && $item['difference'] !== '' ? (int)$item['difference'] : null)
                     : null;

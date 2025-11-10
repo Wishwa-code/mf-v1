@@ -3186,10 +3186,14 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             $unionQuery->where('user_id', '=', $user);
         }
 
-        // payment type filter (Cash / Bank Deposit / Cheque / etc.)
-        if ($payment_type != '0') {
-            $unionQuery->where('pay_method', '=', $payment_type);
+        // payment type filter (Cash / Bank Deposit / Cheque / Collector / Cashier / Extra Payment)
+        if (!empty($payment_type) && $payment_type !== '0') {
+            $needle = strtolower(trim($payment_type));
+
+            $unionQuery->whereRaw('LOWER(TRIM(pay_method)) = ?', [$needle]);
+
         }
+
 
         // date filter
         $unionQuery->whereBetween('pay_date', [$date, $date_to]);
