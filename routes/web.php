@@ -805,6 +805,15 @@ Route::delete('/expenses_categories/{id}', '\App\Http\Controllers\ReportControll
     Route::post('/depletion/data', [\App\Http\Controllers\ReportController::class, 'depletionData'])
         ->name('depletion.data');
 
+
+//investment
+    Route::get('/investment','\App\Http\Controllers\InvestmentReportExecutiveSummaryController@index')->name('investment.index');
+    Route::post('/investment/data', [\App\Http\Controllers\InvestmentReportExecutiveSummaryController::class, 'getData'])
+        ->name('investment.data');
+
+//arrears
+    Route::get('/arrears','\App\Http\Controllers\ArrearsReportExecutiveSummaryController@index')->name('arrears.index');
+
 //approval
 Route::get('/pending_approval','\App\Http\Controllers\ApprovalController@pending_approval')->name('approval.pending');
 Route::get('/approved_history','\App\Http\Controllers\ApprovalController@approved_history')->name('approval.approved');

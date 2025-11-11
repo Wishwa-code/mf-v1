@@ -1549,7 +1549,13 @@ $banner = DB::select($query);
                                                         <li>
                                                             <a href="/depletion">Depletion Report Executive Summary</a>
                                                         </li>
+                                                        <li>
+                                                            <a href="/investment">Investment Report Executive Summary</a>
+                                                        </li>
 
+                                                        <li>
+                                                            <a href="/arrears">Arrears Report Executive Summary</a>
+                                                        </li>
 
 
                                                 </ul>
