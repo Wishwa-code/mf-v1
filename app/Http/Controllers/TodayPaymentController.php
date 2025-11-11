@@ -843,6 +843,10 @@ class TodayPaymentController extends Controller
         $payment_date = $request->payment_date;
         $time = date('H:i:s');
         $payment_type = $request->payment_type;
+        $bulk = $request->bulk ?? '0';
+
+
+
 
         $cheque_accept = $request->cheque_accept ?? '0';
         $cheque_id = $request->cheque_id ?? '0';
@@ -1544,7 +1548,36 @@ class TodayPaymentController extends Controller
                         ->where('idCustomer_Loan', '=', $loan_id)
                         ->first();
                     $bank_log_comment = "Loan Number : {$loan_for_bank->Loan_No}";
+
                     $bank_account_company = $request->bank_account_company;
+                    if ($bulk=="1"){
+                        $user=DB::table('user')->where('id','=',$user_id)->first();
+                        if ($user){
+
+                            $collector=$user->collector;
+                            $cashier=$user->cashier;
+
+                            $bank_account_company = DB::table('company_bank_accounts')
+                                ->where('branch_id', session('branch_id'))
+                                ->where('Account_No','=',$user_id)  // Case-insensitive comparison
+                                ->value('Idbank');
+
+                            if ($collector=="1"){
+                                $payment_type="Collector";
+                            }elseif($cashier=="1"){
+                                $payment_type="Cashier";
+                            }else{
+                                $payment_type="Cash";
+                                $bank_account_company = DB::table('company_bank_accounts')
+                                    ->where('branch_id', session('branch_id'))
+                                    ->whereRaw('LOWER(Account_No) = ?', ['cash'])  // Case-insensitive comparison
+                                    ->value('Idbank');
+                            }
+                        }
+                    }
+
+
+
 
                     $capital_id=tableWithBranch('company_bank_accounts')
                         ->where('Bank_Type','=','System_default_1')

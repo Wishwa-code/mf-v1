@@ -402,6 +402,7 @@ async function performPayment(cus_id, payment_amount, reduce_balance_loan_id, pa
     formData.append('payment_type', 'Cash');
     formData.append('bank_account_company', '1');
     formData.append('sms', '1');
+    formData.append('bulk', '1');
 
     return new Promise((resolve) => {
         $.ajax({
