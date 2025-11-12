@@ -269,8 +269,8 @@ class PenaltyDeductionController extends Controller
                 'Penalty Deduction',        // Type
                 '0',                       // Type_ID (no receipt ID needed here)
                 'Penalty Deduction',        // Description
-                0,                          // Payment Amount (not customer payment)
-                $applied,                   // Penalty Paid (Deducted)
+                $applied,                          // Payment Amount (not customer payment)
+                0,                   // Penalty Paid (Deducted)
                 0,                          // Interest Paid
                 0,                          // Capital Paid
                 0,                          // Saving Paid
