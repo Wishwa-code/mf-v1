@@ -289,6 +289,18 @@
 
                             <div class="col-lg-3">
                                 <div class="mb-3">
+                                    <label for="agent" class="form-label">Lending Officer</label>
+                                    <select class="form-control select2" id="lending_officer">
+                                        <option value="0">All</option>
+                                        @foreach($lending_officer as $item)
+                                            <option value="{{$item->id}}">{{$item->Full_Name}} - {{ $item->email }} - {{$item->TP}}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3">
+                                <div class="mb-3">
                                     <button type="button" class="btn btn-danger" onclick="load_payment_table();"><i class="bi bi-search"></i></button>
                                 </div>
                             </div></div>
@@ -306,6 +318,7 @@
                                     <th>Customer Name</th>
                                     <th>Amount</th>
                                     <th>Collector</th>
+                                    <th>Lending Officer</th>
                                     <th>Action</th>
                                 </tr>
                                 </thead>
@@ -582,6 +595,7 @@
             let date_from = $("#select_date_from").val();
             let date_to = $("#select_date_to").val();
             let user = $("#agent").val();
+            let lending_officer = $("#lending_officer").val();
 
             console.log(date_from, date_to);
 
@@ -597,6 +611,7 @@
                     customer: customer,
                     date_from: date_from,
                     date_to: date_to,
+                    lending_officer: lending_officer,
                     user: user
                 },
                 success: function (data, textStatus, xhr) {
@@ -618,21 +633,30 @@
                         <i class="bi bi-file-earmark-text"></i>
                     </button>`;
 
+                            // inside your success callback when building each row:
                             var row = `<tr>
-                        <td style="vertical-align: middle">${item.Date}</td>
-                        <td style="vertical-align: middle">${item.center_name || item.center_no ? (item.center_name || '-') + ' (' + (item.center_no || '-') + ')' : '-'}</td>
-                        <td style="vertical-align: middle">${item.group_name || item.group_no ? (item.group_name || '-') + ' (' + (item.group_no || '-') + ')' : '-'}</td>
-                        <td style="vertical-align: middle">${item.cus_number}</td>
-                        <td style="vertical-align: middle">${item.Loan_No}</td>
-                        <td style="vertical-align: middle">${item.customer_name} ${item.customer_lastname}</td>
-                        <td style="vertical-align: middle">${formattedAmount}</td>
-                        <td style="vertical-align: middle">${item.Full_Name}</td>
-                        <td style="vertical-align: middle">
-                            <div class="d-flex flex-nowrap gap-2">
-                                ${paymentButton}
-                            </div>
-                        </td>
-                    </tr>`;
+  <td style="vertical-align: middle">${item.date ?? item.Date ?? '-'}</td>
+  <td style="vertical-align: middle">${
+                                (item.center_name || item.center_no)
+                                    ? `${item.center_name || '-'} (${item.center_no || '-'})`
+                                    : '-'
+                            }</td>
+  <td style="vertical-align: middle">${
+                                (item.group_name || item.group_no)
+                                    ? `${item.group_name || '-'} (${item.group_no || '-'})`
+                                    : '-'
+                            }</td>
+  <td style="vertical-align: middle">${item.cus_number || '-'}</td>
+  <td style="vertical-align: middle">${item.Loan_No || '-'}</td>
+  <td style="vertical-align: middle">${(item.customer_name || '')} ${(item.customer_lastname || '')}</td>
+  <td style="vertical-align: middle">${formattedAmount}</td>
+  <td style="vertical-align: middle">${item.agent_name || '-'}</td>
+  <td style="vertical-align: middle">${item.lending_officer_name || '-'}</td>
+  <td style="vertical-align: middle">
+    <div class="d-flex flex-nowrap gap-2">${paymentButton}</div>
+  </td>
+</tr>`;
+
 
                             tableBody.append(row);
                         });

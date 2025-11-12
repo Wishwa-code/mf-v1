@@ -501,6 +501,57 @@
                         </div>
 
 
+                        <hr>
+                        <!-- Allowed Collection Dates -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Collection Dates</label>
+                            <small class="text-muted d-block mb-2">
+                                Select which weekdays are valid for installment collection / route collection.
+                                Only these days will be available when issuing a loan.
+                            </small>
+
+                            <div class="d-flex flex-column gap-2" style="max-width: 300px;">
+                                <div class="form-check">
+                                    <input class="form-check-input collection-day" type="checkbox" id="col_day_1" value="1">
+                                    <label class="form-check-label" for="col_day_1">Monday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input collection-day" type="checkbox" id="col_day_2" value="2">
+                                    <label class="form-check-label" for="col_day_2">Tuesday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input collection-day" type="checkbox" id="col_day_3" value="3">
+                                    <label class="form-check-label" for="col_day_3">Wednesday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input collection-day" type="checkbox" id="col_day_4" value="4">
+                                    <label class="form-check-label" for="col_day_4">Thursday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input collection-day" type="checkbox" id="col_day_5" value="5">
+                                    <label class="form-check-label" for="col_day_5">Friday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input collection-day" type="checkbox" id="col_day_6" value="6">
+                                    <label class="form-check-label" for="col_day_6">Saturday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input collection-day" type="checkbox" id="col_day_0" value="0">
+                                    <label class="form-check-label" for="col_day_0">Sunday</label>
+                                </div>
+                            </div>
+
+                            <button id="btnUpdateCollectionDays" class="btn btn-primary mt-2" style="max-width: 220px;">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Update Collection Days
+                            </button>
+
+                            <small class="text-muted d-block mt-2">
+                                Example: If you uncheck Sunday, users cannot pick Sunday in the "Collection Day" dropdown in Issue Loan.
+                            </small>
+                        </div>
+
+
+
 
 
                     </div>
@@ -786,6 +837,65 @@
                 save_setting('recovery_account_status', value);
             });
 
+            // Collection Days update
+            $('#btnUpdateCollectionDays').on('click', function (e) {
+                e.preventDefault();
+
+                const days = getSelectedCollectionDays(); // e.g. [1,2,3,4,5]
+
+                if (days.length === 0) {
+                    Swal.fire("Warning", "Select at least one collection day.", "warning");
+                    return;
+                }
+
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "Update allowed collection days?",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, Update",
+                }).then((result) => {
+                    if (!result.isConfirmed) return;
+
+                    $.ajax({
+                        type: "POST",
+                        url: "/settings/upsert",
+                        headers: {
+                            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                        },
+                        data: {
+                            key: 'collection_days',
+                            value: JSON.stringify(days) // store as JSON array
+                        },
+                        success: function () {
+                            Swal.fire({
+                                position: "center",
+                                icon: "success",
+                                title: "Collection days updated!",
+                                timer: 1400,
+                                showConfirmButton: false
+                            });
+                        },
+                        error: function (xhr) {
+                            Swal.fire("Error", xhr.responseJSON?.message || "Failed to update collection days", "error");
+                        }
+                    });
+                });
+            });
+
+
+            // Read which weekdays are allowed
+            const getSelectedCollectionDays = () => {
+                const days = [];
+                $('.collection-day:checked').each(function () {
+                    days.push(parseInt($(this).val())); // [1,2,5,...]
+                });
+                return days;
+            };
+
+
 
             // Head Office Approval - Save All
             $('#btnSaveAllApprovals').on('click', function (e) {
@@ -1070,10 +1180,32 @@
                         $('#max_allowed_loans').val(items.max_allowed_loans);
                     }
 
-                    // Hidden: Empty Row Count (handled in Repayment Sheet 09)
-                    // if (items.empty_row_count) {
-                    //     $('#empty_row_count').val(items.empty_row_count);
-                    // }
+                    // Collection Days (allowed weekdays)
+                    if (items.collection_days) {
+                        let allowedDays = [];
+                        try {
+                            allowedDays = JSON.parse(items.collection_days);
+                            if (!Array.isArray(allowedDays)) {
+                                allowedDays = [];
+                            }
+                        } catch (e) {
+                            // fallback if somehow stored comma-separated
+                            allowedDays = String(items.collection_days)
+                                .split(',')
+                                .map(v => v.trim())
+                                .filter(v => v !== '')
+                                .map(v => parseInt(v));
+                        }
+
+                        // uncheck all first
+                        $('.collection-day').prop('checked', false);
+
+                        // check allowed
+                        allowedDays.forEach(d => {
+                            $(`.collection-day[value="${d}"]`).prop('checked', true);
+                        });
+                    }
+
 
                     // Document Types
                     if (items.document_types) {

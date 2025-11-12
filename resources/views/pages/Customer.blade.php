@@ -530,6 +530,112 @@
 
     </script>
     <script>
+        $(function initLiveBankSelectors() {
+            // Upgrade #bank_name to <select id="bank_name">
+            (function ensureBankSelect(){
+                var $old = $('#bank_name');
+                if ($old.length && !$old.is('select')) {
+                    var $sel = $('<select/>', { id:'bank_name', class: $old.attr('class') || 'form-control' });
+                    $old.replaceWith($sel);
+                }
+            })();
+
+            // Upgrade #branch to <select id="branch">
+            (function ensureBranchSelect(){
+                var $old = $('#branch');
+                if ($old.length && !$old.is('select')) {
+                    var $sel = $('<select/>', { id:'branch', class: $old.attr('class') || 'form-control' });
+                    $old.replaceWith($sel);
+                }
+            })();
+
+            // Normalizers so display shows "Name (Code)" and we still get codes
+            function normalizeBankItem(it){
+                let code = it.code || it.id || '';
+                let name = it.name || '';
+                if (!name && it.text) {
+                    const raw = String(it.text).trim();
+                    const m = raw.match(/\s*\((\d{3,4})\)\s*$/);
+                    if (m) { if (!code) code = m[1]; name = raw.replace(m[0],'').trim(); }
+                    else { name = raw; }
+                }
+                if (!name && code) name = code;
+                return { id: code, code, name, text: `${name} (${code})` };
+            }
+            function normalizeBranchItem(br){
+                let code = br.branch_code || br.id || '';
+                let name = br.branch_name || '';
+                if (!name && br.text) {
+                    const raw = String(br.text).trim();
+                    const m = raw.match(/\s*\((\d{3,4})\)\s*$/);
+                    if (m) { if (!code) code = m[1]; name = raw.replace(m[0],'').trim(); }
+                    else { name = raw; }
+                }
+                if (!name && code) name = code;
+                return { id: code, branch_code: code, branch_name: name, text: `${name} (${code})` };
+            }
+
+            // BANK Select2
+            $('#bank_name').select2({
+                placeholder: 'Select Bank',
+                allowClear: true,
+                ajax: {
+                    url: '/lk-live/banks',
+                    dataType: 'json',
+                    delay: 200,
+                    data: params => ({ q: params.term || '' }),
+                    processResults: (data) => ({ results: (data.results||[]).map(normalizeBankItem) })
+                },
+                templateResult: item => item.text,
+                templateSelection: item => item.text,
+                minimumInputLength: 0,
+                width: '100%'
+            })
+                .on('select2:select', function(e){
+                    const item = normalizeBankItem(e.params.data);
+                    $('#bank_code').val(item.code);
+
+                    // Branch Select2 (depends on selected bank)
+                    $('#branch').prop('disabled', false).val(null).trigger('change').select2({
+                        placeholder: 'Select Branch',
+                        allowClear: true,
+                        ajax: {
+                            url: `/lk-live/banks/${item.code}/branches`,
+                            dataType: 'json',
+                            delay: 200,
+                            data: params => ({ q: params.term || '' }),
+                            processResults: (data) => ({ results: (data.results||[]).map(normalizeBranchItem) })
+                        },
+                        templateResult: br => br.text,
+                        templateSelection: br => br.text,
+                        minimumInputLength: 0,
+                        width: '100%'
+                    })
+                        .off('select2:select').on('select2:select', function(ev){
+                        const br = normalizeBranchItem(ev.params.data);
+                        // keep BRANCH CODE in the same #branch field (your requirement)
+                        $('#branch').data('selected-name', br.branch_name);
+                        $('#branch').val(br.branch_code);
+                        // ensure <option> exists so form submit has the code
+                        const $opt = $('#branch').find('option:selected');
+                        if ($opt.length === 0) {
+                            $('#branch').append(new Option(br.text, br.id, true, true)).trigger('change');
+                        }
+                    });
+                })
+                .on('select2:clear', function(){
+                    $('#bank_code').val('');
+                    $('#branch').val(null).trigger('change').prop('disabled', true).empty();
+                });
+
+            // Initially disabled
+            $('#branch').prop('disabled', true);
+        });
+    </script>
+
+
+
+    <script>
         $(document).ready(function() {
             // Load document types on page load
             loadDocumentTypes();
@@ -600,6 +706,8 @@
                 $(this).closest('tr').remove();
             });
         });
+
+
 
         function getBirthdayFromNIC(nic) {
             // nic -> dob, gender (using exact HTML logic)
@@ -766,72 +874,79 @@
             }
         }
 
-        $(document).ready(function() {
-            $('#addBankBtn').click(function() {
-                // Get the values from the input fields
-                var bankName = $('#bank_name').val();
-                var accountName = $('#account_name').val();
-                var accountNumber = $('#account_number').val();
-                var branchCode = $('#branch').val();
-                var bankCode = $('#bank_code').val();
+        $(document).ready(function () {
+            $('#addBankBtn').off('click').on('click', function () {
+                // --- Bank name / code from Select2 ---
+                const $bank = $('#bank_name');
+                const bankDataArr = ($bank.data('select2') && $bank.select2('data')) ? $bank.select2('data') : [];
+                const bankText = bankDataArr[0]?.text || $bank.val() || '';       // e.g. "Commercial Bank (7056)"
+                const bankCode = $('#bank_code').val() || bankDataArr[0]?.id || '';// e.g. "7056"
+                const bankName = String(bankText).replace(/\s*\(\d{3,4}\)\s*$/, '').trim(); // => "Commercial Bank"
 
-                // Validate input (optional)
-                if (bankName === '' || accountName === '' || accountNumber === '' || branchCode === '' || bankCode === '') {
+                // --- Other fields (as you already had) ---
+                const accountName   = $('#account_name').val();
+                const accountNumber = $('#account_number').val();
+
+                // Branch: you want the code in the table
+                const branchCode = $('#branch').val(); // select2 value is the code
+
+                // Basic validation
+                if (!bankName || !accountName || !accountNumber || !branchCode || !bankCode) {
                     Swal.fire("Error!", "All fields are required!", "error");
                     return;
                 }
 
-                // Check if the table already contains the same values
-                var isDuplicate = false;
-                $('#bank_table tbody tr').each(function() {
-                    var rowBankName = $(this).find('td').eq(0).text();
-                    var rowAccountName = $(this).find('td').eq(1).text();
-                    var rowAccountNumber = $(this).find('td').eq(2).text();
-                    var rowBranchCode = $(this).find('td').eq(3).text();
-                    var rowBankCode = $(this).find('td').eq(4).text();
-
-                    if (rowBankName === bankName && rowAccountName === accountName &&
-                        rowAccountNumber === accountNumber && rowBranchCode === branchCode && rowBankCode === bankCode) {
+                // Duplicate check (compares what’s shown in the table)
+                let isDuplicate = false;
+                $('#bank_table tbody tr').each(function () {
+                    const rowBankName     = $(this).find('td').eq(0).text();
+                    const rowAccountName  = $(this).find('td').eq(1).text();
+                    const rowAccountNo    = $(this).find('td').eq(2).text();
+                    const rowBranchCode   = $(this).find('td').eq(3).text();
+                    const rowBankCode     = $(this).find('td').eq(4).text();
+                    if (
+                        rowBankName    === bankName &&
+                        rowAccountName === accountName &&
+                        rowAccountNo   === accountNumber &&
+                        rowBranchCode  === branchCode &&
+                        rowBankCode    === bankCode
+                    ) {
                         isDuplicate = true;
-                        return false; // Break the loop
+                        return false;
                     }
                 });
-
                 if (isDuplicate) {
                     Swal.fire("Error!", "This bank account already exists in the table.", "error");
                     return;
                 }
 
-                // Create a new row with the input values and a remove button
-                var newRow = `
-            <tr>
-                <td>${bankName}</td>
-                <td>${accountName}</td>
-                <td>${accountNumber}</td>
-                <td>${branchCode}</td>
-                <td>${bankCode}</td>
-                <td>
-                    <button type="button" class="btn btn-danger remove-btn">Remove</button>
-                </td>
-            </tr>
-        `;
-
-                // Append the new row to the table
+                // Add row — first column now shows the BANK NAME (not the code)
+                const newRow = `
+      <tr>
+        <td>${bankName}</td>
+        <td>${accountName}</td>
+        <td>${accountNumber}</td>
+        <td>${branchCode}</td>
+        <td>${bankCode}</td>
+        <td><button type="button" class="btn btn-danger remove-btn">Remove</button></td>
+      </tr>
+    `;
                 $('#bank_table tbody').append(newRow);
 
-                // Clear the input fields
-                $('#bank_name').val('');
+                // Clear inputs & select2s
                 $('#account_name').val('');
                 $('#account_number').val('');
-                $('#branch').val('');
                 $('#bank_code').val('');
+                $('#branch').val(null).trigger('change'); // select2 reset
+                $('#bank_name').val(null).trigger('change'); // select2 reset
             });
 
-            // Delegate the click event to the remove buttons
-            $('#bank_table').on('click', '.remove-btn', function() {
+            // keep your existing remove handler
+            $('#bank_table').on('click', '.remove-btn', function () {
                 $(this).closest('tr').remove();
             });
         });
+
 
         // Load document types from settings
         function loadDocumentTypes() {

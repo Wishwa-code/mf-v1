@@ -90,6 +90,7 @@ class PaymentsController extends Controller
             'chq_number'           => (string) $request->input('chq_number', ''),
             'chq_date'             => (string) $request->input('chq_date', ''),
             'chq_type'             => (string) $request->input('chq_type', 'Crossed'),
+            'sms'                  => '1',
         ];
 
         // Legacy compatibility: many of your controllers read session('userid')

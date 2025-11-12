@@ -1527,7 +1527,7 @@ class PendingLoanController extends Controller
 
             // Reverse Doc Charges
             $sumOther = DB::table('loan_other_charges')->where('Customer_Loan_idCustomer_Loan', $loanId)->where('branch_id', $branchId)->sum('Amount');
-            if ($sumOther > 0 && $companyBankId && $default9) {
+            if ($sumOther > 0) {
                 $docComment = "REVERSAL of Loan Document Charges\nLoan Number : {$loan->Loan_No}\nAmount : {$sumOther}\n";
                 // company CREDIT
                 $this->bankLogController->index($companyBankId, "Reversal - Loan Document Charges", $docComment, "-", "credit", $sumOther, $default9->Idbank);

@@ -77,7 +77,8 @@ class LoanController extends Controller
             $type_loan_number = $request->type_loan_number;
 
             // Step 1: Fetch necessary data
-            $maxId = DB::table('customer_loan')->where('branch_id', session('branch_id'))->count('idCustomer_Loan') ?? 1;
+            $maxId = DB::table('customer_loan')->where('branch_id', session('branch_id'))->max('idCustomer_Loan') ?? 1;
+            Log::info($maxId);
             $maxId++;
             $type = $request->loan_type;
 
@@ -575,7 +576,9 @@ class LoanController extends Controller
                 $totalBalance       = $item['totalBalance'];
 
                 // From UI (only meaningful in 'fixed' + 'according_to_route')
-                $collectionDate = $useRouteCollection ? ($item['collectionDate'] ?? null) : null;   // e.g. "2025-08-04"
+                $collectionDate = $useRouteCollection
+                    ? ($item['collectionDate'] ?? $installmentDate)
+                    : $installmentDate;
                 $difference     = $useRouteCollection
                     ? (isset($item['difference']) && $item['difference'] !== '' ? (int)$item['difference'] : null)
                     : null;
@@ -1032,12 +1035,15 @@ class LoanController extends Controller
         $Saving_amountSum = $installments->sum('Saving_amount');
         $Panalty_BalanceSum = $installments->sum('Panalty_Balance');
         $Panalty_Amount = $installments->sum('Panalty_Amount');
-//        $Saving_balance = $installments->sum('Saving_balance');
+
 //        $savingBalanceSum=$Saving_amountSum-$Saving_balance;
         $last_log = DB::table('Loan_Log')->where('Loan_ID','=',$id)->orderBy('Loan_Log_ID', 'desc')->first();
         $savingBalanceSum=0.00;
         if ($last_log){
             $savingBalanceSum = $last_log->Saving_Account_Balance;
+        }
+        if ($savingBalanceSum==0){
+            $savingBalanceSum = $installments->sum('Saving_balance');
         }
 
         // Extracting installment IDs from installments
@@ -1220,8 +1226,31 @@ class LoanController extends Controller
         }
 
 
+        $loan_balance=DB::table('installments')
+            ->where('installments.Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
+            ->where('installments.Status', '=', '0')
+            ->sum('installments.Total_Balance');
+
+
+        $loan_balance=$loan_balance ?? 0;
+
+        $loan_Total_Amount=DB::table('installments')
+            ->where('installments.Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
+            ->sum('installments.Total_Amount');
+
+
+        $loan_Total_Amount=$loan_Total_Amount ?? 0;
+
+        $ins_count=DB::table('installments')
+            ->where('installments.Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
+            ->count();
+
+
         // Pass the data to the view with compact and handle potential nulls
         return view('pages.LoanView', compact(
+            'ins_count',
+            'loan_balance',
+            'loan_Total_Amount',
             'type',
             'exists',
             'id',

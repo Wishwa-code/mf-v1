@@ -83,9 +83,7 @@
                                     <label for="simpleinput" class="form-label">Group</label>
                                     <select class="form-control select2" id="group">
                                         <option value="0">All</option>
-                                        @foreach($group as $item)
-                                            <option value="{{$item->idCustomer_Group}}">{{ $item->Name }}</option>
-                                        @endforeach
+
                                     </select>
                                 </div>
                             </div>
@@ -573,10 +571,54 @@
             $('.select2bs4').select2({
                 theme: 'bootstrap4'
             })
-            // $('#loan_table').DataTable({
-            //     responsive: true,
-            //     // Other options if needed
-            // });
+            const $centerSelect = $('#center_details');
+            const $groupSelect  = $('#group');
+
+            function renderGroupOptions(groups) {
+                $groupSelect.empty().append('<option value="0">All</option>');
+                if (Array.isArray(groups) && groups.length) {
+                    groups.forEach(g => {
+                        $groupSelect.append(
+                            `<option value="${g.idCustomer_Group}">${g.Group_No} - ${g.Name}</option>`
+                        );
+                    });
+                } else {
+                    $groupSelect.append('<option value="0">No groups found</option>');
+                }
+                // Refresh Select2 nicely
+                $groupSelect.trigger('change.select2');
+            }
+
+            $centerSelect.on('change', function () {
+                const centerId = $(this).val();
+
+                // reset state quickly for UX
+                $groupSelect.html('<option value="0">Loading...</option>').trigger('change.select2');
+
+                if (!centerId || centerId === "0") {
+                    // Back to All when no specific center
+                    $groupSelect.html('<option value="0">All</option>').trigger('change.select2');
+                    return;
+                }
+
+                $.ajax({
+                    url: '/get-groups-by-center/' + encodeURIComponent(centerId),
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        renderGroupOptions(data);
+                    },
+                    error: function () {
+                        $groupSelect.html('<option value="0">Error loading groups</option>').trigger('change.select2');
+                    }
+                });
+            });
+
+            // If a center is already preselected on load, fetch its groups
+            const preselectedCenter = $centerSelect.val();
+            if (preselectedCenter && preselectedCenter !== "0") {
+                $centerSelect.trigger('change');
+            }
 
         })
     </script>

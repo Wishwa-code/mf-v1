@@ -302,8 +302,9 @@
                                 <select class="form-control select2" id="payment_type">
                                     <option value="0">All</option>
                                     <option value="Cash">Cash</option>
-                                    <option value="Bank Deposit">Bank Deposit</option>
                                     <option value="Cheque">Cheque</option>
+                                    <option value="Extra Payment">Extra Payment</option>
+                                    <option value="Bank Deposit">Bank Deposit</option>
                                     <option value="Collector">Collector</option>
                                     <option value="Cashier">Cashier</option>
                                 </select>

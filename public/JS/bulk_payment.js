@@ -222,39 +222,82 @@ function load_payment_table(page = 1, includeTotals = false) {
                 const placeholder = item.saving_payment === '1' ? 'Installment Amount' : 'Enter amount';
 
                 rowsHTML += `
-          <tr>
-            <td>${item.Loan_No}</td>
-            <td>${item.customer_name} ${item.customer_lastname}</td>
-            <td>${item.center_no}</td>
-            <td>${item.group_name}</td>
-            <td>${formatter.format(parseFloat(item.Loan_Amount))}</td>
-            <td>${formatter.format(parseFloat(item.Installment_Amount || item.Today_installment || item.due_amount || 0))}</td>
-            <td>${formatter.format(parseFloat(item.Balance_With_Penalty))}</td>
-            <td>${formatter.format(parseFloat(item.Last_Payment_Amount))}</td>
-            <td>${item.Last_Payment_Date}</td>
-            <td>${formatter.format(parseFloat(item.Today_installment))}</td>
-            <td>
-              <input type="date" name="date_bulk" class="form-control"
-                     value="${inputDate}" data-loan-id="${loanId}"
-                     min="${minDate}" max="${today}" />
-            </td>
-            <td>
-              <input type="text" class="form-control numeric-input amount-input" style="width:200px;"
-                     placeholder="${placeholder}" value="${inputAmount}"
-                     data-loan-id="${loanId}" data-balance="${item.Balance_With_Penalty}" />
-              ${item.saving_payment === '1' ? `
-                <br>
-                <input type="text" class="form-control numeric-input saving-amount-input" style="width:200px;"
-                       placeholder="Enter Saving Amount" value="${savingAmount}"
-                       data-loan-id="${loanId}" data-balance="${item.Balance_With_Penalty}" />
-              ` : ``}
-              <input type="hidden" name="loan_id" value="${loanId}" />
-              <input type="hidden" name="cus_id" value="${item.idCustomer}" />
-            </td>
-            <td>${item.NIC}</td>
-            <td>${item.type}</td>
-          </tr>
-        `;
+<tr>
+    <!-- Member No -->
+    <td>${item.cus_number}</td>
+
+    <!-- Member Name -->
+    <td>${item.customer_name} ${item.customer_lastname}</td>
+
+    <!-- Today Installment -->
+    <td>${formatter.format(parseFloat(item.Today_installment))}</td>
+
+    <!-- Amount (payment inputs block) -->
+    <td>
+        <input type="text"
+               class="form-control numeric-input amount-input"
+               style="width:200px;"
+               placeholder="${placeholder}"
+               value="${inputAmount}"
+               data-loan-id="${loanId}"
+               data-balance="${item.Balance_With_Penalty}" />
+        ${item.saving_payment === '1' ? `
+            <br>
+            <input type="text"
+                   class="form-control numeric-input saving-amount-input"
+                   style="width:200px;"
+                   placeholder="Enter Saving Amount"
+                   value="${savingAmount}"
+                   data-loan-id="${loanId}"
+                   data-balance="${item.Balance_With_Penalty}" />
+        ` : ``}
+        <input type="hidden" name="loan_id" value="${loanId}" />
+        <input type="hidden" name="cus_id" value="${item.idCustomer}" />
+    </td>
+
+    <!-- Installment Amount (expected installment) -->
+    <td>${formatter.format(parseFloat(item.Installment_Amount || item.Today_installment || item.due_amount || 0))}</td>
+
+    <!-- Center -->
+    <td>${item.center_no}</td>
+
+    <!-- Group -->
+    <td>${item.group_name}</td>
+
+    <!-- Loan Amount -->
+    <td>${formatter.format(parseFloat(item.Loan_Amount))}</td>
+
+    <!-- Due Amount -->
+    <td>${formatter.format(parseFloat(item.Installment_Amount))}</td>
+
+    <!-- Loan Balance -->
+    <td>${formatter.format(parseFloat(item.Balance_With_Penalty))}</td>
+
+    <!-- Last Payment Amount -->
+    <td>${formatter.format(parseFloat(item.Last_Payment_Amount))}</td>
+
+    <!-- Last Payment Date -->
+    <td>${item.Last_Payment_Date}</td>
+
+    <!-- Date -->
+    <td>
+        <input type="date"
+               name="date_bulk"
+               class="form-control"
+               value="${inputDate}"
+               data-loan-id="${loanId}"
+               min="${minDate}"
+               max="${today}" />
+    </td>
+
+    <!-- Member NIC -->
+    <td>${item.NIC}</td>
+<td>${item.Loan_No}</td>
+    <!-- Type -->
+    <td>${item.type}</td>
+</tr>
+`;
+
             }
 
             // inject table rows once (fast)
@@ -283,7 +326,27 @@ function load_payment_table(page = 1, includeTotals = false) {
     });
 }
 
+// ====================== ENTER KEY NAVIGATION ======================
 
+// Move to next amount or saving field on Enter
+$(document).on('keydown', '.amount-input, .saving-amount-input', function (e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+
+        const $fields = $('.amount-input, .saving-amount-input')
+            .filter(':visible:enabled');
+
+        const index = $fields.index(this);
+        const next = $fields.eq(index + 1);
+
+        if (next.length) {
+            next.focus();
+        } else {
+            // If last input, optionally trigger automation or stay on last field
+            $(this).blur();
+        }
+    }
+});
 
 function enforceDateBulkRules() {
     const today = new Date().toISOString().split("T")[0];
@@ -339,6 +402,7 @@ async function performPayment(cus_id, payment_amount, reduce_balance_loan_id, pa
     formData.append('payment_type', 'Cash');
     formData.append('bank_account_company', '1');
     formData.append('sms', '1');
+    formData.append('bulk', '1');
 
     return new Promise((resolve) => {
         $.ajax({

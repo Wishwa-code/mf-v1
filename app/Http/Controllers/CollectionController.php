@@ -441,7 +441,8 @@ class CollectionController extends Controller
         $center = tableWithBranch('center')->get();
         $company = tableWithBranch('company')->first();
         $user = tableWithBranch('user')->get();
-        return view('pages.CollectionReport', compact('group', 'center', 'customers','company','user'));
+        $lending_officer = tableWithBranch('user')->where('lending_officer','=','1')->get();
+        return view('pages.CollectionReport', compact('group', 'center', 'customers','company','user','lending_officer'));
 
 
     }
@@ -451,22 +452,31 @@ class CollectionController extends Controller
      */
     public function createrepaymentreport(Request $request)
     {
-        $date_from = $request->date_from;
-        $date_to = $request->date_to;
-        $center_details = $request->center_details;
-        $group = $request->group;
-        $customer = $request->customer;
-        $user = $request->user;
+        $date_from       = $request->date_from;
+        $date_to         = $request->date_to;
+        $center_details  = $request->center_details;
+        $group           = $request->group;
+        $customer        = $request->customer;
+        $user            = $request->user;
+        $lending_officer = $request->lending_officer;
 
         try {
             $loanQuery = tableWithBranch('customer_payments','customer_payments')
                 ->join('customer_loan', 'customer_payments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
                 ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+
+                // Agent who recorded the payment
                 ->join('user', 'customer_payments.User_idUser', '=', 'user.id')
+
+                // Lending officer (LEFT JOIN because some loans may not have one)
+                ->leftJoin('user as u2', 'customer_loan.lending_officer_id', '=', 'u2.id')
+
                 ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
                 ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
                 ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+
                 ->whereBetween('customer_payments.date', [$date_from, $date_to])
+
                 ->select(
                     'customer_payments.*',
                     'customer.cus_number as cus_number',
@@ -477,33 +487,39 @@ class CollectionController extends Controller
                     'customer.Nic as NIC',
                     'customer_group.Group_No as group_no',
                     'customer_group.Name as group_name',
-                    'user.Full_Name as Full_Name'
+
+                    // Use distinct aliases:
+                    'user.Full_Name as agent_name',             // the cashier/collector who entered payment
+                    'u2.Full_Name as lending_officer_name'      // the lending officer’s name
                 );
 
             if ($center_details != '0') {
-                $loanQuery->where('center.idCenter', '=', $center_details);
+                $loanQuery->where('center.idCenter', $center_details);
             }
-
             if ($group != '0') {
-                $loanQuery->where('customer_group.idCustomer_Group', '=', $group);
+                $loanQuery->where('customer_group.idCustomer_Group', $group);
             }
-
             if ($customer != '0') {
-                $loanQuery->where('customer.idCustomer', '=', $customer);
+                $loanQuery->where('customer.idCustomer', $customer);
             }
-
             if ($user != '0') {
-                $loanQuery->where('user.id', '=', $user);
+                $loanQuery->where('user.id', $user);
+            }
+            if ($lending_officer != '0') {
+                $loanQuery->where('customer_loan.lending_officer_id', $lending_officer);
             }
 
             $loan = $loanQuery->get();
 
             return response()->json(['item' => $loan, 'test' => $date_from], 200);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'An error occurred while fetching loan details.', 'message' => $e->getMessage()], 500);
+            return response()->json([
+                'error' => 'An error occurred while fetching loan details.',
+                'message' => $e->getMessage()
+            ], 500);
         }
-
     }
+
 
 
 

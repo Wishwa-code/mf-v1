@@ -245,6 +245,7 @@
 
             <div class="container-fluid py-4">
 
+
             {{-- Welcome Banner --}}
             <div class="row mb-4">
                 <div class="col-12">
@@ -865,6 +866,12 @@
             </div>
         </div>
     @endif
+
+    <div class="d-flex justify-content-end mb-3">
+        <button id="startLoanProcess_2" class="btn btn-lg btn-primary">
+            <i class="ri-sparkling-2-line me-1"></i> Process Loans
+        </button>
+    </div>
 @endsection
 
 @section('script')
@@ -878,7 +885,86 @@
     <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
     <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+
+
     <script>
+        $('#startLoanProcess_2').on('click', function () {
+            $.get('/get-loan-ids', function (data) {
+                if (!data || data.ok !== true) {
+                    Swal.fire({icon: 'error', title: 'Failed to fetch loans', text: (data && data.error) || 'Unknown error'});
+                    return;
+                }
+
+                const loanIds = data.loan_ids || [];
+                const total = loanIds.length;
+                let index = 0, deleted = 0, skipped = 0, failed = 0;
+
+                if (!total) {
+                    Swal.fire({icon: 'info', title: 'No eligible loans', text: 'No loans with 12 installments found.'});
+                    return;
+                }
+
+                Swal.fire({
+                    title: 'Processing Loans...',
+                    html: `<div style="font-size:14px;">Processing ${total} loans with 12 installments.</div>
+               <div id="swal-progress" style="margin-top:15px; background:#eee; border-radius:4px; overflow:hidden;">
+                 <div id="swal-progress-bar" style="height:15px; width:0%; background:#4caf50;"></div>
+               </div>
+               <div style="margin-top:10px; font-size:13px;">
+                 <span id="swal-count">0/${total}</span>
+                 <div id="swal-mini-stats" style="margin-top:6px;">Deleted: 0 • Skipped: 0 • Failed: 0</div>
+               </div>`,
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => processNext()
+                });
+
+                function updateProgress() {
+                    const pct = Math.round((index / total) * 100);
+                    $('#swal-progress-bar').css('width', pct + '%');
+                    $('#swal-count').text(`${index}/${total}`);
+                    $('#swal-mini-stats').text(`Deleted: ${deleted} • Skipped: ${skipped} • Failed: ${failed}`);
+                }
+
+                function processNext() {
+                    if (index >= total) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Done!',
+                            html: `<div style="text-align:left">
+                     <div><strong>Total:</strong> ${total}</div>
+                     <div><strong>Deleted:</strong> ${deleted}</div>
+                     <div><strong>Skipped:</strong> ${skipped}</div>
+                     <div><strong>Failed:</strong> ${failed}</div>
+                   </div>`
+                        });
+                        return;
+                    }
+                    const loanId = loanIds[index];
+
+                    $.ajax({
+                        url: `/process-loan/${loanId}`,
+                        method: 'GET',
+                        success: function (res) {
+                            index++;
+                            if (res && res.ok) {
+                                if (res.skipped) skipped++; else deleted++;
+                            } else failed++;
+                            updateProgress();
+                            processNext();
+                        },
+                        error: function () {
+                            index++; failed++;
+                            updateProgress();
+                            processNext();
+                        }
+                    });
+                }
+            }).fail(function() {
+                Swal.fire({icon: 'error', title: 'Network error', text: 'Cannot reach /get-loan-ids'});
+            });
+        });
         // Live DateTime (Updated Every Second)
         function updateDateTime() {
             const dt = new Date();

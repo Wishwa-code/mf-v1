@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Expenses;
+use App\Services\BankBalanceService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -336,7 +337,7 @@ class ReportController extends Controller
         $date=$request->date;
         $amount=$request->amount;
 
-        Log::info($request->bank);
+
 
         $expenses=new Expenses();
 
@@ -347,29 +348,28 @@ class ReportController extends Controller
         $expenses->category_id=$request->category;
         $expenses->bank_id=$request->bank;
         $expenses->user_id = $user_id;
-        $expenses->branch_id = $request->has('branch_id') && $request->branch_id ? $request->branch_id : session('branch_id');
+        $expenses->branch_id = session('branch_id');
 
         if ($expenses->save()) {
-
+            $dateTime = $request->date . ' ' . now()->format('H:i:s');
             if ($type=="Expense") {
-                $bank_id=DB::table('company_bank_accounts')
+                $bank_id=tableWithBranch('company_bank_accounts')
                     ->where('acc_type_group','=','Expenses')
                     ->where('Idbank','=',$request->category)
                     ->first();
-                if ($bank_id) {
-                    $this->bankLogController->index($request->bank,"Expenses",$reason,"-","credit",$amount,$bank_id->Idbank);
-                    $this->bankLogController->index($bank_id->Idbank,"Expenses",$reason,"-","debit",$amount,$request->bank);
-                }
+                $this->bankLogController->index($request->bank,"Expenses",$reason,"-","credit",$amount,$bank_id->Idbank,'0','0',$dateTime);
+                $this->bankLogController->index($bank_id->Idbank,"Expenses",$reason,"-","debit",$amount,$request->bank,'0','0',$dateTime);
             }else{
-                $bank_id=DB::table('company_bank_accounts')
+                $bank_id=tableWithBranch('company_bank_accounts')
                     ->where('acc_type_group','=','Income')
                     ->where('Idbank','=',$request->category)
                     ->first();
-                if ($bank_id) {
-                    $this->bankLogController->index($request->bank,"Income",$reason,"-","debit",$amount,$bank_id->Idbank);
-                    $this->bankLogController->index($bank_id->Idbank,"Income",$reason,"-","credit",$amount,$request->bank);
-                }
+                $this->bankLogController->index($request->bank,"Income",$reason,"-","debit",$amount,$bank_id->Idbank,'0','0',$dateTime);
+                $this->bankLogController->index($bank_id->Idbank,"Income",$reason,"-","credit",$amount,$request->bank,'0','0',$dateTime);
             }
+
+            $service = new BankBalanceService();
+            $service->updateRunningBalance($bank_id->Idbank);
 
 
             // If the data is saved successfully, return a success response
@@ -411,44 +411,21 @@ class ReportController extends Controller
                 ->where('acc_type_group','=','Expenses')
                 ->where('Idbank','=',$last_expenses->category_id)
                 ->first();
-            
-            // Get bank name for description
-            $bankName = $bank_id ? $bank_id->Bank_Name : 'Unknown';
-            
-            // Store expense delete data for approval
-            $requestData = [
-                'expense_id' => $id,
-                'expense_data' => (array)$last_expenses,
-                'bank_id_data' => $bank_id ? (array)$bank_id : null,
-            ];
-
-            // Create approval request
-            DB::table('approval_request')->insert([
-                'type' => 'Expense Delete',
-                'typeid' => 603,
-                'description' => 'Expense Delete: ' . $last_expenses->reason . ' (Amount: ' . $last_expenses->amount . ', Category: ' . $bankName . ')',
-                'data' => json_encode($requestData),
-                'userid' => session('userid'),
-                'branch_id' => session('branch_id'),
-                'data_time' => now(),
-                'status' => 0
-            ]);
-            
-            // Redirect with success message
-            return redirect()->back()->with('success', 'Expense delete request sent for approval!');
-            
-            // OLD CODE - keeping for approval handler reference
-            /*
             $reason='Delete Expense : ('.$last_expenses->reason.')';
-            $this->bankLogController->index($last_expenses->bank_id,"Expenses",$reason,"-","debit",$last_expenses->amount,$bank_id->Idbank);
-            $this->bankLogController->index($bank_id->Idbank,"Expenses",$reason,"-","credit",$last_expenses->amount,$last_expenses->bank_id);
+            $dateTime = $last_expenses->date . ' ' . now()->format('H:i:s');
+            $this->bankLogController->index($last_expenses->bank_id,"Expenses",$reason,"-","debit",$last_expenses->amount,$bank_id->Idbank,'0','0',$dateTime);
+            $this->bankLogController->index($bank_id->Idbank,"Expenses",$reason,"-","credit",$last_expenses->amount,$last_expenses->bank_id,'0','0',$dateTime);
 
             DB::table('expences')
                 ->where('id', $id)
                 ->where('branch_id', session('branch_id'))
                 ->delete();
-            */
         }
+
+        $service = new BankBalanceService();
+
+        $service->updateRunningBalance($last_expenses->bank_id);
+        $service->updateRunningBalance($bank_id->Idbank);
 
 
         // Reload the list with the same logic as viewexpenses()

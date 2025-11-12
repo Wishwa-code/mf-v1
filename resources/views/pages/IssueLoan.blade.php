@@ -848,8 +848,8 @@
                                                             <option value="6">Saturday</option>
                                                             <option value="0">Sunday</option>
                                                         </select>
-
                                                     </div>
+
                                                     <div class="mt-1 mb-2" id="first_of_the_month">
                                                         <label class="form-label">First Of The Month</label>
                                                     </div>
@@ -1172,8 +1172,74 @@
                     );
                 }
             });
-
+            initCollectionDayOptions();
         });
+
+
+        function initCollectionDayOptions() {
+            $.ajax({
+                type: "GET",
+                url: "/settings/all",
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                },
+                success: function (data) {
+                    const items = data.items || {};
+                    let allowedDays = [];
+
+                    if (items.collection_days) {
+                        try {
+                            allowedDays = JSON.parse(items.collection_days);
+                            if (!Array.isArray(allowedDays)) {
+                                allowedDays = [];
+                            }
+                        } catch (e) {
+                            // fallback if stored comma-separated
+                            allowedDays = String(items.collection_days)
+                                .split(',')
+                                .map(v => v.trim())
+                                .filter(v => v !== '')
+                                .map(v => parseInt(v));
+                        }
+                    }
+
+                    // map day numbers to labels
+                    const dayMap = {
+                        1: 'Monday',
+                        2: 'Tuesday',
+                        3: 'Wednesday',
+                        4: 'Thursday',
+                        5: 'Friday',
+                        6: 'Saturday',
+                        0: 'Sunday'
+                    };
+
+                    // If admin removed everything by mistake, fallback to all 7
+                    if (allowedDays.length === 0) {
+                        allowedDays = [1,2,3,4,5,6,0];
+                    }
+
+                    // rebuild dropdown
+                    const $select = $('#weekly_txt');
+                    $select.empty();
+
+                    allowedDays.forEach(function(dayVal, idx){
+                        const label = dayMap[dayVal] ?? ('Day ' + dayVal);
+                        $select.append(
+                            $('<option>', {
+                                value: dayVal,
+                                text: label,
+                                selected: idx === 0 // first one auto selected
+                            })
+                        );
+                    });
+                },
+                error: function (xhr) {
+                    console.error("Failed to load settings for collection days", xhr);
+                    // fallback: do nothing, keep whatever HTML was there
+                }
+            });
+        }
 
 
         function repayment_type(id) {
