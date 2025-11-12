@@ -242,6 +242,9 @@ function saveExtraCharge() {
     const date = $('#extra_date').val();
     const description = $('#extra_description').val();
     const amount = $('#extra_amount').val();
+    const chargeCodeId = $('#extra_charge_type').val();
+    const chargeCodeText = $('#extra_charge_type option:selected').text();
+    const chargeCodeDescription = (chargeCodeId && chargeCodeText !== '-- Select Charge Type --') ? chargeCodeText : null;
 
 
     if (!date || !description || !amount) {
@@ -270,7 +273,9 @@ function saveExtraCharge() {
                     loan_id: loanId,
                     date: date,
                     description: description,
-                    amount: amount
+                    amount: amount,
+                    other_charges_code_id: chargeCodeId ? chargeCodeId : null,
+                    other_charges_codes_discription: chargeCodeDescription
                 },
                 success: function (res) {
                     Swal.fire({
@@ -279,7 +284,7 @@ function saveExtraCharge() {
                         timer: 1200,
                         showConfirmButton: false
                     });
-                    openExtraChargeModal(loanId); // reload table
+                    openExtraChargeModal(loanId);
                 }
             });
         }

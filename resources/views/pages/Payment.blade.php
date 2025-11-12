@@ -243,7 +243,12 @@
             <div class="modal-content shadow-lg rounded-3">
                 <div class="modal-header bg-dark text-white">
                     <h5 class="modal-title"><i class="bi bi-cash-coin me-2"></i>Add Extra Charges</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-light" onclick="openChargeCodesModal()" title="Manage Charge Codes">
+                            <i class="bi bi-gear"></i> Manage Codes
+                        </button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
                 </div>
                 <div class="modal-body py-4">
                     <input type="hidden" id="modalLoanId">
@@ -252,14 +257,19 @@
                             <label class="form-label">Date</label>
                             <input type="date" class="form-control shadow-sm" id="extra_date">
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Description</label>
-                            <input type="text" class="form-control shadow-sm" id="extra_description" placeholder="Enter reason...">
-                        </div>
-
                         <div class="col-md-3">
                             <label class="form-label">Amount</label>
                             <input type="number" class="form-control shadow-sm" id="extra_amount" placeholder="0.00" min="0" step="0.01">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Select Extra Charge Type</label>
+                            <select class="form-control shadow-sm" id="extra_charge_type">
+                                <option value="">-- Select Charge Type --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Description</label>
+                            <input type="text" class="form-control shadow-sm" id="extra_description" placeholder="Enter or edit description...">
                         </div>
                     </div>
 
@@ -462,6 +472,81 @@
             </div><!-- /.modal-content -->
         </div><!-- /.modal-dialog -->
     </div>
+
+    <!-- Other Charges Codes Modal -->
+    <div class="modal fade" id="chargeCodesModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content shadow-lg rounded-3">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="bi bi-gear me-2"></i>Manage Charge Codes</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Charge Codes List</h6>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="openAddChargeCodeModal()">
+                            <i class="bi bi-plus-circle me-1"></i> Add New Code
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-hover" id="chargeCodesTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="10%">ID</th>
+                                    <th width="30%">Code</th>
+                                    <th width="45%">Description</th>
+                                    <th width="15%">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="chargeCodesTableBody">
+                                <!-- Will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Charge Code Modal -->
+    <div class="modal fade" id="chargeCodeFormModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content shadow-lg rounded-3">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="chargeCodeFormTitle">
+                        <i class="bi bi-plus-circle me-2"></i><span id="chargeCodeFormTitleText">Add Charge Code</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <form id="chargeCodeForm">
+                        <input type="hidden" id="chargeCodeId">
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Code <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="charge_code" required placeholder="Enter code">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" id="charge_description" rows="3" placeholder="Enter description"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveChargeCode()">
+                        <i class="bi bi-save me-1"></i> Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('script')
@@ -591,6 +676,200 @@
             modalTitle.textContent = `New message to ${recipient}`
             modalBodyInput.value = recipient
         })
+    </script>
+
+    <script>
+        // Charge Codes Management Functions
+        function openChargeCodesModal() {
+            $('#extraChargeModal').modal('hide');
+            loadChargeCodes();
+            $('#chargeCodesModal').modal('show');
+        }
+
+        function loadChargeCodes() {
+            $.ajax({
+                url: '/other-charges-codes/list',
+                type: 'GET',
+                success: function(response) {
+                    // Populate table
+                    let tbody = $('#chargeCodesTableBody');
+                    tbody.empty();
+
+                    // Populate dropdown
+                    let dropdown = $('#extra_charge_type');
+                    dropdown.empty();
+                    dropdown.append('<option value="">-- Select Charge Type --</option>');
+
+                    if (response.length === 0) {
+                        tbody.append('<tr><td colspan="3" class="text-center">No charge codes found</td></tr>');
+                        return;
+                    }
+
+                    response.forEach(function(code) {
+                        // Add to table
+                        let row = `
+                            <tr>
+                                <td>${code.id}</td>
+                                <td>${code.code}</td>
+                                <td>${code.description || '-'}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-warning" onclick="editChargeCode(${code.id})" title="Edit">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="deleteChargeCode(${code.id})" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.append(row);
+
+                        // Add to dropdown
+                        let option = `<option value="${code.id}" data-description="${code.description || ''}">${code.code} - ${code.description || 'No description'}</option>`;
+                        dropdown.append(option);
+                    });
+                },
+                error: function() {
+                    Swal.fire('Error!', 'Failed to load charge codes', 'error');
+                }
+            });
+        }
+
+        function fillChargeDescription() {
+            const selected = $('#extra_charge_type option:selected');
+            const description = selected.data('description');
+            if (description) {
+                $('#extra_description').val(description);
+            }
+        }
+
+        function openAddChargeCodeModal() {
+            $('#chargeCodeId').val('');
+            $('#charge_code').val('');
+            $('#charge_description').val('');
+            $('#chargeCodeFormTitleText').text('Add Charge Code');
+            $('#chargeCodeFormModal').modal('show');
+        }
+
+        function editChargeCode(id) {
+            $.ajax({
+                url: `/other-charges-codes/${id}`,
+                type: 'GET',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        $('#chargeCodeId').val(response.data.id);
+                        $('#charge_code').val(response.data.code);
+                        $('#charge_description').val(response.data.description);
+                        $('#chargeCodeFormTitleText').text('Edit Charge Code');
+                        $('#chargeCodeFormModal').modal('show');
+                    }
+                },
+                error: function() {
+                    Swal.fire('Error!', 'Failed to load charge code', 'error');
+                }
+            });
+        }
+
+        function saveChargeCode() {
+            const id = $('#chargeCodeId').val();
+            const url = id ? `/other-charges-codes/${id}` : '/other-charges-codes';
+            const method = id ? 'PUT' : 'POST';
+
+            const data = {
+                code: $('#charge_code').val(),
+                description: $('#charge_description').val(),
+                _token: '{{ csrf_token() }}'
+            };
+
+            if (!data.code) {
+                Swal.fire('Error!', 'Code is required', 'error');
+                return;
+            }
+
+            $.ajax({
+                url: url,
+                type: method,
+                data: data,
+                success: function(response) {
+                    if (response.status === 'success') {
+                        Swal.fire('Success!', response.message, 'success');
+                        $('#chargeCodeFormModal').modal('hide');
+                        loadChargeCodes();
+                    }
+                },
+                error: function(xhr) {
+                    const message = xhr.responseJSON?.message || 'Operation failed';
+                    Swal.fire('Error!', message, 'error');
+                }
+            });
+        }
+
+        function deleteChargeCode(id) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `/other-charges-codes/${id}`,
+                        type: 'DELETE',
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            if (response.status === 'success') {
+                                Swal.fire('Deleted!', response.message, 'success');
+                                loadChargeCodes();
+                            }
+                        },
+                        error: function(xhr) {
+                            const message = xhr.responseJSON?.message || 'Delete failed';
+                            Swal.fire('Error!', message, 'error');
+                        }
+                    });
+                }
+            });
+        }
+
+        // Restore Add Extra Charges modal when Manage Charge Codes modal is closed
+        $('#chargeCodesModal').on('hidden.bs.modal', function () {
+            if (!$('#chargeCodeFormModal').hasClass('show')) {
+                setTimeout(() => {
+                    $('#extraChargeModal').modal('show');
+                }, 300);
+            }
+        });
+
+        // Restore Manage Charge Codes modal when Add/Edit Code Form modal is closed
+        $('#chargeCodeFormModal').on('hidden.bs.modal', function () {
+            if (!$('#chargeCodesModal').hasClass('show')) {
+                $('#chargeCodesModal').modal('show');
+            }
+        });
+
+        // Load charge codes dropdown when Extra Charges modal opens
+        $('#extraChargeModal').on('shown.bs.modal', function () {
+            // Load charge codes for dropdown only (don't need to load table)
+            $.ajax({
+                url: '/other-charges-codes/list',
+                type: 'GET',
+                success: function(response) {
+                    let dropdown = $('#extra_charge_type');
+                    dropdown.empty();
+                    dropdown.append('<option value="">-- Select Charge Type --</option>');
+
+                    response.forEach(function(code) {
+                        let option = `<option value="${code.id}" data-description="${code.description || ''}">${code.code} - ${code.description || 'No description'}</option>`;
+                        dropdown.append(option);
+                    });
+                }
+            });
+        });
     </script>
 
 @endsection
