@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class ChartOfAccountController extends Controller
 {
@@ -304,9 +305,21 @@ class ChartOfAccountController extends Controller
     // Fetch data for the tables
     public function fetch(Request $request)
     {
+        // ✅ Step 1: Ensure columns exist (only runs once if missing)
+        if (!Schema::hasColumn('manual_journal', 'reversed_at')) {
+            Schema::table('manual_journal', function ($table) {
+                $table->timestamp('reversed_at')->nullable()->after('updated_at');
+            });
+        }
+
+        if (!Schema::hasColumn('manual_journal', 'reversed_by')) {
+            Schema::table('manual_journal', function ($table) {
+                $table->unsignedBigInteger('reversed_by')->nullable()->after('reversed_at');
+            });
+        }
+
         $query = tableWithBranch('manual_journal');
 
-        // Apply filters
         if ($request->narration) {
             $query->where('narration', 'LIKE', '%' . $request->narration . '%');
         }
@@ -326,18 +339,124 @@ class ChartOfAccountController extends Controller
             $query->where('total_amount', '<=', $request->to_amount);
         }
 
+        // Only statuses we care about here
+        $results = $query->whereIn('status', [1, 2])->get();
 
-        $results = $query->get();
-
-        // Separate results into posted and deleted
-        $posted = $results->where('status', 1)->values();
-        $deleted = $results->where('status', 0)->values();
+        $posted   = $results->where('status', 1)->values();
+        $reversed = $results->where('status', 2)->values();
 
         return response()->json([
-            'posted' => $posted,
-            'deleted' => $deleted,
+            'posted'   => $posted,
+            'reversed' => $reversed,
         ]);
     }
+
+
+    public function reverse(Request $request)
+    {
+        $request->validate(['id_manual_journal' => 'required|integer']);
+        $id = (int)$request->id_manual_journal;
+
+        return DB::transaction(function () use ($id) {
+            // 1) Lock header
+            $header = tableWithBranch('manual_journal','manual_journal')
+                ->where('id_manual_journal', $id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$header) {
+                return response()->json(['status'=>'error','message'=>'Journal not found.'],404);
+            }
+            if ((int)$header->status === 2) {
+                return response()->json(['status'=>'error','message'=>'This journal is already reversed.'],400);
+            }
+
+            // 2) Get lines (we’ll use them mainly to read account strings and debit/credit)
+            $lines = tableWithBranch('manual_journal_has_amount','manual_journal_has_amount')
+                ->where('id_manual_journal', $id)
+                ->orderBy('id_manual_journal_has_amount')
+                ->get();
+
+            if ($lines->isEmpty()) {
+                return response()->json(['status'=>'error','message'=>'No lines found to reverse.'],400);
+            }
+
+            // 3) Reverse bank transactions:
+            //    We will look at each row’s `account` (format "BANKCODE-...") and post the
+            //    opposite entry using your existing BankLogController + BankBalanceService.
+            foreach ($lines as $row) {
+                // Split the account string by '-' and get the first part as bank code
+                $accountParts = explode('-', (string)$row->account);
+                $firstNumber  = $accountParts[0] ?? null;
+
+                if (!$firstNumber) {
+                    // Skip if no recognizable bank id; optional: throw error instead
+                    continue;
+                }
+
+                $bank = tableWithBranch('company_bank_accounts')
+                    ->where('Idbank', '=', $firstNumber)
+                    ->first();
+
+                if (!$bank) {
+                    // Skip silently; or handle as needed
+                    continue;
+                }
+
+                // Opposite transactions
+                $dateTime = ($header->date ?? now()->toDateString()).' '.now()->format('H:i:s');
+                $desc = $row->description;
+
+                // If original posted a debit, we now credit the same amount
+                if ((float)$row->debit_amount > 0) {
+                    $this->bankLogController->index(
+                        $bank->Idbank,
+                        "Manual Journal Reverse",
+                        $desc,
+                        "-",
+                        "credit",                           // opposite of original debit
+                        (float)$row->debit_amount,
+                        '-',
+                        '0',
+                        '0',
+                        $dateTime
+                    );
+                }
+
+                // If original posted a credit, we now debit the same amount
+                if ((float)$row->credit_amount > 0) {
+                    $this->bankLogController->index(
+                        $bank->Idbank,
+                        "Manual Journal Reverse",
+                        $desc,
+                        "-",
+                        "debit",                            // opposite of original credit
+                        (float)$row->credit_amount,
+                        '-',
+                        '0',
+                        '0',
+                        $dateTime
+                    );
+                }
+
+                // Recompute running balance for this bank
+                $service = new BankBalanceService();
+                $service->updateRunningBalance($bank->Idbank);
+            }
+
+            tableWithBranch('manual_journal','manual_journal')
+                ->where('id_manual_journal', $id)
+                ->update([
+                    'status'      => 2,
+                    'reversed_at' => now(),
+                    'reversed_by' => auth()->id() ?? null,
+                    'updated_at'  => now(),
+                ]);
+
+            return response()->json(['status'=>'success','message'=>'Journal reversed successfully.']);
+        });
+    }
+
 
 
 

@@ -335,44 +335,39 @@
         <!-- Tabs Section -->
         <div class="tabs-section d-flex mb-3">
             <button class="btn btn-secondary me-2 active" data-tab="posted">Posted</button>
-            <button class="btn btn-secondary" data-tab="deleted">Deleted</button>
+            <button class="btn btn-secondary" data-tab="reversed">Reversed</button>
         </div>
+
 
         <!-- Table Section -->
-        <div>
-            <!-- Posted Table -->
-            <table class="table table-striped tab-table active" id="postedTable">
-                <thead>
-                <tr>
-                    <th>Narration</th>
-                    <th>Journal Date</th>
-                    <th>Amount</th>
-                    <th>Created Time</th>
-                    <th>Action</th>
-                </tr>
-                </thead>
-                <tbody>
+        <!-- Posted Table -->
+        <table class="table table-striped tab-table active" id="postedTable">
+            <thead>
+            <tr>
+                <th>Narration</th>
+                <th>Journal Date</th>
+                <th>Amount</th>
+                <th>Created Time</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
 
-                </tbody>
-            </table>
+        <!-- Reversed Table -->
+        <table class="table table-striped tab-table" id="reversedTable">
+            <thead>
+            <tr>
+                <th>Narration</th>
+                <th>Journal Date</th>
+                <th>Amount</th>
+                <th>Created Time</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
 
-
-            <!-- Deleted Table -->
-            <table class="table table-striped tab-table" id="deletedTable">
-                <thead>
-                <tr>
-                    <th>Narration</th>
-                    <th>Journal Date</th>
-                    <th>Amount</th>
-                    <th>Created Time</th>
-                    <th>Action</th>
-                </tr>
-                </thead>
-                <tbody>
-
-                </tbody>
-            </table>
-        </div>
     </div>
     <div class="modal" id="viewDetailsModal">
         <div class="modal-content large-modal-content">
@@ -453,18 +448,17 @@
         });
 
         document.addEventListener("DOMContentLoaded", function () {
-            const postedTableBody = document.querySelector("#postedTable tbody");
-            const deletedTableBody = document.querySelector("#deletedTable tbody");
+            const postedTableBody   = document.querySelector("#postedTable tbody");
+            const reversedTableBody = document.querySelector("#reversedTable tbody");
 
-            // Function to fetch and filter data
             function fetchData(filters = {}) {
                 $.ajax({
                     url: "{{ route('manual_journal.fetch') }}",
                     method: "GET",
-                    data: filters, // Pass filters as query parameters
+                    data: filters,
                     success: function (response) {
-                        populateTable(postedTableBody, response.posted);
-                        populateTable(deletedTableBody, response.deleted);
+                        populateTable(postedTableBody, response.posted, 'posted');
+                        populateTable(reversedTableBody, response.reversed, 'reversed');
                     },
                     error: function () {
                         console.error("Failed to fetch data");
@@ -472,99 +466,71 @@
                 });
             }
 
-            function populateTable(tableBody, data) {
-                tableBody.innerHTML = ""; // Clear existing rows
+            function actionButtons(item, bucket) {
+                // Always has View
+                let buttons = `<button class="btn btn-info btn-sm view-btn" data-id="${item.id_manual_journal}">View</button>`;
+                // Only Posted rows can be reversed
+                if (bucket === 'posted') {
+                    buttons += ` <button class="btn btn-warning btn-sm reverse-btn" data-id="${item.id_manual_journal}">Reverse</button>`;
+                }
+                return buttons;
+            }
 
-                if (data.length === 0) {
-                    tableBody.innerHTML = "<tr><td colspan='6' class='text-center'>No records found</td></tr>";
+            function populateTable(tableBody, data, bucket) {
+                tableBody.innerHTML = "";
+                if (!data || data.length === 0) {
+                    tableBody.innerHTML = "<tr><td colspan='5' class='text-center'>No records found</td></tr>";
                     return;
                 }
-
                 data.forEach((item) => {
                     const row = `
-        <tr>
-            <td>${item.narration}</td>
-            <td>${item.date}</td>
-            <td>${parseFloat(item.tot_credit || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            <td>${item.created_at}</td>
-            <td>
-                <button class="btn btn-info btn-sm view-btn" data-id="${item.id_manual_journal}">View</button>
-<button class="btn btn-warning btn-sm edit-btn" data-id="${item.id_manual_journal}" disabled>Edit</button>
-                ${item.status === "1"
-                        ? `<button class="btn btn-danger btn-sm delete-btn" data-id="${item.id_manual_journal}" disabled>Delete</button>`
-                        : `<button class="btn btn-warning btn-sm restore-btn" data-id="${item.id_manual_journal}">Restore</button>`}
-            </td>
-        </tr>`;
-                    tableBody.innerHTML += row;
-                });
-
-                attachRowEvents(); // Reattach events after updating rows
-            }
-
-            // Attach events to delete/restore buttons
-            function attachRowEvents() {
-                document.querySelectorAll(".delete-btn").forEach((btn) => {
-                    btn.addEventListener("click", function () {
-                        const id = this.getAttribute("data-id");
-                        changeStatus(id, 0); // Move to Deleted
-                    });
-                });
-
-                document.querySelectorAll(".restore-btn").forEach((btn) => {
-                    btn.addEventListener("click", function () {
-                        const id = this.getAttribute("data-id");
-                        changeStatus(id, 1); // Move to Posted
-                    });
+                <tr>
+                    <td>${item.narration}</td>
+                    <td>${item.date}</td>
+                    <td>${parseFloat(item.tot_credit || item.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td>${item.created_at ?? ''}</td>
+                    <td>${actionButtons(item, bucket)}</td>
+                </tr>`;
+                    tableBody.insertAdjacentHTML('beforeend', row);
                 });
             }
 
-            // Change status (Delete/Restore) with confirmation
-            function changeStatus(id, status) {
-                const actionText = status === 0 ? 'delete' : 'restore';
-                const confirmationText = status === 0
-                    ? "This will move the record to the Deleted tab."
-                    : "This will restore the record to the Posted tab.";
-                const confirmButtonText = status === 0 ? "Yes, delete it!" : "Yes, restore it!";
-                const successMessage = status === 0 ? "Deleted!" : "Restored!";
-
+            // Reverse flow
+            $(document).on("click", ".reverse-btn", function () {
+                const id = $(this).data("id");
                 Swal.fire({
-                    title: `Are you sure you want to ${actionText}?`,
-                    text: confirmationText,
+                    title: "Reverse this journal?",
+                    text: "This will mark the journal as Reversed and post opposite bank entries.",
                     icon: "warning",
                     showCancelButton: true,
-                    confirmButtonText: confirmButtonText,
-                    cancelButtonText: "No, cancel"
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // Proceed with the status change
-                        $.ajax({
-                            url: "{{ route('manual_journal.change_status') }}",
-                            method: "POST",
-                            data: {
-                                id_manual_journal: id,
-                                status: status,
-                                _token: "{{ csrf_token() }}",
-                            },
-                            success: function (response) {
-                                if (response.status === "success") {
-                                    Swal.fire(successMessage, response.message, "success").then(() => {
-                                        fetchData(); // Refresh data after success
-                                    });
-                                } else {
-                                    Swal.fire("Error", response.message, "error");
-                                }
-                            },
-                            error: function () {
-                                Swal.fire("Error", "An unexpected error occurred.", "error");
+                    confirmButtonText: "Yes, reverse",
+                    cancelButtonText: "Cancel"
+                }).then((res) => {
+                    if (!res.isConfirmed) return;
+
+                    $.ajax({
+                        url: "{{ route('manual_journal.reverse') }}",
+                        method: "POST",
+                        data: {
+                            id_manual_journal: id,
+                            _token: "{{ csrf_token() }}",
+                        },
+                        success: function (resp) {
+                            if (resp.status === "success") {
+                                Swal.fire("Reversed", resp.message, "success").then(() => fetchData());
+                            } else {
+                                Swal.fire("Error", resp.message || "Failed to reverse.", "error");
                             }
-                        });
-                    }
+                        },
+                        error: function () {
+                            Swal.fire("Error", "Unexpected error occurred.", "error");
+                        }
+                    });
                 });
-            }
+            });
 
-
-            // Event listener for the search button
-            document.querySelector(".btn-success").addEventListener("click", function () {
+            // Search
+            document.getElementById("searchButton").addEventListener("click", function () {
                 const filters = {
                     narration: document.getElementById("journalNarration").value,
                     from_date: document.getElementById("fromDate").value,
@@ -572,13 +538,13 @@
                     from_amount: document.getElementById("fromAmount").value,
                     to_amount: document.getElementById("toAmount").value,
                 };
-
-                fetchData(filters); // Fetch data with filters
+                fetchData(filters);
             });
 
-            // Fetch all data on page load
+            // Initial load
             fetchData();
         });
+
 
 
         document.addEventListener("DOMContentLoaded", function () {

@@ -630,6 +630,8 @@ Route::delete('/expenses_categories/{id}', '\App\Http\Controllers\ReportControll
     Route::get('/manual-journal/fetch', [ChartOfAccountController::class, 'fetch'])->name('manual_journal.fetch');
     Route::post('/manual-journal/change-status', [ChartOfAccountController::class, 'updateStatus'])->name('manual_journal.change_status');
 
+    Route::post('/manual-journal/reverse', [ChartOfAccountController::class, 'reverse'])->name('manual_journal.reverse');
+
 
     Route::get('/trialBalanceAccounting', function () {
         return view('pages.Accounting.TrialBalanceAccounting');
