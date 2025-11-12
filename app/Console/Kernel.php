@@ -4,6 +4,9 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
+use App\Jobs\RunRecoverySweepJob;
 
 class Kernel extends ConsoleKernel
 {
@@ -23,10 +26,25 @@ class Kernel extends ConsoleKernel
      * @param  \Illuminate\Console\Scheduling\Schedule  $schedule
      * @return void
      */
-    protected function schedule(Schedule $schedule)
+    protected function schedule(\Illuminate\Console\Scheduling\Schedule $schedule)
     {
-        // Schedule your command to run daily at 7 AM
-        $schedule->command('send-sms-birthday')->dailyAt('13:50');
+        $schedule->call(function () {
+            // Here we manually dispatch the job
+            $branchId = 1; // or get from your main branch setup
+            $userId   = 1; // system user ID (for logs/audit)
+
+            Log::info('Auto Recovery Scheduler Triggered', [
+                'time' => now()->toDateTimeString(),
+                'branch_id' => $branchId,
+                'user_id' => $userId,
+            ]);
+
+            RunRecoverySweepJob::dispatch($branchId, $userId);
+        })
+            ->dailyAt('02:00')          // run at 2:00 AM
+            ->timezone('Asia/Colombo')  // Sri Lankan time zone
+            ->name('auto_recovery_sweep')
+            ->withoutOverlapping();     // ensures it won't overlap if still running
     }
 
     /**
@@ -40,4 +58,6 @@ class Kernel extends ConsoleKernel
 
         require base_path('routes/console.php');
     }
+
+
 }

@@ -319,6 +319,7 @@ class CapitalBalanceController extends Controller
             'first_installment_daily',
             'first_installment_weekly',
             'first_installment_monthly',
+            'recovery_account_status','collection_days',
         ];
 
         // Get fixed keys
@@ -354,7 +355,7 @@ class CapitalBalanceController extends Controller
                         'max_allowed_loans','document_types','collector_txn_modes',
                         'fund_request_columns','disbursement_columns',
                         'document_upload_restriction','guarantees_restriction','change_product_details',
-                        'first_installment_daily','first_installment_weekly','first_installment_monthly','recovery_account_status',
+                        'first_installment_daily','first_installment_weekly','first_installment_monthly','recovery_account_status','collection_days',
                     ];
                     $isFixed = in_array($key, $fixedKeys, true);
 
@@ -429,6 +430,32 @@ class CapitalBalanceController extends Controller
                             !in_array($value, ['active','inactive'], true)) {
                             return $fail('Invalid value for recovery_account_status.');
                         }
+
+                        if ($key === 'collection_days') {
+                            $decoded = json_decode($value, true);
+
+                            if (json_last_error() !== JSON_ERROR_NONE) {
+                                return $fail('collection_days must be valid JSON.');
+                            }
+                            if (!is_array($decoded)) {
+                                return $fail('collection_days must be a JSON array.');
+                            }
+                            if (count($decoded) === 0) {
+                                return $fail('At least one day is required in collection_days.');
+                            }
+
+                            foreach ($decoded as $dayVal) {
+                                // must be int 0-6
+                                if (!is_numeric($dayVal)) {
+                                    return $fail('collection_days must contain numeric day codes.');
+                                }
+                                $dayVal = (int)$dayVal;
+                                if ($dayVal < 0 || $dayVal > 6) {
+                                    return $fail('collection_days contains invalid weekday code: ' . $dayVal);
+                                }
+                            }
+                        }
+
 
                         return; // done for fixed keys
                     }

@@ -1121,85 +1121,92 @@ function openFile(path) {
 function delete_request(id) {
     $("#loan_id_for_delete").val(id);
 }
+let ISSUE_IN_FLIGHT = false;
+
 function issue_loan(){
-    let loan_id=$("#loan_id_for_issue").val();
-    let bank_acc=$("#bank_acc").val();
-    let company_bank=$("#company_bank").val();
+    if (ISSUE_IN_FLIGHT) return;
+    const loan_id      = $("#loan_id_for_issue").val();
+    const bank_acc     = $("#bank_acc").val();
+    const company_bank = $("#company_bank").val();
 
-
-    var document_details = [];
-
-    $('#file_table tbody tr').each(function() {
-        var row = $(this);
-        var rowData = {
-            id: row.find('td').eq(0).text().trim(), // Get the hidden # and trim whitespace
-            checked: row.find('td input[type="checkbox"]').is(':checked') // Get the checkbox state
-        };
-
-        document_details.push(rowData);
+    // build doc array ...
+    const document_details = [];
+    $('#file_table tbody tr').each(function () {
+        const row = $(this);
+        document_details.push({
+            id: row.find('td').eq(0).text().trim(),
+            checked: row.find('td input[type="checkbox"]').is(':checked')
+        });
     });
 
+    if (bank_acc===null)   return Swal.fire("Error!", "Please select customer bank account !", "error");
+    if (company_bank===null) return Swal.fire("Error!", "Please select company bank account !", "error");
 
-    if (bank_acc===null){
-        Swal.fire("Error!", "Please select customer bank account !", "error");
-    }else if(company_bank===null){
-        Swal.fire("Error!", "Please select company bank account !", "error");
-    }else{
-        Swal.fire({
-            title: "Are you sure?",
-            text: "Do you want to issue this Loan ?",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes, Issue it!",
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    type: "POST",
-                    url: "/pendingloanissue",
-                    headers: {
-                        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-                    },
-                    data: {
-                        loan_id: loan_id,
-                        bank_acc: bank_acc,
-                        company_bank: company_bank,
-                        document_details:document_details
-                    },
-                    success: function (data, textStatus, xhr) {
-                        console.log(data)
-                        if (xhr.status === 200) {
+    Swal.fire({
+        title: "Are you sure?",
+        text: "Do you want to issue this Loan ?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, Issue it!",
+    }).then((res)=>{
+        if (!res.isConfirmed) return;
 
-                            if (data.id===1){
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Successfully issued !',
-                                    showCancelButton: true,
-                                    confirmButtonColor: '#3085d6',
-                                    cancelButtonColor: '#d33',
-                                    confirmButtonText: 'OK',
-                                    cancelButtonText: 'Print Invoice'
-                                }).then((result) => {
-                                    if (result.isConfirmed) {
-                                        window.location.reload();
-                                    } else if (result.dismiss === Swal.DismissReason.cancel) {
-                                        window.open('/invoice/' + loan_id, '_blank');
-                                        window.location.reload();
-                                    }
-                                });
-                            }else{
-                                Swal.fire("Error!", "Bank Balance is not enough !", "error");
+        ISSUE_IN_FLIGHT = true;
+
+        const $btn = $("#issue_loan_btn");
+        const origHtml = $btn.html();
+        $btn.prop("disabled", true).attr("aria-busy","true")
+            .html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Issuing…');
+
+        showProcessing('Issuing loan', 'This may take a moment');
+
+        $.ajax({
+            type: "POST",
+            url: "/pendingloanissue",
+            headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") },
+            data: { loan_id, bank_acc, company_bank, document_details },
+            success: function (data, _text, xhr) {
+                if (xhr.status === 200 && data.id === 1) {
+                    showProcessingSuccess('Issued successfully');
+                    setTimeout(()=> {  // let user see the success tick
+                        hideProcessing();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Successfully issued !',
+                            showCancelButton: true,
+                            confirmButtonColor: '#3085d6',
+                            cancelButtonColor: '#d33',
+                            confirmButtonText: 'OK',
+                            cancelButtonText: 'Print Invoice'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.reload();
+                            } else if (result.dismiss === Swal.DismissReason.cancel) {
+                                window.open('/invoice/' + loan_id, '_blank');
+                                window.location.reload();
                             }
-                        } else {
-                            Swal.fire("Error!", "Failed to issue loan!", "error");
-                        }
-                    },
-                });
+                        });
+                    }, 450);
+                } else {
+                    hideProcessing();
+                    Swal.fire("Error!", data?.message || "Bank Balance is not enough !", "error");
+                }
+            },
+            error: function (xhr) {
+                hideProcessing();
+                Swal.fire("Error!", xhr.responseJSON?.message || "Failed to issue loan!", "error");
+            },
+            complete: function () {
+                ISSUE_IN_FLIGHT = false;
+                $btn.prop("disabled", false).removeAttr("aria-busy").html(origHtml);
             }
         });
-    }
+    });
 }
+
+
 
 
 function delete_loan(){

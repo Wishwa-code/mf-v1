@@ -6,10 +6,12 @@ use App\Http\Controllers\BankController;
 use App\Http\Controllers\CashFlowController;
 use App\Http\Controllers\CashierController;
 use App\Http\Controllers\KYCController;
+use App\Http\Controllers\LiveLankaPayController;
 use App\Http\Controllers\LoanCategoryController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\PDFController;
 use App\Http\Controllers\PaymentVoucherController;
+use App\Http\Controllers\PenaltyDeductionController;
 use App\Http\Controllers\PendingLoanController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\SupplierController;
@@ -803,6 +805,15 @@ Route::delete('/expenses_categories/{id}', '\App\Http\Controllers\ReportControll
     Route::post('/depletion/data', [\App\Http\Controllers\ReportController::class, 'depletionData'])
         ->name('depletion.data');
 
+
+//investment
+    Route::get('/investment','\App\Http\Controllers\InvestmentReportExecutiveSummaryController@index')->name('investment.index');
+    Route::post('/investment/data', [\App\Http\Controllers\InvestmentReportExecutiveSummaryController::class, 'getData'])
+        ->name('investment.data');
+
+//arrears
+    Route::get('/arrears','\App\Http\Controllers\ArrearsReportExecutiveSummaryController@index')->name('arrears.index');
+
 //approval
 Route::get('/pending_approval','\App\Http\Controllers\ApprovalController@pending_approval')->name('approval.pending');
 Route::get('/approved_history','\App\Http\Controllers\ApprovalController@approved_history')->name('approval.approved');
@@ -899,6 +910,26 @@ Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalContr
     Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
     Route::get('/suppliers/{id}', [SupplierController::class, 'show'])->name('suppliers.show');
     Route::put('/suppliers/{id}', [SupplierController::class, 'update'])->name('suppliers.update');
+
+
+    Route::get('/penalty-deduction', [PenaltyDeductionController::class, 'index'])
+        ->name('penalty.deduction.index');
+
+    Route::post('/penalty-deduction/load', [PenaltyDeductionController::class, 'load'])
+        ->name('penalty.deduction.load');
+
+    Route::post('/penalty-deduction/deduct', [PenaltyDeductionController::class, 'deduct'])
+        ->name('penalty.deduction.apply');
+
+
+
+    Route::get('/lk-live/banks', [LiveLankaPayController::class, 'banks']);
+    Route::get('/lk-live/banks/{bankCode}/branches', [LiveLankaPayController::class, 'branches']);
+    Route::get('/lk-live/health', [LiveLankaPayController::class, 'health']); // optional
+
+    Route::get('/get-loan-ids', [LiveLankaPayController::class, 'getLoanIds']);
+    Route::get('/process-loan/{loanId}', [LiveLankaPayController::class, 'processLoan']);
+
 
 });
 // use App\Services\SmsService;

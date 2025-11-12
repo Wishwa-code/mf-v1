@@ -150,9 +150,9 @@
                 <tbody>
                 <tr>
                     <td>{{ number_format($loan->Amount, 2, '.', ',') }}</td>
-                    <td>{{ number_format($loan->Total_Loan_Amount, 2, '.', ',') }}</td>
+                    <td>{{ number_format($loan_Total_Amount, 2, '.', ',') }}</td>
                     <td>{{ number_format($total_paid_amount, 2, '.', ',') }}</td>
-                    <td>{{ number_format($loan->Balance_Amount, 2, '.', ',') }}</td>
+                    <td>{{ number_format($loan_balance, 2, '.', ',') }}</td>
                     <td>{{ number_format($loan->capital_balance, 2, '.', ',') }}</td>
                     <td>{{ $installments->last()->Installment_Date }}</td>
                 </tr>
@@ -215,7 +215,7 @@
                         </tr>
                         <tr>
                             <td style="text-align: left"><strong>Total Loan Amount</strong></td>
-                            <td style="text-align: left">{{ $loan->Total_Loan_Amount }}</td>
+                            <td style="text-align: left">{{ $loan_Total_Amount }}</td>
                         </tr>
                         <tr>
                             <td style="text-align: left"><strong>Installment Amount</strong></td>

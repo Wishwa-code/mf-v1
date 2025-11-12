@@ -51,6 +51,7 @@ class BankBalanceService
         $lastBalance = DB::table('company_bank_has_log')
             ->where('branch_id', $branchId)
             ->where('Bank_Account_Id', $bankAccountId)
+            ->orderBy('Date_Time', 'desc')
             ->orderBy('id', 'desc')
             ->value('Balance');
 

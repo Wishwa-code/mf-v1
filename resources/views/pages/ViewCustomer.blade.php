@@ -195,7 +195,8 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="bank_name" class="form-label">Bank Name</label>
-                                        <input type="text" id="bank_name" class="form-control">
+                                        <select id="bank_name" class="form-control"></select>
+                                        <input type="hidden" id="bank_code">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -215,7 +216,8 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="branch" class="form-label">Branch</label>
-                                        <input type="text" id="branch" class="form-control">
+                                        <select id="branch" class="form-control" disabled></select>
+                                        <input type="hidden" id="branch_code">
                                     </div>
                                 </div>
                             </div>
@@ -1205,9 +1207,144 @@
             load_bank(id);
         }
 
+        function initLankaPaySelectors({ bankCode=null, bankText=null, branchCode=null, branchText=null } = {}) {
+
+            // Destroy stale instances if modal reopened
+            if ($('#bank_name').hasClass('select2-hidden-accessible'))  $('#bank_name').select2('destroy');
+            if ($('#branch').hasClass('select2-hidden-accessible'))     $('#branch').select2('destroy');
+
+            // BANK
+            $('#bank_name')
+                .select2({
+                    placeholder: 'Select Bank',
+                    allowClear: true,
+                    dropdownParent: $('#bank-modal'),
+                    width: '100%',
+                    minimumInputLength: 0,
+                    ajax: {
+                        url: '/lk-live/banks',
+                        dataType: 'json',
+                        delay: 200,
+                        data: params => ({ q: params?.term || '' }),
+                        processResults: data => data, // {results:[...]}
+                        transport: function (params, success, failure) {
+                            const request = $.ajax(params);
+                            request.then(success);
+                            request.fail((xhr) => {
+                                console.error('Banks AJAX error:', xhr.status, xhr.responseText);
+                                failure(xhr);
+                            });
+                            return request;
+                        }
+                    }
+                })
+                .on('select2:select', function (e) {
+                    const sel = e.params.data;                 // {id,text,name,code}
+                    $('#bank_code').val(sel.id || sel.code);
+                    $('#branch').prop('disabled', false).val(null).trigger('change');
+                    initBranchSelect(sel.id);
+                })
+                .on('select2:clear', function () {
+                    $('#bank_code').val('');
+                    $('#branch_code').val('');
+                    $('#branch').prop('disabled', true).empty().trigger('change');
+                });
+
+            // Preselect if provided
+            if (bankCode && bankText) {
+                $('#bank_name').append(new Option(bankText, bankCode, true, true)).trigger('change');
+                initBranchSelect(bankCode, () => {
+                    if (branchCode && branchText) {
+                        $('#branch').append(new Option(branchText, branchCode, true, true))
+                            .prop('disabled', false)
+                            .trigger('change');
+                        $('#branch_code').val(branchCode);
+                    }
+                });
+            } else {
+                $('#branch').prop('disabled', true).empty();
+            }
+
+            // Open + fetch immediately so you can see data without typing
+            $('#bank_name').on('select2:open', () => {
+                $('.select2-search__field').trigger('input'); // triggers initial query with empty q
+            });
+        }
+
+        function initBranchSelect(bankCode, onReady) {
+            if ($('#branch').hasClass('select2-hidden-accessible')) $('#branch').select2('destroy');
+
+            $('#branch')
+                .select2({
+                    placeholder: 'Select Branch',
+                    allowClear: true,
+                    dropdownParent: $('#bank-modal'),
+                    width: '100%',
+                    minimumInputLength: 0,
+                    ajax: {
+                        url: `/lk-live/banks/${encodeURIComponent(bankCode)}/branches`,
+                        dataType: 'json',
+                        delay: 200,
+                        data: params => ({ q: params?.term || '' }),
+                        processResults: data => data,
+                        transport: function (params, success, failure) {
+                            const request = $.ajax(params);
+                            request.then(success);
+                            request.fail((xhr) => {
+                                console.error('Branches AJAX error:', xhr.status, xhr.responseText);
+                                failure(xhr);
+                            });
+                            return request;
+                        }
+                    }
+                })
+                .on('select2:select', function (e) {
+                    const sel = e.params.data;                 // {id,text,branch_name,branch_code}
+                    $('#branch_code').val(sel.id || sel.branch_code);
+                })
+                .on('select2:clear', function () {
+                    $('#branch_code').val('');
+                });
+
+            if (typeof onReady === 'function') onReady();
+
+            // Auto-fetch on open
+            $('#branch').on('select2:open', () => {
+                $('.select2-search__field').trigger('input');
+            });
+        }
+
+        // Initialize when modal is shown (best place for dropdownParent)
+        $(document).on('shown.bs.modal', '#bank-modal', function () {
+            initLankaPaySelectors();
+        });
+
+        // Optional: quick health ping to verify API from THIS page
+        $(function(){
+            $.get('/lk-live/health').done(h => console.log('LankaPay health:', h))
+                .fail(xhr => console.error('Health fail:', xhr.status, xhr.responseText));
+        });
+
+
+        // ---- When the page (or the bank modal) is shown ----
+        $(document).on('shown.bs.modal', '#bank-modal', function () {
+            // If you have saved values to show in edit:
+            // const bankCode   = $('#bank_code').val();     // or from row data
+            // const bankText   = $('#bank_name').data('text');
+            // const branchCode = $('#branch_code').val();
+            // const branchText = $('#branch').data('text');
+            // initLankaPaySelectors({ bankCode, bankText, branchCode, branchText });
+
+            // Fresh (no preset):
+            initLankaPaySelectors();
+        });
+
+        // Or initialize once on page load if not inside a modal:
+        $(function(){ initLankaPaySelectors(); });
+
+
+        // --- Save bank details: send bank_name, bank_code, branch_name, branch_code ---
         function save_bank_details() {
-
-
             Swal.fire({
                 title: "Are you sure?",
                 text: "Do you want to save the Bank Details ?",
@@ -1217,59 +1354,56 @@
                 cancelButtonColor: "#d33",
                 confirmButtonText: "Yes, Save it!",
             }).then((result) => {
-                if (result.isConfirmed) {
-                    var formData = new FormData();
+                if (!result.isConfirmed) return;
 
-                    var id = $('#customer').val();
+                const id = $('#customer').val();
 
+                // Select2 data for display names
+                const bankSel = $('#bank_name').select2('data')[0] || {};
+                const branchSel = $('#branch').select2('data')[0] || {};
 
+                // Clean display names: "Name (CODE)" -> "Name"
+                const bankName   = (bankSel?.text || '').replace(/\s*\(\d{3,4}\)\s*$/,'').trim();
+                const branchName = (branchSel?.text || '').replace(/\s*\(\d{3,4}\)\s*$/,'').trim();
 
-                    // Get the values from the input fields
-                    var bankName = $('#bank_name').val();
-                    var accountName = $('#account_name').val();
-                    var accountNumber = $('#account_number').val();
-                    var branch = $('#branch').val();
+                // Codes
+                const bankCode   = $('#bank_code').val()   || bankSel?.id || '';
+                const branchCode = $('#branch_code').val() || branchSel?.id || '';
 
-                    // Append the values to the FormData object
-                    formData.append('bankName', bankName);
-                    formData.append('accountName', accountName);
-                    formData.append('accountNumber', accountNumber);
-                    formData.append('branch', branch);
-                    formData.append('id', id); // Append the general ID
+                const accountName   = $('#account_name').val();
+                const accountNumber = $('#account_number').val();
 
-
-                    // Send the form data via AJAX
-                    $.ajax({
-                        url: "/save-bank-details-single",
-                        method: "POST",
-                        headers: {
-                            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-                        },
-                        data: formData,
-                        contentType: false,
-                        processData: false,
-                        success: function(response) {
-                            Swal.fire({
-                                position: "center",
-                                icon: "info",
-                                title: "Approval Required!",
-                                text: "Document upload request sent to head office for approval!",
-                                confirmButtonText: "OK"
-                            }).then(function () {
-                                window.location.reload();
-                            });
-                        },
-                        error: function(xhr, status, error) {
-                            // Handle error
-                            console.error(error);
-                        }
-                    });
+                if (!bankCode || !branchCode || !bankName || !branchName || !accountName || !accountNumber) {
+                    Swal.fire("Error!", "All fields are required!", "error");
+                    return;
                 }
+
+                const formData = new FormData();
+                formData.append('id', id);
+                formData.append('bankName', bankName);
+                formData.append('bankCode', bankCode);
+                formData.append('branch', branchName);
+                formData.append('accountName', accountName);
+                formData.append('accountNumber', accountNumber);
+
+                $.ajax({
+                    url: "/save-bank-details-single",
+                    method: "POST",
+                    headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") },
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function() {
+                           location.reload();
+                    },
+                    error: function(xhr) {
+                        console.error(xhr?.responseText || xhr);
+                        Swal.fire("Error!", "Failed to save bank details!", "error");
+                    }
+                });
             });
-
-
-
         }
+
 
 
         function getlocation() {

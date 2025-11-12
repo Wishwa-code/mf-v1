@@ -28,11 +28,122 @@
             border-color: #aeb4ba !important;
             transition: background-color .2s ease, border-color .2s ease;
         }
+
+        /* ==== Processing Overlay (Glass + Motion) ==== */
+        #processingOverlay {
+            position: fixed; inset: 0; z-index: 20000; display: none;
+            background: radial-gradient(1200px 800px at 50% -10%, rgba(26,41,66,.12), rgba(26,41,66,.28)) ,
+            linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.35));
+            backdrop-filter: blur(8px);
+        }
+
+        #processingOverlay .wrap {
+            position: absolute; inset: 0; display: grid; place-items: center;
+        }
+
+        #processingOverlay .card {
+            width: min(560px, 92vw);
+            background: rgba(255,255,255,.85);
+            border: 1px solid rgba(26,41,66,.12);
+            box-shadow: 0 20px 45px rgba(26,41,66,.25);
+            border-radius: 20px;
+            padding: 28px 26px;
+            text-align: center;
+            transform: translateY(6px);
+            animation: floatIn .28s ease-out both;
+        }
+
+        @keyframes floatIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Spinner (conic ring) */
+        .loaderRing {
+            --s: 68px;
+            width: var(--s); height: var(--s); margin: 0 auto 14px; position: relative;
+            border-radius: 50%;
+            background:
+                    conic-gradient(from 0deg, #1A2942 0 300deg, rgba(26,41,66,.15) 300deg 360deg);
+            -webkit-mask: radial-gradient(farthest-side, transparent calc(50% - 6px), #000 0);
+            mask: radial-gradient(farthest-side, transparent calc(50% - 6px), #000 0);
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .title {
+            font-size: 1.1rem; font-weight: 700; color: #1A2942; letter-spacing: .2px;
+        }
+        .subtitle {
+            margin-top: 2px; color: #455267; font-size: .92rem;
+        }
+
+        /* Animated status dots (… that breathe) */
+        .ellipsis::after {
+            content: "…"; display: inline-block; width: 1.2em; text-align: left;
+            animation: dots 1.1s steps(4,end) infinite;
+        }
+        @keyframes dots {
+            0%   { content: "   "; }
+            33%  { content: ".  "; }
+            66%  { content: ".. "; }
+            100% { content: "..."; }
+        }
+
+        /* Indeterminate progress bar */
+        .progressWrap {
+            height: 8px; background: #e9eef5; border-radius: 999px; overflow: hidden;
+            margin: 14px auto 0; width: 82%;
+            border: 1px solid rgba(26,41,66,.08);
+        }
+        .progressBar {
+            height: 100%; width: 28%; border-radius: inherit;
+            background: linear-gradient(90deg, #3b82f6, #22c55e);
+            animation: indet 1.6s ease-in-out infinite;
+        }
+        @keyframes indet {
+            0%   { transform: translateX(-110%); }
+            50%  { transform: translateX(35%); }
+            100% { transform: translateX(120%); }
+        }
+
+        /* Success state */
+        .successIcon {
+            display: none; margin: 2px auto 12px; width: 56px; height: 56px; border-radius: 50%;
+            background: #22c55e;
+            position: relative; box-shadow: 0 0 0 6px rgba(34,197,94,.15);
+        }
+        .successIcon::before {
+            content: ""; position: absolute; inset: 0; border-radius: 50%;
+            box-shadow: inset 0 0 0 6px rgba(255,255,255,.75);
+        }
+        .successTick {
+            position: absolute; left: 17px; top: 25px; width: 22px; height: 10px;
+            border-left: 4px solid #fff; border-bottom: 4px solid #fff; transform: rotate(-45deg);
+        }
+
+        /* Respect reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            .loaderRing, .progressBar { animation: none; }
+        }
+
     </style>
+
+
 @endsection
 
 
 @section('content')
+    <div id="processingOverlay" aria-hidden="true">
+        <div class="wrap">
+            <div class="card">
+                <div class="loaderRing" id="po-spinner"></div>
+                <div class="successIcon" id="po-success"><span class="successTick"></span></div>
+
+                <div class="title" id="po-title">Issuing loan</div>
+                <div class="subtitle" id="po-sub"><span class="ellipsis">Please wait</span></div>
+
+                <div class="progressWrap"><div class="progressBar"></div></div>
+            </div>
+        </div>
+    </div>
 
     <div class="container-fluid">
 
@@ -581,6 +692,27 @@
 
 
     <script>
+
+        function showProcessing(title = 'Processing', subtitle = 'Please wait') {
+            $('#po-title').text(title);
+            $('#po-sub').html(`<span class="ellipsis">${subtitle}</span>`);
+            $('#po-success').hide();
+            $('#po-spinner').show();
+            $('#processingOverlay').fadeIn(120);
+            $('body').css('overflow','hidden'); // prevent scroll
+        }
+        function showProcessingSuccess(msg = 'Done') {
+            $('#po-title').text(msg);
+            $('#po-sub').text('');              // clear dots
+            $('#po-spinner').hide();
+            $('#po-success').fadeIn(120);
+        }
+        function hideProcessing() {
+            $('#processingOverlay').fadeOut(160, ()=> {
+                $('body').css('overflow','');     // restore scroll
+            });
+        }
+
         $(function() {
 
             $('#twice_a_month').hide(); // Hide the div

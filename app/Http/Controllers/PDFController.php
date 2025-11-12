@@ -67,8 +67,25 @@ class PDFController extends Controller
             }
         }
 
+        $loan_balance=DB::table('installments')
+            ->where('installments.Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
+            ->where('installments.Status', '=', '0')
+            ->sum('installments.Total_Balance');
+
+
+        $loan_balance=$loan_balance ?? 0;
+
+        $loan_Total_Amount=DB::table('installments')
+            ->where('installments.Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
+            ->sum('installments.Total_Amount');
+
+
+        $loan_Total_Amount=$loan_Total_Amount ?? 0;
+
         // Load the view for PDF generation
         $pdf = app('dompdf.wrapper')->loadView('pages/LoanSummaryView', compact(
+            'loan_balance',
+            'loan_Total_Amount',
             'customers',
             'loan',
             'installments',
@@ -150,9 +167,31 @@ class PDFController extends Controller
                 ];
             }
         }
+        $loan_balance=DB::table('installments')
+            ->where('installments.Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
+            ->where('installments.Status', '=', '0')
+            ->sum('installments.Total_Balance');
+
+
+        $loan_balance=$loan_balance ?? 0;
+
+        $loan_Total_Amount=DB::table('installments')
+            ->where('installments.Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
+            ->sum('installments.Total_Amount');
+
+
+        $loan_Total_Amount=$loan_Total_Amount ?? 0;
+
+
+        $ins_count=DB::table('installments')
+            ->where('installments.Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
+            ->count();
 
         // Load the view for PDF generation
         $pdf = app('dompdf.wrapper')->loadView('pages/LoanFullPDFView', compact(
+            'ins_count',
+            'loan_balance',
+            'loan_Total_Amount',
             'customers',
             'loan',
             'installments',

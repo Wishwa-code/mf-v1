@@ -427,6 +427,7 @@ class CenterController extends Controller
                 'c.cus_number as customer_number',
                 DB::raw("CONCAT(c.First_Name, ' ', c.Last_Name) as customer_name"),
                 'cl.Loan_No as loan_number',
+                'cl.idCustomer_Loan as idCustomer_Loan',
                 'installments.Installment_Amount as installment_amount',
                 DB::raw('SUM(cp.Amount) as paid_amount')
             )
@@ -442,7 +443,7 @@ class CenterController extends Controller
                 'installments.Installment_Amount'
             )
             ->orderBy('r.name')
-            ->orderBy('c.cus_number')
+            ->orderBy('cl.idCustomer_Loan')
             ->get();
 
         return view('pages.RouteWiseCollection', compact('date', 'route', 'route_id', 'collection'));
