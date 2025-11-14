@@ -231,35 +231,73 @@ class BankController extends Controller
      */
     public function edit(Request $request)
     {
-        $fromBank=$request->fromBank;
+        $fromBank   = $request->fromBank;
+        $fromAmount = $request->fromAmount;
+        $reason     = $request->reason;
+        $toBank     = $request->toBank;
+
         $isHeadOffice = (int)session('branch_id') === -1;
 
         // For head office, don't filter by branch
         if ($isHeadOffice) {
-            $fromBankDetails = DB::table('company_bank_accounts')->where('Idbank', $fromBank)->first();
+            $fromBankDetails = DB::table('company_bank_accounts')
+                ->where('Idbank', $fromBank)
+                ->first();
         } else {
-            $fromBankDetails = tableWithBranch('company_bank_accounts')->where('Idbank', $fromBank)->first();
+            $fromBankDetails = tableWithBranch('company_bank_accounts')
+                ->where('Idbank', $fromBank)
+                ->first();
         }
 
-        $fromAmount=$request->fromAmount;
-        $reason=$request->reason;
-        $toBank=$request->toBank;
-        
+        if (!$fromBankDetails) {
+            return response()->json(['error' => 'Invalid FROM bank account', 'id' => 0], 422);
+        }
+
+        // ====== POLICY CHECK (strict vs flexible) ======
+        // read policy: strict vs flexible
+        $app_settings = DB::table('app_settings')
+            ->where('key', '=', 'loan_disbursement_policy')
+            ->first();
+
+        $loan_disbursement_policy = $app_settings->value ?? 'flexible';
+
+        if ($loan_disbursement_policy === 'strict') {
+            // Use the already loaded $fromBankDetails as "bank"
+            if ($fromBankDetails->Account_Balance < $fromAmount) {
+                return response()->json([
+                    'error' => 'Bank Balance is not enough',
+                    'id'    => 0
+                ], 200);
+            }
+        }
+        // ====== END POLICY CHECK ======
+
         // For head office, don't filter by branch
         if ($isHeadOffice) {
-            $toBankDetails = DB::table('company_bank_accounts')->where('Idbank', $toBank)->first();
+            $toBankDetails = DB::table('company_bank_accounts')
+                ->where('Idbank', $toBank)
+                ->first();
         } else {
-            $toBankDetails = tableWithBranch('company_bank_accounts')->where('Idbank', $toBank)->first();
+            $toBankDetails = tableWithBranch('company_bank_accounts')
+                ->where('Idbank', $toBank)
+                ->first();
+        }
+
+        if (!$toBankDetails) {
+            return response()->json(['error' => 'Invalid TO bank account', 'id' => 0], 422);
         }
 
         // Check if this is an inter-branch transfer (Head Office to Branch or vice versa)
-        $isInterBranchTransfer = ($fromBankDetails->branch_id == -1 && $toBankDetails->branch_id != -1) || 
-                                  ($fromBankDetails->branch_id != -1 && $toBankDetails->branch_id == -1);
+        $isInterBranchTransfer =
+            ($fromBankDetails->branch_id == -1 && $toBankDetails->branch_id != -1) ||
+            ($fromBankDetails->branch_id != -1 && $toBankDetails->branch_id == -1);
 
         if ($isInterBranchTransfer && $fromBankDetails->branch_id == -1) {
             // Transfer from Head Office to Branch
             $targetBranchId = $toBankDetails->branch_id;
-            $branchName = DB::table('branch')->where('branch_id', $targetBranchId)->value('Name');
+            $branchName = DB::table('branch')
+                ->where('branch_id', $targetBranchId)
+                ->value('Name');
 
             // Step 1: Check if Head Office has "Inter-Branch Transfer - [BranchName]" account
             $interBranchAccountName = "Inter-Branch Transfer - " . $branchName;
@@ -271,18 +309,18 @@ class BankController extends Controller
             // If not exists, create it
             if (!$interBranchAccount) {
                 $interBranchAccountId = DB::table('company_bank_accounts')->insertGetId([
-                    'branch_id' => -1,
-                    'Bank_Type' => 'Bank',
-                    'code' => 'IBT-' . $targetBranchId,
-                    'Bank_Name' => 'Inter-Branch Transfer',
-                    'Account_Name' => $interBranchAccountName,
-                    'Account_No' => 'IBT-' . $targetBranchId . '-' . time(),
-                    'Bank_Branch' => 'Head Office',
-                    'Account_Balance' => 0,
-                    'type' => 'Cash and Bank',
-                    'cashflow' => 'Non Applicable',
-                    'acc_type_group' => 'Assets',
-                    'User' => session('userid')
+                    'branch_id'        => -1,
+                    'Bank_Type'        => 'Bank',
+                    'code'             => 'IBT-' . $targetBranchId,
+                    'Bank_Name'        => 'Inter-Branch Transfer',
+                    'Account_Name'     => $interBranchAccountName,
+                    'Account_No'       => 'IBT-' . $targetBranchId . '-' . time(),
+                    'Bank_Branch'      => 'Head Office',
+                    'Account_Balance'  => 0,
+                    'type'             => 'Cash and Bank',
+                    'cashflow'         => 'Non Applicable',
+                    'acc_type_group'   => 'Assets',
+                    'User'             => session('userid')
                 ]);
             } else {
                 $interBranchAccountId = $interBranchAccount->Idbank;
@@ -290,8 +328,25 @@ class BankController extends Controller
 
             // Step 2: Make first double entry at Head Office
             // DEBIT: Inter-Branch Transfer account, CREDIT: Selected FROM account
-            $this->bankLogController->index($interBranchAccountId, "InterBank Transfer", 'To ' . $branchName . ' Branch (' . $toBankDetails->Account_No . ')', $reason, "debit", $fromAmount, $fromBank);
-            $this->bankLogController->index($fromBank, "InterBank Transfer", 'To ' . $branchName . ' Branch (' . $toBankDetails->Account_No . ')', $reason, "credit", $fromAmount, $interBranchAccountId);
+            $this->bankLogController->index(
+                $interBranchAccountId,
+                "InterBank Transfer",
+                'To ' . $branchName . ' Branch (' . $toBankDetails->Account_No . ')',
+                $reason,
+                "debit",
+                $fromAmount,
+                $fromBank
+            );
+
+            $this->bankLogController->index(
+                $fromBank,
+                "InterBank Transfer",
+                'To ' . $branchName . ' Branch (' . $toBankDetails->Account_No . ')',
+                $reason,
+                "credit",
+                $fromAmount,
+                $interBranchAccountId
+            );
 
             // Step 3: Check if Branch has "Head Office Transfer" account
             $headOfficeTransferAccount = DB::table('company_bank_accounts')
@@ -302,18 +357,18 @@ class BankController extends Controller
             // If not exists, create it
             if (!$headOfficeTransferAccount) {
                 $headOfficeTransferAccountId = DB::table('company_bank_accounts')->insertGetId([
-                    'branch_id' => $targetBranchId,
-                    'Bank_Type' => 'Bank',
-                    'code' => 'HOT-' . $targetBranchId,
-                    'Bank_Name' => 'Head Office Transfer',
-                    'Account_Name' => 'Head Office Transfer',
-                    'Account_No' => 'HOT-' . $targetBranchId . '-' . time(),
-                    'Bank_Branch' => $branchName,
-                    'Account_Balance' => 0,
-                    'type' => 'Cash and Bank',
-                    'cashflow' => 'Non Applicable',
-                    'acc_type_group' => 'Assets',
-                    'User' => session('userid')
+                    'branch_id'        => $targetBranchId,
+                    'Bank_Type'        => 'Bank',
+                    'code'             => 'HOT-' . $targetBranchId,
+                    'Bank_Name'        => 'Head Office Transfer',
+                    'Account_Name'     => 'Head Office Transfer',
+                    'Account_No'       => 'HOT-' . $targetBranchId . '-' . time(),
+                    'Bank_Branch'      => $branchName,
+                    'Account_Balance'  => 0,
+                    'type'             => 'Cash and Bank',
+                    'cashflow'         => 'Non Applicable',
+                    'acc_type_group'   => 'Assets',
+                    'User'             => session('userid')
                 ]);
             } else {
                 $headOfficeTransferAccountId = $headOfficeTransferAccount->Idbank;
@@ -321,17 +376,52 @@ class BankController extends Controller
 
             // Step 4: Make second double entry at Branch
             // DEBIT: Selected TO account, CREDIT: Head Office Transfer account
-            $this->bankLogController->index($toBank, "InterBank Transfer", 'From Head Office (' . $fromBankDetails->Account_No . ')', $reason, "debit", $fromAmount, $headOfficeTransferAccountId);
-            $this->bankLogController->index($headOfficeTransferAccountId, "InterBank Transfer", 'From Head Office (' . $fromBankDetails->Account_No . ')', $reason, "credit", $fromAmount, $toBank);
+            $this->bankLogController->index(
+                $toBank,
+                "InterBank Transfer",
+                'From Head Office (' . $fromBankDetails->Account_No . ')',
+                $reason,
+                "debit",
+                $fromAmount,
+                $headOfficeTransferAccountId
+            );
+
+            $this->bankLogController->index(
+                $headOfficeTransferAccountId,
+                "InterBank Transfer",
+                'From Head Office (' . $fromBankDetails->Account_No . ')',
+                $reason,
+                "credit",
+                $fromAmount,
+                $toBank
+            );
 
         } else {
             // Normal transfer within same branch or not inter-branch
-            $this->bankLogController->index($fromBank, "InterBank Transfer", 'To (' . $toBankDetails->Account_No . ')', $reason, "credit", $fromAmount, $toBank);
-            $this->bankLogController->index($toBank, "InterBank Transfer", 'From (' . $fromBankDetails->Account_No . ')', $reason, "debit", $fromAmount, $fromBank);
+            $this->bankLogController->index(
+                $fromBank,
+                "InterBank Transfer",
+                'To (' . $toBankDetails->Account_No . ')',
+                $reason,
+                "credit",
+                $fromAmount,
+                $toBank
+            );
+
+            $this->bankLogController->index(
+                $toBank,
+                "InterBank Transfer",
+                'From (' . $fromBankDetails->Account_No . ')',
+                $reason,
+                "debit",
+                $fromAmount,
+                $fromBank
+            );
         }
 
         return response()->json(["id" => "1"], 200);
     }
+
 
     /**
      * Update the specified resource in storage.
