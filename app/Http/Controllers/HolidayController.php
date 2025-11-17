@@ -11,21 +11,34 @@ use Illuminate\Support\Facades\Log;
 class HolidayController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Run the global due-skip process.
+     *
+     * @param string      $skipFor  all | loan | branch | center | product
+     * @param int|null    $targetId target id (loan_id, branch_id, etc.)
+     * @param string      $skipType installment | day
+     *
+     * @return int        number of installments affected
      */
     public function index($skipFor, $targetId, $skipType)
     {
         $companySetting = tableWithBranch('company')->value('saturday_sunday');
-        $holidays = tableWithBranch('holidays')->get();
-        $branch_id=session('branch_id');
+        $holidays       = tableWithBranch('holidays')->get();
+
+        // Default branch from session
+        $branch_id = session('branch_id');
+
+        // Loans to work on (your custom helper)
+        $loans = getTargetLoans($skipFor, $targetId);
+
+        // If skipping for a specific branch, override branch id
+        if ($skipFor === "branch" && $targetId) {
+            $branch_id = $targetId;
+        }
+
+        $affected = 0;
+
         foreach ($holidays as $holiday) {
             $holidayDate = $holiday->date;
-
-            $loans = getTargetLoans($skipFor, $targetId);
-
-            if ($skipFor=="branch"){
-                $branch_id=$targetId;
-            }
 
             foreach ($loans as $loan) {
                 $installments = tableWithBranch('installments')
@@ -35,126 +48,149 @@ class HolidayController extends Controller
 
                 foreach ($installments as $installment) {
                     if ($skipType === 'installment') {
-                        processInstallmentSkip($loan, $installment, $companySetting,$branch_id);
+                        // your existing helper
+                        processInstallmentSkip($loan, $installment, $companySetting, $branch_id);
                     } else {
-                        processDaySkip($loan, $installment, $holidayDate, $companySetting,$branch_id);
+                        // your existing helper
+                        processDaySkip($loan, $installment, $holidayDate, $companySetting, $branch_id);
                     }
+                    $affected++;
                 }
             }
         }
 
-        $this->create($branch_id); // whatever this method does
+        // Resort installments inside each loan after all changes
+        $this->create($branch_id);
 
+        return $affected;
     }
 
-
-
     /**
-     * Show the form for creating a new resource.
+     * Resort installment and penalty dates for all loans of a branch.
      */
-    public function create($branch_id)
+    public function create($branch_id = null)
     {
-        $loan=DB::table('customer_loan')->where('branch_id','=',$branch_id)->get();
-        foreach ($loan as $loans) {
-            $insallment=DB::table('installments')->where('branch_id','=',$branch_id)->where('Customer_Loan_idCustomer_Loan','=',$loans->idCustomer_Loan)->get();
-            $date=[];
-            $panelty_date=[];
-            foreach ($insallment as $installments) {
-                $date[]=$installments->Installment_Date;
-                $panelty_date[]=$installments->Panelty_date;
+        // Fallback to session branch for cases like store()
+        if ($branch_id === null) {
+            $branch_id = session('branch_id');
+        }
+
+        $loans = DB::table('customer_loan')
+            ->where('branch_id', '=', $branch_id)
+            ->get();
+
+        foreach ($loans as $loan) {
+            $installments = DB::table('installments')
+                ->where('branch_id', '=', $branch_id)
+                ->where('Customer_Loan_idCustomer_Loan', '=', $loan->idCustomer_Loan)
+                ->get();
+
+            if ($installments->isEmpty()) {
+                continue;
             }
-            sort($date);
-            sort($panelty_date);
-            $count=0;
-            foreach ($insallment as $new_installments) {
-                DB::table('installments')->where('branch_id','=',$branch_id)->where('idInstallments', $new_installments->idInstallments)->update([
-                    'Installment_Date' => $date[$count],
-                    'Panelty_date' => $panelty_date[$count],
-                ]);
+
+            $dates        = [];
+            $penaltyDates = [];
+
+            foreach ($installments as $inst) {
+                $dates[]        = $inst->Installment_Date;
+                $penaltyDates[] = $inst->Panelty_date;
+            }
+
+            sort($dates);
+            sort($penaltyDates);
+
+            $count = 0;
+            foreach ($installments as $inst) {
+                DB::table('installments')
+                    ->where('branch_id', '=', $branch_id)
+                    ->where('idInstallments', $inst->idInstallments)
+                    ->update([
+                        'Installment_Date' => $dates[$count],
+                        'Panelty_date'     => $penaltyDates[$count],
+                    ]);
                 $count++;
             }
         }
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Shift installments for a single loan when it is issued (your old logic).
      */
     public function store($loan_id)
     {
-        // Fetch the saturday_sunday setting from the company table
         $companySetting = tableWithBranch('company')->value('saturday_sunday');
-        $holidays=tableWithBranch('holidays')->get();
+        $holidays       = tableWithBranch('holidays')->get();
+
+        // Get this loan & branch
+        $loan      = tableWithBranch('customer_loan')
+            ->where('idCustomer_Loan', '=', $loan_id)
+            ->first();
+        $branch_id = $loan->branch_id ?? session('branch_id');
 
         foreach ($holidays as $holiday) {
-            $holidayDate = $holiday->date; // Extracting the date correctly
-            $installments = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', '=', $loan_id)->where('Installment_Date', $holidayDate)->get();
+            $holidayDate  = $holiday->date;
+            $installments = tableWithBranch('installments')
+                ->where('Customer_Loan_idCustomer_Loan', '=', $loan_id)
+                ->where('Installment_Date', $holidayDate)
+                ->get();
 
             foreach ($installments as $installment) {
-                $loan_id=$installment->Customer_Loan_idCustomer_Loan;
-                $newDate = Carbon::parse($holidayDate)->addDay(); // Start by adding one day
-                Log::info("Normal installment date:".$newDate);
+                $loan_id = $installment->Customer_Loan_idCustomer_Loan;
 
-                // Loop to find the next valid date
+                // Start one day after the holiday
+                $newDate = Carbon::parse($holidayDate)->addDay();
+                Log::info("Normal installment date:" . $newDate);
+
+                // find the next valid date
                 while (
-                    tableWithBranch('holidays')->where('date', $newDate->toDateString())->exists() || // Avoid holidays
-                    ($companySetting == "1" && ($newDate->isSaturday() || $newDate->isSunday())) || // Avoid weekends if setting is enabled
-                    tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan','=',$loan_id)->where('Installment_Date', $newDate->toDateString())->exists() // Avoid existing installment dates
+                    tableWithBranch('holidays')->where('date', $newDate->toDateString())->exists() ||    // avoid holidays
+                    ($companySetting == "1" && ($newDate->isSaturday() || $newDate->isSunday())) ||      // avoid weekend
+                    tableWithBranch('installments')
+                        ->where('Customer_Loan_idCustomer_Loan', '=', $loan_id)
+                        ->where('Installment_Date', $newDate->toDateString())
+                        ->exists()                                                                      // avoid duplicate installment dates
                 ) {
-                    $newDate->addDay(); // Keep adding days until a valid one is found
+                    $newDate->addDay();
                 }
 
-                $loan = tableWithBranch('customer_loan')->where('idCustomer_Loan', '=', $installment->Customer_Loan_idCustomer_Loan)->first();
-                $newpanelty_date = $newDate->toDateString();
+                $loanRow = tableWithBranch('customer_loan')
+                    ->where('idCustomer_Loan', '=', $installment->Customer_Loan_idCustomer_Loan)
+                    ->first();
 
-                if ($loan) {
-                    $product_id = $loan->Loan_Category_idLoan_Category;
-                    $product = tableWithBranch('loan_category')->where('idLoan_Category', '=', $product_id)->first();
-                    $panelty_date = $product->Panelty_date;
-                    $newpanelty_date = Carbon::parse($newDate)->addDays((int) $panelty_date)->toDateString();
+                $newPenaltyDate = $newDate->toDateString();
 
+                if ($loanRow) {
+                    $productId = $loanRow->Loan_Category_idLoan_Category;
+                    $product   = tableWithBranch('loan_category')
+                        ->where('idLoan_Category', '=', $productId)
+                        ->first();
+
+                    if ($product) {
+                        $penaltyGapDays = (int) $product->Panelty_date;
+                        $newPenaltyDate = Carbon::parse($newDate)
+                            ->addDays($penaltyGapDays)
+                            ->toDateString();
+                    }
                 }
 
-                // Update the installment with the new valid date
-                tableWithBranch('installments')->where('idInstallments', $installment->idInstallments)->update([
-                    'Installment_Date' => $newDate->toDateString(),
-                    'Panelty_date' => $newpanelty_date, // ✅ Fix applied here
-                ]);
+                tableWithBranch('installments')
+                    ->where('idInstallments', $installment->idInstallments)
+                    ->update([
+                        'Installment_Date' => $newDate->toDateString(),
+                        'Panelty_date'     => $newPenaltyDate,
+                    ]);
             }
         }
-        $this->create();
+
+        // re-sort dates for that branch
+        $this->create($branch_id);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
-    }
+    public function show(string $id)  { /* not used */ }
+    public function edit(string $id)  { /* not used */ }
+    public function update(Request $request, string $id) { /* not used */ }
+    public function destroy(string $id) { /* not used */ }
 
     public function fetchPoya()
     {

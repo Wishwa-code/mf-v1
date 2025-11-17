@@ -5,25 +5,32 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css">
     <!-- Font Awesome CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css">
-    <!-- Custom CSS -->
+
     <style>
         .page-title {
-            font-size: 1.5rem;
-            font-weight: bold;
+            font-size: 1.4rem;
+            font-weight: 600;
             color: #343a40;
+            margin-bottom: .75rem;
         }
 
         .card {
             border: none;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        .card-body {
+            padding: 1.25rem 1.5rem;
         }
 
         .btn-success {
             background-color: #28a745;
             border-color: #28a745;
             color: #fff;
-            font-weight: bold;
+            font-weight: 600;
         }
 
         .btn-success:hover {
@@ -33,12 +40,40 @@
 
         .table thead th {
             background-color: #007bff;
-            color: white;
-            font-weight: bold;
+            color: #fff;
+            font-weight: 600;
+            border: none;
         }
 
         .table tbody tr:hover {
             background-color: #f8f9fa;
+        }
+
+        .nav-tabs .nav-link {
+            font-weight: 500;
+        }
+
+        .nav-tabs .nav-link.active {
+            font-weight: 600;
+        }
+
+        .warning-text {
+            font-size: 0.9rem;
+        }
+
+        .sticky-actions-right {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem;
+        }
+
+        .sticky-actions-right .btn {
+            white-space: nowrap;
+        }
+
+        .due-skip-note {
+            font-size: 0.85rem;
+            color: #6c757d;
         }
     </style>
 @endsection
@@ -48,61 +83,99 @@
         <!-- Tab Navigation -->
         <ul class="nav nav-tabs" id="myTab" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="holidays-tab" data-bs-toggle="tab" data-bs-target="#holidays" type="button" role="tab" aria-controls="holidays" aria-selected="true">
+                <button class="nav-link active"
+                        id="holidays-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#holidays"
+                        type="button"
+                        role="tab"
+                        aria-controls="holidays"
+                        aria-selected="true">
                     Customize Holidays
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="poya-tab" data-bs-toggle="tab" data-bs-target="#poya" type="button" role="tab" aria-controls="poya" aria-selected="false">
+                <button class="nav-link"
+                        id="poya-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#poya"
+                        type="button"
+                        role="tab"
+                        aria-controls="poya"
+                        aria-selected="false">
                     Holidays
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="special-tab" data-bs-toggle="tab" data-bs-target="#special" type="button" role="tab" aria-controls="special" aria-selected="false">
+                <button class="nav-link"
+                        id="special-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#special"
+                        type="button"
+                        role="tab"
+                        aria-controls="special"
+                        aria-selected="false">
                     Due Skip Process
                 </button>
             </li>
         </ul>
 
         <div class="tab-content mt-3" id="myTabContent">
-            <!-- Customize Holidays Tab -->
-            <div class="tab-pane fade show active" id="holidays" role="tabpanel" aria-labelledby="holidays-tab">
-                <div class="row mt-3">
+
+            {{-- ========== TAB 1: CUSTOMIZE HOLIDAYS ========== --}}
+            <div class="tab-pane fade show active"
+                 id="holidays"
+                 role="tabpanel"
+                 aria-labelledby="holidays-tab">
+                <div class="row mt-2">
                     <div class="col-12">
                         <div class="card">
                             <div class="card-body">
-                                <div class="d-flex justify-content-between mb-3">
-                                    <h4 class="page-title">Holiday Details</h4>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h4 class="page-title mb-0">Holiday Details</h4>
                                 </div>
-                                <h5 style="color: #ff0000">"Once a holiday is added, it cannot be removed as installment dates depend on it."</h5>
-                                <br><br><br>
+
+                                <div class="alert alert-warning border-warning" role="alert">
+                                    <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                                    <span class="warning-text">
+                                        Once a holiday is added, it cannot be removed because installment dates depend on it.
+                                    </span>
+                                </div>
+
                                 <div class="mb-3">
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
                                             <label for="holiday_date" class="form-label">Date</label>
                                             <input type="date" id="holiday_date" class="form-control">
                                         </div>
                                         <div class="col-md-6">
                                             <label for="account_name" class="form-label">Reason</label>
-                                            <input type="text" id="account_name" class="form-control">
+                                            <input type="text" id="account_name" class="form-control" placeholder="Reason for holiday">
+                                        </div>
+                                        <div class="col-md-2 d-flex align-items-end">
+                                            <button type="button"
+                                                    class="btn btn-success w-100"
+                                                    id="addBankBtn"
+                                                    onclick="validateSubmitBank(event)">
+                                                <i class="fa-solid fa-floppy-disk me-1"></i> Save
+                                            </button>
                                         </div>
                                     </div>
-                                    <button type="button" class="btn btn-success" id="addBankBtn" onclick="validateSubmitBank(event)">Save Holiday</button>
                                 </div>
 
                                 <div class="table-responsive-sm">
                                     <table class="table table-centered mb-0" id="holiday_table">
                                         <thead>
                                         <tr>
-                                            <th>Date</th>
+                                            <th style="width: 160px;">Date</th>
                                             <th>Reason</th>
                                         </tr>
                                         </thead>
                                         <tbody>
                                         @foreach($holidays as $item)
                                             <tr>
-                                                <td>{{$item->date}}</td>
-                                                <td>{{$item->reason}}</td>
+                                                <td>{{ \Carbon\Carbon::parse($item->date)->format('Y-m-d') }}</td>
+                                                <td>{{ $item->reason }}</td>
                                             </tr>
                                         @endforeach
                                         </tbody>
@@ -115,25 +188,43 @@
                 </div>
             </div>
 
-            <!-- Holidays Tab (Poya Days) -->
-            <div class="tab-pane fade" id="poya" role="tabpanel" aria-labelledby="poya-tab">
-                <div class="row mt-3">
+            {{-- ========== TAB 2: HOLIDAYS / POYA DAYS ========== --}}
+            <div class="tab-pane fade"
+                 id="poya"
+                 role="tabpanel"
+                 aria-labelledby="poya-tab">
+                <div class="row mt-2">
                     <div class="col-12">
                         <div class="card">
                             <div class="card-body">
-                                <h4 class="page-title">Poya Days (Full Moons)</h4>
-                                <div class="d-flex justify-content-end">
-                                    <button class="btn btn-dark ms-2" id="addPoyaDays">Add Poya Days</button>
-                                    <button class="btn btn-warning ms-2" id="addWeekendDays">Add Weekend Days</button>
-                                    <button class="btn btn-primary ms-2" id="addOnlySaturdays">Add Only Saturdays</button>
-                                    <button class="btn btn-info ms-2" id="addOnlySundays">Add Only Sundays</button>
-                                    <button class="btn btn-danger ms-2" id="savePoyaDays">Save All</button>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h4 class="page-title mb-0">Poya Days (Full Moons)</h4>
+                                    <span class="text-muted small">Year: {{ $year }}</span>
                                 </div>
+
+                                <div class="d-flex justify-content-end mb-2 sticky-actions-right">
+                                    <button class="btn btn-dark btn-sm" id="addPoyaDays">
+                                        <i class="fa-solid fa-moon me-1"></i> Add Poya Days
+                                    </button>
+                                    <button class="btn btn-warning btn-sm" id="addWeekendDays">
+                                        <i class="fa-solid fa-calendar-days me-1"></i> Add Weekend Days
+                                    </button>
+                                    <button class="btn btn-primary btn-sm" id="addOnlySaturdays">
+                                        <i class="fa-solid fa-calendar-day me-1"></i> Add Only Saturdays
+                                    </button>
+                                    <button class="btn btn-info btn-sm text-white" id="addOnlySundays">
+                                        <i class="fa-solid fa-sun me-1"></i> Add Only Sundays
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" id="savePoyaDays">
+                                        <i class="fa-solid fa-floppy-disk me-1"></i> Save All
+                                    </button>
+                                </div>
+
                                 <div class="table-responsive-sm mt-3">
                                     <table class="table table-centered mb-0" id="poya_table">
                                         <thead>
                                         <tr>
-                                            <th>Date</th>
+                                            <th style="width: 160px;">Date</th>
                                             <th>Description</th>
                                         </tr>
                                         </thead>
@@ -146,111 +237,136 @@
                 </div>
             </div>
 
-            <!-- Special Holidays Tab -->
-            <div class="tab-pane fade" id="special" role="tabpanel" aria-labelledby="due-tab">
-                <div class="row mt-3">
+            {{-- ========== TAB 3: DUE SKIP PROCESS ========== --}}
+            <div class="tab-pane fade"
+                 id="special"
+                 role="tabpanel"
+                 aria-labelledby="special-tab">
+                <div class="row mt-2">
                     <div class="col-12">
                         <div class="card">
                             <div class="card-body">
-                                <h4 class="page-title">Due Skip Process</h4>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h4 class="page-title mb-0">Due Skip Process</h4>
+                                    <div class="text-end">
+                                        <div class="small text-muted">Installments falling on holidays:</div>
+                                        <div class="fs-5 fw-semibold text-primary">
+                                            {{ $holidayWithInstallmentsCount }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="due-skip-note mb-3">
+                                    Use this tool to automatically adjust installments that fall on holidays.
+                                    Choose the target (all loans / specific loan / product, etc.) and how you want to skip them.
+                                </p>
+
                                 <div class="row">
                                     <!-- Left Table -->
                                     <div class="col-md-6">
-                                        <div class="table-responsive-sm" style="max-height: 400px; overflow-y: auto;">
-                                            <table class="table table-bordered">
-                                                <thead>
-                                                <tr class="table-primary">
-                                                    <th>Date</th>
-                                                    <th>Note</th>
-                                                </tr>
-                                                </thead>
-                                                <tbody id="due-skip-table-body">
-                                                @foreach($holidays as $item)
-                                                    <tr>
-                                                        <td>{{$item->date}}</td>
-                                                        <td>{{$item->reason}}</td>
-                                                    </tr>
-                                                @endforeach
-                                                </tbody>
-                                            </table>
+                                        <div class="card mb-0">
+                                            <div class="card-body p-2">
+                                                <h6 class="fw-semibold mb-2">Holiday List</h6>
+                                                <div class="table-responsive-sm" style="max-height: 400px; overflow-y: auto;">
+                                                    <table class="table table-bordered mb-0">
+                                                        <thead>
+                                                        <tr class="table-primary">
+                                                            <th style="width: 140px;">Date</th>
+                                                            <th>Note</th>
+                                                        </tr>
+                                                        </thead>
+                                                        <tbody id="due-skip-table-body">
+                                                        @foreach($holidays as $item)
+                                                            <tr>
+                                                                <td>{{ \Carbon\Carbon::parse($item->date)->format('Y-m-d') }}</td>
+                                                                <td>{{ $item->reason }}</td>
+                                                            </tr>
+                                                        @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
                                     <!-- Right Side Options -->
                                     <div class="col-md-6">
-                                        <div class="mb-3" hidden>
-                                            <label class="form-label fw-bold">Installment Count in holidays:</label>
-                                            <div id="installment-count" class="fs-5">{{$holidayWithInstallmentsCount}}</div>
-                                        </div>
+                                        <div class="card mb-0">
+                                            <div class="card-body">
+                                                <h6 class="fw-semibold mb-3">Due Skip Options</h6>
 
-                                        <div class="mb-3">
-                                            <label for="skipFor" class="form-label">Skip Due For</label>
-                                            <select id="skipFor" class="form-select">
-                                                <option value="all">All Loans</option>
-                                                <option value="loan">Specific Loan</option>
-{{--                                                <option value="branch">Specific Branch</option>--}}
-{{--                                                <option value="center">Specific Center</option>--}}
-                                                <option value="product">Specific Product</option>
-                                            </select>
-                                        </div>
+                                                <div class="mb-3">
+                                                    <label for="skipFor" class="form-label">Skip Due For</label>
+                                                    <select id="skipFor" class="form-select">
+                                                        <option value="all">All Loans</option>
+                                                        <option value="loan">Specific Loan</option>
+                                                        {{-- <option value="branch">Specific Branch</option> --}}
+                                                        {{-- <option value="center">Specific Center</option> --}}
+                                                        <option value="product">Specific Product</option>
+                                                    </select>
+                                                </div>
 
-                                        <!-- All Target Dropdowns (Loaded at start, hidden initially) -->
-                                        <div class="mb-3 d-none target-dropdown" id="loanSelectWrapper">
-                                            <label class="form-label">Select Loan</label>
-                                            <select id="loanSelect" class="form-select">
-                                                @foreach($loans as $loan)
-                                                    <option value="{{ $loan->idCustomer_Loan }}">{{ $loan->Loan_No }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
+                                                <!-- Target dropdowns -->
+                                                <div class="mb-3 d-none target-dropdown" id="loanSelectWrapper">
+                                                    <label class="form-label">Select Loan</label>
+                                                    <select id="loanSelect" class="form-select">
+                                                        @foreach($loans as $loan)
+                                                            <option value="{{ $loan->idCustomer_Loan }}">{{ $loan->Loan_No }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
 
-                                        <div class="mb-3 d-none target-dropdown" id="branchSelectWrapper">
-                                            <label class="form-label">Select Branch</label>
-                                            <select id="branchSelect" class="form-select">
-                                                @foreach($branches as $branch)
-                                                    <option value="{{ $branch->branch_id }}">{{ $branch->Name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
+                                                <div class="mb-3 d-none target-dropdown" id="branchSelectWrapper">
+                                                    <label class="form-label">Select Branch</label>
+                                                    <select id="branchSelect" class="form-select">
+                                                        @foreach($branches as $branch)
+                                                            <option value="{{ $branch->branch_id }}">{{ $branch->Name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
 
-                                        <div class="mb-3 d-none target-dropdown" id="centerSelectWrapper">
-                                            <label class="form-label">Select Center</label>
-                                            <select id="centerSelect" class="form-select">
-                                                @foreach($centers as $center)
-                                                    <option value="{{ $center->idCenter }}">{{ $center->Name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
+                                                <div class="mb-3 d-none target-dropdown" id="centerSelectWrapper">
+                                                    <label class="form-label">Select Center</label>
+                                                    <select id="centerSelect" class="form-select">
+                                                        @foreach($centers as $center)
+                                                            <option value="{{ $center->idCenter }}">{{ $center->Name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
 
-                                        <div class="mb-3 d-none target-dropdown" id="productSelectWrapper">
-                                            <label class="form-label">Select Product</label>
-                                            <select id="productSelect" class="form-select">
-                                                @foreach($products as $product)
-                                                    <option value="{{ $product->idLoan_Category }}">{{ $product->Name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
+                                                <div class="mb-3 d-none target-dropdown" id="productSelectWrapper">
+                                                    <label class="form-label">Select Product</label>
+                                                    <select id="productSelect" class="form-select">
+                                                        @foreach($products as $product)
+                                                            <option value="{{ $product->idLoan_Category }}">{{ $product->Name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
 
-                                        <div class="mb-3">
-                                            <label for="skipType" class="form-label">Skip Type</label>
-                                            <select id="skipType" class="form-select">
-                                                <option value="installment">Skip An Installment</option>
-                                                <option value="day">Skip a Day</option>
-                                            </select>
-                                        </div>
+                                                <div class="mb-3">
+                                                    <label for="skipType" class="form-label">Skip Type</label>
+                                                    <select id="skipType" class="form-select">
+                                                        <option value="installment">Skip an Installment</option>
+                                                        <option value="day">Skip a Day</option>
+                                                    </select>
+                                                </div>
 
-                                        <button class="btn btn-primary" onclick="generateDueSkip()">Generate Due Skip</button>
+                                                <button class="btn btn-primary w-100" onclick="generateDueSkip()">
+                                                    <i class="fa-solid fa-gears me-1"></i> Generate Due Skip
+                                                </button>
+                                                <p class="due-skip-note mt-2 mb-0">
+                                                    This process may take a few moments depending on the number of affected installments.
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                </div> <!-- /row -->
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-
-
-        </div>
+        </div> <!-- /tab-content -->
     </div>
 @endsection
 
@@ -266,23 +382,24 @@
         $(document).ready(function () {
             $('#holiday_table').DataTable();
 
-
             const year = new Date().getFullYear();
 
-
+            // ----------- Poya Days -----------
             $('#addPoyaDays').click(function () {
                 fetch('/poya-days')
                     .then(response => response.json())
                     .then(data => {
                         data.forEach(day => {
-                            const year = day[0];
-                            const month = String(day[1]).padStart(2, '0');
-                            const date = String(day[2]).padStart(2, '0');
-                            const fullDate = `${year}-${month}-${date}`;
+                            const y = day[0];
+                            const m = String(day[1]).padStart(2, '0');
+                            const d = String(day[2]).padStart(2, '0');
+                            const fullDate = `${y}-${m}-${d}`;
 
-                            $('#poya-days').append(
-                                `<tr><td>${fullDate}</td><td>Full Moon</td></tr>`
-                            );
+                            if (!isDateInTable(fullDate)) {
+                                $('#poya-days').append(
+                                    `<tr><td>${fullDate}</td><td>Full Moon</td></tr>`
+                                );
+                            }
                         });
 
                         Swal.fire({
@@ -303,12 +420,9 @@
 
             });
 
-
-            // Handle show/hide of relevant dropdown
+            // show / hide target dropdowns
             $('#skipFor').on('change', function () {
                 const value = $(this).val();
-
-                // Hide all
                 $('.target-dropdown').addClass('d-none');
 
                 switch (value) {
@@ -337,6 +451,11 @@
                     }
                 });
 
+                if (poyaDays.length === 0) {
+                    Swal.fire("No Data", "Please add at least one date before saving.", "warning");
+                    return;
+                }
+
                 Swal.fire({
                     title: "Are you sure?",
                     text: "Do you want to save all Poya Days?",
@@ -358,7 +477,7 @@
                                 Swal.fire({
                                     position: "center",
                                     icon: "success",
-                                    title: response.message,
+                                    title: response.message || "Poya Days saved!",
                                     showConfirmButton: false,
                                     timer: 1500,
                                 }).then(() => {
@@ -392,7 +511,7 @@
                 let currentDate = startDate;
 
                 while (currentDate <= endDate) {
-                    const dayOfWeek = currentDate.getDay();
+                    const dayOfWeek = currentDate.getDay(); // 0 Sun, 6 Sat
                     if (dayOfWeek === 0 || dayOfWeek === 6) {
                         const formattedDate = currentDate.toISOString().split('T')[0];
                         if (!isDateInTable(formattedDate)) {
@@ -433,30 +552,32 @@
             });
         });
 
-
         function generateDueSkip() {
             const skipFor = $('#skipFor').val();
             const skipType = $('#skipType').val();
 
             let targetValue = null;
-            let targetText = null;
+            let targetText  = null;
 
-            // Get the corresponding target value based on skipFor
             if (skipFor === 'loan') {
                 targetValue = $('#loanSelect').val();
-                targetText = $('#loanSelect option:selected').text();
+                targetText  = $('#loanSelect option:selected').text();
             } else if (skipFor === 'branch') {
                 targetValue = $('#branchSelect').val();
-                targetText = $('#branchSelect option:selected').text();
+                targetText  = $('#branchSelect option:selected').text();
             } else if (skipFor === 'center') {
                 targetValue = $('#centerSelect').val();
-                targetText = $('#centerSelect option:selected').text();
+                targetText  = $('#centerSelect option:selected').text();
             } else if (skipFor === 'product') {
                 targetValue = $('#productSelect').val();
-                targetText = $('#productSelect option:selected').text();
+                targetText  = $('#productSelect option:selected').text();
             }
 
-            // Sample confirmation using SweetAlert
+            if (skipFor !== 'all' && (!targetValue || targetValue === '')) {
+                Swal.fire("Required", "Please select a target before generating due skip.", "warning");
+                return;
+            }
+
             let displayText = `<b>Skip For:</b> ${skipFor}<br>`;
             if (targetValue) {
                 displayText += `<b>Target:</b> ${targetText} (ID: ${targetValue})<br>`;
@@ -470,42 +591,83 @@
                 showCancelButton: true,
                 confirmButtonText: 'Proceed',
             }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: '/generate-due-skip',
-                        type: 'POST',
-                        data: {
-                            skip_for: skipFor,
-                            target_id: targetValue,
-                            skip_type: skipType,
-                            _token: $('meta[name="csrf-token"]').attr('content')
-                        },
-                        success: function (response) {
+                if (!result.isConfirmed) return;
+
+                // Show progress modal
+                let progressInterval;
+                let progressVal = 10;
+
+                Swal.fire({
+                    title: 'Processing Due Skip...',
+                    html: `
+                <div class="mt-2 mb-1 small text-muted">
+                    Please wait while we update affected installments.
+                </div>
+                <div class="progress mt-2" style="height: 18px;">
+                    <div id="dueSkipProgressBar"
+                         class="progress-bar progress-bar-striped progress-bar-animated"
+                         role="progressbar"
+                         style="width: 10%;"
+                         aria-valuenow="10"
+                         aria-valuemin="0"
+                         aria-valuemax="100">
+                    </div>
+                </div>
+            `,
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        progressInterval = setInterval(() => {
+                            progressVal = Math.min(progressVal + 5, 95);
+                            $('#dueSkipProgressBar')
+                                .css('width', progressVal + '%')
+                                .attr('aria-valuenow', progressVal);
+                        }, 400);
+                    },
+                    willClose: () => {
+                        if (progressInterval) clearInterval(progressInterval);
+                    }
+                });
+
+                $.ajax({
+                    url: '/generate-due-skip',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        skip_for:  skipFor,
+                        target_id: targetValue,
+                        skip_type: skipType,
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function (response) {
+                        $('#dueSkipProgressBar').css('width', '100%').attr('aria-valuenow', 100);
+
+                        setTimeout(() => {
                             Swal.fire({
                                 title: 'Success',
-                                text: 'Due skip processed successfully',
+                                text: response.message || 'Due skip processed successfully.',
                                 icon: 'success',
                                 timer: 2000,
                                 showConfirmButton: false
                             }).then(() => {
                                 window.location.reload();
                             });
-                        },
-                        error: function (xhr) {
-                            Swal.fire({
-                                title: 'Error',
-                                text: 'Something went wrong!',
-                                icon: 'error'
-                            });
-                            console.error(xhr.responseText);
-                        }
-                    });
-                }
+                        }, 300);
+                    },
+                    error: function (xhr) {
+                        console.error(xhr.responseText);
+                        Swal.fire({
+                            title: 'Error',
+                            text: xhr.responseJSON?.message || 'Something went wrong while processing due skip.',
+                            icon: 'error'
+                        });
+                    }
+                });
             });
         }
 
 
-        // JS function to handle adding special holidays
+        // (Optional) helper for "special holidays" if you later use that section
         function addSpecialHoliday() {
             const name = $('#special_name').val();
             const start = $('#special_start').val();

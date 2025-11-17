@@ -337,12 +337,11 @@ class UserController extends Controller
 
 
 
+
         if (!Auth::check()) {
             return redirect()->route('login')->with("error", "Session expired! Please Login");
         }
-        $branchId=session('branch_id');
-        $userId=session('userid');
-        RunRecoverySweepJob::dispatch($branchId,$userId);
+
         // Head Office aggregated dashboard: show all branches overview
         if ((int)session('branch_id') === -1) {
             // Fetch active branches excluding head office itself
@@ -458,7 +457,7 @@ class UserController extends Controller
 
 
         // Call to the penalty creation function
-         $this->create_panelty();
+        // $this->create_panelty();
 
 
         $customerCount = tableWithBranch('customer')->count();
@@ -480,6 +479,12 @@ class UserController extends Controller
             ->sum('Amount');
 
         $todayinstallment = tableWithBranch('customer_loan', 'customer_loan')
+            ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
+            ->where('installments.Installment_Date', '=', date('Y-m-d'))
+            ->where('customer_loan.Status', '=', '0')
+            ->sum('installments.Installment_Amount');
+
+        $todayNotPaid = tableWithBranch('customer_loan', 'customer_loan')
             ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
             ->where('installments.Installment_Date', '=', date('Y-m-d'))
             ->where('customer_loan.Status', '=', '0')
@@ -573,8 +578,8 @@ class UserController extends Controller
         }
 
 
-        $startOfWeek = Carbon::now()->startOfWeek(); // Mon 2025-04-21 00:00:00
-        $endOfWeek = Carbon::now()->endOfWeek();     // Sun 2025-04-27 23:59:59
+        $startOfWeek = Carbon::now()->startOfWeek(Carbon::SUNDAY); // Sun 2025-04-20 00:00:00
+        $endOfWeek = Carbon::now()->endOfWeek(Carbon::SATURDAY);     // Sat 2025-04-26 23:59:59
         $startOfLastWeek = $startOfWeek->copy()->subWeek();
         $endOfLastWeek = $endOfWeek->copy()->subWeek();
 
@@ -658,7 +663,7 @@ class UserController extends Controller
         }
 
         // Weekly unpaid (active loans)
-        $weekStart = Carbon::now()->startOfWeek()->toDateString();
+        $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY)->toDateString();
         $weekToday = date('Y-m-d');
 
         $weeklyUnpaidQuery = tableWithBranch('installments','installments')
@@ -675,16 +680,68 @@ class UserController extends Controller
             ->distinct()
             ->count('customer_loan.Customer_idCustomer');
 
+        // Current week pending (Sunday to Saturday of current week)
+        $weekEnd = Carbon::now()->endOfWeek(Carbon::SATURDAY)->toDateString();
+
+        $currentWeekPendingQuery = tableWithBranch('installments','installments')
+            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->where('customer_loan.Status', '=', '0')
+            ->where('installments.Status', '=', '0')
+            ->where('installments.Total_Balance', '>', 0)
+            ->whereBetween('installments.Installment_Date', [$weekStart, $weekEnd]);
+
+        $currentWeekPendingCount = (clone $currentWeekPendingQuery)->count();
+        $currentWeekPendingAmount = (clone $currentWeekPendingQuery)->sum('installments.Total_Balance');
+        $currentWeekPendingCustomerCount = (clone $currentWeekPendingQuery)
+            ->distinct()
+            ->count('customer_loan.Customer_idCustomer');
+
 
         return view('home',compact(
             'currentMonthLending','portfolio','profit','todaycollected','profitTarget','weeklyComparison',
             'deleted_loan_Count','all_loan','monthlyData','dashboard','checqueamount','totalBalanceUntil','arrease',
             'todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount',
             'setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count',
-            'customer_loan_current_Count','todayinstallment','todaycollection',
-            'weeklyUnpaidCount','weeklyUnpaidAmount','weeklyUnpaidCustomerCount','totalOutstanding','penaltyBalance'
+            'customer_loan_current_Count','todayinstallment','todaycollection','todayNotPaid',
+            'weeklyUnpaidCount','weeklyUnpaidAmount','weeklyUnpaidCustomerCount','totalOutstanding','penaltyBalance',
+            'currentWeekPendingCount','currentWeekPendingAmount','currentWeekPendingCustomerCount'
         ));
     }
+
+    public function currentWeekPendingData()
+    {
+        // Get current week date range (Sunday to Saturday)
+        $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY)->toDateString();
+        $weekEnd = Carbon::now()->endOfWeek(Carbon::SATURDAY)->toDateString();
+
+        $currentWeekPendingData = tableWithBranch('installments','installments')
+            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->select(
+                'customer_loan.idCustomer_Loan as loan_id',
+                'customer.idCustomer as customer_id',
+                DB::raw('CONCAT(customer.First_Name, " ", customer.Last_Name) as customer_name'),
+                'customer_loan.Amount as capital_amount',
+                'customer_loan.Total_Loan_Amount as full_loan_amount',
+                // Current week pending amount (installments between Sunday and Saturday of current week)
+                DB::raw('SUM(CASE WHEN installments.Installment_Date BETWEEN "'.$weekStart.'" AND "'.$weekEnd.'" THEN installments.Total_Balance ELSE 0 END) as current_week_pending'),
+                // Total arrears (all overdue installments)
+                DB::raw('SUM(CASE WHEN installments.Installment_Date < CURDATE() THEN installments.Total_Balance ELSE 0 END) as total_arrears'),
+                // Not paid installment count
+                DB::raw('COUNT(CASE WHEN installments.Total_Balance > 0 AND installments.Status = 0 THEN 1 END) as not_paid_installment_count')
+            )
+            ->where('customer_loan.Status', '=', '0')
+            ->where('installments.Status', '=', '0')
+            ->where('installments.Total_Balance', '>', 0)
+            ->whereBetween('installments.Installment_Date', [$weekStart, $weekEnd])
+            ->groupBy('customer_loan.idCustomer_Loan', 'customer.idCustomer', 'customer.First_Name', 'customer.Last_Name', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount')
+            ->havingRaw('current_week_pending > 0')
+            ->orderBy('current_week_pending', 'DESC')
+            ->get();
+
+        return response()->json(['data' => $currentWeekPendingData]);
+    }
+
     public function fixLoanInstallmentsOnce(int $loanId): void
     {
         DB::transaction(function () use ($loanId) {
@@ -1564,38 +1621,45 @@ class UserController extends Controller
 
 
 
-    public function holidays(){
+    public function holidays()
+    {
         $year = date('Y');
 
-        $loans = tableWithBranch('customer_loan')->where('Status', '0')->get();
-        $branches = DB::table('branch')->where('Status', '1')->get();
-        $centers = tableWithBranch('center')->get();
-        $products = tableWithBranch('loan_category')->get();
+        $loans     = tableWithBranch('customer_loan')->where('Status', '0')->get();
+        $branches  = DB::table('branch')->where('Status', '1')->get();
+        $centers   = tableWithBranch('center')->get();
+        $products  = tableWithBranch('loan_category')->get();
 
-// Get holidays for the year
+        // Get holidays
         $holidays = tableWithBranch('holidays')->get();
 
-// Format holiday dates to Y-m-d (in case they include time)
+        // Format holiday dates
         $holidayDates = $holidays->pluck('date')->map(function ($date) {
-            return \Carbon\Carbon::parse($date)->format('Y-m-d');
+            return Carbon::parse($date)->format('Y-m-d');
         })->unique();
 
-// Get all installment dates (formatted)
-        $installmentDates = tableWithBranch('installments','installments')
-            ->join('customer_loan','customer_loan.idCustomer_Loan','=','installments.Customer_Loan_idCustomer_Loan')
-            ->where('customer_loan.Status','=','0')
+        // Get all installment dates (only for active loans)
+        $installmentDates = tableWithBranch('installments', 'installments')
+            ->join('customer_loan', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
+            ->where('customer_loan.Status', '=', '0')
             ->pluck('installments.Installment_Date')
             ->map(function ($date) {
-                return \Carbon\Carbon::parse($date)->format('Y-m-d');
+                return Carbon::parse($date)->format('Y-m-d');
             })->unique();
 
-// Intersect to find how many holiday dates have installments
+        // Intersect to find how many holiday dates have installments
         $matchingDates = $holidayDates->intersect($installmentDates);
         $holidayWithInstallmentsCount = $matchingDates->count();
 
-
-
-        return view('pages.Holidays', compact('holidays','year','loans','branches','centers','products','holidayWithInstallmentsCount'));
+        return view('pages.Holidays', compact(
+            'holidays',
+            'year',
+            'loans',
+            'branches',
+            'centers',
+            'products',
+            'holidayWithInstallmentsCount'
+        ));
     }
 
 
@@ -1671,14 +1735,42 @@ class UserController extends Controller
 
     public function generateDueSkip(Request $request)
     {
-        $skipFor = $request->skip_for;
-        $targetId = $request->target_id;
-        $skipType = $request->skip_type;
-        $holiday=new HolidayController();
-        $holiday->index($skipFor,$targetId,$skipType);
+        // basic validation for safety
+        $data = $request->validate([
+            'skip_for'  => 'required|string|in:all,loan,branch,center,product',
+            'target_id' => 'nullable|integer',
+            'skip_type' => 'required|string|in:installment,day',
+        ]);
 
+        $skipFor  = $data['skip_for'];
+        $targetId = $data['target_id'] ?? null;
+        $skipType = $data['skip_type'];
+
+
+        try {
+            /** @var HolidayController $holiday */
+            $holiday = app(HolidayController::class);
+
+            // run your heavy logic and get count of affected installments
+            $affected = $holiday->index($skipFor, $targetId, $skipType);
+
+            return response()->json([
+                'status'         => 'success',
+                'message'        => "Due skip completed. Updated {$affected} installments.",
+                'affected_count' => $affected,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Due skip failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Due skip process failed. Please contact system administrator.',
+            ], 500);
+        }
     }
-
 
     public function getUserDetails($id)
     {
