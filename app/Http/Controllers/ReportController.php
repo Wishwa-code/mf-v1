@@ -216,7 +216,6 @@ class ReportController extends Controller
 
     public function loansummary(Request $request)
     {
-        // Fetch the list of centers
         $branch_access = session('branch_access');
 
         if ($branch_access == 1) {
@@ -228,13 +227,21 @@ class ReportController extends Controller
                 ->get();
         }
 
-
         $centers = DB::table('center')->where('branch_id', session('branch_id'))->get();
+        $groups  = DB::table('customer_group')->where('branch_id', session('branch_id'))
+            ->select('Group_No as group_name')->distinct()->get();
 
-        // Fetch the list of groups
-        $groups = DB::table('customer_group')->where('branch_id', session('branch_id'))->select('Group_No as group_name')->distinct()->get();
+        // 🔹 Aggregate extra_charger by loan_id (branch-scoped)
+        $extraAgg = DB::table('extra_charger')
+            ->select(
+                'loan_id',
+                DB::raw("SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END)         AS total_extra"),
+                DB::raw("SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END)    AS paid_extra")
+            // If you ever need net: DB::raw("SUM(amount) AS net_extra")
+            )
+            ->where('branch_id', session('branch_id'))
+            ->groupBy('loan_id');
 
-        // Initialize the query for fetching loans
         $query = DB::table('customer_loan')
             ->join('branch', 'customer_loan.branch_id', '=', 'branch.branch_id')
             ->join('user', 'customer_loan.lending_officer_id', '=', 'user.id')
@@ -247,7 +254,14 @@ class ReportController extends Controller
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
-            ->select('customer_loan.*',
+
+            // 🔹 join the aggregated extras
+            ->leftJoinSub($extraAgg, 'ec', function ($join) {
+                $join->on('ec.loan_id', '=', 'customer_loan.idCustomer_Loan');
+            })
+
+            ->select(
+                'customer_loan.*',
                 'loan_category.Name as loan_name',
                 DB::raw('IFNULL(center.No, "-") as center_no'),
                 DB::raw('IFNULL(center.Name, "-") as center_name'),
@@ -259,44 +273,39 @@ class ReportController extends Controller
                 'customer.Nic as Nic',
                 'branch.Name as branch_name',
                 'user.Full_Name as LendingOfficer',
-                'loan_category.Name as Name')
+                'loan_category.Name as Name',
+
+                // 🔹 expose the totals to the view (default 0)
+                DB::raw('IFNULL(ec.total_extra, 0) as total_extra'),
+                DB::raw('IFNULL(ec.paid_extra, 0)  as paid_extra')
+            // If needed: DB::raw('IFNULL(ec.net_extra, 0)   as net_extra')
+            )
             ->where('customer_loan.Status', '!=', '-1')
             ->where('customer_loan.Status', '!=', '-2');
 
-        // Apply center filter if center_id is provided
+        // Filters
         if ($request->has('center_id') && $request->center_id != '') {
             $query->where('center.idCenter', $request->center_id);
         }
-
-        // Apply group filter if group_name is provided
         if ($request->has('group_name') && $request->group_name != '') {
             $query->where('subquery.group_name', $request->group_name);
         }
-
-        // Apply group filter if group_name is provided
         if ($request->has('loan_status') && $request->loan_status != '') {
-            $query->where('customer_loan.Status','!=', $request->loan_status);
+            $query->where('customer_loan.Status', '!=', $request->loan_status);
         }
-
-
         if ($branch_access == 1) {
-            // Apply group filter if group_name is provided
             if ($request->has('branch') && $request->branch != '') {
                 $query->where('customer_loan.branch_id', $request->branch);
             }
-        }else{
+        } else {
             $query->where('customer_loan.branch_id', session('branch_id'));
         }
 
-
-
-
-        // Execute the query and get the loan data
         $loan = $query->get();
 
-        // Pass loan, centers, and groups data to the view
-        return view('pages.LoanSummaryDetails', compact('loan', 'centers', 'groups','branch'));
+        return view('pages.LoanSummaryDetails', compact('loan', 'centers', 'groups', 'branch'));
     }
+
 
     /**
      * Update the specified resource in storage.
@@ -1426,7 +1435,165 @@ class ReportController extends Controller
 
 
 
+    public function penaltyDeductionReport(Request $request)
+    {
+        $branchId = session('branch_id');
 
+        $loanNo   = $request->loan_no;
+        $routeId  = $request->route_id;
+        $centerId = $request->center_id;
+
+        // Dropdown data
+        $routes = tableWithBranch('route')
+            ->get();
+
+        $centers = tableWithBranch('center')
+            ->when($routeId, function ($q) use ($routeId) {
+                $q->where('route_id', $routeId);
+            })
+            ->get();
+
+        $loanPenalty = tableWithBranch('customer_loan as cl','customer_loan as cl')
+            ->join('customer as cust', 'cust.idCustomer', '=', 'cl.Customer_idCustomer')
+
+            // Subquery for group_name with default '-'
+            ->leftJoin(DB::raw('(
+                SELECT 
+                    ghc.cus_id, 
+                    IFNULL(cg.Group_No, "-") AS group_name
+                FROM group_has_customer ghc
+                LEFT JOIN customer_group cg 
+                    ON ghc.group_id = cg.idCustomer_Group
+            ) AS subquery'), 'cust.idCustomer', '=', 'subquery.cus_id')
+
+            // Group / center / route chain
+            ->leftJoin('group_has_customer as ghc', 'cust.idCustomer', '=', 'ghc.cus_id')
+            ->leftJoin('customer_group as cg', 'ghc.group_id', '=', 'cg.idCustomer_Group')
+            ->leftJoin('center', 'cg.center_id', '=', 'center.idCenter')
+            ->leftJoin('route', 'center.route_id', '=', 'route.id_route')
+
+            ->leftJoin('loan_category as lc', 'lc.idLoan_Category', '=', 'cl.Loan_Category_idLoan_Category')
+
+            // Penalty Deduction logs
+            ->leftJoin('loan_log as ll', function ($join) {
+                $join->on('ll.Loan_ID', '=', 'cl.idCustomer_Loan')
+                    ->where('ll.Type', '=', 'Penalty Deduction');
+            })
+
+            // Always filter by current branch
+            ->where('cl.branch_id', $branchId)
+
+            // Filters
+            ->when($loanNo, function ($q, $loanNo) {
+                $q->where('cl.Loan_No', 'like', '%' . $loanNo . '%');
+            })
+            ->when($routeId, function ($q, $routeId) {
+                $q->where('route.id_route', $routeId);
+            })
+            ->when($centerId, function ($q, $centerId) {
+                $q->where('center.idCenter', $centerId);
+            })
+
+            ->select(
+                'cl.idCustomer_Loan',
+                'cl.Loan_No',
+                'cl.Date_Time',
+                'cl.Amount',
+                'cl.Total_Loan_Amount',
+                'cl.Balance_Amount',
+                'cl.capital_balance',
+                'cl.installment_balance',
+                'cl.Status',
+
+                'cust.First_Name',
+                'cust.Last_Name',
+                'cust.cus_number',
+                'cust.Nic',
+                'cust.Contact_No',
+
+                'lc.Name as loan_name',
+
+                DB::raw('COALESCE(subquery.group_name, "-") as group_name'),
+                'center.Name as center_name',
+                // ⚠️ adjust this column name if your route table is different
+                'route.Name as route_name',
+
+                DB::raw('COALESCE(SUM(CASE WHEN ll.Type = "Penalty Deduction" THEN ll.Amount ELSE 0 END), 0) as total_penalty_deduct')
+            )
+            ->groupBy(
+                'cl.idCustomer_Loan',
+                'cl.Loan_No',
+                'cl.Date_Time',
+                'cl.Amount',
+                'cl.Total_Loan_Amount',
+                'cl.Balance_Amount',
+                'cl.capital_balance',
+                'cl.installment_balance',
+                'cl.Status',
+
+                'cust.First_Name',
+                'cust.Last_Name',
+                'cust.cus_number',
+                'cust.Nic',
+                'cust.Contact_No',
+
+                'lc.Name',
+                'subquery.group_name',
+                'center.Name',
+                'route.Name'
+            )
+            ->having('total_penalty_deduct', '>', 0)
+            ->orderBy('cl.Date_Time', 'desc')
+            ->get();
+
+        return view('pages.penalty_deduction_report', [
+            'loanPenalty' => $loanPenalty,
+            'routes'      => $routes,
+            'centers'     => $centers,
+            'loanNo'      => $loanNo,
+            'routeId'     => $routeId,
+            'centerId'    => $centerId,
+        ]);
+    }
+
+
+    public function penaltyDeductionDetails($loanId, Request $request)
+    {
+        $loan = DB::table('customer_loan as cl')
+            ->join('customer as c', 'c.idCustomer', '=', 'cl.Customer_idCustomer')
+            ->leftJoin('loan_category as lc', 'lc.idLoan_Category', '=', 'cl.Loan_Category_idLoan_Category')
+            ->where('cl.idCustomer_Loan', $loanId)
+            ->first([
+                'cl.idCustomer_Loan',
+                'cl.Loan_No',
+                'cl.Date_Time',
+                'cl.Amount',
+                'cl.Balance_Amount',
+                'c.First_Name',
+                'c.Last_Name',
+                'c.cus_number',
+                'lc.Name as loan_name',
+            ]);
+
+        $logs = DB::table('loan_log as ll')
+            ->leftJoin('user as u', 'll.User_idUser', '=', 'u.id')
+            ->where('ll.Loan_ID', $loanId)
+            ->where('ll.Type', 'Penalty Deduction')
+            ->where('ll.branch_id', session('branch_id'))
+            ->orderBy('ll.Date_Time', 'asc')
+            ->get([
+                'll.Date_Time',
+                'll.Amount',
+                'u.Full_Name as deducted_user'
+            ]);
+
+
+
+        return response()->json([
+            'loan' => $loan,
+            'logs' => $logs,
+        ]);
+    }
 
 
 

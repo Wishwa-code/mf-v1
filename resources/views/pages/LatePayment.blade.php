@@ -324,17 +324,25 @@
                                         <span class="fw-bold">Total Pending Amount</span>
                                     </div>
                                 </div>
-                                <div class="col-lg-4">
+                                <div class="col-lg-3">
                                     <div>
                                         <span id="tot_amount">0.00</span>
                                     </div>
+                                </div>
 
+                                <div class="col-sm-3">
+                                    <div>
+                                        <span class="fw-bold">Loan Count</span>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3">
+                                    <div>
+                                        <span id="loan_count">0</span>
+                                    </div>
                                 </div>
                             </div>
-
-
-
                         </div>
+
 
                     </div> <!-- end card-->
                 </div> <!-- end col -->
@@ -625,8 +633,13 @@
                         $('#total_balance').text(totalBalanceSum.toFixed(2));
                         $('#total_last_payment').text(totalLastPayment.toFixed(2));
 
+
                         // Update total amount
-                        $("#tot_amount").text(tot.toFixed(2));
+                        $("#tot_amount").text(totalArrears.toFixed(2));
+
+// Loan count (current result set)
+                        $("#loan_count").text(data.item.length);
+
 
                         // Custom Pagination
                         let paginationControls = '';
@@ -658,7 +671,7 @@
                         $('#total_arrears').text('0.00');
                         $('#total_balance').text('0.00');
                         $('#total_last_payment').text('0.00');
-                        
+                        $("#loan_count").text("0");
                         $('#pagination').html('');
                     }
                 },

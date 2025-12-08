@@ -317,7 +317,7 @@
                                 <tr>
                                     @for ($i = 1; $i <= 5; $i++)
                                         <th>PAID AMOUNT</th>
-                                        <th>CORRECTION</th>
+                                        <th>CORRE-CTION</th>
                                     @endfor
                                 </tr>
                                 </thead>
@@ -733,8 +733,8 @@
                 printWindow.document.write('<html><head><title>Repayment Sheet</title>');
                 printWindow.document.write('<style>');
                     printWindow.document.write('body { font-family: Arial, sans-serif; font-size: 10px; margin: 0; }');
-                printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; font-size: 8px; }');
-                printWindow.document.write('#repaymentTable th, #repaymentTable td { border: 1px solid black; padding: 3px; text-align: center; font-size: 7px; }');
+                printWindow.document.write('#repaymentTable { width: 100%; border-collapse: collapse; font-size: 6px; }');
+                printWindow.document.write('#repaymentTable th, #repaymentTable td { border: 1px solid black; padding: 5.5px; text-align: center; font-size: 7px; }');
                 printWindow.document.write('#repaymentTable th { font-weight: bold; white-space: normal; word-wrap: break-word; }');
                 printWindow.document.write('#repaymentTable td { white-space: nowrap; overflow: hidden; }');
                 printWindow.document.write('.paid-amount, .correct-column { white-space: nowrap; }');

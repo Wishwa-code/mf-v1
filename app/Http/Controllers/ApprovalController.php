@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
@@ -11,14 +12,14 @@ class ApprovalController extends Controller
     public function pending_approval(Request $request)
     {
         // Get branch access info
-        $branch_access = session('branch_access', 0);
-        $user_branch_id = session('branch_id');
-        $selectedBranch = $request->get('branch_id', '');
-        $selectedType = $request->get('type', '');
-        
+        $branch_access   = session('branch_access', 0);
+        $user_branch_id  = session('branch_id');
+        $selectedBranch  = $request->get('branch_id', '');
+        $selectedType    = $request->get('type', '');
+
         // Get branches for filter dropdown
         $branches = DB::table('branch')->where('status', 1)->get();
-        
+
         // Types list
         $types = [
             'User Management' => [
@@ -53,7 +54,7 @@ class ApprovalController extends Controller
                 '603' => 'Expense Modification'
             ]
         ];
-        
+
         // Build query for pending approvals with branch and user information
         $query = DB::table('approval_request as ar')
             ->leftJoin('branch as b', 'ar.branch_id', '=', 'b.branch_id')
@@ -63,43 +64,45 @@ class ApprovalController extends Controller
                 'b.Name as branch_name',
                 'u.Full_Name as user_full_name'
             )
-            ->where('ar.status', 0); // Pending status
-            
-        // Apply branch filtering
-        // If not head office (-1), force filter to user's branch only
+            ->where('ar.status', 0); // Pending
+
+        // Branch filtering
         if ($user_branch_id != -1) {
-            // Non-head office users can only see their own branch data
+            // Non-head office: only own branch
             $query->where('ar.branch_id', $user_branch_id);
         } elseif (!empty($selectedBranch)) {
-            // Head office can filter by selected branch
+            // Head office: filter by selected branch
             $query->where('ar.branch_id', $selectedBranch);
         }
-        // If head office and no branch selected, show all branches
-        
-        // Apply type filtering
+
+        // Type filtering
         if (!empty($selectedType)) {
             $query->where('ar.typeid', $selectedType);
         }
-        
+
         $pendingApprovals = $query->orderBy('ar.data_time', 'desc')->get();
 
-        return view('pages.PendingApproval', compact('pendingApprovals', 'branches', 'branch_access', 'selectedBranch', 'selectedType', 'types'));
+        return view('pages.PendingApproval', compact(
+            'pendingApprovals',
+            'branches',
+            'branch_access',
+            'selectedBranch',
+            'selectedType',
+            'types'
+        ));
     }
 
     public function approved_history(Request $request)
     {
-        // Get branch access info
-        $branch_access = session('branch_access', 0);
-        $user_branch_id = session('branch_id');
-        $selectedBranch = $request->get('branch_id', '');
-        $selectedType = $request->get('type', '');
-        $dateFrom = $request->get('date_from', '');
-        $dateTo = $request->get('date_to', '');
-        
-        // Get branches for filter dropdown
+        $branch_access   = session('branch_access', 0);
+        $user_branch_id  = session('branch_id');
+        $selectedBranch  = $request->get('branch_id', '');
+        $selectedType    = $request->get('type', '');
+        $dateFrom        = $request->get('date_from', '');
+        $dateTo          = $request->get('date_to', '');
+
         $branches = DB::table('branch')->where('status', 1)->get();
-        
-        // Types list
+
         $types = [
             'User Management' => [
                 '101' => 'User Creation',
@@ -133,8 +136,7 @@ class ApprovalController extends Controller
                 '603' => 'Expense Modification'
             ]
         ];
-        
-        // Build query for approved requests
+
         $query = DB::table('approval_request as ar')
             ->leftJoin('branch as b', 'ar.branch_id', '=', 'b.branch_id')
             ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
@@ -145,51 +147,50 @@ class ApprovalController extends Controller
                 'u.Full_Name as user_full_name',
                 'au.Full_Name as approved_by_full_name'
             )
-            ->where('ar.status', 1); // Approved status
-            
-        // Apply branch filtering
-        // If not head office (-1), force filter to user's branch only
+            ->where('ar.status', 1); // Approved
+
         if ($user_branch_id != -1) {
-            // Non-head office users can only see their own branch data
             $query->where('ar.branch_id', $user_branch_id);
         } elseif (!empty($selectedBranch)) {
-            // Head office can filter by selected branch
             $query->where('ar.branch_id', $selectedBranch);
         }
-        // If head office and no branch selected, show all branches
-        
-        // Apply type filtering
+
         if (!empty($selectedType)) {
-            $query->where('ar.type', $selectedType);
+            $query->where('ar.typeid', $selectedType);
         }
-        
-        // Apply date filtering
+
         if (!empty($dateFrom)) {
             $query->whereDate('ar.approved_date_time', '>=', $dateFrom);
         }
         if (!empty($dateTo)) {
             $query->whereDate('ar.approved_date_time', '<=', $dateTo);
         }
-        
+
         $approvedHistory = $query->orderBy('ar.approved_date_time', 'desc')->get();
 
-        return view('pages.ApprovedHistory', compact('approvedHistory', 'branches', 'branch_access', 'selectedBranch', 'selectedType', 'dateFrom', 'dateTo', 'types'));
+        return view('pages.ApprovedHistory', compact(
+            'approvedHistory',
+            'branches',
+            'branch_access',
+            'selectedBranch',
+            'selectedType',
+            'dateFrom',
+            'dateTo',
+            'types'
+        ));
     }
 
     public function rejected_approval(Request $request)
     {
-        // Get branch access info
-        $branch_access = session('branch_access', 0);
-        $user_branch_id = session('branch_id');
-        $selectedBranch = $request->get('branch_id', '');
-        $selectedType = $request->get('type', '');
-        $dateFrom = $request->get('date_from', '');
-        $dateTo = $request->get('date_to', '');
-        
-        // Get branches for filter dropdown
+        $branch_access   = session('branch_access', 0);
+        $user_branch_id  = session('branch_id');
+        $selectedBranch  = $request->get('branch_id', '');
+        $selectedType    = $request->get('type', '');
+        $dateFrom        = $request->get('date_from', '');
+        $dateTo          = $request->get('date_to', '');
+
         $branches = DB::table('branch')->where('status', 1)->get();
-        
-        // Types list
+
         $types = [
             'User Management' => [
                 '101' => 'User Creation',
@@ -223,8 +224,7 @@ class ApprovalController extends Controller
                 '603' => 'Expense Modification'
             ]
         ];
-        
-        // Build query for rejected requests
+
         $query = DB::table('approval_request as ar')
             ->leftJoin('branch as b', 'ar.branch_id', '=', 'b.branch_id')
             ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
@@ -235,456 +235,481 @@ class ApprovalController extends Controller
                 'u.Full_Name as user_full_name',
                 'au.Full_Name as rejected_by_full_name'
             )
-            ->where('ar.status', 2); // Rejected status
-            
-        // Apply branch filtering
-        // If not head office (-1), force filter to user's branch only
+            ->where('ar.status', 2); // Rejected
+
         if ($user_branch_id != -1) {
-            // Non-head office users can only see their own branch data
             $query->where('ar.branch_id', $user_branch_id);
         } elseif (!empty($selectedBranch)) {
-            // Head office can filter by selected branch
             $query->where('ar.branch_id', $selectedBranch);
         }
-        // If head office and no branch selected, show all branches
-        
-        // Apply type filtering
+
         if (!empty($selectedType)) {
-            $query->where('ar.type', $selectedType);
+            $query->where('ar.typeid', $selectedType);
         }
-        
-        // Apply date filtering
+
         if (!empty($dateFrom)) {
             $query->whereDate('ar.approved_date_time', '>=', $dateFrom);
         }
         if (!empty($dateTo)) {
             $query->whereDate('ar.approved_date_time', '<=', $dateTo);
         }
-        
+
         $rejectedApprovals = $query->orderBy('ar.approved_date_time', 'desc')->get();
 
-        return view('pages.RejectedApproval', compact('rejectedApprovals', 'branches', 'branch_access', 'selectedBranch', 'selectedType', 'dateFrom', 'dateTo', 'types'));
+        return view('pages.RejectedApproval', compact(
+            'rejectedApprovals',
+            'branches',
+            'branch_access',
+            'selectedBranch',
+            'selectedType',
+            'dateFrom',
+            'dateTo',
+            'types'
+        ));
     }
 
     public function approve(Request $request)
     {
-        $id = $request->input('id');
-        $comment = $request->input('comment');
-        
+        $id      = $request->input('id');
+        $comment = trim($request->input('comment', ''));
+
         try {
-            // Get approval request
-            $approval = DB::table('approval_request')->where('id', $id)->first();
-            
-            // Handle User Creation (Type 101)
+            DB::beginTransaction();
+
+            // Lock the approval row for safety
+            $approval = DB::table('approval_request')
+                ->where('id', $id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$approval) {
+                throw new \Exception('Approval request not found.');
+            }
+
+            // -----------------------------------------------------------------
+            // TYPE 101: USER CREATION
+            // -----------------------------------------------------------------
             if ($approval->typeid == 101) {
                 $requestData = json_decode($approval->data, true);
-                $userData = $requestData['user_data'];
-                
+                $userData    = $requestData['user_data'];
+
                 // Create user
                 $user = User::create($userData);
-                
+
                 // Add branches
                 if (!empty($requestData['branches'])) {
                     foreach ($requestData['branches'] as $branch_id) {
                         DB::table('user_has_branches')->insert([
-                            'user_id' => $user->id,
-                            'branch_id' => $branch_id
+                            'user_id'   => $user->id,
+                            'branch_id' => (int)$branch_id,
                         ]);
                     }
                 }
-                
-                // Apply privileges - Find designation from user's branch
+
+                // Apply privileges from designation (branch-wise)
                 $designation_branch_id = $userData['branch_id'];
                 $designation = DB::table('designation')
                     ->where('branch_id', $designation_branch_id)
-                    ->where(function($query) use ($userData) {
-                        $query->where('name', $userData['Designation'])
-                              ->orWhere('idDesignation', $userData['Designation']);
+                    ->where(function ($q) use ($userData) {
+                        $q->where('name', $userData['Designation'])
+                            ->orWhere('idDesignation', $userData['Designation']);
                     })
                     ->first();
-                
+
                 if ($designation && $designation->privileges) {
                     $privileges = json_decode($designation->privileges, true);
                     if (is_array($privileges)) {
                         foreach ($privileges as $permissionKey => $value) {
                             DB::table('user_privileges_has_user')->updateOrInsert(
                                 ['user_id' => $user->id, 'permission_key' => $permissionKey],
-                                ['value' => $value]
+                                ['value'   => $value]
                             );
                         }
                     }
                 }
-                
+
                 // Create bank account
                 $Bank = [
-                    'Bank_Type' => "Collector",
-                    'code' => $user->id.'/Collector',
-                    'Bank_Name' => "Collector",
-                    'Account_Name' => $userData['Full_Name'],
-                    'Account_No' => $user->id,
-                    'Bank_Branch' => '-',
+                    'Bank_Type'       => "Collector",
+                    'code'            => $user->id . '/Collector',
+                    'Bank_Name'       => "Collector",
+                    'Account_Name'    => $userData['Full_Name'],
+                    'Account_No'      => $user->id,
+                    'Bank_Branch'     => '-',
                     'Account_Balance' => "0.00",
-                    'type' => "Cash and Bank",
-                    'cashflow' => "Non Applicable",
-                    'User' => $user->id,
-                    'branch_id' => $userData['branch_access'],
+                    'type'            => "Cash and Bank",
+                    'cashflow'        => "Non Applicable",
+                    'User'            => $user->id,
+                    'branch_id'       => $userData['branch_access'],
                 ];
-                
+
                 $insertedId = insertWithBranch('company_bank_accounts', $Bank);
-                
+
                 $bankLogData = [
                     'Bank_Account_Id' => $insertedId,
-                    'Date_Time' => date('Y-m-d H:i:s'),
-                    'Type' => "Account Creation",
-                    'Description' => "Collector Account",
-                    'Note' => "",
-                    'Credit' => "0.00",
-                    'Debit' => "0.00",
-                    'Balance' => "0.00",
-                    'User' => $user->id,
-                    'branch_id' => $userData['branch_access'],
+                    'Date_Time'       => date('Y-m-d H:i:s'),
+                    'Type'            => "Account Creation",
+                    'Description'     => "Collector Account",
+                    'Note'            => "",
+                    'Credit'          => "0.00",
+                    'Debit'           => "0.00",
+                    'Balance'         => "0.00",
+                    'User'            => $user->id,
+                    'branch_id'       => $userData['branch_access'],
                 ];
-                
+
                 insertWithBranch('company_bank_has_log', $bankLogData);
             }
-            
-            // Handle User Details Update (Type 102)
+
+            // -----------------------------------------------------------------
+            // TYPE 102: USER DETAILS UPDATE / STATUS CHANGE
+            // -----------------------------------------------------------------
             if ($approval->typeid == 102) {
                 $requestData = json_decode($approval->data, true);
-                
-                // Check if this is a status-only change or full update
+
+                // Status-only change
                 if (isset($requestData['new_data']) && isset($requestData['new_data']['Status'])) {
-                    // Status-only change (active/inactive toggle)
-                    $userId = $requestData['user_id'];
+                    $userId    = $requestData['user_id'];
                     $newStatus = $requestData['new_data']['Status'];
-                    
+
                     DB::table('user')
                         ->where('id', $userId)
                         ->update(['Status' => $newStatus]);
                 } else {
-                    // Full user detail update
-                    $updateData = $requestData['update_data'];
-                    $newBranches = $requestData['new_branches'];
+                    // Full details update
+                    $updateData      = $requestData['update_data'];
+                    $newBranches     = $requestData['new_branches'];
                     $branchesChanged = $requestData['branches_changed'];
-                    
+
                     $userId = $updateData['user_id'];
-                    
-                    // Update main user record
+
                     DB::table('user')
                         ->where('id', $userId)
                         ->update([
-                            'Epf_no' => $updateData['Epf_no'],
-                            'Designation' => $updateData['Designation'],
-                            'Nic' => $updateData['Nic'],
-                            'Full_Name' => $updateData['Full_Name'],
-                            'TP' => $updateData['TP'],
+                            'Epf_no'          => $updateData['Epf_no'],
+                            'Designation'     => $updateData['Designation'],
+                            'Nic'             => $updateData['Nic'],
+                            'Full_Name'       => $updateData['Full_Name'],
+                            'TP'              => $updateData['TP'],
                             'lending_officer' => $updateData['lending_officer'],
-                            'collector' => $updateData['collector'],
-                            'branch_id' => $updateData['branch_id'],
-                            'branch_access' => $updateData['branch_access'],
-                            'cashier' => $updateData['cashier'],
+                            'collector'       => $updateData['collector'],
+                            'branch_id'       => $updateData['branch_id'],
+                            'branch_access'   => $updateData['branch_access'],
+                            'cashier'         => $updateData['cashier'],
                         ]);
-                    
-                    // Sync branches if changed
+
                     if ($branchesChanged) {
-                        DB::table('user_has_branches')->where('user_id', $userId)->delete();
+                        DB::table('user_has_branches')
+                            ->where('user_id', $userId)
+                            ->delete();
+
                         foreach ($newBranches as $branch_id) {
                             DB::table('user_has_branches')->insert([
-                                'user_id' => $userId,
+                                'user_id'   => $userId,
                                 'branch_id' => (int)$branch_id,
                             ]);
                         }
                     }
                 }
             }
-            
-            // Handle User Privilege Change (Type 103)
+
+            // -----------------------------------------------------------------
+            // TYPE 103: USER PRIVILEGE CHANGE
+            // -----------------------------------------------------------------
             if ($approval->typeid == 103) {
                 $requestData = json_decode($approval->data, true);
-                $userId = $requestData['user_id'];
-                $privileges = $requestData['privileges'];
-                
+                $userId      = $requestData['user_id'];
+                $privileges  = $requestData['privileges'];
+
                 foreach ($privileges as $key => $value) {
                     DB::table('user_privileges_has_user')->updateOrInsert(
                         ['user_id' => $userId, 'permission_key' => $key],
-                        ['value' => $value]
+                        ['value'   => $value]
                     );
-                    
-                    // Update special fields in user table
-                    if ($key == "payment_delete") {
-                        DB::table('user')->where('id', $userId)->update([
-                            'payment_delete' => $value
-                        ]);
+
+                    if ($key === "payment_delete") {
+                        DB::table('user')->where('id', $userId)->update(['payment_delete' => $value]);
                     }
-                    
-                    if ($key == "branch_access") {
-                        DB::table('user')->where('id', $userId)->update([
-                            'branch_access' => $value
-                        ]);
+                    if ($key === "branch_access") {
+                        DB::table('user')->where('id', $userId)->update(['branch_access' => $value]);
                     }
-                    
-                    if ($key == "collector_access") {
-                        DB::table('user')->where('id', $userId)->update([
-                            'collector' => $value
-                        ]);
+                    if ($key === "collector_access") {
+                        DB::table('user')->where('id', $userId)->update(['collector' => $value]);
                     }
-                    
-                    if ($key == "cashier_access") {
-                        DB::table('user')->where('id', $userId)->update([
-                            'cashier' => $value
-                        ]);
+                    if ($key === "cashier_access") {
+                        DB::table('user')->where('id', $userId)->update(['cashier' => $value]);
                     }
                 }
             }
-            
-            // Handle Designation Privileges Update (Type 201)
+
+            // -----------------------------------------------------------------
+            // TYPE 201: DESIGNATION DETAILS / PRIVILEGES UPDATE
+            // -----------------------------------------------------------------
             if ($approval->typeid == 201) {
-                $requestData = json_decode($approval->data, true);
+                $requestData   = json_decode($approval->data, true);
                 $designationId = $requestData['designation_id'];
-                
-                // Check if this is a details update or privileges update
+
                 if (isset($requestData['update_type']) && $requestData['update_type'] === 'details') {
-                    // Update designation details (name, max amounts, etc.)
                     $newData = $requestData['new_data'];
                     DB::table('designation')
                         ->where('idDesignation', $designationId)
                         ->update([
-                            'name' => $newData['name'],
-                            'desi_level' => $newData['desi_level'],
-                            'loan_creat' => $newData['loan_creat'],
-                            'loan_issue' => $newData['loan_issue'],
+                            'name'              => $newData['name'],
+                            'desi_level'        => $newData['desi_level'],
+                            'loan_creat'        => $newData['loan_creat'],
+                            'loan_issue'        => $newData['loan_issue'],
                             'max_create_amount' => $newData['max_create_amount'],
-                            'max_issue_amount' => $newData['max_issue_amount'],
+                            'max_issue_amount'  => $newData['max_issue_amount'],
                         ]);
                 } else {
-                    // Update designation privileges
                     $privileges = $requestData['privileges'];
                     DB::table('designation')
                         ->where('idDesignation', $designationId)
                         ->update([
-                            'privileges' => json_encode($privileges)
+                            'privileges' => json_encode($privileges),
                         ]);
                 }
             }
-            
-            // Handle Customer Creation (Type 301)
+
+            // -----------------------------------------------------------------
+            // TYPE 301: CUSTOMER CREATION
+            // -----------------------------------------------------------------
             if ($approval->typeid == 301) {
-                $requestData = json_decode($approval->data, true);
+                $requestData  = json_decode($approval->data, true);
                 $customerData = $requestData['customer_data'];
-                
-                // Create customer using Eloquent model
+
+                // Safety: branch_id from approval
+                $branchId = $approval->branch_id;
+
+                // Prevent duplicates at approval time
+                $exists = DB::table('customer')
+                    ->where('branch_id', $branchId)
+                    ->where(function ($q) use ($customerData) {
+                        if (!empty($customerData['Nic'])) {
+                            $q->orWhere('Nic', $customerData['Nic']);
+                        }
+                        if (!empty($customerData['cus_number'])) {
+                            $q->orWhere('cus_number', $customerData['cus_number']);
+                        }
+                        if (!empty($customerData['Contact_No'])) {
+                            $q->orWhere('Contact_No', $customerData['Contact_No']);
+                        }
+                    })
+                    ->exists();
+
+                if ($exists) {
+                    throw new \Exception("Customer already exists in this branch. Approval aborted.");
+                }
+
+                // Create customer via model
                 $customer = new \App\Models\Customer();
                 foreach ($customerData as $key => $value) {
                     $customer->$key = $value;
                 }
-                
-                if ($customer->save()) {
-                    $customerId = $customer->id;
-                    
-                    // Create customer log FIRST (required by customer_number function)
-                    DB::table('customer_log')->insert([
-                        'customer_id' => $customerId,
-                        'customer_name' => $customerData['First_Name'] . ' ' . $customerData['Last_Name'],
-                        'date' => date('Y-m-d'),
-                        'time' => date('H:i:s'),
-                        'description' => 'Customer registration for ' . $customerData['First_Name'] . ' ' . $customerData['Last_Name'],
-                        'description_id' => $customerId,
-                        'comment' => ' ',
-                        'type' => 'Customer Registration',
-                        'user' => session('userid'),
-                        'branch_id' => $approval->branch_id,
-                    ]);
-                    
-                    // Generate customer number AFTER log creation
-                    customer_number($customerId);
-                    
-                    // Send SMS if template exists
-                    $sms_template = DB::table('sms_template')
-                        ->where('type', 'customer_registration')
-                        ->where('status', 1)
-                        ->where('branch_id', $approval->branch_id)
-                        ->first();
-                    
-                    if ($sms_template) {
-                        $customer_table = DB::table('customer')->where('idCustomer', $customerId)->first();
+
+                if (!$customer->save()) {
+                    throw new \Exception("Failed to save customer record.");
+                }
+
+                $customerId = $customer->idCustomer ?? $customer->id;
+
+                // Log BEFORE customer_number()
+                DB::table('customer_log')->insert([
+                    'customer_id'    => $customerId,
+                    'customer_name'  => ($customerData['First_Name'] ?? '') . ' ' . ($customerData['Last_Name'] ?? ''),
+                    'date'           => date('Y-m-d'),
+                    'time'           => date('H:i:s'),
+                    'description'    => 'Customer registration for ' . (($customerData['First_Name'] ?? '') . ' ' . ($customerData['Last_Name'] ?? '')),
+                    'description_id' => $customerId,
+                    'comment'        => ' ',
+                    'type'           => 'Customer Registration',
+                    'user'           => session('userid'),
+                    'branch_id'      => $branchId,
+                ]);
+
+                // Generate customer number
+                customer_number($customerId);
+
+                // Optional: SMS logic (kept from your code)
+                $sms_template = DB::table('sms_template')
+                    ->where('type', 'customer_registration')
+                    ->where('status', 1)
+                    ->where('branch_id', $branchId)
+                    ->first();
+
+                if ($sms_template) {
+                    $customer_table = DB::table('customer')->where('idCustomer', $customerId)->first();
+                    if ($customer_table) {
                         $placeholders = [
-                            '@Member_No@' => $customer_table->cus_number,
+                            '@Member_No@'   => $customer_table->cus_number,
                             '@Member_Name@' => $customer_table->First_Name . ' ' . $customer_table->Last_Name,
                         ];
-                        
+
                         $sms_text = $sms_template->template;
                         foreach ($placeholders as $placeholder => $value) {
                             $sms_text = str_replace($placeholder, $value, $sms_text);
                         }
-                        
-                        // Log SMS (assuming smsLogController exists)
+
+                        // SMS log call can be kept commented or used:
                         // $this->smsLogController->index($customerId, $sms_text, "Customer Registration");
                     }
                 }
             }
-            
-            // Handle Customer Details Update (Type 302)
+
+            // -----------------------------------------------------------------
+            // TYPE 302: CUSTOMER DETAILS UPDATE
+            // -----------------------------------------------------------------
             if ($approval->typeid == 302) {
                 $requestData = json_decode($approval->data, true);
-                $customerId = $requestData['customer_id'];
-                $newData = $requestData['new_data'];
-                
-                // Update customer with new data (direct DB update for reliability)
+                $customerId  = $requestData['customer_id'];
+                $newData     = $requestData['new_data'];
+
                 DB::table('customer')
                     ->where('idCustomer', $customerId)
                     ->where('branch_id', $approval->branch_id)
                     ->update($newData);
-                
-                // Regenerate customer number
+
                 customer_number($customerId);
-                
-                // Create customer log
+
                 DB::table('customer_log')->insert([
-                    'customer_id' => $customerId,
-                    'customer_name' => $newData['First_Name'] . ' ' . $newData['Last_Name'],
-                    'date' => date('Y-m-d'),
-                    'time' => date('H:i:s'),
-                    'description' => 'Customer Update',
+                    'customer_id'    => $customerId,
+                    'customer_name'  => ($newData['First_Name'] ?? '') . ' ' . ($newData['Last_Name'] ?? ''),
+                    'date'           => date('Y-m-d'),
+                    'time'           => date('H:i:s'),
+                    'description'    => 'Customer Update',
                     'description_id' => $customerId,
-                    'comment' => ' ',
-                    'type' => 'Customer Update',
-                    'user' => session('userid'),
-                    'branch_id' => $approval->branch_id,
+                    'comment'        => ' ',
+                    'type'           => 'Customer Update',
+                    'user'           => session('userid'),
+                    'branch_id'      => $approval->branch_id,
                 ]);
             }
-            
-            // Handle Customer Status Change (Type 304)
+
+            // -----------------------------------------------------------------
+            // TYPE 304: CUSTOMER STATUS CHANGE / BLACKLIST
+            // -----------------------------------------------------------------
             if ($approval->typeid == 304) {
-                $requestData = json_decode($approval->data, true);
-                $customerId = $requestData['customer_id'];
-                $newStatus = $requestData['new_status'];
-                $note = $requestData['note'];
-                $actionType = $requestData['action_type'];
-                $actionDescription = $requestData['action_description'];
-                
-                // Update customer status
+                $requestData     = json_decode($approval->data, true);
+                $customerId      = $requestData['customer_id'];
+                $newStatus       = $requestData['new_status'];
+                $note            = $requestData['note'];
+                $actionType      = $requestData['action_type'];
+                $actionDesc      = $requestData['action_description'];
+
                 DB::table('customer')
                     ->where('idCustomer', $customerId)
                     ->where('branch_id', $approval->branch_id)
                     ->update([
-                        'Status' => $newStatus,
-                        'Comment' => $note
+                        'Status'  => $newStatus,
+                        'Comment' => $note,
                     ]);
-                
-                // Get customer details for logging
+
                 $customer = DB::table('customer')
                     ->where('idCustomer', $customerId)
                     ->where('branch_id', $approval->branch_id)
                     ->first();
-                
-                // Create customer log
+
                 if ($customer) {
                     DB::table('customer_log')->insert([
-                        'customer_id' => $customerId,
-                        'customer_name' => $customer->First_Name . ' ' . $customer->Last_Name,
-                        'date' => date('Y-m-d'),
-                        'time' => date('H:i:s'),
-                        'description' => $note ?? $actionDescription,
+                        'customer_id'    => $customerId,
+                        'customer_name'  => $customer->First_Name . ' ' . $customer->Last_Name,
+                        'date'           => date('Y-m-d'),
+                        'time'           => date('H:i:s'),
+                        'description'    => $note ?: $actionDesc,
                         'description_id' => $customerId,
-                        'comment' => ' ',
-                        'type' => $actionType,
-                        'user' => session('userid'),
-                        'branch_id' => $approval->branch_id,
+                        'comment'        => ' ',
+                        'type'           => $actionType,
+                        'user'           => session('userid'),
+                        'branch_id'      => $approval->branch_id,
                     ]);
                 }
             }
-            
-            // Handle Customer Document Upload/Delete (Type 305)
+
+            // -----------------------------------------------------------------
+            // TYPE 305: CUSTOMER DOCUMENT UPLOAD / DELETE
+            // -----------------------------------------------------------------
             if ($approval->typeid == 305) {
                 $requestData = json_decode($approval->data, true);
-                
-                // Check if this is a delete or upload request
+
+                // Delete
                 if (isset($requestData['document_id'])) {
-                    // Document Delete
                     $documentId = $requestData['document_id'];
+
                     DB::table('customer_documents')
                         ->where('idCustomer_Documents', $documentId)
                         ->where('branch_id', $approval->branch_id)
                         ->delete();
-                } else if (isset($requestData['document_path'])) {
-                    // Document Upload
-                    $customerId = $requestData['customer_id'];
-                    $description = $requestData['description'];
+
+                    // Upload
+                } elseif (isset($requestData['document_path'])) {
+                    $customerId   = $requestData['customer_id'];
+                    $description  = $requestData['description'];
                     $documentPath = $requestData['document_path'];
-                    
+
                     DB::table('customer_documents')->insert([
                         'Customer_idCustomer' => $customerId,
-                        'Description' => $description,
-                        'Path' => $documentPath,
-                        'branch_id' => $approval->branch_id,
+                        'Description'         => $description,
+                        'Path'                => $documentPath,
+                        'branch_id'           => $approval->branch_id,
                     ]);
                 }
             }
-            
-            // Handle Loan Approval (Type 401)
+
+            // -----------------------------------------------------------------
+            // TYPE 401: LOAN APPROVAL (HO)  (Status: -3 -> -1)
+            // -----------------------------------------------------------------
             if ($approval->typeid == 401) {
                 $requestData = json_decode($approval->data, true);
-                $loan_id = $requestData['loan_id'];
-                
+                $loan_id     = $requestData['loan_id'];
+
                 DB::table('customer_loan')
                     ->where('idCustomer_Loan', $loan_id)
                     ->where('branch_id', $approval->branch_id)
                     ->update(['Status' => '-1']);
             }
-            
-            // Handle Loan Approval (Type 401)
-            if ($approval->typeid == 401) {
-                $requestData = json_decode($approval->data, true);
-                $loan_id = $requestData['loan_id'];
-                
-                // Update loan status from -3 (pending HO approval) to -1 (pending disbursement)
-                DB::table('customer_loan')
-                    ->where('idCustomer_Loan', $loan_id)
-                    ->where('branch_id', $approval->branch_id)
-                    ->update(['Status' => '-1']);
-            }
-            
-            // Handle Loan Rejection (Type 402)
+
+            // -----------------------------------------------------------------
+            // TYPE 402: LOAN REJECTION
+            // -----------------------------------------------------------------
             if ($approval->typeid == 402) {
                 $requestData = json_decode($approval->data, true);
-                $loan_id = $requestData['loan_id'];
-                $reason = $requestData['reason'];
+                $loan_id     = $requestData['loan_id'];
+                $reason      = $requestData['reason'];
                 $customer_id = $requestData['customer_id'];
-                
-                // Update loan status to rejected
+
                 DB::table('customer_loan')
                     ->where('idCustomer_Loan', $loan_id)
                     ->where('branch_id', $approval->branch_id)
                     ->update(['Status' => '-2', 'reason' => $reason]);
-                
-                // Log to customer log
+
                 $customer = DB::table('customer')
                     ->where('idCustomer', $customer_id)
                     ->where('branch_id', $approval->branch_id)
                     ->first();
-                
+
                 $logData = [
-                    'customer_id' => $customer_id,
-                    'customer_name' => ($customer->First_Name ?? '') . ' ' . ($customer->Last_Name ?? ''),
-                    'date' => date('Y-m-d'),
-                    'time' => date('H:i:s'),
-                    'description' => "Delete Loan ({$loan_id})\nReason : {$reason}",
+                    'customer_id'    => $customer_id,
+                    'customer_name'  => ($customer->First_Name ?? '') . ' ' . ($customer->Last_Name ?? ''),
+                    'date'           => date('Y-m-d'),
+                    'time'           => date('H:i:s'),
+                    'description'    => "Delete Loan ({$loan_id})\nReason : {$reason}",
                     'description_id' => $loan_id,
-                    'comment' => ' ',
-                    'type' => 'Delete Loan',
-                    'user' => session('userid'),
+                    'comment'        => ' ',
+                    'type'           => 'Delete Loan',
+                    'user'           => session('userid'),
                 ];
-                
+
                 insertWithBranch('customer_log', $logData);
             }
-            
-            // Handle Loan Installment Modification (Type 403)
+
+            // -----------------------------------------------------------------
+            // TYPE 403: LOAN INSTALLMENT MODIFICATION
+            // -----------------------------------------------------------------
             if ($approval->typeid == 403) {
-                $requestData = json_decode($approval->data, true);
-                $loanId = $requestData['loan_id'];
+                $requestData  = json_decode($approval->data, true);
+                $loanId       = $requestData['loan_id'];
                 $installments = $requestData['installments'];
-                
-                // Update each installment
+
                 foreach ($installments as $installment) {
                     DB::table('installments')
                         ->where('Customer_Loan_idCustomer_Loan', $loanId)
@@ -692,139 +717,236 @@ class ApprovalController extends Controller
                         ->where('branch_id', $approval->branch_id)
                         ->update([
                             'Installment_Date' => $installment['installment_date'],
-                            'Panelty_date' => $installment['penalty_date'],
+                            'Panelty_date'     => $installment['penalty_date'],
                         ]);
                 }
             }
-            
-            // Handle Expense Delete (Type 603)
+
+            // -----------------------------------------------------------------
+            // TYPE 603: EXPENSE DELETE
+            // -----------------------------------------------------------------
             if ($approval->typeid == 603) {
                 $requestData = json_decode($approval->data, true);
-                $expenseId = $requestData['expense_id'];
+                $expenseId   = $requestData['expense_id'];
                 $expenseData = $requestData['expense_data'];
-                $bankIdData = $requestData['bank_id_data'];
-                
-                // Re-fetch to ensure data is current
+                $bankIdData  = $requestData['bank_id_data'];
+
                 $last_expenses = DB::table('expences')
                     ->where('id', $expenseId)
                     ->where('branch_id', $approval->branch_id)
                     ->first();
-                
+
                 if ($last_expenses) {
                     $bank_id = DB::table('company_bank_accounts')
                         ->where('acc_type_group', 'Expenses')
                         ->where('Idbank', $last_expenses->category_id)
                         ->first();
-                    
+
                     if ($bank_id) {
                         $reason = 'Delete Expense : (' . $last_expenses->reason . ')';
-                        
-                        // Create bank logs for deletion
+
                         DB::table('bank_log')->insert([
-                            'bank_id' => $last_expenses->bank_id,
-                            'type' => 'Expenses',
-                            'reason' => $reason,
-                            'cheque_no' => '-',
-                            'date_time' => now(),
-                            'debit_credit' => 'debit',
-                            'amount' => $last_expenses->amount,
+                            'bank_id'       => $last_expenses->bank_id,
+                            'type'          => 'Expenses',
+                            'reason'        => $reason,
+                            'cheque_no'     => '-',
+                            'date_time'     => now(),
+                            'debit_credit'  => 'debit',
+                            'amount'        => $last_expenses->amount,
                             'other_bank_id' => $bank_id->Idbank,
-                            'user_id' => session('userid'),
-                            'branch_id' => $approval->branch_id,
+                            'user_id'       => session('userid'),
+                            'branch_id'     => $approval->branch_id,
                         ]);
-                        
+
                         DB::table('bank_log')->insert([
-                            'bank_id' => $bank_id->Idbank,
-                            'type' => 'Expenses',
-                            'reason' => $reason,
-                            'cheque_no' => '-',
-                            'date_time' => now(),
-                            'debit_credit' => 'credit',
-                            'amount' => $last_expenses->amount,
+                            'bank_id'       => $bank_id->Idbank,
+                            'type'          => 'Expenses',
+                            'reason'        => $reason,
+                            'cheque_no'     => '-',
+                            'date_time'     => now(),
+                            'debit_credit'  => 'credit',
+                            'amount'        => $last_expenses->amount,
                             'other_bank_id' => $last_expenses->bank_id,
-                            'user_id' => session('userid'),
-                            'branch_id' => $approval->branch_id,
+                            'user_id'       => session('userid'),
+                            'branch_id'     => $approval->branch_id,
                         ]);
                     }
-                    
-                    // Delete the expense
+
                     DB::table('expences')
                         ->where('id', $expenseId)
                         ->where('branch_id', $approval->branch_id)
                         ->delete();
                 }
             }
-            
-            // Update approval status
+
+            // -----------------------------------------------------------------
+            // FINAL: UPDATE APPROVAL REQUEST AS APPROVED
+            // -----------------------------------------------------------------
             DB::table('approval_request')
                 ->where('id', $id)
                 ->update([
-                    'status' => 1, // Approved
-                    'approveduserid' => session('userid'),
+                    'status'             => 1,
+                    'approveduserid'     => session('userid'),
                     'approved_date_time' => now(),
-                    'comment' => $comment
+                    'comment'            => $comment,
                 ]);
 
-            return response()->json(['success' => true, 'message' => 'Request approved successfully!']);
+            // -----------------------------------------------------------------
+            // NEW: BRANCH NOTIFICATION FOR APPROVED REQUEST
+            // -----------------------------------------------------------------
+            // Only create notification if approval has a valid branch
+            if (!is_null($approval->branch_id)) {
+                $typeText = $approval->type ? $approval->type : ('Type ' . $approval->typeid);
+
+                DB::table('approval_notifications')->insert([
+                    'approval_id' => $approval->id,
+                    'branch_id'   => $approval->branch_id,
+                    'type'        => $approval->type,
+                    'typeid'      => $approval->typeid,
+                    'status'      => 1, // 1 = Approved
+                    'title'       => 'Approval Request Approved',
+                    'message'     => 'Your request for ' . $typeText . ' has been approved.',
+                    'is_read'     => 0,
+                    'created_at'  => now(),
+                    'updated_at'  => now(),
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Request approved successfully!',
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error approving request: ' . $e->getMessage()]);
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error approving request: ' . $e->getMessage(),
+            ]);
         }
     }
 
+
     public function reject(Request $request)
     {
-        $id = $request->input('id');
+        $id     = $request->input('id');
         $reason = $request->input('reason');
-        
+
         try {
             $approval = DB::table('approval_request')->where('id', $id)->first();
-            
-            // Handle Loan Approval Rejection (Type 401)
+
+            if (!$approval) {
+                return response()->json(['success' => false, 'message' => 'Approval request not found.']);
+            }
+
+            // Loan approval rejection (Type 401) -> set loan as rejected
             if ($approval->typeid == 401) {
                 $requestData = json_decode($approval->data, true);
-                $loan_id = $requestData['loan_id'];
-                
+                $loan_id     = $requestData['loan_id'];
+
                 DB::table('customer_loan')
                     ->where('idCustomer_Loan', $loan_id)
                     ->where('branch_id', $approval->branch_id)
                     ->update(['Status' => '-2']);
             }
-            
+
             DB::table('approval_request')
                 ->where('id', $id)
                 ->update([
-                    'status' => 2, // Rejected
-                    'approveduserid' => session('userid'),
+                    'status'             => 2,
+                    'approveduserid'     => session('userid'),
                     'approved_date_time' => now(),
-                    'comment' => $reason
+                    'comment'            => $reason,
                 ]);
 
-            return response()->json(['success' => true, 'message' => 'Request rejected successfully!']);
+            // -------------------------------------------------------------
+            // NEW: BRANCH NOTIFICATION FOR REJECTED REQUEST
+            // -------------------------------------------------------------
+            if (!is_null($approval->branch_id)) {
+                $typeText = $approval->type ? $approval->type : ('Type ' . $approval->typeid);
+
+                DB::table('approval_notifications')->insert([
+                    'approval_id' => $approval->id,
+                    'branch_id'   => $approval->branch_id,
+                    'type'        => $approval->type,
+                    'typeid'      => $approval->typeid,
+                    'status'      => 2, // 2 = Rejected
+                    'title'       => 'Approval Request Rejected',
+                    'message'     => 'Your request for ' . $typeText . ' has been rejected. Reason: ' . $reason,
+                    'is_read'     => 0,
+                    'created_at'  => now(),
+                    'updated_at'  => now(),
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Request rejected successfully!',
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error rejecting request: ' . $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error rejecting request: ' . $e->getMessage(),
+            ]);
         }
     }
+
+
 
     public function callback(Request $request)
     {
-        $id = $request->input('id');
+        $id      = $request->input('id');
         $comment = $request->input('comment');
-        
+
         try {
+            $approval = DB::table('approval_request')->where('id', $id)->first();
+
+            if (!$approval) {
+                return response()->json(['success' => false, 'message' => 'Approval request not found.']);
+            }
+
             DB::table('approval_request')
                 ->where('id', $id)
                 ->update([
-                    'status' => -1, // Callback
-                    'approveduserid' => session('userid'),
+                    'status'             => -1,
+                    'approveduserid'     => session('userid'),
                     'approved_date_time' => now(),
-                    'comment' => $comment
+                    'comment'            => $comment,
                 ]);
 
-            return response()->json(['success' => true, 'message' => 'Callback request sent successfully!']);
+            // -------------------------------------------------------------
+            // NEW: BRANCH NOTIFICATION FOR CALLBACK
+            // -------------------------------------------------------------
+            if (!is_null($approval->branch_id)) {
+                $typeText = $approval->type ? $approval->type : ('Type ' . $approval->typeid);
+
+                DB::table('approval_notifications')->insert([
+                    'approval_id' => $approval->id,
+                    'branch_id'   => $approval->branch_id,
+                    'type'        => $approval->type,
+                    'typeid'      => $approval->typeid,
+                    'status'      => 3, // 3 = Callback
+                    'title'       => 'Approval Request Sent for Callback',
+                    'message'     => 'Your request for ' . $typeText . ' was sent back with comments: ' . $comment,
+                    'is_read'     => 0,
+                    'created_at'  => now(),
+                    'updated_at'  => now(),
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Callback request sent successfully!',
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error processing callback: ' . $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error processing callback: ' . $e->getMessage(),
+            ]);
         }
     }
+
 
     public function getLoanDetails($approvalId)
     {
@@ -2157,4 +2279,98 @@ class ApprovalController extends Controller
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
         }
     }
+
+    /**
+     * HEAD OFFICE – new PENDING approvals from all branches
+     */
+    public function notifications(Request $request)
+    {
+        // Only HO can use this
+        if (session('branch_id') != -1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authorized.',
+            ]);
+        }
+
+        $sinceId = (int) $request->get('since_id', 0);
+        $init    = (bool) $request->get('init', false);
+
+        $lastPendingId = DB::table('approval_request')
+            ->where('status', 0)
+            ->max('id') ?? 0;
+
+        // First sync – no popup
+        if ($init) {
+            return response()->json([
+                'success'   => true,
+                'init'      => true,
+                'last_id'   => $lastPendingId,
+                'approvals' => [],
+            ]);
+        }
+
+        $query = DB::table('approval_request as ar')
+            ->leftJoin('branch as b', 'ar.branch_id', '=', 'b.branch_id')
+            ->select(
+                'ar.id',
+                'ar.type',
+                'ar.typeid',
+                'ar.data_time',
+                'b.Name as branch_name'
+            )
+            ->where('ar.status', 0);
+
+        if ($sinceId > 0) {
+            $query->where('ar.id', '>', $sinceId);
+        }
+
+        $approvals = $query
+            ->orderBy('ar.id', 'asc')
+            ->limit(20)
+            ->get();
+
+        return response()->json([
+            'success'   => true,
+            'init'      => false,
+            'last_id'   => $lastPendingId,
+            'approvals' => $approvals,
+        ]);
+    }
+
+    /**
+     * BRANCH – notifications when their own requests are
+     * Approved / Rejected / Callback (status != 0)
+     */
+    public function branchNotifications(Request $request)
+    {
+        $branchId = session('branch_id');
+
+        // Only branches (not HO)
+        if (!$branchId || $branchId == -1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authorized.',
+            ]);
+        }
+
+        $items = DB::table('approval_notifications')
+            ->where('branch_id', $branchId)
+            ->where('is_read', 0)
+            ->orderBy('id', 'asc')
+            ->limit(20)
+            ->get();
+
+        if ($items->count() > 0) {
+            DB::table('approval_notifications')
+                ->whereIn('id', $items->pluck('id'))
+                ->update(['is_read' => 1, 'updated_at' => now()]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'items'   => $items,
+        ]);
+    }
+
 }

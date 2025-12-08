@@ -163,6 +163,7 @@
                                         <th>Capital Received</th>
                                         <th>Interest Received</th>
                                         <th>Penalty Received</th>
+                                        <th>Other Charges Amount</th>
                                         {{--                                    <th>Balance</th>--}}
                                         {{--                                    <th>Capital Balance</th>--}}
                                         {{--                                    <th>Interest Balance</th>--}}
@@ -329,6 +330,7 @@
             let total_capital_received = 0;
             let total_interest_received = 0;
             let total_penalty_received = 0;
+            let total_other_charges = 0;
             let total_processing_fee = 0;
 
             responseData.data.forEach(row => {
@@ -343,6 +345,7 @@
                 total_capital_received += parseFloat(row.capital_received);
                 total_interest_received += parseFloat(row.interest_received);
                 total_penalty_received += parseFloat(row.penalty_received);
+                total_other_charges += parseFloat(row.other_charges_amount || 0);
                 total_processing_fee += parseFloat(row.processing_fee_received);
 
                 // Add Main Row with Branch, Route, and Center
@@ -360,6 +363,7 @@
 <td>${parseFloat(row.capital_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 <td>${parseFloat(row.interest_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 <td>${parseFloat(row.penalty_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${parseFloat(row.other_charges_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 <td>${parseFloat(row.processing_fee_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
         </tr>`;
 
@@ -380,6 +384,7 @@
 <td>${parseFloat(loan.capital_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 <td>${parseFloat(loan.interest_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 <td>${parseFloat(loan.penalty_received).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td>${loan.other_charges_amount ? parseFloat(loan.other_charges_amount).toFixed(2) : "0.00"}</td>
                     <td>${loan.processing_fee_received ? parseFloat(loan.processing_fee_received).toFixed(2) : "0.00"}</td>
                 </tr>`;
 
@@ -401,6 +406,7 @@
 <td>${total_capital_received.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 <td>${total_interest_received.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 <td>${total_penalty_received.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+<td>${total_other_charges.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 <td>${total_processing_fee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
     </tr>`;
 
@@ -410,4 +416,3 @@
 
     </script>
 @endsection
-

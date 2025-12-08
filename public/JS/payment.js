@@ -110,7 +110,7 @@ function load_table(page = 1) {
                             <a href="/invoice/${item.idCustomer_Loan}" target="_blank" class="btn btn-danger"><i class="bi bi-file-earmark-text"></i></a>
                             ${agreementButton} 
                             ${extra_chargeButton} 
-                            ${deleteButton}
+                       
                         </td>
                     </tr>
                 `);

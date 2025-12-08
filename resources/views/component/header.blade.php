@@ -694,6 +694,7 @@ $banner = DB::select($query);
                                     </a>
                                 </li>
                             @endforeach
+
                         </ul>
 
                     </div>
@@ -733,6 +734,20 @@ $banner = DB::select($query);
             @endif
         </div>
         <ul class="topbar-menu d-flex align-items-center gap-3">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('approval.pending') }}">
+                    <i class="ri-notification-3-line"></i>
+                    <span>Approvals</span>
+
+                    {{-- Badge only for Head Office --}}
+                    @if(session('branch_id') == -1)
+                        <span id="approvalBadge"
+                              class="badge bg-danger ms-1"
+                              style="display:none; min-width:20px;">0</span>
+                    @endif
+                </a>
+            </li>
+
             <li class="d-none d-sm-inline-block">
                 <div class="nav-link" id="light-dark-mode">
                     <i class="ri-moon-line fs-22"></i>
@@ -779,13 +794,15 @@ $banner = DB::select($query);
                                 <span>My Account</span>
                             </a>
                         @endif
-
-                            @if(optional($privilege)->settings == 1)
-                                <a href="/setting" class="dropdown-item">
-                                    <i class="ri-settings-4-line fs-18 align-middle me-1"></i>
-                                    <span>Settings</span>
-                                </a>
+                            @if(session('branch_id') == -1)
+                                @if(optional($privilege)->settings == 1)
+                                    <a href="/setting" class="dropdown-item">
+                                        <i class="ri-settings-4-line fs-18 align-middle me-1"></i>
+                                        <span>Settings</span>
+                                    </a>
+                                @endif
                             @endif
+
 
                             @if(optional($privilege)->sms_format == 1)
 
@@ -826,13 +843,15 @@ $banner = DB::select($query);
                                     <span>Company Holidays</span>
                                 </a>
                             @endif
-
-                            @if(optional($privilege)->branches == 1)
-                                <a href="/branch" class="dropdown-item">
-                                    <i class="ri-building-2-fill fs-18 align-middle me-1"></i>
-                                    <span>Branches</span>
-                                </a>
+                            @if(session('branch_id') == -1)
+                                @if(optional($privilege)->branches == 1)
+                                    <a href="/branch" class="dropdown-item">
+                                        <i class="ri-building-2-fill fs-18 align-middle me-1"></i>
+                                        <span>Branches</span>
+                                    </a>
+                                @endif
                             @endif
+
                             <!-- item-->
                             <a href="#" class="dropdown-item">
                                 <i class="ri-customer-service-2-line fs-18 align-middle me-1"></i>
@@ -963,6 +982,8 @@ $banner = DB::select($query);
                                     @if(optional($privilege)->kyc == 1)
                                         <li><a href="/kyc">KYC</a></li>
                                     @endif
+
+
                                 </ul>
                             </div>
                         </li>
@@ -1130,6 +1151,11 @@ $banner = DB::select($query);
                                         </li>
                                     @endif
 
+                                        <li>
+                                            <a href="{{ route('customers.map') }}">
+                                                <span> Customer Map </span>
+                                            </a>
+                                        </li>
                                 </ul>
                             </div>
 
@@ -1256,11 +1282,7 @@ $banner = DB::select($query);
                                                 <a href="/penalty-deduction">Panelty Deduction</a>
                                             </li>
                                         @endif
-                                        @if(optional($privilege)->current_loan_delete == 1)
-                                                <li>
-                                                    <a href="loan_delete_requests">Delete Loans Approval</a>
-                                                </li>
-                                            @endif
+
 
                                         @if(optional($privilege)->settled_loans == 1)
                                             <li>
@@ -1557,6 +1579,10 @@ $banner = DB::select($query);
                                                             <a href="/arrears">Arrears Report Executive Summary</a>
                                                         </li>
 
+                                                        <li>
+                                                            <a href="/report/penalty-deduction">Penalty Deduction Report</a>
+                                                        </li>
+
 
                                                 </ul>
                                             </div>
@@ -1779,6 +1805,9 @@ $banner = DB::select($query);
                             <li><a href="/pending_approval">Pending Approval</a></li>
                             <li><a href="/approved_history">Approved History</a></li>
                             <li><a href="/rejected_approval">Rejected Approval</a></li>
+                            <li>
+                                <a href="loan_delete_requests">Delete Loans Approval</a>
+                            </li>
                         </ul>
                     </div>
                 </li>

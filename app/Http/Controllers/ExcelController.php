@@ -1195,15 +1195,13 @@ class ExcelController extends Controller
     {
         $row = $request->input('row'); // full excel row array
 
-        // ---- basic validation for loan number column ----
-        // loan number is in 2nd column (index 1)
+        // ---- keep your index: loan number is at $row[2]
         if (!isset($row[2]) || trim((string)$row[2]) === '') {
             return response()->json(['message' => 'Invalid data: Loan number missing'], 400);
         }
 
         $loan_number = trim((string)$row[2]);
 
-        // find loan by loan_no + branch scope
         $loan = tableWithBranch('customer_loan')
             ->where('Loan_No', $loan_number)
             ->first();
@@ -1213,41 +1211,25 @@ class ExcelController extends Controller
             return response()->json(['message' => 'Loan not found: ' . $loan_number], 404);
         }
 
-        // -------------------------------------------------
-        // helper: convert any Excel-style date cell to Y-m-d
-        // -------------------------------------------------
+        // helper: convert Excel date to Y-m-d (unchanged behavior)
         $normalizeDate = function ($excelDate) {
-            if ($excelDate === null) {
-                return null;
-            }
+            if ($excelDate === null) return null;
 
             $excelDateStr = trim((string)$excelDate);
-            if ($excelDateStr === '') {
-                return null;
-            }
+            if ($excelDateStr === '') return null;
 
-            // Case 1: numeric serial (e.g. 45678)
             if (is_numeric($excelDate)) {
-                // Excel serial: 25569 = 1970-01-01
-                $ts = ((float)$excelDate - 25569) * 86400;
+                $ts = ((float)$excelDate - 25569) * 86400; // Excel serial to epoch
                 return gmdate('Y-m-d', $ts);
             }
 
-            // Case 2: explicit formats
             try {
-                // Already Y-m-d?
                 $parsed = DateTime::createFromFormat('Y-m-d', $excelDateStr);
-                if ($parsed && $parsed->format('Y-m-d') === $excelDateStr) {
-                    return $excelDateStr;
-                }
+                if ($parsed && $parsed->format('Y-m-d') === $excelDateStr) return $excelDateStr;
 
-                // Try n/j/Y type (e.g. 8/3/2025 or 08/03/2025)
                 $parsed = DateTime::createFromFormat('n/j/Y', $excelDateStr);
-                if ($parsed) {
-                    return $parsed->format('Y-m-d');
-                }
+                if ($parsed) return $parsed->format('Y-m-d');
 
-                // Fallback general parse
                 $parsed = new DateTime($excelDateStr);
                 return $parsed->format('Y-m-d');
             } catch (Exception $e) {
@@ -1258,67 +1240,93 @@ class ExcelController extends Controller
         $messages = [];
         $saving_amount = '0';
 
-        /*
-            Layout we are reading:
-            index 5  -> payment 1 date
-            index 6  -> payment 1 amount
-            index 7  -> payment 2 date
-            index 8  -> payment 2 amount
-            index 9  -> payment 3 date
-            index 10 -> payment 3 amount
-            ...
-            So from 5 onward: (date, amount) pairs in steps of 2
-        */
-        for ($i = 5; $i < count($row); $i += 2) {
+        // NEW: prevent duplicates within THIS SINGLE EXCEL ROW
+        $seen = []; // key: "Y-m-d|amount(2dp)"
 
-            $rawDate   = $row[$i]   ?? null;
-            $rawAmount = $row[$i+1] ?? null;
+        DB::beginTransaction();
+        try {
+            /*
+                KEEPING YOUR INDEXES:
+                index 5  -> payment 1 date
+                index 6  -> payment 1 amount
+                index 7  -> payment 2 date
+                index 8  -> payment 2 amount
+                ...
+            */
+            for ($i = 5; $i < count($row); $i += 2) {
+                $rawDate   = $row[$i]   ?? null;
+                $rawAmount = $row[$i+1] ?? null;
 
-            $date   = $normalizeDate($rawDate);
-            $amount = is_numeric($rawAmount) ? (float)$rawAmount : 0;
+                $date   = $normalizeDate($rawDate);
+                $amount = is_numeric($rawAmount) ? (float)$rawAmount : 0;
 
-            // skip invalid amount
-            if ($amount <= 0) {
-                $messages[] = "Skipped: zero/negative amount at columns [$i,$i+1] for loan {$loan_number}";
-                continue;
+                if ($amount <= 0) {
+                    $messages[] = "Skipped: zero/negative amount at columns [$i,$i+1] for loan {$loan_number}";
+                    continue;
+                }
+                if (!$date) {
+                    $messages[] = "Skipped: invalid date '{$rawDate}' at column [$i] for loan {$loan_number}";
+                    continue;
+                }
+
+                // de-dup within the same row
+                $key = $date . '|' . number_format($amount, 2, '.', '');
+                if (isset($seen[$key])) {
+                    $messages[] = "Skipped duplicate in row: Rs.$amount on $date for loan {$loan_number}";
+                    continue;
+                }
+                $seen[$key] = true;
+
+                // skip if same payment already exists in DB
+                $exists = DB::table('customer_payments')
+                    ->where('Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
+                    ->whereDate('Date', $date)              // adjust if your column is different
+                    ->whereBetween('Amount', [$amount - 0.01, $amount + 0.01]) // float tolerance
+                    ->exists();
+
+                if ($exists) {
+                    $messages[] = "Skipped existing payment: Rs.$amount on $date for loan {$loan_number}";
+                    continue;
+                }
+
+                // your original payload (unchanged)
+                $paymentData = [
+                    'cus_id'                => $loan->Customer_idCustomer,
+                    'payment_amount'        => $amount,
+                    'saving_amount'         => $saving_amount,
+                    'file'                  => '-',
+                    'loan_id'               => $loan->idCustomer_Loan,
+                    'payment_date'          => $date,
+                    'payment_type'          => 'Cash',
+                    'bank_account_company'  => '1',
+                    'cheque_issue_bank'     => '1',
+                    'name_on_cheque'        => '',
+                    'chq_number'            => '',
+                    'chq_date'              => '',
+                    'chq_type'              => 'Crossed',
+                ];
+
+                try {
+                    app(TodayPaymentController::class)->store(new Request($paymentData));
+                    $messages[] = "Saved payment Rs.$amount on $date for loan {$loan_number}";
+                } catch (Exception $e) {
+                    Log::error("Payment insert failed for loan {$loan_number}: " . $e->getMessage());
+                    $messages[] = "Error saving payment Rs.$amount on $date for loan {$loan_number}";
+                }
             }
 
-            // skip invalid date
-            if (!$date) {
-                $messages[] = "Skipped: invalid date '{$rawDate}' at column [$i] for loan {$loan_number}";
-                continue;
+            if (empty($messages)) {
+                $messages[] = "No payment columns found for loan {$loan_number}";
             }
 
-            // Build the payload expected by TodayPaymentController@store
-            $paymentData = [
-                'cus_id'                => $loan->Customer_idCustomer,
-                'payment_amount'        => $amount,
-                'saving_amount'         => $saving_amount,
-                'file'                  => '-',
-                'loan_id'               => $loan->idCustomer_Loan,
-                'payment_date'          => $date,
-                'payment_type'          => 'Cash',
-                'bank_account_company'  => '1',
-                'cheque_issue_bank'     => '1',
-                'name_on_cheque'        => '',
-                'chq_number'            => '',
-                'chq_date'              => '',
-                'chq_type'              => 'Crossed',
-            ];
-
-            try {
-                $paymentController = app(TodayPaymentController::class);
-                $paymentController->store(new Request($paymentData));
-
-                $messages[] = "Saved payment Rs.$amount on $date for loan {$loan_number}";
-            } catch (Exception $e) {
-                Log::error("Payment insert failed for loan {$loan_number}: " . $e->getMessage());
-                $messages[] = "Error saving payment Rs.$amount on $date for loan {$loan_number}";
-            }
-        }
-
-        if (empty($messages)) {
-            $messages[] = "No payment columns found for loan {$loan_number}";
+            DB::commit();
+        } catch (\Throwable $t) {
+            DB::rollBack();
+            Log::error("Row import failed for loan {$loan_number}: " . $t->getMessage());
+            return response()->json([
+                'loan'    => $loan_number,
+                'results' => ['Unexpected error while processing this row. Nothing was saved.'],
+            ], 500);
         }
 
         return response()->json([
@@ -1326,6 +1334,8 @@ class ExcelController extends Controller
             'results' => $messages,
         ]);
     }
+
+
 
     function convertExcelDate($excelDate)
     {

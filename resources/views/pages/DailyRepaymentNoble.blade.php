@@ -160,13 +160,17 @@
                             <form action="{{ route('transaction.daily_repayment_sheet_filter_hm') }}" method="POST">
                                 @csrf
                                 <div class="row">
+                                    {{-- 🔹 Center Filter (with "All Centers") --}}
                                     <div class="col-lg-3">
                                         <div class="mb-3">
                                             <label for="center_details" class="form-label">Center</label>
                                             <select class="form-control select2" id="center_details" name="center_details">
+                                                <option value="0" {{ ($center_details ?? '0') == '0' ? 'selected' : '' }}>
+                                                    All Centers
+                                                </option>
                                                 @foreach ($center as $item)
                                                     <option value="{{ $item->idCenter }}"
-                                                            {{ $item->idCenter == $center_details ? 'selected' : '' }}>
+                                                            {{ ($item->idCenter == ($center_details ?? '0')) ? 'selected' : '' }}>
                                                         {{ $item->Name }}-{{ $item->Route }}
                                                     </option>
                                                 @endforeach
@@ -174,22 +178,44 @@
                                         </div>
                                     </div>
 
+                                    {{-- 🔹 Route Filter --}}
+                                    <div class="col-lg-3">
+                                        <div class="mb-3">
+                                            <label for="route_details" class="form-label">Route</label>
+                                            <select class="form-control select2" id="route_details" name="route_details">
+                                                <option value="0" {{ ($route_details ?? '0') == '0' ? 'selected' : '' }}>
+                                                    All Routes
+                                                </option>
+                                                @foreach ($routes as $r)
+                                                    <option value="{{ $r->id_route }}"
+                                                            {{ ($r->id_route == ($route_details ?? '0')) ? 'selected' : '' }}>
+                                                        {{ $r->name }} - {{ $r->root_code }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {{-- 🔹 Date --}}
                                     <div class="col-lg-3">
                                         <div class="mb-3">
                                             <label for="from_date" class="form-label">Date</label>
                                             <input type="date" class="form-control" id="from_date" name="from_date"
-                                                   value="{{ request('from_date') }}">
+                                                   value="{{ $from_date ?? request('from_date') }}">
                                         </div>
                                     </div>
 
-
+                                    {{-- 🔹 Search Button --}}
                                     <div class="col-lg-3 d-flex align-items-end">
                                         <div class="mb-3">
-                                            <button type="submit" class="btn btn-danger"><i class="bi bi-search"></i> Search</button>
+                                            <button type="submit" class="btn btn-danger">
+                                                <i class="bi bi-search"></i> Search
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
                             </form>
+
 
                         </div>
                         <hr>

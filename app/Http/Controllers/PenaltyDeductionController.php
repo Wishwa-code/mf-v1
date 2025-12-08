@@ -32,14 +32,17 @@ class PenaltyDeductionController extends Controller
         ]);
     }
 
+
+
     public function load(Request $request)
     {
         // Filters (optional)
-        $groupId      = (int) $request->input('group_id', 0);
-        $categoryId   = (int) $request->input('category_id', 0);
-        $customerId   = (int) $request->input('customer_id', 0);
+        $groupId    = (int) $request->input('group_id', 0);
+        $categoryId = (int) $request->input('category_id', 0);
+        $customerId = (int) $request->input('customer_id', 0);
+        $loanNo     = trim((string)$request->input('loan_no', ''));
 
-        $branchId = (int) session('branch_id'); // your app uses branch scoping
+        $branchId = (int) session('branch_id');
 
         // Base loan query (scoped by branch)
         $loanQ = DB::table('customer_loan as cl')
@@ -63,26 +66,74 @@ class PenaltyDeductionController extends Controller
                 'cg.Name as Group_Name',
                 'cg.Leader_name',
                 'cg.Contact_no',
-                DB::raw('COALESCE(SUM(i.Panalty_Balance),0) as penalty_balance')
+
+                // ✅ sum ONLY installments where Panalty_status != 2
+                DB::raw("
+                COALESCE(
+                    SUM(
+                        CASE 
+                            WHEN i.Panelty_status != 2 
+                            THEN i.Panalty_Balance 
+                            ELSE 0 
+                        END
+                    ),
+                    0
+                ) as penalty_balance
+            "),
             ])
             ->join('customer as c', 'c.idCustomer', '=', 'cl.Customer_idCustomer')
             ->leftJoin('loan_category as lc', 'lc.idLoan_Category', '=', 'cl.Loan_Category_idLoan_Category')
-            ->leftJoin('group_has_customer as ghc', function($j){
+            ->leftJoin('group_has_customer as ghc', function ($j) {
                 $j->on('ghc.cus_id', '=', 'cl.Customer_idCustomer');
             })
             ->leftJoin('customer_group as cg', 'cg.idCustomer_Group', '=', 'ghc.group_id')
-            ->join('installments as i', function($j){
-                $j->on('i.Customer_Loan_idCustomer_Loan', '=', 'cl.idCustomer_Loan');
+
+            // ✅ Only installments with Panalty_status != 2 are considered
+            ->join('installments as i', function ($j) {
+                $j->on('i.Customer_Loan_idCustomer_Loan', '=', 'cl.idCustomer_Loan')
+                    ->where('i.Panelty_status', '!=', 2);
+                // If you also want only pending ones:
+                // ->where('i.Status', 0);
             })
+
             ->where('cl.branch_id', $branchId)
             ->groupBy([
-                'cl.idCustomer_Loan','cl.Loan_No','cl.Customer_idCustomer',
-                'cl.Loan_Category_idLoan_Category','cl.Amount','cl.capital_balance',
-                'cl.Total_Loan_Amount','cl.Balance_Amount','cl.Date_Time',
-                'cl.repayment_duration','cl.Interest_period','cl.branch_id',
-                'c.First_Name','c.Last_Name','c.Nic','lc.Name','cg.Name','cg.Leader_name','cg.Contact_no'
-            ]);
+                'cl.idCustomer_Loan',
+                'cl.Loan_No',
+                'cl.Customer_idCustomer',
+                'cl.Loan_Category_idLoan_Category',
+                'cl.Amount',
+                'cl.capital_balance',
+                'cl.Total_Loan_Amount',
+                'cl.Balance_Amount',
+                'cl.Date_Time',
+                'cl.repayment_duration',
+                'cl.Interest_period',
+                'cl.branch_id',
+                'c.First_Name',
+                'c.Last_Name',
+                'c.Nic',
+                'lc.Name',
+                'cg.Name',
+                'cg.Leader_name',
+                'cg.Contact_no',
+            ])
 
+            // ✅ Only loans whose penalty (with Panalty_status != 2) > 0
+            ->havingRaw("
+            COALESCE(
+                SUM(
+                    CASE 
+                        WHEN i.Panelty_status != 2 
+                        THEN i.Panalty_Balance 
+                        ELSE 0 
+                    END
+                ),
+                0
+            ) > 0
+        ");
+
+        // Optional filters
         if ($groupId > 0) {
             $loanQ->where('ghc.group_id', $groupId);
         }
@@ -92,51 +143,54 @@ class PenaltyDeductionController extends Controller
         if ($customerId > 0) {
             $loanQ->where('cl.Customer_idCustomer', $customerId);
         }
-
-        $loanNo = trim((string)$request->input('loan_no', ''));
-
         if ($loanNo !== '') {
             $loanQ->where('cl.Loan_No', 'like', '%' . $loanNo . '%');
         }
 
-
-        // Only loans with positive penalty balance
-        $rows = DB::query()->fromSub($loanQ, 'x')
-            ->where('x.penalty_balance', '>', 0)
-            ->orderBy('x.Date_Time', 'desc')
+        $rows = $loanQ
+            ->orderBy('cl.Date_Time', 'desc')
             ->get();
 
-        // Prepare response with computed maturity date (best-effort)
+        // Build response
         $data = [];
         foreach ($rows as $r) {
-            $created = $r->Date_Time ? Carbon::parse($r->Date_Time) : null;
+            $created  = $r->Date_Time ? Carbon::parse($r->Date_Time) : null;
             $maturity = null;
+
             if ($created && !empty($r->repayment_duration)) {
-                // assuming months
-                $maturity = $created->copy()->addMonthsNoOverflow((int)$r->repayment_duration)->format('Y-m-d');
+                $maturity = $created->copy()
+                    ->addMonthsNoOverflow((int) $r->repayment_duration)
+                    ->format('Y-m-d');
             }
 
+            $penaltyRaw = (float) $r->penalty_balance;
+
             $data[] = [
-                'loan_id'          => (int)$r->idCustomer_Loan,
+                'loan_id'          => (int) $r->idCustomer_Loan,
                 'loan_no'          => $r->Loan_No,
                 'group'            => trim(($r->Group_Name ?? '—') . ($r->Leader_name ? ' / ' . $r->Leader_name : '')),
                 'customer'         => trim($r->First_Name . ' ' . $r->Last_Name) . ' - ' . ($r->Nic ?? ''),
                 'category'         => $r->Category_Name ?? '—',
-                'loan_amount'      => number_format((float)$r->Amount, 2, '.', ','),
-                'capital_balance'  => number_format((float)$r->capital_balance, 2, '.', ','),
-                'total_amount'     => number_format((float)$r->Total_Loan_Amount, 2, '.', ','),
-                'total_balance'    => number_format((float)$r->Balance_Amount, 2, '.', ','),
+                'loan_amount'      => number_format((float) $r->Amount, 2, '.', ','),
+                'capital_balance'  => number_format((float) $r->capital_balance, 2, '.', ','),
+                'total_amount'     => number_format((float) $r->Total_Loan_Amount, 2, '.', ','),
+                'total_balance'    => number_format((float) $r->Balance_Amount, 2, '.', ','),
                 'created_at'       => $created ? $created->format('Y-m-d') : '—',
                 'maturity_date'    => $maturity ?? '—',
-                'penalty_balance'  => number_format((float)$r->penalty_balance, 2, '.', ','),
-                'penalty_raw'      => (float)$r->penalty_balance, // for action
+                'penalty_balance'  => number_format($penaltyRaw, 2, '.', ','),
+                'penalty_raw'      => $penaltyRaw,
             ];
         }
 
         // Summary
         $summary = [
-            'count' => count($data),
-            'total_penalty' => number_format(array_sum(array_map(fn($x) => (float)$x['penalty_raw'], $data)), 2, '.', ',')
+            'count'         => count($data),
+            'total_penalty' => number_format(
+                array_sum(array_map(fn($x) => (float) $x['penalty_raw'], $data)),
+                2,
+                '.',
+                ','
+            ),
         ];
 
         return response()->json([
@@ -144,6 +198,7 @@ class PenaltyDeductionController extends Controller
             'summary' => $summary,
         ]);
     }
+
 
     public function deduct(Request $request)
     {

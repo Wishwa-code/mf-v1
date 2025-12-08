@@ -703,6 +703,18 @@ class LoanController extends Controller
             $this->customerLogController->store($logRequest);
             $this->CapitalBalanceController->create($id);
 
+            $skip = DB::table('app_settings')
+                ->where('key', '=','due_skip_type')
+                ->value('value');
+            Log::info($skip);
+            $skipType="installment";
+            if ($skip=="skip_day"){
+                $skipType="day";
+            }
+
+            $holiday=new HolidayController();
+            $holiday->index('loan',$id,$skipType);
+
             DB::commit();
 
             // Fetch customer once
@@ -735,6 +747,8 @@ class LoanController extends Controller
                     'name'             => $fullName,
                 ];
             }
+
+
 
             return response()->json([
                 'item' => $loan->getKey(),
@@ -1034,7 +1048,12 @@ class LoanController extends Controller
         $installments = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', $id)->orderBy('idInstallments')->get();
         $Saving_amountSum = $installments->sum('Saving_amount');
         $Panalty_BalanceSum = $installments->sum('Panalty_Balance');
-        $Panalty_Amount = $installments->sum('Panalty_Amount');
+
+        $Total_Balance = $installments->sum('Total_Balance');
+
+
+        $loan_log_sum=tableWithBranch('Loan_Log')->where('Loan_ID','=',$id)->where('Type','=','Customer Payment')->get();
+        $Panalty_Amount = $loan_log_sum->sum('Panelty_Payment');
 
 //        $savingBalanceSum=$Saving_amountSum-$Saving_balance;
         $last_log = DB::table('Loan_Log')->where('Loan_ID','=',$id)->orderBy('Loan_Log_ID', 'desc')->first();
@@ -1245,10 +1264,23 @@ class LoanController extends Controller
             ->where('installments.Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
             ->count();
 
+        // --- Extra charger aggregates for this loan ---
+        $extraAgg = DB::table('extra_charger')
+            ->where('loan_id', $loan->idCustomer_Loan)
+            ->where('branch_id', session('branch_id')) // keep branch scope like the rest
+            ->selectRaw('SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END)  AS total_extra_charges')
+            ->selectRaw('SUM(CASE WHEN amount < 0 THEN -amount ELSE 0 END) AS total_extra_payments')
+            ->first();
+
+        $totalExtraCharges  = (float)($extraAgg->total_extra_charges  ?? 0);
+        $totalExtraPayments = (float)($extraAgg->total_extra_payments ?? 0);
+
+
 
         // Pass the data to the view with compact and handle potential nulls
         return view('pages.LoanView', compact(
             'ins_count',
+            'Total_Balance',
             'loan_balance',
             'loan_Total_Amount',
             'type',
@@ -1277,7 +1309,10 @@ class LoanController extends Controller
             'loan_saving_balance',
             'extraChargelatestBalance',
             'customerSummary',
-            'groupMembers'));
+            'groupMembers',
+            'totalExtraCharges',
+            'totalExtraPayments'
+        ));
   }
 
 

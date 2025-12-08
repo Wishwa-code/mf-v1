@@ -296,18 +296,21 @@ class TodayPaymentController extends Controller
 
     public function latePayment(Request $request)
     {
-        $center_details   = $request->center_details;
-        $group            = $request->group;
-        $customer         = $request->customer;
-        $route            = $request->route;
-        $status           = $request->status;
-        $lending_officer  = $request->lending;
+        $center_details    = $request->center_details;
+        $group             = $request->group;
+        $customer          = $request->customer;
+        $route             = $request->route;
+        $status            = $request->status;
+        $lending_officer   = $request->lending;
         $installmentFilter = $request->input('installment_filter'); // all | more_than_3 | maturity | maturity7 | maturity14 | maturity21
 
         // Any maturity variant?
         $isMaturity = in_array($installmentFilter, ['maturity', 'maturity7', 'maturity14', 'maturity21'], true);
 
         if ($status == '-1') {
+            // --------------------------
+            // STATUS = -1  (All loans)
+            // --------------------------
             $loanQuery = tableWithBranch('installments', 'installments')
                 ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
                 ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
@@ -354,7 +357,7 @@ class TodayPaymentController extends Controller
                     'customer_loan.idCustomer_Loan AS idCustomer_Loan',
                     'customer_loan.type AS type',
                     'customer_loan.Installment_Count AS Installment_Count',
-                    'customer_loan.capital_balance AS capital_balance_dup', // to avoid duplicate alias issues
+                    'customer_loan.capital_balance AS capital_balance_dup',
                     'customer_loan.Installment_Amount AS Installment_Amount',
                     'customer_loan.Vehicle_No AS Vehicle_No',
                     DB::raw('COUNT(installments.idInstallments) AS Installment_Count_Total'),
@@ -389,6 +392,9 @@ class TodayPaymentController extends Controller
                     'last_payment.Last_Payment_Amount'
                 );
         } else {
+            // --------------------------
+            // STATUS != -1
+            // --------------------------
             $loanQuery = tableWithBranch('installments', 'installments')
                 ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
                 ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
@@ -418,7 +424,7 @@ class TodayPaymentController extends Controller
                 ON cp1.Customer_Loan_idCustomer_Loan = cp2.Customer_Loan_idCustomer_Loan
                AND cp1.Date = cp2.MaxDate
             ) AS last_payment'), 'customer_loan.idCustomer_Loan', '=', 'last_payment.Customer_Loan_idCustomer_Loan')
-                ->where('installments.Status', '=', '0')
+                // NOTE: only loan status here. Installment status filter will be added later (NOT for maturity).
                 ->where('customer_loan.Status', '=', '0')
                 ->select(
                     'customer.idCustomer',
@@ -469,7 +475,9 @@ class TodayPaymentController extends Controller
                 );
         }
 
-        // Filters: center, group, customer, route, lending officer
+        // --------------------------
+        // Common filters
+        // --------------------------
         if ($center_details != '0') {
             $loanQuery->where('center.idCenter', '=', $center_details);
         }
@@ -486,43 +494,68 @@ class TodayPaymentController extends Controller
             $loanQuery->where('customer_loan.lending_officer_id', '=', $lending_officer);
         }
 
-        // Apply status-specific date filters unless it's a maturity variant (we need full schedule)
+        // ---------------------------------------
+        // Status-specific date filters (NON-maturity)
+        // ---------------------------------------
+        // Also: for non-maturity filters, we only look at pending installments.
         if (!$isMaturity) {
+
+            // Only pending installments for non-maturity filters
+            if ($status != '-1') {
+                $loanQuery->where('installments.Status', '=', '0');
+            }
+
             if ($status == '1') {
+                // Today
                 $loanQuery->whereDate('installments.Installment_Date', '=', date('Y-m-d'));
             } elseif ($status == '2') {
+                // Arrears
                 $loanQuery->whereDate('installments.Installment_Date', '<', date('Y-m-d'));
             } else {
+                // All up to today
                 $loanQuery->whereDate('installments.Installment_Date', '<=', date('Y-m-d'));
             }
         }
 
+        // ---------------------------------------
         // Installment filter handling
+        // ---------------------------------------
         if ($installmentFilter === 'more_than_3') {
+
+            // 3+ installments (NOTE: still total count; adjust to Overdue_Count if needed)
             $loanQuery->havingRaw('COUNT(installments.idInstallments) > 3');
 
         } elseif ($isMaturity) {
-            // Add aggregates needed for maturity logic (do NOT add row-level date WHERE here)
+
+            // Extra aggregates for maturity logic
             $loanQuery->selectRaw("
             MAX(installments.Installment_Date) AS Last_Installment_Date,
-            SUM(CASE
-                  WHEN installments.Status = 0
-                   AND installments.Installment_Date < CURDATE()
-                  THEN 1 ELSE 0
-                END) AS Overdue_Count,
-            ROUND(SUM(CASE
-                  WHEN installments.Status = 0
-                   AND installments.Installment_Date < CURDATE()
-                  THEN installments.Total_Balance ELSE 0
-                END), 2) AS Overdue_Balance
+            SUM(
+                CASE
+                    WHEN installments.Status = 0
+                     AND installments.Installment_Date < CURDATE()
+                    THEN 1 ELSE 0
+                END
+            ) AS Overdue_Count,
+            ROUND(SUM(
+                CASE
+                    WHEN installments.Status = 0
+                     AND installments.Installment_Date < CURDATE()
+                    THEN installments.Total_Balance ELSE 0
+                END
+            ), 2) AS Overdue_Balance
         ");
 
             if ($installmentFilter === 'maturity') {
-                // Original rule: (>3 overdue) OR (matured & at least 1 overdue)
+                // Generic maturity:
+                //  - loan is matured (Last_Installment_Date < today)
+                //  - and either >=3 overdue OR >=1 overdue after maturity
                 $loanQuery->havingRaw("
-                (Overdue_Count > 3)
-                OR
-                (Overdue_Count >= 1 AND Last_Installment_Date < CURDATE())
+                Last_Installment_Date < CURDATE()
+                AND (
+                    Overdue_Count >= 3
+                    OR Overdue_Count >= 1
+                )
             ");
             } else {
                 // maturity7 | maturity14 | maturity21
@@ -531,17 +564,16 @@ class TodayPaymentController extends Controller
                     $days = 7; // fallback
                 }
 
-                // matured + at least 1 overdue + aged by threshold
+                // Now: maturityX = loans with:
+                //  - matured (Last_Installment_Date < today)
+                //  - 3+ overdue installments
+                //  - X+ days after maturity
                 $loanQuery->havingRaw(
-                    '(Overdue_Count >= 1 AND DATEDIFF(CURDATE(), Last_Installment_Date) >= ?)',
+                    'Overdue_Count >= 3
+                 AND Last_Installment_Date < CURDATE()
+                 AND DATEDIFF(CURDATE(), Last_Installment_Date) >= ?',
                     [$days]
                 );
-
-                // If you also want to keep the "fast lane" like maturity:
-                // $loanQuery->havingRaw(
-                //   '((Overdue_Count > 3) OR (Overdue_Count >= 1 AND DATEDIFF(CURDATE(), Last_Installment_Date) >= ?))',
-                //   [$days]
-                // );
             }
         }
 
@@ -549,6 +581,8 @@ class TodayPaymentController extends Controller
 
         return response()->json(['item' => $loan, 'message' => 'all'], 200);
     }
+
+
 
 
 
@@ -845,7 +879,7 @@ class TodayPaymentController extends Controller
         $payment_type = $request->payment_type;
         $bulk = $request->bulk ?? '0';
 
-
+        Log::info($request->sms);
 
 
         $cheque_accept = $request->cheque_accept ?? '0';
@@ -2843,7 +2877,11 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
         $company = DB::table('company')->first();
         $user = tableWithBranch('user')->get();
         $loan = tableWithBranch('customer_loan')->whereIn('Status', [0, 1])->get();
-        return view('pages.ViewPayment', compact('group', 'loan', 'center', 'customers', 'company', 'user'));
+        $route = tableWithBranch('route', 'route')
+            ->leftJoin('user', 'route.id_officer', '=', 'user.id')
+            ->select('route.*', 'user.Full_Name')
+            ->get();
+        return view('pages.ViewPayment', compact('group', 'loan', 'center', 'customers', 'company', 'user', 'route'));
     }
 
     public function view_DateWise_CashFlow()
@@ -3094,6 +3132,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
         $group = $request->group;
         $customer = $request->customer;
         $user = $request->user;
+        $route = $request->route;
         $loan_number_search = $request->loan_number_search;
         $payment_type = $request->payment_type;
 
@@ -3105,6 +3144,12 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
+            ->leftJoin('Loan_Log', function($join) {
+                $join->on('Loan_Log.Type_ID', '=', 'customer_payments.idCustomer_Payments')
+                    ->where('Loan_Log.Type', '=', 'Customer Payment')
+                    ->where('Loan_Log.branch_id', '=', session('branch_id'));
+            })
             ->select([
                 // core
                 'customer_payments.idCustomer_Payments     as Inv_no',
@@ -3138,6 +3183,13 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
                 'user.Full_Name           as Full_Name',
                 'user.id                  as user_id',
 
+                'route.id_route           as route_id',
+
+                // loan_log payment breakdown
+                DB::raw("COALESCE(Loan_Log.Capital_Payment, '0') as capital_paid"),
+                DB::raw("COALESCE(Loan_Log.Interest_Payment, '0') as interest_paid"),
+                DB::raw("COALESCE(Loan_Log.Savings_Payment, '0') as saving_paid"),
+
                 // tag
                 DB::raw("'normal' as row_type")
             ]);
@@ -3150,6 +3202,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
             ->where('extra_charger.amount', '<', 0) // ✅ only negative values (actual paid ones)
             ->select([
                 DB::raw("CONCAT('EXTRA-', extra_charger.id_extra_charger) as Inv_no"),
@@ -3181,6 +3234,13 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
 
                 'user.Full_Name               as Full_Name',
                 'user.id                      as user_id',
+
+                'route.id_route               as route_id',
+
+                // loan_log payment breakdown (extra payments don't have loan_log entries)
+                DB::raw("'0' as capital_paid"),
+                DB::raw("'0' as interest_paid"),
+                DB::raw("'0' as saving_paid"),
 
                 DB::raw("'extra' as row_type")
             ]);
@@ -3219,14 +3279,15 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             $unionQuery->where('user_id', '=', $user);
         }
 
-        // payment type filter (Cash / Bank Deposit / Cheque / Collector / Cashier / Extra Payment)
-        if (!empty($payment_type) && $payment_type !== '0') {
-            $needle = strtolower(trim($payment_type));
-
-            $unionQuery->whereRaw('LOWER(TRIM(pay_method)) = ?', [$needle]);
-
+        // route filter
+        if ($route != '0') {
+            $unionQuery->where('route_id', '=', $route);
         }
 
+        // payment type filter (Cash / Bank Deposit / Cheque / etc.)
+        if ($payment_type != '0') {
+            $unionQuery->where('pay_method', '=', $payment_type);
+        }
 
         // date filter
         $unionQuery->whereBetween('pay_date', [$date, $date_to]);

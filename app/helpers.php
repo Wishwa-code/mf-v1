@@ -120,10 +120,7 @@ function numberToWords($number) {
 
 function tableWithBranch($table, $useBranchIdFromTable = null)
 {
-    // Check if branch_id session exists, otherwise redirect to login
-    if (!session()->has('branch_id')) {
-        return redirect()->route('login'); // <-- use your login route name here
-    }
+
 
     if (!Schema::hasColumn('customer_loan', 'panelty_method')) {
         DB::statement(
@@ -240,14 +237,11 @@ if (!function_exists('formatName')) {
         return trim(implode('', $initials) . ' ' . $lastName);
     }
 }
-
-// Format member display name according to app setting
 if (!function_exists('format_member_name')) {
     /**
-     * @param string|null $first First name(s)
-     * @param string|null $last  Last name(s)
-     * @param string $mode one of: full_name | with_initial | only_first_name | only_last_name
-     * @return string
+     * @param string|null $first First name(s) (may already contain initials+surname like B.M.D.L.GUNASIRI)
+     * @param string|null $last  Last name (often empty or "-")
+     * @param string      $mode  full_name | with_initial | only_first_name | only_last_name
      */
     function format_member_name(?string $first, ?string $last, string $mode = 'with_initial'): string
     {
@@ -257,16 +251,54 @@ if (!function_exists('format_member_name')) {
         switch ($mode) {
             case 'full_name':
                 return trim($first . ' ' . $last);
+
             case 'only_first_name':
                 return $first;
+
             case 'only_last_name':
                 return $last;
+
             case 'with_initial':
             default:
-                return formatName($first, $last);
+                // 1️⃣ If first already looks like "B.M.D.L.GUNASIRI" and last is empty / "-"
+                //    -> show exactly as stored (no more "B. -")
+                if (($last === '' || $last === '-') && substr_count($first, '.') >= 2) {
+                    return strtoupper($first);
+                }
+
+                // 2️⃣ If last name is empty but not in the above pattern -> just return first
+                if ($last === '') {
+                    return $first;
+                }
+
+                // 3️⃣ If first is just pure initials like "H.M.P." or "K."
+                $compact = str_replace(' ', '', $first); // "H.M.P." / "K."
+                if (preg_match('/^([A-Za-z]\.)+$/', $compact)) {
+                    return strtoupper($compact . ' ' . $last);
+                }
+
+                // 4️⃣ Normal case: build initials from plain first name words
+                //     "Buddhika Mahesh Don Lakshan" -> "B.M.D.L. GUNASIRI"
+                $parts    = preg_split('/\s+/', $first, -1, PREG_SPLIT_NO_EMPTY);
+                $initials = '';
+
+                foreach ($parts as $p) {
+                    $ch = mb_substr($p, 0, 1, 'UTF-8');
+                    if ($ch !== '') {
+                        $initials .= mb_strtoupper($ch, 'UTF-8') . '.';
+                    }
+                }
+
+                if ($initials === '' && $last === '') {
+                    return '';
+                }
+
+                return trim($initials . ' ' . strtoupper($last));
         }
     }
 }
+
+
 
 
 function getTargetLoans($skipFor, $targetId)
@@ -293,6 +325,7 @@ function getTargetLoans($skipFor, $targetId)
 
     return collect(); // empty if none match
 }
+
 
 function processInstallmentSkip($loan, $installment, $companySetting,$branch_id)
 {

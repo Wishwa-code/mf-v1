@@ -657,11 +657,16 @@ class TransactionController extends Controller
 
     public function create_hm(Request $request)
     {
+        // 🔹 Load all centers & routes
         $center = tableWithBranch('center')->get();
+        $routes = tableWithBranch('route')->get();
 
-        $center_details = $request->center_details ?? ($center->isNotEmpty() ? $center[0]->idCenter : null);
+        // 🔹 Filters (0 = All)
+        $center_details = $request->center_details ?? '0';
+        $route_details  = $request->route_details ?? '0';
+
         $from_date = $request->from_date;
-        $to_date = $request->to_date;
+        $to_date   = $request->to_date; // not used now, but kept
 
         $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
             ->leftJoin('installments', function ($join) use ($from_date) {
@@ -698,14 +703,21 @@ class TransactionController extends Controller
                 DB::raw('ROUND(CASE WHEN installments.Installment_Date < CURDATE() THEN installments.Total_Balance ELSE 0 END, 2) as arrease')
             );
 
-// ✅ Filter by center
-        if ($center_details != '0') {
+        // ✅ Filter by Center (0 = All Centers)
+        if ($center_details !== '0') {
             $loanQuery->where('center.idCenter', '=', $center_details);
         }
 
+        // ✅ Filter by Route (0 = All Routes)
+        if ($route_details !== '0') {
+            // Using customer.route_id as you shared in structure
+            $loanQuery->where('customer.route_id', '=', $route_details);
+        }
+
         $loan = $loanQuery->get();
+
         // Group data by 'group_name'
-        $grouped_loans = $loan->groupBy('group_name')->sortKeysUsing(function($a, $b) {
+        $grouped_loans = $loan->groupBy('group_name')->sortKeysUsing(function ($a, $b) {
             // Extract numbers from group names like "Group No: 1"
             preg_match('/\d+/', $a, $matchA);
             preg_match('/\d+/', $b, $matchB);
@@ -716,13 +728,17 @@ class TransactionController extends Controller
             return $numA <=> $numB;
         });
 
+        // Read app setting for how to display member names (same as other reports)
+        $name_mode = DB::table('app_settings')
+            ->where('key', 'payment_member_name')
+            ->value('value') ?? 'with_initial';
 
-    // Read app setting for how to display member names (same as other reports)
-    $name_mode = DB::table('app_settings')->where('key', 'payment_member_name')->value('value') ?? 'with_initial';
-
-    return view('pages.DailyRepaymentNoble', compact('center', 'grouped_loans', 'center_details', 'from_date', 'name_mode'));
-
+        return view(
+            'pages.DailyRepaymentNoble',
+            compact('center', 'routes', 'grouped_loans', 'center_details', 'route_details', 'from_date', 'name_mode')
+        );
     }
+
 
 
     public function rightway(Request $request){

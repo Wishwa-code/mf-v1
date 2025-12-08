@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\BankLogController;
+use App\Jobs\GenerateDueSkipJob;
 use App\Jobs\RunRecoverySweepJob;
+use App\Models\LoginUser;
 use App\Models\Sms;
 use App\Models\User;
 use Carbon\Carbon;
@@ -11,6 +13,7 @@ use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Session\Store;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -101,9 +104,8 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+//
+
     public function store(Request $request, Store $session)
     {
         $request->validate([
@@ -138,19 +140,13 @@ class UserController extends Controller
                     return redirect()->route('login')->with("error", "Please contact Admin!");
                 }
             }
-            // Check if 'log_tracking_no' column exists in 'company_bank_has_log'
+// Check if 'log_tracking_no' column exists in 'company_bank_has_log'
             if (!Schema::hasColumn('company_bank_has_log', 'log_tracking_no')) {
                 DB::statement("ALTER TABLE `company_bank_has_log` ADD `log_tracking_no` VARCHAR(10) NULL");
             }
-            // Dynamically add 'status' column if it does not exist
-            if (!Schema::hasColumn('loan_category', 'status')) {
-                DB::statement("ALTER TABLE loan_category ADD COLUMN status TINYINT DEFAULT 1");
-            }
 
-
-
-
-
+            // Call to the penalty creation function
+            $this->create_panelty();
             return redirect()->intended(route('home'));
         }
 
@@ -158,7 +154,121 @@ class UserController extends Controller
         return redirect()->route('login')->with("error", "Login details are not valid!");
     }
 
-
+//    public function store(Request $request, Store $session)
+//    {
+//        $request->validate([
+//            'email'    => 'required|email',
+//            'password' => 'required',
+//        ]);
+//
+//        $email    = $request->email;
+//        $password = $request->password;
+//
+//        /**
+//         * 1) Read login mapping from MAIN DB (asipiya_main)
+//         *    Here LoginUser uses the default "mysql" connection which should point to asipiya_main.
+//         *    If you gave LoginUser a $connection = 'main', then make sure 'main' exists in config/database.php
+//         */
+//        $loginUser = LoginUser::where('email', $email)
+//            ->where('active', 1)
+//            ->first();
+//
+//        if (! $loginUser) {
+//            return back()->with('error', 'Login details are not valid! (Email not registered)');
+//        }
+//
+//        // Tenant DB name is stored in db_name column of login_users
+//        $tenantDbName = $loginUser->db_name;
+//
+//        /**
+//         * 2) Save tenant DB name into session for future requests
+//         *    (SetTenantConnection middleware will read this)
+//         */
+//        $session->put('tenant_db', $tenantDbName);
+//        $session->put('login_email', $email);
+//        $session->save();
+//
+//        /**
+//         * 3) Configure TENANT connection for THIS request
+//         *    (we only change the database name; host/user/pass come from env)
+//         */
+//        Config::set('database.connections.tenant.database', $tenantDbName);
+//        Config::set('database.default', 'tenant');   // so DB::table() uses tenant
+//
+//        DB::purge('tenant');        // clear old connection cache
+//        DB::reconnect('tenant');    // reconnect with new DB
+//
+//        // Make sure the default guard is web (uses App\Models\User with $connection='tenant')
+//        Auth::shouldUse('web');
+//
+//        /**
+//         * 4) Log in using TENANT DB `user` table
+//         */
+//        $credentials = [
+//            'email'    => $email,
+//            'password' => $password,
+//        ];
+//
+//        if (! Auth::attempt($credentials)) {
+//            return back()->with('error', 'Login details are not valid!');
+//        }
+//
+//        // Regenerate session ID after login for security
+//        $request->session()->regenerate();
+//
+//        /**
+//         * 5) Load extra user/session info from TENANT DB
+//         *    Now DB::table() hits the tenant database.
+//         */
+//        $userRows = DB::table('user')->where('email', $email)->get();
+//
+//        foreach ($userRows as $item) {
+//            $session->put('userid',        (int) $item->id);
+//            $session->put('username',      $item->email);
+//            $session->put('Full_Name',     $item->Full_Name);
+//            $session->put('designation',   $item->Designation);
+//            $session->put('branch_id',     (int) $item->branch_id);
+//            $session->put('branch_access', (int) $item->branch_access);
+//
+//            // These helpers now also use tenant DB because default is 'tenant'
+//            $company = tableWithBranch('company')->first();
+//            if ($company) {
+//                $session->put('company_name', $company->company_name);
+//            }
+//
+//            $branch = DB::table('branch')
+//                ->where('branch_id', '=', $item->branch_id)
+//                ->first();
+//
+//            if ($branch) {
+//                $session->put('branch_name', $branch->Name);
+//            }
+//
+//            if ($item->Status === "0") {
+//                Auth::logout();
+//                $request->session()->invalidate();
+//                $request->session()->regenerateToken();
+//
+//                return redirect()->route('login')
+//                    ->with('error', 'Please contact Admin! (User deactivated)');
+//            }
+//        }
+//
+//        /**
+//         * 6) Example column checks on TENANT DB
+//         */
+//        if (! Schema::connection('tenant')->hasColumn('company_bank_has_log', 'log_tracking_no')) {
+//            DB::statement("ALTER TABLE company_bank_has_log ADD log_tracking_no VARCHAR(10) NULL");
+//        }
+//
+//        if (! Schema::connection('tenant')->hasColumn('loan_category', 'status')) {
+//            DB::statement("ALTER TABLE loan_category ADD COLUMN status TINYINT DEFAULT 1");
+//        }
+//
+//        // 7) Go to dashboard – from now on, SetTenantConnection middleware
+//        //    will read session('tenant_db') and switch DB for each request
+//        return redirect()->intended(route('home'));
+//    }
 
     /**
      * Display the specified resource.
@@ -332,10 +442,10 @@ class UserController extends Controller
 //                $this->fixLoanInstallmentsOnce_2((int)$loan->idCustomer_Loan);
 //            }
 //        }
-
-
-
-
+//        dd([
+//            'default' => DB::getDefaultConnection(),
+//            'db_name' => DB::select('SELECT DATABASE() as db')[0]->db,
+//        ]);
 
 
         if (!Auth::check()) {
@@ -468,21 +578,31 @@ class UserController extends Controller
         $setteled_loan_Count = tableWithBranch('customer_loan')->where('Status','=','1')->count();
         $deleted_loan_Count = tableWithBranch('customer_loan')->where('Status','=','-2')->count();
         $setteled_loan_current_Amount = tableWithBranch('customer_loan')->where('Status','=','1')->sum('Amount');
-        $portfolio = tableWithBranch('installments')->sum('capital_balance');
+        $portfolio = tableWithBranch('installments', 'installments')
+            ->join('customer_loan as cl', 'cl.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
+            ->where('cl.Status', 0)
+            ->sum('installments.capital_balance');
 
-        // Current month lending amount - from 1st of current month to today
-        $currentMonthStart = date('Y-m-01'); // First day of current month
-        $today = date('Y-m-d');
+        $currentMonthStart = date('Y-m-01 00:00:00'); // Start of month
+        $todayEnd = date('Y-m-d 23:59:59');          // End of today
+
         $currentMonthLending = tableWithBranch('customer_loan')
-            ->whereBetween('Date_Time', [$currentMonthStart, $today])
-            ->where('Status', '0') // Only disbursed loans
+            ->whereBetween('Date_Time', [$currentMonthStart, $todayEnd])
+            ->where('Status', '0')
             ->sum('Amount');
+
 
         $todayinstallment = tableWithBranch('customer_loan', 'customer_loan')
             ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
             ->where('installments.Installment_Date', '=', date('Y-m-d'))
             ->where('customer_loan.Status', '=', '0')
             ->sum('installments.Installment_Amount');
+
+        $todayinstallment_balance = tableWithBranch('customer_loan', 'customer_loan')
+            ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
+            ->where('installments.Installment_Date', '=', date('Y-m-d'))
+            ->where('customer_loan.Status', '=', '0')
+            ->sum('installments.Total_Balance');
 
         $todayNotPaid = tableWithBranch('customer_loan', 'customer_loan')
             ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
@@ -662,27 +782,45 @@ class UserController extends Controller
             DB::statement("ALTER TABLE `company_bank_has_log` ADD `log_tracking_no` VARCHAR(10) NULL");
         }
 
-        // Weekly unpaid (active loans)
-        $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY)->toDateString();
-        $weekToday = date('Y-m-d');
+        // ----------------------
+// Date boundaries
+// ----------------------
+        $today      = Carbon::today();
+        $todayDate  = $today->toDateString();
+        $weekStart  = $today->copy()->startOfWeek(Carbon::SUNDAY)->toDateString();   // Sunday
+        $weekEnd    = $today->copy()->endOfWeek(Carbon::SATURDAY)->toDateString();   // Saturday
 
-        $weeklyUnpaidQuery = tableWithBranch('installments','installments')
-            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
-            ->where('customer_loan.Status', '=', '0')
-            ->where('installments.Status', '=', '0')
-            ->where('installments.Total_Balance', '>', 0)
-            ->whereBetween('installments.Installment_Date', [$weekStart, $weekToday]);
+// ----------------------
+// 1) THIS WEEK ARREARS
+//    (Sunday → yesterday)
+// ----------------------
+        if ($todayDate > $weekStart) {
+            $arrearsEnd = $today->toDateString();
 
-        $weeklyUnpaidCount = (clone $weeklyUnpaidQuery)->count();
-        $weeklyUnpaidAmount = (clone $weeklyUnpaidQuery)->sum('installments.Total_Balance');
-        // Distinct customers with unpaid installments (head count)
-        $weeklyUnpaidCustomerCount = (clone $weeklyUnpaidQuery)
-            ->distinct()
-            ->count('customer_loan.Customer_idCustomer');
 
-        // Current week pending (Sunday to Saturday of current week)
-        $weekEnd = Carbon::now()->endOfWeek(Carbon::SATURDAY)->toDateString();
+            $weeklyUnpaidQuery = tableWithBranch('installments','installments')
+                ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+                ->where('customer_loan.Status', '=', '0')
+                ->where('installments.Status', '=', '0')
+                ->where('installments.Total_Balance', '>', 0)
+                ->whereBetween('installments.Installment_Date', [$weekStart, $arrearsEnd]);
 
+            $weeklyUnpaidCount = (clone $weeklyUnpaidQuery)->count();
+            $weeklyUnpaidAmount = (clone $weeklyUnpaidQuery)->sum('installments.Total_Balance');
+            $weeklyUnpaidCustomerCount = (clone $weeklyUnpaidQuery)
+                ->distinct()
+                ->count('customer_loan.Customer_idCustomer');
+        } else {
+            // If today is Sunday – no arrears yet for "this week"
+            $weeklyUnpaidCount = 0;
+            $weeklyUnpaidAmount = 0;
+            $weeklyUnpaidCustomerCount = 0;
+        }
+
+// ----------------------
+// 2) CURRENT WEEK PENDING
+//    (today → Saturday)
+// ----------------------
         $currentWeekPendingQuery = tableWithBranch('installments','installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->where('customer_loan.Status', '=', '0')
@@ -697,6 +835,8 @@ class UserController extends Controller
             ->count('customer_loan.Customer_idCustomer');
 
 
+
+
         return view('home',compact(
             'currentMonthLending','portfolio','profit','todaycollected','profitTarget','weeklyComparison',
             'deleted_loan_Count','all_loan','monthlyData','dashboard','checqueamount','totalBalanceUntil','arrease',
@@ -704,7 +844,7 @@ class UserController extends Controller
             'setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count',
             'customer_loan_current_Count','todayinstallment','todaycollection','todayNotPaid',
             'weeklyUnpaidCount','weeklyUnpaidAmount','weeklyUnpaidCustomerCount','totalOutstanding','penaltyBalance',
-            'currentWeekPendingCount','currentWeekPendingAmount','currentWeekPendingCustomerCount'
+            'currentWeekPendingCount','currentWeekPendingAmount','currentWeekPendingCustomerCount','todayinstallment_balance'
         ));
     }
 
@@ -1651,6 +1791,31 @@ class UserController extends Controller
         $matchingDates = $holidayDates->intersect($installmentDates);
         $holidayWithInstallmentsCount = $matchingDates->count();
 
+        // Ensure table exists
+        DB::statement("
+    CREATE TABLE IF NOT EXISTS `due_skip_runs` (
+        `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        `skip_for` VARCHAR(255) NOT NULL,
+        `target_id` BIGINT UNSIGNED NULL,
+        `skip_type` VARCHAR(255) NOT NULL,
+
+        `branch_id` BIGINT UNSIGNED NULL,
+
+        `total_items` INT UNSIGNED NOT NULL DEFAULT 0,
+        `processed_items` INT UNSIGNED NOT NULL DEFAULT 0,
+
+        `status` ENUM('queued','running','completed','failed') NOT NULL DEFAULT 'queued',
+
+        `error_message` TEXT NULL,
+
+        `created_at` TIMESTAMP NULL DEFAULT NULL,
+        `updated_at` TIMESTAMP NULL DEFAULT NULL,
+
+        PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+");
+
+
         return view('pages.Holidays', compact(
             'holidays',
             'year',
@@ -1733,44 +1898,28 @@ class UserController extends Controller
     }
 
 
-    public function generateDueSkip(Request $request)
+    public function generateDueSkip(Request $request, HolidayController $holidayController)
     {
-        // basic validation for safety
-        $data = $request->validate([
-            'skip_for'  => 'required|string|in:all,loan,branch,center,product',
+        $request->validate([
+            'skip_for'  => 'required|in:all,loan,branch,center,product',
+            'skip_type' => 'required|in:installment,day',
             'target_id' => 'nullable|integer',
-            'skip_type' => 'required|string|in:installment,day',
         ]);
 
-        $skipFor  = $data['skip_for'];
-        $targetId = $data['target_id'] ?? null;
-        $skipType = $data['skip_type'];
+        $skipFor  = $request->input('skip_for');
+        $targetId = $request->input('target_id');
+        $skipType = $request->input('skip_type');
 
+        // Call service method from HolidayController
+        $result = $holidayController->runDueSkip($skipFor, $targetId, $skipType);
 
-        try {
-            /** @var HolidayController $holiday */
-            $holiday = app(HolidayController::class);
-
-            // run your heavy logic and get count of affected installments
-            $affected = $holiday->index($skipFor, $targetId, $skipType);
-
-            return response()->json([
-                'status'         => 'success',
-                'message'        => "Due skip completed. Updated {$affected} installments.",
-                'affected_count' => $affected,
-            ]);
-        } catch (\Throwable $e) {
-            Log::error('Due skip failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Due skip process failed. Please contact system administrator.',
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Due skip processed successfully.',
+            'data'    => $result,
+        ]);
     }
+
 
     public function getUserDetails($id)
     {

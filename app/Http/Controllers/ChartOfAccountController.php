@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\BankBalanceService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -712,68 +713,89 @@ class ChartOfAccountController extends Controller
     public function BalanceSheetView()
     {
         $date_from = Carbon::now()->format('Y-m-d'); // Default: Current date
-        $date_to = Carbon::now()->format('Y-m-d');   // Default: Current date
+        $date_to   = Carbon::now()->format('Y-m-d'); // Default: Current date
 
         // Initialize all financial categories as empty arrays
-        $revenue = [];
-        $expenses = [];
-        $current_assets = [];
+        $revenue            = [];
+        $expenses           = [];
+        $current_assets     = [];
         $non_current_assets = [];
-        $equity = [];
-        $liabilities = [];
-        $assets = [];
+        $equity             = [];
+        $liabilities        = [];
+        $assets             = [];
 
         // Calculate Totals (Ensure total is `0` if dataset is empty)
-        $total_revenue =  0;
-        $total_expenses =  0;
-        $total_assets =  0;
-        $total_liabilities =  0;
-        $total_equity =  0;
-        $total_liabilities_and_equity =  0;
-        $final_result_float =  0;
+        $total_revenue                 = 0;
+        $total_expenses                = 0;
+        $total_assets                  = 0;
+        $total_liabilities             = 0;
+        $total_equity                  = 0;
+        $total_liabilities_and_equity  = 0;
+        $final_result_float            = 0;
 
         return view('pages.Accounting.BalanceSheet', compact(
-            'revenue', 'expenses', 'current_assets', 'non_current_assets',
-            'liabilities', 'equity', 'total_revenue', 'total_expenses',
-            'total_assets', 'total_liabilities', 'total_equity',
-            'total_liabilities_and_equity', 'date_from', 'date_to','assets','final_result_float'
+            'revenue',
+            'expenses',
+            'current_assets',
+            'non_current_assets',
+            'liabilities',
+            'equity',
+            'total_revenue',
+            'total_expenses',
+            'total_assets',
+            'total_liabilities',
+            'total_equity',
+            'total_liabilities_and_equity',
+            'date_from',
+            'date_to',
+            'assets',
+            'final_result_float'
         ));
     }
 
+
     public function BalanceSheet(Request $request)
     {
-        $service = new BankBalanceService();
-
-        $bank=tableWithBranch('company_bank_accounts')->get();
-        foreach ($bank as $banks){
-            $service->updateRunningBalance( $banks->Idbank);
-        }
-
+        // 1) Decide the date_to
         $date_to = $request->date_to ?? now()->toDateString();
 
-        // Call the profit function
-        $profitData = $this->profit($request);
+        // 2) Recalculate all bank balances ONCE per branch (if needed)
+        //    This keeps your process, but avoids parallel recalcs / deadlocks.
+        $this->recalcAllBankBalancesSafely();
 
-        // Initialize variables
-        $total_assets = 0;
+        // 3) Call the profit function (unchanged)
+        //    If profit() uses dates, make sure date_to is inside $request.
+        $profitRequest = clone $request;
+        $profitRequest->merge(['date_to' => $date_to]);
+
+        $profitData = $this->profit($profitRequest);
+
+        // 4) Initialize variables (your logic)
+        $total_assets      = 0;
         $total_liabilities = 0;
-        $total_equity = 0;
-        $assets = [];
-        $liabilities = [];
-        $equity = [];
+        $total_equity      = 0;
+        $assets            = [];
+        $liabilities       = [];
+        $equity            = [];
 
-        // Net Profit / Loss logic
-        $final_result = ($profitData['total_difference_revenue'] + $profitData['interest'] + $profitData['panelty'] + $profitData['other_chargers'] - $profitData['total_difference']);
-        $final_result = str_replace(',', '', $final_result);
+        // 5) Net Profit / Loss logic (your formula)
+        $final_result = (
+            $profitData['total_difference_revenue']
+            + $profitData['interest']
+            + $profitData['panelty']
+            + $profitData['other_chargers']
+            - $profitData['total_difference']
+        );
+        $final_result      = str_replace(',', '', $final_result);
         $final_result_float = floatval($final_result);
 
-        // Subquery to get the latest log for each account
+        // 6) Subquery to get the latest log for each account (your query)
         $latestLogs = tableWithBranch('company_bank_has_log as log1')
             ->select(DB::raw('MAX(log1.Id) as latest_log_id'))
             ->whereDate('log1.Date_Time', '<=', $date_to)
             ->groupBy('log1.Bank_Account_Id');
 
-        // Fetch account balances with latest logs
+        // 7) Fetch account balances with latest logs (your query)
         $accountData = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
             ->join('company_bank_has_log', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.Bank_Account_Id')
             ->joinSub($latestLogs, 'latest_logs', function ($join) {
@@ -791,52 +813,57 @@ class ChartOfAccountController extends Controller
             )
             ->get();
 
-        // Process accounts
+        // 8) Process accounts (your logic)
         foreach ($accountData as $item) {
             $entry = [
-                'idbank' => $item->Idbank,
-                'name' => $item->Bank_Name,
-                'balance' => floatval($item->Balance),
-                'primary_account' => $item->primary_account ?? 0
+                'idbank'          => $item->Idbank,
+                'name'            => $item->Bank_Name,
+                'balance'         => floatval($item->Balance),
+                'primary_account' => $item->primary_account ?? 0,
             ];
 
             switch ($item->acc_type_group) {
                 case 'Assets':
-                    $assets[] = $entry;
-                    $total_assets += $entry['balance'];
+                    $assets[]       = $entry;
+                    $total_assets  += $entry['balance'];
                     break;
+
                 case 'Liabilities':
-                    $liabilities[] = $entry;
-                    $total_liabilities += $entry['balance'];
+                    $liabilities[]       = $entry;
+                    $total_liabilities  += $entry['balance'];
                     break;
+
                 case 'Equity':
-                    $equity[] = $entry;
-                    $total_equity += $entry['balance'];
+                    $equity[]       = $entry;
+                    $total_equity  += $entry['balance'];
                     break;
             }
         }
 
-        // Add Net Profit or Net Loss
+        // 9) Add Net Profit or Net Loss (your logic)
         if ($final_result_float > 0) {
             $liabilities[] = [
-                'idbank' => 'Net Profit',
-                'name' => 'Net Profit',
-                'balance' => $final_result_float,
+                'idbank'          => 'Net Profit',
+                'name'            => 'Net Profit',
+                'balance'         => $final_result_float,
                 'primary_account' => 0
             ];
             $total_liabilities += $final_result_float;
+
         } elseif ($final_result_float < 0) {
             $assets[] = [
-                'idbank' => 'Net Loss',
-                'name' => 'Net Loss',
-                'balance' => abs($final_result_float),
+                'idbank'          => 'Net Loss',
+                'name'            => 'Net Loss',
+                'balance'         => abs($final_result_float),
                 'primary_account' => 0
             ];
             $total_assets += abs($final_result_float);
         }
 
+        // 10) Totals
         $total_liabilities_and_equity = $total_liabilities + $total_equity;
 
+        // 11) Return view (your variables)
         return view('pages.Accounting.BalanceSheet', compact(
             'date_to',
             'assets',
@@ -853,6 +880,41 @@ class ChartOfAccountController extends Controller
 
 
 
+    function recalcAllBankBalancesSafely()
+    {
+        $branchId = session('branch_id') ?? 'all';
+        $lockKey  = "all_bank_balance_recalc_branch_{$branchId}";
+        $lock     = Cache::lock($lockKey, 300); // 5 minutes
+
+        if (! $lock->get()) {
+            // Another request/background job is already doing full recalculation.
+            // We skip here to avoid deadlock and heavy duplicate work.
+            return;
+        }
+
+        try {
+            $service = new BankBalanceService();
+
+            // === YOUR ORIGINAL LOOP (KEPT) ===
+            $bank = tableWithBranch('company_bank_accounts')->get();
+            foreach ($bank as $banks) {
+                $service->updateRunningBalance($banks->Idbank);
+            }
+            // =================================
+
+        } catch (\Throwable $e) {
+            // Log but don't break the Balance Sheet view completely
+            \Log::error('recalcAllBankBalancesSafely failed: ' . $e->getMessage());
+        } finally {
+            try {
+                if (isset($lock) && method_exists($lock, 'release')) {
+                    $lock->release();
+                }
+            } catch (\Throwable $e) {
+                // ignore lock release errors
+            }
+        }
+    }
 
 
 

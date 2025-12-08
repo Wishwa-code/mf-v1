@@ -84,31 +84,21 @@
                                         </div>
                                     </div>
                                     <div class="mb-3">
-                                        <label for="simpleinput" class="form-label">Province / State</label>
+                                        <label for="state" class="form-label">Province / State</label>
                                         <select id="state" name="state" class="form-control">
-                                            <option value="Western Province" >Western Province</option>
-                                            <option value="Central Province">Central Province</option>
-                                            <option value="Eastern Province">Eastern Province</option>
-                                            <option value="North Central Province">North Central Province</option>
-                                            <option value="Northern Province">Northern Province</option>
-                                            <option value="North Western Province">North Western Province</option>
-                                            <option value="Sabaragamuwa Province">Sabaragamuwa Province</option>
-                                            <option value="Southern Province">Southern Province</option>
-                                            <option value="Uva Province">Uva Province</option>
+                                            <option value="">Select Province</option>
+                                            {{-- Options via AJAX (Select2) --}}
                                         </select>
                                     </div>
+
                                     <div class="mb-3">
-                                        <label for="simpleinput" class="form-label">City</label>
-                                        <select  id="city" name="city" class="form-control">
-                                            <?php
-                                            $query = "SELECT * FROM cities";
-                                            $cities = DB::select($query);
-                                            ?>
-                                            @foreach($cities as $item)
-                                                <option value="{{$item->name_en}}">{{$item->name_en}}</option>
-                                            @endforeach
+                                        <label for="city" class="form-label">City / Town</label>
+                                        <select id="city" name="city" class="form-control">
+                                            <option value="">Select City / Town</option>
+                                            {{-- Options via AJAX (Select2 based on province) --}}
                                         </select>
                                     </div>
+
 
                                     <div class="mb-3">
                                         <label for="simpleinput" class="form-label">Landline Phone</label>
@@ -212,43 +202,77 @@
 @endsection
 
 @section('script')
-    <script src="assets/vendor/daterangepicker/moment.min.js"></script>
-    <script src="assets/vendor/daterangepicker/daterangepicker.js"></script>
-    <script src="assets/js/pages/dashboard.js"></script>
-    <script src="../JS/validate.js"></script>
-    <script src="../JS/group.js"></script>
-    <script src="../JS/guardian.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
     <!-- Select2 JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+    <script src="assets/vendor/daterangepicker/moment.min.js"></script>
+    <script src="assets/vendor/daterangepicker/daterangepicker.js"></script>
+    {{-- If dashboard.js gives ApexCharts error and you don't need charts here, comment this --}}
+    {{-- <script src="assets/js/pages/dashboard.js"></script> --}}
+
+    <script src="../JS/validate.js"></script>
+    <script src="../JS/group.js"></script>
+    <script src="../JS/guardian.js"></script>
+
     <script>
         $(document).ready(function() {
 
-            //Initialize Select2 Elements
-            $('.select2').select2()
-
-            //Initialize Select2 Elements
-            $('.select2bs4').select2({
-                theme: 'bootstrap4'
-            })
+            // ================== PROVINCE (STATE) – SL LOCATIONS ==================
             $('#state').select2({
-                placeholder: "Select Province", // Optional placeholder
-                allowClear: true // Allows clearing the selection
+                placeholder: "Select Province",
+                allowClear: true,
+                ajax: {
+                    url: '/sl-locations/provinces',
+                    dataType: 'json',
+                    delay: 200,
+                    processResults: function (data) {
+                        // expecting: { provinces: [ {id,text}, ... ] }
+                        return {
+                            results: data.provinces || []
+                        };
+                    }
+                },
+                width: '100%'
             });
 
-
+            // ================== CITY – DEPENDS ON PROVINCE ==================
             $('#city').select2({
-                placeholder: "Select City", // Optional placeholder
-                allowClear: true // Allows clearing the selection
+                placeholder: "Select City",
+                allowClear: true,
+                ajax: {
+                    url: '/sl-locations/cities',
+                    dataType: 'json',
+                    delay: 200,
+                    data: function (params) {
+                        return {
+                            province_id: $('#state').val(),   // match your controller param
+                            q: params.term || ''
+                        };
+                    },
+                    processResults: function (data) {
+                        // expecting: { cities: [ {id,text}, ... ] }
+                        return {
+                            results: data.cities || []
+                        };
+                    }
+                },
+                width: '100%'
             });
 
+            // When province changes, reset city
+            $('#state').on('change', function () {
+                $('#city').val(null).trigger('change');
+            });
+
+            // ================== NIC → DOB + GENDER ==================
             $('#nic').on('input', function() {
                 let nic = $('#nic').val().trim();
                 let birthdayInfo = getBirthdayFromNIC(nic);
 
                 if (birthdayInfo) {
-                    $('#dob').val('' + birthdayInfo.year + '-' + birthdayInfo.month + '-' + birthdayInfo.day + '');
+                    $('#dob').val(birthdayInfo.year + '-' + birthdayInfo.month + '-' + birthdayInfo.day);
                     $('#gender').val(birthdayInfo.gender);
                 } else {
                     $('#gender').val("-");
@@ -256,6 +280,7 @@
                 }
             });
 
+            // ================== REQUIRED DOCUMENT TABLE ==================
             $('#addDocBtn').on('click', function() {
                 var description = $('#otherDocDescription').val().trim();
 
@@ -264,60 +289,61 @@
                     return;
                 }
 
-                var uniqueId = 'docInput_' + Date.now(); // ensures unique ID based on timestamp
+                var uniqueId = 'docInput_' + Date.now();
 
                 var newRow = `
                     <tr>
                         <td>${description}</td>
                         <td>
-                           <input type="file" id="${uniqueId}" class="form-control doc-file" accept="image/*">
-            <button type="button" class="btn btn-outline-secondary mt-1" onclick="openGlobalCamera('#${uniqueId}')">📷</button>
+                            <input type="file" id="${uniqueId}" class="form-control doc-file" accept="image/*">
+                            <button type="button" class="btn btn-outline-secondary mt-1" onclick="openGlobalCamera('#${uniqueId}')">📷</button>
                         </td>
-
                         <td><button type="button" class="btn btn-danger removeDocBtn">Remove</button></td>
                     </tr>
                 `;
 
                 $('#documenttable tbody').append(newRow);
-
-                // Clear the input field after adding
                 $('#otherDocDescription').val('');
             });
 
-            // Use event delegation to handle dynamically added remove buttons
             $('#documenttable').on('click', '.removeDocBtn', function() {
                 $(this).closest('tr').remove();
             });
         });
 
+        // ================== NIC PARSER (OLD + NEW) ==================
         function getBirthdayFromNIC(nic) {
             let year, days;
 
+            nic = (nic || '').toString().trim().toUpperCase();
+            if (!nic) return null;
+
             if (nic.length === 10) {
                 // Old NIC format
+                if (!/^\d{9}[VX]$/.test(nic)) return null;
                 year = '19' + nic.substr(0, 2);
                 days = parseInt(nic.substr(2, 3), 10);
             } else if (nic.length === 12) {
                 // New NIC format
+                if (!/^\d{12}$/.test(nic)) return null;
                 year = nic.substr(0, 4);
                 days = parseInt(nic.substr(4, 3), 10);
             } else {
                 return null;
             }
 
-            // Determine if the person is male or female
             let gender = 'Male';
             if (days > 500) {
                 gender = 'Female';
                 days -= 500;
             }
 
-            // Calculate the birthday
+            if (days < 1 || days > 366) return null;
+
             let date = new Date(year, 0, days);
-            let month = date.getMonth() + 1; // Months are zero-based in JS
+            let month = date.getMonth() + 1;
             let day = date.getDate();
 
-            // Return the result
             return {
                 year: year,
                 month: month < 10 ? '0' + month : month,
@@ -326,32 +352,22 @@
             };
         }
 
+        // ================== GEO LOCATION ==================
         function getlocation() {
-            // Check if Geolocation is supported by the browser
             if ("geolocation" in navigator) {
-                // Geolocation is supported
-                // Use getCurrentPosition method to get the user's current position
                 navigator.geolocation.getCurrentPosition(function(position) {
-                    // Get latitude and longitude from the position object
                     var latitude = position.coords.latitude;
                     var longitude = position.coords.longitude;
 
-                    // Log the latitude and longitude to the console (you can do further processing here)
-                    console.log("Latitude:", latitude);
-                    console.log("Longitude:", longitude);
-
-                    // If you want to do something with the latitude and longitude, you can call a function here
-                    // For example, set the values of input fields:
                     $('#latitude').val(latitude);
                     $('#longitude').val(longitude);
                 }, function(error) {
-                    // Handle any errors that occur while getting the location
                     console.error("Error getting location:", error);
                 });
             } else {
-                // Geolocation is not supported by the browser
                 console.error("Geolocation is not supported by this browser.");
             }
         }
     </script>
 @endsection
+

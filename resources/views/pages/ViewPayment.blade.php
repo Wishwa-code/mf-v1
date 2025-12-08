@@ -20,21 +20,21 @@
 
         }
 
-    thead {
-        background-color: #d9edf7; /* Light blue color */
-        color: #31708f; /* Darker blue text for contrast */
-    }
+        thead {
+            background-color: #d9edf7; /* Light blue color */
+            color: #31708f; /* Darker blue text for contrast */
+        }
 
-    #overlay {
-        display: none;
-        position: fixed;
-        z-index: 1;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-    }
+        #overlay {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
 
 
         .bg-purple th {
@@ -46,122 +46,122 @@
             color: white !important; /* White text color */
         }
 
-    .modal_2 {
-        display: none;
-        position: fixed;
-        z-index: 1;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        overflow: auto;
-        background-color: rgba(0,0,0,0.5);
-    }
+        .modal_2 {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
 
-    .modal_2-content {
-        background-color: #fff;
-        margin: 5% auto;
-        padding: 20px;
-        border: 1px solid #ccc;
-        width: 90%;
-        max-width: 400px;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
+        .modal_2-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
 
-    .close_2 {
-        color: #aaa;
-        float: right;
-        font-size: 28px;
-        font-weight: bold;
-    }
+        .close_2 {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
 
-    .close_2:hover,
-    .close_2:focus {
-        color: black;
-        text-decoration: none;
-        cursor: pointer;
-    }
+        .close_2:hover,
+        .close_2:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
 
-    .printer-design {
-        text-align: center;
-    }
+        .printer-design {
+            text-align: center;
+        }
 
-    .receipt {
-        font-family: 'Arial', sans-serif;
-        text-align: left;
-        margin: 0;
-    }
+        .receipt {
+            font-family: 'Arial', sans-serif;
+            text-align: left;
+            margin: 0;
+        }
 
-    .receipt .header {
-        text-align: center;
-    }
+        .receipt .header {
+            text-align: center;
+        }
 
-    .receipt .logo {
-        width: 80px;
-        margin: 0 auto 10px;
-    }
+        .receipt .logo {
+            width: 80px;
+            margin: 0 auto 10px;
+        }
 
-    .receipt h1, .receipt h2 {
-        margin: 5px 0;
-    }
+        .receipt h1, .receipt h2 {
+            margin: 5px 0;
+        }
 
-    .receipt p {
-        margin: 5px 0;
-        line-height: 1.5;
-    }
+        .receipt p {
+            margin: 5px 0;
+            line-height: 1.5;
+        }
 
-    .receipt .details p {
-        margin: 3px 0;
-    }
+        .receipt .details p {
+            margin: 3px 0;
+        }
 
-    .receipt .payment-info {
-        margin: 10px 0;
-    }
+        .receipt .payment-info {
+            margin: 10px 0;
+        }
 
-    .receipt .payment-info .item {
-        display: flex;
-        justify-content: space-between;
-        margin: 5px 0;
-    }
+        .receipt .payment-info .item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
 
-    .receipt .payment-info .description {
-        font-weight: bold;
-    }
+        .receipt .payment-info .description {
+            font-weight: bold;
+        }
 
-    .receipt .payment-info .amount {
-        text-align: right;
-    }
+        .receipt .payment-info .amount {
+            text-align: right;
+        }
 
-    .receipt hr {
-        border: 0;
-        border-top: 1px dashed #ddd;
-        margin: 10px 0;
-    }
+        .receipt hr {
+            border: 0;
+            border-top: 1px dashed #ddd;
+            margin: 10px 0;
+        }
 
-    .receipt .totals p {
-        margin: 5px 0;
-        font-weight: bold;
-    }
+        .receipt .totals p {
+            margin: 5px 0;
+            font-weight: bold;
+        }
 
-    .receipt .signature {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        margin: 20px 0;
-    }
+        .receipt .signature {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            margin: 20px 0;
+        }
 
-    .receipt .signature-line {
-        width: 100%;
-        text-align: center;
-        margin-bottom: 5px;
-    }
+        .receipt .signature-line {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 5px;
+        }
 
-    .receipt .thank-you {
-        text-align: center;
-        font-size: 18px;
-        margin-top: 20px;
-    }
+        .receipt .thank-you {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 20px;
+        }
 
 
         @media print {
@@ -203,7 +203,7 @@
             }
         }
 
-</style>
+    </style>
 
 
 @endsection
@@ -296,15 +296,25 @@
                                 </select>
                             </div>
 
+                            <!-- Route Selection -->
+                            <div class="col-lg-3 mb-3">
+                                <label for="route" class="form-label">Route</label>
+                                <select class="form-control select2" id="route">
+                                    <option value="0">All</option>
+                                    @foreach($route as $item)
+                                        <option value="{{ $item->id_route }}">{{ $item->name }} - {{ $item->Full_Name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
                             <!-- Payment Type Filter -->
                             <div class="col-lg-3 mb-3">
                                 <label for="payment_type" class="form-label">Payment Type</label>
                                 <select class="form-control select2" id="payment_type">
                                     <option value="0">All</option>
                                     <option value="Cash">Cash</option>
-                                    <option value="Cheque">Cheque</option>
-                                    <option value="Extra Payment">Extra Payment</option>
                                     <option value="Bank Deposit">Bank Deposit</option>
+                                    <option value="Cheque">Cheque</option>
                                     <option value="Collector">Collector</option>
                                     <option value="Cashier">Cashier</option>
                                 </select>
@@ -353,6 +363,9 @@
                                         <th>Date</th>
                                         <th>Payment Method</th>
                                         <th>Amount</th>
+                                        <th>Capital Paid</th>
+                                        <th>Interest Paid</th>
+                                        <th>Saving Paid</th>
                                         <th>Agent</th>
                                         <th>Comment</th>
                                         <th>Action</th>
@@ -787,23 +800,26 @@
                 // 7  Date
                 // 8  Payment Method
                 // 9  Amount
-                //10  Agent
-                //11  Comment
-                //12  Action  <-- we'll SKIP
+                //10  Capital Paid
+                //11  Interest Paid
+                //12  Saving Paid
+                //13  Agent
+                //14  Comment
+                //15  Action  <-- we'll SKIP
 
                 tableData += `<tr>`;
 
                 for (let i = 0; i < columns.length; i++) {
 
                     // skip Action col (last one)
-                    if (i === 12) {
+                    if (i === 15) {
                         continue;
                     }
 
                     let cellText = columns[i].innerText || '';
 
                     // shorten comment column only
-                    if (i === 11) {
+                    if (i === 14) {
                         cellText = shortComment(cellText);
                     }
 
@@ -826,6 +842,9 @@
             <th>Date</th>
             <th>Payment Method</th>
             <th>Amount</th>
+            <th>Capital Paid</th>
+            <th>Interest Paid</th>
+            <th>Saving Paid</th>
             <th>Agent</th>
             <th>Comment</th>
         </tr>

@@ -103,6 +103,9 @@
                 </div>
                 <br><br>
                 <button id="customPDF" class="btn btn-danger">Generate PDF</button>
+                <button type="button" id="exportExcel" class="btn btn-success ms-2">Download Excel</button>
+
+
             </form>
         </div>
     </div>
@@ -177,14 +180,47 @@
             // Initialize Select2
             $('.select2').select2();
 
+            // ---- Common session values (used for PDF + Excel) ----
+            var branchName = {!! json_encode(session('branch_name') ?? '') !!} || '';
+            branchName = branchName ? branchName + ' Branch' : 'All Branches';
+
+            var executiveName = {!! json_encode(session('username') ?? '') !!} || 'All Executives';
+
+            var rawCompany = {!! json_encode(session('company_name') ?? '') !!} || '';
+            var companyName = rawCompany ? rawCompany.replace(/[^\w\s&]/gi, '') : 'Company';
+
             // Initialize DataTable and keep the instance
             var table = $('#customerTable').DataTable({
                 dom: 'Bfrtip',
-                buttons: [],
                 responsive: true,
                 fixedHeader: true,
                 order: [[0, 'asc']],
-                pageLength: 25
+                pageLength: 25,
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        text: 'Export to Excel',
+                        title: function () {
+                            // Title inside Excel file
+                            var selectedDate = $('#date_from').val() || 'All Dates';
+                            return companyName + ' - Center Wise Collection Summary (' + selectedDate + ')';
+                        },
+                        filename: function () {
+                            // Excel file name
+                            var selectedDate = $('#date_from').val() || 'All_Dates';
+                            selectedDate = selectedDate.replace(/-/g, '');
+                            return 'Center_Wise_Collection_Summary_' + selectedDate;
+                        },
+                        exportOptions: {
+                            columns: [0, 1, 2, 3] // export all 4 columns
+                        }
+                    }
+                ]
+            });
+
+            // External button that triggers DataTables Excel export
+            $('#exportExcel').on('click', function () {
+                table.button('.buttons-excel').trigger();
             });
 
             // Function to get the current date and time in Asia/Colombo timezone
@@ -206,35 +242,21 @@
             $('#customPDF').on('click', function(e) {
                 e.preventDefault();
 
-                // Safely get session values (avoid calling .replace on null)
-                var branchName = {!! json_encode(session('branch_name') ?? '') !!};
-                branchName = branchName ? branchName + ' Branch' : 'All Branches';
-
-                var executiveName = {!! json_encode(session('username') ?? '') !!} || 'All Executives';
                 var selectedDate = $('#date_from').val() || 'All Dates';
 
-                var rawCompany = {!! json_encode(session('company_name') ?? '') !!};
-                // remove unsafe chars if present (only if non-empty)
-                var companyName = rawCompany ? rawCompany.replace(/[^\w\s&]/gi, '') : 'Company';
-
-                // Get all rows from DataTables (use filtered rows if you prefer search-applied)
-                // Use { search: 'applied' } to respect the current filter, or remove to get absolutely all rows.
+                // Get all rows from DataTables (filtered)
                 var allData = table.rows({ search: 'applied' }).data().toArray();
 
                 var totalAmount = 0;
                 var data = [];
 
-                // allData entries are either arrays (DOM-source) or objects (if using data option)
                 allData.forEach(function(row) {
-                    // If row is an array of cell strings, use indexes.
-                    // Defensive: convert to array of strings
                     var cells = Array.isArray(row) ? row : Object.values(row);
                     var centerNo = (cells[0] || '').toString().trim();
                     var centerName = (cells[1] || '').toString().trim();
                     var paymentType = (cells[2] || '').toString().trim();
                     var amountText = (cells[3] || '').toString().trim();
 
-                    // parse amount safely
                     var amount = parseFloat(amountText.replace(/,/g, '')) || 0;
                     totalAmount += amount;
 
@@ -246,7 +268,6 @@
                     ]);
                 });
 
-                // Cash table body (unchanged)
                 var cashTableBody = [
                     [{ text: "5000", alignment: 'center' }, { text: "", alignment: 'center' }, { text: "", alignment: 'right' }],
                     [{ text: "1000", alignment: 'center' }, { text: "", alignment: 'center' }, { text: "", alignment: 'right' }],
@@ -284,7 +305,6 @@
                         },
                         { text: `Date: ${selectedDate}`, style: 'subheader', margin: [0, 2, 0, 5] },
 
-                        // Collection Summary Table
                         {
                             table: {
                                 headerRows: 1,
@@ -307,8 +327,6 @@
                             pageBreak: 'avoid'
                         },
                         { text: '\n' },
-
-                        // Total Row
                         {
                             table: {
                                 widths: ['75%', '25%'],
@@ -323,7 +341,6 @@
                             pageBreak: 'avoid'
                         },
 
-                        // Cash Details Table (Empty for manual input)
                         { text: "CASH DETAILS", style: 'tableTitle', margin: [0, 10, 0, 5] },
                         {
                             table: {
@@ -341,8 +358,6 @@
                             layout: 'lightHorizontalLines',
                             pageBreak: 'avoid'
                         },
-
-                        // Excess/Short & Slip Number Section with Blank Space
                         {
                             columns: [
                                 { text: "Excess/Short: ____________________", style: 'signatureLabel', alignment: 'left', margin: [0, 10, 0, 0] },
@@ -350,8 +365,6 @@
                             ],
                             pageBreak: 'avoid'
                         },
-
-                        // Signature Section
                         {
                             columns: [
                                 { text: 'Executive Signature', style: 'signatureLabel', alignment: 'center', margin: [0, 80, 0, 5] },
@@ -374,7 +387,6 @@
                             ]
                         }
                     ],
-
                     styles: {
                         companyName: {
                             fontSize: 18,
@@ -426,6 +438,7 @@
 
         });
     </script>
+
 
 
 

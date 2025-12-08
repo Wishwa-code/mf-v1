@@ -306,7 +306,7 @@ class CenterController extends Controller
     public function CenterWiseCollectionSummary(Request $request) {
         $date_from = $request->input('date_from');
         $collector_id = $request->input('collector_id');
-        $collector = tableWithBranch('user')->where('collector', '=', '1')->get();
+        $collector = tableWithBranch('user')->get();
 
         // --- Expenses Query ---
         $expensesQuery = tableWithBranch('expences','expences')
@@ -405,49 +405,64 @@ class CenterController extends Controller
 
     public function root_wise(Request $request)
     {
-        $date = $request->input('date_from');
+        $date     = $request->input('date_from') ?? date('Y-m-d');
         $route_id = $request->input('route_id');
 
         $route = tableWithBranch('route')->get();
 
-        $hasPayments = DB::table('customer_payments')
-            ->whereDate('Date', $date)
-            ->exists();
-
-        $collection = DB::table('installments')
-            ->join('customer_loan as cl', 'installments.Customer_Loan_idCustomer_Loan', '=', 'cl.idCustomer_Loan')
+        // ---------------------------------------------
+        // DAILY PAYMENT COLLECTION + OPTIONAL INSTALLMENT
+        // ---------------------------------------------
+        $collection = DB::table('customer_payments as cp')
+            ->join('customer_loan as cl', 'cp.Customer_Loan_idCustomer_Loan', '=', 'cl.idCustomer_Loan')
             ->join('customer as c', 'cl.Customer_idCustomer', '=', 'c.idCustomer')
             ->leftJoin('route as r', 'c.route_id', '=', 'r.id_route')
-            ->leftJoin('customer_payments as cp', function ($join) use ($date) {
-                $join->on('installments.Customer_Loan_idCustomer_Loan', '=', 'cp.Customer_Loan_idCustomer_Loan')
-                    ->whereDate('cp.Date', $date);
+
+            // Installment only for this selected date
+            ->leftJoin('installments as i', function ($join) use ($date) {
+                $join->on('i.Customer_Loan_idCustomer_Loan', '=', 'cl.idCustomer_Loan')
+                    ->whereDate('i.Installment_Date', '=', $date);
             })
+
             ->select(
                 'r.name as route_name',
                 'c.cus_number as customer_number',
                 DB::raw("CONCAT(c.First_Name, ' ', c.Last_Name) as customer_name"),
                 'cl.Loan_No as loan_number',
-                'cl.idCustomer_Loan as idCustomer_Loan',
-                'installments.Installment_Amount as installment_amount',
+                'cl.idCustomer_Loan',
+                DB::raw('COALESCE(i.Installment_Amount, NULL) as installment_amount'),
                 DB::raw('SUM(cp.Amount) as paid_amount')
             )
-            ->when($date, fn($q) => $q->whereDate('installments.Installment_Date', $date))
-            ->when($route_id && $route_id != '0', fn($q) => $q->where('c.route_id', $route_id))
-            ->where('cl.Status', 0) // ✅ Only active (ongoing) loans
+
+            // Daily payments
+            ->whereDate('cp.Date', $date)
+
+            // Route filter
+            ->when($route_id && $route_id != '0', function ($q) use ($route_id) {
+                $q->where('c.route_id', $route_id);
+            })
+
+            // Only active loans
+            ->where('cl.Status', 0)
+
             ->groupBy(
                 'r.name',
                 'c.cus_number',
                 'c.First_Name',
                 'c.Last_Name',
                 'cl.Loan_No',
-                'installments.Installment_Amount'
+                'cl.idCustomer_Loan',
+                'i.Installment_Amount'
             )
+
             ->orderBy('r.name')
-            ->orderBy('cl.idCustomer_Loan')
+            ->orderBy('c.cus_number')
             ->get();
 
         return view('pages.RouteWiseCollection', compact('date', 'route', 'route_id', 'collection'));
     }
+
+
 
     /**
      * Get branch hierarchy data for dropdown

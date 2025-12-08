@@ -33,26 +33,7 @@
                         </div>
                         <div class="col-lg-6">
                             <div class="d-flex flex-column h-100">
-                                <div class="auth-brand p-4">
-                                    <?php
-                                    $query = "SELECT * FROM company where branch_id='1'";
-                                    $company = DB::select($query);
-                                    ?>
-                                    @foreach($company as $item)
-                                        @php
-                                            $logoPath = 'storage/' . $item->logo;
-                                        @endphp
-                                        @if ($item->logo && file_exists(public_path($logoPath)))
-                                            <a href="javascript: void(0);" class="logo-light">
-                                                <img src="{{ asset($logoPath) }}" alt="logo" height="22">
-                                            </a>
-                                            <a href="javascript: void(0);" class="logo-dark">
-                                                <img src="{{ asset($logoPath) }}" alt="dark logo" height="100">
-                                            </a>
-                                        @endif
-                                    @endforeach
 
-                                </div>
                                 @if ($errors->any())
                                     <div class="mt-5">
                                         <div class="col-12">

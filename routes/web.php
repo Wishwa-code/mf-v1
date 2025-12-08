@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AssetManagementController;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\CashFlowController;
 use App\Http\Controllers\CashierController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\KYCController;
 use App\Http\Controllers\LiveLankaPayController;
 use App\Http\Controllers\LoanCategoryController;
@@ -14,6 +16,7 @@ use App\Http\Controllers\PaymentVoucherController;
 use App\Http\Controllers\PenaltyDeductionController;
 use App\Http\Controllers\PendingLoanController;
 use App\Http\Controllers\RouteController;
+use App\Http\Controllers\SlAdminDivisionController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TodayPaymentController;
 use App\Http\Controllers\TransactionController;
@@ -24,10 +27,11 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
-
 Route::get('/storage_link', function () {
     Artisan::call('storage:link');
 });
+
+
 
 // API for branch hierarchy dropdown
 Route::get('/api/branch-hierarchy/{branchId}', '\App\Http\Controllers\CenterController@getBranchHierarchy');
@@ -57,7 +61,7 @@ Route::post('/recover_password','\App\Http\Controllers\UserController@recover_pa
 
 
 
-Route::middleware(['auth'])->group(function () {
+//Route::middleware(['web', 'tenant', 'auth'])->group(function () {
     Route::get('/','\App\Http\Controllers\UserController@showdashboard')->name('home');
     Route::get('/privileges', function () {
         return view('pages.Privilages');
@@ -107,7 +111,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/savecustomerdocument','\App\Http\Controllers\CustomerController@create')->name('customers.create');
     Route::get('/customerdoc/{id}','\App\Http\Controllers\CustomerController@show')->name('customers.show');
     Route::get('/cusdocument/delete/{id}','\App\Http\Controllers\CustomerController@destroy')->name('customers.destroy');
-    Route::get('/showcustomers','\App\Http\Controllers\CustomerController@edit')->name('customers.edit');
+    Route::get('/showcustomers','\App\Http\Controllers\CustomerController@edit')->name('customersdetails.edit');
     Route::post('/save-files-customer', 'App\Http\Controllers\CustomerController@saveFiles')->name('customers.files');
     Route::get('/load_customers/{id}','\App\Http\Controllers\CustomerController@load_customers')->name('customers.load_customers');
     Route::get('/load_individual_customer','\App\Http\Controllers\CustomerController@load_individual_customer')->name('customers.load_individual_customer');
@@ -120,9 +124,23 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/customer_saving/{id}','\App\Http\Controllers\CustomerController@customer_saving')->name('customers.customer_saving');
     Route::get('/get-account-transactions/{id}','\App\Http\Controllers\CustomerController@get_account_transactions')->name('customers.get_account_transactions');
 
-//Route::get('/customer_road_map', function () {
-//    return view('pages.CustomerRoadMap');
-//});
+
+
+
+    Route::post('/customer/upload-photo','\App\Http\Controllers\CustomerController@uploadPhoto')->name('customer.uploadPhoto');
+    Route::get('/customer/export-excel', [CustomerController::class, 'exportExcel'])
+        ->name('customers.exportExcel');
+
+
+// Customer Locations Map
+    Route::get('/customer/map', [\App\Http\Controllers\CustomerController::class, 'mapView'])
+        ->name('customers.map');
+
+    Route::get('/customer/map-data', [\App\Http\Controllers\CustomerController::class, 'mapData'])
+        ->name('customers.mapData');
+
+
+
 
     Route::post('/save-bank-details', 'App\Http\Controllers\CustomerController@saveBank')->name('customers.saveBank');
     Route::post('/save-bank-details-single', 'App\Http\Controllers\CustomerController@saveBankSingle')->name('customers.saveBankSingle');
@@ -182,13 +200,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/show_loan/{id}/{loan}','\App\Http\Controllers\PendingLoanController@edit')->name('loan.show_loan');
 
 //Total Outstanding
-Route::get('/total-outstanding-data','\App\Http\Controllers\UserController@totalOutstandingData')->name('total-outstanding.data');
+    Route::get('/total-outstanding-data','\App\Http\Controllers\UserController@totalOutstandingData')->name('total-outstanding.data');
 
 //Weekly Not Paid
-Route::get('/weekly-not-paid-data','\App\Http\Controllers\UserController@weeklyNotPaidData')->name('weekly-not-paid.data');
+    Route::get('/weekly-not-paid-data','\App\Http\Controllers\UserController@weeklyNotPaidData')->name('weekly-not-paid.data');
 
 //Penalty Balance
-Route::get('/penalty-balance-data','\App\Http\Controllers\UserController@penaltyBalanceData')->name('penalty-balance.data');
+    Route::get('/penalty-balance-data','\App\Http\Controllers\UserController@penaltyBalanceData')->name('penalty-balance.data');
 
 
 //payment
@@ -353,10 +371,10 @@ Route::get('/penalty-balance-data','\App\Http\Controllers\UserController@penalty
     Route::post('/income','\App\Http\Controllers\ReportController@saveexpenses')->name('report.saveexpenses');
     Route::get('/view_income','\App\Http\Controllers\ReportController@viewincome')->name('report.viewincome');
 
-Route::get('/expenses','\App\Http\Controllers\ReportController@create')->name('report.create');
-Route::post('/get-branch-expense-data','\App\Http\Controllers\ReportController@getBranchExpenseData')->name('report.getBranchExpenseData');
-Route::post('/expenses_categories', '\App\Http\Controllers\ReportController@store')->name('expenses_categories.store');
-Route::delete('/expenses_categories/{id}', '\App\Http\Controllers\ReportController@destroy')->name('categories.destroy');
+    Route::get('/expenses','\App\Http\Controllers\ReportController@create')->name('report.create');
+    Route::post('/get-branch-expense-data','\App\Http\Controllers\ReportController@getBranchExpenseData')->name('report.getBranchExpenseData');
+    Route::post('/expenses_categories', '\App\Http\Controllers\ReportController@store')->name('expenses_categories.store');
+    Route::delete('/expenses_categories/{id}', '\App\Http\Controllers\ReportController@destroy')->name('categories.destroy');
 
     Route::post('/income_categories', '\App\Http\Controllers\ReportController@income_store')->name('expenses_categories.income_store');
     Route::delete('/income_categories/{id}', '\App\Http\Controllers\ReportController@income_destroy')->name('categories.income_destroy');
@@ -652,6 +670,7 @@ Route::delete('/expenses_categories/{id}', '\App\Http\Controllers\ReportControll
     Route::delete('/holidays/delete/{id}','\App\Http\Controllers\UserController@deleteHoliday')->name('holidays.delete');
     Route::get('/get-holidays','\App\Http\Controllers\UserController@getHolidays')->name('get.holidays');
     Route::post('/generate-due-skip','\App\Http\Controllers\UserController@generateDueSkip')->name('save.holidays');
+
     Route::get('/poya-days','\App\Http\Controllers\HolidayController@fetchPoya')->name('get.fetchPoya');
 
 
@@ -817,25 +836,25 @@ Route::delete('/expenses_categories/{id}', '\App\Http\Controllers\ReportControll
     Route::get('/arrears','\App\Http\Controllers\ArrearsReportExecutiveSummaryController@index')->name('arrears.index');
 
 //approval
-Route::get('/pending_approval','\App\Http\Controllers\ApprovalController@pending_approval')->name('approval.pending');
-Route::get('/approved_history','\App\Http\Controllers\ApprovalController@approved_history')->name('approval.approved');
-Route::get('/rejected_approval','\App\Http\Controllers\ApprovalController@rejected_approval')->name('approval.rejected');
-Route::post('/approve_request','\App\Http\Controllers\ApprovalController@approve')->name('approval.approve');
-Route::post('/reject_request','\App\Http\Controllers\ApprovalController@reject')->name('approval.reject');
-Route::post('/callback_request','\App\Http\Controllers\ApprovalController@callback')->name('approval.callback');
-Route::get('/approval/loan-details/{id}','\App\Http\Controllers\ApprovalController@getLoanDetails')->name('approval.loan_details');
-Route::get('/approval/loan-rejection-details/{id}','\App\Http\Controllers\ApprovalController@getLoanRejectionDetails')->name('approval.loan_rejection_details');
-Route::get('/approval/designation-details/{id}','\App\Http\Controllers\ApprovalController@getDesignationDetails')->name('approval.designation_details');
-Route::get('/approval/user-creation-details/{id}','\App\Http\Controllers\ApprovalController@getUserCreationDetails')->name('approval.user_creation_details');
-Route::get('/approval/user-details-update-details/{id}','\App\Http\Controllers\ApprovalController@getUserDetailsUpdateDetails')->name('approval.user_details_update_details');
-Route::get('/approval/user-privilege-change-details/{id}','\App\Http\Controllers\ApprovalController@getUserPrivilegeChangeDetails')->name('approval.user_privilege_change_details');
-Route::get('/approval/customer-creation-details/{id}','\App\Http\Controllers\ApprovalController@getCustomerCreationDetails')->name('approval.customer_creation_details');
-Route::get('/approval/customer-update-details/{id}','\App\Http\Controllers\ApprovalController@getCustomerDetailsUpdateDetails')->name('approval.customer_update_details');
-Route::get('/approval/expense-delete-details/{id}','\App\Http\Controllers\ApprovalController@getExpenseDeleteDetails')->name('approval.expense_delete_details');
-Route::get('/approval/customer-status-change-details/{id}','\App\Http\Controllers\ApprovalController@getCustomerStatusChangeDetails')->name('approval.customer_status_change_details');
-Route::get('/approval/customer-document-delete-details/{id}','\App\Http\Controllers\ApprovalController@getCustomerDocumentDeleteDetails')->name('approval.customer_document_delete_details');
-Route::get('/approval/loan-installment-modification-details/{id}','\App\Http\Controllers\ApprovalController@getLoanInstallmentModificationDetails')->name('approval.loan_installment_modification_details');
-Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalController@undoRejection')->name('approval.undo_rejection');
+    Route::get('/pending_approval','\App\Http\Controllers\ApprovalController@pending_approval')->name('approval.pending');
+    Route::get('/approved_history','\App\Http\Controllers\ApprovalController@approved_history')->name('approval.approved');
+    Route::get('/rejected_approval','\App\Http\Controllers\ApprovalController@rejected_approval')->name('approval.rejected');
+    Route::post('/approve_request','\App\Http\Controllers\ApprovalController@approve')->name('approval.approve');
+    Route::post('/reject_request','\App\Http\Controllers\ApprovalController@reject')->name('approval.reject');
+    Route::post('/callback_request','\App\Http\Controllers\ApprovalController@callback')->name('approval.callback');
+    Route::get('/approval/loan-details/{id}','\App\Http\Controllers\ApprovalController@getLoanDetails')->name('approval.loan_details');
+    Route::get('/approval/loan-rejection-details/{id}','\App\Http\Controllers\ApprovalController@getLoanRejectionDetails')->name('approval.loan_rejection_details');
+    Route::get('/approval/designation-details/{id}','\App\Http\Controllers\ApprovalController@getDesignationDetails')->name('approval.designation_details');
+    Route::get('/approval/user-creation-details/{id}','\App\Http\Controllers\ApprovalController@getUserCreationDetails')->name('approval.user_creation_details');
+    Route::get('/approval/user-details-update-details/{id}','\App\Http\Controllers\ApprovalController@getUserDetailsUpdateDetails')->name('approval.user_details_update_details');
+    Route::get('/approval/user-privilege-change-details/{id}','\App\Http\Controllers\ApprovalController@getUserPrivilegeChangeDetails')->name('approval.user_privilege_change_details');
+    Route::get('/approval/customer-creation-details/{id}','\App\Http\Controllers\ApprovalController@getCustomerCreationDetails')->name('approval.customer_creation_details');
+    Route::get('/approval/customer-update-details/{id}','\App\Http\Controllers\ApprovalController@getCustomerDetailsUpdateDetails')->name('approval.customer_update_details');
+    Route::get('/approval/expense-delete-details/{id}','\App\Http\Controllers\ApprovalController@getExpenseDeleteDetails')->name('approval.expense_delete_details');
+    Route::get('/approval/customer-status-change-details/{id}','\App\Http\Controllers\ApprovalController@getCustomerStatusChangeDetails')->name('approval.customer_status_change_details');
+    Route::get('/approval/customer-document-delete-details/{id}','\App\Http\Controllers\ApprovalController@getCustomerDocumentDeleteDetails')->name('approval.customer_document_delete_details');
+    Route::get('/approval/loan-installment-modification-details/{id}','\App\Http\Controllers\ApprovalController@getLoanInstallmentModificationDetails')->name('approval.loan_installment_modification_details');
+    Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalController@undoRejection')->name('approval.undo_rejection');
 
 
     Route::get('/load_customer_route/{id}','\App\Http\Controllers\CustomerController@load_customer_route')->name('customers.load_customer_route');
@@ -885,7 +904,7 @@ Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalContr
     Route::get('double-entries/{loanId}', '\App\Http\Controllers\TodayPaymentController@doubleEntries')
         ->name('loan.double-entries');
 
-    // Payment Voucher Module
+// Payment Voucher Module
     Route::get('/VoucherDashboard', [VoucherDashboardController::class, 'index'])->name('voucher.dashboard');
 
     Route::get('/PaymentVoucher', function () {
@@ -931,9 +950,33 @@ Route::post('/approval/undo-rejection/{id}','\App\Http\Controllers\ApprovalContr
 
     Route::get('/get-loan-ids', [LiveLankaPayController::class, 'getLoanIds']);
     Route::get('/process-loan/{loanId}', [LiveLankaPayController::class, 'processLoan']);
+//Current Week Pending Payment
+    Route::get('/current-week-pending-data','\App\Http\Controllers\UserController@currentWeekPendingData')->name('current-week-pending.data');
 
 
-});
+    Route::get('/sl-locations/provinces', [SlAdminDivisionController::class, 'provinces']);
+    Route::get('/sl-locations/cities', [SlAdminDivisionController::class, 'cities']);
+
+    Route::get('/approval/notifications', [ApprovalController::class, 'notifications'])
+        ->name('approval.notifications');                 // Head Office (new pending approvals)
+
+    Route::get('/approval/branch-notifications', [ApprovalController::class, 'branchNotifications'])
+        ->name('approval.branch.notifications');         // Branch (status changes)
+
+
+// Penalty Deduction Loans Report
+Route::get('/report/penalty-deduction', [\App\Http\Controllers\ReportController::class, 'penaltyDeductionReport'])
+    ->name('report.penaltyDeduction');
+
+// Ajax – penalty deduction details for a single loan
+Route::get('/report/penalty-deduction/details/{loan}', [\App\Http\Controllers\ReportController::class, 'penaltyDeductionDetails'])
+    ->name('report.penaltyDeduction.details');
+//});
+
+
+
+
+
 // use App\Services\SmsService;
 
 // Route::get('/one-off/resend-failed-sms', function (Request $request, SmsService $smsService) {

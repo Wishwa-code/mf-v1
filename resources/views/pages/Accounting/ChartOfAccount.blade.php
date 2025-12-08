@@ -360,6 +360,8 @@
                             <option value="42">Non-Current Asset</option>
                             <option value="30">Receivable</option>
                             <option value="11">Taxes Paid on Purchase</option>
+                            <option value="45">Investing Activities</option>
+
                         </optgroup>
                         <optgroup label="Liabilities">
                             <option value="12">Accounts Payable</option>
@@ -578,6 +580,7 @@
                             <option value="42">Non-Current Asset</option>
                             <option value="30">Receivable</option>
                             <option value="11">Taxes Paid on Purchase</option>
+                            <option value="45">Investing Activities</option>
                         </optgroup>
                         <optgroup label="Liabilities">
                             <option value="12">Accounts Payable</option>
