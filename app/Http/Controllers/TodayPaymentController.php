@@ -443,7 +443,16 @@ class TodayPaymentController extends Controller
                     'customer_loan.type AS type',
                     'customer_loan.Installment_Amount AS Installment_Amount',
                     'customer_loan.Vehicle_No AS Vehicle_No',
-                    DB::raw('COUNT(installments.idInstallments) AS Installment_Count'),
+                    DB::raw('
+    SUM(
+        CASE 
+            WHEN installments.Status = 0 
+             AND installments.Installment_Date < CURDATE()
+            THEN 1 ELSE 0 
+        END
+    ) AS Installment_Count
+'),
+
                     DB::raw('IFNULL(subquery.group_name, "-") AS group_name'),
                     DB::raw('ROUND(SUM(installments.Total_Balance), 2) AS Installment_Balance'),
                     DB::raw('ROUND(SUM(installments.Panalty_Balance), 2) AS Panalty_Balance'),
@@ -529,34 +538,31 @@ class TodayPaymentController extends Controller
 
             // Extra aggregates for maturity logic
             $loanQuery->selectRaw("
-            MAX(installments.Installment_Date) AS Last_Installment_Date,
-            SUM(
-                CASE
-                    WHEN installments.Status = 0
-                     AND installments.Installment_Date < CURDATE()
-                    THEN 1 ELSE 0
-                END
-            ) AS Overdue_Count,
-            ROUND(SUM(
-                CASE
-                    WHEN installments.Status = 0
-                     AND installments.Installment_Date < CURDATE()
-                    THEN installments.Total_Balance ELSE 0
-                END
-            ), 2) AS Overdue_Balance
-        ");
+        MAX(installments.Installment_Date) AS Last_Installment_Date,
+        SUM(
+            CASE
+                WHEN installments.Status = 0
+                 AND installments.Installment_Date < CURDATE()
+                THEN 1 ELSE 0
+            END
+        ) AS Overdue_Count,
+        ROUND(SUM(
+            CASE
+                WHEN installments.Status = 0
+                 AND installments.Installment_Date < CURDATE()
+                THEN installments.Total_Balance ELSE 0
+            END
+        ), 2) AS Overdue_Balance
+    ");
 
             if ($installmentFilter === 'maturity') {
                 // Generic maturity:
-                //  - loan is matured (Last_Installment_Date < today)
-                //  - and either >=3 overdue OR >=1 overdue after maturity
+                // - loan is matured (Last_Installment_Date < today)
+                // - at least 3 overdue installments
                 $loanQuery->havingRaw("
-                Last_Installment_Date < CURDATE()
-                AND (
-                    Overdue_Count >= 3
-                    OR Overdue_Count >= 1
-                )
-            ");
+            Last_Installment_Date < CURDATE()
+            AND Overdue_Count >= 3
+        ");
             } else {
                 // maturity7 | maturity14 | maturity21
                 $days = (int) substr($installmentFilter, 8); // after 'maturity'
@@ -564,18 +570,19 @@ class TodayPaymentController extends Controller
                     $days = 7; // fallback
                 }
 
-                // Now: maturityX = loans with:
-                //  - matured (Last_Installment_Date < today)
-                //  - 3+ overdue installments
-                //  - X+ days after maturity
+                // ❗ For maturity21: this means
+                //  - Overdue_Count >= 3  (3+ overdue installments)
+                //  - Loan is matured (Last_Installment_Date < today)
+                //  - At least 21 days passed after maturity
                 $loanQuery->havingRaw(
-                    'Overdue_Count >= 3
-                 AND Last_Installment_Date < CURDATE()
-                 AND DATEDIFF(CURDATE(), Last_Installment_Date) >= ?',
+                    'Last_Installment_Date < CURDATE()
+             AND Overdue_Count >= 3
+             AND DATEDIFF(CURDATE(), Last_Installment_Date) >= ?',
                     [$days]
                 );
             }
         }
+
 
         $loan = $loanQuery->get();
 

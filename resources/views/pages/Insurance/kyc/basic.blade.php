@@ -8,7 +8,6 @@
                      style="width: 120px; height: 120px; object-fit: cover;">
             </div>
         @endif
-
     </div>
 
     <div class="row g-3">

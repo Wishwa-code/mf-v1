@@ -398,6 +398,13 @@ class ApprovalController extends Controller
                             'cashier'         => $updateData['cashier'],
                         ]);
 
+                    // 🔁 Update related bank account name
+                    DB::table('company_bank_accounts')
+                        ->where('Account_No', $userId)  // Account_No = user.id
+                        ->update([
+                            'Account_Name' => $updateData['Full_Name'],
+                        ]);
+
                     if ($branchesChanged) {
                         DB::table('user_has_branches')
                             ->where('user_id', $userId)
@@ -410,6 +417,7 @@ class ApprovalController extends Controller
                             ]);
                         }
                     }
+
                 }
             }
 
