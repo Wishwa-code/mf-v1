@@ -1772,7 +1772,12 @@ class TodayPaymentController extends Controller
                         ->where('installments.Installment_Date', '<', date('Y-m-d'))
                         ->sum('installments.Total_Balance');
 
-                    $arrears = $arrears ?? 0; // make sure it is numeric
+                    $arrears = $arrears ?? 0;
+
+                    $loan_balance = DB::table('installments')
+                        ->where('Customer_Loan_idCustomer_Loan', $loan_id)
+                        ->sum('Total_Balance');
+                    $loan_balance = $loan_balance ?? 0;
 
 
                     $loan_balance=DB::table('installments')
@@ -2600,13 +2605,19 @@ class TodayPaymentController extends Controller
                 $sms_template = DB::table('sms_template')->where('type', '=', 'loan_payment')->where('status', '=', '1')->first();
                 if ($sms_template) {
                     $customer = DB::table('customer')->where('idCustomer', '=', $loan->Customer_idCustomer)->first();
+
+                    $loan_balance = DB::table('installments')
+                        ->where('Customer_Loan_idCustomer_Loan', $loan_id)
+                        ->sum('Total_Balance');
+                    $loan_balance = $loan_balance ?? 0;
+
                     $placeholders = [
                         '@Member_No@' => $customer->cus_number,
                         '@Member_Name@' => $customer->First_Name . ' ' . $customer->Last_Name,
                         '@Loan_No@' => $loan->Loan_No,
                         '@Payment_Date@' => $customer_payment->Date,
                         '@Paid_Amount@' => number_format($customer_payment->Amount, 2, '.', ','),
-                        '@Loan_Balance@' => number_format($loan->Balance_Amount, 2, '.', ','),
+                        '@Loan_Balance@' => number_format($loan_balance, 2, '.', ','),
                         '@Capital_Balance@' => number_format($loan->capital_balance, 2, '.', ','),
                     ];
 
@@ -4342,6 +4353,8 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             $date        = $request->date ? Carbon::parse($request->date)->toDateString() : now()->toDateString();
             $userId      = (int)session('userid');
             $branchId    = (int)session('branch_id');
+            $chargeCodeId = $request->other_charges_code_id ?? null;
+            $chargeCodeDescription = $request->other_charges_codes_discription ?? null;
 
             // --- Lock last record for consistency ---
             $lastRow = DB::table('extra_charger')
@@ -4363,6 +4376,8 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
                 'branch_id'   => $branchId,
                 'amount'      => $amount,
                 'balance'     => $newBalance,
+                'other_charges_code_id' => $chargeCodeId,
+                'other_charges_codes_discription' => $chargeCodeDescription,
             ]);
 
             // --- Add comment for audit trail ---
