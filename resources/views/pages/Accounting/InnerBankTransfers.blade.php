@@ -152,135 +152,127 @@
 
     <script>
         $(document).ready(function() {
+
             let x = ["#fromAmount"];
             decimalFormat(x);
-            // Initialize Select2
+
             $('.select2').select2();
 
             @if($isHeadOffice)
-            // Store all original options
             var allOptions = $('#toBank option').clone();
-            
-            // Branch filter for head office
+
             $('#branchFilter').on('change', function() {
                 var selectedBranch = $(this).val();
                 var $toBank = $('#toBank');
-                
-                // Destroy select2, clear options
+
                 $toBank.select2('destroy');
                 $toBank.empty();
-                
-                // Add placeholder option
+
                 $toBank.append('<option value="0">Select Bank Account</option>');
-                
-                // Filter and add options based on selected branch
+
                 allOptions.each(function() {
                     var $option = $(this);
                     var optionBranch = $option.data('branch');
-                    
-                    // Skip the placeholder option
-                    if ($option.val() === '0') {
-                        return;
-                    }
-                    
-                    // Add option if no branch selected OR branch matches
-                    if (selectedBranch === '' || optionBranch == selectedBranch) {
+                    if ($option.val() !== '0' && (selectedBranch === '' || optionBranch == selectedBranch)) {
                         $toBank.append($option.clone());
                     }
                 });
-                
-                // Reinitialize select2
+
                 $toBank.select2();
             });
             @endif
 
-
-            // Handle form submission
+            // -----------------------------------------
+            // FORM SUBMIT WITH BEAUTIFUL SWEET ALERT
+            // -----------------------------------------
             $('form').on('submit', function(e) {
-                e.preventDefault(); // Prevent the default form submission
+                e.preventDefault();
 
-                // Get selected values
                 var fromBank = $('#fromBank').val();
                 var toBank = $('#toBank').val();
                 var reason = $('#reason').val();
                 var fromAmount = $('#fromAmount').val();
 
-                // Check if "From Bank" and "To Bank" are the same
+                // ------------------------------------------------
+                // FRONTEND VALIDATIONS
+                // ------------------------------------------------
+                if (fromBank === "0") {
+                    return Swal.fire("Missing Info", "Please select a FROM bank account.", "warning");
+                }
+                if (toBank === "0") {
+                    return Swal.fire("Missing Info", "Please select a TO bank account.", "warning");
+                }
                 if (fromBank === toBank) {
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'The "From Bank Account" and "To Bank Account" cannot be the same.',
-                        icon: 'error',
-                        confirmButtonText: 'OK'
-                    });
-                    return; // Stop further execution
-                }else if(fromBank===""){
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'The select From Bank',
-                        icon: 'error',
-                        confirmButtonText: 'OK'
-                    });
-                    return; // Stop further execution
-                }else if(toBank===""){
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'The select To Bank',
-                        icon: 'error',
-                        confirmButtonText: 'OK'
-                    });
-                    return; // Stop further execution
-                }else if(fromAmount===""){
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Please enter Amount',
-                        icon: 'error',
-                        confirmButtonText: 'OK'
-                    });
-                    return; // Stop further execution
-                }else if(reason===""){
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Please enter reason',
-                        icon: 'error',
-                        confirmButtonText: 'OK'
-                    });
-                    return; // Stop further execution
+                    return Swal.fire("Invalid Selection", "FROM and TO bank accounts cannot be the same.", "error");
+                }
+                if (fromAmount === "") {
+                    return Swal.fire("Missing Info", "Please enter an amount.", "warning");
+                }
+                if (reason === "") {
+                    return Swal.fire("Missing Info", "Please enter a reason.", "warning");
                 }
 
+                // ------------------------------------------------
+                // CONFIRMATION ALERT
+                // ------------------------------------------------
                 Swal.fire({
-                    title: 'Are you sure?',
-                    text: "You are about to make an inter-bank transfer.",
-                    icon: 'warning',
+                    title: "Confirm Transfer",
+                    html: "<b>You are about to transfer funds internally.</b><br><br>This action cannot be undone.",
+                    icon: "warning",
                     showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Yes, proceed!',
-                    cancelButtonText: 'Cancel'
+                    confirmButtonColor: "#198754",
+                    cancelButtonColor: "#6c757d",
+                    confirmButtonText: "Yes, Transfer",
+                    cancelButtonText: "Cancel"
                 }).then((result) => {
                     if (result.isConfirmed) {
+
                         $.ajax({
-                            url: '{{ route('bankTransfer.store') }}', // URL to send the request to
-                            type: 'POST',
-                            data: $(this).serialize(), // Serialize form data
+                            url: '{{ route("bankTransfer.store") }}',
+                            type: "POST",
+                            data: $('form').serialize(),
                             headers: {
                                 "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                             },
-                            success: function(response) {
+                            success: function(res) {
+
+                                // -------------------------
+                                // STRICT POLICY FAIL CASES
+                                // -------------------------
+                                if (res.id === 0 && res.error === "Bank Balance is not enough") {
+                                    return Swal.fire({
+                                        icon: "error",
+                                        title: "Insufficient Bank Balance",
+                                        text: "The selected FROM account does not have enough balance to complete this transfer.",
+                                    });
+                                }
+
+                                if (res.id === 0 && res.error === "Invalid bank account") {
+                                    return Swal.fire({
+                                        icon: "error",
+                                        title: "Invalid Bank",
+                                        text: "Selected bank account is not valid.",
+                                    });
+                                }
+
+                                // -------------------------
+                                // SUCCESS
+                                // -------------------------
                                 Swal.fire({
-                                    position: "center",
                                     icon: "success",
-                                    title: "Successfully transferred !",
-                                }).then(function () {
+                                    title: "Transfer Completed!",
+                                    text: "The internal bank transfer was successfully processed.",
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                }).then(() => {
                                     window.location.reload();
                                 });
                             },
                             error: function(xhr) {
                                 Swal.fire({
-                                    title: 'Error!',
-                                    text: 'An error occurred: ' + xhr.responseText,
-                                    icon: 'error',
-                                    confirmButtonText: 'OK'
+                                    icon: "error",
+                                    title: "System Error",
+                                    text: "Something went wrong: " + xhr.responseText,
                                 });
                             }
                         });
@@ -288,8 +280,7 @@
                 });
             });
 
-
         });
-
     </script>
+
 @endsection

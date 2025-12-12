@@ -333,6 +333,15 @@
             font-size: 13px;            /* slightly smaller font for big tables */
         }
     </style>
+    <style>
+        .summary-table th, .summary-table td { vertical-align: middle; }
+        .summary-table .table-primary { background: #020909 !important; color:#fff; }
+        .summary-table .bg-light { font-weight:600; }
+        @media (max-width: 992px) {
+            .summary-table td { font-size: 0.9rem; }
+        }
+    </style>
+
 
 @endsection
 
@@ -397,82 +406,104 @@
 
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-bordered table-sm">
-                                <thead class="thead-dark">
-                                <tr>
-                                    <th scope="col">Loan Stock</th>
-                                    <th scope="col">Loan Portfolio</th>
-                                    <th scope="col">Paid Loan Amount</th>
-                                    <th scope="col">Paid Saving Amount</th>
-                                    <th scope="col">Total Paid Amount</th>
 
-                                    <th scope="col">Total Paid Penalty</th>
-                                    <th scope="col">Total Penalty Balance</th>
-                                    <th scope="col">Savings Balance</th>
-                                    <th scope="col">Capital Balance</th>
-                                    <th scope="col">Interest Balance</th>
-                                    <th scope="col">Extra Charge Balance</th>
-                                    <th scope="col">Total Outstanding</th>
-                                    <th scope="col">Loan Maturity Date</th>
-                                    <th>Loan Status</th>
+                            <table class="table table-bordered table-sm text-center align-middle">
+                                <thead class="thead-dark">
+                                <tr class="bg-purple">
+                                    <th colspan="5">Loan Basic Summary</th>
+                                    <th colspan="5">Balances & Deductions</th>
+                                    <th colspan="3">Loan Completion</th>
+                                </tr>
+                                <tr>
+                                    <th>Loan Stock</th>
+                                    <th>Loan Portfolio</th>
+                                    <th>Paid Loan Amount</th>
+                                    <th>Paid Saving Amount</th>
+                                    <th>Extra Payment</th>
+
+                                    <th>Total Paid Penalty</th>
+                                    <th>Total Penalty Balance</th>
+                                    <th>Savings Balance</th>
+                                    <th>Capital Balance</th>
+                                    <th>Interest Balance</th>
+
+                                    <th>Extra Charge Balance</th>
+                                    <th>Total Outstanding</th>
+                                    <th>Maturity Date</th>
                                 </tr>
                                 </thead>
+
                                 <tbody>
                                 <tr>
-                                    <td>{{ number_format($loan->Amount, 2, '.', ',') }}</td>
-                                    <td>{{ number_format($loan->Total_Loan_Amount, 2, '.', ',') }}</td>
-                                    <td>{{ number_format(max($total_paid_amount - $savingBalanceSum, 0), 2, '.', ',') }}</td>
-                                    <td>{{ number_format($savingBalanceSum, 2, '.', ',') }}</td>
-                                    <td>{{ number_format($total_paid_amount, 2, '.', ',') }}</td>
-                                    <td>{{ number_format($Panalty_Amount-$Panalty_BalanceSum, 2, '.', ',') }}</td>
-                                    <td>{{ number_format($Panalty_BalanceSum, 2, '.', ',') }}</td>
-                                    <td>{{ number_format($loan_saving_balance, 2, '.', ',') }}</td>
-                                    <td>{{ number_format($loan->capital_balance, 2, '.', ',') }}</td>
-                                    <td>{{ number_format($loan->installment_balance, 2, '.', ',') }}</td>
-                                    <td>{{ number_format($extraChargelatestBalance, 2, '.', ',') }}</td>
-                                    <td>{{ number_format($loan_balance, 2, '.', ',') }}</td>
+                                    <td>{{ number_format($loan->Amount, 2) }}</td>
+                                    <td>{{ number_format($loan->Total_Loan_Amount, 2) }}</td>
+                                    <td>{{ number_format(max($total_paid_amount - $savingBalanceSum, 0), 2) }}</td>
+                                    <td>{{ number_format($savingBalanceSum, 2) }}</td>
+                                    <td>{{ number_format($totalExtraPayments, 2) }}</td>
+
+                                    <td>{{ number_format($Panalty_Amount, 2) }}</td>
+                                    <td>{{ number_format($Panalty_BalanceSum, 2) }}</td>
+                                    <td>{{ number_format($loan_saving_balance, 2) }}</td>
+                                    <td>{{ number_format($loan->capital_balance, 2) }}</td>
+                                    <td>{{ number_format($loan->installment_balance, 2) }}</td>
+
+                                    <td>{{ number_format($extraChargelatestBalance, 2) }}</td>
+                                    <td>{{ number_format($Total_Balance + $extraChargelatestBalance, 2, '.', ',') }}</td>
                                     <td>{{ $installments->last()->Installment_Date }}</td>
-                                    <td style="color:
-    {{ $loan->Status == -1 ? 'orange' : ($loan->Status == 0 ? 'red' : 'green') }};">
-                                        <strong>
-                                            {{ $loan->Status == -1 ? 'Pending' : ($loan->Status == 0 ? 'Ongoing' : 'Settled') }}
-                                        </strong>
-                                    </td>
                                 </tr>
+
+                                <tr class="bg-light">
+                                    <th colspan="13" class="text-center">
+                                        Loan Status:
+                                        <span style="color:
+                        {{ $loan->Status == -1 ? 'orange' : ($loan->Status == 0 ? 'red' : 'green') }};">
+                        <strong>
+                            {{ $loan->Status == -1 ? 'Pending' : ($loan->Status == 0 ? 'Ongoing' : 'Settled') }}
+                        </strong>
+                    </span>
+                                    </th>
+                                </tr>
+
                                 </tbody>
                             </table>
-                            <div class="text-center">
+
+                            <!-- BUTTON PANEL -->
+                            <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
+
                                 <a href="{{ route('generate-loan-pdf', $loan->idCustomer_Loan) }}"
-                                   class="btn btn-primary">
+                                   class="btn btn-primary px-4">
                                     Download Full Loan Detail PDF
                                 </a>
-                                <a href="#" class="btn btn-danger" id="viewLoanLog">
+
+                                <a href="#" class="btn btn-danger px-4" id="viewLoanLog">
                                     Loan Log
                                 </a>
-                                <a href="#" class="btn btn-warning" id="viewLoanLog">
+
+                                <a href="#" class="btn btn-warning px-4" id="viewLoanLog">
                                     Loan Comment
                                 </a>
-                                <a href="/kyc/{{$loan->Customer_idCustomer}}" class="btn btn-dark" id="KYC" target="_blank">
+
+                                <a href="/kyc/{{$loan->Customer_idCustomer}}" target="_blank"
+                                   class="btn btn-dark px-4">
                                     KYC
                                 </a>
-                                <a href="javascript:void(0)" class="btn btn-outline-danger" id="btnDeleteLoan">
+
+                                <a href="javascript:void(0)" class="btn btn-outline-danger px-4" id="btnDeleteLoan">
                                     Delete Loan Permanently
                                 </a>
 
                                 <a href="javascript:void(0)"
-                                   class="btn btn-outline-dark btn-show-double-entries"
+                                   class="btn btn-outline-dark px-4 btn-show-double-entries"
                                    data-loan-id="{{ $loan->idCustomer_Loan }}"
                                    data-loan-no="{{ $loan->Loan_No }}">
                                     Loan Double Entries
                                 </a>
 
-
-
-
                             </div>
 
                         </div>
                     </div>
+
                 </div>
             </div>
 

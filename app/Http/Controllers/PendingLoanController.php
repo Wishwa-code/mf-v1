@@ -438,6 +438,16 @@ class PendingLoanController extends Controller
                         ->where('idLoan_Category', '=', $customer_loan->Loan_Category_idLoan_Category)
                         ->first();
 
+                    // 🔹 Get first installment for this loan
+                    $firstInstallment = tableWithBranch('installments', 'installments')
+                        ->where('Customer_Loan_idCustomer_Loan', $customer_loan->idCustomer_Loan)
+                        ->orderBy('No', 'asc')   // or ->orderBy('Installment_Date', 'asc')
+                        ->first();
+
+                    // If not found, safely fallback to loan table value
+                    $installmentAmount = $firstInstallment->Installment_Amount;
+
+
                     $placeholders = [
                         '@Member_No@'          => $customer->cus_number,
                         '@Member_Name@'        => $customer->First_Name . ' ' . $customer->Last_Name,
@@ -445,7 +455,7 @@ class PendingLoanController extends Controller
                         '@Loan_Amount@'        => $customer_loan->Amount,
                         '@Interest_Amount@'    => $customer_loan->Interest_Amount,
                         '@Repayment_Type@'     => $product->Repayment_type,
-                        '@Installment_Amount@' => $customer_loan->Installment_Amount,
+                        '@Installment_Amount@' => $installmentAmount,
                         '@Issue_Date@'         => $customer_loan->Date_Time,
                     ];
 
@@ -752,8 +762,13 @@ class PendingLoanController extends Controller
     {
         $user_id = (int)session('userid');
         $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
-        $collector = $collector_val->collector;
-        $cashier = $collector_val->cashier;
+        $collector=0;
+        $cashier=0;
+        if ($collector_val){
+            $collector = $collector_val->collector;
+            $cashier = $collector_val->cashier;
+        }
+
 
         $group = tableWithBranch('customer_group')->get();
         $loan_category = tableWithBranch('loan_category')->get();

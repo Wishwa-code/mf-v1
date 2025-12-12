@@ -3,9 +3,7 @@
 @section('head')
     <!-- Select2 CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
-
     <!-- DataTables CSS -->
-    <!-- DataTable CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.2.3/css/buttons.dataTables.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css">
@@ -45,6 +43,72 @@
 
 
     </style>
+    <style>
+        .style-tr > td {
+            padding: 2px 15px;
+        }
+        .form-label {
+            font-weight: bold;
+        }
+        .form-control {
+            border-radius: 0.25rem;
+        }
+        .card-body {
+            padding: 1.5rem;
+        }
+        .card {
+            border-radius: 0.5rem;
+        }
+        .bg-purple th {
+            color: #e1e1e1 !important;
+        }
+        .bg-purple {
+            background-color: #1A2942 !important;
+            color: white !important;
+        }
+
+        /* Make table text a bit smaller on mobile */
+        @media (max-width: 767.98px) {
+            #customerTable td {
+                font-size: 12px;
+                padding: 4px 6px;
+                white-space: nowrap;
+            }
+        }
+        .dataTables_filter {
+            display: none !important;
+        }
+        /* Desktop: small nice search on right */
+        .search-wrapper {
+            max-width: 100%;
+        }
+
+        .search-form {
+            max-width: 400px;
+        }
+
+        /* Mobile: full width, stacked */
+        @media (max-width: 767.98px) {
+            .search-wrapper {
+                justify-content: center !important;
+            }
+
+            .search-form {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            #customerSearch {
+                width: 100%;
+            }
+
+            #customerSearchForm button {
+                width: 100%;
+            }
+        }
+
+    </style>
+
 @endsection
 
 @section('content')
@@ -60,118 +124,70 @@
 
                             @php $isHeadOffice = session('branch_id') == -1; @endphp
                             @if(!$isHeadOffice)
-                            <!-- File input -->
-                            <label style="color: red">Upload Excel</label>
-                            <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="form-control mb-2 w-50">
+{{--                            <!-- File input -->--}}
+{{--                            <label style="color: red">Upload Excel</label>--}}
+{{--                            <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="form-control mb-2 w-50">--}}
 
-                            <!-- Upload button, aligned below the file input -->
-                            <input type="button" onclick="upload_excel()" class="btn btn-success mt-2" value="Upload">
+{{--                            <!-- Upload button, aligned below the file input -->--}}
+{{--                            <input type="button" onclick="upload_excel()" class="btn btn-success mt-2" value="Upload">--}}
                             @endif
+                            <div class="d-flex w-100 justify-content-end mt-2 mb-3" style="gap:10px;">
+                                <form id="customerSearchForm" method="GET" action="{{ url()->current() }}" class="d-flex" style="gap: 10px;">
+                                    <input type="text"
+                                           id="customerSearch"
+                                           name="search"
+                                           value="{{ request('search') }}"
+                                           class="form-control"
+                                           placeholder="Search customers…"
+                                           style="min-width: 250px;">
+                                    <button class="btn btn-primary">Search</button>
+                                </form>
+
+                                <button id="exportExcelBtn" class="btn btn-success">
+                                    <i class="bi bi-file-earmark-excel"></i> Export Excel
+                                </button>
+                            </div>
+
+
+
                         </div>
 
 
-                        <!-- DataTable -->
-                        <table id="customerTable" class="display nowrap table table-striped table-bordered" style="width:100%">
-                            <thead  class="bg-purple">
-                            <tr>
-                                <th>Center</th>
-                                <th>Group Name</th>
-                                <th>Branch Name</th>
-                                <th>Customer No</th>
-                                <th>Customer Name</th>
-                                <th>Nic</th>
-                                <th>Address</th>
-                                <th>Contact Number</th>
-                                <th>Points</th>
-                                <th>Current Loan Count</th>
-                                <th>Settled Loan Count</th>
-                                <th>Location</th>
-                                <th>Status</th>
-                                <th>Blacklist</th>
-                                <th>Action</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            @foreach($customers as $customer)
+
+                        <div class="table-responsive">
+                            <table id="customerTable" class="table table-striped table-bordered align-middle mb-0">
+                                <thead class="bg-purple">
                                 <tr>
-                                    <td>{{ $customer->center_name ?? '-' }}</td>
-                                    <td>{{ $customer->group_name ?? '-' }}</td>
-                                    <td>{{ $customer->branch_name }}</td>
-                                    <td>{{ $customer->cus_number }}</td>
-                                    <td>{{ $customer->First_Name }} {{ $customer->Last_Name }}</td>
-                                    <td>{{ $customer->Nic }}</td>
-                                    <td>{{ $customer->Address }},{{ $customer->Address_02 }},{{ $customer->Address_03 }}</td>
-                                    <td>{{ $customer->Contact_No }}</td>
-                                    <td>{{ number_format($customer->points,2,'.',',') }}</td>
-                                    <td>{{$customer->current_loans}}</td>
-                                    <td>{{$customer->settled_loans}}</td>
-                                    <td class="text-center">
-                                        <button type="button" class="btn btn-light" onclick="openMap('{{ $customer->Latitude }}', '{{ $customer->Longitude }}')">
-                                            <i class="bi bi-map fs-4"></i>
-                                        </button>
-                                    </td>
-
-                                    @if($customer->Status == "1")
-                                        <td class="text-center">
-                                            <span class="badge bg-primary">Active</span>
-                                        </td>
-                                        <td><button class="btn btn-warning" onclick="change_status({{$customer->idCustomer}})">Move To Blacklist</button></td>
-                                    @else
-                                        <td class="text-center">
-                                            <span class="badge bg-danger">Blacklisted</span>
-                                        </td>
-                                        <td><button class="btn btn-warning" disabled>Move To Blacklist</button></td>
-                                    @endif
-                                    <td>
-                                        <div class="d-flex justify-content-center">
-                                            <button type="button" class="btn btn-light" onclick="viewCustomer({{$customer->idCustomer}})" title="View Customer Details">
-                                                <i class="bi bi-eye fs-4"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#view-modal" onclick="load_document({{$customer->idCustomer}});">
-                                                <i class="bi bi-envelope-check fs-4"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-light edit-btn" data-bs-toggle="modal" data-bs-target="#standard-modal"
-                                                    data-first-name="{{$customer->First_Name}}" data-last-name="{{$customer->Last_Name}}" data-title="{{$customer->Title}}" data-civil="{{$customer->civil_status}}"
-                                                    data-email="{{$customer->Email}}" data-contact-no="{{$customer->Contact_No}}" data-nic="{{$customer->Nic}}"
-                                                    data-gender="{{$customer->Gender}}" data-dob="{{$customer->Dob}}" data-address="{{$customer->Address}}" data-address_2="{{$customer->Address_02}}" data-address_3="{{$customer->Address_03}}" data-city="{{$customer->City}}"
-                                                    data-Per_Address_01="{{$customer->Per_Address_01}}" data-Per_Address_02="{{$customer->Per_Address_02}}" data-Per_Address_03="{{$customer->Per_Address_03}}" data-State="{{$customer->State}}" data-landline="{{$customer->Landline}}" data-gua_title="{{$customer->Gua_title}}" data-gua_name="{{$customer->Gua_name}}"
-                                                    data-guardian_gender="{{$customer->Guardian_gender}}" data-gua_relation="{{$customer->Gua_relation}}" data-gua_occu="{{$customer->Gua_occu}}" data-gua_contact="{{$customer->Gua_contact}}"
-                                                    data-gua_address="{{$customer->Gua_address}}" data-cus_number="{{$customer->cus_number}}"
-                                                    data-occu_job_position="{{$customer->occu_job_position}}" data-occu_monthly_salary="{{$customer->occu_monthly_salary}}" data-occu_address_01="{{$customer->occu_address_01}}" data-occu_address_02="{{$customer->occu_address_02}}"
-                                                    data-occu_contact_no="{{$customer->occu_contact_no}}" data-occu_longitude="{{$customer->occu_longitude}}" data-occu_latitude="{{$customer->occu_latitude}}" data-occu_address_03="{{$customer->occu_address_03}}"
-                                                    data-note="{{ $customer->Note !== null ? $customer->Note : '-' }}" data-risk-level="{{$customer->Customer_Risk_Level}}" data-gua_nic="{{$customer->Gua_nic}}"
-                                                    data-customer-id="{{$customer->idCustomer}}" data-longitude="{{$customer->Longitude}}" data-latitude="{{$customer->Latitude}}" data-root="{{$customer->route_id}}"
-                                            >
-                                                <i class="bi bi-pencil fs-4"></i></button>
-                                            <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#location-modal" onclick="setLocationId({{$customer->idCustomer}}, '{{$customer->Latitude}}', '{{$customer->Longitude}}')">
-                                                <i class="bi bi-geo-alt fs-4"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#standard-modal_2" onclick="set_cus({{$customer->idCustomer}})">
-                                                <i class="bi bi-envelope-paper fs-4"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#bank-modal" onclick="setbankid({{$customer->idCustomer}})">
-                                                <i class="bi bi-bank2 fs-4"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-danger" onclick="deleteCustomer({{$customer->idCustomer}})">
-                                                <i class="bi bi-trash fs-4"></i>
-                                            </button>
-                                            @if (!empty($customer->Cus_phto))
-                                                <a href="{{ Storage::url($customer->Cus_phto) }}" target="_blank" class="btn btn-dark">
-                                                    <i class="bi bi-people fs-4"></i>
-                                                </a>
-                                            @else
-                                                <button class="btn btn-dark" disabled>
-                                                    <i class="bi bi-people fs-4"></i>
-                                                </button>
-                                            @endif
-
-                                            <a href="/customer_road_map/{{$customer->idCustomer}}" target="_blank" class="btn btn-primary"><i class="bi bi-bar-chart-steps fs-4"></i></a>
-                                        </div>
-                                    </td>
+                                    <th>Center</th>
+                                    <th class="d-none d-lg-table-cell">Group Name</th>
+                                    <th>Branch Name</th>
+                                    <th>Customer No</th>
+                                    <th>Customer Name</th>
+                                    <th class="d-none d-md-table-cell">Nic</th>
+                                    <th class="d-none d-lg-table-cell">Address</th>
+                                    <th>Contact Number</th>
+                                    <th class="d-none d-lg-table-cell">Points</th>
+                                    <th>Current Loan Count</th>
+                                    <th class="d-none d-md-table-cell">Settled Loan Count</th>
+                                    <th class="text-center d-none d-md-table-cell">Location</th>
+                                    <th>Status</th>
+                                    <th>Blacklist</th>
+                                    <th>Action</th>
                                 </tr>
-                            @endforeach
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody id="customerTableBody">
+                                @include('partials.customer_rows')
+                                </tbody>
+
+                            </table>
+                        </div>
+
+                        {{-- Laravel pagination --}}
+                        <div id="customerPagination">
+                            @include('partials.customer_pagination')
+                        </div>
+
+
 
                     </div> <!-- end card-body-->
                 </div> <!-- end card-->
@@ -618,6 +634,35 @@
             </div>
         </div>
     </div>
+        <div class="modal fade" id="upload-photo-modal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">Upload Customer Photo</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <form id="photoUploadForm" enctype="multipart/form-data">
+                            @csrf
+
+                            <input type="hidden" id="photo_customer_id" name="customer_id">
+
+                            <div class="mb-3">
+                                <label class="form-label">Select Photo</label>
+                                <input type="file" name="cus_phto" id="photo_file"
+                                       class="form-control" accept="image/*" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">Upload</button>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
 
 @endsection
 
@@ -644,74 +689,167 @@
     <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
+        let customerTable = null;
+        const customerIndexUrl = "{{ route('customersdetails.edit') }}"; // or url('/showcustomers')
+
+
+        function initCustomerDataTable() {
+            // Destroy if already initialized
+            if ($.fn.DataTable.isDataTable('#customerTable')) {
+                $('#customerTable').DataTable().destroy();
+            }
+
+
+
+            customerTable = $('#customerTable').DataTable({
+                dom: 'frtip',
+                responsive: true,
+                order: [[0, 'desc']],
+                paging: false,
+                info: false,
+                searching: false,
+                buttons: false
+            });
+
+        }
+
+
+        $('#exportExcelBtn').on('click', function () {
+            const search = $('#customerSearch').val() || '';
+            const url = "/customer/export-excel?search=" + encodeURIComponent(search);
+            window.location = url; // triggers file download, not JSON
+        });
+
+
+
+
+        // Small debounce helper so we don't spam the server while typing
+        function debounce(fn, delay) {
+            let timer = null;
+            return function () {
+                const context = this;
+                const args = arguments;
+                clearTimeout(timer);
+                timer = setTimeout(() => fn.apply(context, args), delay);
+            };
+        }
+
+
+        function openPhotoUpload(id) {
+            $('#photo_customer_id').val(id);
+        }
+
+        $('#photoUploadForm').on('submit', function(e) {
+            e.preventDefault();
+
+            let formData = new FormData(this);
+
+            $.ajax({
+                url: "{{ route('customer.uploadPhoto') }}",
+                method: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(res) {
+
+                    Swal.fire(
+                        'Success!',
+                        'Photo uploaded successfully!',
+                        'success'
+                    );
+
+                    $('#upload-photo-modal').modal('hide');
+
+                    fetchCustomers(1);  // reload table
+                },
+                error: function(err) {
+                    Swal.fire('Error!', 'Error uploading photo', 'error');
+                }
+            });
+        });
+
+
+
+        function fetchCustomers(page = 1) {
+            const raw = $('#customerSearch').val();
+            const search = raw && raw.trim().length > 0 ? raw.trim() : null;
+
+            // 💣 Destroy existing DataTable BEFORE touching the DOM
+            if ($.fn.DataTable.isDataTable('#customerTable')) {
+                $('#customerTable').DataTable().clear().destroy();
+            }
+
+            const data = { page: page };
+            if (search !== null) {
+                data.search = search; // only send when there is a value
+            }
+
+            $.ajax({
+                url: customerIndexUrl,
+                method: 'GET',
+                dataType: 'json',
+                data: data,
+                success: function (res) {
+                    console.log('AJAX RESPONSE:', res);
+
+                    if (res.rows && res.rows.trim() !== '') {
+                        $('#customerTableBody').html(res.rows);
+                    } else {
+                        $('#customerTableBody').html(
+                            `<tr>
+                        <td colspan="15" class="text-center text-muted">
+                            No customers found for this search.
+                        </td>
+                    </tr>`
+                        );
+                    }
+
+                    $('#customerPagination').html(res.pagination || '');
+
+                    initCustomerDataTable();
+                },
+                error: function (xhr) {
+                    console.error(xhr.responseText || xhr);
+                }
+            });
+        }
+
+
+
+        $(document).ready(function () {
+            initCustomerDataTable();
+
+            $('#customerSearch').on('input keyup search', debounce(function () {
+                fetchCustomers(1);
+            }, 500));
+
+            $('#customerSearchForm').on('submit', function(e) {
+                e.preventDefault();
+                fetchCustomers(1);
+            });
+
+            $(document).on('click', '#customerPagination .pagination a', function(e) {
+                e.preventDefault();
+                const url = new URL(this.href);
+                const page = url.searchParams.get('page') || 1;
+                fetchCustomers(page);
+            });
+        });
+
+
+
+
         $(document).ready(function() {
-
-
             // Initialize Select2 Elements
             $('.select2').select2();
 
-            // Replace special characters in the company name
-            var companyName = {!! json_encode($company->company_name) !!}.replace(/&/g, ' And ');
+            // Initial DataTable setup
+            initCustomerDataTable();
 
-
-            // Initialize DataTable
-            $('#customerTable').DataTable({
-                dom: 'Bfrtip',
-                responsive: true,
-                order: [[0, 'desc']],
-                buttons: [
-                    {
-                        extend: 'copy',
-                        text: '<i class="bi bi-clipboard"></i> Copy',
-                        className: 'btn btn-secondary',
-                        exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5]
-                        },
-                        filename: companyName // Use the modified company name
-                    },
-                    {
-                        extend: 'csv',
-                        text: '<i class="bi bi-file-earmark-spreadsheet"></i> CSV',
-                        className: 'btn btn-success',
-                        exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5]
-                        },
-                        filename: companyName // Use the modified company name
-                    },
-                    {
-                        extend: 'excel',
-                        text: '<i class="bi bi-file-earmark-excel"></i> Excel',
-                        className: 'btn btn-primary',
-                        exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5]
-                        },
-                        filename: companyName // Use the modified company name
-                    },
-                    {
-                        extend: 'pdf',
-                        text: '<i class="bi bi-file-earmark-pdf"></i> PDF',
-                        className: 'btn btn-danger',
-                        exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5]
-                        },
-                        filename: companyName // Use the modified company name
-                    },
-                    {
-                        extend: 'print',
-                        text: '<i class="bi bi-printer"></i> Print',
-                        className: 'btn btn-info',
-                        exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5]
-                        },
-                        filename: companyName // Use the modified company name
-                    }
-                ]
-            });
+            // Existing edit-btn handler (unchanged)
             $(document).on('click', '.edit-btn', function() {
-                // Use `this` to reference the specific button that was clicked
                 const editButton = $(this);
 
-                // Retrieve the data attributes from the clicked button
                 const firstName = editButton.data('first-name');
                 const lastName = editButton.data('last-name');
                 const cusNumber = editButton.data('cus_number');
@@ -753,7 +891,6 @@
                 const occuLatitude = editButton.data('occu_latitude');
                 const root = editButton.data('root');
 
-                // Set the values of the input fields in your modal or form
                 $('#title').val(title);
                 $('#root').val(root);
                 $('#cus_number').val(cusNumber);
@@ -794,87 +931,27 @@
                 $('#occu_contact_no').val(occuContactNo);
                 $('#occu_longitude').val(occuLongitude);
                 $('#occu_latitude').val(occuLatitude);
-
-                // Open your modal or perform any other required actions
             });
 
+            // 🔍 Live search (on typing)
+            $('#customerSearch').on('keyup', debounce(function() {
+                fetchCustomers(1); // always go to first page when search changes
+            }, 500));
+
+            // Submit search form manually (press Enter / button)
+            $('#customerSearchForm').on('submit', function(e) {
+                e.preventDefault();
+                fetchCustomers(1);
+            });
+
+            // Pagination links -> AJAX
+            $(document).on('click', '#customerPagination .pagination a', function(e) {
+                e.preventDefault();
+                const url = new URL(this.href);
+                const page = url.searchParams.get('page') || 1;
+                fetchCustomers(page);
+            });
         });
-
-        // function upload_excel() {
-        //     var fileInput = document.getElementById('uploadExcel');  // Get the file input element
-        //     var file = fileInput.files[0];  // Get the selected file
-        //
-        //     if (file) {
-        //         var reader = new FileReader();
-        //         reader.onload = function(e) {
-        //             var data = new Uint8Array(e.target.result);
-        //             var workbook = XLSX.read(data, { type: 'array' });
-        //
-        //             // Assuming the first sheet in the Excel file
-        //             var firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        //
-        //             // Convert sheet to JSON, starting from the 5th row (index 5 in zero-indexed array)
-        //             var jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-        //
-        //             // Start reading data from the 5th index (skip the first 5 rows)
-        //             var dataFrom5thRow = jsonData.slice(5);
-        //
-        //             console.log(dataFrom5thRow);  // Debugging: see the data in console
-        //
-        //             // SweetAlert2 confirmation prompt
-        //             Swal.fire({
-        //                 title: 'Are you sure?',
-        //                 text: "Do you want to upload the Excel data?",
-        //                 icon: 'warning',
-        //                 showCancelButton: true,
-        //                 confirmButtonText: 'Yes, upload it!',
-        //                 cancelButtonText: 'No, cancel!',
-        //                 reverseButtons: true
-        //             }).then((result) => {
-        //                 if (result.isConfirmed) {
-        //                     // Send data to backend using AJAX
-        //                     $.ajax({
-        //                         // url: '/upload-excel-customer',  // Your route URL
-        //                         url: '/upload-excel-guardian',  // Your route URL
-        //                         type: 'POST',
-        //                         data: {
-        //                             excelData: dataFrom5thRow,  // Send the Excel data
-        //                         },
-        //                         headers: {
-        //                             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-        //                         },
-        //                         success: function(response) {
-        //                             Swal.fire({
-        //                                 position: "center",
-        //                                 icon: "success",
-        //                                 title: "Your Excel data has been uploaded.",
-        //                             }).then(function () {
-        //                                 window.location.reload();
-        //                             });
-        //                         },
-        //                         error: function(xhr, status, error) {
-        //                             Swal.fire(
-        //                                 'Error!',
-        //                                 'There was an issue uploading the file.',
-        //                                 'error'
-        //                             );
-        //                             console.error(error);  // Handle errors
-        //                         }
-        //                     });
-        //                 } else if (result.dismiss === Swal.DismissReason.cancel) {
-        //                     Swal.fire(
-        //                         'Cancelled',
-        //                         'Your Excel data upload was cancelled.',
-        //                         'error'
-        //                     );
-        //                 }
-        //             });
-        //         };
-        //         reader.readAsArrayBuffer(file);
-        //     }
-        // }
-
-
 
         function getlocation_occu() {
             // Check if Geolocation is supported by the browser

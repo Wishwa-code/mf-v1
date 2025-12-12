@@ -68,7 +68,11 @@
 <body>
 <div class="wrapper">
     @include('component.header')
+
+
+
     <div class="content-page">
+
         <div class="content">
             <div class="container-fluid">
                 @yield('content')
@@ -190,8 +194,8 @@
         }
     }
 </script>
-
 @yield('script')
+
 <script>
     let timer;
     let timeoutMinutes = 60; // 1 hour
@@ -203,8 +207,7 @@
             const interval = setInterval(() => {
                 if (countdown === 0) {
                     clearInterval(interval);
-                    // Auto logout if countdown reaches 0
-                    window.location.href = "{{ route('user.logout') }}"; // Update with your logout route
+                    window.location.href = "{{ route('user.logout') }}";
                 } else {
                     Swal.update({
                         html: `You will be logged out in <b>${countdown}</b> seconds due to inactivity.`,
@@ -213,7 +216,6 @@
                 countdown--;
             }, 1000);
 
-            // SweetAlert2 dialog for inactivity
             Swal.fire({
                 title: 'Inactivity Detected',
                 html: `You will be logged out in <b>10</b> seconds due to inactivity.`,
@@ -223,17 +225,15 @@
                 cancelButtonText: 'Logout Now',
                 reverseButtons: true,
                 didOpen: () => {
-                    Swal.showLoading(); // Show loading spinner
+                    Swal.showLoading();
                 },
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // If user chooses to stay logged in, reset the timer
                     clearInterval(interval);
                     resetTimer();
                 } else {
-                    // If user cancels, logout immediately
                     clearInterval(interval);
-                    window.location.href = "{{ route('user.logout') }}"; // Update with your logout route
+                    window.location.href = "{{ route('user.logout') }}";
                 }
             });
         }, timeoutMinutes * 60 * 1000);
@@ -252,7 +252,6 @@
             const branchId   = $(this).data('branch-id');
             const branchName = $(this).data('branch-name');
 
-            // Optional: update UI immediately
             $('.branch-text').text(branchName);
 
             $.ajax({
@@ -264,12 +263,12 @@
                 },
                 success: function (response) {
                     if (response.success) {
-                        location.reload(); // apply server-side session changes
+                        location.reload();
                     } else {
                         Swal?.fire?.('Oops', response.message || 'Failed to update branch.', 'error');
                     }
                 },
-                error: function (xhr) {
+                error: function () {
                     Swal?.fire?.('Error!', 'Failed to update branch.', 'error');
                 }
             });
@@ -277,6 +276,202 @@
     });
 </script>
 
+{{-- HEAD OFFICE NOTIFICATIONS – new pending approvals --}}
+<script>
+    @if(session('branch_id') == -1)
+    let lastApprovalId = 0;
+    let approvalPollInterval = null;
+
+    function initApprovalNotifications() {
+        $.ajax({
+            url: '{{ route("approval.notifications") }}',
+            method: 'GET',
+            data: { init: 1 },
+            success: function (response) {
+                if (response.success) {
+                    lastApprovalId = response.last_id || 0;
+                    startApprovalPolling();
+                } else {
+                    console.warn('Approval notification init failed:', response.message);
+                }
+            },
+            error: function () {
+                console.warn('Error initializing approval notifications');
+            }
+        });
+    }
+
+    function startApprovalPolling() {
+        if (approvalPollInterval) {
+            clearInterval(approvalPollInterval);
+        }
+        approvalPollInterval = setInterval(pollApprovals, 15000);
+    }
+
+    function pollApprovals() {
+        $.ajax({
+            url: '{{ route("approval.notifications") }}',
+            method: 'GET',
+            data: { since_id: lastApprovalId },
+            success: function (response) {
+                if (!response.success) {
+                    console.warn('Approval notification error:', response.message);
+                    return;
+                }
+
+                if (typeof response.last_id !== 'undefined') {
+                    lastApprovalId = response.last_id;
+                }
+
+                const approvals = response.approvals || [];
+                if (approvals.length > 0) {
+                    showApprovalNotification(approvals);
+                    updateApprovalMenuBadge(approvals.length);
+                }
+            },
+            error: function () {
+                console.warn('Error polling approval notifications');
+            }
+        });
+    }
+
+    function showApprovalNotification(approvals) {
+        let html = '<div style="text-align:left;">';
+        html += '<strong>' + approvals.length + ' new approval request(s)</strong><br><br>';
+
+        approvals.forEach(function (item) {
+            const typeText   = item.type ? item.type : ('Type ' + item.typeid);
+            const branchName = item.branch_name ? item.branch_name : 'Unknown Branch';
+            const dateTime   = item.data_time;
+
+            html += '<div style="margin-bottom:6px;">';
+            html += '<i class="ri-notification-3-line"></i> ';
+            html += '<strong>' + typeText + '</strong>';
+            html += ' from <span style="color:#0d6efd;">' + branchName + '</span>';
+            html += '<br><small class="text-muted">' + dateTime + '</small>';
+            html += '</div>';
+        });
+
+        html += '</div>';
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                title: 'New pending approvals',
+                html: html,
+                showConfirmButton: false,
+                timer: 8000,
+                timerProgressBar: true
+            });
+        } else {
+            alert(approvals.length + ' new approval request(s) arrived.');
+        }
+    }
+
+    function updateApprovalMenuBadge(newCount) {
+        const badge = document.getElementById('approvalBadge');
+        if (!badge) return;
+
+        let current = parseInt(badge.innerText || '0', 10);
+        if (isNaN(current)) current = 0;
+
+        const total = current + newCount;
+        badge.innerText = total;
+        badge.style.display = total > 0 ? 'inline-block' : 'none';
+    }
+
+    $(document).ready(function () {
+        initApprovalNotifications();
+    });
+    @endif
+</script>
+
+{{-- BRANCH NOTIFICATIONS – when HO approves/rejects/callback --}}
+{{-- BRANCH NOTIFICATIONS – when HO approves / rejects / callback --}}
+<script>
+    @if(session('branch_id') != -1)
+    let branchNotifInterval = null;
+
+    function pollBranchNotifications() {
+        $.ajax({
+            url: '{{ route("approval.branch.notifications") }}',
+            method: 'GET',
+            success: function (response) {
+                if (!response.success) {
+                    console.warn('Branch notification error:', response.message);
+                    return;
+                }
+
+                const items = response.items || [];
+                if (items.length > 0) {
+                    showBranchNotification(items);
+                }
+            },
+            error: function () {
+                console.warn('Error polling branch notifications');
+            }
+        });
+    }
+
+    function mapStatus(status) {
+        switch (parseInt(status, 10)) {
+            case 1: return { text: 'Approved', icon: 'success' };
+            case 2: return { text: 'Rejected', icon: 'error' };
+            case 3: return { text: 'Sent for Callback', icon: 'warning' };
+            default: return { text: 'Updated', icon: 'info' };
+        }
+    }
+
+    function showBranchNotification(items) {
+        let html = '<div style="text-align:left;">';
+        let mainIcon = 'info';
+
+        html += '<strong>' + items.length + ' approval update(s)</strong><br><br>';
+
+        items.forEach(function (item) {
+            const statusMap = mapStatus(item.status);
+            mainIcon = statusMap.icon;
+
+            const typeText = item.type ? item.type : ('Type ' + item.typeid);
+            const timeText = item.created_at || item.updated_at;
+
+            html += '<div style="margin-bottom:6px;">';
+            html += '<strong>' + typeText + '</strong> - ' + statusMap.text;
+            if (item.message) {
+                html += '<br><small>' + item.message + '</small>';
+            }
+            if (timeText) {
+                html += '<br><small class="text-muted">' + timeText + '</small>';
+            }
+            html += '</div>';
+        });
+
+        html += '</div>';
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: mainIcon,
+                title: 'Approval status updated',
+                html: html,
+                showConfirmButton: false,
+                timer: 8000,
+                timerProgressBar: true
+            });
+        } else {
+            alert(items.length + ' approval request(s) updated.');
+        }
+    }
+
+    $(document).ready(function () {
+        // poll every 15 seconds
+        branchNotifInterval = setInterval(pollBranchNotifications, 15000);
+    });
+    @endif
+</script>
 
 
 </body>

@@ -22,13 +22,32 @@ class SmsController extends Controller
             $customer = tableWithBranch('customer')->where('idCustomer', $customer_id)->first();
 
             if (!$company || !$customer) {
+
                 Log::info('[SMS] Missing company or customer', [
                     'company' => (bool)$company,
                     'customer' => (bool)$customer,
                     'customer_id' => $customer_id
                 ]);
-                return response()->json(['ok' => true, 'message' => 'Skipped, company or customer missing (Logged)'], 200);
+
+                // ✅ log into sms table
+                if ($customer) {
+                    $this->logSMS(
+                        $customer_id,
+                        $customer,
+                        $message,
+                        $type,
+                        'failed',
+                        [
+                            'reason' => 'Company or customer missing',
+                            'company_found'  => (bool) $company,
+                            'customer_found' => (bool) $customer
+                        ]
+                    );
+                }
+
+                return response()->json(['ok' => true, 'message' => 'Missing data logged'], 200);
             }
+
 
             // Ensure provider column exists
             try {
@@ -43,9 +62,30 @@ class SmsController extends Controller
             // Normalize mobile
             [$normalized, $err] = $this->normalizeSriLankanMobile($customer->Contact_No);
             if ($err) {
-                Log::info('[SMS] Invalid mobile number', ['raw' => $customer->Contact_No, 'error' => $err]);
-                return response()->json(['ok' => true, 'message' => 'Invalid mobile (Logged)'], 200);
+
+                Log::info('[SMS] Invalid mobile number', [
+                    'raw'   => $customer->Contact_No,
+                    'error' => $err
+                ]);
+
+                // ✅ INSERT FAILED SMS RECORD
+                $this->logSMS(
+                    $customer_id,
+                    $customer,
+                    $message,
+                    $type,
+                    'failed',
+                    [
+                        'reason' => 'Invalid mobile number',
+                        'error'  => $err,
+                        'raw'    => $customer->Contact_No
+                    ]
+                );
+
+                // Do NOT break the main system
+                return response()->json(['ok' => true, 'message' => 'Invalid mobile logged'], 200);
             }
+
 
             $provider = $company->provider ?? 'Dialog';
             Log::info('[SMS] Provider selected', ['provider' => $provider]);
@@ -67,18 +107,21 @@ class SmsController extends Controller
     {
         try {
             $dialogToken = Session::get('token');
+
             if (!$dialogToken) {
                 try {
                     Log::info('[SMS][Dialog] Logging in');
                     $client   = new Client(['base_uri' => 'https://e-sms.dialog.lk/api/v1/']);
                     $response = $client->post('login', [
                         'headers' => ['Content-Type' => 'application/json'],
-                        'json' => [
+                        'json'    => [
                             'username' => 'ASIPIYA',
                             'password' => 'Dialog@123',
                         ],
                     ]);
+
                     $responseData = json_decode($response->getBody()->getContents(), true);
+
                     if (!empty($responseData['token'])) {
                         $dialogToken = $responseData['token'];
                         Session::put('token', $dialogToken);
@@ -108,30 +151,40 @@ class SmsController extends Controller
                     ],
                 ]);
 
-                $data = json_decode($response->getBody()->getContents(), true);
+                $data = json_decode($response->getBody()->getContents(), true) ?? [];
                 Log::info('[SMS][Dialog] Send Response', $data);
 
-                if (($data['status'] ?? '') === 'success') {
-                    $this->logSMS($customer_id, $customer, $message, $type);
-                }
+                // Same success rule you used in the job
+                $ok     = (($data['status'] ?? null) === 'success');
+                $status = $ok ? 'sent' : 'failed';
+
+                // Log into sms table with provider_response + status
+                $this->logSMS($customer_id, $customer, $message, $type, $status, $data);
             }
         } catch (\Exception $e) {
             Log::info('[SMS][Dialog] Exception', ['error' => $e->getMessage()]);
+
+            // Even in exception, log as failed (optional but nice)
+            $this->logSMS($customer_id, $customer, $message, $type, 'failed', [
+                'error' => $e->getMessage(),
+            ]);
         }
     }
+
 
     private function sendViaHutch($company, $customer_id, $customer, $message, $type, $normalized)
     {
         try {
             $accessToken = Session::get('hutch_access_token');
+
             if (!$accessToken) {
                 try {
                     Log::info('[SMS][Hutch] Logging in');
-                    $client = new Client(['base_uri' => 'https://bsms.hutch.lk/api/login']);
+                    $client   = new Client(['base_uri' => 'https://bsms.hutch.lk/api/login']);
                     $response = $client->post('login', [
                         'headers' => [
-                            'Content-Type' => 'application/json',
-                            'Accept' => '*/*',
+                            'Content-Type'  => 'application/json',
+                            'Accept'        => '*/*',
                             'X-API-VERSION' => 'v1',
                         ],
                         'json' => [
@@ -139,6 +192,7 @@ class SmsController extends Controller
                             'password' => 'Asipiya@hutch123',
                         ],
                     ]);
+
                     $data = json_decode($response->getBody()->getContents(), true);
                     if (!empty($data['accessToken'])) {
                         $accessToken = $data['accessToken'];
@@ -152,7 +206,8 @@ class SmsController extends Controller
 
             if ($accessToken) {
                 $client = new Client(['base_uri' => 'https://bsms.hutch.lk/api/sendsms']);
-                $mask = $company->mask ?? 'DefaultMask';
+                $mask   = $company->mask ?? 'DefaultMask';
+
                 $response = $client->post('sendsms', [
                     'headers' => [
                         'Content-Type'  => 'application/json',
@@ -161,25 +216,33 @@ class SmsController extends Controller
                         'Authorization' => 'Bearer ' . $accessToken,
                     ],
                     'json' => [
-                        'campaignName' => 'campaign_' . date('YmdHis'),
-                        'mask' => $mask,
-                        'numbers' => $normalized,
-                        'content' => $message,
-                        'deliveryReportRequest' => true,
+                        'campaignName'           => 'campaign_' . date('YmdHis'),
+                        'mask'                   => $mask,
+                        'numbers'                => $normalized,
+                        'content'                => $message,
+                        'deliveryReportRequest'  => true,
                     ],
                 ]);
 
-                $result = json_decode($response->getBody()->getContents(), true);
+                $result = json_decode($response->getBody()->getContents(), true) ?? [];
                 Log::info('[SMS][Hutch] Send Response', $result);
 
-                if (!empty($result['serverRef'])) {
-                    $this->logSMS($customer_id, $customer, $message, $type);
-                }
+                // Hutch success rule (same style as your job: serverRef)
+                $ok     = !empty($result['serverRef']);
+                $status = $ok ? 'sent' : 'failed';
+
+                $this->logSMS($customer_id, $customer, $message, $type, $status, $result);
             }
         } catch (\Exception $e) {
             Log::info('[SMS][Hutch] Exception', ['error' => $e->getMessage()]);
+
+            // Also log as failed here
+            $this->logSMS($customer_id, $customer, $message, $type, 'failed', [
+                'error' => $e->getMessage(),
+            ]);
         }
     }
+
 
     private function normalizeSriLankanMobile(string $raw): array
     {
@@ -198,24 +261,34 @@ class SmsController extends Controller
         return ['94' . $nsn, null];
     }
 
-    private function logSMS($customer_id, $customer, $message, $type)
+    private function logSMS($customer_id, $customer, $message, $type, ?string $status = null, $providerResponse = null)
     {
         try {
             DB::table('sms')->insert([
-                'cus_id' => $customer_id,
-                'cus_name' => $customer->First_Name . ' ' . $customer->Last_Name,
-                'contact_no' => $customer->Contact_No,
-                'message' => $message,
-                'type' => $type,
-                'date' => now()->toDateString(),
-                'time' => now()->toTimeString(),
-                'branch_id' => session('branch_id'),
+                'cus_id'            => $customer_id,
+                'cus_name'          => trim(($customer->First_Name ?? '') . ' ' . ($customer->Last_Name ?? '')),
+                'contact_no'        => $customer->Contact_No,
+                'message'           => $message,
+                'type'              => $type,
+                'date'              => now()->toDateString(),
+                'time'              => now()->toTimeString(),
+                'branch_id'         => session('branch_id'),
+                'status'            => $status,                                      // 👈 NEW
+                'provider_response' => $providerResponse
+                    ? json_encode($providerResponse, JSON_UNESCAPED_UNICODE)
+                    : null,                                                        // 👈 NEW
             ]);
-            Log::info('[SMS] Logged SMS', ['cus_id' => $customer_id, 'type' => $type]);
+
+            Log::info('[SMS] Logged SMS', [
+                'cus_id' => $customer_id,
+                'type'   => $type,
+                'status' => $status,
+            ]);
         } catch (\Exception $e) {
             Log::info('[SMS] Log error', ['error' => $e->getMessage()]);
         }
     }
+
 
     public function create() { return view('pages.SMS_Format'); }
 

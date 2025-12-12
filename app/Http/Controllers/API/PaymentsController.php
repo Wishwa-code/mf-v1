@@ -157,6 +157,7 @@ class PaymentsController extends Controller
             $loan = DB::table('customer_loan')
                 ->where('idCustomer_Loan', $customer_payment->Customer_Loan_idCustomer_Loan)
                 ->first();
+            $branch=$loan->branch_id;
 
             if (!$loan) {
                 return response()->json(['message' => 'Loan not found'], 404);
@@ -207,6 +208,7 @@ class PaymentsController extends Controller
             $sms_template = DB::table('sms_template')
                 ->where('type', 'loan_payment')
                 ->where('status', '1')
+                ->where('branch_id', '=',$branch)
                 ->first();
 
             if ($sms_template) {

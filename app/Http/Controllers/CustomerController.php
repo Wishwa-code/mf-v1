@@ -73,9 +73,9 @@ class CustomerController extends Controller
     $customerData = tableWithBranch('customer')
         ->where('idCustomer', $customer)
         ->first();
-    
+
     $customerName = $customerData ? ($customerData->First_Name . ' ' . $customerData->Last_Name) : 'Unknown';
-    
+
     // Store document upload data for approval
     $requestData = [
         'customer_id' => $customer,
@@ -96,7 +96,7 @@ class CustomerController extends Controller
     ]);
 
     return response()->json(['message' => 'Document upload request sent for approval!'], 200);
-    
+
     // OLD CODE - keeping for approval handler reference
     /*
     insertWithBranch('customer_documents', [
@@ -129,6 +129,13 @@ class CustomerController extends Controller
             ->where('branch_id', '=', session('branch_id')) // Check within the same branch
             ->exists()) {
             return response()->json(['message' => 'This customer contact number already exists!', 'id' => '0'], 200);
+        } else if (empty($request->root)) {
+
+            return response()->json([
+                'message' => 'Root value is required!',
+                'id' => '0'
+            ], 200);
+
         }else{
 
             // Instantiate a new Customer object
@@ -345,12 +352,26 @@ class CustomerController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit()
+    public function edit(Request $request)
     {
         $isHeadOffice = (int)session('branch_id') === -1;
+        $perPage      = (int) $request->input('per_page', 10);
+
+        // 🔹 For AJAX we NEVER use session search – only current value
+        if ($request->ajax()) {
+            $search = trim((string) $request->input('search', ''));
+        } else {
+            // If you want to keep normal-page search via form submit:
+            if ($request->has('search')) {
+                $search = trim((string) $request->input('search', ''));
+                // optional: session(['customer_search' => $search]);
+            } else {
+                $search = ''; // ❗ don't reuse old search
+                // or: $search = session('customer_search', '');
+            }
+        }
 
         if ($isHeadOffice) {
-            // Unscoped (all branches) when Head Office
             $loanSub = DB::table('customer_loan')
                 ->select(
                     'Customer_idCustomer',
@@ -359,7 +380,7 @@ class CustomerController extends Controller
                 )
                 ->groupBy('Customer_idCustomer');
 
-            $customers = DB::table('customer as customer')
+            $customersQuery = DB::table('customer as customer')
                 ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
                 ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
                 ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
@@ -374,10 +395,8 @@ class CustomerController extends Controller
                     'branch.Name as branch_name',
                     DB::raw('IFNULL(loan_counts.current_loans, 0) as current_loans'),
                     DB::raw('IFNULL(loan_counts.settled_loans, 0) as settled_loans')
-                )
-                ->get();
+                );
         } else {
-            // Branch-scoped for regular branches
             $loanSub = tableWithBranch('customer_loan')
                 ->select(
                     'Customer_idCustomer',
@@ -386,7 +405,7 @@ class CustomerController extends Controller
                 )
                 ->groupBy('Customer_idCustomer');
 
-            $customers = tableWithBranch('customer', 'customer')
+            $customersQuery = tableWithBranch('customer', 'customer')
                 ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
                 ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
                 ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
@@ -401,25 +420,294 @@ class CustomerController extends Controller
                     'branch.Name as branch_name',
                     DB::raw('IFNULL(loan_counts.current_loans, 0) as current_loans'),
                     DB::raw('IFNULL(loan_counts.settled_loans, 0) as settled_loans')
-                )
-                ->get();
+                );
         }
 
+        // 🔍 Apply filter ONLY if search not empty
+        if ($search !== '') {
+            $customersQuery->where(function ($q) use ($search) {
+                $q->where('customer.First_Name', 'like', "%{$search}%")
+                    ->orWhere('customer.Last_Name', 'like', "%{$search}%")
+                    ->orWhere('customer.cus_number', 'like', "%{$search}%")
+                    ->orWhere('customer.Nic', 'like', "%{$search}%")
+                    ->orWhere('customer.Contact_No', 'like', "%{$search}%");
+            });
+        }
+
+        $customers = $customersQuery
+            ->orderBy('customer.idCustomer', 'desc')
+            ->paginate($perPage)
+            ->appends(['search' => $search]);
+
+
+
+        // ------------- AJAX RESPONSE -------------
+        if ($request->ajax()) {
+            $rowsHtml       = view('partials.customer_rows', compact('customers'))->render();
+            $paginationHtml = view('partials.customer_pagination', compact('customers'))->render();
+
+            return response()->json([
+                'rows'       => $rowsHtml,
+                'pagination' => $paginationHtml,
+            ]);
+        }
+
+        // ------------- NORMAL PAGE LOAD -------------
         if ($isHeadOffice) {
-            $group = DB::table('customer_group')->get();
-            $center = DB::table('center')->get();
-            // At HO there can be multiple companies; pick none or any — retaining prior behavior of single
+            $group   = DB::table('customer_group')->get();
+            $center  = DB::table('center')->get();
             $company = DB::table('company')->first();
-            $route = DB::table('route')->get();
+            $route   = DB::table('route')->get();
         } else {
-            $group = tableWithBranch('customer_group')->get();
-            $center = tableWithBranch('center')->get();
+            $group   = tableWithBranch('customer_group')->get();
+            $center  = tableWithBranch('center')->get();
             $company = DB::table('company')->first();
-            $route= tableWithBranch('route')->get();
+            $route   = tableWithBranch('route')->get();
         }
 
         return view('pages.ViewCustomer', compact('customers','route','group','center','company'));
     }
+
+
+    public function uploadPhoto(Request $request)
+    {
+        $request->validate([
+            'customer_id' => 'required|integer|exists:customer,idCustomer',
+            'cus_phto'    => 'required|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        $id = $request->customer_id;
+
+        // Get customer
+        $customer = DB::table('customer')->where('idCustomer', $id)->first();
+        if (!$customer) {
+            return response()->json(['error' => 'Customer not found'], 404);
+        }
+
+        // Handle file upload (same pattern you already use)
+        if ($request->hasFile('cus_phto')) {
+
+            $file = $request->file('cus_phto');
+            $directory = 'documents';
+
+            if (!Storage::disk('public')->exists($directory)) {
+                Storage::disk('public')->makeDirectory($directory);
+            }
+
+            $documentPath = Storage::disk('public')->putFile($directory, $file);
+
+            // Update DB
+            DB::table('customer')
+                ->where('idCustomer', $id)
+                ->update([
+                    'Cus_phto' => $documentPath
+                ]);
+        }
+
+        return response()->json(['status' => 'success']);
+    }
+
+    public function exportExcel(Request $request)
+    {
+
+
+        $search = $request->input('search');
+
+        $loanSub = DB::table('customer_loan')
+            ->select(
+                'Customer_idCustomer',
+                DB::raw("SUM(CASE WHEN Status = 1 THEN 1 ELSE 0 END) AS current_loans"),
+                DB::raw("SUM(CASE WHEN Status = 2 THEN 1 ELSE 0 END) AS settled_loans")
+            )
+            ->groupBy('Customer_idCustomer');
+
+        $query = tableWithBranch('customer', 'customer')
+            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->leftJoin('branch', 'customer.branch_id', '=', 'branch.branch_id')
+            ->leftJoinSub($loanSub, 'loan_counts', function ($join) {
+                $join->on('customer.idCustomer', '=', 'loan_counts.Customer_idCustomer');
+            })
+            ->select(
+                'customer.*',
+                'customer_group.Name as group_name',
+                'center.Name as center_name',
+                'branch.Name as branch_name',
+                DB::raw('IFNULL(loan_counts.current_loans, 0) as current_loans'),
+                DB::raw('IFNULL(loan_counts.settled_loans, 0) as settled_loans')
+            );
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('customer.First_Name', 'like', "%{$search}%")
+                    ->orWhere('customer.Last_Name', 'like', "%{$search}%")
+                    ->orWhere('customer.cus_number', 'like', "%{$search}%")
+                    ->orWhere('customer.Nic', 'like', "%{$search}%")
+                    ->orWhere('customer.Contact_No', 'like', "%{$search}%");
+            });
+        }
+
+        $customers = $query->orderBy('customer.idCustomer', 'desc')->get();
+
+        $fileName = 'customers_' . now()->format('Ymd_His') . '.csv';
+
+        return response()->stream(function () use ($customers) {
+            $handle = fopen('php://output', 'w');
+
+            fputcsv($handle, [
+                'Center',
+                'Group Name',
+                'Branch Name',
+                'Customer No',
+                'Customer Name',
+                'NIC',
+                'Address',
+                'Contact Number',
+                'Points',
+                'Current Loan Count',
+                'Settled Loan Count',
+            ]);
+
+            foreach ($customers as $c) {
+                fputcsv($handle, [
+                    $c->center_name ?? '-',
+                    $c->group_name ?? '-',
+                    $c->branch_name,
+                    $c->cus_number,
+                    trim(($c->First_Name ?? '') . ' ' . ($c->Last_Name ?? '')),
+                    $c->Nic,
+                    trim(($c->Address ?? '') . ' ' . ($c->Address_02 ?? '') . ' ' . ($c->Address_03 ?? '')),
+                    $c->Contact_No,
+                    number_format($c->points ?? 0, 2, '.', ','),
+                    $c->current_loans ?? 0,
+                    $c->settled_loans ?? 0,
+                ]);
+            }
+
+            fclose($handle);
+        }, 200, [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="'.$fileName.'"',
+            'Cache-Control'       => 'no-store, no-cache',
+        ]);
+    }
+
+    public function mapView()
+    {
+        return view('pages.customerMap');
+    }
+
+    public function mapData(Request $request)
+    {
+        $routeId = $request->route_id;
+        $today   = date('Y-m-d');
+
+        // Load ALL active loan customers
+        $query = tableWithBranch('customer', 'customer')
+            ->join('customer_loan', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->where('customer_loan.Status', "=","1")  // only active loans
+            ->whereNotNull('customer.Latitude')
+            ->whereNotNull('customer.Longitude');
+
+        if (!empty($routeId)) {
+            $query->where('customer.route_id', $routeId);
+        }
+
+        $rows = $query->select(
+            'customer.idCustomer',
+            'customer.cus_number',
+            'customer.Title',
+            'customer.First_Name',
+            'customer.Last_Name',
+            'customer.Contact_No',
+            'customer.Address',
+            'customer.Address_02',
+            'customer.Address_03',
+            'customer.Latitude',
+            'customer.Longitude',
+            'customer.Cus_phto'
+        )
+            ->groupBy(
+                'customer.idCustomer',
+                'customer.cus_number',
+                'customer.Title',
+                'customer.First_Name',
+                'customer.Last_Name',
+                'customer.Contact_No',
+                'customer.Address',
+                'customer.Address_02',
+                'customer.Address_03',
+                'customer.Latitude',
+                'customer.Longitude',
+                'customer.Cus_phto'
+            )
+            ->get();
+
+        $customers = $rows->map(function ($c) use ($today) {
+
+            // Get all active loan IDs of customer
+            $activeLoanIds = DB::table('customer_loan')
+                ->where('Customer_idCustomer', $c->idCustomer)
+                ->where('Status', 1)
+                ->pluck('idCustomer_Loan');
+
+            // STEP 3: Paid today (for active loans)
+            $paidToday = DB::table('customer_payments')
+                ->whereIn('Customer_Loan_idCustomer_Loan', $activeLoanIds)
+                ->whereDate('Date', $today)
+                ->exists();
+
+            // STEP 2: Installment today?
+            $installmentToday = DB::table('installments')
+                ->whereIn('Customer_Loan_idCustomer_Loan', $activeLoanIds)
+                ->whereDate('Installment_Date', $today)
+                ->exists();
+
+            // STEP 1: Default red
+            $pinColor = 'red';
+
+            // Step 2 → Yellow (if installment today)
+            if ($installmentToday) {
+                $pinColor = 'yellow';
+            }
+
+            // Step 3 → Blue overrides yellow (if paid today)
+            if ($paidToday) {
+                $pinColor = 'blue';
+            }
+
+            // Photo URL
+            $photoUrl = !empty($c->Cus_phto) ? asset('storage/' . $c->Cus_phto) : null;
+
+            return [
+                'id'          => $c->idCustomer,
+                'name'        => trim(($c->Title ? $c->Title.' ' : '') . $c->First_Name.' '.$c->Last_Name),
+                'cus_number'  => $c->cus_number,
+                'phone'       => $c->Contact_No,
+                'address'     => trim(($c->Address ?? '').' '.($c->Address_02 ?? '').' '.($c->Address_03 ?? '')),
+                'lat'         => (float) $c->Latitude,
+                'lng'         => (float) $c->Longitude,
+                'photo'       => $photoUrl,
+                'pin_color'   => $pinColor
+            ];
+        });
+
+        return response()->json([
+            'customers' => $customers
+        ]);
+    }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

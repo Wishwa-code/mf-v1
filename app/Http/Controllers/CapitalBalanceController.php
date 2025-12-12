@@ -319,7 +319,7 @@ class CapitalBalanceController extends Controller
             'first_installment_daily',
             'first_installment_weekly',
             'first_installment_monthly',
-            'recovery_account_status','collection_days',
+            'recovery_account_status','collection_days','due_skip_type'
         ];
 
         // Get fixed keys
@@ -356,6 +356,7 @@ class CapitalBalanceController extends Controller
                         'fund_request_columns','disbursement_columns',
                         'document_upload_restriction','guarantees_restriction','change_product_details',
                         'first_installment_daily','first_installment_weekly','first_installment_monthly','recovery_account_status','collection_days',
+                        'due_skip_type',
                     ];
                     $isFixed = in_array($key, $fixedKeys, true);
 
@@ -454,6 +455,10 @@ class CapitalBalanceController extends Controller
                                     return $fail('collection_days contains invalid weekday code: ' . $dayVal);
                                 }
                             }
+                        }
+                        if ($key === 'due_skip_type' &&
+                            !in_array($value, ['skip_installment','skip_day'], true)) {
+                            return $fail('Invalid value for due_skip_type.');
                         }
 
 

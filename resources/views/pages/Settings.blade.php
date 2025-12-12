@@ -315,6 +315,8 @@
                             </div>
                         </div>
 
+
+
                         <button id="btnUpdateLoanRestrictions" class="btn btn-primary">
                             <i class="fa-solid fa-floppy-disk me-1"></i> Update Restrictions
                         </button>
@@ -548,6 +550,26 @@
                             <small class="text-muted d-block mt-2">
                                 Example: If you uncheck Sunday, users cannot pick Sunday in the "Collection Day" dropdown in Issue Loan.
                             </small>
+
+                            <hr>
+                            <!-- Due Skip Type -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Due Skip Type</label>
+                                <div class="d-flex gap-2">
+                                    <select id="due_skip_type" class="form-select" style="max-width: 300px;">
+                                        <option value="skip_installment">Skip an Installment</option>
+                                        <option value="skip_day">Skip a Day</option>
+                                    </select>
+                                    <button id="btnUpdateDueSkipType" class="btn btn-primary">
+                                        <i class="fa-solid fa-floppy-disk me-1"></i> Update
+                                    </button>
+                                </div>
+                                <small class="text-muted">
+                                    Controls how the system behaves when you skip a due:
+                                    either skip the entire installment or only shift the due date.
+                                </small>
+                            </div>
+
                         </div>
 
 
@@ -562,7 +584,7 @@
 
         <!-- Head Office Approval Section -->
         <div class="row mt-3">
-            <div class="col-12">
+            <div class="col-6">
                 <div class="card">
                     <div class="card-body">
                         <h5 class="mb-3">Head Office Approval</h5>
@@ -777,6 +799,19 @@
                 const value = $('#loan_order').val(); // 'create_date' | 'loan_number' | 'issue_date'
                 save_setting('loan_order', value);
             });
+
+            $('#btnUpdateDueSkipType').on('click', function (e) {
+                e.preventDefault();
+                const value = $('#due_skip_type').val(); // 'skip_installment' | 'skip_day'
+
+                if (!value) {
+                    Swal.fire("Warning", "Please select a Due Skip Type.", "warning");
+                    return;
+                }
+
+                save_setting('due_skip_type', value);
+            });
+
 
             $('#btnUpdateMaxLoans').on('click', function (e) {
                 e.preventDefault();
@@ -1154,6 +1189,10 @@
                         $('#recovery_account_status').val(items.recovery_account_status); // 'active' | 'inactive'
                     }
 
+// Due Skip Type
+                    if (items.due_skip_type) {
+                        $('#due_skip_type').val(items.due_skip_type); // 'skip_installment' | 'skip_day'
+                    }
 
 // Payment Member Name
                     if (items.payment_member_name) {

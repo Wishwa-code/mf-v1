@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Services\BankBalanceService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class ChartOfAccountController extends Controller
 {
@@ -304,9 +306,21 @@ class ChartOfAccountController extends Controller
     // Fetch data for the tables
     public function fetch(Request $request)
     {
+        // ✅ Step 1: Ensure columns exist (only runs once if missing)
+        if (!Schema::hasColumn('manual_journal', 'reversed_at')) {
+            Schema::table('manual_journal', function ($table) {
+                $table->timestamp('reversed_at')->nullable()->after('updated_at');
+            });
+        }
+
+        if (!Schema::hasColumn('manual_journal', 'reversed_by')) {
+            Schema::table('manual_journal', function ($table) {
+                $table->unsignedBigInteger('reversed_by')->nullable()->after('reversed_at');
+            });
+        }
+
         $query = tableWithBranch('manual_journal');
 
-        // Apply filters
         if ($request->narration) {
             $query->where('narration', 'LIKE', '%' . $request->narration . '%');
         }
@@ -326,18 +340,124 @@ class ChartOfAccountController extends Controller
             $query->where('total_amount', '<=', $request->to_amount);
         }
 
+        // Only statuses we care about here
+        $results = $query->whereIn('status', [1, 2])->get();
 
-        $results = $query->get();
-
-        // Separate results into posted and deleted
-        $posted = $results->where('status', 1)->values();
-        $deleted = $results->where('status', 0)->values();
+        $posted   = $results->where('status', 1)->values();
+        $reversed = $results->where('status', 2)->values();
 
         return response()->json([
-            'posted' => $posted,
-            'deleted' => $deleted,
+            'posted'   => $posted,
+            'reversed' => $reversed,
         ]);
     }
+
+
+    public function reverse(Request $request)
+    {
+        $request->validate(['id_manual_journal' => 'required|integer']);
+        $id = (int)$request->id_manual_journal;
+
+        return DB::transaction(function () use ($id) {
+            // 1) Lock header
+            $header = tableWithBranch('manual_journal','manual_journal')
+                ->where('id_manual_journal', $id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$header) {
+                return response()->json(['status'=>'error','message'=>'Journal not found.'],404);
+            }
+            if ((int)$header->status === 2) {
+                return response()->json(['status'=>'error','message'=>'This journal is already reversed.'],400);
+            }
+
+            // 2) Get lines (we’ll use them mainly to read account strings and debit/credit)
+            $lines = tableWithBranch('manual_journal_has_amount','manual_journal_has_amount')
+                ->where('id_manual_journal', $id)
+                ->orderBy('id_manual_journal_has_amount')
+                ->get();
+
+            if ($lines->isEmpty()) {
+                return response()->json(['status'=>'error','message'=>'No lines found to reverse.'],400);
+            }
+
+            // 3) Reverse bank transactions:
+            //    We will look at each row’s `account` (format "BANKCODE-...") and post the
+            //    opposite entry using your existing BankLogController + BankBalanceService.
+            foreach ($lines as $row) {
+                // Split the account string by '-' and get the first part as bank code
+                $accountParts = explode('-', (string)$row->account);
+                $firstNumber  = $accountParts[0] ?? null;
+
+                if (!$firstNumber) {
+                    // Skip if no recognizable bank id; optional: throw error instead
+                    continue;
+                }
+
+                $bank = tableWithBranch('company_bank_accounts')
+                    ->where('Idbank', '=', $firstNumber)
+                    ->first();
+
+                if (!$bank) {
+                    // Skip silently; or handle as needed
+                    continue;
+                }
+
+                // Opposite transactions
+                $dateTime = ($header->date ?? now()->toDateString()).' '.now()->format('H:i:s');
+                $desc = $row->description;
+
+                // If original posted a debit, we now credit the same amount
+                if ((float)$row->debit_amount > 0) {
+                    $this->bankLogController->index(
+                        $bank->Idbank,
+                        "Manual Journal Reverse",
+                        $desc,
+                        "-",
+                        "credit",                           // opposite of original debit
+                        (float)$row->debit_amount,
+                        '-',
+                        '0',
+                        '0',
+                        $dateTime
+                    );
+                }
+
+                // If original posted a credit, we now debit the same amount
+                if ((float)$row->credit_amount > 0) {
+                    $this->bankLogController->index(
+                        $bank->Idbank,
+                        "Manual Journal Reverse",
+                        $desc,
+                        "-",
+                        "debit",                            // opposite of original credit
+                        (float)$row->credit_amount,
+                        '-',
+                        '0',
+                        '0',
+                        $dateTime
+                    );
+                }
+
+                // Recompute running balance for this bank
+                $service = new BankBalanceService();
+                $service->updateRunningBalance($bank->Idbank);
+            }
+
+            tableWithBranch('manual_journal','manual_journal')
+                ->where('id_manual_journal', $id)
+                ->update([
+                    'status'      => 2,
+                    'reversed_at' => now(),
+                    'reversed_by' => auth()->id() ?? null,
+                    'updated_at'  => now(),
+                ]);
+
+            return response()->json(['status'=>'success','message'=>'Journal reversed successfully.']);
+        });
+    }
+
 
 
 
@@ -593,68 +713,89 @@ class ChartOfAccountController extends Controller
     public function BalanceSheetView()
     {
         $date_from = Carbon::now()->format('Y-m-d'); // Default: Current date
-        $date_to = Carbon::now()->format('Y-m-d');   // Default: Current date
+        $date_to   = Carbon::now()->format('Y-m-d'); // Default: Current date
 
         // Initialize all financial categories as empty arrays
-        $revenue = [];
-        $expenses = [];
-        $current_assets = [];
+        $revenue            = [];
+        $expenses           = [];
+        $current_assets     = [];
         $non_current_assets = [];
-        $equity = [];
-        $liabilities = [];
-        $assets = [];
+        $equity             = [];
+        $liabilities        = [];
+        $assets             = [];
 
         // Calculate Totals (Ensure total is `0` if dataset is empty)
-        $total_revenue =  0;
-        $total_expenses =  0;
-        $total_assets =  0;
-        $total_liabilities =  0;
-        $total_equity =  0;
-        $total_liabilities_and_equity =  0;
-        $final_result_float =  0;
+        $total_revenue                 = 0;
+        $total_expenses                = 0;
+        $total_assets                  = 0;
+        $total_liabilities             = 0;
+        $total_equity                  = 0;
+        $total_liabilities_and_equity  = 0;
+        $final_result_float            = 0;
 
         return view('pages.Accounting.BalanceSheet', compact(
-            'revenue', 'expenses', 'current_assets', 'non_current_assets',
-            'liabilities', 'equity', 'total_revenue', 'total_expenses',
-            'total_assets', 'total_liabilities', 'total_equity',
-            'total_liabilities_and_equity', 'date_from', 'date_to','assets','final_result_float'
+            'revenue',
+            'expenses',
+            'current_assets',
+            'non_current_assets',
+            'liabilities',
+            'equity',
+            'total_revenue',
+            'total_expenses',
+            'total_assets',
+            'total_liabilities',
+            'total_equity',
+            'total_liabilities_and_equity',
+            'date_from',
+            'date_to',
+            'assets',
+            'final_result_float'
         ));
     }
 
+
     public function BalanceSheet(Request $request)
     {
-        $service = new BankBalanceService();
-
-        $bank=tableWithBranch('company_bank_accounts')->get();
-        foreach ($bank as $banks){
-            $service->updateRunningBalance( $banks->Idbank);
-        }
-
+        // 1) Decide the date_to
         $date_to = $request->date_to ?? now()->toDateString();
 
-        // Call the profit function
-        $profitData = $this->profit($request);
+        // 2) Recalculate all bank balances ONCE per branch (if needed)
+        //    This keeps your process, but avoids parallel recalcs / deadlocks.
+        $this->recalcAllBankBalancesSafely();
 
-        // Initialize variables
-        $total_assets = 0;
+        // 3) Call the profit function (unchanged)
+        //    If profit() uses dates, make sure date_to is inside $request.
+        $profitRequest = clone $request;
+        $profitRequest->merge(['date_to' => $date_to]);
+
+        $profitData = $this->profit($profitRequest);
+
+        // 4) Initialize variables (your logic)
+        $total_assets      = 0;
         $total_liabilities = 0;
-        $total_equity = 0;
-        $assets = [];
-        $liabilities = [];
-        $equity = [];
+        $total_equity      = 0;
+        $assets            = [];
+        $liabilities       = [];
+        $equity            = [];
 
-        // Net Profit / Loss logic
-        $final_result = ($profitData['total_difference_revenue'] + $profitData['interest'] + $profitData['panelty'] + $profitData['other_chargers'] - $profitData['total_difference']);
-        $final_result = str_replace(',', '', $final_result);
+        // 5) Net Profit / Loss logic (your formula)
+        $final_result = (
+            $profitData['total_difference_revenue']
+            + $profitData['interest']
+            + $profitData['panelty']
+            + $profitData['other_chargers']
+            - $profitData['total_difference']
+        );
+        $final_result      = str_replace(',', '', $final_result);
         $final_result_float = floatval($final_result);
 
-        // Subquery to get the latest log for each account
+        // 6) Subquery to get the latest log for each account (your query)
         $latestLogs = tableWithBranch('company_bank_has_log as log1')
             ->select(DB::raw('MAX(log1.Id) as latest_log_id'))
             ->whereDate('log1.Date_Time', '<=', $date_to)
             ->groupBy('log1.Bank_Account_Id');
 
-        // Fetch account balances with latest logs
+        // 7) Fetch account balances with latest logs (your query)
         $accountData = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
             ->join('company_bank_has_log', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.Bank_Account_Id')
             ->joinSub($latestLogs, 'latest_logs', function ($join) {
@@ -672,52 +813,57 @@ class ChartOfAccountController extends Controller
             )
             ->get();
 
-        // Process accounts
+        // 8) Process accounts (your logic)
         foreach ($accountData as $item) {
             $entry = [
-                'idbank' => $item->Idbank,
-                'name' => $item->Bank_Name,
-                'balance' => floatval($item->Balance),
-                'primary_account' => $item->primary_account ?? 0
+                'idbank'          => $item->Idbank,
+                'name'            => $item->Bank_Name,
+                'balance'         => floatval($item->Balance),
+                'primary_account' => $item->primary_account ?? 0,
             ];
 
             switch ($item->acc_type_group) {
                 case 'Assets':
-                    $assets[] = $entry;
-                    $total_assets += $entry['balance'];
+                    $assets[]       = $entry;
+                    $total_assets  += $entry['balance'];
                     break;
+
                 case 'Liabilities':
-                    $liabilities[] = $entry;
-                    $total_liabilities += $entry['balance'];
+                    $liabilities[]       = $entry;
+                    $total_liabilities  += $entry['balance'];
                     break;
+
                 case 'Equity':
-                    $equity[] = $entry;
-                    $total_equity += $entry['balance'];
+                    $equity[]       = $entry;
+                    $total_equity  += $entry['balance'];
                     break;
             }
         }
 
-        // Add Net Profit or Net Loss
+        // 9) Add Net Profit or Net Loss (your logic)
         if ($final_result_float > 0) {
             $liabilities[] = [
-                'idbank' => 'Net Profit',
-                'name' => 'Net Profit',
-                'balance' => $final_result_float,
+                'idbank'          => 'Net Profit',
+                'name'            => 'Net Profit',
+                'balance'         => $final_result_float,
                 'primary_account' => 0
             ];
             $total_liabilities += $final_result_float;
+
         } elseif ($final_result_float < 0) {
             $assets[] = [
-                'idbank' => 'Net Loss',
-                'name' => 'Net Loss',
-                'balance' => abs($final_result_float),
+                'idbank'          => 'Net Loss',
+                'name'            => 'Net Loss',
+                'balance'         => abs($final_result_float),
                 'primary_account' => 0
             ];
             $total_assets += abs($final_result_float);
         }
 
+        // 10) Totals
         $total_liabilities_and_equity = $total_liabilities + $total_equity;
 
+        // 11) Return view (your variables)
         return view('pages.Accounting.BalanceSheet', compact(
             'date_to',
             'assets',
@@ -734,6 +880,41 @@ class ChartOfAccountController extends Controller
 
 
 
+    function recalcAllBankBalancesSafely()
+    {
+        $branchId = session('branch_id') ?? 'all';
+        $lockKey  = "all_bank_balance_recalc_branch_{$branchId}";
+        $lock     = Cache::lock($lockKey, 300); // 5 minutes
+
+        if (! $lock->get()) {
+            // Another request/background job is already doing full recalculation.
+            // We skip here to avoid deadlock and heavy duplicate work.
+            return;
+        }
+
+        try {
+            $service = new BankBalanceService();
+
+            // === YOUR ORIGINAL LOOP (KEPT) ===
+            $bank = tableWithBranch('company_bank_accounts')->get();
+            foreach ($bank as $banks) {
+                $service->updateRunningBalance($banks->Idbank);
+            }
+            // =================================
+
+        } catch (\Throwable $e) {
+            // Log but don't break the Balance Sheet view completely
+            \Log::error('recalcAllBankBalancesSafely failed: ' . $e->getMessage());
+        } finally {
+            try {
+                if (isset($lock) && method_exists($lock, 'release')) {
+                    $lock->release();
+                }
+            } catch (\Throwable $e) {
+                // ignore lock release errors
+            }
+        }
+    }
 
 
 

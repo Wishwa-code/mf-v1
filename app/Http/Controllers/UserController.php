@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\BankLogController;
+use App\Jobs\GenerateDueSkipJob;
 use App\Jobs\RunRecoverySweepJob;
+use App\Models\LoginUser;
 use App\Models\Sms;
 use App\Models\User;
 use Carbon\Carbon;
@@ -11,6 +13,7 @@ use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Session\Store;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -101,9 +104,8 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+//
+
     public function store(Request $request, Store $session)
     {
         $request->validate([
@@ -138,19 +140,13 @@ class UserController extends Controller
                     return redirect()->route('login')->with("error", "Please contact Admin!");
                 }
             }
-            // Check if 'log_tracking_no' column exists in 'company_bank_has_log'
+// Check if 'log_tracking_no' column exists in 'company_bank_has_log'
             if (!Schema::hasColumn('company_bank_has_log', 'log_tracking_no')) {
                 DB::statement("ALTER TABLE `company_bank_has_log` ADD `log_tracking_no` VARCHAR(10) NULL");
             }
-            // Dynamically add 'status' column if it does not exist
-            if (!Schema::hasColumn('loan_category', 'status')) {
-                DB::statement("ALTER TABLE loan_category ADD COLUMN status TINYINT DEFAULT 1");
-            }
 
-
-
-
-
+            // Call to the penalty creation function
+            $this->create_panelty();
             return redirect()->intended(route('home'));
         }
 
@@ -158,7 +154,121 @@ class UserController extends Controller
         return redirect()->route('login')->with("error", "Login details are not valid!");
     }
 
-
+//    public function store(Request $request, Store $session)
+//    {
+//        $request->validate([
+//            'email'    => 'required|email',
+//            'password' => 'required',
+//        ]);
+//
+//        $email    = $request->email;
+//        $password = $request->password;
+//
+//        /**
+//         * 1) Read login mapping from MAIN DB (asipiya_main)
+//         *    Here LoginUser uses the default "mysql" connection which should point to asipiya_main.
+//         *    If you gave LoginUser a $connection = 'main', then make sure 'main' exists in config/database.php
+//         */
+//        $loginUser = LoginUser::where('email', $email)
+//            ->where('active', 1)
+//            ->first();
+//
+//        if (! $loginUser) {
+//            return back()->with('error', 'Login details are not valid! (Email not registered)');
+//        }
+//
+//        // Tenant DB name is stored in db_name column of login_users
+//        $tenantDbName = $loginUser->db_name;
+//
+//        /**
+//         * 2) Save tenant DB name into session for future requests
+//         *    (SetTenantConnection middleware will read this)
+//         */
+//        $session->put('tenant_db', $tenantDbName);
+//        $session->put('login_email', $email);
+//        $session->save();
+//
+//        /**
+//         * 3) Configure TENANT connection for THIS request
+//         *    (we only change the database name; host/user/pass come from env)
+//         */
+//        Config::set('database.connections.tenant.database', $tenantDbName);
+//        Config::set('database.default', 'tenant');   // so DB::table() uses tenant
+//
+//        DB::purge('tenant');        // clear old connection cache
+//        DB::reconnect('tenant');    // reconnect with new DB
+//
+//        // Make sure the default guard is web (uses App\Models\User with $connection='tenant')
+//        Auth::shouldUse('web');
+//
+//        /**
+//         * 4) Log in using TENANT DB `user` table
+//         */
+//        $credentials = [
+//            'email'    => $email,
+//            'password' => $password,
+//        ];
+//
+//        if (! Auth::attempt($credentials)) {
+//            return back()->with('error', 'Login details are not valid!');
+//        }
+//
+//        // Regenerate session ID after login for security
+//        $request->session()->regenerate();
+//
+//        /**
+//         * 5) Load extra user/session info from TENANT DB
+//         *    Now DB::table() hits the tenant database.
+//         */
+//        $userRows = DB::table('user')->where('email', $email)->get();
+//
+//        foreach ($userRows as $item) {
+//            $session->put('userid',        (int) $item->id);
+//            $session->put('username',      $item->email);
+//            $session->put('Full_Name',     $item->Full_Name);
+//            $session->put('designation',   $item->Designation);
+//            $session->put('branch_id',     (int) $item->branch_id);
+//            $session->put('branch_access', (int) $item->branch_access);
+//
+//            // These helpers now also use tenant DB because default is 'tenant'
+//            $company = tableWithBranch('company')->first();
+//            if ($company) {
+//                $session->put('company_name', $company->company_name);
+//            }
+//
+//            $branch = DB::table('branch')
+//                ->where('branch_id', '=', $item->branch_id)
+//                ->first();
+//
+//            if ($branch) {
+//                $session->put('branch_name', $branch->Name);
+//            }
+//
+//            if ($item->Status === "0") {
+//                Auth::logout();
+//                $request->session()->invalidate();
+//                $request->session()->regenerateToken();
+//
+//                return redirect()->route('login')
+//                    ->with('error', 'Please contact Admin! (User deactivated)');
+//            }
+//        }
+//
+//        /**
+//         * 6) Example column checks on TENANT DB
+//         */
+//        if (! Schema::connection('tenant')->hasColumn('company_bank_has_log', 'log_tracking_no')) {
+//            DB::statement("ALTER TABLE company_bank_has_log ADD log_tracking_no VARCHAR(10) NULL");
+//        }
+//
+//        if (! Schema::connection('tenant')->hasColumn('loan_category', 'status')) {
+//            DB::statement("ALTER TABLE loan_category ADD COLUMN status TINYINT DEFAULT 1");
+//        }
+//
+//        // 7) Go to dashboard – from now on, SetTenantConnection middleware
+//        //    will read session('tenant_db') and switch DB for each request
+//        return redirect()->intended(route('home'));
+//    }
 
     /**
      * Display the specified resource.
@@ -332,17 +442,16 @@ class UserController extends Controller
 //                $this->fixLoanInstallmentsOnce_2((int)$loan->idCustomer_Loan);
 //            }
 //        }
-
-
-
+//        dd([
+//            'default' => DB::getDefaultConnection(),
+//            'db_name' => DB::select('SELECT DATABASE() as db')[0]->db,
+//        ]);
 
 
         if (!Auth::check()) {
             return redirect()->route('login')->with("error", "Session expired! Please Login");
         }
-        $branchId=session('branch_id');
-        $userId=session('userid');
-        RunRecoverySweepJob::dispatch($branchId,$userId);
+
         // Head Office aggregated dashboard: show all branches overview
         if ((int)session('branch_id') === -1) {
             // Fetch active branches excluding head office itself
@@ -458,7 +567,7 @@ class UserController extends Controller
 
 
         // Call to the penalty creation function
-         $this->create_panelty();
+        // $this->create_panelty();
 
 
         $customerCount = tableWithBranch('customer')->count();
@@ -469,17 +578,33 @@ class UserController extends Controller
         $setteled_loan_Count = tableWithBranch('customer_loan')->where('Status','=','1')->count();
         $deleted_loan_Count = tableWithBranch('customer_loan')->where('Status','=','-2')->count();
         $setteled_loan_current_Amount = tableWithBranch('customer_loan')->where('Status','=','1')->sum('Amount');
-        $portfolio = tableWithBranch('installments')->sum('capital_balance');
+        $portfolio = tableWithBranch('installments', 'installments')
+            ->join('customer_loan as cl', 'cl.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
+            ->where('cl.Status', 0)
+            ->sum('installments.capital_balance');
 
-        // Current month lending amount - from 1st of current month to today
-        $currentMonthStart = date('Y-m-01'); // First day of current month
-        $today = date('Y-m-d');
+        $currentMonthStart = date('Y-m-01 00:00:00'); // Start of month
+        $todayEnd = date('Y-m-d 23:59:59');          // End of today
+
         $currentMonthLending = tableWithBranch('customer_loan')
-            ->whereBetween('Date_Time', [$currentMonthStart, $today])
-            ->where('Status', '0') // Only disbursed loans
+            ->whereBetween('Date_Time', [$currentMonthStart, $todayEnd])
+            ->where('Status', '0')
             ->sum('Amount');
 
+
         $todayinstallment = tableWithBranch('customer_loan', 'customer_loan')
+            ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
+            ->where('installments.Installment_Date', '=', date('Y-m-d'))
+            ->where('customer_loan.Status', '=', '0')
+            ->sum('installments.Installment_Amount');
+
+        $todayinstallment_balance = tableWithBranch('customer_loan', 'customer_loan')
+            ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
+            ->where('installments.Installment_Date', '=', date('Y-m-d'))
+            ->where('customer_loan.Status', '=', '0')
+            ->sum('installments.Total_Balance');
+
+        $todayNotPaid = tableWithBranch('customer_loan', 'customer_loan')
             ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
             ->where('installments.Installment_Date', '=', date('Y-m-d'))
             ->where('customer_loan.Status', '=', '0')
@@ -573,8 +698,8 @@ class UserController extends Controller
         }
 
 
-        $startOfWeek = Carbon::now()->startOfWeek(); // Mon 2025-04-21 00:00:00
-        $endOfWeek = Carbon::now()->endOfWeek();     // Sun 2025-04-27 23:59:59
+        $startOfWeek = Carbon::now()->startOfWeek(Carbon::SUNDAY); // Sun 2025-04-20 00:00:00
+        $endOfWeek = Carbon::now()->endOfWeek(Carbon::SATURDAY);     // Sat 2025-04-26 23:59:59
         $startOfLastWeek = $startOfWeek->copy()->subWeek();
         $endOfLastWeek = $endOfWeek->copy()->subWeek();
 
@@ -657,23 +782,59 @@ class UserController extends Controller
             DB::statement("ALTER TABLE `company_bank_has_log` ADD `log_tracking_no` VARCHAR(10) NULL");
         }
 
-        // Weekly unpaid (active loans)
-        $weekStart = Carbon::now()->startOfWeek()->toDateString();
-        $weekToday = date('Y-m-d');
+        // ----------------------
+// Date boundaries
+// ----------------------
+        $today      = Carbon::today();
+        $todayDate  = $today->toDateString();
+        $weekStart  = $today->copy()->startOfWeek(Carbon::SUNDAY)->toDateString();   // Sunday
+        $weekEnd    = $today->copy()->endOfWeek(Carbon::SATURDAY)->toDateString();   // Saturday
 
-        $weeklyUnpaidQuery = tableWithBranch('installments','installments')
+// ----------------------
+// 1) THIS WEEK ARREARS
+//    (Sunday → yesterday)
+// ----------------------
+        if ($todayDate > $weekStart) {
+            $arrearsEnd = $today->toDateString();
+
+
+            $weeklyUnpaidQuery = tableWithBranch('installments','installments')
+                ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+                ->where('customer_loan.Status', '=', '0')
+                ->where('installments.Status', '=', '0')
+                ->where('installments.Total_Balance', '>', 0)
+                ->whereBetween('installments.Installment_Date', [$weekStart, $arrearsEnd]);
+
+            $weeklyUnpaidCount = (clone $weeklyUnpaidQuery)->count();
+            $weeklyUnpaidAmount = (clone $weeklyUnpaidQuery)->sum('installments.Total_Balance');
+            $weeklyUnpaidCustomerCount = (clone $weeklyUnpaidQuery)
+                ->distinct()
+                ->count('customer_loan.Customer_idCustomer');
+        } else {
+            // If today is Sunday – no arrears yet for "this week"
+            $weeklyUnpaidCount = 0;
+            $weeklyUnpaidAmount = 0;
+            $weeklyUnpaidCustomerCount = 0;
+        }
+
+// ----------------------
+// 2) CURRENT WEEK PENDING
+//    (today → Saturday)
+// ----------------------
+        $currentWeekPendingQuery = tableWithBranch('installments','installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->where('customer_loan.Status', '=', '0')
             ->where('installments.Status', '=', '0')
             ->where('installments.Total_Balance', '>', 0)
-            ->whereBetween('installments.Installment_Date', [$weekStart, $weekToday]);
+            ->whereBetween('installments.Installment_Date', [$weekStart, $weekEnd]);
 
-        $weeklyUnpaidCount = (clone $weeklyUnpaidQuery)->count();
-        $weeklyUnpaidAmount = (clone $weeklyUnpaidQuery)->sum('installments.Total_Balance');
-        // Distinct customers with unpaid installments (head count)
-        $weeklyUnpaidCustomerCount = (clone $weeklyUnpaidQuery)
+        $currentWeekPendingCount = (clone $currentWeekPendingQuery)->count();
+        $currentWeekPendingAmount = (clone $currentWeekPendingQuery)->sum('installments.Total_Balance');
+        $currentWeekPendingCustomerCount = (clone $currentWeekPendingQuery)
             ->distinct()
             ->count('customer_loan.Customer_idCustomer');
+
+
 
 
         return view('home',compact(
@@ -681,10 +842,46 @@ class UserController extends Controller
             'deleted_loan_Count','all_loan','monthlyData','dashboard','checqueamount','totalBalanceUntil','arrease',
             'todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount',
             'setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count',
-            'customer_loan_current_Count','todayinstallment','todaycollection',
-            'weeklyUnpaidCount','weeklyUnpaidAmount','weeklyUnpaidCustomerCount','totalOutstanding','penaltyBalance'
+            'customer_loan_current_Count','todayinstallment','todaycollection','todayNotPaid',
+            'weeklyUnpaidCount','weeklyUnpaidAmount','weeklyUnpaidCustomerCount','totalOutstanding','penaltyBalance',
+            'currentWeekPendingCount','currentWeekPendingAmount','currentWeekPendingCustomerCount','todayinstallment_balance'
         ));
     }
+
+    public function currentWeekPendingData()
+    {
+        // Get current week date range (Sunday to Saturday)
+        $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY)->toDateString();
+        $weekEnd = Carbon::now()->endOfWeek(Carbon::SATURDAY)->toDateString();
+
+        $currentWeekPendingData = tableWithBranch('installments','installments')
+            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->select(
+                'customer_loan.idCustomer_Loan as loan_id',
+                'customer.idCustomer as customer_id',
+                DB::raw('CONCAT(customer.First_Name, " ", customer.Last_Name) as customer_name'),
+                'customer_loan.Amount as capital_amount',
+                'customer_loan.Total_Loan_Amount as full_loan_amount',
+                // Current week pending amount (installments between Sunday and Saturday of current week)
+                DB::raw('SUM(CASE WHEN installments.Installment_Date BETWEEN "'.$weekStart.'" AND "'.$weekEnd.'" THEN installments.Total_Balance ELSE 0 END) as current_week_pending'),
+                // Total arrears (all overdue installments)
+                DB::raw('SUM(CASE WHEN installments.Installment_Date < CURDATE() THEN installments.Total_Balance ELSE 0 END) as total_arrears'),
+                // Not paid installment count
+                DB::raw('COUNT(CASE WHEN installments.Total_Balance > 0 AND installments.Status = 0 THEN 1 END) as not_paid_installment_count')
+            )
+            ->where('customer_loan.Status', '=', '0')
+            ->where('installments.Status', '=', '0')
+            ->where('installments.Total_Balance', '>', 0)
+            ->whereBetween('installments.Installment_Date', [$weekStart, $weekEnd])
+            ->groupBy('customer_loan.idCustomer_Loan', 'customer.idCustomer', 'customer.First_Name', 'customer.Last_Name', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount')
+            ->havingRaw('current_week_pending > 0')
+            ->orderBy('current_week_pending', 'DESC')
+            ->get();
+
+        return response()->json(['data' => $currentWeekPendingData]);
+    }
+
     public function fixLoanInstallmentsOnce(int $loanId): void
     {
         DB::transaction(function () use ($loanId) {
@@ -985,112 +1182,112 @@ class UserController extends Controller
 
     public function create_panelty()
     {
-//        $date=date('Y-m-d');
-//
-//
-//        $installment=tableWithBranch('installments','installments')
-//            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
-//            ->where('customer_loan.Status', '=', '0')
-//            ->where('installments.Status', '=', '0')
-//            ->whereDate('Panelty_date', '<=', $date)
-//            ->select('installments.*', 'customer_loan.Panalty_Rate','customer_loan.Panelty_period as Loan_Panelty_period','customer_loan.panelty_method','customer_loan.Panelty_period','customer_loan.idCustomer_Loan','customer_loan.Customer_idCustomer')
-//            ->get();
-//
-//        $today  = Carbon::today('Asia/Colombo');
-//        foreach ($installment as $item){
-//
-//            $Panelty_period=$item->Loan_Panelty_period;
-//            $penaltyDate = Carbon::parse($item->Panelty_date);
-//            $days = max(0, $penaltyDate->diffInDays($today, false));
-//
-//            if ($Panelty_period == "Weekly") {
-//                // Convert to full weeks (round down)
-//                $days = intdiv($days, 7);
-//                $days++;
-//            }
-//
-//
-//            $paneltyCount = (int) ($item->Panelty_count ?? 0);
-//            $missing      = max(0, $days - $paneltyCount);
-//
-//            if ($missing > 0) {
-//
-//                $ins_amount=$item->capital_balance + $item->Interest_Balance;
-//                $panelty_amount=($ins_amount*$item->Panalty_Rate)/100;
-//
-//                $count=$paneltyCount;
-//
-//                for ($i = 1; $i <= $missing; $i++) {
-//                    $count++;
-//                    $amt = number_format((float) $panelty_amount, 2, '.', ''); // sanitize to 2dp
-//
-//                    DB::table('installments')
-//                        ->where('idInstallments', $item->idInstallments)
-//                        ->where('branch_id', session('branch_id'))
-//                        ->update([
-//                            'Panalty_Amount'  => DB::raw("ROUND(Panalty_Amount + {$amt}, 2)"),
-//                            'Panalty_Balance' => DB::raw("ROUND(Panalty_Balance + {$amt}, 2)"),
-//                            'Total_Amount'    => DB::raw("ROUND(Total_Amount + {$amt}, 2)"),
-//                            'Total_Balance'   => DB::raw("ROUND(capital_balance + Interest_Balance + Panalty_Balance, 2)"),
-//                            'Panelty_status'  => 1,
-//                            'Panelty_count'   => DB::raw('COALESCE(Panelty_count,0) + 1'),
-//                        ]);
-//
-//
-//                    $user_id= session('userid');
-//                    $date=date('Y-m-d');
-//                    $time=date('H:i:s');
-//
-//                    $customer_table=tableWithBranch('customer')
-//                        ->where('idCustomer','=',$item->Customer_idCustomer)
-//                        ->first();
-//
-//
-//                    $panelty_amount=number_format($panelty_amount, 2,'.','');
-//
-//                    DB::table('customer_log')->insert([
-//                        'customer_id' => $item->Customer_idCustomer,
-//                        'customer_name' => $customer_table->First_Name.' '.$customer_table->Last_Name,
-//                        'date' => $date,
-//                        'time' => $time,
-//                        'description' => "{$panelty_amount} LKR Penalty added for ({$item->idCustomer_Loan})\nInstallment No : {$item->idInstallments}",
-//                        'description_id' => $item->idInstallments,
-//                        'comment' => ' ',
-//                        'type' => 'Penalty',
-//                        'user' => $user_id,
-//                        'branch_id' => session('branch_id')
-//                    ]);
-//
-//
-//                    $loanLogController = new LoanLogController();
-//
-//                    $last_log = DB::table('Loan_Log')->where('Loan_ID','=',$item->idCustomer_Loan)->orderBy('Loan_Log_ID', 'desc')->first();
-//                    $Panelty_Balance = number_format((float)$last_log->Panelty_Balance + (float)$panelty_amount, 2, '.', '');
-//                    $Total_Pending_Balance = number_format((float)$last_log->Total_Pending_Balance + (float)$panelty_amount, 2, '.', '');
-//                    $loanLogController->index(
-//                        $item->idCustomer_Loan, 'Penalty', $item->idInstallments,
-//                        'Penalty-Installment No : '.$item->idInstallments.' Penalty Count : '.$count, $panelty_amount,
-//                        '0.00', '0.00',
-//                        '0.00','0.00', $Panelty_Balance,
-//                        $last_log->Interest_Balance, $last_log->Capital_Balance, $Total_Pending_Balance, $last_log->Saving_Account_Balance
-//                    );
-//
-//                    Log::info($item->idCustomer_Loan.'-'.$count);
-//
-//                    $bankLogController = new BankLogController();
-//
-//                    $System_default_5=tableWithBranch('company_bank_accounts')
-//                        ->where('Bank_Type','=','System_default_5')
-//                        ->first();
-//                    $System_default_6=tableWithBranch('company_bank_accounts')
-//                        ->where('Bank_Type','=','System_default_6')
-//                        ->first();
-//                    $bankLogController->index($System_default_5->Idbank,"Penalty","Penalty","-","debit",$panelty_amount,$System_default_6->Idbank);
-//                    $bankLogController->index($System_default_6->Idbank,"Penalty","Penalty","-","credit",$panelty_amount,$System_default_5->Idbank);
-//
-//                }
-//            }
-//        }
+        $date=date('Y-m-d');
+
+
+        $installment=tableWithBranch('installments','installments')
+            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->where('customer_loan.Status', '=', '0')
+            ->where('installments.Status', '=', '0')
+            ->whereDate('Panelty_date', '<=', $date)
+            ->select('installments.*', 'customer_loan.Panalty_Rate','customer_loan.Panelty_period as Loan_Panelty_period','customer_loan.panelty_method','customer_loan.Panelty_period','customer_loan.idCustomer_Loan','customer_loan.Customer_idCustomer')
+            ->get();
+
+        $today  = Carbon::today('Asia/Colombo');
+        foreach ($installment as $item){
+
+            $Panelty_period=$item->Loan_Panelty_period;
+            $penaltyDate = Carbon::parse($item->Panelty_date);
+            $days = max(0, $penaltyDate->diffInDays($today, false));
+
+            if ($Panelty_period == "Weekly") {
+                // Convert to full weeks (round down)
+                $days = intdiv($days, 7);
+                $days++;
+            }
+
+
+            $paneltyCount = (int) ($item->Panelty_count ?? 0);
+            $missing      = max(0, $days - $paneltyCount);
+
+            if ($missing > 0) {
+
+                $ins_amount=$item->capital_balance + $item->Interest_Balance;
+                $panelty_amount=($ins_amount*$item->Panalty_Rate)/100;
+
+                $count=$paneltyCount;
+
+                for ($i = 1; $i <= $missing; $i++) {
+                    $count++;
+                    $amt = number_format((float) $panelty_amount, 2, '.', ''); // sanitize to 2dp
+
+                    DB::table('installments')
+                        ->where('idInstallments', $item->idInstallments)
+                        ->where('branch_id', session('branch_id'))
+                        ->update([
+                            'Panalty_Amount'  => DB::raw("ROUND(Panalty_Amount + {$amt}, 2)"),
+                            'Panalty_Balance' => DB::raw("ROUND(Panalty_Balance + {$amt}, 2)"),
+                            'Total_Amount'    => DB::raw("ROUND(Total_Amount + {$amt}, 2)"),
+                            'Total_Balance'   => DB::raw("ROUND(capital_balance + Interest_Balance + Panalty_Balance, 2)"),
+                            'Panelty_status'  => 1,
+                            'Panelty_count'   => DB::raw('COALESCE(Panelty_count,0) + 1'),
+                        ]);
+
+
+                    $user_id= session('userid');
+                    $date=date('Y-m-d');
+                    $time=date('H:i:s');
+
+                    $customer_table=tableWithBranch('customer')
+                        ->where('idCustomer','=',$item->Customer_idCustomer)
+                        ->first();
+
+
+                    $panelty_amount=number_format($panelty_amount, 2,'.','');
+
+                    DB::table('customer_log')->insert([
+                        'customer_id' => $item->Customer_idCustomer,
+                        'customer_name' => $customer_table->First_Name.' '.$customer_table->Last_Name,
+                        'date' => $date,
+                        'time' => $time,
+                        'description' => "{$panelty_amount} LKR Penalty added for ({$item->idCustomer_Loan})\nInstallment No : {$item->idInstallments}",
+                        'description_id' => $item->idInstallments,
+                        'comment' => ' ',
+                        'type' => 'Penalty',
+                        'user' => $user_id,
+                        'branch_id' => session('branch_id')
+                    ]);
+
+
+                    $loanLogController = new LoanLogController();
+
+                    $last_log = DB::table('Loan_Log')->where('Loan_ID','=',$item->idCustomer_Loan)->orderBy('Loan_Log_ID', 'desc')->first();
+                    $Panelty_Balance = number_format((float)$last_log->Panelty_Balance + (float)$panelty_amount, 2, '.', '');
+                    $Total_Pending_Balance = number_format((float)$last_log->Total_Pending_Balance + (float)$panelty_amount, 2, '.', '');
+                    $loanLogController->index(
+                        $item->idCustomer_Loan, 'Penalty', $item->idInstallments,
+                        'Penalty-Installment No : '.$item->idInstallments.' Penalty Count : '.$count, $panelty_amount,
+                        '0.00', '0.00',
+                        '0.00','0.00', $Panelty_Balance,
+                        $last_log->Interest_Balance, $last_log->Capital_Balance, $Total_Pending_Balance, $last_log->Saving_Account_Balance
+                    );
+
+                    Log::info($item->idCustomer_Loan.'-'.$count);
+
+                    $bankLogController = new BankLogController();
+
+                    $System_default_5=tableWithBranch('company_bank_accounts')
+                        ->where('Bank_Type','=','System_default_5')
+                        ->first();
+                    $System_default_6=tableWithBranch('company_bank_accounts')
+                        ->where('Bank_Type','=','System_default_6')
+                        ->first();
+                    $bankLogController->index($System_default_5->Idbank,"Penalty","Penalty","-","debit",$panelty_amount,$System_default_6->Idbank);
+                    $bankLogController->index($System_default_6->Idbank,"Penalty","Penalty","-","credit",$panelty_amount,$System_default_5->Idbank);
+
+                }
+            }
+        }
 
 
 
@@ -1102,8 +1299,8 @@ class UserController extends Controller
 
 
 
-
-
+//
+//
 //        $date=date('Y-m-d');
 //
 //        $poya=tableWithBranch('holidays')->get();
@@ -1564,38 +1761,70 @@ class UserController extends Controller
 
 
 
-    public function holidays(){
+    public function holidays()
+    {
         $year = date('Y');
 
-        $loans = tableWithBranch('customer_loan')->where('Status', '0')->get();
-        $branches = DB::table('branch')->where('Status', '1')->get();
-        $centers = tableWithBranch('center')->get();
-        $products = tableWithBranch('loan_category')->get();
+        $loans     = tableWithBranch('customer_loan')->where('Status', '0')->get();
+        $branches  = DB::table('branch')->where('Status', '1')->get();
+        $centers   = tableWithBranch('center')->get();
+        $products  = tableWithBranch('loan_category')->get();
 
-// Get holidays for the year
+        // Get holidays
         $holidays = tableWithBranch('holidays')->get();
 
-// Format holiday dates to Y-m-d (in case they include time)
+        // Format holiday dates
         $holidayDates = $holidays->pluck('date')->map(function ($date) {
-            return \Carbon\Carbon::parse($date)->format('Y-m-d');
+            return Carbon::parse($date)->format('Y-m-d');
         })->unique();
 
-// Get all installment dates (formatted)
-        $installmentDates = tableWithBranch('installments','installments')
-            ->join('customer_loan','customer_loan.idCustomer_Loan','=','installments.Customer_Loan_idCustomer_Loan')
-            ->where('customer_loan.Status','=','0')
+        // Get all installment dates (only for active loans)
+        $installmentDates = tableWithBranch('installments', 'installments')
+            ->join('customer_loan', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
+            ->where('customer_loan.Status', '=', '0')
             ->pluck('installments.Installment_Date')
             ->map(function ($date) {
-                return \Carbon\Carbon::parse($date)->format('Y-m-d');
+                return Carbon::parse($date)->format('Y-m-d');
             })->unique();
 
-// Intersect to find how many holiday dates have installments
+        // Intersect to find how many holiday dates have installments
         $matchingDates = $holidayDates->intersect($installmentDates);
         $holidayWithInstallmentsCount = $matchingDates->count();
 
+        // Ensure table exists
+        DB::statement("
+    CREATE TABLE IF NOT EXISTS `due_skip_runs` (
+        `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        `skip_for` VARCHAR(255) NOT NULL,
+        `target_id` BIGINT UNSIGNED NULL,
+        `skip_type` VARCHAR(255) NOT NULL,
+
+        `branch_id` BIGINT UNSIGNED NULL,
+
+        `total_items` INT UNSIGNED NOT NULL DEFAULT 0,
+        `processed_items` INT UNSIGNED NOT NULL DEFAULT 0,
+
+        `status` ENUM('queued','running','completed','failed') NOT NULL DEFAULT 'queued',
+
+        `error_message` TEXT NULL,
+
+        `created_at` TIMESTAMP NULL DEFAULT NULL,
+        `updated_at` TIMESTAMP NULL DEFAULT NULL,
+
+        PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+");
 
 
-        return view('pages.Holidays', compact('holidays','year','loans','branches','centers','products','holidayWithInstallmentsCount'));
+        return view('pages.Holidays', compact(
+            'holidays',
+            'year',
+            'loans',
+            'branches',
+            'centers',
+            'products',
+            'holidayWithInstallmentsCount'
+        ));
     }
 
 
@@ -1669,14 +1898,26 @@ class UserController extends Controller
     }
 
 
-    public function generateDueSkip(Request $request)
+    public function generateDueSkip(Request $request, HolidayController $holidayController)
     {
-        $skipFor = $request->skip_for;
-        $targetId = $request->target_id;
-        $skipType = $request->skip_type;
-        $holiday=new HolidayController();
-        $holiday->index($skipFor,$targetId,$skipType);
+        $request->validate([
+            'skip_for'  => 'required|in:all,loan,branch,center,product',
+            'skip_type' => 'required|in:installment,day',
+            'target_id' => 'nullable|integer',
+        ]);
 
+        $skipFor  = $request->input('skip_for');
+        $targetId = $request->input('target_id');
+        $skipType = $request->input('skip_type');
+
+        // Call service method from HolidayController
+        $result = $holidayController->runDueSkip($skipFor, $targetId, $skipType);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Due skip processed successfully.',
+            'data'    => $result,
+        ]);
     }
 
 

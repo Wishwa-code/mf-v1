@@ -10,6 +10,7 @@ function load_payment_table() {
     let date = $("#select_date").val();
     let date_to = $("#select_date_to").val();
     let user = $("#agent").val();
+    let route = $("#route").val();
     let loan_number_search = $("#loan_number_search").val();
     let payment_type = $("#payment_type").val();
 
@@ -26,6 +27,7 @@ function load_payment_table() {
             date: date,
             date_to: date_to,
             user: user,
+            route: route,
             loan_number_search: loan_number_search,
             payment_type: payment_type
         },
@@ -92,6 +94,10 @@ function load_payment_table() {
                         ? "background-color:#fff7e6;"
                         : "";
 
+                    let capitalPaid = parseFloat(item.capital_paid || 0);
+                    let interestPaid = parseFloat(item.interest_paid || 0);
+                    let savingPaid = parseFloat(item.saving_paid || 0);
+
                     var row = `<tr style="${highlightStyle}">
         <td style="vertical-align: middle">${safe(item.Inv_no)}</td>
         <td style="vertical-align: middle">${safe(item.center_name)}</td>
@@ -107,6 +113,9 @@ function load_payment_table() {
         <td style="vertical-align: middle">${safe(item.pay_date)}</td>
         <td style="vertical-align: middle">${safe(item.pay_method)}</td>
         <td style="vertical-align: middle">${formattedAmount}</td>
+        <td style="vertical-align: middle">${capitalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td style="vertical-align: middle">${interestPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td style="vertical-align: middle">${savingPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
         <td style="vertical-align: middle">${safe(item.Full_Name)}</td>
         <td style="vertical-align: middle">${safe(item.pay_comment)}</td>
         <td style="vertical-align: middle">
@@ -175,7 +184,7 @@ function undo_payment(id) {
                             icon: "success",
                             title: "Payment removed successfully!",
                         }).then(function () {
-                            window.location.reload();
+                            load_payment_table();
                         });
                     } else {
                         Swal.fire("Error!", "Failed to undo payment!", "error");

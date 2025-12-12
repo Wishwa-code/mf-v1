@@ -223,7 +223,11 @@
             <button type="button" class="btn btn-primary mb-4" id="addRowBtn">Add a new line</button>
 
             <div class="d-flex justify-content-end ">
-                <button type="button" class="btn btn-success me-2">Add Journal</button>
+                <button type="button" class="btn btn-success me-2" id="saveJournalBtn">
+                    <span class="btn-text">Add Journal</span>
+                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                </button>
+
                 <button type="button" class="btn btn-danger me-2"><a href="/ManualJournal" class="text-white">Cancel</a></button>
             </div>
 
@@ -241,6 +245,20 @@
         $(document).ready(function () {
             $('.select2-account').select2();
 
+            // Reference to Save/Add Journal button
+            const $saveBtn = $('#saveJournalBtn');
+
+            function setSaving(isSaving) {
+                if (isSaving) {
+                    $saveBtn.prop('disabled', true);
+                    $saveBtn.find('.btn-text').text('Saving...');
+                    $saveBtn.find('.spinner-border').removeClass('d-none');
+                } else {
+                    $saveBtn.prop('disabled', false);
+                    $saveBtn.find('.btn-text').text('Add Journal');
+                    $saveBtn.find('.spinner-border').addClass('d-none');
+                }
+            }
 
             const editJournalData = localStorage.getItem("editJournalData");
             console.log(editJournalData);
@@ -264,7 +282,7 @@
                         ${detail.account === "{{ $account->code }}-{{ $account->Account_Name }}" ? "selected" : ""}>
                     {{ $account->Account_Name }} - {{ $account->type }}
                     </option>
-@endforeach
+            @endforeach
                     `;
 
                     const newRow = `
@@ -293,11 +311,6 @@
                 // Calculate totals
                 calculateTotals();
             }
-
-
-
-
-
 
             function calculateTotals() {
                 let subtotalDebit = 0;
@@ -388,9 +401,8 @@
 
             calculateTotals();
 
-
-
-            $('.btn-success').on('click', function () {
+            // Save/Add Journal click
+            $saveBtn.on('click', function () {
                 // Gather form data
                 const narration = $('#narration').val();
                 const date = $('#journalDate').val();
@@ -403,7 +415,6 @@
                 const journalId = editJournalData ? JSON.parse(editJournalData).id : null;
 
                 console.log(journalId);
-
 
                 // Gather table data
                 let rows = [];
@@ -457,8 +468,6 @@
                     return;
                 }
 
-
-
                 // Confirmation Dialog
                 Swal.fire({
                     title: 'Are you sure?',
@@ -469,6 +478,9 @@
                     cancelButtonText: 'No, Cancel'
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        // Disable button + show spinner
+                        setSaving(true);
+
                         // AJAX Request
                         $.ajax({
                             url: "{{ route('manual_journal.save') }}",
@@ -488,22 +500,24 @@
                                 if (response.status === 'success') {
                                     localStorage.removeItem("editJournalData");
                                     Swal.fire('Saved!', response.message, 'success').then(() => {
+                                        // Redirect – no need to re-enable button
                                         window.location.href = '/ManualJournal';
                                     });
                                 } else {
+                                    setSaving(false); // enable button again
                                     Swal.fire('Error', response.message, 'error');
                                 }
                             },
                             error: function () {
+                                setSaving(false); // enable button again
                                 Swal.fire('Error', 'An unexpected error occurred.', 'error');
                             }
                         });
                     }
                 });
             });
-
-
         });
     </script>
 @endsection
+
 

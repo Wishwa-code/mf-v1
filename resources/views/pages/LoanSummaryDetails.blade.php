@@ -171,6 +171,8 @@
                             <th>Last Payment Amount</th>
                             <th>Last Due Date</th>
                             <th>Next Due Date</th>
+                            <th>Total Extra Charges</th>
+                            <th>Paid Extra Charges</th>
                             <th>Action</th>
                         </tr>
                         </thead>
@@ -284,6 +286,8 @@
 
                                 <td>{{ $lastDueDate ?? 'N/A' }}</td> <!-- Display the last due date or 'N/A' if not found -->
                                 <td>{{ $nextDueDate ?? 'N/A' }}</td> <!-- Display the last due date or 'N/A' if not found -->
+                                <td>{{ number_format($item->total_extra ?? 0, 2) }}</td>
+                                <td>{{ number_format($item->paid_extra  ?? 0, 2) }}</td>
                                 <td><a href="/loanview/{{$item->idCustomer_Loan}}" target="_blank" class="btn btn-warning"><i class="bi bi-eye"></i></a></td>
                             </tr>
                         @endforeach

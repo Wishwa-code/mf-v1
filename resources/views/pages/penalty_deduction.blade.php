@@ -212,9 +212,32 @@
                     beforeSend(){ $('#btn-search').prop('disabled', true).text('Loading...'); },
                     complete(){ $('#btn-search').prop('disabled', false).html('<i class="bi bi-search"></i> Search'); },
                     success: function(res){
-                        table.clear().rows.add(res.data || []).draw();
-                        $('#summary_badge').text(`Count: ${res.summary?.count ?? 0} | Total Penalty: ${res.summary?.total_penalty ?? '0.00'}`);
+                        // 🔒 Front-end safety: only rows with penalty > 0
+                        const allRows = Array.isArray(res.data) ? res.data : [];
+
+                        const rows = allRows.filter(r => {
+                            // prefer penalty_raw, fallback to penalty_balance
+                            const p = parseFloat(r.penalty_raw ?? r.penalty_balance ?? 0);
+                            return !isNaN(p) && p > 0;
+                        });
+
+                        // fill table only with filtered rows
+                        table.clear().rows.add(rows).draw();
+
+                        // recompute summary from filtered rows
+                        const count = rows.length;
+                        const totalPenalty = rows
+                            .reduce((sum, r) => {
+                                const p = parseFloat(r.penalty_raw ?? r.penalty_balance ?? 0);
+                                return sum + (isNaN(p) ? 0 : p);
+                            }, 0)
+                            .toFixed(2);
+
+                        $('#stat_count').text(count);
+                        $('#stat_total_penalty').text(totalPenalty);
+                        $('#summary_badge').text(`Count: ${count} | Total Penalty: ${totalPenalty}`);
                     },
+
                     error: function(){
                         Swal.fire('Error','Failed to load data','error');
                     }
