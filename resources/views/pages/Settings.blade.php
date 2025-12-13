@@ -7,9 +7,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
     <!-- Custom CSS -->
     <style>
-
         .main-topic {
-            background-color: #ffffff; /* Light gray background for main topics */
+            background-color: #ffffff;
+            /* Light gray background for main topics */
         }
 
 
@@ -18,37 +18,37 @@
             color: white;
             text-align: center;
         }
+
         .profile-card .profile-image {
             display: flex;
             justify-content: center;
             align-items: center;
             margin-top: -50px;
         }
+
         .profile-card .profile-image img {
             width: 100px;
             height: 100px;
             border-radius: 50%;
             border: 5px solid white;
         }
-
     </style>
 @endsection
 
 @section('content')
-    <div>
-        <div class="row mt-3">
-            <div class="col-6">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-hover">
-                                <thead class="table-dark">
+    <div class="row mt-3">
+        <div class="col-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-dark">
                                 <tr>
                                     <th class="fw-bolder">Shortcut Permission</th>
                                     <th class="fw-bolder text-center">Access</th>
                                 </tr>
-                                </thead>
-                                <tbody>
+                            </thead>
+                            <tbody>
                                 <!-- Customer Main Topic -->
                                 <tr class="main-topic">
                                     <td class="align-middle">
@@ -225,199 +225,217 @@
 
 
 
-                                </tbody>
-                            </table>
+                            </tbody>
+                        </table>
 
-                            <input type="button" class="btn btn-danger" value="Update Shortcut" onclick="saveShortcut(event)">
-                        </div>
+                        <input type="button" class="btn btn-danger" value="Update Shortcut"
+                            onclick="saveShortcut(event)">
                     </div>
                 </div>
-
-                <!-- Loan Creation Restrictions Card -->
-                <div class="card mt-3">
-                    <div class="card-body">
-                        <h5 class="mb-3">Loan Creation Restrictions</h5>
-                        <hr>
-                        <small class="text-muted d-block mb-3">Configure restrictions and requirements for loan creation process.</small>
-                        
-                        <!-- Document Upload Restriction -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Document Upload Restriction</label>
-                            <div class="d-flex gap-2">
-                                <select id="document_upload_restriction" class="form-select" style="max-width: 300px;">
-                                    <option value="" disabled selected>-- Select Option --</option>
-                                    <option value="required">Required</option>
-                                    <option value="not_required">Not Required</option>
-                                </select>
-                            </div>
-                            <small class="text-muted">Specify whether document uploads are mandatory during loan creation.</small>
-                        </div>
-
-                        <hr>
-                        <!-- Guarantees Restriction -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Guarantees</label>
-                            <div class="d-flex gap-2">
-                                <select id="guarantees_restriction" class="form-select" style="max-width: 300px;">
-                                    <option value="" disabled selected>-- Select Option --</option>
-                                    <option value="required">Required</option>
-                                    <option value="not_required">Not Required</option>
-                                </select>
-                            </div>
-                            <small class="text-muted">Specify whether guarantees are mandatory during loan creation.</small>
-                        </div>
-
-                        <hr>
-                        <!-- Change Product Details -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Change Product Details</label>
-                            <div class="d-flex gap-2">
-                                <select id="change_product_details" class="form-select" style="max-width: 300px;">
-                                    <option value="" disabled selected>-- Select Option --</option>
-                                    <option value="editable">Editable</option>
-                                    <option value="not_editable">Not Editable</option>
-                                </select>
-                            </div>
-                            <small class="text-muted">Control whether product details can be modified after loan creation.</small>
-                        </div>
-
-                        <hr>
-                        <!-- First Installment Date Restrictions -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">First Installment Date - Maximum Days After Issue Date</label>
-                            <small class="text-muted d-block mb-2">Set how many days after the Issue Date the first installment date can be set for each loan type.</small>
-                            
-                            <!-- Daily Loans -->
-                            <div class="mb-3">
-                                <label class="form-label">Daily Loans (max days)</label>
-                                <div class="d-flex gap-2 align-items-center">
-                                    <input type="number" id="first_installment_daily" class="form-control" min="0" max="365" style="max-width: 150px;" placeholder="Days">
-                                    <span class="text-muted">days</span>
-                                </div>
-                            </div>
-
-                            <!-- Weekly Loans -->
-                            <div class="mb-3">
-                                <label class="form-label">Weekly Loans (max days)</label>
-                                <div class="d-flex gap-2 align-items-center">
-                                    <input type="number" id="first_installment_weekly" class="form-control" min="0" max="365" style="max-width: 150px;" placeholder="Days">
-                                    <span class="text-muted">days</span>
-                                </div>
-                            </div>
-
-                            <!-- Monthly Loans -->
-                            <div class="mb-3">
-                                <label class="form-label">Monthly Loans (max days)</label>
-                                <div class="d-flex gap-2 align-items-center">
-                                    <input type="number" id="first_installment_monthly" class="form-control" min="0" max="365" style="max-width: 150px;" placeholder="Days">
-                                    <span class="text-muted">days</span>
-                                </div>
-                            </div>
-                        </div>
-
-
-
-                        <button id="btnUpdateLoanRestrictions" class="btn btn-primary">
-                            <i class="fa-solid fa-floppy-disk me-1"></i> Update Restrictions
-                        </button>
-                    </div>
-                </div>
-
-
             </div>
-            <div class="col-6">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="mb-3">Settings</h5>
-                        <hr>
-                        <!-- Loan Disbursement Policy -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Loan Disbursement Policy</label>
-                            <div class="d-flex flex-column gap-2">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="loan_policy" id="strict_mode" value="strict">
-                                    <label class="form-check-label" for="strict_mode">
-                                        <span class="fw-bold">Strict mode</span> → Don’t allow disbursement if balance is insufficient.
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="loan_policy" id="flexible_mode" value="flexible" checked>
-                                    <label class="form-check-label" for="flexible_mode">
-                                        <span class="fw-bold">Flexible mode</span> → Allow disbursement and show the account in minus (overdraft-like).
-                                    </label>
-                                </div>
-                                <button id="btnUpdateLoanPolicy" class="btn btn-primary mt-2" style="max-width: 150px;">
-                                    <i class="fa-solid fa-floppy-disk me-1"></i> Update
-                                </button>
-                            </div>
-                            <small class="text-muted">Controls how loan disbursements are handled.</small>
+
+            <!-- Loan Creation Restrictions Card -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h5 class="mb-3">Loan Creation Restrictions</h5>
+                    <hr>
+                    <small class="text-muted d-block mb-3">Configure restrictions and requirements for loan creation
+                        process.</small>
+
+                    <!-- Document Upload Restriction -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Document Upload Restriction</label>
+                        <div class="d-flex gap-2">
+                            <select id="document_upload_restriction" class="form-select" style="max-width: 300px;">
+                                <option value="" disabled selected>-- Select Option --</option>
+                                <option value="required">Required</option>
+                                <option value="not_required">Not Required</option>
+                            </select>
                         </div>
-                        <hr>
-                        <!-- Payment Section Member Name -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Payment Section Member Name</label>
-                            <div class="d-flex gap-2">
-                                <select id="payment_member_name" class="form-select" style="max-width: 300px;">
-                                    <option value="full_name">Full Name</option>
-                                    <option value="with_initial">With Initial</option>
-                                    <option value="only_first_name">Only First Name</option>
-                                    <option value="only_last_name">Only Last Name</option>
-                                </select>
-                                <button id="btnUpdatePaymentMemberName" class="btn btn-primary">
-                                    <i class="fa-solid fa-floppy-disk me-1"></i> Update
-                                </button>
-                            </div>
-                            <small class="text-muted">Controls how member names show on the Payment section.</small>
+                        <small class="text-muted">Specify whether document uploads are mandatory during loan
+                            creation.</small>
+                    </div>
+
+                    <hr>
+                    <!-- Guarantees Restriction -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Guarantees</label>
+                        <div class="d-flex gap-2">
+                            <select id="guarantees_restriction" class="form-select" style="max-width: 300px;">
+                                <option value="" disabled selected>-- Select Option --</option>
+                                <option value="required">Required</option>
+                                <option value="not_required">Not Required</option>
+                            </select>
                         </div>
-                        <hr>
-                        <!-- Payment Backdate -->
+                        <small class="text-muted">Specify whether guarantees are mandatory during loan
+                            creation.</small>
+                    </div>
+
+                    <hr>
+                    <!-- Change Product Details -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Change Product Details</label>
+                        <div class="d-flex gap-2">
+                            <select id="change_product_details" class="form-select" style="max-width: 300px;">
+                                <option value="" disabled selected>-- Select Option --</option>
+                                <option value="editable">Editable</option>
+                                <option value="not_editable">Not Editable</option>
+                            </select>
+                        </div>
+                        <small class="text-muted">Control whether product details can be modified after loan
+                            creation.</small>
+                    </div>
+
+                    <hr>
+                    <!-- First Installment Date Restrictions -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">First Installment Date - Maximum Days After Issue
+                            Date</label>
+                        <small class="text-muted d-block mb-2">Set how many days after the Issue Date the first
+                            installment date can be set for each loan type.</small>
+
+                        <!-- Daily Loans -->
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Payment Backdate</label>
-                            <div class="d-flex gap-2">
-                                <select id="payment_backdate" class="form-select" style="max-width: 300px;">
-                                    <option value="disabled">Disable</option>
-                                    <option value="enabled">Enable</option>
-                                </select>
-                                <button id="btnUpdatePaymentBackdate" class="btn btn-primary">
-                                    <i class="fa-solid fa-floppy-disk me-1"></i> Update
-                                </button>
+                            <label class="form-label">Daily Loans (max days)</label>
+                            <div class="d-flex gap-2 align-items-center">
+                                <input type="number" id="first_installment_daily" class="form-control" min="0"
+                                    max="365" style="max-width: 150px;" placeholder="Days">
+                                <span class="text-muted">days</span>
                             </div>
-                            <small class="text-muted">Allow entering payments with a back-dated date when enabled.</small>
                         </div>
 
-                        <hr>
-                        <!-- Loan Number Order -->
+                        <!-- Weekly Loans -->
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Loan Number Order</label>
-                            <div class="d-flex gap-2">
-                                <select id="loan_order" class="form-select" style="max-width: 300px;">
-                                    <option value="create_date">Create Date</option>
-                                    <option value="loan_number">Loan Number</option>
-                                    <option value="issue_date">Issue Date</option>
-                                </select>
-                                <button id="btnUpdateLoanOrder" class="btn btn-primary">
-                                    <i class="fa-solid fa-floppy-disk me-1"></i> Update
-                                </button>
+                            <label class="form-label">Weekly Loans (max days)</label>
+                            <div class="d-flex gap-2 align-items-center">
+                                <input type="number" id="first_installment_weekly" class="form-control" min="0"
+                                    max="365" style="max-width: 150px;" placeholder="Days">
+                                <span class="text-muted">days</span>
                             </div>
-                            <small class="text-muted">Controls the default ordering of loans in lists and dropdowns.</small>
                         </div>
 
-                        <hr>
-                        <!-- Maximum Allowed Loans -->
+                        <!-- Monthly Loans -->
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Maximum Allowed Loans</label>
-                            <div class="d-flex gap-2">
-                                <input type="number" id="max_allowed_loans" class="form-control" min="1" max="50" value="3" style="max-width: 300px;">
-                                <button id="btnUpdateMaxLoans" class="btn btn-primary">
-                                    <i class="fa-solid fa-floppy-disk me-1"></i> Update
-                                </button>
+                            <label class="form-label">Monthly Loans (max days)</label>
+                            <div class="d-flex gap-2 align-items-center">
+                                <input type="number" id="first_installment_monthly" class="form-control" min="0"
+                                    max="365" style="max-width: 150px;" placeholder="Days">
+                                <span class="text-muted">days</span>
                             </div>
-                            <small class="text-muted">Maximum number of loans a customer can have at once (pending + current).</small>
                         </div>
+                    </div>
 
-                        <hr>
-                        {{-- Hidden: Empty Row Count moved to Repayment Sheet 09 page UI --}}
-                        {{--
+
+
+                    <button id="btnUpdateLoanRestrictions" class="btn btn-primary">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Update Restrictions
+                    </button>
+                </div>
+            </div>
+
+
+        </div>
+
+        <div class="col-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="mb-3">Settings</h5>
+                    <hr>
+                    <!-- Loan Disbursement Policy -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Loan Disbursement Policy</label>
+                        <div class="d-flex flex-column gap-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="loan_policy" id="strict_mode"
+                                    value="strict">
+                                <label class="form-check-label" for="strict_mode">
+                                    <span class="fw-bold">Strict mode</span> → Don’t allow disbursement if balance is
+                                    insufficient.
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="loan_policy" id="flexible_mode"
+                                    value="flexible" checked>
+                                <label class="form-check-label" for="flexible_mode">
+                                    <span class="fw-bold">Flexible mode</span> → Allow disbursement and show the
+                                    account in minus (overdraft-like).
+                                </label>
+                            </div>
+                            <button id="btnUpdateLoanPolicy" class="btn btn-primary mt-2" style="max-width: 150px;">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Update
+                            </button>
+                        </div>
+                        <small class="text-muted">Controls how loan disbursements are handled.</small>
+                    </div>
+                    <hr>
+                    <!-- Payment Section Member Name -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Payment Section Member Name</label>
+                        <div class="d-flex gap-2">
+                            <select id="payment_member_name" class="form-select" style="max-width: 300px;">
+                                <option value="full_name">Full Name</option>
+                                <option value="with_initial">With Initial</option>
+                                <option value="only_first_name">Only First Name</option>
+                                <option value="only_last_name">Only Last Name</option>
+                            </select>
+                            <button id="btnUpdatePaymentMemberName" class="btn btn-primary">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Update
+                            </button>
+                        </div>
+                        <small class="text-muted">Controls how member names show on the Payment section.</small>
+                    </div>
+                    <hr>
+                    <!-- Payment Backdate -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Payment Backdate</label>
+                        <div class="d-flex gap-2">
+                            <select id="payment_backdate" class="form-select" style="max-width: 300px;">
+                                <option value="disabled">Disable</option>
+                                <option value="enabled">Enable</option>
+                            </select>
+                            <button id="btnUpdatePaymentBackdate" class="btn btn-primary">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Update
+                            </button>
+                        </div>
+                        <small class="text-muted">Allow entering payments with a back-dated date when enabled.</small>
+                    </div>
+
+                    <hr>
+                    <!-- Loan Number Order -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Loan Number Order</label>
+                        <div class="d-flex gap-2">
+                            <select id="loan_order" class="form-select" style="max-width: 300px;">
+                                <option value="create_date">Create Date</option>
+                                <option value="loan_number">Loan Number</option>
+                                <option value="issue_date">Issue Date</option>
+                            </select>
+                            <button id="btnUpdateLoanOrder" class="btn btn-primary">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Update
+                            </button>
+                        </div>
+                        <small class="text-muted">Controls the default ordering of loans in lists and
+                            dropdowns.</small>
+                    </div>
+
+                    <hr>
+                    <!-- Maximum Allowed Loans -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Maximum Allowed Loans</label>
+                        <div class="d-flex gap-2">
+                            <input type="number" id="max_allowed_loans" class="form-control" min="1"
+                                max="50" value="3" style="max-width: 300px;">
+                            <button id="btnUpdateMaxLoans" class="btn btn-primary">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Update
+                            </button>
+                        </div>
+                        <small class="text-muted">Maximum number of loans a customer can have at once (pending +
+                            current).</small>
+                    </div>
+
+                    <hr>
+                    {{-- Hidden: Empty Row Count moved to Repayment Sheet 09 page UI --}}
+                    {{--
                         <div class="mb-3">
                             <label class="form-label fw-bold">Empty Row Count</label>
                             <div class="d-flex gap-2">
@@ -430,327 +448,419 @@
                         </div>
                         --}}
 
-                        <hr>
-                        <!-- Document Types -->
+                    <hr>
+                    <!-- Document Types -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Document Types</label>
+                        <small class="text-muted d-block mb-3">Manage predefined document types for customer
+                            registration.</small>
+
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Document Types</label>
-                            <small class="text-muted d-block mb-3">Manage predefined document types for customer registration.</small>
-                            
-                            <div class="mb-3">
-                                <div class="input-group mb-2">
-                                    <input type="text" id="new_document_type" class="form-control" placeholder="Enter document type" maxlength="100">
-                                    <button id="btnAddDocumentType" class="btn btn-outline-success">
-                                        <i class="fa-solid fa-plus me-1"></i> Add
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div id="document_types_list" class="mb-3">
-                                <!-- Document types will be loaded here -->
-                            </div>
-                            
-                            <button id="btnUpdateDocumentTypes" class="btn btn-primary">
-                                <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
-                            </button>
-                        </div>
-
-
-                        <hr>
-                        <!-- Collector Account Transaction Modes -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Collector Account Transaction Modes</label>
-                            <div class="d-flex flex-column gap-2">
-                                <div class="form-check">
-                                    <input class="form-check-input collector-mode" type="checkbox" id="mode_cash_bank" value="cash_bank">
-                                    <label class="form-check-label" for="mode_cash_bank">Cash</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input collector-mode" type="checkbox" id="mode_bank_deposit" value="bank_deposit">
-                                    <label class="form-check-label" for="mode_bank_deposit">Bank Deposit</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input collector-mode" type="checkbox" id="mode_cheques" value="cheques">
-                                    <label class="form-check-label" for="mode_cheques">Cheques</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input collector-mode" type="checkbox" id="mode_collector_account" value="collector_account">
-                                    <label class="form-check-label" for="mode_collector_account">Collector Account</label>
-                                </div>
-
-                                <button id="btnUpdateCollectorModes" class="btn btn-primary mt-2" style="max-width: 220px;">
-                                    <i class="fa-solid fa-floppy-disk me-1"></i> Update Modes
+                            <div class="input-group mb-2">
+                                <input type="text" id="new_document_type" class="form-control"
+                                    placeholder="Enter document type" maxlength="100">
+                                <button id="btnAddDocumentType" class="btn btn-outline-success">
+                                    <i class="fa-solid fa-plus me-1"></i> Add
                                 </button>
                             </div>
-                            <small class="text-muted">Select which transaction modes are available when recording collector account transactions.</small>
                         </div>
 
-                        <hr>
-                        <!-- Recovery Account Access -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Recovery Account Access</label>
-                            <div class="d-flex gap-2">
-                                <select id="recovery_account_status" class="form-select" style="max-width: 300px;">
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
-                                </select>
-                                <button id="btnUpdateRecoveryAccount" class="btn btn-primary">
-                                    <i class="fa-solid fa-floppy-disk me-1"></i> Update
-                                </button>
-                            </div>
-                            <small class="text-muted">
-                                Control whether recovery account features are available in the system.
-                            </small>
+                        <div id="document_types_list" class="mb-3">
+                            <!-- Document types will be loaded here -->
                         </div>
 
+                        <button id="btnUpdateDocumentTypes" class="btn btn-primary">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+                        </button>
+                    </div>
 
-                        <hr>
-                        <!-- Allowed Collection Dates -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Collection Dates</label>
-                            <small class="text-muted d-block mb-2">
-                                Select which weekdays are valid for installment collection / route collection.
-                                Only these days will be available when issuing a loan.
-                            </small>
-
-                            <div class="d-flex flex-column gap-2" style="max-width: 300px;">
-                                <div class="form-check">
-                                    <input class="form-check-input collection-day" type="checkbox" id="col_day_1" value="1">
-                                    <label class="form-check-label" for="col_day_1">Monday</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input collection-day" type="checkbox" id="col_day_2" value="2">
-                                    <label class="form-check-label" for="col_day_2">Tuesday</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input collection-day" type="checkbox" id="col_day_3" value="3">
-                                    <label class="form-check-label" for="col_day_3">Wednesday</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input collection-day" type="checkbox" id="col_day_4" value="4">
-                                    <label class="form-check-label" for="col_day_4">Thursday</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input collection-day" type="checkbox" id="col_day_5" value="5">
-                                    <label class="form-check-label" for="col_day_5">Friday</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input collection-day" type="checkbox" id="col_day_6" value="6">
-                                    <label class="form-check-label" for="col_day_6">Saturday</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input collection-day" type="checkbox" id="col_day_0" value="0">
-                                    <label class="form-check-label" for="col_day_0">Sunday</label>
-                                </div>
+                    <hr>
+                    <!-- Collector Account Transaction Modes -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Collector Account Transaction Modes</label>
+                        <div class="d-flex flex-column gap-2">
+                            <div class="form-check">
+                                <input class="form-check-input collector-mode" type="checkbox" id="mode_cash_bank"
+                                    value="cash_bank">
+                                <label class="form-check-label" for="mode_cash_bank">Cash</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input collector-mode" type="checkbox" id="mode_bank_deposit"
+                                    value="bank_deposit">
+                                <label class="form-check-label" for="mode_bank_deposit">Bank Deposit</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input collector-mode" type="checkbox" id="mode_cheques"
+                                    value="cheques">
+                                <label class="form-check-label" for="mode_cheques">Cheques</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input collector-mode" type="checkbox"
+                                    id="mode_collector_account" value="collector_account">
+                                <label class="form-check-label" for="mode_collector_account">Collector Account</label>
                             </div>
 
-                            <button id="btnUpdateCollectionDays" class="btn btn-primary mt-2" style="max-width: 220px;">
-                                <i class="fa-solid fa-floppy-disk me-1"></i> Update Collection Days
+                            <button id="btnUpdateCollectorModes" class="btn btn-primary mt-2" style="max-width: 220px;">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Update Modes
                             </button>
+                        </div>
+                        <small class="text-muted">Select which transaction modes are available when recording collector
+                            account transactions.</small>
+                    </div>
 
-                            <small class="text-muted d-block mt-2">
-                                Example: If you uncheck Sunday, users cannot pick Sunday in the "Collection Day" dropdown in Issue Loan.
-                            </small>
+                    <hr>
+                    <!-- Recovery Account Access -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Recovery Account Access</label>
+                        <div class="d-flex gap-2">
+                            <select id="recovery_account_status" class="form-select" style="max-width: 300px;">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                            <button id="btnUpdateRecoveryAccount" class="btn btn-primary">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Update
+                            </button>
+                        </div>
+                        <small class="text-muted">
+                            Control whether recovery account features are available in the system.
+                        </small>
+                    </div>
 
-                            <hr>
-                            <!-- Due Skip Type -->
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Due Skip Type</label>
-                                <div class="d-flex gap-2">
-                                    <select id="due_skip_type" class="form-select" style="max-width: 300px;">
-                                        <option value="skip_installment">Skip an Installment</option>
-                                        <option value="skip_day">Skip a Day</option>
-                                    </select>
-                                    <button id="btnUpdateDueSkipType" class="btn btn-primary">
-                                        <i class="fa-solid fa-floppy-disk me-1"></i> Update
-                                    </button>
-                                </div>
-                                <small class="text-muted">
-                                    Controls how the system behaves when you skip a due:
-                                    either skip the entire installment or only shift the due date.
-                                </small>
+                    <hr>
+                    <!-- Allowed Collection Dates -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Collection Dates</label>
+                        <small class="text-muted d-block mb-2">
+                            Select which weekdays are valid for installment collection / route collection.
+                            Only these days will be available when issuing a loan.
+                        </small>
+
+                        <div class="d-flex flex-column gap-2" style="max-width: 300px;">
+                            <div class="form-check">
+                                <input class="form-check-input collection-day" type="checkbox" id="col_day_1"
+                                    value="1">
+                                <label class="form-check-label" for="col_day_1">Monday</label>
                             </div>
-
+                            <div class="form-check">
+                                <input class="form-check-input collection-day" type="checkbox" id="col_day_2"
+                                    value="2">
+                                <label class="form-check-label" for="col_day_2">Tuesday</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input collection-day" type="checkbox" id="col_day_3"
+                                    value="3">
+                                <label class="form-check-label" for="col_day_3">Wednesday</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input collection-day" type="checkbox" id="col_day_4"
+                                    value="4">
+                                <label class="form-check-label" for="col_day_4">Thursday</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input collection-day" type="checkbox" id="col_day_5"
+                                    value="5">
+                                <label class="form-check-label" for="col_day_5">Friday</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input collection-day" type="checkbox" id="col_day_6"
+                                    value="6">
+                                <label class="form-check-label" for="col_day_6">Saturday</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input collection-day" type="checkbox" id="col_day_0"
+                                    value="0">
+                                <label class="form-check-label" for="col_day_0">Sunday</label>
+                            </div>
                         </div>
 
+                        <button id="btnUpdateCollectionDays" class="btn btn-primary mt-2" style="max-width: 220px;">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Update Collection Days
+                        </button>
 
+                        <small class="text-muted d-block mt-2">
+                            Example: If you uncheck Sunday, users cannot pick Sunday in the "Collection Day" dropdown in
+                            Issue Loan.
+                        </small>
 
+                        <hr>
+                    </div>
 
-
+                    <!-- Due Skip Type -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Due Skip Type</label>
+                        <div class="d-flex gap-2">
+                            <select id="due_skip_type" class="form-select" style="max-width: 300px;">
+                                <option value="skip_installment">Skip an Installment</option>
+                                <option value="skip_day">Skip a Day</option>
+                            </select>
+                            <button id="btnUpdateDueSkipType" class="btn btn-primary">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Update
+                            </button>
+                        </div>
+                        <small class="text-muted">
+                            Controls how the system behaves when you skip a due:
+                            either skip the entire installment or only shift the due date.
+                        </small>
                     </div>
                 </div>
             </div>
 
-        </div>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="mb-3">Recovery Lead Settings</h5>
+                    <hr>
+                    <small class="text-muted d-block">Configure settings related to recovery leads.</small>
 
-        <!-- Head Office Approval Section -->
-        <div class="row mt-3">
-            <div class="col-6">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="mb-3">Head Office Approval</h5>
-                        <hr>
-                        <small class="text-muted d-block mb-3">Configure which approval types require head office approval.</small>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Document Types</label>
+                        <small class="text-muted d-block mb-3">Manage predefined document types for customer
+                            registration.</small>
 
-                        <!-- User Management -->
                         <div class="mb-3">
-                            <h6 class="text-primary mb-2">User Management</h6>
-                            <div class="list-group">
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>User Creation</span>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_101" data-type="101">
-                                    </div>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>User Details Update</span>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_102" data-type="102">
-                                    </div>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>User Privilege Change</span>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_103" data-type="103">
-                                    </div>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>User Designation Change</span>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_104" data-type="104">
-                                    </div>
-                                </div>
+                            <div class="input-group mb-2">
+                                <input type="text" id="new_document_type" class="form-control"
+                                    placeholder="Enter document type" maxlength="100">
+                                <button id="btnAddDocumentType" class="btn btn-outline-success">
+                                    <i class="fa-solid fa-plus me-1"></i> Add
+                                </button>
                             </div>
                         </div>
 
-                        <!-- Designation Management -->
-                        <div class="mb-3">
-                            <h6 class="text-primary mb-2">Designation Management</h6>
-                            <div class="list-group">
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Designation Privileges Update</span>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_201" data-type="201">
-                                    </div>
-                                </div>
-                            </div>
+                        <div id="document_types_list" class="mb-3">
+                            <!-- Document types will be loaded here -->
                         </div>
 
-                        <!-- Customer Management -->
-                        <div class="mb-3">
-                            <h6 class="text-primary mb-2">Customer Management</h6>
-                            <div class="list-group">
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Customer Creation</span>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_301" data-type="301">
-                                    </div>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Customer Details Update</span>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_302" data-type="302">
-                                    </div>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Customer Status Change</span>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_303" data-type="303">
-                                    </div>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Customer Blacklist</span>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_304" data-type="304">
-                                    </div>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Customer Document Update</span>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_305" data-type="305">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Loan Management -->
-                        <div class="mb-3">
-                            <h6 class="text-primary mb-2">Loan Management</h6>
-                            <div class="list-group">
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Loan Approval</span>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_401" data-type="401">
-                                    </div>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Loan Rejection</span>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_402" data-type="402">
-                                    </div>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Loan Modification</span>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_403" data-type="403">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Financial Transactions -->
-                        <div class="mb-3">
-                            <h6 class="text-primary mb-2">Financial Transactions</h6>
-                            <div class="list-group">
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Bank Account Transfer</span>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_501" data-type="501">
-                                    </div>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Payment Undo</span>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_502" data-type="502">
-                                    </div>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Payment Reversal</span>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_503" data-type="503">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Expenses -->
-                        <div class="mb-3">
-                            <h6 class="text-primary mb-2">Expenses</h6>
-                            <div class="list-group">
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Expense Creation</span>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_601" data-type="601">
-                                    </div>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Expense Approval</span>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_602" data-type="602">
-                                    </div>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Expense Modification</span>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_603" data-type="603">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button id="btnSaveAllApprovals" class="btn btn-primary mt-2">
-                            <i class="fa-solid fa-floppy-disk me-1"></i> Save All Approval Settings
+                        <button id="btnUpdateDocumentTypes" class="btn btn-primary">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
                         </button>
                     </div>
+
+                    <hr>
+                    <!-- Collector Account Transaction Modes -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Collector Account Transaction Modes</label>
+                        <div class="d-flex flex-column gap-2">
+                            <div class="form-check">
+                                <input class="form-check-input collector-mode" type="checkbox" id="mode_cash_bank"
+                                    value="cash_bank">
+                                <label class="form-check-label" for="mode_cash_bank">Cash</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input collector-mode" type="checkbox" id="mode_bank_deposit"
+                                    value="bank_deposit">
+                                <label class="form-check-label" for="mode_bank_deposit">Bank Deposit</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input collector-mode" type="checkbox" id="mode_cheques"
+                                    value="cheques">
+                                <label class="form-check-label" for="mode_cheques">Cheques</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input collector-mode" type="checkbox"
+                                    id="mode_collector_account" value="collector_account">
+                                <label class="form-check-label" for="mode_collector_account">Collector Account</label>
+                            </div>
+
+                            <button id="btnUpdateCollectorModes" class="btn btn-primary mt-2" style="max-width: 220px;">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Update Modes
+                            </button>
+                        </div>
+                        <small class="text-muted">Select which transaction modes are available when recording collector
+                            account transactions.</small>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Head Office Approval Section -->
+    <div class="row mt-3" >
+        <div class="col-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="mb-3">Head Office Approval</h5>
+                    <hr>
+                    <small class="text-muted d-block mb-3">Configure which approval types require head office
+                        approval.</small>
+
+                    <!-- User Management -->
+                    <div class="mb-3">
+                        <h6 class="text-primary mb-2">User Management</h6>
+                        <div class="list-group">
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>User Creation</span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_101"
+                                        data-type="101">
+                                </div>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>User Details Update</span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_102"
+                                        data-type="102">
+                                </div>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>User Privilege Change</span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_103"
+                                        data-type="103">
+                                </div>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>User Designation Change</span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_104"
+                                        data-type="104">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Designation Management -->
+                    <div class="mb-3">
+                        <h6 class="text-primary mb-2">Designation Management</h6>
+                        <div class="list-group">
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Designation Privileges Update</span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_201"
+                                        data-type="201">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Customer Management -->
+                    <div class="mb-3">
+                        <h6 class="text-primary mb-2">Customer Management</h6>
+                        <div class="list-group">
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Customer Creation</span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_301"
+                                        data-type="301">
+                                </div>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Customer Details Update</span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_302"
+                                        data-type="302">
+                                </div>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Customer Status Change</span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_303"
+                                        data-type="303">
+                                </div>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Customer Blacklist</span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_304"
+                                        data-type="304">
+                                </div>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Customer Document Update</span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_305"
+                                        data-type="305">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Loan Management -->
+                    <div class="mb-3">
+                        <h6 class="text-primary mb-2">Loan Management</h6>
+                        <div class="list-group">
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Loan Approval</span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_401"
+                                        data-type="401">
+                                </div>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Loan Rejection</span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_402"
+                                        data-type="402">
+                                </div>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Loan Modification</span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_403"
+                                        data-type="403">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Financial Transactions -->
+                    <div class="mb-3">
+                        <h6 class="text-primary mb-2">Financial Transactions</h6>
+                        <div class="list-group">
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Bank Account Transfer</span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_501"
+                                        data-type="501">
+                                </div>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Payment Undo</span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_502"
+                                        data-type="502">
+                                </div>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Payment Reversal</span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_503"
+                                        data-type="503">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Expenses -->
+                    <div class="mb-3">
+                        <h6 class="text-primary mb-2">Expenses</h6>
+                        <div class="list-group">
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Expense Creation</span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_601"
+                                        data-type="601">
+                                </div>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Expense Approval</span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_602"
+                                        data-type="602">
+                                </div>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Expense Modification</span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_603"
+                                        data-type="603">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="btnSaveAllApprovals" class="btn btn-primary mt-2">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Save All Approval Settings
+                    </button>
                 </div>
             </div>
         </div>
@@ -764,43 +874,43 @@
     <script src="../JS/profile.js"></script>
     <!-- Custom JS -->
     <script>
-
         $(document).ready(function() {
             load_data_shortcut();
             // you already call load_data_shortcut(); keep it
             load_settings();
 
-            $('#btnUpdatePaymentMemberName').on('click', function (e) {
+            $('#btnUpdatePaymentMemberName').on('click', function(e) {
                 e.preventDefault();
                 const value = $('#payment_member_name').val(); // 'full_name' or 'with_initial'
                 save_setting('payment_member_name', value);
             });
 
-            $('#btnUpdateLoanPolicy').on('click', function (e) {
+            $('#btnUpdateLoanPolicy').on('click', function(e) {
                 e.preventDefault();
                 const value = $('input[name="loan_policy"]:checked').val(); // 'strict' or 'flexible'
 
                 if (!value) {
-                    Swal.fire("Warning", "Please select a Loan Disbursement Policy before updating.", "warning");
+                    Swal.fire("Warning", "Please select a Loan Disbursement Policy before updating.",
+                        "warning");
                     return;
                 }
 
                 save_setting('loan_disbursement_policy', value);
             });
 
-            $('#btnUpdatePaymentBackdate').on('click', function (e) {
+            $('#btnUpdatePaymentBackdate').on('click', function(e) {
                 e.preventDefault();
                 const value = $('#payment_backdate').val(); // 'enabled' | 'disabled'
                 save_setting('payment_backdate', value);
             });
 
-                        $('#btnUpdateLoanOrder').on('click', function (e) {
+            $('#btnUpdateLoanOrder').on('click', function(e) {
                 e.preventDefault();
                 const value = $('#loan_order').val(); // 'create_date' | 'loan_number' | 'issue_date'
                 save_setting('loan_order', value);
             });
 
-            $('#btnUpdateDueSkipType').on('click', function (e) {
+            $('#btnUpdateDueSkipType').on('click', function(e) {
                 e.preventDefault();
                 const value = $('#due_skip_type').val(); // 'skip_installment' | 'skip_day'
 
@@ -813,7 +923,7 @@
             });
 
 
-            $('#btnUpdateMaxLoans').on('click', function (e) {
+            $('#btnUpdateMaxLoans').on('click', function(e) {
                 e.preventDefault();
                 const value = $('#max_allowed_loans').val();
                 if (!value || value < 1 || value > 50) {
@@ -835,26 +945,28 @@
             // });
 
             // Document Types Management
-            $('#btnAddDocumentType').on('click', function (e) {
+            $('#btnAddDocumentType').on('click', function(e) {
                 e.preventDefault();
                 addDocumentType();
             });
 
-            $('#new_document_type').on('keypress', function (e) {
+            $('#new_document_type').on('keypress', function(e) {
                 if (e.which === 13) { // Enter key
                     e.preventDefault();
                     addDocumentType();
                 }
             });
 
-            $('#btnUpdateDocumentTypes').on('click', function (e) {
+            $('#btnUpdateDocumentTypes').on('click', function(e) {
                 e.preventDefault();
                 saveDocumentTypes();
             });
 
-            $('#btnUpdateCollectorModes').on('click', function (e) {
+            $('#btnUpdateCollectorModes').on('click', function(e) {
                 e.preventDefault();
-                const selected = $('.collector-mode:checked').map(function(){ return $(this).val(); }).get();
+                const selected = $('.collector-mode:checked').map(function() {
+                    return $(this).val();
+                }).get();
 
                 // Optional: prevent empty selection
                 if (selected.length === 0) {
@@ -866,14 +978,14 @@
                 save_setting('collector_txn_modes', JSON.stringify(selected));
             });
 
-            $('#btnUpdateRecoveryAccount').on('click', function (e) {
+            $('#btnUpdateRecoveryAccount').on('click', function(e) {
                 e.preventDefault();
                 const value = $('#recovery_account_status').val(); // 'active' | 'inactive'
                 save_setting('recovery_account_status', value);
             });
 
             // Collection Days update
-            $('#btnUpdateCollectionDays').on('click', function (e) {
+            $('#btnUpdateCollectionDays').on('click', function(e) {
                 e.preventDefault();
 
                 const days = getSelectedCollectionDays(); // e.g. [1,2,3,4,5]
@@ -904,7 +1016,7 @@
                             key: 'collection_days',
                             value: JSON.stringify(days) // store as JSON array
                         },
-                        success: function () {
+                        success: function() {
                             Swal.fire({
                                 position: "center",
                                 icon: "success",
@@ -913,8 +1025,9 @@
                                 showConfirmButton: false
                             });
                         },
-                        error: function (xhr) {
-                            Swal.fire("Error", xhr.responseJSON?.message || "Failed to update collection days", "error");
+                        error: function(xhr) {
+                            Swal.fire("Error", xhr.responseJSON?.message ||
+                                "Failed to update collection days", "error");
                         }
                     });
                 });
@@ -924,7 +1037,7 @@
             // Read which weekdays are allowed
             const getSelectedCollectionDays = () => {
                 const days = [];
-                $('.collection-day:checked').each(function () {
+                $('.collection-day:checked').each(function() {
                     days.push(parseInt($(this).val())); // [1,2,5,...]
                 });
                 return days;
@@ -933,9 +1046,9 @@
 
 
             // Head Office Approval - Save All
-            $('#btnSaveAllApprovals').on('click', function (e) {
+            $('#btnSaveAllApprovals').on('click', function(e) {
                 e.preventDefault();
-                
+
                 Swal.fire({
                     title: "Are you sure?",
                     text: "Update all head office approval settings?",
@@ -952,7 +1065,10 @@
                         const type = $(this).data('type');
                         const isChecked = $(this).is(':checked');
                         const value = isChecked ? 'required' : 'not_required';
-                        settings.push({ key: 'headoffice_approval_' + type, value: value });
+                        settings.push({
+                            key: 'headoffice_approval_' + type,
+                            value: value
+                        });
                     });
 
                     let completedCount = 0;
@@ -963,12 +1079,14 @@
                             type: "POST",
                             url: "/settings/upsert",
                             headers: {
-                                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
+                                    "content"),
                             },
                             data: setting,
-                            success: function () {
+                            success: function() {
                                 completedCount++;
-                                if (completedCount === settings.length && !hasError) {
+                                if (completedCount === settings.length && !
+                                    hasError) {
                                     Swal.fire({
                                         position: "center",
                                         icon: "success",
@@ -978,10 +1096,13 @@
                                     });
                                 }
                             },
-                            error: function (xhr) {
+                            error: function(xhr) {
                                 if (!hasError) {
                                     hasError = true;
-                                    Swal.fire("Error", xhr.responseJSON?.message || "Failed to update approval settings", "error");
+                                    Swal.fire("Error", xhr.responseJSON
+                                        ?.message ||
+                                        "Failed to update approval settings",
+                                        "error");
                                 }
                             }
                         });
@@ -990,9 +1111,9 @@
             });
 
             // Loan Creation Restrictions
-            $('#btnUpdateLoanRestrictions').on('click', function (e) {
+            $('#btnUpdateLoanRestrictions').on('click', function(e) {
                 e.preventDefault();
-                
+
                 const documentUpload = $('#document_upload_restriction').val();
                 const guarantees = $('#guarantees_restriction').val();
                 const changeProduct = $('#change_product_details').val();
@@ -1015,11 +1136,11 @@
                 }
 
                 // Save all settings
-                saveLoanRestrictions(documentUpload, guarantees, changeProduct, dailyDays, weeklyDays, monthlyDays);
+                saveLoanRestrictions(documentUpload, guarantees, changeProduct, dailyDays, weeklyDays,
+                    monthlyDays);
             });
 
         });
-
 
         const getSelectedCheckboxValues = () => {
             const checkboxValues = {};
@@ -1095,13 +1216,15 @@
                         headers: {
                             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                         },
-                        data: { checkboxValues: selectedCheckboxValues }, // Use ES6 shorthand
-                        success: function (data) {
+                        data: {
+                            checkboxValues: selectedCheckboxValues
+                        }, // Use ES6 shorthand
+                        success: function(data) {
                             Swal.fire({
                                 position: "center",
                                 icon: "success",
                                 title: "Successfully updated shortcuts!",
-                            }).then(function () {
+                            }).then(function() {
                                 load_data_shortcut();
                             });
                         },
@@ -1110,7 +1233,6 @@
             });
         };
 
-
         const load_data_shortcut = () => {
             $.ajax({
                 type: "GET",
@@ -1118,7 +1240,7 @@
                 headers: {
                     "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                 },
-                success: function (data) {
+                success: function(data) {
                     console.log(data);
                     const items = data.items;
                     items.forEach(item => {
@@ -1165,7 +1287,7 @@
                         }
                     });
                 },
-                error: function (error) {
+                error: function(error) {
                     console.log('Error:', error);
                 }
             });
@@ -1181,37 +1303,40 @@
                 headers: {
                     "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                 },
-                success: function (data) {
+                success: function(data) {
                     const items = data.items || {};
 
                     // Recovery Account Access
                     if (items.recovery_account_status) {
-                        $('#recovery_account_status').val(items.recovery_account_status); // 'active' | 'inactive'
+                        $('#recovery_account_status').val(items
+                            .recovery_account_status); // 'active' | 'inactive'
                     }
 
-// Due Skip Type
+                    // Due Skip Type
                     if (items.due_skip_type) {
                         $('#due_skip_type').val(items.due_skip_type); // 'skip_installment' | 'skip_day'
                     }
 
-// Payment Member Name
+                    // Payment Member Name
                     if (items.payment_member_name) {
                         $('#payment_member_name').val(items.payment_member_name);
                     }
 
-// Loan Disbursement Policy
+                    // Loan Disbursement Policy
                     if (items.loan_disbursement_policy) {
-                        $(`input[name="loan_policy"][value="${items.loan_disbursement_policy}"]`).prop('checked', true);
+                        $(`input[name="loan_policy"][value="${items.loan_disbursement_policy}"]`).prop(
+                            'checked', true);
                     }
 
-// NEW: Payment Backdate
+                    // NEW: Payment Backdate
                     if (items.payment_backdate) {
                         $('#payment_backdate').val(items.payment_backdate); // 'enabled' | 'disabled'
                     }
 
-// NEW: Loan Number Order
+                    // NEW: Loan Number Order
                     if (items.loan_order) {
-                        $('#loan_order').val(items.loan_order); // 'create_date' | 'loan_number' | 'issue_date'
+                        $('#loan_order').val(items
+                            .loan_order); // 'create_date' | 'loan_number' | 'issue_date'
                     }
 
                     // Max Allowed Loans
@@ -1245,7 +1370,6 @@
                         });
                     }
 
-
                     // Document Types
                     if (items.document_types) {
                         try {
@@ -1268,7 +1392,8 @@
                             if (!Array.isArray(modes)) modes = [];
                         } catch (e) {
                             // fallback if stored as comma-separated
-                            modes = String(items.collector_txn_modes).split(',').map(s => s.trim()).filter(Boolean);
+                            modes = String(items.collector_txn_modes).split(',').map(s => s.trim()).filter(
+                                Boolean);
                         }
 
                         // Uncheck all first, then check the ones present
@@ -1305,7 +1430,7 @@
                         }
                     });
                 },
-                error: function (xhr) {
+                error: function(xhr) {
                     console.error('Settings load error:', xhr.responseText || xhr.statusText);
                 }
             });
@@ -1330,8 +1455,11 @@
                     headers: {
                         "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                     },
-                    data: { key, value },
-                    success: function () {
+                    data: {
+                        key,
+                        value
+                    },
+                    success: function() {
                         Swal.fire({
                             position: "center",
                             icon: "success",
@@ -1340,8 +1468,9 @@
                             showConfirmButton: false
                         });
                     },
-                    error: function (xhr) {
-                        Swal.fire("Error", xhr.responseJSON?.message || "Failed to update setting", "error");
+                    error: function(xhr) {
+                        Swal.fire("Error", xhr.responseJSON?.message || "Failed to update setting",
+                            "error");
                     }
                 });
             });
@@ -1361,13 +1490,30 @@
                 if (!result.isConfirmed) return;
 
                 // Prepare all settings to save
-                const settings = [
-                    { key: 'document_upload_restriction', value: documentUpload },
-                    { key: 'guarantees_restriction', value: guarantees },
-                    { key: 'change_product_details', value: changeProduct },
-                    { key: 'first_installment_daily', value: dailyDays },
-                    { key: 'first_installment_weekly', value: weeklyDays },
-                    { key: 'first_installment_monthly', value: monthlyDays },
+                const settings = [{
+                        key: 'document_upload_restriction',
+                        value: documentUpload
+                    },
+                    {
+                        key: 'guarantees_restriction',
+                        value: guarantees
+                    },
+                    {
+                        key: 'change_product_details',
+                        value: changeProduct
+                    },
+                    {
+                        key: 'first_installment_daily',
+                        value: dailyDays
+                    },
+                    {
+                        key: 'first_installment_weekly',
+                        value: weeklyDays
+                    },
+                    {
+                        key: 'first_installment_monthly',
+                        value: monthlyDays
+                    },
                 ];
 
                 let completedCount = 0;
@@ -1382,7 +1528,7 @@
                             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                         },
                         data: setting,
-                        success: function () {
+                        success: function() {
                             completedCount++;
                             if (completedCount === settings.length && !hasError) {
                                 Swal.fire({
@@ -1394,10 +1540,11 @@
                                 });
                             }
                         },
-                        error: function (xhr) {
+                        error: function(xhr) {
                             if (!hasError) {
                                 hasError = true;
-                                Swal.fire("Error", xhr.responseJSON?.message || "Failed to update loan restrictions", "error");
+                                Swal.fire("Error", xhr.responseJSON?.message ||
+                                    "Failed to update loan restrictions", "error");
                             }
                         }
                     });
@@ -1449,7 +1596,7 @@
         // Add new document type
         const addDocumentType = () => {
             const newType = $('#new_document_type').val().trim();
-            
+
             if (!newType) {
                 Swal.fire("Warning", "Please enter a document type.", "warning");
                 return;
@@ -1457,7 +1604,7 @@
 
             // Get current types
             const currentTypes = getCurrentDocumentTypes();
-            
+
             // Check for duplicates (case insensitive)
             if (currentTypes.some(type => type.toLowerCase() === newType.toLowerCase())) {
                 Swal.fire("Warning", "This document type already exists.", "warning");
@@ -1467,7 +1614,7 @@
             // Add new type
             currentTypes.push(newType);
             loadDocumentTypesList(currentTypes);
-            
+
             // Clear input
             $('#new_document_type').val('');
         };
@@ -1494,14 +1641,14 @@
         // Save document types to database
         const saveDocumentTypes = () => {
             const documentTypes = getCurrentDocumentTypes();
-            
+
             if (documentTypes.length === 0) {
                 Swal.fire("Warning", "Please add at least one document type.", "warning");
                 return;
             }
 
             const jsonValue = JSON.stringify(documentTypes);
-            
+
             Swal.fire({
                 title: "Are you sure?",
                 text: "Update document types?",
@@ -1519,11 +1666,11 @@
                     headers: {
                         "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                     },
-                    data: { 
-                        key: 'document_types', 
-                        value: jsonValue 
+                    data: {
+                        key: 'document_types',
+                        value: jsonValue
                     },
-                    success: function () {
+                    success: function() {
                         Swal.fire({
                             position: "center",
                             icon: "success",
@@ -1532,12 +1679,12 @@
                             showConfirmButton: false
                         });
                     },
-                    error: function (xhr) {
-                        Swal.fire("Error", xhr.responseJSON?.message || "Failed to update document types", "error");
+                    error: function(xhr) {
+                        Swal.fire("Error", xhr.responseJSON?.message ||
+                            "Failed to update document types", "error");
                     }
                 });
             });
         };
-
     </script>
 @endsection
