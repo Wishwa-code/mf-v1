@@ -629,7 +629,7 @@
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="../JS/validate.js"></script>
-    <script src="../JS/re_payment.js?n=17"></script>
+    <script src="../JS/re_payment.js?n=18"></script>
     <script>
 
         $(document).ready(function() {
