@@ -164,6 +164,56 @@
                     </li>
                 @endif
 
+                {{-- @if (optional($privilege)->customer == 1) --}}
+                    <li class="side-nav-item">
+                        <a data-bs-toggle="collapse" href="#lead" aria-expanded="false"
+                            aria-controls="sidebarPagesAuth" class="side-nav-link">
+                           <i class="ri-article-fill"></i>
+                            <span> Lead </span>
+                            <span class="menu-arrow"></span>
+                        </a>
+                        <div class="collapse" id="lead">
+                            <ul class="side-nav-second-level">
+                                {{-- @if (optional($privilege)->add_customer == 1) --}}
+                                    <li>
+                                        <a href="{{ route('leads.index') }}">Lead</a>
+                                    </li>
+                                {{-- @endif --}}
+                                {{-- @if (optional($privilege)->view_blacklist_customer == 1)
+                                    <li>
+                                        <a href="/showblacklistcustomers">View Blacklist Customer</a>
+                                    </li>
+                                @endif
+                                @if (optional($privilege)->customer_saving_acc == 1)
+                                    <li>
+                                        <a href="/showcustomerssaving">Customer Saving Acc.</a>
+                                    </li>
+                                    <li>
+                                        <a href="/showcustomersrecovery">Customer Recovery Acc.</a>
+                                    </li>
+                                @endif
+                                @if (optional($privilege)->kyc == 1)
+                                    <li>
+                                        <a href="/kyc">KYC</a>
+                                    </li>
+                                @endif
+                                @if (optional($privilege)->insurance == 1)
+                                    <li>
+                                        <a href="/insurance">Insurance</a>
+                                    </li>
+                                @endif --}}
+
+                                <li>
+                                    <a href="{{ route('customers.map') }}">
+                                        <span> Customer Map </span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
+                    </li>
+                {{-- @endif --}}
+
                 @if (optional($privilege)->customer == 1)
                     <li class="side-nav-item">
                         <a data-bs-toggle="collapse" href="#customer" aria-expanded="false"
