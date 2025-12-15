@@ -298,42 +298,57 @@ class CapitalBalanceController extends Controller
     // GET /settings/all
     public function all()
     {
-        $keys = [
-            'payment_member_name',
-            'loan_disbursement_policy',
-            'payment_backdate',
-            'loan_order',
-            'max_allowed_loans',
-            'empty_row_count',
-            'document_types',
-            'collector_txn_modes',
-            'fund_request_columns',
-            'disbursement_columns',
-            'document_upload_restriction',
-            'guarantees_restriction',
-            'change_product_details',
-            'first_installment_daily',
-            'first_installment_weekly',
-            'first_installment_monthly',
-            'recovery_account_status',
-            'collection_days',
-            'due_skip_type'
-        ];
+        try {
+            //code...
+            $keys = [
+                'payment_member_name',
+                'loan_disbursement_policy',
+                'payment_backdate',
+                'loan_order',
+                'max_allowed_loans',
+                'empty_row_count',
+                'document_types',
+                'image_types',
+                'collector_txn_modes',
+                'fund_request_columns',
+                'disbursement_columns',
+                'document_upload_restriction',
+                'guarantees_restriction',
+                'change_product_details',
+                'first_installment_daily',
+                'first_installment_weekly',
+                'first_installment_monthly',
+                'recovery_account_status',
+                'collection_days',
+                'due_skip_type',
 
-        // Get fixed keys
-        $rows = DB::table($this->table)
-            ->whereIn('key', $keys)
-            ->pluck('value', 'key');
+            ];
 
-        // Get all headoffice_approval_* keys
-        $approvalRows = DB::table($this->table)
-            ->where('key', 'LIKE', 'headoffice_approval_%')
-            ->pluck('value', 'key');
+            // Get fixed keys
+            $fixedSettings = AppSettings::query()
+                ->whereIn('key', $keys)
+                ->pluck('value', 'key');
 
-        // Merge both collections
-        $allSettings = $rows->merge($approvalRows);
 
-        return response()->json(['items' => $allSettings], 200);
+            //Dynamic headoffice approval keys
+
+            $approvalSettings = AppSettings::query()
+                ->where('key', 'like', 'headoffice_approval_%')
+                ->pluck('value', 'key');
+
+
+            //Merge & return
+
+            $allSettings = $fixedSettings->merge($approvalSettings);
+
+            return response()->json([
+                'items' => $allSettings
+            ], 200);
+        } catch (\Throwable $th) {
+            //throw $th;
+            Log::error('Error fetching app settings: ' . $th->getMessage());
+            return response()->json(['message' => 'Failed to fetch app settings'], 500);
+        }
     }
 
 
@@ -390,6 +405,7 @@ class CapitalBalanceController extends Controller
             return response()->json(['success' => true], 200);
         } catch (\Throwable $th) {
             DB::rollBack();
+            dd($th);
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }

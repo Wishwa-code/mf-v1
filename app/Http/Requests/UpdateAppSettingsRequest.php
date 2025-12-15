@@ -6,26 +6,20 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateAppSettingsRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
-            'key'   => ['required', 'string'],
+            'key' => ['required', 'string'],
+
             'value' => [
                 'required',
                 function ($attribute, $value, $fail) {
+
                     $key = (string) $this->key;
 
                     /*
@@ -40,6 +34,7 @@ class UpdateAppSettingsRequest extends FormRequest
                         'loan_order',
                         'max_allowed_loans',
                         'document_types',
+                        'image_types', // ✅ ADDED
                         'collector_txn_modes',
                         'fund_request_columns',
                         'disbursement_columns',
@@ -54,12 +49,17 @@ class UpdateAppSettingsRequest extends FormRequest
                         'due_skip_type',
                     ];
 
-                    $isFixed               = in_array($key, $fixedKeys, true);
-                    $isSheetEmptyRows      = preg_match('/^empty_row_count_[A-Za-z0-9_]+$/', $key);
-                    $isSheetOrderBy        = preg_match('/^repayment_order_[A-Za-z0-9_]+$/', $key);
-                    $isHeadOfficeApproval  = preg_match('/^headoffice_approval_[0-9]+$/', $key);
+                    $isFixed              = in_array($key, $fixedKeys, true);
+                    $isSheetEmptyRows     = preg_match('/^empty_row_count_[A-Za-z0-9_]+$/', $key);
+                    $isSheetOrderBy       = preg_match('/^repayment_order_[A-Za-z0-9_]+$/', $key);
+                    $isHeadOfficeApproval = preg_match('/^headoffice_approval_[0-9]+$/', $key);
 
-                    if (!$isFixed && !$isSheetEmptyRows && !$isSheetOrderBy && !$isHeadOfficeApproval) {
+                    if (
+                        !$isFixed &&
+                        !$isSheetEmptyRows &&
+                        !$isSheetOrderBy &&
+                        !$isHeadOfficeApproval
+                    ) {
                         return $fail('Invalid key.');
                     }
 
@@ -69,6 +69,7 @@ class UpdateAppSettingsRequest extends FormRequest
                      |--------------------------------------------------------------------------
                      */
                     if ($isFixed) {
+
                         match ($key) {
                             'payment_member_name' => in_array($value, [
                                 'full_name',
@@ -77,40 +78,111 @@ class UpdateAppSettingsRequest extends FormRequest
                                 'only_last_name'
                             ], true) ?: $fail('Invalid value for payment_member_name.'),
 
-                            'loan_disbursement_policy' => in_array($value, ['strict', 'flexible'], true)
+                            'loan_disbursement_policy' =>
+                                in_array($value, ['strict', 'flexible'], true)
                                 ?: $fail('Invalid value for loan_disbursement_policy.'),
 
-                            'payment_backdate' => in_array($value, ['enabled', 'disabled'], true)
+                            'payment_backdate' =>
+                                in_array($value, ['enabled', 'disabled'], true)
                                 ?: $fail('Invalid value for payment_backdate.'),
 
-                            'loan_order' => in_array($value, ['create_date', 'loan_number', 'issue_date'], true)
+                            'loan_order' =>
+                                in_array($value, ['create_date', 'loan_number', 'issue_date'], true)
                                 ?: $fail('Invalid value for loan_order.'),
 
-                            'recovery_account_status' => in_array($value, ['active', 'inactive'], true)
+                            'recovery_account_status' =>
+                                in_array($value, ['active', 'inactive'], true)
                                 ?: $fail('Invalid value for recovery_account_status.'),
 
-                            'due_skip_type' => in_array($value, ['skip_installment', 'skip_day'], true)
+                            'due_skip_type' =>
+                                in_array($value, ['skip_installment', 'skip_day'], true)
                                 ?: $fail('Invalid value for due_skip_type.'),
 
                             default => null,
                         };
 
-                        if ($key === 'max_allowed_loans' && (!is_numeric($value) || $value < 1 || $value > 50)) {
+                        /*
+                         |---------------------------------------------
+                         | Numeric rules
+                         |---------------------------------------------
+                         */
+                        if (
+                            $key === 'max_allowed_loans' &&
+                            (!is_numeric($value) || $value < 1 || $value > 50)
+                        ) {
                             return $fail('Max allowed loans must be between 1 and 50.');
                         }
 
-                        if (in_array($key, ['document_types', 'fund_request_columns', 'disbursement_columns'], true)) {
+                        /*
+                         |---------------------------------------------
+                         | Generic JSON arrays
+                         |---------------------------------------------
+                         */
+                        if (
+                            in_array($key, [
+                                'document_types',
+                                'fund_request_columns',
+                                'disbursement_columns'
+                            ], true)
+                        ) {
                             $decoded = json_decode($value, true);
+
                             if (json_last_error() !== JSON_ERROR_NONE) {
                                 return $fail("{$key} must be valid JSON.");
                             }
+
                             if (!is_array($decoded) || count($decoded) === 0) {
                                 return $fail("{$key} must be a non-empty JSON array.");
                             }
                         }
 
+                        /*
+                         |---------------------------------------------
+                         | IMAGE TYPES (custom structure)
+                         |---------------------------------------------
+                         */
+                        if ($key === 'image_types') {
+                            $decoded = json_decode($value, true);
+
+                            if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+                                return $fail('image_types must be a valid JSON array.');
+                            }
+
+                            if (count($decoded) === 0) {
+                                return $fail('image_types must contain at least one item.');
+                            }
+
+                            foreach ($decoded as $index => $item) {
+
+                                if (
+                                    !isset($item['name']) ||
+                                    !is_string($item['name']) ||
+                                    trim($item['name']) === ''
+                                ) {
+                                    return $fail("Image type name is required at index {$index}.");
+                                }
+
+                                if (
+                                    !array_key_exists('is_required', $item) ||
+                                    !is_bool($item['is_required'])
+                                ) {
+                                    return $fail("Image type 'is_required' must be boolean at index {$index}.");
+                                }
+                            }
+                        }
+
+                        /*
+                         |---------------------------------------------
+                         | Collector transaction modes
+                         |---------------------------------------------
+                         */
                         if ($key === 'collector_txn_modes') {
-                            $allowed = ['cash_bank', 'bank_deposit', 'cheques', 'collector_account'];
+                            $allowed = [
+                                'cash_bank',
+                                'bank_deposit',
+                                'cheques',
+                                'collector_account'
+                            ];
 
                             $decoded = json_decode($value, true);
                             $modes   = is_array($decoded)
@@ -124,10 +196,19 @@ class UpdateAppSettingsRequest extends FormRequest
                             }
                         }
 
+                        /*
+                         |---------------------------------------------
+                         | Collection days
+                         |---------------------------------------------
+                         */
                         if ($key === 'collection_days') {
                             $decoded = json_decode($value, true);
 
-                            if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded) || count($decoded) === 0) {
+                            if (
+                                json_last_error() !== JSON_ERROR_NONE ||
+                                !is_array($decoded) ||
+                                count($decoded) === 0
+                            ) {
                                 return $fail('collection_days must be a non-empty JSON array.');
                             }
 
@@ -143,10 +224,13 @@ class UpdateAppSettingsRequest extends FormRequest
 
                     /*
                      |--------------------------------------------------------------------------
-                     | Sheet-scoped keys
+                     | Sheet scoped keys
                      |--------------------------------------------------------------------------
                      */
-                    if ($isSheetEmptyRows && (!is_numeric($value) || $value < 0 || $value > 100)) {
+                    if (
+                        $isSheetEmptyRows &&
+                        (!is_numeric($value) || $value < 0 || $value > 100)
+                    ) {
                         return $fail('Empty row count must be between 0 and 100.');
                     }
 
@@ -167,7 +251,10 @@ class UpdateAppSettingsRequest extends FormRequest
                         }
                     }
 
-                    if ($isHeadOfficeApproval && !in_array($value, ['required', 'not_required'], true)) {
+                    if (
+                        $isHeadOfficeApproval &&
+                        !in_array($value, ['required', 'not_required'], true)
+                    ) {
                         return $fail('Head office approval must be either required or not_required.');
                     }
                 },

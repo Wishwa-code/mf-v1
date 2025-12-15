@@ -42,8 +42,6 @@
                                 @if (optional($privilege)->kyc == 1)
                                     <li><a href="/kyc">KYC</a></li>
                                 @endif
-
-
                             </ul>
                         </div>
                     </li>
@@ -352,7 +350,6 @@
                         </div>
                     </li>
                 @endif
-
 
                 @if (optional($privilege)->payment_details == 1)
                     <li class="side-nav-item">

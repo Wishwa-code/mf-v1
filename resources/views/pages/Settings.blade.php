@@ -38,302 +38,488 @@
 @section('content')
     <div class="row mt-3">
         <div class="col-6">
-            <div class="card">
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th class="fw-bolder">Shortcut Permission</th>
-                                    <th class="fw-bolder text-center">Access</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Customer Main Topic -->
-                                <tr class="main-topic">
-                                    <td class="align-middle">
-                                        <div class="d-flex align-items-center">
-                                            <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                            <span class="h5 font-weight-bold">Add Customer</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        <input class="form-check-input access_module" id="1" type="checkbox">
-                                    </td>
-                                </tr>
-                                <!-- Customer Subtopics -->
+            <div class="row">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th class="fw-bolder">Shortcut Permission</th>
+                                        <th class="fw-bolder text-center">Access</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Customer Main Topic -->
+                                    <tr class="main-topic">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
+                                                <span class="h5 font-weight-bold">Add Customer</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <input class="form-check-input access_module" id="1" type="checkbox">
+                                        </td>
+                                    </tr>
+                                    <!-- Customer Subtopics -->
 
-                                <!-- Center Main Topic -->
-                                <tr class="main-topic">
-                                    <td class="align-middle">
-                                        <div class="d-flex align-items-center">
-                                            <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                            <span class="h5 font-weight-bold">View Customer</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        <input class="form-check-input access_module" id="2" type="checkbox">
-                                    </td>
-                                </tr>
-                                <!-- Center Subtopics -->
+                                    <!-- Center Main Topic -->
+                                    <tr class="main-topic">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
+                                                <span class="h5 font-weight-bold">View Customer</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <input class="form-check-input access_module" id="2" type="checkbox">
+                                        </td>
+                                    </tr>
+                                    <!-- Center Subtopics -->
 
-                                <tr class="main-topic">
-                                    <td class="align-middle">
-                                        <div class="d-flex align-items-center">
-                                            <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                            <span class="h5 font-weight-bold">Assign Customers to group</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        <input class="form-check-input access_module" id="3" type="checkbox">
-                                    </td>
-                                </tr>
-                                <!-- Loan Category Subtopics -->
-                                <tr class="main-topic">
-                                    <td class="align-middle">
-                                        <div class="d-flex align-items-center">
-                                            <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                            <span class="h5 font-weight-bold">View Products</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        <input class="form-check-input access_module" id="4" type="checkbox">
-                                    </td>
-                                </tr>
+                                    <tr class="main-topic">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
+                                                <span class="h5 font-weight-bold">Assign Customers to group</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <input class="form-check-input access_module" id="3" type="checkbox">
+                                        </td>
+                                    </tr>
+                                    <!-- Loan Category Subtopics -->
+                                    <tr class="main-topic">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
+                                                <span class="h5 font-weight-bold">View Products</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <input class="form-check-input access_module" id="4" type="checkbox">
+                                        </td>
+                                    </tr>
 
-                                <tr class="main-topic">
-                                    <td class="align-middle">
-                                        <div class="d-flex align-items-center">
-                                            <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                            <span class="h5 font-weight-bold">Pending Loans</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        <input class="form-check-input access_module" id="5" type="checkbox">
-                                    </td>
-                                </tr>
-
-
-
-
-                                <tr class="main-topic">
-                                    <td class="align-middle">
-                                        <div class="d-flex align-items-center">
-                                            <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                            <span class="h5 font-weight-bold">Current Loans</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        <input class="form-check-input access_module" id="6" type="checkbox">
-                                    </td>
-                                </tr>
-                                <!-- Loan Category Subtopics -->
-
-
-                                <tr class="main-topic">
-                                    <td class="align-middle">
-                                        <div class="d-flex align-items-center">
-                                            <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                            <span class="h5 font-weight-bold">Loan In arrears</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        <input class="form-check-input access_module" id="7" type="checkbox">
-                                    </td>
-                                </tr>
-                                <!-- Loan Category Subtopics -->
-
-                                <tr class="main-topic">
-                                    <td class="align-middle">
-                                        <div class="d-flex align-items-center">
-                                            <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                            <span class="h5 font-weight-bold">Add Repayment</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        <input class="form-check-input access_module" id="8" type="checkbox">
-                                    </td>
-                                </tr>
-                                <!-- Loan Category Subtopics -->
+                                    <tr class="main-topic">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
+                                                <span class="h5 font-weight-bold">Pending Loans</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <input class="form-check-input access_module" id="5" type="checkbox">
+                                        </td>
+                                    </tr>
 
 
 
 
-                                <tr class="main-topic">
-                                    <td class="align-middle">
-                                        <div class="d-flex align-items-center">
-                                            <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                            <span class="h5 font-weight-bold">Repayment details</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        <input class="form-check-input access_module" id="9" type="checkbox">
-                                    </td>
-                                </tr>
-                                <!-- Loan Category Subtopics -->
-
-                                <tr class="main-topic">
-                                    <td class="align-middle">
-                                        <div class="d-flex align-items-center">
-                                            <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                            <span class="h5 font-weight-bold">Collector wise collections</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        <input class="form-check-input access_module" id="10" type="checkbox">
-                                    </td>
-                                </tr>
+                                    <tr class="main-topic">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
+                                                <span class="h5 font-weight-bold">Current Loans</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <input class="form-check-input access_module" id="6" type="checkbox">
+                                        </td>
+                                    </tr>
+                                    <!-- Loan Category Subtopics -->
 
 
-                                <tr class="main-topic">
-                                    <td class="align-middle">
-                                        <div class="d-flex align-items-center">
-                                            <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                            <span class="h5 font-weight-bold">Loan Calculator</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        <input class="form-check-input access_module" id="11" type="checkbox">
-                                    </td>
-                                </tr>
+                                    <tr class="main-topic">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
+                                                <span class="h5 font-weight-bold">Loan In arrears</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <input class="form-check-input access_module" id="7" type="checkbox">
+                                        </td>
+                                    </tr>
+                                    <!-- Loan Category Subtopics -->
 
-                                <tr class="main-topic">
-                                    <td class="align-middle">
-                                        <div class="d-flex align-items-center">
-                                            <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                            <span class="h5 font-weight-bold">Add Expenses</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        <input class="form-check-input access_module" id="12" type="checkbox">
-                                    </td>
-                                </tr>
-
-                                <tr class="main-topic">
-                                    <td class="align-middle">
-                                        <div class="d-flex align-items-center">
-                                            <i class="ti ti-folder h3 text-primary mr-2"></i>
-                                            <span class="h5 font-weight-bold">Add Income</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        <input class="form-check-input access_module" id="13" type="checkbox">
-                                    </td>
-                                </tr>
+                                    <tr class="main-topic">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
+                                                <span class="h5 font-weight-bold">Add Repayment</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <input class="form-check-input access_module" id="8" type="checkbox">
+                                        </td>
+                                    </tr>
+                                    <!-- Loan Category Subtopics -->
 
 
 
 
+                                    <tr class="main-topic">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
+                                                <span class="h5 font-weight-bold">Repayment details</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <input class="form-check-input access_module" id="9" type="checkbox">
+                                        </td>
+                                    </tr>
+                                    <!-- Loan Category Subtopics -->
 
-                            </tbody>
-                        </table>
+                                    <tr class="main-topic">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
+                                                <span class="h5 font-weight-bold">Collector wise collections</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <input class="form-check-input access_module" id="10" type="checkbox">
+                                        </td>
+                                    </tr>
 
-                        <input type="button" class="btn btn-danger" value="Update Shortcut"
-                            onclick="saveShortcut(event)">
+
+                                    <tr class="main-topic">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
+                                                <span class="h5 font-weight-bold">Loan Calculator</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <input class="form-check-input access_module" id="11" type="checkbox">
+                                        </td>
+                                    </tr>
+
+                                    <tr class="main-topic">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
+                                                <span class="h5 font-weight-bold">Add Expenses</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <input class="form-check-input access_module" id="12" type="checkbox">
+                                        </td>
+                                    </tr>
+
+                                    <tr class="main-topic">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <i class="ti ti-folder h3 text-primary mr-2"></i>
+                                                <span class="h5 font-weight-bold">Add Income</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <input class="form-check-input access_module" id="13" type="checkbox">
+                                        </td>
+                                    </tr>
+
+
+
+
+
+                                </tbody>
+                            </table>
+
+                            <input type="button" class="btn btn-danger" value="Update Shortcut"
+                                onclick="saveShortcut(event)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loan Creation Restrictions Card -->
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h5 class="mb-3">Loan Creation Restrictions</h5>
+                        <hr>
+                        <small class="text-muted d-block mb-3">Configure restrictions and requirements for loan creation
+                            process.</small>
+
+                        <!-- Document Upload Restriction -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Document Upload Restriction</label>
+                            <div class="d-flex gap-2">
+                                <select id="document_upload_restriction" class="form-select" style="max-width: 300px;">
+                                    <option value="" disabled selected>-- Select Option --</option>
+                                    <option value="required">Required</option>
+                                    <option value="not_required">Not Required</option>
+                                </select>
+                            </div>
+                            <small class="text-muted">Specify whether document uploads are mandatory during loan
+                                creation.</small>
+                        </div>
+
+                        <hr>
+                        <!-- Guarantees Restriction -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Guarantees</label>
+                            <div class="d-flex gap-2">
+                                <select id="guarantees_restriction" class="form-select" style="max-width: 300px;">
+                                    <option value="" disabled selected>-- Select Option --</option>
+                                    <option value="required">Required</option>
+                                    <option value="not_required">Not Required</option>
+                                </select>
+                            </div>
+                            <small class="text-muted">Specify whether guarantees are mandatory during loan
+                                creation.</small>
+                        </div>
+
+                        <hr>
+                        <!-- Change Product Details -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Change Product Details</label>
+                            <div class="d-flex gap-2">
+                                <select id="change_product_details" class="form-select" style="max-width: 300px;">
+                                    <option value="" disabled selected>-- Select Option --</option>
+                                    <option value="editable">Editable</option>
+                                    <option value="not_editable">Not Editable</option>
+                                </select>
+                            </div>
+                            <small class="text-muted">Control whether product details can be modified after loan
+                                creation.</small>
+                        </div>
+
+                        <hr>
+                        <!-- First Installment Date Restrictions -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">First Installment Date - Maximum Days After Issue
+                                Date</label>
+                            <small class="text-muted d-block mb-2">Set how many days after the Issue Date the first
+                                installment date can be set for each loan type.</small>
+
+                            <!-- Daily Loans -->
+                            <div class="mb-3">
+                                <label class="form-label">Daily Loans (max days)</label>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <input type="number" id="first_installment_daily" class="form-control"
+                                        min="0" max="365" style="max-width: 150px;" placeholder="Days">
+                                    <span class="text-muted">days</span>
+                                </div>
+                            </div>
+
+                            <!-- Weekly Loans -->
+                            <div class="mb-3">
+                                <label class="form-label">Weekly Loans (max days)</label>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <input type="number" id="first_installment_weekly" class="form-control"
+                                        min="0" max="365" style="max-width: 150px;" placeholder="Days">
+                                    <span class="text-muted">days</span>
+                                </div>
+                            </div>
+
+                            <!-- Monthly Loans -->
+                            <div class="mb-3">
+                                <label class="form-label">Monthly Loans (max days)</label>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <input type="number" id="first_installment_monthly" class="form-control"
+                                        min="0" max="365" style="max-width: 150px;" placeholder="Days">
+                                    <span class="text-muted">days</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="btnUpdateLoanRestrictions" class="btn btn-primary">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Update Restrictions
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h5 class="mb-3">Head Office Approval</h5>
+                        <hr>
+                        <small class="text-muted d-block mb-3">Configure which approval types require head office
+                            approval.</small>
+
+                        <!-- User Management -->
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2">User Management</h6>
+                            <div class="list-group">
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>User Creation</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_101"
+                                            data-type="101">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>User Details Update</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_102"
+                                            data-type="102">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>User Privilege Change</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_103"
+                                            data-type="103">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>User Designation Change</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_104"
+                                            data-type="104">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Designation Management -->
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2">Designation Management</h6>
+                            <div class="list-group">
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Designation Privileges Update</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_201"
+                                            data-type="201">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Customer Management -->
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2">Customer Management</h6>
+                            <div class="list-group">
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Customer Creation</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_301"
+                                            data-type="301">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Customer Details Update</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_302"
+                                            data-type="302">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Customer Status Change</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_303"
+                                            data-type="303">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Customer Blacklist</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_304"
+                                            data-type="304">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Customer Document Update</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_305"
+                                            data-type="305">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Loan Management -->
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2">Loan Management</h6>
+                            <div class="list-group">
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Loan Approval</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_401"
+                                            data-type="401">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Loan Rejection</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_402"
+                                            data-type="402">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Loan Modification</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_403"
+                                            data-type="403">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Financial Transactions -->
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2">Financial Transactions</h6>
+                            <div class="list-group">
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Bank Account Transfer</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_501"
+                                            data-type="501">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Payment Undo</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_502"
+                                            data-type="502">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Payment Reversal</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_503"
+                                            data-type="503">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Expenses -->
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2">Expenses</h6>
+                            <div class="list-group">
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Expense Creation</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_601"
+                                            data-type="601">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Expense Approval</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_602"
+                                            data-type="602">
+                                    </div>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Expense Modification</span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-toggle" type="checkbox" id="approval_603"
+                                            data-type="603">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="btnSaveAllApprovals" class="btn btn-primary mt-2">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Save All Approval Settings
+                        </button>
                     </div>
                 </div>
             </div>
-
-            <!-- Loan Creation Restrictions Card -->
-            <div class="card mt-3">
-                <div class="card-body">
-                    <h5 class="mb-3">Loan Creation Restrictions</h5>
-                    <hr>
-                    <small class="text-muted d-block mb-3">Configure restrictions and requirements for loan creation
-                        process.</small>
-
-                    <!-- Document Upload Restriction -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Document Upload Restriction</label>
-                        <div class="d-flex gap-2">
-                            <select id="document_upload_restriction" class="form-select" style="max-width: 300px;">
-                                <option value="" disabled selected>-- Select Option --</option>
-                                <option value="required">Required</option>
-                                <option value="not_required">Not Required</option>
-                            </select>
-                        </div>
-                        <small class="text-muted">Specify whether document uploads are mandatory during loan
-                            creation.</small>
-                    </div>
-
-                    <hr>
-                    <!-- Guarantees Restriction -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Guarantees</label>
-                        <div class="d-flex gap-2">
-                            <select id="guarantees_restriction" class="form-select" style="max-width: 300px;">
-                                <option value="" disabled selected>-- Select Option --</option>
-                                <option value="required">Required</option>
-                                <option value="not_required">Not Required</option>
-                            </select>
-                        </div>
-                        <small class="text-muted">Specify whether guarantees are mandatory during loan
-                            creation.</small>
-                    </div>
-
-                    <hr>
-                    <!-- Change Product Details -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Change Product Details</label>
-                        <div class="d-flex gap-2">
-                            <select id="change_product_details" class="form-select" style="max-width: 300px;">
-                                <option value="" disabled selected>-- Select Option --</option>
-                                <option value="editable">Editable</option>
-                                <option value="not_editable">Not Editable</option>
-                            </select>
-                        </div>
-                        <small class="text-muted">Control whether product details can be modified after loan
-                            creation.</small>
-                    </div>
-
-                    <hr>
-                    <!-- First Installment Date Restrictions -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">First Installment Date - Maximum Days After Issue
-                            Date</label>
-                        <small class="text-muted d-block mb-2">Set how many days after the Issue Date the first
-                            installment date can be set for each loan type.</small>
-
-                        <!-- Daily Loans -->
-                        <div class="mb-3">
-                            <label class="form-label">Daily Loans (max days)</label>
-                            <div class="d-flex gap-2 align-items-center">
-                                <input type="number" id="first_installment_daily" class="form-control" min="0"
-                                    max="365" style="max-width: 150px;" placeholder="Days">
-                                <span class="text-muted">days</span>
-                            </div>
-                        </div>
-
-                        <!-- Weekly Loans -->
-                        <div class="mb-3">
-                            <label class="form-label">Weekly Loans (max days)</label>
-                            <div class="d-flex gap-2 align-items-center">
-                                <input type="number" id="first_installment_weekly" class="form-control" min="0"
-                                    max="365" style="max-width: 150px;" placeholder="Days">
-                                <span class="text-muted">days</span>
-                            </div>
-                        </div>
-
-                        <!-- Monthly Loans -->
-                        <div class="mb-3">
-                            <label class="form-label">Monthly Loans (max days)</label>
-                            <div class="d-flex gap-2 align-items-center">
-                                <input type="number" id="first_installment_monthly" class="form-control" min="0"
-                                    max="365" style="max-width: 150px;" placeholder="Days">
-                                <span class="text-muted">days</span>
-                            </div>
-                        </div>
-                    </div>
-
-
-
-                    <button id="btnUpdateLoanRestrictions" class="btn btn-primary">
-                        <i class="fa-solid fa-floppy-disk me-1"></i> Update Restrictions
-                    </button>
-                </div>
-            </div>
-
-
         </div>
 
         <div class="col-6">
@@ -607,37 +793,62 @@
 
             <div class="card">
                 <div class="card-body">
-                    <h5 class="mb-3">Recovery Lead Settings</h5>
+                    <h4 class="mb-3">Recovery Lead Settings</h4>
                     <hr>
                     <small class="text-muted d-block">Configure settings related to recovery leads.</small>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Document Types</label>
-                        <small class="text-muted d-block mb-3">Manage predefined document types for customer
-                            registration.</small>
+                        <h4 class="mb-3">Image Types</h4>
+                        {{-- <label class="form-label fw-bold">Image Types</label> --}}
+                        {{-- <small class="text-muted d-block mb-3">Manage predefined image types for leads
+                                registration.</small> --}}
 
                         <div class="mb-3">
-                            <div class="input-group mb-2">
-                                <input type="text" id="new_document_type" class="form-control"
-                                    placeholder="Enter document type" maxlength="100">
-                                <button id="btnAddDocumentType" class="btn btn-outline-success">
-                                    <i class="fa-solid fa-plus me-1"></i> Add
-                                </button>
+                            <div class="row g-2 align-items-center">
+
+                                <!-- Image Type Input -->
+                                <div class="col-md-5">
+                                    <input type="text" id="new_image_type" class="form-control"
+                                        placeholder="Enter image type" maxlength="100">
+                                </div>
+
+                                <!-- Cash Checkbox -->
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="is_required" value="0">
+                                        <label class="form-check-label" for="is_required">
+                                            Is Required
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Add Button -->
+                                <div class="col-md-2">
+                                    <button id="btnAddImageType" class="btn btn-outline-success w-100">
+                                        <i class="fa-solid fa-plus me-1"></i> Add
+                                    </button>
+                                </div>
+
                             </div>
+
+                            <small class="text-muted">
+                                Add new image types for leads registration.
+                            </small>
                         </div>
 
-                        <div id="document_types_list" class="mb-3">
-                            <!-- Document types will be loaded here -->
+
+                        <div id="image_types_list" class="mb-3">
+                            <!-- Image types will be loaded here -->
                         </div>
 
-                        <button id="btnUpdateDocumentTypes" class="btn btn-primary">
+                        <button id="btnUpdateImageTypes" class="btn btn-primary">
                             <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
                         </button>
                     </div>
 
                     <hr>
                     <!-- Collector Account Transaction Modes -->
-                    <div class="mb-3">
+                    {{-- <div class="mb-3">
                         <label class="form-label fw-bold">Collector Account Transaction Modes</label>
                         <div class="d-flex flex-column gap-2">
                             <div class="form-check">
@@ -667,203 +878,12 @@
                         </div>
                         <small class="text-muted">Select which transaction modes are available when recording collector
                             account transactions.</small>
-                    </div>
+                    </div> --}}
 
                 </div>
             </div>
         </div>
-    </div>
-    <!-- Head Office Approval Section -->
-    <div class="row mt-3" >
-        <div class="col-6">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="mb-3">Head Office Approval</h5>
-                    <hr>
-                    <small class="text-muted d-block mb-3">Configure which approval types require head office
-                        approval.</small>
-
-                    <!-- User Management -->
-                    <div class="mb-3">
-                        <h6 class="text-primary mb-2">User Management</h6>
-                        <div class="list-group">
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>User Creation</span>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_101"
-                                        data-type="101">
-                                </div>
-                            </div>
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>User Details Update</span>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_102"
-                                        data-type="102">
-                                </div>
-                            </div>
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>User Privilege Change</span>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_103"
-                                        data-type="103">
-                                </div>
-                            </div>
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>User Designation Change</span>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_104"
-                                        data-type="104">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Designation Management -->
-                    <div class="mb-3">
-                        <h6 class="text-primary mb-2">Designation Management</h6>
-                        <div class="list-group">
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Designation Privileges Update</span>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_201"
-                                        data-type="201">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Customer Management -->
-                    <div class="mb-3">
-                        <h6 class="text-primary mb-2">Customer Management</h6>
-                        <div class="list-group">
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Customer Creation</span>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_301"
-                                        data-type="301">
-                                </div>
-                            </div>
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Customer Details Update</span>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_302"
-                                        data-type="302">
-                                </div>
-                            </div>
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Customer Status Change</span>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_303"
-                                        data-type="303">
-                                </div>
-                            </div>
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Customer Blacklist</span>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_304"
-                                        data-type="304">
-                                </div>
-                            </div>
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Customer Document Update</span>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_305"
-                                        data-type="305">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Loan Management -->
-                    <div class="mb-3">
-                        <h6 class="text-primary mb-2">Loan Management</h6>
-                        <div class="list-group">
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Loan Approval</span>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_401"
-                                        data-type="401">
-                                </div>
-                            </div>
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Loan Rejection</span>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_402"
-                                        data-type="402">
-                                </div>
-                            </div>
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Loan Modification</span>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_403"
-                                        data-type="403">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Financial Transactions -->
-                    <div class="mb-3">
-                        <h6 class="text-primary mb-2">Financial Transactions</h6>
-                        <div class="list-group">
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Bank Account Transfer</span>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_501"
-                                        data-type="501">
-                                </div>
-                            </div>
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Payment Undo</span>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_502"
-                                        data-type="502">
-                                </div>
-                            </div>
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Payment Reversal</span>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_503"
-                                        data-type="503">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Expenses -->
-                    <div class="mb-3">
-                        <h6 class="text-primary mb-2">Expenses</h6>
-                        <div class="list-group">
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Expense Creation</span>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_601"
-                                        data-type="601">
-                                </div>
-                            </div>
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Expense Approval</span>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_602"
-                                        data-type="602">
-                                </div>
-                            </div>
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>Expense Modification</span>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input approval-toggle" type="checkbox" id="approval_603"
-                                        data-type="603">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button id="btnSaveAllApprovals" class="btn btn-primary mt-2">
-                        <i class="fa-solid fa-floppy-disk me-1"></i> Save All Approval Settings
-                    </button>
-                </div>
-            </div>
-        </div>
+        {{-- </div> --}}
     </div>
 @endsection
 
@@ -960,6 +980,26 @@
             $('#btnUpdateDocumentTypes').on('click', function(e) {
                 e.preventDefault();
                 saveDocumentTypes();
+            });
+
+            // Image Types Management
+
+            $('#btnAddImageType').on('click', function(e) {
+                e.preventDefault();
+                addImageType();
+            });
+
+            $('#btnUpdateImageTypes').on('click', function(e) {
+                e.preventDefault();
+                saveImageTypes();
+            });
+
+
+            $('#new_image_type').on('keypress', function(e) {
+                if (e.which === 13) { // Enter key
+                    e.preventDefault();
+                    addImageType();
+                }
             });
 
             $('#btnUpdateCollectorModes').on('click', function(e) {
@@ -1421,6 +1461,19 @@
                         $('#first_installment_monthly').val(items.first_installment_monthly);
                     }
 
+
+                    if(items.image_types) {
+                        try {
+                            const imageTypes = JSON.parse(items.image_types);
+                            loadLeadImagesTypesList(imageTypes);
+                        } catch (e) {
+                            console.error('Error parsing image types:', e);
+                            loadLeadImagesTypesList([]);
+                        }
+                    } else {
+                        loadLeadImagesTypesList([]);
+                    }
+
                     // Head Office Approval toggles
                     $('.approval-toggle').each(function() {
                         const type = $(this).data('type');
@@ -1682,6 +1735,149 @@
                     error: function(xhr) {
                         Swal.fire("Error", xhr.responseJSON?.message ||
                             "Failed to update document types", "error");
+                    }
+                });
+            });
+        };
+
+        // Load lead images types list in UI
+        const loadLeadImagesTypesList = (imageTypes) => {
+            const container = $('#image_types_list');
+            container.empty();
+
+            if (!imageTypes || imageTypes.length === 0) {
+                container.html('<p class="text-muted">No image types added yet.</p>');
+                return;
+            }
+
+            imageTypes.forEach((item, index) => {
+                const requiredBadge = item.is_required ?
+                    '<span class="badge bg-danger ms-2">Required</span>' :
+                    '<span class="badge bg-secondary ms-2">Optional</span>';
+
+                const row = $(`
+            <div class="d-flex align-items-center mb-2 image-type-item" data-index="${index}">
+                <div class="badge bg-light text-dark me-2 flex-grow-1 text-start py-2 px-3"
+                     data-name="${item.name}"
+                     data-required="${item.is_required}">
+                    ${item.name}
+                    ${requiredBadge}
+                </div>
+
+                <button type="button"
+                        class="btn btn-sm btn-outline-danger remove-image-type"
+                        data-index="${index}">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        `);
+
+                container.append(row);
+            });
+
+            $('.remove-image-type').on('click', function() {
+                removeImageType($(this).data('index'));
+            });
+        };
+
+
+        // Add new image type
+        const addImageType = () => {
+            const name = $('#new_image_type').val().trim();
+            const isRequired = $('#is_required').is(':checked');
+
+            if (!name) {
+                Swal.fire("Warning", "Please enter an image type.", "warning");
+                return;
+            }
+
+            const currentTypes = getCurrentImageTypes();
+
+            // Duplicate check (case-insensitive)
+            if (currentTypes.some(t => t.name.toLowerCase() === name.toLowerCase())) {
+                Swal.fire("Warning", "This image type already exists.", "warning");
+                return;
+            }
+
+            currentTypes.push({
+                name: name,
+                is_required: isRequired
+            });
+
+            loadLeadImagesTypesList(currentTypes);
+
+            // Reset form
+            $('#new_image_type').val('');
+            $('#is_required').prop('checked', false);
+        };
+
+
+        // Get current image types from UI
+        const getCurrentImageTypes = () => {
+            const types = [];
+
+            $('.image-type-item').each(function() {
+                const name = $(this).find('.badge').data('name');
+                const isRequired = $(this).find('.badge').data('required');
+
+                if (name) {
+                    types.push({
+                        name: name,
+                        is_required: Boolean(isRequired)
+                    });
+                }
+            });
+
+            return types;
+        };
+
+        const removeImageType = (index) => {
+            const currentTypes = getCurrentImageTypes();
+            currentTypes.splice(index, 1);
+            loadLeadImagesTypesList(currentTypes);
+        };
+
+        const saveImageTypes = () => {
+            const imageTypes = getCurrentImageTypes();
+
+            if (imageTypes.length === 0) {
+                Swal.fire("Warning", "Please add at least one image type.", "warning");
+                return;
+            }
+
+            Swal.fire({
+                title: "Are you sure?",
+                text: "Update image types?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, Update",
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                $.ajax({
+                    type: "POST",
+                    url: "/settings/upsert",
+                    headers: {
+                        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                    },
+                    data: {
+                        key: 'image_types',
+                        value: JSON.stringify(imageTypes)
+                    },
+                    success: () => {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Image types updated!",
+                            timer: 1400,
+                            showConfirmButton: false
+                        });
+                    },
+                    error: (xhr) => {
+                        Swal.fire(
+                            "Error",
+                            xhr.responseJSON?.message || "Failed to update image types",
+                            "error"
+                        );
                     }
                 });
             });
