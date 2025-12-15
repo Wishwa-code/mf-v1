@@ -547,6 +547,42 @@
             </div>
         </div>
     </div>
+
+
+    <div class="modal fade" id="standard-modal_2" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4>Add Loan Documents</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <input type="hidden" id="loan_location_id">
+                        </div>
+                        <div class="mb-3">
+                            <label for="simpleinput" class="form-label">Description</label>
+                            <input type="text" id="description" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="simpleinput" class="form-label">Document</label>
+                            <input type="file" id="file" class="form-control">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-success" onclick="saveDocument()"><i
+                                        class="bi bi-upload"></i>&nbsp;&nbsp;
+                                Upload</button>
+                        </div>
+                    </div>
+                </div>
+
+
+
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div>
 @endsection
 
 @section('script')
@@ -684,6 +720,11 @@
             $('#extraChargeModal').modal('hide');
             loadChargeCodes();
             $('#chargeCodesModal').modal('show');
+        }
+
+
+        function set_cus(id){
+            $('#loan_location_id').val(id);
         }
 
         function loadChargeCodes() {

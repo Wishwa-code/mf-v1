@@ -952,9 +952,9 @@ $banner = DB::select($query);
                 <li class="side-nav-title" style="color: red">{{$item->company_name}}</li>
             @endforeach
 
-
+            @php $isHeadOffice = session('branch_id') == -1; @endphp
             @if($privilege)
-                @php $isHeadOffice = session('branch_id') == -1; @endphp
+
                 @if($isHeadOffice)
                     {{-- Head Office restricted menu: Dashboard, View Customer, KYC, View Center --}}
                     @if(optional($privilege)->dashboard == 1)
@@ -1582,6 +1582,9 @@ $banner = DB::select($query);
                                                         <li>
                                                             <a href="/report/penalty-deduction">Penalty Deduction Report</a>
                                                         </li>
+                                                        <li>
+                                                            <a href="dailycollectionratio">Daily Collection Ratio Report</a>
+                                                        </li>
 
 
                                                 </ul>
@@ -1792,26 +1795,27 @@ $banner = DB::select($query);
 
                 @endif {{-- end isHeadOffice condition --}}
 
-                {{-- Approval menu - Available to all users --}}
-                <li class="side-nav-item">
-                    <a data-bs-toggle="collapse" href="#approval" aria-expanded="false" aria-controls="approval"
-                       class="side-nav-link">
-                        <i class="ri-checkbox-circle-line"></i>
-                        <span> Approval </span>
-                        <span class="menu-arrow"></span>
-                    </a>
-                    <div class="collapse" id="approval">
-                        <ul class="side-nav-second-level">
-                            <li><a href="/pending_approval">Pending Approval</a></li>
-                            <li><a href="/approved_history">Approved History</a></li>
-                            <li><a href="/rejected_approval">Rejected Approval</a></li>
-                            <li>
-                                <a href="loan_delete_requests">Delete Loans Approval</a>
-                            </li>
-                        </ul>
-                    </div>
-                </li>
-
+                    @if($isHeadOffice)
+                        {{-- Approval menu - Available to all users --}}
+                        <li class="side-nav-item">
+                            <a data-bs-toggle="collapse" href="#approval" aria-expanded="false" aria-controls="approval"
+                               class="side-nav-link">
+                                <i class="ri-checkbox-circle-line"></i>
+                                <span> Approval </span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse" id="approval">
+                                <ul class="side-nav-second-level">
+                                    <li><a href="/pending_approval">Pending Approval</a></li>
+                                    <li><a href="/approved_history">Approved History</a></li>
+                                    <li><a href="/rejected_approval">Rejected Approval</a></li>
+                                    <li>
+                                        <a href="/loan_delete_requests">Delete Loans Approval</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                    @endif
             @endif
         </ul>
 

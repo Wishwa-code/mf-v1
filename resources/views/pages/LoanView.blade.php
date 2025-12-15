@@ -654,9 +654,15 @@
                                                 - {{ $Customer_Bank->account_number ?? '-' }}</td>
                                         </tr>
                                         <tr>
-                                            <td style="text-align: left"><strong>Lending Officer ID</strong></td>
+                                            <td style="text-align: left"><strong>Lending Officer</strong></td>
                                             <td style="text-align: left">{{ $Lending_Officer->id }}
                                                 - {{ $Lending_Officer->Full_Name }}</td>
+                                        </tr>
+
+                                        <tr>
+                                            <td style="text-align: left"><strong>Collecting Officer</strong></td>
+                                            <td style="text-align: left">{{ $Collecting_Officer->id }}
+                                                - {{ $Collecting_Officer->Full_Name }}</td>
                                         </tr>
 
                                         </tbody>

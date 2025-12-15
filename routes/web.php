@@ -979,7 +979,11 @@ Route::get('/report/penalty-deduction/details/{loan}', [\App\Http\Controllers\Re
     ->name('report.penaltyDeduction.details');
 //});
 
+Route::get('/dailycollectionratio', [\App\Http\Controllers\ReportController::class, 'dailyCollectionRatioToday'])
+    ->name('report.dailycollectionratio');
 
+Route::get('/ajax/branch/centers-routes', [\App\Http\Controllers\ReportController::class, 'ajaxCentersRoutes'])
+    ->name('ajax.centers.routes');
 
 
 

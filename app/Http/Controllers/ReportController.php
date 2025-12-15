@@ -1048,7 +1048,7 @@ class ReportController extends Controller
 
         $routes = tableWithBranch('route')->get();
         $centers = tableWithBranch('center')->get();
-        $collectors = tableWithBranch('user')->where('collector', '=', '1')->get();
+        $collectors = tableWithBranch('user')->get();
         $loanProducts = tableWithBranch('loan_category')->get();
 
         return view('pages.PaymentFullDetailsReport', compact(
@@ -1596,7 +1596,201 @@ class ReportController extends Controller
     }
 
 
+    public function dailyCollectionRatioToday(Request $request)
+    {
+        $today = date('Y-m-d');
 
+        // ------------------------------------------------
+        // 🔹 User scope
+        // ------------------------------------------------
+        $sessionBranchId = (int) session('branch_id'); // -1 = HO
+        $isHO = ($sessionBranchId === -1);
+
+        // ------------------------------------------------
+        // 🔹 Date range (payment based)
+        // ------------------------------------------------
+        $fromDate = $request->from_date ?: $today;
+        $toDate   = $request->to_date   ?: $today;
+
+        // ------------------------------------------------
+        // 🔹 Branch list
+        // ------------------------------------------------
+        if ($isHO) {
+            $branch = DB::table('branch')->where('status', 1)->get();
+        } else {
+            $branch = DB::table('branch')
+                ->where('status', 1)
+                ->where('branch_id', $sessionBranchId)
+                ->get();
+        }
+
+        // ------------------------------------------------
+        // 🔹 Branch filter logic
+        // ------------------------------------------------
+        if ($isHO) {
+            $filterBranchId = ($request->branch && $request->branch != '')
+                ? (int) $request->branch
+                : null; // all branches
+        } else {
+            $filterBranchId = $sessionBranchId;
+        }
+
+        // ------------------------------------------------
+        // 🔹 Centers / Routes for dropdowns
+        // ------------------------------------------------
+        $branchForLists = $filterBranchId ?? $sessionBranchId;
+
+        $centers = DB::table('center')
+            ->where('branch_id', $branchForLists)
+            ->get();
+
+        $routes = DB::table('route')
+            ->where('branch_id', $branchForLists)
+            ->get();
+
+        // ------------------------------------------------
+        // 🔹 Aggregates
+        // ------------------------------------------------
+
+        // Paid amount within date range
+        $paidAgg = DB::table('customer_payments')
+            ->select(
+                'Customer_Loan_idCustomer_Loan as loan_id',
+                DB::raw('SUM(Amount) as paid_amount')
+            )
+            ->whereBetween('Date', [$fromDate, $toDate])
+            ->groupBy('Customer_Loan_idCustomer_Loan');
+
+        // Arrears (before to_date)
+        $arrearsAgg = DB::table('installments')
+            ->select(
+                'Customer_Loan_idCustomer_Loan as loan_id',
+                DB::raw('SUM(Total_Balance) as arrears_balance')
+            )
+            ->where('Status', 0)
+            ->whereDate('Installment_Date', '<', $toDate)
+            ->groupBy('Customer_Loan_idCustomer_Loan');
+
+        // 🔹 Latest loan comment (up to to_date)
+        $loanCommentAgg = DB::table('loan_comment as lc')
+            ->select(
+                'lc.loan_id',
+                DB::raw('MAX(CONCAT(lc.date," ",lc.time)) as max_dt')
+            )
+            ->whereDate('lc.date', '<=', $toDate)
+            ->groupBy('lc.loan_id');
+
+        // ------------------------------------------------
+        // 🔹 Main query
+        // ------------------------------------------------
+        $query = DB::table('customer_loan as cl')
+            ->join('branch as b', 'cl.branch_id', '=', 'b.branch_id')
+            ->join('customer as c', 'cl.Customer_idCustomer', '=', 'c.idCustomer')
+
+            ->leftJoin('group_has_customer as ghc', 'c.idCustomer', '=', 'ghc.cus_id')
+            ->leftJoin('customer_group as cg', 'ghc.group_id', '=', 'cg.idCustomer_Group')
+            ->leftJoin('center as ce', 'cg.center_id', '=', 'ce.idCenter')
+            ->leftJoin('route as r', 'c.route_id', '=', 'r.id_route')
+
+            ->leftJoinSub($paidAgg, 'pa', function ($j) {
+                $j->on('pa.loan_id', '=', 'cl.idCustomer_Loan');
+            })
+            ->leftJoinSub($arrearsAgg, 'ar', function ($j) {
+                $j->on('ar.loan_id', '=', 'cl.idCustomer_Loan');
+            })
+            ->leftJoinSub($loanCommentAgg, 'lcm', function ($j) {
+                $j->on('lcm.loan_id', '=', 'cl.idCustomer_Loan');
+            })
+            ->leftJoin('loan_comment as lc', function ($j) {
+                $j->on('lc.loan_id', '=', 'cl.idCustomer_Loan')
+                    ->on(DB::raw('CONCAT(lc.date," ",lc.time)'), '=', 'lcm.max_dt');
+            })
+
+            ->select(
+                'cl.idCustomer_Loan',
+                'cl.Loan_No',
+                'cl.Installment_Amount',
+                'b.Name as branch_name',
+                DB::raw('IFNULL(ce.Name,"-") as center_name'),
+                DB::raw('IFNULL(r.Name,"-") as route_name'),
+                'c.First_Name',
+                'c.Last_Name',
+                'c.Contact_No',
+
+                DB::raw('IFNULL(pa.paid_amount,0) as paid_amount'),
+                DB::raw('IFNULL(ar.arrears_balance,0) as arrears_balance'),
+                DB::raw('IFNULL(lc.comment,"") as arrears_reason')
+            )
+            ->whereNotIn('cl.Status', [-1, -2]);
+
+        // Branch filter
+        if (!is_null($filterBranchId)) {
+            $query->where('cl.branch_id', $filterBranchId);
+        }
+
+        // Center filter
+        if ($request->center_id) {
+            $query->where('ce.idCenter', $request->center_id);
+        }
+
+        // Route filter
+        if ($request->route_id) {
+            $query->where('r.id_route', $request->route_id);
+        }
+
+        $loan = $query->get();
+
+        // ------------------------------------------------
+        // 🔹 Totals
+        // ------------------------------------------------
+        $totalCollection = $loan->sum('paid_amount');
+        $totalCollectable = $loan->sum('Installment_Amount');
+
+        $ratio = $totalCollectable > 0
+            ? ($totalCollection / $totalCollectable)
+            : 0;
+
+        return view('pages.DailyCollectionRatio', compact(
+            'loan',
+            'branch',
+            'centers',
+            'routes',
+            'totalCollection',
+            'totalCollectable',
+            'ratio',
+            'fromDate',
+            'toDate'
+        ));
+    }
+
+
+    // ✅ AJAX for branch change (centers + routes)
+    public function ajaxCentersRoutes(Request $request)
+    {
+        $branchId = (int)$request->branch_id;
+
+        $centers = DB::table('center')
+            ->where('branch_id', $branchId)
+            ->select('idCenter', 'No', 'Name')
+            ->get();
+
+        $routes = DB::table('route')
+            ->where('branch_id', $branchId)
+            ->select('id_route', 'Name')
+            ->get();
+
+        $groups = DB::table('customer_group')
+            ->where('branch_id', $branchId)
+            ->select('Group_No as group_name')
+            ->distinct()
+            ->get();
+
+        return response()->json([
+            'centers' => $centers,
+            'routes'  => $routes,
+            'groups'  => $groups,
+        ]);
+    }
 
 
 

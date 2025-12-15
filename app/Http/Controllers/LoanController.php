@@ -1090,6 +1090,7 @@ class LoanController extends Controller
         $Lending_Officer = DB::table('user')->where('id', $loan->lending_officer_id)->first();
 
 
+
         // Fetch the loan category
         $Loan_Category = DB::table('loan_category')->where('idLoan_Category', $loan->Loan_Category_idLoan_Category)->first();
 
@@ -1275,10 +1276,11 @@ class LoanController extends Controller
         $totalExtraCharges  = (float)($extraAgg->total_extra_charges  ?? 0);
         $totalExtraPayments = (float)($extraAgg->total_extra_payments ?? 0);
 
-
+        $Collecting_Officer = DB::table('user')->where('id', $loan->collector_id)->first();
 
         // Pass the data to the view with compact and handle potential nulls
         return view('pages.LoanView', compact(
+            'Collecting_Officer',
             'ins_count',
             'Total_Balance',
             'loan_balance',
