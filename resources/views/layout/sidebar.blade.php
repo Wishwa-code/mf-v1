@@ -176,9 +176,12 @@
                             <ul class="side-nav-second-level">
                                 {{-- @if (optional($privilege)->add_customer == 1) --}}
                                     <li>
-                                        <a href="{{ route('leads.index') }}">Lead</a>
+                                        <a href="{{ route('leads.index') }}">Add Lead</a>
                                     </li>
                                 {{-- @endif --}}
+                                <li>
+                                    <a href="{{ route('leads.approvals') }}">Lead Approvals</a>
+                                </li>
                                 {{-- @if (optional($privilege)->view_blacklist_customer == 1)
                                     <li>
                                         <a href="/showblacklistcustomers">View Blacklist Customer</a>

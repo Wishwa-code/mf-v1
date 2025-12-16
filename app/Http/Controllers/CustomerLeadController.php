@@ -36,12 +36,58 @@ class CustomerLeadController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * List leads that are waiting for approval.
+     *
+     * This shows only leads that are still in "pending" status.
+     * The view uses jQuery DataTables to render the table.
      */
-    public function create()
+    public function approvalIndex()
     {
-        //
+        return view('pages.leads.approvals');
     }
+
+    /**
+     * JSON data source for the leads approval DataTable.
+     */
+    public function approvalData(Request $request)
+    {
+        // For now we keep things simple and just return all pending leads.
+        // If the dataset grows large, we can add pagination and filters later.
+        $leads = CustomerLead::where('status', 'pending')
+            ->orderByDesc('created_at_lead')
+            ->get();
+
+        $data = $leads->map(function (CustomerLead $lead) {
+            return [
+                'id'          => $lead->id,
+                'full_name'   => $lead->full_name,
+                'phone_number'=> $lead->phone_number,
+                'email'       => $lead->email,
+                'type'        => $lead->type,
+                'periods'     => $lead->periods,
+                'status'      => $lead->status,
+                'address'     => $lead->address,
+                'latitude'    => $lead->latitude,
+                'longitude'   => $lead->longitude,
+                'created_at'  => optional($lead->created_at_lead)->format('Y-m-d H:i'),
+            ];
+        })->values();
+
+        return response()->json([
+            'data' => $data,
+        ]);
+    }
+    
+    /**
+     * Handle form submission and return JSON response for AJAX
+     */
+    public function create(Request $request)
+    {
+        // This is handled by store method via AJAX
+        return redirect()->route('leads.index');
+    }
+
+    
 
     /**
      * Store a newly created resource in storage.
@@ -50,17 +96,15 @@ class CustomerLeadController extends Controller
     {
         DB::beginTransaction();
         try {
-            // Create the lead
-            $lead = new CustomerLead();
-            $lead->full_name = $request->full_name;
-            $lead->phone_number = $request->phone_number;
-            $lead->email = $request->email;
-            $lead->address = $request->address;
-            $lead->notes = $request->notes;
-            $lead->latitude = $request->latitude;
-            $lead->longitude = $request->longitude;
-            $lead->created_by = session('userid', 1);
-            $lead->save();
+            // Get validated data from request
+            $data = $request->validated();
+            
+            // Add additional fields
+            $data['created_at_lead'] = now();
+            $data['created_by'] = session('userid', 1);
+            
+            // Create the lead using create method
+            $lead = CustomerLead::create($data);
 
             // Get image types from app_settings
             $imageTypesSetting = AppSettings::where('key', 'image_types')->value('value');
@@ -119,11 +163,14 @@ class CustomerLeadController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Display a single lead with full details and images.
      */
-    public function show(CustomerLead $customerLead)
+    public function show( $customerLead)
     {
-        //
+$customerLead = CustomerLead::findOrFail($customerLead);
+        $lead = $customerLead->load('images');
+
+        return view('pages.leads.show', compact('lead'));
     }
 
     /**
@@ -148,5 +195,28 @@ class CustomerLeadController extends Controller
     public function destroy(CustomerLead $customerLead)
     {
         //
+    }
+
+    /**
+     * Approve a lead after verifying that it has a valid location.
+     */
+    public function approve(Request $request, CustomerLead $lead)
+    {
+        // Require location before approval
+        if (empty($lead->latitude) || empty($lead->longitude)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lead location is missing. Capture latitude and longitude before approval.',
+            ], 422);
+        }
+
+        $lead->status = 'pending-approved';
+        $lead->updated_by = session('userid', 1);
+        $lead->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lead approved successfully.',
+        ]);
     }
 }

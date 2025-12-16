@@ -19,6 +19,7 @@ class CustomerLead extends Model
         'latitude',
         'address',
         'notes',
+        'periods',
         'type',
         'status',
         'created_at_lead',

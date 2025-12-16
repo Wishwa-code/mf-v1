@@ -20,6 +20,7 @@ return new class extends Migration
             $table->float('latitude', 10, 6)->nullable();
             $table->text('address')->nullable();
             $table->text('notes')->nullable();
+            $table->float('periods',8,2)->nullable();
             $table->enum('type',['group','individual','business','leasing'])->default('group');
             $table->enum('status',['pending','pending-approved','agreement-signed','loan-issued'])->default('pending');
             $table->dateTime('created_at_lead')->nullable();

@@ -2,103 +2,279 @@
 
 @section('content')
 <style>
+    /* Modern Form Styling */
+    .lead-form {
+        background: #ffffff;
+    }
+    
+    .lead-form .card {
+        border: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .lead-form .card-body {
+        padding: 2rem;
+    }
+    
+    .lead-form .form-label {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+    
+    .lead-form .form-label .text-danger {
+        color: #dc3545;
+        margin-left: 2px;
+    }
+    
+    .lead-form .form-control,
+    .lead-form .form-select {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        background-color: #fafafa;
+        transition: all 0.2s ease;
+        height: 48px;
+    }
+    
+    .lead-form .form-control:focus,
+    .lead-form .form-select:focus {
+        background-color: #ffffff;
+        border-color: #4a90e2;
+        box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        outline: none;
+    }
+    
+    .lead-form .form-control::placeholder,
+    .lead-form textarea::placeholder {
+        color: #999;
+        font-size: 0.9rem;
+    }
+    
+    .lead-form textarea.form-control {
+        min-height: 100px;
+        resize: vertical;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+    }
+    
+    .lead-form .small.text-muted {
+        font-size: 0.85rem;
+        color: #666;
+        margin-top: 0.25rem;
+        display: block;
+    }
+    
+    .lead-form .row {
+        margin-bottom: 1rem;
+    }
+    
+    .lead-form .row:last-child {
+        margin-bottom: 0;
+    }
+    
+    .lead-form hr {
+        border: none;
+        border-top: 1px solid #e8e8e8;
+        margin: 2rem 0;
+    }
+    
+    .lead-form h5 {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 1.5rem;
+        font-size: 1.1rem;
+    }
+    
+    /* Invalid State */
+    .lead-form .form-control.is-invalid,
+    .lead-form .form-select.is-invalid {
+        border-color: #dc3545;
+        background-color: #fff5f5;
+    }
+    
+    .lead-form .invalid-feedback {
+        font-size: 0.875rem;
+        color: #dc3545;
+        margin-top: 0.25rem;
+        display: block;
+    }
+    
+    /* Image Upload Styling */
     .image-upload-wrapper {
         position: relative;
     }
     
     .image-upload-input {
         transition: all 0.3s ease;
-        border: 2px dashed #dee2e6;
-        padding: 12px;
-        cursor: pointer;
-    }
-    
-    .image-upload-input:hover {
-        border-color: #0d6efd;
-        background-color: #f8f9fa;
-    }
-    
-    .image-upload-input:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
     }
     
     .img-thumbnail {
-        border: 2px solid #dee2e6;
+        border: 1px solid #e0e0e0;
         border-radius: 8px;
         transition: transform 0.2s ease;
+        background: #fafafa;
     }
     
     .img-thumbnail:hover {
-        transform: scale(1.05);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transform: scale(1.02);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     
-    .lead-form .card {
-        border-radius: 12px;
-        overflow: hidden;
-    }
-    
-    .lead-form .form-control-lg {
-        border-radius: 8px;
-    }
-    
-    .lead-form .form-control {
-        border-radius: 6px;
-    }
-    
+    /* Buttons */
     .lead-form .btn {
         border-radius: 8px;
-        padding: 10px 20px;
+        padding: 0.65rem 1.5rem;
         font-weight: 500;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        border: none;
     }
     
-    .nav-tabs .nav-link {
-        border-radius: 8px 8px 0 0;
-        font-weight: 500;
+    .lead-form .btn-success {
+        background: #28a745;
+        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
     }
     
-    .nav-tabs .nav-link.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-color: transparent;
+    .lead-form .btn-success:hover {
+        background: #218838;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
     }
     
-    .btn-camera-capture {
-        flex: 1;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        min-width: 140px;
+    .lead-form .btn-outline-secondary {
+        border: 1px solid #e0e0e0;
+        color: #666;
+        background: #ffffff;
     }
     
-    .btn-camera-capture:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    .lead-form .btn-outline-secondary:hover {
+        background: #f8f9fa;
+        border-color: #d0d0d0;
     }
     
+    .btn-camera-capture,
     .btn-gallery-select {
         flex: 1;
         font-weight: 500;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
         min-width: 140px;
+        border-radius: 8px;
+        padding: 0.65rem 1rem;
     }
     
+    .btn-camera-capture:hover,
     .btn-gallery-select:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
     
+    /* Header Section */
+    .lead-form .card-header-section {
+        border-bottom: 1px solid #e8e8e8;
+        padding-bottom: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .lead-form .badge {
+        font-size: 0.85rem;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+    }
+    
+    .lead-form h4 {
+        font-weight: 600;
+        color: #333;
+        font-size: 1.5rem;
+    }
+    
+    .lead-form .text-muted {
+        color: #666 !important;
+    }
+    
+    /* Tabs */
+    .nav-tabs {
+        border-bottom: 2px solid #e8e8e8;
+        margin-bottom: 1.5rem;
+    }
+    
+    .nav-tabs .nav-link {
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: #666;
+        font-weight: 500;
+        padding: 0.75rem 1.5rem;
+        transition: all 0.2s ease;
+        background: transparent;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        color: #4a90e2;
+        border-bottom-color: #e0e0e0;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #4a90e2;
+        border-bottom-color: #4a90e2;
+        background: transparent;
+    }
+    
+    /* Input Group */
+    .lead-form .input-group-text {
+        background: #f8f9fa;
+        border: 1px solid #e0e0e0;
+        border-right: none;
+        border-radius: 8px 0 0 8px;
+        color: #666;
+    }
+    
+    .lead-form .input-group .form-control {
+        border-left: none;
+        border-radius: 0 8px 8px 0;
+    }
+    
+    .lead-form .input-group:focus-within .input-group-text {
+        border-color: #4a90e2;
+    }
+    
+    /* Alert */
+    .lead-form .alert {
+        border-radius: 8px;
+        border: none;
+        padding: 1rem;
+    }
+    
+    .lead-form .alert-info {
+        background: #e7f3ff;
+        color: #0066cc;
+    }
+    
+    /* Responsive */
     @media (max-width: 768px) {
+        .lead-form .card-body {
+            padding: 1.5rem;
+        }
+        
         .btn-camera-capture,
         .btn-gallery-select {
             font-size: 0.875rem;
-            padding: 8px 12px;
+            padding: 0.5rem 0.75rem;
             min-width: auto;
             flex: 1 1 100%;
         }
         
         .d-flex.gap-2.mb-2.flex-wrap {
             flex-direction: column;
+        }
+        
+        .lead-form .form-control,
+        .lead-form .form-select {
+            height: 44px;
+            font-size: 0.9rem;
         }
     }
 </style>
@@ -125,22 +301,16 @@
 
         <div class="card shadow-sm border-0">
             <div class="card-body p-4">
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                    <div>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-primary rounded-pill px-3 py-2">Lead Capture</span>
-                            <span class="badge bg-light text-dark border">Customer First</span>
-                        </div>
-                        <h4 class="mt-3 mb-1">Create a new lead</h4>
+                <div class="card-header-section">
+                    <h4 class="mb-2">Lead Information</h4>
+                    <hr style="margin: 0.5rem 0 1rem 0;">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                         <p class="text-muted mb-0">Capture contact details and location in one simple form.</p>
-                    </div>
-                    <div class="text-end">
-                        <button type="button" class="btn btn-outline-secondary me-2" onclick="getLeadLocation()">
-                            <i class="bi bi-geo-alt"></i> Get Location
-                        </button>
-                        <button type="button" class="btn btn-success" onclick="saveLead()" id="saveLeadBtn">
-                            <i class="bi bi-check2-circle"></i> Save Lead
-                        </button>
+                        <div>
+                            <button type="button" class="btn btn-success" onclick="saveLead()" id="saveLeadBtn">
+                                <i class="bi bi-check2-circle"></i> Save Lead
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -148,49 +318,94 @@
                 <input type="hidden" name="latitude" id="lead_lat">
                 <input type="hidden" name="longitude" id="lead_lng">
 
-                <div class="row g-3 mt-4">
+                <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Full Name *</label>
-                        <input type="text" name="full_name" class="form-control form-control-lg" placeholder="E.g. Alex Fernando" required>
+                        <input type="text" name="full_name" class="form-control form-control-lg @error('full_name') is-invalid @enderror" placeholder="E.g. Alex Fernando" value="{{ old('full_name') }}">
                         <small class="text-muted">Use the customer's preferred name.</small>
+                        @error('full_name')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Phone *</label>
-                        <input type="text" name="phone_number" class="form-control form-control-lg" placeholder="+94 7X XXX XXXX" required>
+                        <input type="text" name="phone_number" class="form-control form-control-lg @error('phone_number') is-invalid @enderror" placeholder="+94 7X XXX XXXX" value="{{ old('phone_number') }}">
                         <small class="text-muted">Primary contact number for follow-ups.</small>
+                        @error('phone_number')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Email</label>
-                        <input type="email" name="email" class="form-control" placeholder="name@email.com">
+                        <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" placeholder="name@email.com" value="{{ old('email') }}">
+                        @error('email')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Type *</label>
+                        <select name="type" class="form-select form-control-lg @error('type') is-invalid @enderror">
+                            <option value="">Select Type</option>
+                            <option value="group" {{ old('type') == 'group' ? 'selected' : '' }}>Group</option>
+                            <option value="individual" {{ old('type') == 'individual' ? 'selected' : '' }}>Individual</option>
+                            <option value="business" {{ old('type') == 'business' ? 'selected' : '' }}>Business</option>
+                            <option value="leasing" {{ old('type') == 'leasing' ? 'selected' : '' }}>Leasing</option>
+                        </select>
+                        <small class="text-muted">Select the lead type.</small>
+                        @error('type')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Periods *</label>
+                        <input type="text" name="periods" class="form-control form-control-lg @error('periods') is-invalid @enderror" placeholder="E.g. 12 months, 24 months" value="{{ old('periods') }}">
+                        <small class="text-muted">Enter the loan period duration.</small>
+                        @error('periods')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-12">
                         <label class="form-label">Address</label>
-                        <textarea name="address" class="form-control" rows="3" placeholder="Street, City, District"></textarea>
+                        <textarea name="address" class="form-control @error('address') is-invalid @enderror" rows="3" placeholder="Street, City, District">{{ old('address') }}</textarea>
+                        @error('address')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Latitude</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-compass"></i></span>
-                            <input type="text" id="lead_lat_display" class="form-control" placeholder="Auto from GPS" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Longitude</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-compass"></i></span>
-                            <input type="text" id="lead_lng_display" class="form-control" placeholder="Auto from GPS" readonly>
+                    <div class="col-12">
+                        <label class="form-label">Location Coordinates</label>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-5">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-compass"></i> Latitude</span>
+                                    <input type="text" id="lead_lat_display" class="form-control" placeholder="Auto from GPS" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-compass"></i> Longitude</span>
+                                    <input type="text" id="lead_lng_display" class="form-control" placeholder="Auto from GPS" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-outline-primary w-100" onclick="getLeadLocation()" style="height: 48px;">
+                                    <i class="bi bi-geo-alt"></i> Get Location
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="col-12">
                         <label class="form-label">Notes</label>
-                        <textarea name="notes" class="form-control" rows="4" placeholder="Key pain points, interest level, next steps"></textarea>
+                        <textarea name="notes" class="form-control @error('notes') is-invalid @enderror" rows="4" placeholder="Key pain points, interest level, next steps">{{ old('notes') }}</textarea>
+                        @error('notes')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
                     </div>
                     
                     {{-- Image Upload Fields (Dynamic based on app_settings) --}}
                     @if(isset($imageTypes) && count($imageTypes) > 0)
                     <div class="col-12">
-                        <hr class="my-4">
-                        <h5 class="mb-3">
+                        <hr>
+                        <h5>
                             <i class="bi bi-images"></i> Document Images
                         </h5>
                         <div class="row g-3">
@@ -213,12 +428,14 @@
                                         <input type="file" 
                                                name="{{ $fieldName }}" 
                                                id="{{ $fieldName }}"
-                                               class="d-none image-upload-input" 
+                                               class="d-none image-upload-input @error($fieldName) is-invalid @enderror" 
                                                accept="image/*" 
                                                capture="user"
-                                               @if($isRequired) required @endif
                                                onchange="handleImageUpload(this, '{{ $fieldName }}_preview', '{{ $fieldName }}_lat', '{{ $fieldName }}_lng')"
                                                data-image-type="{{ $imageType['name'] }}">
+                                        @error($fieldName)
+                                            <div class="invalid-feedback d-block mt-1">{{ $message }}</div>
+                                        @enderror
                                         <input type="hidden" id="{{ $fieldName }}_lat" name="{{ $fieldName }}_latitude">
                                         <input type="hidden" id="{{ $fieldName }}_lng" name="{{ $fieldName }}_longitude">
                                         
@@ -261,7 +478,7 @@
                     </div>
                     @endif
                     
-                    <div class="col-12">
+                    <div class="col-12 mt-3">
                         <div class="alert alert-info d-flex align-items-center mb-0">
                             <i class="bi bi-info-circle me-2"></i>
                             <div>Tap "Get Location" to capture GPS, it will also open your position in the map.</div>
@@ -666,17 +883,19 @@ function getLeadLocation() {
 
     navigator.geolocation.getCurrentPosition(
         pos => {
+            // Get full precision coordinates without rounding
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
 
+            // Store full precision values (no rounding)
             $('#lead_lat').val(lat);
             $('#lead_lng').val(lng);
             $('#lead_lat_display').val(lat);
             $('#lead_lng_display').val(lng);
 
-            // Open OpenStreetMap with current position
-            const mapUrl = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=18/${lat}/${lng}`;
-            window.open(mapUrl, '_blank');
+            // // Open OpenStreetMap with current position
+            // const mapUrl = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=18/${lat}/${lng}`;
+            // window.open(mapUrl, '_blank');
         },
         err => {
             if (err.code === 1) {
@@ -858,13 +1077,11 @@ function previewImage(input, previewId) {
 
 /* ================= SAVE LEAD ================= */
 function saveLead() {
-    // Validate form
-    if (!$('#leadForm')[0].checkValidity()) {
-        $('#leadForm')[0].reportValidity();
-        return;
-    }
-
     $('#saveLeadBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Saving...');
+
+    // Clear previous validation errors
+    $('.is-invalid').removeClass('is-invalid');
+    $('.invalid-feedback').remove();
 
     // Create FormData for file uploads
     const formData = new FormData($('#leadForm')[0]);
@@ -886,30 +1103,85 @@ function saveLead() {
                     showConfirmButton: false
                 }).then(() => {
                     // Optionally reset form or redirect
-                    // $('#leadForm')[0].reset();
-                    // $('.img-thumbnail').addClass('d-none');
+                    // window.location.reload();
                 });
             } else {
                 Swal.fire('Error', res.message || 'Unable to save lead', 'error');
             }
         },
         error: function(xhr) {
-            let errorMessage = 'Unable to save lead right now';
-            
-            if (xhr.responseJSON && xhr.responseJSON.errors) {
-                // Laravel validation errors
+            // Handle Laravel validation errors
+            if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
                 const errors = xhr.responseJSON.errors;
-                const errorList = Object.values(errors).flat().join('<br>');
-                errorMessage = errorList;
-            } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                errorMessage = xhr.responseJSON.message;
+                
+                // Display errors under each field
+                $.each(errors, function(field, messages) {
+                    const errorMsg = Array.isArray(messages) ? messages[0] : messages;
+                    
+                    // Find input/select/textarea by name
+                    let input = $(`[name="${field}"]`);
+                    
+                    // Handle file inputs and image fields differently
+                    if (input.length === 0 || input.is('input[type="file"]')) {
+                        // For file inputs, find the parent wrapper
+                        const wrapper = $(`[name="${field}"]`).closest('.image-upload-wrapper');
+                        if (wrapper.length) {
+                            input = wrapper.find(`[name="${field}"]`);
+                        }
+                    }
+                    
+                    if (input.length) {
+                        // Add invalid class to input
+                        input.addClass('is-invalid');
+                        
+                        // Remove existing error message
+                        input.parent().find('.invalid-feedback').remove();
+                        
+                        // Add error message below input
+                        const errorDiv = $('<div class="invalid-feedback d-block text-danger mt-1"></div>');
+                        errorDiv.text(errorMsg);
+                        
+                        // Insert after input or in appropriate location
+                        if (input.is('input[type="file"]')) {
+                            input.closest('.image-upload-wrapper').append(errorDiv);
+                        } else {
+                            input.after(errorDiv);
+                        }
+                    }
+                });
+                
+                // Show alert with summary
+                // const errorCount = Object.keys(errors).length;
+                // Swal.fire({
+                //     icon: 'error',
+                //     title: 'Validation Error',
+                //     html: `<p>Please fix the ${errorCount} error(s) in the form below.</p>`,
+                //     confirmButtonText: 'OK'
+                // });
+                
+                // Scroll to first error
+                setTimeout(function() {
+                    const firstError = $('.is-invalid').first();
+                    if (firstError.length) {
+                        $('html, body').animate({
+                            scrollTop: firstError.offset().top - 150
+                        }, 500);
+                    }
+                }, 300);
+                
+            } else {
+                let errorMessage = 'Unable to save lead right now';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: errorMessage,
+                    confirmButtonText: 'OK'
+                });
             }
-            
-            Swal.fire({
-                icon: 'error',
-                title: 'Validation Error',
-                html: errorMessage
-            });
         },
         complete: function() {
             $('#saveLeadBtn').prop('disabled', false).html('<i class="bi bi-check2-circle"></i> Save Lead');

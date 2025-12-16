@@ -25,6 +25,8 @@ class StoreCustomerLeadRequest extends FormRequest
             'full_name' => ['required', 'string', 'max:255'],
             'phone_number' => ['required', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255'],
+            'type' => ['required', 'string', 'in:group,individual,business,leasing'],
+            'periods' => ['required', 'string', 'max:255'],
             'address' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
@@ -64,6 +66,9 @@ class StoreCustomerLeadRequest extends FormRequest
         $messages = [
             'full_name.required' => 'Full name is required.',
             'phone_number.required' => 'Phone number is required.',
+            'type.required' => 'Type is required.',
+            'type.in' => 'Type must be one of: group, individual, business, or leasing.',
+            'periods.required' => 'Periods is required.',
             'email.email' => 'Please provide a valid email address.',
             'latitude.numeric' => 'Latitude must be a valid number.',
             'longitude.numeric' => 'Longitude must be a valid number.',

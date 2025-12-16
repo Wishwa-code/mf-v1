@@ -971,7 +971,19 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->name('report.penaltyDeduction.details');
     
     //Lead Management Routes
+
+    // Lead approval – list + data source + approve action
+    Route::get('/leads/approvals', [CustomerLeadController::class, 'approvalIndex'])
+        ->name('leads.approvals');
+
+    Route::get('/leads/approvals/data', [CustomerLeadController::class, 'approvalData'])
+        ->name('leads.approvals.data');
+
+    Route::post('/leads/{lead}/approve', [CustomerLeadController::class, 'approve'])
+        ->name('leads.approve');
+        
     Route::resource('leads', CustomerLeadController::class)->names('leads');
+
 });
 
 
