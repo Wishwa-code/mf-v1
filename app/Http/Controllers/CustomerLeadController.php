@@ -83,8 +83,16 @@ class CustomerLeadController extends Controller
      */
     public function create(Request $request)
     {
-        // This is handled by store method via AJAX
-        return redirect()->route('leads.index');
+        // Get image types from app_settings
+        $imageTypesSetting = AppSettings::where('key', 'image_types')->value('value');
+        $imageTypes = [];
+        
+        if ($imageTypesSetting) {
+            $decoded = json_decode($imageTypesSetting, true);
+            $imageTypes = is_array($decoded) ? $decoded : [];
+        }
+
+        return view('pages.leads.create', compact('imageTypes'));
     }
 
     

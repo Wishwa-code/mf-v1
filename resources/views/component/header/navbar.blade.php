@@ -28,21 +28,25 @@
                     var minutes = String(now.getMinutes()).padStart(2, '0');
                     var seconds = String(now.getSeconds()).padStart(2, '0');
                     var day = String(now.getDate()).padStart(2, '0');
-                    var month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+                    var month = String(now.getMonth() + 1).padStart(2, '0');
                     var year = now.getFullYear();
 
                     var formattedTime = hours + ':' + minutes + ':' + seconds;
                     var formattedDate = year + '/' + month + '/' + day;
 
-                    document.getElementById('time').innerText = formattedTime;
-                    document.getElementById('date').innerText = formattedDate;
+                    const timeEl = document.getElementById('time');
+                    const dateEl = document.getElementById('date');
+                    
+                    if (timeEl) timeEl.innerText = formattedTime;
+                    if (dateEl) dateEl.innerText = formattedDate;
                 }
 
-                updateTime(); // Initial call to display the time immediately
-                setInterval(updateTime, 1000); // Update every second
+                updateTime(); 
+                setInterval(updateTime, 1000); 
             });
         </script>
         <div class="date-time">
+            <h2 id="time" style="margin-right: 15px;"></h2>
             <h2 id="date">{{ date('Y/m/d') }}</h2>
             <h2 id="day">{{ date('l') }}</h2>
         </div>

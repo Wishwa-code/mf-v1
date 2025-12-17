@@ -1,31 +1,18 @@
 @extends('layout.admin')
 
-@section('head')
-    {{-- DataTables + Buttons CSS (same style as your other tables) --}}
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.2.3/css/buttons.dataTables.min.css">
-@endsection
-
 @section('content')
-    <div class="container-fluid">
-        <div class="row mb-3">
-            <div class="col-12">
-                <div class="page-title-box">
-                    <h4 class="page-title">Lead Approvals</h4>
-                    <p class="text-muted mb-0">
-                        Review pending leads and send them for next approval step.
-                    </p>
+<div class="container-fluid">
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0" style="border-radius: 12px; overflow: hidden;">
+                <div class="card-header bg-white py-3">
+                    <h4 class="card-title mb-0" style="font-weight: 600; color: #333;">Lead Approvals</h4>
+                    <p class="text-muted mb-0 small">Review pending leads and send them for next approval step.</p>
                 </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table id="leads_approval_table" class="table table-centered mb-0" style="width:100%">
-                                <thead>
+                <div class="card-body p-4">
+                    <div class="table-responsive">
+                        <table id="leads_approval_table" class="table table-hover table-striped dt-responsive nowrap w-100" style="width:100%">
+                            <thead class="table-light">
                                 <tr>
                                     <th>#</th>
                                     <th>Full Name</th>
@@ -35,27 +22,20 @@
                                     <th>Status</th>
                                     <th>Action</th>
                                 </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 @endsection
 
 @section('script')
-    {{-- jQuery already loaded globally from header --}}
-    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.2.3/js/buttons.html5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.2.3/js/buttons.print.min.js"></script>
-
     <script>
-        $(function () {
+        $(document).ready(function () {
             $('#leads_approval_table').DataTable({
                 ajax: {
                     url: "{{ route('leads.approvals.data') }}",
@@ -64,8 +44,33 @@
                 processing: true,
                 pageLength: 10,
                 order: [[0, 'asc']],
+                language: {
+                    searchPlaceholder: "Search records",
+                    search: "",
+                },
                 dom: 'Bfrtip',
-                buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
+                buttons: [
+                    {
+                        extend: 'copy',
+                        className: 'btn btn-light btn-sm'
+                    },
+                    {
+                        extend: 'csv',
+                        className: 'btn btn-light btn-sm'
+                    },
+                    {
+                        extend: 'excel',
+                        className: 'btn btn-light btn-sm'
+                    },
+                    {
+                        extend: 'pdf',
+                        className: 'btn btn-light btn-sm'
+                    },
+                    {
+                        extend: 'print',
+                        className: 'btn btn-light btn-sm'
+                    }
+                ],
                 columns: [
                     {
                         data: 'id',
@@ -73,16 +78,27 @@
                             return meta.row + 1;
                         }
                     },
-                    {data: 'full_name'},
+                    {data: 'full_name', className: 'fw-medium'},
                     {data: 'email'},
                     {data: 'phone_number'},
-                    {data: 'type'},
+                    {
+                        data: 'type',
+                        render: function(data) {
+                            return `<span class="badge bg-soft-info text-info">${data.charAt(0).toUpperCase() + data.slice(1)}</span>`;
+                        }
+                    },
                     {
                         data: 'status',
                         render: function (data) {
-                            let cls = 'badge bg-warning text-dark';
-                            if (data === 'pending-approved') cls = 'badge bg-success';
-                            return `<span class="${cls}">${data}</span>`;
+                            let cls = 'badge bg-soft-warning text-warning';
+                            let text = 'Pending';
+                            
+                            if (data === 'pending-approved') {
+                                cls = 'badge bg-soft-success text-success';
+                                text = 'Approved';
+                            }
+                            
+                            return `<span class="${cls}">${text}</span>`;
                         }
                     },
                     {
@@ -92,19 +108,18 @@
                         render: function (data, type, row) {
                             const url = "{{ route('leads.show', ['lead' => '__ID__']) }}".replace('__ID__', row.id);
                             return `
-                                <button class="btn btn-sm btn-primary"
-                                        onclick="window.location.href='${url}'">
-                                    <i class="bi bi-eye"></i>
-                                </button>
+                                <a href="${url}" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" style="border-radius: 6px;">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
                             `;
                         }
                     }
-                ]
+                ],
+                initComplete: function() {
+                    $('.dataTables_filter input').addClass('form-control').css('margin-left','10px');
+                    $('.dt-buttons .btn').removeClass('btn-secondary').addClass('btn-light btn-sm border');
+                }
             });
         });
     </script>
 @endsection
-
-
-
-
