@@ -26,31 +26,7 @@
                     </li>
                 @endif
 
-                <li class="side-nav-item">
-                    <a data-bs-toggle="collapse" href="#lead" aria-expanded="false"
-                        aria-controls="sidebarPagesAuth" class="side-nav-link">
-                       <i class="ri-article-fill"></i>
-                        <span> Lead </span>
-                        <span class="menu-arrow"></span>
-                    </a>
-                    <div class="collapse" id="lead">
-                        <ul class="side-nav-second-level">
-                            <li>
-                                <a href="{{ route('leads.index') }}">Add Lead</a>
-                            </li>
-                            <li>
-                                <a href="{{ route('leads.approvals') }}">Lead Approvals</a>
-                            </li>
-                            <li>
-                                <!-- <a href="{{ route('customers.map') }}">
-                                    <span> Customer Map </span>
-                                </a>
-                            </li> -->
-
-                        </ul>
-                    </div>
-                </li>
-
+               
                 <li class="side-nav-item">
                     <a href="{{ route('business-categories.index') }}" class="side-nav-link">
                         <i class="ri-layout-grid-fill"></i>
@@ -208,13 +184,18 @@
                             <ul class="side-nav-second-level">
                                 {{-- @if (optional($privilege)->add_customer == 1) --}}
                                     <li>
-                                        <a href="{{ route('leads.index') }}">Add Lead</a>
+                                        <a href="{{ route('leads.index') }}">Lead Create/Agreement</a>
                                     </li>
                                 {{-- @endif --}}
                                 <li>
                                     <a href="{{ route('leads.approvals') }}">Lead Approvals</a>
                                 </li>
-
+                                <li>
+                                    <a href="{{ route('leads.verifyAction') }}">Lead Verification</a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('leads.verifiedList') }}">Verified Lead History</a>
+                                </li>
                             </ul>
                         </div>
 

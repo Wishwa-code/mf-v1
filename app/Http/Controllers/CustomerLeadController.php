@@ -6,6 +6,7 @@ use App\Http\Requests\StoreCustomerLeadRequest;
 use App\Models\AppSettings;
 use App\Models\CustomerLead;
 use App\Models\LeadHasImages;
+use App\Models\BusinessCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -18,7 +19,8 @@ class CustomerLeadController extends Controller
     public function index()
     {
         try {
-            $leads = CustomerLead::with('images')->get();
+            $leads = CustomerLead::with(['images', 'businessCategory'])->get();
+        $businessCategories = BusinessCategory::all();
             
             // Get image types from app_settings
             $imageTypesSetting = AppSettings::where('key', 'image_types')->value('value');
@@ -29,7 +31,7 @@ class CustomerLeadController extends Controller
                 $imageTypes = is_array($decoded) ? $decoded : [];
             }
 
-            return view('pages.leads.create', compact('leads', 'imageTypes'));
+            return view('pages.leads.create', compact('leads', 'imageTypes','businessCategories'));
         } catch (\Exception $e) {
             return response()->json(['message'=>$e->getMessage()],500);
         }
@@ -92,7 +94,9 @@ class CustomerLeadController extends Controller
             $imageTypes = is_array($decoded) ? $decoded : [];
         }
 
-        return view('pages.leads.create', compact('imageTypes'));
+        $businessCategories = BusinessCategory::all();
+
+        return view('pages.leads.create', compact('imageTypes', 'businessCategories'));
     }
 
     
@@ -175,8 +179,8 @@ class CustomerLeadController extends Controller
      */
     public function show( $customerLead)
     {
-$customerLead = CustomerLead::findOrFail($customerLead);
-        $lead = $customerLead->load('images');
+        $customerLead = CustomerLead::findOrFail($customerLead);
+        $lead = $customerLead->load(['images', 'businessCategory']);
 
         return view('pages.leads.show', compact('lead'));
     }
@@ -225,6 +229,97 @@ $customerLead = CustomerLead::findOrFail($customerLead);
         return response()->json([
             'success' => true,
             'message' => 'Lead approved successfully.',
+        ]);
+    }
+
+    /**
+     * Show the Verify Action Page (Dropdown + Form).
+     */
+    public function verifyActionPage()
+    {
+        // Get leads that are approved but NOT visited yet
+        $leads = CustomerLead::where('status', 'pending-approved')
+            ->where('is_visited', 0) // Only unvisited
+            ->orderBy('full_name')
+            ->get();
+            
+        return view('pages.leads.verify_action', compact('leads'));
+    }
+
+    /**
+     * Show the Verified Leads List Page (Table).
+     */
+    public function verifiedListPage()
+    {
+        return view('pages.leads.verified_list');
+    }
+
+    /**
+     * API to get lead details for the dropdown.
+     */
+    public function getLeadDetails(CustomerLead $lead)
+    {
+        return response()->json([
+            'success' => true,
+            'id' => $lead->id,
+            'full_name' => $lead->full_name,
+            'address' => $lead->address,
+            'phone_number' => $lead->phone_number,
+            'latitude' => $lead->latitude,
+            'longitude' => $lead->longitude,
+        ]);
+    }
+
+    /**
+     * JSON data for verified leads table using Yajra DataTables.
+     */
+    public function verifiedData(Request $request)
+    {
+        $leads = CustomerLead::where('status', 'pending-approved')
+            ->orderByDesc('created_at_lead');
+
+        return \Yajra\DataTables\Facades\DataTables::of($leads)
+            ->addColumn('action', function ($row) {
+                 // No action button on the list view anymore, maybe just a 'View' or disabled 'Visited'
+                if ($row->is_visited) {
+                    return '<span class="badge bg-success">VISITED</span>';
+                }
+                return '<span class="badge bg-warning text-dark">PENDING VISIT</span>';
+            })
+            ->editColumn('status', function ($row) {
+                return '<span class="badge bg-info">' . strtoupper($row->status) . '</span>';
+            })
+            ->editColumn('is_visited', function ($row) {
+                if ($row->is_visited) {
+                    return '<span class="badge bg-success">VISITED</span>';
+                }
+                return '<span class="badge bg-warning text-dark">PENDING</span>';
+            })
+            ->rawColumns(['action', 'status', 'is_visited']) // Allow HTML in these columns
+            ->make(true);
+    }
+
+    /**
+     * Mark a lead as verified/visited.
+     */
+    public function markAsVisited(Request $request, CustomerLead $lead)
+    {
+        $request->validate([
+            'visited_latitude'  => 'required|numeric',
+            'visited_longitude' => 'required|numeric',
+            'visit_notes'       => 'required|string|max:5000',
+        ]);
+
+        $lead->is_visited = 1;
+        $lead->visited_latitude = $request->visited_latitude;
+        $lead->visited_longitude = $request->visited_longitude;
+        $lead->visit_notes = $request->visit_notes;
+        $lead->updated_by = session('userid', 1);
+        $lead->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lead marked as visited successfully.',
         ]);
     }
 }

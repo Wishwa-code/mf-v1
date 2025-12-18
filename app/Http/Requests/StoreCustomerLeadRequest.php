@@ -32,6 +32,7 @@ class StoreCustomerLeadRequest extends FormRequest
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'loan_amount' => ['required', 'numeric', 'min:0'],
+            'business_category_id' => ['required', 'exists:business_categories,id'],
         ];
 
         // Get image types from app_settings
@@ -73,6 +74,7 @@ class StoreCustomerLeadRequest extends FormRequest
             'email.email' => 'Please provide a valid email address.',
             'latitude.numeric' => 'Latitude must be a valid number.',
             'longitude.numeric' => 'Longitude must be a valid number.',
+            'business_category_id.required' => 'Business category is required.',
         ];
 
         // Get image types from app_settings for custom messages

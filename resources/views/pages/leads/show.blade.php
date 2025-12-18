@@ -119,6 +119,18 @@
                                     <div class="detail-value">{{ $lead->periods ?? '-' }}</div>
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded-3 h-100">
+                                    <div class="detail-label"><i class="bi bi-cash-stack me-1"></i> Loan Amount</div>
+                                    <div class="detail-value">{{ $lead->loan_amount ? number_format($lead->loan_amount, 2) : '-' }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded-3 h-100">
+                                    <div class="detail-label"><i class="bi bi-tag me-1"></i> Business Category</div>
+                                    <div class="detail-value">{{ $lead->businessCategory->name ?? '-' }}</div>
+                                </div>
+                            </div>
                             <div class="col-12">
                                 <div class="p-3 border rounded-3 h-100">
                                     <div class="detail-label"><i class="bi bi-geo-alt me-1"></i> Address</div>

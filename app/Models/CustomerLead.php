@@ -29,11 +29,17 @@ class CustomerLead extends Model
         'visit_notes',
         'visited_longitude',
         'visited_latitude',
-        'loan_amount'
+        'loan_amount',
+        'business_category_id'
     ];
 
     public function images()
     {
         return $this->hasMany(LeadHasImages::class, 'lead_id');
+    }
+
+    public function businessCategory()
+    {
+        return $this->belongsTo(BusinessCategory::class);
     }
 }

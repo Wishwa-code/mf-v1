@@ -145,6 +145,12 @@ Route::middleware(['web', 'auth'])->group(function () {
         return view('pages.leads.map', compact('lead'));
     })->name('leads.map');
 
+    Route::get('/leads/verify', [CustomerLeadController::class, 'verifyActionPage'])->name('leads.verifyAction');
+    Route::get('/leads/verified-list', [CustomerLeadController::class, 'verifiedListPage'])->name('leads.verifiedList');
+    Route::get('/leads/data', [CustomerLeadController::class, 'verifiedData'])->name('leads.verifiedData');
+    Route::get('/api/leads/{lead}/details', [CustomerLeadController::class, 'getLeadDetails'])->name('leads.details');
+    Route::post('/leads/{lead}/mark-visited', [CustomerLeadController::class, 'markAsVisited'])->name('leads.markVisited');
+
 
 
 

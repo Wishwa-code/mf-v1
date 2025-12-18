@@ -398,9 +398,26 @@
                                 <label class="form-label">Loan Amount *</label>
                                 <input type="number" name="loan_amount" step="0.01" class="form-control form-control-lg @error('loan_amount') is-invalid @enderror" placeholder="E.g. 50000" value="{{ old('loan_amount') }}">
                                 <small class="text-muted">Expected loan amount.</small>
-                                @error('loan_amount')
-                                    <div class="invalid-feedback d-block">{{ $message }}</div>
-                                @enderror
+                                <div class="invalid-feedback d-block">
+                                    @error('loan_amount') {{ $message }} @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Business Category *</label>
+                                <select name="business_category_id" class="form-select form-control-lg select2-search @error('business_category_id') is-invalid @enderror">
+                                    <option value="">Select Category</option>
+                                    @if(isset($businessCategories))
+                                        @foreach($businessCategories as $category)
+                                            <option value="{{ $category->id }}" {{ old('business_category_id') == $category->id ? 'selected' : '' }}>
+                                                {{ $category->name }}
+                                            </option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                                <small class="text-muted">Select the business category (if applicable).</small>
+                                <div class="invalid-feedback d-block">
+                                    @error('business_category_id') {{ $message }} @enderror
+                                </div>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Periods *</label>
@@ -605,14 +622,16 @@
 <script>
     $(document).ready(function() {
         // Initialize Choices.js
-        const element = document.querySelector('.select2-search');
-        if(element){
-            const choices = new Choices(element, {
-                searchEnabled: true,
-                itemSelectText: '',
-                shouldSort: false,
-                placeholder: true,
-                placeholderValue: 'Select Type',
+        const elements = document.querySelectorAll('.select2-search');
+        if(elements.length > 0){
+            elements.forEach(element => {
+                new Choices(element, {
+                    searchEnabled: true,
+                    itemSelectText: '',
+                    shouldSort: false,
+                    placeholder: true,
+                    placeholderValue: 'Select Option',
+                });
             });
         }
     });

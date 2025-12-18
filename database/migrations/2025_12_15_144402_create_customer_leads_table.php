@@ -44,6 +44,8 @@ return new class extends Migration
             $table->longText('visit_notes')->nullable();
             $table->float('visited_longitude', 10, 6)->nullable();
             $table->float('visited_latitude', 10, 6)->nullable();
+
+            $table->foreignId('business_category_id')->nullable()->constrained('business_categories');
             $table->softDeletes();
         });
     }
