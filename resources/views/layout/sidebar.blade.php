@@ -194,7 +194,10 @@
                                     <a href="{{ route('leads.verifyAction') }}">Lead Verification</a>
                                 </li>
                                 <li>
-                                    <a href="{{ route('leads.verifiedList') }}">Verified Lead History</a>
+                                    <a href="{{ route('leads.verifiedList') }}">Lead History List</a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('leads.globalMap') }}">All Leads Map</a>
                                 </li>
                             </ul>
                         </div>

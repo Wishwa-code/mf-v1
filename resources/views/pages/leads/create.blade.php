@@ -325,11 +325,7 @@
                         <h4 class="mb-1">Lead Management</h4>
                         <p class="text-muted small mb-0">Capture and manage lead details.</p>
                     </div>
-                    <div>
-                        <button type="button" class="btn btn-success" onclick="saveLead()" id="saveLeadBtn">
-                            <i class="bi bi-check2-circle"></i> Save Lead
-                        </button>
-                    </div>
+
                 </div>
                 
                 <ul class="nav nav-tabs card-header-tabs" id="leadMainTabs" role="tablist">
@@ -340,7 +336,7 @@
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="lead-empty-tab" data-bs-toggle="tab" data-bs-target="#lead-empty" type="button" role="tab">
-                            Other
+                            Agreement Sign Form
                         </button>
                     </li>
                 </ul>
@@ -550,15 +546,151 @@
                                     <div>Tap "Get Location" to capture GPS. This will also allow you to view the position on Google Maps.</div>
                                 </div>
                             </div>
+
+                            <div class="col-12 mt-4 pb-3">
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <button type="button" class="btn btn-success btn-lg px-5" onclick="saveLead()" id="saveLeadBtn">
+                                        <i class="bi bi-check2-circle me-2"></i> Save Lead
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                         </form>
                     </div>
 
-                    {{-- TAB 2: EMPTY TAB (PLACEHOLDER) --}}
+                    {{-- TAB 2: AGREEMENT IMAGES TAB --}}
                     <div class="tab-pane fade" id="lead-empty" role="tabpanel">
-                        <div class="text-center py-5">
-                            <h5 class="mb-2">Empty Tab</h5>
-                            <p class="text-muted mb-0">You can design this tab later for additional lead information or summary.</p>
+                        <div class="row">
+                            <!-- Left Side: Selection and Upload -->
+                            <div class="col-md-7">
+                                <div class="p-2">
+                                    <h5 class="mb-4">Upload Agreement Images</h5>
+                                    
+                                    <form id="agreementForm" enctype="multipart/form-data">
+                                        @csrf
+                                        <input type="hidden" id="agreement_target_lat" name="agreement_target_lat">
+                                        <input type="hidden" id="agreement_target_lng" name="agreement_target_lng">
+
+                                        <div class="mb-4">
+                                            <label class="form-label">Select Lead *</label>
+                                            <select id="lead_select_agreement" name="lead_id" class="form-select form-control-lg select2-agreement">
+                                                <option value="">Search and select a lead...</option>
+                                                @foreach($leads as $lead)
+                                                    <option value="{{ $lead->id }}">{{ $lead->full_name }} - {{ $lead->phone_number }}</option>
+                                                @endforeach
+                                            </select>
+                                            <small class="text-muted">Search by name or phone number to upload agreements.</small>
+                                            <!-- Mobile Only: Quick Lead Details Summary -->
+                                            <div id="mobile_lead_summary" class="d-md-none mt-3 p-3 bg-light rounded border" style="display: none;">
+                                                <h6 class="fw-bold mb-1" id="mob_lead_name"></h6>
+                                                <div class="small text-muted mb-2" id="mob_lead_address"></div>
+                                                <div class="d-flex align-items-center small">
+                                                    <i class="bi bi-geo-alt me-1 text-primary"></i>
+                                                    <span id="mob_lead_loc"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                    
+                                        <div id="image_upload_section_agreement" style="display: none;">
+                                            <hr class="my-4">
+                                            
+                                            @if(isset($agreementImageTypes) && count($agreementImageTypes) > 0)
+                                                <h6 class="mb-3 text-muted text-uppercase fw-bold"><i class="bi bi-images me-2"></i>Agreement Documents</h6>
+                                                <div class="row g-4">
+                                                    @foreach($agreementImageTypes as $imageType)
+                                                        @php
+                                                            $fieldName = 'image_' . str_replace(' ', '_', strtolower($imageType['name']));
+                                                            $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
+                                                            $isRequired = isset($imageType['is_required']) && $imageType['is_required'];
+                                                        @endphp
+                                                        <div class="col-12">
+                                                            <label class="form-label">
+                                                                {{ $imageType['name'] }}
+                                                                @if($isRequired)
+                                                                    <span class="text-danger">*</span>
+                                                                @else
+                                                                    <span class="text-muted small">(Optional)</span>
+                                                                @endif
+                                                            </label>
+                                                            
+                                                            <div class="image-upload-wrapper">
+                                                                <input type="file" 
+                                                                       name="{{ $fieldName }}" 
+                                                                       id="{{ $fieldName }}_agreement"
+                                                                       class="d-none image-upload-input" 
+                                                                       accept="image/*" 
+                                                                       api-field-name="{{ $fieldName }}"
+                                                                       capture="user"
+                                                                       onchange="handleImageUpload(this, '{{ $fieldName }}_agreement_preview', '{{ $fieldName }}_agreement_lat', '{{ $fieldName }}_agreement_lng')"
+                                                                       data-image-type="{{ $imageType['name'] }}">
+                                                                
+                                                                <input type="hidden" id="{{ $fieldName }}_agreement_lat" name="{{ $fieldName }}_latitude">
+                                                                <input type="hidden" id="{{ $fieldName }}_agreement_lng" name="{{ $fieldName }}_longitude">
+                                                                
+                                                                <div class="d-flex gap-2 mb-2 flex-wrap">
+                                                                    <button type="button" 
+                                                                            class="btn btn-primary btn-camera-capture" 
+                                                                            onclick="openWebcamModal('{{ $fieldName }}_agreement', '{{ $fieldName }}_agreement_preview', '{{ $fieldName }}_agreement_lat', '{{ $fieldName }}_agreement_lng')"
+                                                                            title="Capture from Webcam">
+                                                                        <i class="bi bi-camera-video"></i> Use Camera
+                                                                    </button>
+                                                                    <button type="button" 
+                                                                            class="btn btn-info btn-camera-capture" 
+                                                                            onclick="triggerCamera('{{ $fieldName }}_agreement', 'environment')"
+                                                                            title="Capture from Rear Camera">
+                                                                        <i class="bi bi-camera"></i> Mobile Camera
+                                                                    </button>
+                                                                    <!-- <button type="button" 
+                                                                            class="btn btn-outline-secondary btn-gallery-select" 
+                                                                            onclick="triggerFileSelect('{{ $fieldName }}_agreement')"
+                                                                            title="Select from Gallery">
+                                                                        <i class="bi bi-image"></i> Choose File
+                                                                    </button> -->
+                                                                </div>
+                                                                
+                                                                <div class="mt-2">
+                                                                    <img id="{{ $fieldName }}_agreement_preview" 
+                                                                         src="" 
+                                                                         alt="Preview" 
+                                                                         class="img-thumbnail d-none" 
+                                                                         style="max-height: 200px; width: auto;">
+                                                                </div>
+                                                                <div id="{{ $fieldName }}_agreement_location_status" class="mt-2"></div>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                                
+                                                <hr class="my-4">
+                                                <button type="button" class="btn btn-success w-100 py-3 fs-5" onclick="saveAgreementImages()" id="btnSaveAgreement">
+                                                    <i class="bi bi-cloud-upload me-2"></i> Upload Agreement Images
+                                                </button>
+                                            @else
+                                                <div class="alert alert-warning">
+                                                    <i class="bi bi-exclamation-triangle me-2"></i> No Agreement Image Types configured in Settings.
+                                                </div>
+                                            @endif
+                                        </div>
+                                        
+                                        <div id="select_lead_msg_agreement" class="text-center py-5 text-muted bg-light rounded-3 mt-3">
+                                            <i class="bi bi-person-check" style="font-size: 3rem;"></i>
+                                            <p class="mt-3 mb-0">Please select a lead to upload agreement images.</p>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Right Side: Lead Details -->
+                            <div class="col-md-5">
+                                <div class="card bg-light border-0 h-100">
+                                    <div class="card-body p-4" id="agreement_lead_details_container">
+                                        <div class="text-center py-5 text-muted">
+                                            <i class="bi bi-info-circle" style="font-size: 3rem;"></i>
+                                            <p class="mt-3">Lead details will appear here.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -634,7 +766,214 @@
                 });
             });
         }
+
+        // Initialize Choices.js for Agreement Image Tab Lead Selection
+        const agreementLeadSelect = document.querySelector('.select2-agreement');
+        if(agreementLeadSelect){
+            const choicesAgreement = new Choices(agreementLeadSelect, {
+                searchEnabled: true,
+                itemSelectText: '',
+                shouldSort: false,
+                placeholder: true,
+                placeholderValue: 'Search and select a lead...',
+            });
+
+            // Handle Change
+            agreementLeadSelect.addEventListener('change', function(event) {
+                const leadId = event.detail.value;
+                if (leadId) {
+                    loadAgreementLeadDetails(leadId);
+                    $('#image_upload_section_agreement').slideDown();
+                    $('#select_lead_msg_agreement').slideUp();
+                } else {
+                    $('#image_upload_section_agreement').slideUp();
+                    $('#select_lead_msg_agreement').slideDown();
+                    resetAgreementLeadDetails();
+                }
+            });
+        }
     });
+
+    // Agreement Images Functions
+    function loadAgreementLeadDetails(leadId) {
+        $('#agreement_lead_details_container').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted">Loading details...</p></div>');
+        
+        $.ajax({
+            url: "/api/leads/" + leadId + "/details",
+            method: "GET",
+            success: function(res) {
+                if(res.success) {
+                    // Populate hidden location fields for validation
+                    $('#agreement_target_lat').val(res.latitude || '');
+                    $('#agreement_target_lng').val(res.longitude || '');
+                    
+                    // Show Mobile Summary
+                    $('#mob_lead_name').text(res.full_name || 'Unknown');
+                    $('#mob_lead_address').text(res.address || 'No Address');
+                    $('#mob_lead_loc').text(res.latitude ? 'Location Available' : 'No Location Set');
+                    $('#mobile_lead_summary').slideDown();
+
+                    const html = `
+                        <div class="mb-4 text-center">
+                            <div class="avatar-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.5rem; font-weight: bold;">
+                                ${res.full_name ? res.full_name.charAt(0).toUpperCase() : '?'}
+                            </div>
+                            <h5 class="mb-1">${res.full_name || 'Unknown'}</h5>
+                            <span class="badge bg-light text-dark border">Lead ID: #${res.id}</span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="small text-muted text-uppercase fw-bold mb-1">Phone Number</label>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-telephone me-2 text-muted"></i>
+                                <span class="fs-5 text-dark">${res.phone_number || '-'}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="small text-muted text-uppercase fw-bold mb-1">Address</label>
+                            <div class="d-flex align-items-start">
+                                <i class="bi bi-geo-alt me-2 text-muted mt-1"></i>
+                                <span class="text-dark">${res.address || '-'}</span>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="p-2 border rounded bg-white">
+                                    <label class="small text-muted text-uppercase fw-bold d-block mb-1" style="font-size: 0.75rem;">Latitude</label>
+                                    <span class="font-monospace">${res.latitude || '-'}</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 border rounded bg-white">
+                                    <label class="small text-muted text-uppercase fw-bold d-block mb-1" style="font-size: 0.75rem;">Longitude</label>
+                                    <span class="font-monospace">${res.longitude || '-'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${res.latitude ? `
+                        <div class="mt-4">
+                             <a href="https://www.google.com/maps/search/?api=1&query=${res.latitude},${res.longitude}" target="_blank" class="btn btn-outline-primary w-100">
+                                <i class="bi bi-map me-1"></i> View Location on Map
+                            </a>
+                        </div>
+                        ` : ''}
+                    `;
+                    $('#agreement_lead_details_container').html(html);
+                }
+            },
+            error: function() {
+                $('#agreement_lead_details_container').html('<div class="alert alert-danger"><i class="bi bi-exclamation-circle me-1"></i> Failed to load lead details.</div>');
+            }
+        });
+    }
+
+    function resetAgreementLeadDetails() {
+        $('#agreement_target_lat').val('');
+        $('#agreement_target_lng').val('');
+        $('#mobile_lead_summary').slideUp();
+        $('#agreement_lead_details_container').html(`
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-info-circle" style="font-size: 3rem;"></i>
+                <p class="mt-3">Lead details will appear here.</p>
+            </div>
+        `);
+    }
+
+    // Check Location for Agreement Images
+    function checkAgreementImageLocation(imageLat, imageLng, imageTypeName) {
+        const leadLat = parseFloat($('#agreement_target_lat').val());
+        const leadLng = parseFloat($('#agreement_target_lng').val());
+        
+        // If lead location is not captured yet
+        if (!leadLat || !leadLng || isNaN(leadLat) || isNaN(leadLng)) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Lead Location Invalid',
+                text: 'The selected lead does not have a registered location. Please update the lead location first.',
+                confirmButtonText: 'OK'
+            });
+            return false;
+        }
+        
+        // Calculate distance via Haversine
+        const distance = calculateDistance(leadLat, leadLng, imageLat, imageLng);
+        const distanceKm = (distance / 1000).toFixed(2);
+        
+        // Tolerance: 200 meters
+        const tolerance = 100; 
+        
+        if (distance >= tolerance) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Location Mismatch!',
+                html: `
+                    <div class="text-start">
+                        <p class="mb-2">Your current location is too far from the registered lead location.</p>
+                        <ul class="list-unstyled small text-muted bg-light p-2 rounded mb-2">
+                            <li><strong>Lead Loc:</strong> ${leadLat.toFixed(5)}, ${leadLng.toFixed(5)}</li>
+                            <li><strong>Your Loc:</strong> ${imageLat.toFixed(5)}, ${imageLng.toFixed(5)}</li>
+                        </ul>
+                        <p class="mb-0 text-danger fw-bold">Distance: ${distanceKm} km (Max: ${tolerance}m)</p>
+                    </div>
+                `,
+                confirmButtonText: 'OK'
+            });
+            return false;
+        }
+        
+        return true;
+    }
+
+    function saveAgreementImages() {
+        const btn = $('#btnSaveAgreement');
+        // Validate Lead Selection
+        const leadId = $('#lead_select_agreement').val();
+         if (!leadId) {
+            Swal.fire('Warning', 'Please select a lead first.', 'warning');
+            return;
+        }
+
+        btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Uploading...');
+        
+        const formData = new FormData($('#agreementForm')[0]);
+        
+        $.ajax({
+            url: "{{ route('leads.agreementImages.upload') }}",
+            method: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(res) {
+                if(res.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: res.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        // Optional: Clear form or reload
+                         window.location.reload();
+                    });
+                } else {
+                    Swal.fire('Error', res.message || 'Upload failed', 'error');
+                }
+            },
+            error: function(xhr) {
+                let msg = 'Upload failed.';
+                if(xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                Swal.fire('Error', msg, 'error');
+            },
+            complete: function() {
+                btn.prop('disabled', false).html('<i class="bi bi-cloud-upload me-2"></i> Upload Agreement Images');
+            }
+        });
+    }
 
 // Global variables for webcam
 const GOOGLE_MAPS_API_KEY = "{{ config('services.google_maps.key') }}";
@@ -803,6 +1142,7 @@ async function useCapturedPhoto() {
     const input = document.getElementById(currentFieldId);
     const preview = document.getElementById(currentPreviewId);
     const statusDiv = document.getElementById(currentFieldId + '_location_status');
+    const isAgreementUpload = input.hasAttribute('api-field-name');
     
     if (!canvas || !input) {
         Swal.fire('Error', 'Unable to process photo. Please try again.', 'error');
@@ -851,13 +1191,24 @@ async function useCapturedPhoto() {
                 const imageTypeName = input.getAttribute('data-image-type');
                 
                 // Check if location matches lead location
-                if (!checkImageLocation(imageLat, imageLng, imageTypeName)) {
-                    input.value = '';
-                    preview.classList.add('d-none');
-                    document.getElementById(currentLatFieldId).value = '';
-                    document.getElementById(currentLngFieldId).value = '';
-                    statusDiv.innerHTML = '';
-                    return;
+                if (isAgreementUpload) {
+                    if (!checkAgreementImageLocation(imageLat, imageLng, imageTypeName)) {
+                        input.value = '';
+                        preview.classList.add('d-none');
+                        document.getElementById(currentLatFieldId).value = '';
+                        document.getElementById(currentLngFieldId).value = '';
+                        statusDiv.innerHTML = '<small class="text-danger fw-bold"><i class="bi bi-x-circle"></i> Location Mismatch</small>';
+                        return;
+                    }
+                } else {
+                    if (!checkImageLocation(imageLat, imageLng, imageTypeName)) {
+                        input.value = '';
+                        preview.classList.add('d-none');
+                        document.getElementById(currentLatFieldId).value = '';
+                        document.getElementById(currentLngFieldId).value = '';
+                        statusDiv.innerHTML = '';
+                        return;
+                    }
                 }
                 
                 // Location matches, store coordinates and show preview
@@ -1105,6 +1456,8 @@ function handleImageUpload(input, previewId, latFieldId, lngFieldId) {
     const file = input.files[0];
     const statusDiv = document.getElementById(input.id + '_location_status');
     const imageTypeName = input.getAttribute('data-image-type');
+    // Check if this is an Agreement Image Upload (it has 'api-field-name' or specific class)
+    const isAgreementUpload = input.hasAttribute('api-field-name');
     
     if (!file) {
         document.getElementById(previewId).classList.add('d-none');
@@ -1135,15 +1488,29 @@ function handleImageUpload(input, previewId, latFieldId, lngFieldId) {
             const imageLat = position.coords.latitude;
             const imageLng = position.coords.longitude;
             
-            // Check if location matches lead location
-            if (!checkImageLocation(imageLat, imageLng, imageTypeName)) {
-                // Location doesn't match, clear the file input
-                input.value = '';
-                document.getElementById(previewId).classList.add('d-none');
-                document.getElementById(latFieldId).value = '';
-                document.getElementById(lngFieldId).value = '';
-                statusDiv.innerHTML = '';
-                return;
+            // Check if location matches lead location (Only for Agreement Uploads)
+            if (isAgreementUpload) {
+                if (!checkAgreementImageLocation(imageLat, imageLng, imageTypeName)) {
+                     // Location doesn't match, clear the file input
+                    input.value = '';
+                    document.getElementById(previewId).classList.add('d-none');
+                    document.getElementById(latFieldId).value = '';
+                    document.getElementById(lngFieldId).value = '';
+                    statusDiv.innerHTML = '<small class="text-danger fw-bold"><i class="bi bi-x-circle"></i> Location Mismatch</small>';
+                    return;
+                }
+            } else {
+                 // For normal lead create usage, checkImageLocation checks against #lead_lat
+                 // IF #lead_lat exists and has value. If creating new lead, we might just be setting it.
+                 // The original code called checkImageLocation here.
+                 if (!checkImageLocation(imageLat, imageLng, imageTypeName)) {
+                    input.value = '';
+                    document.getElementById(previewId).classList.add('d-none');
+                    document.getElementById(latFieldId).value = '';
+                    document.getElementById(lngFieldId).value = '';
+                    statusDiv.innerHTML = '';
+                    return;
+                 }
             }
             
             // Location matches, store coordinates and show preview

@@ -34,8 +34,14 @@
                     var formattedTime = hours + ':' + minutes + ':' + seconds;
                     var formattedDate = year + '/' + month + '/' + day;
 
-                    document.getElementById('time').innerText = formattedTime;
-                    document.getElementById('date').innerText = formattedDate;
+                    var timeElement = document.getElementById('time');
+                    if (timeElement) {
+                        timeElement.innerText = formattedTime;
+                    }
+                    var dateElement = document.getElementById('date');
+                    if (dateElement) {
+                        dateElement.innerText = formattedDate;
+                    }
                 }
 
                 updateTime(); 

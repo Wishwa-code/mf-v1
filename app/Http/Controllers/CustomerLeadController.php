@@ -31,7 +31,16 @@ class CustomerLeadController extends Controller
                 $imageTypes = is_array($decoded) ? $decoded : [];
             }
 
-            return view('pages.leads.create', compact('leads', 'imageTypes','businessCategories'));
+            // Get Agreement Image Types
+            $agreementImageTypesSetting = AppSettings::where('key', 'agreement_image_types')->value('value');
+            $agreementImageTypes = [];
+            
+            if ($agreementImageTypesSetting) {
+                $decodedAgreement = json_decode($agreementImageTypesSetting, true);
+                $agreementImageTypes = is_array($decodedAgreement) ? $decodedAgreement : [];
+            }
+
+            return view('pages.leads.create', compact('leads', 'imageTypes', 'businessCategories', 'agreementImageTypes'));
         } catch (\Exception $e) {
             return response()->json(['message'=>$e->getMessage()],500);
         }
@@ -181,8 +190,9 @@ class CustomerLeadController extends Controller
     {
         $customerLead = CustomerLead::findOrFail($customerLead);
         $lead = $customerLead->load(['images', 'businessCategory']);
+        $images = LeadHasImages::where('lead_id', $customerLead)->get();
 
-        return view('pages.leads.show', compact('lead'));
+        return view('pages.leads.show', compact('lead','images'));
     }
 
     /**
@@ -275,29 +285,89 @@ class CustomerLeadController extends Controller
      */
     public function verifiedData(Request $request)
     {
-        $leads = CustomerLead::where('status', 'pending-approved')
-            ->orderByDesc('created_at_lead');
+        $leads = CustomerLead::orderByDesc('created_at_lead');
 
         return \Yajra\DataTables\Facades\DataTables::of($leads)
             ->addColumn('action', function ($row) {
-                 // No action button on the list view anymore, maybe just a 'View' or disabled 'Visited'
-                if ($row->is_visited) {
-                    return '<span class="badge bg-success">VISITED</span>';
+                $btn = '';
+                
+                // View Details Button (Triggers Modal)
+                $btn .= '<button onclick="viewLeadModal('.$row->id.')" class="btn btn-sm btn-outline-info d-inline-flex align-items-center gap-1 me-1" style="border-radius: 6px;" title="View Details"><i class="bi bi-eye"></i> View</button>';
+
+                // Reject Button (if not visited)
+                if (!$row->is_visited && $row->status != 'rejected') { 
+                    $btn .= '<button onclick="rejectLead('.$row->id.')" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1" style="border-radius: 6px;" title="Reject Lead"><i class="bi bi-x"></i> Reject</button>';
                 }
-                return '<span class="badge bg-warning text-dark">PENDING VISIT</span>';
-            })
+                
+                return $btn;
+            })  
             ->editColumn('status', function ($row) {
-                return '<span class="badge bg-info">' . strtoupper($row->status) . '</span>';
+                $status = $row->status;
+                $badgeClass = 'bg-soft-secondary text-secondary';
+                if ($status == 'pending') $badgeClass = 'bg-soft-warning text-warning';
+                elseif ($status == 'pending-approved') $badgeClass = 'bg-soft-info text-info';
+                elseif ($status == 'agreement-signed') $badgeClass = 'bg-soft-primary text-primary';
+                elseif ($status == 'loan-issued') $badgeClass = 'bg-soft-success text-success';
+                elseif ($status == 'rejected') $badgeClass = 'bg-soft-danger text-danger';
+                
+                return '<span class="badge ' . $badgeClass . '">' . ucfirst($status) . '</span>';
             })
             ->editColumn('is_visited', function ($row) {
                 if ($row->is_visited) {
-                    return '<span class="badge bg-success">VISITED</span>';
+                    return '<span class="badge bg-soft-success text-success">Visited</span>';
                 }
-                return '<span class="badge bg-warning text-dark">PENDING</span>';
+                return '<span class="badge bg-soft-secondary text-secondary">Not Visited</span>';
             })
-            ->rawColumns(['action', 'status', 'is_visited']) // Allow HTML in these columns
+            ->rawColumns(['action', 'status', 'is_visited'])
             ->make(true);
     }
+
+    /**
+     * Display the specified resource for verified leads (Modal Content).
+     */
+    public function getVerifiedLeadDetailsModal($id)
+    {
+        $lead = CustomerLead::with('images', 'businessCategory')->findOrFail($id);
+        
+        return view('pages.leads.partials.verified_lead_modal_content', compact('lead'));
+    }
+
+    /**
+     * Display the specified resource for verified leads (Full Page).
+     */
+    public function showVerifiedDetails($id)
+    {
+        $lead = CustomerLead::with('images')->findOrFail($id);
+        $images = $lead->images;
+
+        return view('pages.leads.show', compact('lead', 'images'));
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    // public function show($id)
+    // {
+    //     $lead = CustomerLead::findOrFail($id);
+    //     $images = \App\Models\LeadHasImages::where('lead_id', $id)->get();
+
+    //     return view('pages.leads.show', compact('lead', 'images'));
+    // }
+
+    /**
+     * Reject the specified lead.
+     */
+    public function reject($id)
+    {
+        $lead = CustomerLead::find($id);
+        if ($lead) {
+            $lead->status = 'rejected';
+            $lead->save();
+            return response()->json(['success' => true, 'message' => 'Lead rejected successfully.']);
+        }
+        return response()->json(['success' => false, 'message' => 'Lead not found.'], 404);
+    }
+
 
     /**
      * Mark a lead as verified/visited.
@@ -321,5 +391,114 @@ class CustomerLeadController extends Controller
             'success' => true,
             'message' => 'Lead marked as visited successfully.',
         ]);
+    }
+
+    /**
+     * Show global map with all leads.
+     */
+    public function globalMap()
+    {
+        // Get all leads that have a location captured
+        $leads = CustomerLead::whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->select('id', 'full_name', 'address', 'latitude', 'longitude', 'status', 'is_visited')
+            ->get();
+
+        return view('pages.leads.global_map', compact('leads'));
+    }
+
+    /**
+     * Handle Agreement Image Upload.
+     */
+    public function uploadAgreementImages(Request $request)
+    {
+        $request->validate([
+            'lead_id' => 'required|exists:customer_leads,id',
+        ]);
+
+        // Fetch Agreement Image Types to build dynamic validation rules
+        $imageTypesSetting = AppSettings::where('key', 'agreement_image_types')->value('value');
+        $validationRules = [];
+        $customAttributes = [];
+        $imageTypes = [];
+
+        if ($imageTypesSetting) {
+            $imageTypes = json_decode($imageTypesSetting, true);
+            if (is_array($imageTypes)) {
+                foreach ($imageTypes as $imageType) {
+                    $fieldName = 'image_' . str_replace(' ', '_', strtolower($imageType['name']));
+                    $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
+                    
+                    if (isset($imageType['is_required']) && $imageType['is_required']) {
+                        $validationRules[$fieldName] = 'required|image|mimes:jpeg,png,jpg,gif';
+                    } else {
+                        $validationRules[$fieldName] = 'nullable|image|mimes:jpeg,png,jpg,gif';
+                    }
+                    $customAttributes[$fieldName] = $imageType['name'];
+                }
+            }
+        }
+
+        // Apply dynamic validation
+        $request->validate($validationRules, [], $customAttributes);
+
+        DB::beginTransaction();
+        try {
+            $leadId = $request->input('lead_id');
+            $directory = 'agreement_images'; // Separate directory for agreements
+            
+            if (!Storage::disk('public')->exists($directory)) {
+                Storage::disk('public')->makeDirectory($directory);
+            }
+
+            foreach ($imageTypes as $imageType) {
+                $fieldName = 'image_' . str_replace(' ', '_', strtolower($imageType['name']));
+                $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
+                
+                if ($request->hasFile($fieldName)) {
+                    $file = $request->file($fieldName);
+                    $path = Storage::disk('public')->putFile($directory, $file);
+                    
+                    // Get image location if provided
+                    $imageLat = $request->input($fieldName . '_latitude');
+                    $imageLng = $request->input($fieldName . '_longitude');
+                    
+                    // Save image record
+                    LeadHasImages::create([
+                        'lead_id' => $leadId,
+                        'image_path' => $path,
+                        'image_type' => $imageType['name'], 
+                        'latitude' => $imageLat,
+                        'longitude' => $imageLng,
+                    ]);
+                }
+            }
+
+            // Update Lead Status to 'agreement-signed'
+            $lead = CustomerLead::find($leadId);
+            if ($lead) {
+                $lead->status = 'agreement-signed';
+                $lead->save();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Agreement images uploaded and lead status updated successfully.',
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+             return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . implode(', ', Arr::flatten($e->errors()))
+            ], 422);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to upload images: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

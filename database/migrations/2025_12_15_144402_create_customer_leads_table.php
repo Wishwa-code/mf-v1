@@ -23,7 +23,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->float('periods',8,2)->nullable();
             $table->enum('type',['group','individual','business','leasing'])->default('group');
-            $table->enum('status',['pending','pending-approved','agreement-signed','loan-issued'])->default('pending');
+            $table->enum('status',['pending','pending-approved','agreement-signed','loan-issued','rejected'])->default('pending');
             $table->dateTime('created_at_lead')->nullable();
 
             $table->integer('created_by')->nullable();

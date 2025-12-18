@@ -141,6 +141,8 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/customer/map-data', [\App\Http\Controllers\CustomerController::class, 'mapData'])
         ->name('customers.mapData');
 
+    Route::get('/leads/global-map', [CustomerLeadController::class, 'globalMap'])->name('leads.globalMap');
+
     Route::get('/leads/{lead}/map', function (\App\Models\CustomerLead $lead) {
         return view('pages.leads.map', compact('lead'));
     })->name('leads.map');
@@ -453,6 +455,15 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/save_agreement', '\App\Http\Controllers\AgreementController@store')->name('sms.store');
     Route::post('/load_agreement', '\App\Http\Controllers\AgreementController@show')->name('sms.show');
     Route::get('/load_agreement_doc', '\App\Http\Controllers\AgreementController@load_agreement_doc')->name('sms.load_agreement_doc');
+
+    // Agreement Image Upload
+    Route::post('/leads/agreement-images/upload', [CustomerLeadController::class, 'uploadAgreementImages'])->name('leads.agreementImages.upload');
+    
+    // Verified Lead History Actions
+    Route::get('/leads/verified-data', [CustomerLeadController::class, 'verifiedData'])->name('leads.verifiedData');
+    Route::get('/leads/verified-details-modal/{id}', [CustomerLeadController::class, 'getVerifiedLeadDetailsModal'])->name('leads.getVerifiedLeadDetailsModal');
+    Route::get('/leads/verified-details/{id}', [CustomerLeadController::class, 'showVerifiedDetails'])->name('leads.showVerifiedDetails');
+    Route::post('/leads/{id}/reject', [CustomerLeadController::class, 'reject'])->name('leads.reject');
 
     //loan_settlement
     Route::get('/loan_settlement', '\App\Http\Controllers\PaymentLoanController@settlment')->name('loan_settlement.index');

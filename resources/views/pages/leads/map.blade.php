@@ -19,7 +19,7 @@
 @endsection
 
 @section('content')
-    <div class="container-fluid p-0">
+    <div class="container-fluid p-0 mt-3">
         {{-- Header overlay or top bar --}}
         <div class="header-card px-4 py-3 d-flex justify-content-between align-items-center shadow-sm sticky-top">
             <div>

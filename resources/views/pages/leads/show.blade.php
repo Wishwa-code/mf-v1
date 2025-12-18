@@ -24,13 +24,17 @@
         .badge-soft-info { background-color: rgba(13,202,240,0.1); color: #0dcaf0; }
         .detail-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #6c757d; font-weight: 600; margin-bottom: 0.25rem; }
         .detail-value { font-size: 1rem; font-weight: 500; color: #212529; }
+        
+        @media (min-width: 992px) {
+            .sticky-lg-top-custom { position: sticky; top: 1rem; z-index: 1020; }
+        }
     </style>
 @endsection
 
 @section('content')
-    <div class="container-fluid mt-5 pb-5">
+    <div class="container-fluid mt-3 mt-lg-5 pb-5">
         {{-- Page header --}}
-        <div class="card shadow-sm rounded-4 mb-4 border-0 sticky-top z-3" style="top: 1rem;">
+        <div class="card shadow-sm rounded-4 mb-4 border-0 sticky-lg-top-custom">
             <div class="card-body p-3">
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
                     <div>
@@ -41,7 +45,7 @@
                             View and manage captured lead information and location.
                         </p>
                     </div>
-                    <div class="mt-3 mt-md-0 d-flex gap-2">
+                    <div class="mt-3 mt-md-0 d-flex gap-2 flex-wrap">
                         <a href="{{ route('leads.approvals') }}" class="btn btn-outline-secondary shadow-sm rounded-pill px-4">
                             <i class="bi bi-arrow-left me-1"></i> Back
                         </a>
@@ -63,7 +67,7 @@
             {{-- Left column – details --}}
             <div class="col-lg-7">
                 <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
-                    <div class="card-header bg-white border-0 py-3 px-4">
+                    <div class="card-header bg-white border-0 py-3 px-3 px-md-4">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0 fw-bold text-primary">Information</h5>
                             @php
@@ -79,7 +83,7 @@
                             </span>
                         </div>
                     </div>
-                    <div class="card-body px-4 pb-4 pt-0">
+                    <div class="card-body px-3 px-md-4 pb-4 pt-0">
                         <div class="p-3 bg-light rounded-3 mb-4">
                             <div class="d-flex align-items-center">
                                 <div class="avatar bg-white rounded-circle p-2 shadow-sm me-3 text-center" style="width: 48px; height: 48px;">
@@ -177,11 +181,11 @@
 
                 {{-- Images --}}
                 <div class="card border-0 shadow-sm rounded-4">
-                    <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
+                    <div class="card-header bg-white border-0 py-3 px-3 px-md-4 d-flex justify-content-between align-items-center">
                         <h5 class="mb-0 fw-bold text-primary">Attached Images</h5>
                         <span class="badge bg-secondary rounded-pill">{{ $lead->images->count() }}</span>
                     </div>
-                    <div class="card-body px-4 pb-4 pt-0">
+                    <div class="card-body px-3 px-md-4 pb-4 pt-0">
                         @if($lead->images->isEmpty())
                             <div class="text-center py-5 text-muted bg-light rounded-3">
                                 <i class="bi bi-images fs-1 mb-2 d-block opacity-50"></i>
@@ -219,8 +223,8 @@
 
             {{-- Right column – map summary --}}
             <div class="col-lg-5">
-                <div class="card border-0 shadow-lg rounded-4 overflow-hidden position-sticky" style="top: 1rem;">
-                    <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
+                <div class="card border-0 shadow-lg rounded-4 overflow-hidden sticky-lg-top-custom">
+                    <div class="card-header bg-white border-0 py-3 px-3 px-md-4 d-flex justify-content-between align-items-center">
                          <h5 class="mb-0 fw-bold text-primary">Location</h5>
                          @if($lead->latitude && $lead->longitude)
                              <a href="{{ route('leads.map', $lead->id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
