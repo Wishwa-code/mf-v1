@@ -42,12 +42,20 @@
                                 <a href="{{ route('leads.approvals') }}">Lead Approvals</a>
                             </li>
                             <li>
-                                <a href="{{ route('customers.map') }}">
+                                <!-- <a href="{{ route('customers.map') }}">
                                     <span> Customer Map </span>
                                 </a>
-                            </li>
+                            </li> -->
+
                         </ul>
                     </div>
+                </li>
+
+                <li class="side-nav-item">
+                    <a href="{{ route('business-categories.index') }}" class="side-nav-link">
+                        <i class="ri-layout-grid-fill"></i>
+                        <span> Business Categories </span>
+                    </a>
                 </li>
 
                 @if (optional($privilege)->customer == 1 && (optional($privilege)->view_customer == 1 || optional($privilege)->kyc == 1))
@@ -206,38 +214,17 @@
                                 <li>
                                     <a href="{{ route('leads.approvals') }}">Lead Approvals</a>
                                 </li>
-                                {{-- @if (optional($privilege)->view_blacklist_customer == 1)
-                                    <li>
-                                        <a href="/showblacklistcustomers">View Blacklist Customer</a>
-                                    </li>
-                                @endif
-                                @if (optional($privilege)->customer_saving_acc == 1)
-                                    <li>
-                                        <a href="/showcustomerssaving">Customer Saving Acc.</a>
-                                    </li>
-                                    <li>
-                                        <a href="/showcustomersrecovery">Customer Recovery Acc.</a>
-                                    </li>
-                                @endif
-                                @if (optional($privilege)->kyc == 1)
-                                    <li>
-                                        <a href="/kyc">KYC</a>
-                                    </li>
-                                @endif
-                                @if (optional($privilege)->insurance == 1)
-                                    <li>
-                                        <a href="/insurance">Insurance</a>
-                                    </li>
-                                @endif --}}
 
-                                <li>
-                                    <a href="{{ route('customers.map') }}">
-                                        <span> Customer Map </span>
-                                    </a>
-                                </li>
                             </ul>
                         </div>
 
+                    </li>
+
+                    <li class="side-nav-item">
+                        <a href="{{ route('business-categories.index') }}" class="side-nav-link">
+                            <i class="ri-layout-grid-fill"></i>
+                            <span> Business Categories </span>
+                        </a>
                     </li>
                 {{-- @endif --}}
 
@@ -428,6 +415,8 @@
                     </li>
                 @endif
 
+
+                
                 @if (optional($privilege)->payment_details == 1)
                     <li class="side-nav-item">
                         <a data-bs-toggle="collapse" href="#payment" aria-expanded="false" aria-controls="center"

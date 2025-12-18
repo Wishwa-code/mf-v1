@@ -13,6 +13,7 @@ use App\Http\Controllers\LoanCategoryController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\PDFController;
 use App\Http\Controllers\PaymentVoucherController;
+use App\Http\Controllers\BusinessCategoryController;
 use App\Http\Controllers\PenaltyDeductionController;
 use App\Http\Controllers\PendingLoanController;
 use App\Http\Controllers\RouteController;
@@ -804,6 +805,9 @@ Route::middleware(['web', 'auth'])->group(function () {
 
         return response()->json(['loan_ids' => $loan_ids]);
     });
+
+    // Business Categories
+    Route::resource('business-categories', BusinessCategoryController::class);
 
     Route::get('/loan_log/{loan_id}', '\App\Http\Controllers\CapitalBalanceController@show')->name('sms.show');
 
