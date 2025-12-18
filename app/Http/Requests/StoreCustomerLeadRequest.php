@@ -31,6 +31,7 @@ class StoreCustomerLeadRequest extends FormRequest
             'notes' => ['nullable', 'string'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'loan_amount' => ['required', 'numeric', 'min:0'],
         ];
 
         // Get image types from app_settings

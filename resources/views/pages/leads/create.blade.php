@@ -276,229 +276,275 @@
             height: 44px;
             font-size: 0.9rem;
         }
+
+        /* Fix Nav Tabs on Mobile */
+        .nav-tabs {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .nav-tabs .nav-link {
+            white-space: nowrap;
+        }
+    }
+
+    /* Choices.js Customization */
+    .choices__inner {
+        min-height: 48px;
+        background-color: #fafafa;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+    }
+    .choices__list--single {
+        padding: 0;
+    }
+    .choices[data-type*="select-one"] .choices__inner {
+        padding-bottom: 0;
+    }
+    .choices:focus-visible .choices__inner,
+    .choices.is-focused .choices__inner {
+        border-color: #4a90e2;
+        box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
     }
 </style>
+<!-- Choices.js CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 
-{{-- MAIN TABS --}}
-<ul class="nav nav-tabs" id="leadMainTabs" role="tablist">
-    <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="lead-form-tab" data-bs-toggle="tab" data-bs-target="#lead-form" type="button" role="tab">
-            Lead Form
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="lead-empty-tab" data-bs-toggle="tab" data-bs-target="#lead-empty" type="button" role="tab">
-            Other
-        </button>
-    </li>
-</ul>
-
-<div class="tab-content mt-3">
-    {{-- TAB 1: FULL FORM --}}
-    <div class="tab-pane fade show active" id="lead-form" role="tabpanel">
-        <form id="leadForm" enctype="multipart/form-data" class="lead-form">
-        @csrf
-
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-4">
-                <div class="card-header-section">
-                    <h4 class="mb-2">Lead Information</h4>
-                    <hr style="margin: 0.5rem 0 1rem 0;">
-                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                        <p class="text-muted mb-0">Capture contact details and location in one simple form.</p>
-                        <div>
-                            <button type="button" class="btn btn-success" onclick="saveLead()" id="saveLeadBtn">
-                                <i class="bi bi-check2-circle"></i> Save Lead
-                            </button>
-                        </div>
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow-sm border-0 lead-form">
+            <div class="card-header bg-white border-bottom pt-4 px-4 pb-0">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                    <div>
+                        <h4 class="mb-1">Lead Management</h4>
+                        <p class="text-muted small mb-0">Capture and manage lead details.</p>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-success" onclick="saveLead()" id="saveLeadBtn">
+                            <i class="bi bi-check2-circle"></i> Save Lead
+                        </button>
                     </div>
                 </div>
+                
+                <ul class="nav nav-tabs card-header-tabs" id="leadMainTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="lead-form-tab" data-bs-toggle="tab" data-bs-target="#lead-form" type="button" role="tab">
+                            Lead Form
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="lead-empty-tab" data-bs-toggle="tab" data-bs-target="#lead-empty" type="button" role="tab">
+                            Other
+                        </button>
+                    </li>
+                </ul>
+            </div>
 
-                <input type="hidden" id="lead_id" name="lead_id">
-                <input type="hidden" name="latitude" id="lead_lat">
-                <input type="hidden" name="longitude" id="lead_lng">
+            <div class="card-body p-4">
+                <div class="tab-content">
+                    {{-- TAB 1: FULL FORM --}}
+                    <div class="tab-pane fade show active" id="lead-form" role="tabpanel">
+                        <form id="leadForm" enctype="multipart/form-data">
+                        @csrf
+                        <input type="hidden" id="lead_id" name="lead_id">
+                        <input type="hidden" name="latitude" id="lead_lat">
+                        <input type="hidden" name="longitude" id="lead_lng">
 
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Full Name *</label>
-                        <input type="text" name="full_name" class="form-control form-control-lg @error('full_name') is-invalid @enderror" placeholder="E.g. Alex Fernando" value="{{ old('full_name') }}">
-                        <small class="text-muted">Use the customer's preferred name.</small>
-                        @error('full_name')
-                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Phone *</label>
-                        <input type="text" name="phone_number" class="form-control form-control-lg @error('phone_number') is-invalid @enderror" placeholder="+94 7X XXX XXXX" value="{{ old('phone_number') }}">
-                        <small class="text-muted">Primary contact number for follow-ups.</small>
-                        @error('phone_number')
-                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Email</label>
-                        <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" placeholder="name@email.com" value="{{ old('email') }}">
-                        @error('email')
-                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Type *</label>
-                        <select name="type" class="form-select form-control-lg @error('type') is-invalid @enderror">
-                            <option value="">Select Type</option>
-                            <option value="group" {{ old('type') == 'group' ? 'selected' : '' }}>Group</option>
-                            <option value="individual" {{ old('type') == 'individual' ? 'selected' : '' }}>Individual</option>
-                            <option value="business" {{ old('type') == 'business' ? 'selected' : '' }}>Business</option>
-                            <option value="leasing" {{ old('type') == 'leasing' ? 'selected' : '' }}>Leasing</option>
-                        </select>
-                        <small class="text-muted">Select the lead type.</small>
-                        @error('type')
-                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Periods *</label>
-                        <input type="text" name="periods" class="form-control form-control-lg @error('periods') is-invalid @enderror" placeholder="E.g. 12 months, 24 months" value="{{ old('periods') }}">
-                        <small class="text-muted">Enter the loan period duration.</small>
-                        @error('periods')
-                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label">Address</label>
-                        <textarea name="address" class="form-control @error('address') is-invalid @enderror" rows="3" placeholder="Street, City, District">{{ old('address') }}</textarea>
-                        @error('address')
-                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label">Location Coordinates</label>
-                        <div class="row g-2 align-items-end">
-                            <div class="col-md-4">
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-compass"></i> Latitude</span>
-                                    <input type="text" id="lead_lat_display" class="form-control" placeholder="Auto from GPS" readonly>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-compass"></i> Longitude</span>
-                                    <input type="text" id="lead_lng_display" class="form-control" placeholder="Auto from GPS" readonly>
-                                </div>
-                            </div>
-                            <div class="col-md-4 d-flex gap-2">
-                                <button type="button" class="btn btn-outline-primary flex-grow-1" onclick="getLeadLocation()" style="height: 48px;">
-                                    <i class="bi bi-geo-alt"></i> Get Location
-                                </button>
-                                <a href="#" id="viewMapBtn" target="_blank" class="btn btn-outline-info flex-grow-1" style="height: 48px; display: none; align-items: center; justify-content: center; text-decoration: none;">
-                                    <i class="bi bi-map me-1"></i> View Map
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label">Notes</label>
-                        <textarea name="notes" class="form-control @error('notes') is-invalid @enderror" rows="4" placeholder="Key pain points, interest level, next steps">{{ old('notes') }}</textarea>
-                        @error('notes')
-                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    
-                    {{-- Image Upload Fields (Dynamic based on app_settings) --}}
-                    @if(isset($imageTypes) && count($imageTypes) > 0)
-                    <div class="col-12">
-                        <hr>
-                        <h5>
-                            <i class="bi bi-images"></i> Document Images
-                        </h5>
                         <div class="row g-3">
-                            @foreach($imageTypes as $imageType)
-                                @php
-                                    $fieldName = 'image_' . str_replace(' ', '_', strtolower($imageType['name']));
-                                    $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
-                                    $isRequired = isset($imageType['is_required']) && $imageType['is_required'];
-                                @endphp
-                                <div class="col-md-6">
-                                    <label class="form-label">
-                                        {{ $imageType['name'] }}
-                                        @if($isRequired)
-                                            <span class="text-danger">*</span>
-                                        @else
-                                            <span class="text-muted small">(Optional)</span>
-                                        @endif
-                                    </label>
-                                    <div class="image-upload-wrapper">
-                                        <input type="file" 
-                                               name="{{ $fieldName }}" 
-                                               id="{{ $fieldName }}"
-                                               class="d-none image-upload-input @error($fieldName) is-invalid @enderror" 
-                                               accept="image/*" 
-                                               capture="user"
-                                               onchange="handleImageUpload(this, '{{ $fieldName }}_preview', '{{ $fieldName }}_lat', '{{ $fieldName }}_lng')"
-                                               data-image-type="{{ $imageType['name'] }}">
-                                        @error($fieldName)
-                                            <div class="invalid-feedback d-block mt-1">{{ $message }}</div>
-                                        @enderror
-                                        <input type="hidden" id="{{ $fieldName }}_lat" name="{{ $fieldName }}_latitude">
-                                        <input type="hidden" id="{{ $fieldName }}_lng" name="{{ $fieldName }}_longitude">
-                                        
-                                        <div class="d-flex gap-2 mb-2 flex-wrap">
-                                            <button type="button" 
-                                                    class="btn btn-primary btn-camera-capture" 
-                                                    onclick="openWebcamModal('{{ $fieldName }}', '{{ $fieldName }}_preview', '{{ $fieldName }}_lat', '{{ $fieldName }}_lng')"
-                                                    title="Capture from Webcam/Camera">
-                                                <i class="bi bi-camera-video"></i> Use Camera
-                                            </button>
-                                            <button type="button" 
-                                                    class="btn btn-info btn-camera-capture" 
-                                                    onclick="triggerCamera('{{ $fieldName }}', 'environment')"
-                                                    title="Capture from Rear Camera (Mobile)">
-                                                <i class="bi bi-camera"></i> Mobile Camera
-                                            </button>
-                                            <button type="button" 
-                                                    class="btn btn-outline-secondary btn-gallery-select" 
-                                                    onclick="triggerFileSelect('{{ $fieldName }}')"
-                                                    title="Select from Gallery">
-                                                <i class="bi bi-image"></i> Choose File
-                                            </button>
+                            <div class="col-md-6">
+                                <label class="form-label">Full Name *</label>
+                                <input type="text" name="full_name" class="form-control form-control-lg @error('full_name') is-invalid @enderror" placeholder="E.g. Alex Fernando" value="{{ old('full_name') }}">
+                                <small class="text-muted">Use the customer's preferred name.</small>
+                                @error('full_name')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Phone *</label>
+                                <input type="text" name="phone_number" class="form-control form-control-lg @error('phone_number') is-invalid @enderror" placeholder="07X XXX XXXX" value="{{ old('phone_number') }}">
+                                <small class="text-muted">Primary contact number for follow-ups.</small>
+                                @error('phone_number')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" placeholder="name@email.com" value="{{ old('email') }}">
+                                @error('email')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Loan Type *</label>
+                                <select name="type" class="form-select form-control-lg select2-search @error('type') is-invalid @enderror">
+                                    <option value="">Select Type</option>
+                                    <option value="group" {{ old('type') == 'group' ? 'selected' : '' }}>Group</option>
+                                    <option value="individual" {{ old('type') == 'individual' ? 'selected' : '' }}>Individual</option>
+                                    <option value="business" {{ old('type') == 'business' ? 'selected' : '' }}>Business</option>
+                                    <option value="leasing" {{ old('type') == 'leasing' ? 'selected' : '' }}>Leasing</option>
+                                </select>
+                                <small class="text-muted">Select the lead type.</small>
+                                @error('type')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Loan Amount *</label>
+                                <input type="number" name="loan_amount" step="0.01" class="form-control form-control-lg @error('loan_amount') is-invalid @enderror" placeholder="E.g. 50000" value="{{ old('loan_amount') }}">
+                                <small class="text-muted">Expected loan amount.</small>
+                                @error('loan_amount')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Periods *</label>
+                                <input type="text" name="periods" class="form-control form-control-lg @error('periods') is-invalid @enderror" placeholder="E.g. 12 months, 24 months" value="{{ old('periods') }}">
+                                <small class="text-muted">Enter the loan period duration.</small>
+                                @error('periods')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Address</label>
+                                <textarea name="address" class="form-control @error('address') is-invalid @enderror" rows="3" placeholder="Street, City, District">{{ old('address') }}</textarea>
+                                @error('address')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Location Coordinates</label>
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-md-4">
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-compass"></i> Latitude</span>
+                                            <input type="text" id="lead_lat_display" class="form-control" placeholder="Auto from GPS" readonly>
                                         </div>
-                                        
-                                        <div class="mt-2">
-                                            <img id="{{ $fieldName }}_preview" 
-                                                 src="" 
-                                                 alt="Preview" 
-                                                 class="img-thumbnail d-none" 
-                                                 style="max-height: 150px; width: auto;">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-compass"></i> Longitude</span>
+                                            <input type="text" id="lead_lng_display" class="form-control" placeholder="Auto from GPS" readonly>
                                         </div>
-                                        <div id="{{ $fieldName }}_location_status" class="mt-2"></div>
-                                        <small class="text-muted d-block mt-1">
-                                            <i class="bi bi-info-circle"></i> Max 10MB. Supported: JPG, PNG, GIF, WebP. Location will be captured automatically.
-                                        </small>
+                                    </div>
+                                    <div class="col-md-4 d-flex gap-2">
+                                        <button type="button" class="btn btn-outline-primary flex-grow-1" onclick="getLeadLocation()" style="height: 48px;">
+                                            <i class="bi bi-geo-alt"></i> Get Location
+                                        </button>
+                                        <a href="#" id="viewMapBtn" target="_blank" class="btn btn-outline-info flex-grow-1" style="height: 48px; display: none; align-items: center; justify-content: center; text-decoration: none;">
+                                            <i class="bi bi-map me-1"></i> View Map
+                                        </a>
                                     </div>
                                 </div>
-                            @endforeach
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Notes</label>
+                                <textarea name="notes" class="form-control @error('notes') is-invalid @enderror" rows="4" placeholder="Key pain points, interest level, next steps">{{ old('notes') }}</textarea>
+                                @error('notes')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            
+                            {{-- Image Upload Fields (Dynamic based on app_settings) --}}
+                            @if(isset($imageTypes) && count($imageTypes) > 0)
+                            <div class="col-12">
+                                <hr>
+                                <h5>
+                                    <i class="bi bi-images"></i> Document Images
+                                </h5>
+                                <div class="row g-3">
+                                    @foreach($imageTypes as $imageType)
+                                        @php
+                                            $fieldName = 'image_' . str_replace(' ', '_', strtolower($imageType['name']));
+                                            $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
+                                            $isRequired = isset($imageType['is_required']) && $imageType['is_required'];
+                                        @endphp
+                                        <div class="col-md-6">
+                                            <label class="form-label">
+                                                {{ $imageType['name'] }}
+                                                @if($isRequired)
+                                                    <span class="text-danger">*</span>
+                                                @else
+                                                    <span class="text-muted small">(Optional)</span>
+                                                @endif
+                                            </label>
+                                            <div class="image-upload-wrapper">
+                                                <input type="file" 
+                                                       name="{{ $fieldName }}" 
+                                                       id="{{ $fieldName }}"
+                                                       class="d-none image-upload-input @error($fieldName) is-invalid @enderror" 
+                                                       accept="image/*" 
+                                                       capture="user"
+                                                       onchange="handleImageUpload(this, '{{ $fieldName }}_preview', '{{ $fieldName }}_lat', '{{ $fieldName }}_lng')"
+                                                       data-image-type="{{ $imageType['name'] }}">
+                                                @error($fieldName)
+                                                    <div class="invalid-feedback d-block mt-1">{{ $message }}</div>
+                                                @enderror
+                                                <input type="hidden" id="{{ $fieldName }}_lat" name="{{ $fieldName }}_latitude">
+                                                <input type="hidden" id="{{ $fieldName }}_lng" name="{{ $fieldName }}_longitude">
+                                                
+                                                <div class="d-flex gap-2 mb-2 flex-wrap">
+                                                    <button type="button" 
+                                                            class="btn btn-primary btn-camera-capture" 
+                                                            onclick="openWebcamModal('{{ $fieldName }}', '{{ $fieldName }}_preview', '{{ $fieldName }}_lat', '{{ $fieldName }}_lng')"
+                                                            title="Capture from Webcam/Camera">
+                                                        <i class="bi bi-camera-video"></i> Use Camera
+                                                    </button>
+                                                    <button type="button" 
+                                                            class="btn btn-info btn-camera-capture" 
+                                                            onclick="triggerCamera('{{ $fieldName }}', 'environment')"
+                                                            title="Capture from Rear Camera (Mobile)">
+                                                        <i class="bi bi-camera"></i> Mobile Camera
+                                                    </button>
+                                                    <button type="button" 
+                                                            class="btn btn-outline-secondary btn-gallery-select" 
+                                                            onclick="triggerFileSelect('{{ $fieldName }}')"
+                                                            title="Select from Gallery">
+                                                        <i class="bi bi-image"></i> Choose File
+                                                    </button>
+                                                </div>
+                                                
+                                                <div class="mt-2">
+                                                    <img id="{{ $fieldName }}_preview" 
+                                                         src="" 
+                                                         alt="Preview" 
+                                                         class="img-thumbnail d-none" 
+                                                         style="max-height: 150px; width: auto;">
+                                                </div>
+                                                <div id="{{ $fieldName }}_location_status" class="mt-2"></div>
+                                                <small class="text-muted d-block mt-1">
+                                                    <i class="bi bi-info-circle"></i> Max 10MB. Supported: JPG, PNG, GIF, WebP. Location will be captured automatically.
+                                                </small>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
+                            
+                            <div class="col-12 mt-3">
+                                <div class="alert alert-info d-flex align-items-center mb-0">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <div>Tap "Get Location" to capture GPS. This will also allow you to view the position on Google Maps.</div>
+                                </div>
+                            </div>
                         </div>
+                        </form>
                     </div>
-                    @endif
-                    
-                    <div class="col-12 mt-3">
-                        <div class="alert alert-info d-flex align-items-center mb-0">
-                            <i class="bi bi-info-circle me-2"></i>
-                            <div>Tap "Get Location" to capture GPS. This will also allow you to view the position on Google Maps.</div>
+
+                    {{-- TAB 2: EMPTY TAB (PLACEHOLDER) --}}
+                    <div class="tab-pane fade" id="lead-empty" role="tabpanel">
+                        <div class="text-center py-5">
+                            <h5 class="mb-2">Empty Tab</h5>
+                            <p class="text-muted mb-0">You can design this tab later for additional lead information or summary.</p>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        </form>
-    </div>
-
-    {{-- TAB 2: EMPTY TAB (PLACEHOLDER) --}}
-    <div class="tab-pane fade" id="lead-empty" role="tabpanel">
-        <div class="card shadow-sm border-0">
-            <div class="card-body text-center py-5">
-                <h5 class="mb-2">Empty Tab</h5>
-                <p class="text-muted mb-0">You can design this tab later for additional lead information or summary.</p>
             </div>
         </div>
     </div>
@@ -553,8 +599,24 @@
 
 @section('script')
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<!-- Choices.js JS -->
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
 <script>
+    $(document).ready(function() {
+        // Initialize Choices.js
+        const element = document.querySelector('.select2-search');
+        if(element){
+            const choices = new Choices(element, {
+                searchEnabled: true,
+                itemSelectText: '',
+                shouldSort: false,
+                placeholder: true,
+                placeholderValue: 'Select Type',
+            });
+        }
+    });
+
 // Global variables for webcam
 const GOOGLE_MAPS_API_KEY = "{{ config('services.google_maps.key') }}";
 let webcamStream = null;

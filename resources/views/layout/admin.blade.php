@@ -277,7 +277,7 @@
                 },
                 success: function (response) {
                     if (response.success) {
-                        location.reload();
+                        window.location.href = '/';
                     } else {
                         Swal?.fire?.('Oops', response.message || 'Failed to update branch.', 'error');
                     }

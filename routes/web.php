@@ -140,6 +140,10 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/customer/map-data', [\App\Http\Controllers\CustomerController::class, 'mapData'])
         ->name('customers.mapData');
 
+    Route::get('/leads/{lead}/map', function (\App\Models\CustomerLead $lead) {
+        return view('pages.leads.map', compact('lead'));
+    })->name('leads.map');
+
 
 
 

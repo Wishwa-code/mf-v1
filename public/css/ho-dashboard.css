@@ -145,7 +145,7 @@ body {
 .branch-grid {
     display: grid;
     gap: 24px;
-    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     margin-bottom: 30px;
 }
 
@@ -436,4 +436,77 @@ body {
 
 .dashboard-title-icon {
     margin-right: 12px;
+}
+
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 5px; /* Minimal padding */
+        overflow-x: hidden;
+        width: 100%;
+        max-width: 100vw;
+        box-sizing: border-box;
+    }
+
+    .dashboard-header {
+        padding: 15px;
+        margin-bottom: 20px;
+        min-height: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        position: relative;
+    }
+
+    .dashboard-title {
+        font-size: 1.5rem;
+        word-break: break-word;
+        margin-top: 10px; /* Space for the button if absolute */
+        padding-right: 0;
+    }
+
+    .dashboard-title i {
+        font-size: 1.8rem;
+        margin-right: 10px;
+    }
+
+    .dashboard-subtitle {
+        font-size: 0.9rem;
+    }
+
+    .branch-grid, .summary-cards { /* Ensure grids don't overflow */
+        grid-template-columns: 1fr;
+        width: 100%;
+        box-sizing: border-box;
+        margin-right: 0;
+        margin-left: 0;
+    }
+
+    /* Move refresh button to a better spot or keep absolute but avoid overlap */
+    .refresh-btn {
+        position: relative; /* Make it flow with content */
+        top: auto;
+        right: auto;
+        align-self: flex-end; /* Align to right */
+        margin-bottom: 10px;
+        margin-top: -5px;
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+
+    /* Disable card flip on mobile for better UX */
+    .card-inner {
+        transform: none !important;
+    }
+    
+    .branch-card:hover .card-inner {
+        transform: none !important;
+    }
+    
+    /* Show content on front directly? Or keep as is.
+       The requirement was to disable "flip", but if we disable flip, we can't see the back.
+       Wait, the goal was "click to switch", so we don't need the back "Switch Branch" prompt on mobile?
+       Or we should just let the click handle it.
+       Actually, the card has an onclick event. The flip is just visual.
+       So disabling flip is fine, it just looks static.
+    */
 }

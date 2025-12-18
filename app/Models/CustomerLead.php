@@ -29,6 +29,7 @@ class CustomerLead extends Model
         'visit_notes',
         'visited_longitude',
         'visited_latitude',
+        'loan_amount'
     ];
 
     public function images()

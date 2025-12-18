@@ -26,6 +26,30 @@
                     </li>
                 @endif
 
+                <li class="side-nav-item">
+                    <a data-bs-toggle="collapse" href="#lead" aria-expanded="false"
+                        aria-controls="sidebarPagesAuth" class="side-nav-link">
+                       <i class="ri-article-fill"></i>
+                        <span> Lead </span>
+                        <span class="menu-arrow"></span>
+                    </a>
+                    <div class="collapse" id="lead">
+                        <ul class="side-nav-second-level">
+                            <li>
+                                <a href="{{ route('leads.index') }}">Add Lead</a>
+                            </li>
+                            <li>
+                                <a href="{{ route('leads.approvals') }}">Lead Approvals</a>
+                            </li>
+                            <li>
+                                <a href="{{ route('customers.map') }}">
+                                    <span> Customer Map </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+
                 @if (optional($privilege)->customer == 1 && (optional($privilege)->view_customer == 1 || optional($privilege)->kyc == 1))
                     <li class="side-nav-item">
                         <a data-bs-toggle="collapse" href="#customer" aria-expanded="false" aria-controls="customer"

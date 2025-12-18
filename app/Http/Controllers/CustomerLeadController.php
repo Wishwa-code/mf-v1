@@ -29,7 +29,7 @@ class CustomerLeadController extends Controller
                 $imageTypes = is_array($decoded) ? $decoded : [];
             }
 
-            return view('pages.leads.index', compact('leads', 'imageTypes'));
+            return view('pages.leads.create', compact('leads', 'imageTypes'));
         } catch (\Exception $e) {
             return response()->json(['message'=>$e->getMessage()],500);
         }

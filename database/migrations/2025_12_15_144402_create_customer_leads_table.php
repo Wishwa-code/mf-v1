@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('phone_number')->unique();
             $table->float('longitude', 10, 6)->nullable();
             $table->float('latitude', 10, 6)->nullable();
+            $table->float('loan_amount', 10, 2)->nullable();
             $table->text('address')->nullable();
             $table->text('notes')->nullable();
             $table->float('periods',8,2)->nullable();
