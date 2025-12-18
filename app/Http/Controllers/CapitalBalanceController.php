@@ -309,6 +309,7 @@ class CapitalBalanceController extends Controller
                 'empty_row_count',
                 'document_types',
                 'image_types',
+                'agreement_image_types',
                 'collector_txn_modes',
                 'fund_request_columns',
                 'disbursement_columns',

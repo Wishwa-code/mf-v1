@@ -34,7 +34,8 @@ class UpdateAppSettingsRequest extends FormRequest
                         'loan_order',
                         'max_allowed_loans',
                         'document_types',
-                        'image_types', // ✅ ADDED
+                        'image_types',
+                        'agreement_image_types',
                         'collector_txn_modes',
                         'fund_request_columns',
                         'disbursement_columns',

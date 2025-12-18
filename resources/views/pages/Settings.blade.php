@@ -798,10 +798,8 @@
                     <small class="text-muted d-block">Configure settings related to recovery leads.</small>
 
                     <div class="mb-3">
-                        <h4 class="mb-3">Image Types</h4>
-                        {{-- <label class="form-label fw-bold">Image Types</label> --}}
-                        {{-- <small class="text-muted d-block mb-3">Manage predefined image types for leads
-                                registration.</small> --}}
+                        <!-- <h4 class="mb-3">Image Types</h4> -->
+                        <label class="form-label fw-bold">Image Types</label> 
 
                         <div class="mb-3">
                             <div class="row g-2 align-items-center">
@@ -880,10 +878,65 @@
                             account transactions.</small>
                     </div> --}}
 
-                </div>
             </div>
         </div>
-        {{-- </div> --}}
+
+        <!-- Agreement Print Settings -->
+        <div class="card mt-3">
+            <div class="card-body">
+                <h4 class="mb-3">Agreement Print Settings</h4>
+                <hr>
+                <small class="text-muted d-block">Configure settings related to agreement prints.</small>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Image Types</label>
+
+                    <div class="mb-3">
+                        <div class="row g-2 align-items-center">
+
+                            <!-- Image Type Input -->
+                            <div class="col-md-5">
+                                <input type="text" id="new_agreement_image_type" class="form-control"
+                                    placeholder="Enter image type" maxlength="100">
+                            </div>
+
+                            <!-- Required Checkbox -->
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="agreement_is_required" value="0">
+                                    <label class="form-check-label" for="agreement_is_required">
+                                        Is Required
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Add Button -->
+                            <div class="col-md-2">
+                                <button id="btnAddAgreementImageType" class="btn btn-outline-success w-100">
+                                    <i class="fa-solid fa-plus me-1"></i> Add
+                                </button>
+                            </div>
+
+                        </div>
+
+                        <small class="text-muted">
+                            Add new image types for agreement prints.
+                        </small>
+                    </div>
+
+
+                    <div id="agreement_image_types_list" class="mb-3">
+                        <!-- Image types will be loaded here -->
+                    </div>
+
+                    <button id="btnUpdateAgreementImageTypes" class="btn btn-primary">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+                    </button>
+                </div>
+
+            </div>
+        </div>
+        </div>
     </div>
 @endsection
 
@@ -999,6 +1052,24 @@
                 if (e.which === 13) { // Enter key
                     e.preventDefault();
                     addImageType();
+                }
+            });
+
+            // Agreement Image Types Management
+            $('#btnAddAgreementImageType').on('click', function(e) {
+                e.preventDefault();
+                addAgreementImageType();
+            });
+
+            $('#btnUpdateAgreementImageTypes').on('click', function(e) {
+                e.preventDefault();
+                saveAgreementImageTypes();
+            });
+
+            $('#new_agreement_image_type').on('keypress', function(e) {
+                if (e.which === 13) { // Enter key
+                    e.preventDefault();
+                    addAgreementImageType();
                 }
             });
 
@@ -1281,7 +1352,7 @@
                     "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                 },
                 success: function(data) {
-                    console.log(data);
+                    // console.log(data);
                     const items = data.items;
                     items.forEach(item => {
                         switch (item.name) {
@@ -1472,6 +1543,18 @@
                         }
                     } else {
                         loadLeadImagesTypesList([]);
+                    }
+
+                    if(items.agreement_image_types) {
+                        try {
+                            const agreementImageTypes = JSON.parse(items.agreement_image_types);
+                            loadAgreementImagesTypesList(agreementImageTypes);
+                        } catch (e) {
+                            console.error('Error parsing agreement image types:', e);
+                            loadAgreementImagesTypesList([]);
+                        }
+                    } else {
+                        loadAgreementImagesTypesList([]);
                     }
 
                     // Head Office Approval toggles
@@ -1876,6 +1959,151 @@
                         Swal.fire(
                             "Error",
                             xhr.responseJSON?.message || "Failed to update image types",
+                            "error"
+                        );
+                    }
+                });
+            });
+        };
+
+        // ========== AGREEMENT IMAGE TYPES MANAGEMENT ==========
+
+        // Load agreement images types list in UI
+        const loadAgreementImagesTypesList = (imageTypes) => {
+            const container = $('#agreement_image_types_list');
+            container.empty();
+
+            if (!imageTypes || imageTypes.length === 0) {
+                container.html('<p class="text-muted">No agreement image types added yet.</p>');
+                return;
+            }
+
+            imageTypes.forEach((item, index) => {
+                const requiredBadge = item.is_required ?
+                    '<span class="badge bg-danger ms-2">Required</span>' :
+                    '<span class="badge bg-secondary ms-2">Optional</span>';
+
+                const row = $(`
+            <div class="d-flex align-items-center mb-2 agreement-image-type-item" data-index="${index}">
+                <div class="badge bg-light text-dark me-2 flex-grow-1 text-start py-2 px-3"
+                     data-name="${item.name}"
+                     data-required="${item.is_required}">
+                    ${item.name}
+                    ${requiredBadge}
+                </div>
+
+                <button type="button"
+                        class="btn btn-sm btn-outline-danger remove-agreement-image-type"
+                        data-index="${index}">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        `);
+
+                container.append(row);
+            });
+
+            $('.remove-agreement-image-type').on('click', function() {
+                removeAgreementImageType($(this).data('index'));
+            });
+        };
+
+
+        // Add new agreement image type
+        const addAgreementImageType = () => {
+            const name = $('#new_agreement_image_type').val().trim();
+            const isRequired = $('#agreement_is_required').is(':checked');
+
+            if (!name) {
+                Swal.fire("Warning", "Please enter an image type.", "warning");
+                return;
+            }
+
+            const currentTypes = getCurrentAgreementImageTypes();
+
+            // Duplicate check (case-insensitive)
+            if (currentTypes.some(t => t.name.toLowerCase() === name.toLowerCase())) {
+                Swal.fire("Warning", "This image type already exists.", "warning");
+                return;
+            }
+
+            currentTypes.push({
+                name: name,
+                is_required: isRequired
+            });
+
+            loadAgreementImagesTypesList(currentTypes);
+
+            // Reset form
+            $('#new_agreement_image_type').val('');
+            $('#agreement_is_required').prop('checked', false);
+        };
+
+
+        // Get current agreement image types from UI
+        const getCurrentAgreementImageTypes = () => {
+            const types = [];
+
+            $('.agreement-image-type-item').each(function() {
+                const name = $(this).find('.badge').data('name');
+                const isRequired = $(this).find('.badge').data('required');
+
+                if (name) {
+                    types.push({
+                        name: name,
+                        is_required: Boolean(isRequired)
+                    });
+                }
+            });
+
+            return types;
+        };
+
+        const removeAgreementImageType = (index) => {
+            const currentTypes = getCurrentAgreementImageTypes();
+            currentTypes.splice(index, 1);
+            loadAgreementImagesTypesList(currentTypes);
+        };
+
+        const saveAgreementImageTypes = () => {
+            const imageTypes = getCurrentAgreementImageTypes();
+
+            if (imageTypes.length === 0) {
+                Swal.fire("Warning", "Please add at least one image type.", "warning");
+                return;
+            }
+
+            Swal.fire({
+                title: "Are you sure?",
+                text: "Update agreement image types?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, Update",
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                $.ajax({
+                    type: "POST",
+                    url: "/settings/upsert",
+                    headers: {
+                        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                    },
+                    data: {
+                        key: 'agreement_image_types',
+                        value: JSON.stringify(imageTypes)
+                    },
+                    success: () => {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Agreement image types updated!",
+                            timer: 1400,
+                            showConfirmButton: false
+                        });
+                    },
+                    error: (xhr) => {
+                        Swal.fire(
+                            "Error",
+                            xhr.responseJSON?.message || "Failed to update agreement image types",
                             "error"
                         );
                     }
