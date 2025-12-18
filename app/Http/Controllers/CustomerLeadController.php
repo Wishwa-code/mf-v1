@@ -20,12 +20,12 @@ class CustomerLeadController extends Controller
     {
         try {
             $leads = CustomerLead::with(['images', 'businessCategory'])->get();
-        $businessCategories = BusinessCategory::all();
-            
+            $businessCategories = BusinessCategory::all();
+
             // Get image types from app_settings
             $imageTypesSetting = AppSettings::where('key', 'image_types')->value('value');
             $imageTypes = [];
-            
+
             if ($imageTypesSetting) {
                 $decoded = json_decode($imageTypesSetting, true);
                 $imageTypes = is_array($decoded) ? $decoded : [];
@@ -34,7 +34,7 @@ class CustomerLeadController extends Controller
             // Get Agreement Image Types
             $agreementImageTypesSetting = AppSettings::where('key', 'agreement_image_types')->value('value');
             $agreementImageTypes = [];
-            
+
             if ($agreementImageTypesSetting) {
                 $decodedAgreement = json_decode($agreementImageTypesSetting, true);
                 $agreementImageTypes = is_array($decodedAgreement) ? $decodedAgreement : [];
@@ -42,7 +42,7 @@ class CustomerLeadController extends Controller
 
             return view('pages.leads.create', compact('leads', 'imageTypes', 'businessCategories', 'agreementImageTypes'));
         } catch (\Exception $e) {
-            return response()->json(['message'=>$e->getMessage()],500);
+            return response()->json(['message' => $e->getMessage()], 500);
         }
     }
 
@@ -72,7 +72,7 @@ class CustomerLeadController extends Controller
             return [
                 'id'          => $lead->id,
                 'full_name'   => $lead->full_name,
-                'phone_number'=> $lead->phone_number,
+                'phone_number' => $lead->phone_number,
                 'email'       => $lead->email,
                 'type'        => $lead->type,
                 'periods'     => $lead->periods,
@@ -88,7 +88,7 @@ class CustomerLeadController extends Controller
             'data' => $data,
         ]);
     }
-    
+
     /**
      * Handle form submission and return JSON response for AJAX
      */
@@ -97,7 +97,7 @@ class CustomerLeadController extends Controller
         // Get image types from app_settings
         $imageTypesSetting = AppSettings::where('key', 'image_types')->value('value');
         $imageTypes = [];
-        
+
         if ($imageTypesSetting) {
             $decoded = json_decode($imageTypesSetting, true);
             $imageTypes = is_array($decoded) ? $decoded : [];
@@ -108,7 +108,7 @@ class CustomerLeadController extends Controller
         return view('pages.leads.create', compact('imageTypes', 'businessCategories'));
     }
 
-    
+
 
     /**
      * Store a newly created resource in storage.
@@ -119,20 +119,20 @@ class CustomerLeadController extends Controller
         try {
             // Get validated data from request
             $data = $request->validated();
-            
+
             // Add additional fields
             $data['created_at_lead'] = now();
             $data['created_by'] = session('userid', 1);
-            
+
             // Create the lead using create method
             $lead = CustomerLead::create($data);
 
             // Get image types from app_settings
             $imageTypesSetting = AppSettings::where('key', 'image_types')->value('value');
-            
+
             if ($imageTypesSetting) {
                 $imageTypes = json_decode($imageTypesSetting, true);
-                
+
                 if (is_array($imageTypes) && count($imageTypes) > 0) {
                     // Ensure directory exists
                     $directory = 'lead_images';
@@ -144,15 +144,15 @@ class CustomerLeadController extends Controller
                     foreach ($imageTypes as $imageType) {
                         $fieldName = 'image_' . str_replace(' ', '_', strtolower($imageType['name']));
                         $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
-                        
+
                         if ($request->hasFile($fieldName)) {
                             $file = $request->file($fieldName);
                             $path = Storage::disk('public')->putFile($directory, $file);
-                            
+
                             // Get image location if provided
                             $imageLat = $request->input($fieldName . '_latitude');
                             $imageLng = $request->input($fieldName . '_longitude');
-                            
+
                             // Save image record
                             LeadHasImages::create([
                                 'lead_id' => $lead->id,
@@ -173,7 +173,6 @@ class CustomerLeadController extends Controller
                 'message' => 'Lead saved successfully',
                 'lead_id' => $lead->id
             ], 200);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -186,13 +185,13 @@ class CustomerLeadController extends Controller
     /**
      * Display a single lead with full details and images.
      */
-    public function show( $customerLead)
+    public function show($customerLead)
     {
         $customerLead = CustomerLead::findOrFail($customerLead);
         $lead = $customerLead->load(['images', 'businessCategory']);
         $images = LeadHasImages::where('lead_id', $customerLead)->get();
 
-        return view('pages.leads.show', compact('lead','images'));
+        return view('pages.leads.show', compact('lead', 'images'));
     }
 
     /**
@@ -252,7 +251,7 @@ class CustomerLeadController extends Controller
             ->where('is_visited', 0) // Only unvisited
             ->orderBy('full_name')
             ->get();
-            
+
         return view('pages.leads.verify_action', compact('leads'));
     }
 
@@ -290,17 +289,17 @@ class CustomerLeadController extends Controller
         return \Yajra\DataTables\Facades\DataTables::of($leads)
             ->addColumn('action', function ($row) {
                 $btn = '';
-                
+
                 // View Details Button (Triggers Modal)
-                $btn .= '<button onclick="viewLeadModal('.$row->id.')" class="btn btn-sm btn-outline-info d-inline-flex align-items-center gap-1 me-1" style="border-radius: 6px;" title="View Details"><i class="bi bi-eye"></i> View</button>';
+                $btn .= '<button onclick="viewLeadModal(' . $row->id . ')" class="btn btn-sm btn-outline-info d-inline-flex align-items-center gap-1 me-1" style="border-radius: 6px;" title="View Details"><i class="bi bi-eye"></i> View</button>';
 
                 // Reject Button (if not visited)
-                if (!$row->is_visited && $row->status != 'rejected') { 
-                    $btn .= '<button onclick="rejectLead('.$row->id.')" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1" style="border-radius: 6px;" title="Reject Lead"><i class="bi bi-x"></i> Reject</button>';
+                if (!$row->is_visited && $row->status != 'rejected') {
+                    $btn .= '<button onclick="rejectLead(' . $row->id . ')" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1" style="border-radius: 6px;" title="Reject Lead"><i class="bi bi-x"></i> Reject</button>';
                 }
-                
+
                 return $btn;
-            })  
+            })
             ->editColumn('status', function ($row) {
                 $status = $row->status;
                 $badgeClass = 'bg-soft-secondary text-secondary';
@@ -309,7 +308,7 @@ class CustomerLeadController extends Controller
                 elseif ($status == 'agreement-signed') $badgeClass = 'bg-soft-primary text-primary';
                 elseif ($status == 'loan-issued') $badgeClass = 'bg-soft-success text-success';
                 elseif ($status == 'rejected') $badgeClass = 'bg-soft-danger text-danger';
-                
+
                 return '<span class="badge ' . $badgeClass . '">' . ucfirst($status) . '</span>';
             })
             ->editColumn('is_visited', function ($row) {
@@ -328,7 +327,7 @@ class CustomerLeadController extends Controller
     public function getVerifiedLeadDetailsModal($id)
     {
         $lead = CustomerLead::with('images', 'businessCategory')->findOrFail($id);
-        
+
         return view('pages.leads.partials.verified_lead_modal_content', compact('lead'));
     }
 
@@ -428,7 +427,7 @@ class CustomerLeadController extends Controller
                 foreach ($imageTypes as $imageType) {
                     $fieldName = 'image_' . str_replace(' ', '_', strtolower($imageType['name']));
                     $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
-                    
+
                     if (isset($imageType['is_required']) && $imageType['is_required']) {
                         $validationRules[$fieldName] = 'required|image|mimes:jpeg,png,jpg,gif';
                     } else {
@@ -446,7 +445,7 @@ class CustomerLeadController extends Controller
         try {
             $leadId = $request->input('lead_id');
             $directory = 'agreement_images'; // Separate directory for agreements
-            
+
             if (!Storage::disk('public')->exists($directory)) {
                 Storage::disk('public')->makeDirectory($directory);
             }
@@ -454,20 +453,20 @@ class CustomerLeadController extends Controller
             foreach ($imageTypes as $imageType) {
                 $fieldName = 'image_' . str_replace(' ', '_', strtolower($imageType['name']));
                 $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
-                
+
                 if ($request->hasFile($fieldName)) {
                     $file = $request->file($fieldName);
                     $path = Storage::disk('public')->putFile($directory, $file);
-                    
+
                     // Get image location if provided
                     $imageLat = $request->input($fieldName . '_latitude');
                     $imageLng = $request->input($fieldName . '_longitude');
-                    
+
                     // Save image record
                     LeadHasImages::create([
                         'lead_id' => $leadId,
                         'image_path' => $path,
-                        'image_type' => $imageType['name'], 
+                        'image_type' => $imageType['name'],
                         'latitude' => $imageLat,
                         'longitude' => $imageLng,
                     ]);
@@ -487,9 +486,8 @@ class CustomerLeadController extends Controller
                 'success' => true,
                 'message' => 'Agreement images uploaded and lead status updated successfully.',
             ]);
-
         } catch (\Illuminate\Validation\ValidationException $e) {
-             return response()->json([
+            return response()->json([
                 'success' => false,
                 'message' => 'Validation failed: ' . implode(', ', Arr::flatten($e->errors()))
             ], 422);
