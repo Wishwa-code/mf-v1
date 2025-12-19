@@ -36,6 +36,8 @@ class UpdateAppSettingsRequest extends FormRequest
                         'document_types',
                         'image_types',
                         'agreement_image_types',
+                        'guardian_image_types',
+                        'guarantor_image_types',
                         'collector_txn_modes',
                         'fund_request_columns',
                         'disbursement_columns',
@@ -80,23 +82,23 @@ class UpdateAppSettingsRequest extends FormRequest
                             ], true) ?: $fail('Invalid value for payment_member_name.'),
 
                             'loan_disbursement_policy' =>
-                                in_array($value, ['strict', 'flexible'], true)
+                            in_array($value, ['strict', 'flexible'], true)
                                 ?: $fail('Invalid value for loan_disbursement_policy.'),
 
                             'payment_backdate' =>
-                                in_array($value, ['enabled', 'disabled'], true)
+                            in_array($value, ['enabled', 'disabled'], true)
                                 ?: $fail('Invalid value for payment_backdate.'),
 
                             'loan_order' =>
-                                in_array($value, ['create_date', 'loan_number', 'issue_date'], true)
+                            in_array($value, ['create_date', 'loan_number', 'issue_date'], true)
                                 ?: $fail('Invalid value for loan_order.'),
 
                             'recovery_account_status' =>
-                                in_array($value, ['active', 'inactive'], true)
+                            in_array($value, ['active', 'inactive'], true)
                                 ?: $fail('Invalid value for recovery_account_status.'),
 
                             'due_skip_type' =>
-                                in_array($value, ['skip_installment', 'skip_day'], true)
+                            in_array($value, ['skip_installment', 'skip_day'], true)
                                 ?: $fail('Invalid value for due_skip_type.'),
 
                             default => null,
@@ -142,7 +144,7 @@ class UpdateAppSettingsRequest extends FormRequest
                          | IMAGE TYPES (custom structure)
                          |---------------------------------------------
                          */
-                        if ($key === 'image_types') {
+                        if (in_array($key, ['image_types', 'agreement_image_types', 'guardian_image_types', 'guarantor_image_types'], true)) {
                             $decoded = json_decode($value, true);
 
                             if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
