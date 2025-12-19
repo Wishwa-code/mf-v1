@@ -7,9 +7,15 @@
             padding-bottom: 1.5rem;
         }
     }
+
     @media (min-width: 768px) {
-        .border-end-md {
-            border-right: 1px solid #dee2e6;
+        .border-end-md {}
+
+        gmp-map {
+            width: 100%;
+            height: 300px;
+            border-radius: 12px;
+            display: block;
         }
     }
 </style>
@@ -85,44 +91,45 @@
             </div>
 
             <div class="mb-3">
-                 <label class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Additional Info</label>
-                 @if($lead->notes)
-                    <div class="p-2 bg-light rounded-3 mb-2">
-                        <div class="small fw-semibold text-muted" style="font-size: 0.7rem;">Notes</div>
-                        <p class="mb-0 small fst-italic">"{{ $lead->notes }}"</p>
-                    </div>
-                 @endif
-                 
-                 <div class="p-2 bg-light rounded-3">
+                <label class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Additional Info</label>
+                @if($lead->notes)
+                <div class="p-2 bg-light rounded-3 mb-2">
+                    <div class="small fw-semibold text-muted" style="font-size: 0.7rem;">Notes</div>
+                    <p class="mb-0 small fst-italic">"{{ $lead->notes }}"</p>
+                </div>
+                @endif
+
+                <div class="p-2 bg-light rounded-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="small text-muted fw-semibold" style="font-size: 0.7rem;">Visit Status</span>
                         @if($lead->is_visited)
-                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill">Visited</span>
+                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill">Visited</span>
                         @else
-                            <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill">Not Visited</span>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill">Not Visited</span>
                         @endif
                     </div>
                     @if($lead->is_visited)
-                        <div class="small text-muted mt-1" style="font-size: 0.65rem;">
-                            {{ $lead->visited_latitude }}, {{ $lead->visited_longitude }}
-                        </div>
+                    <div class="small text-muted mt-1" style="font-size: 0.65rem;">
+                        {{ $lead->visited_latitude }}, {{ $lead->visited_longitude }}
+                    </div>
                     @endif
-                 </div>
-            </div>
-            
-            @if($lead->latitude && $lead->longitude)
-                <div class="mt-4">
-                    <label class="small text-muted text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Captured Location</label>
-                    
-                    <a href="https://www.google.com/maps/search/?api=1&query={{ $lead->latitude }},{{ $lead->longitude }}" target="_blank" class="btn btn-outline-primary btn-sm w-100 mb-2">
-                        <i class="bi bi-map-fill me-1"></i> View on Google Maps
-                    </a>
-
-                   
-
-                     <div id="modalMap" style="height: 300px; width: 100%;" data-lat="{{ $lead->latitude }}" 
-                         data-lng="{{ $lead->longitude }}"></div>
                 </div>
+            </div>
+
+            @if($lead->latitude && $lead->longitude)
+            <div class="mt-4">
+                <label class="small text-muted text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Captured Location</label>
+
+                <a href="https://www.google.com/maps/search/?api=1&query={{ $lead->latitude }},{{ $lead->longitude }}" target="_blank" class="btn btn-outline-primary btn-sm w-100 mb-2">
+                    <i class="bi bi-map-fill me-1"></i> View on Google Maps
+                </a>
+
+
+
+                <gmp-map center="{{ $lead->latitude }},{{ $lead->longitude }}" zoom="15" map-id="DEMO_MAP_ID">
+                    <gmp-advanced-marker position="{{ $lead->latitude }},{{ $lead->longitude }}"></gmp-advanced-marker>
+                </gmp-map>
+            </div>
             @endif
         </div>
     </div>
@@ -130,44 +137,44 @@
     {{-- Right Column: Images Gallery --}}
     <div class="col-md-7">
         <h6 class="fw-bold mb-3 border-bottom pb-2">Docs & Images <span class="badge bg-secondary rounded-pill ms-1">{{ $lead->images->count() }}</span></h6>
-        
+
         @if($lead->images->isEmpty())
-            <div class="text-center py-5 bg-light rounded-3">
-                <i class="bi bi-images text-muted opacity-50 mb-2" style="font-size: 2rem;"></i>
-                <p class="text-muted small mb-0">No images uploaded.</p>
-            </div>
+        <div class="text-center py-5 bg-light rounded-3">
+            <i class="bi bi-images text-muted opacity-50 mb-2" style="font-size: 2rem;"></i>
+            <p class="text-muted small mb-0">No images uploaded.</p>
+        </div>
         @else
-            <div class="row g-3 pe-1">
-                @foreach($lead->images as $img)
-                    <div class="col-6 col-md-6">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <a href="{{ Storage::url($img->image_path) }}" target="_blank" class="position-relative d-block">
-                                <div class="ratio ratio-4x3 bg-light rounded-top">
-                                    <img src="{{ Storage::url($img->image_path) }}" class="card-img-top object-fit-cover" alt="{{ $img->image_type }}">
-                                </div>
-                                <div class="position-absolute bottom-0 start-0 w-100 p-1 bg-dark bg-opacity-50 text-white text-center small">
-                                    Click to View
-                                </div>
-                            </a>
-                            <div class="card-body p-2 bg-light rounded-bottom">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div class="text-truncate fw-bold text-dark small" style="max-width: 120px;" title="{{ $img->image_type }}">
-                                        {{ $img->image_type }}
-                                    </div>
-                                    @if($img->latitude)
-                                        <a href="https://www.google.com/maps/search/?api=1&query={{ $img->latitude }},{{ $img->longitude }}" target="_blank" class="text-primary" title="Image Location">
-                                            <i class="bi bi-geo-alt-fill"></i>
-                                        </a>
-                                    @endif
-                                </div>
-                                <small class="text-muted d-block mt-1" style="font-size: 0.65rem;">
-                                    {{ $img->created_at->format('d M, H:i') }}
-                                </small>
-                            </div>
+        <div class="row g-3 pe-1">
+            @foreach($lead->images as $img)
+            <div class="col-6 col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                    <a href="{{ Storage::url($img->image_path) }}" target="_blank" class="position-relative d-block">
+                        <div class="ratio ratio-4x3 bg-light rounded-top">
+                            <img src="{{ Storage::url($img->image_path) }}" class="card-img-top object-fit-cover" alt="{{ $img->image_type }}">
                         </div>
+                        <div class="position-absolute bottom-0 start-0 w-100 p-1 bg-dark bg-opacity-50 text-white text-center small">
+                            Click to View
+                        </div>
+                    </a>
+                    <div class="card-body p-2 bg-light rounded-bottom">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="text-truncate fw-bold text-dark small" style="max-width: 120px;" title="{{ $img->image_type }}">
+                                {{ $img->image_type }}
+                            </div>
+                            @if($img->latitude)
+                            <a href="https://www.google.com/maps/search/?api=1&query={{ $img->latitude }},{{ $img->longitude }}" target="_blank" class="text-primary" title="Image Location">
+                                <i class="bi bi-geo-alt-fill"></i>
+                            </a>
+                            @endif
+                        </div>
+                        <small class="text-muted d-block mt-1" style="font-size: 0.65rem;">
+                            {{ $img->created_at->format('d M, H:i') }}
+                        </small>
                     </div>
-                @endforeach
+                </div>
             </div>
+            @endforeach
+        </div>
         @endif
     </div>
 </div>

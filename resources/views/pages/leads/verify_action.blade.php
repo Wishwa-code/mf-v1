@@ -277,7 +277,7 @@
 
                 if (targetLat && targetLng) {
                     const dist = getDistanceFromLatLonInM(targetLat, targetLng, curLat, curLng);
-                    if (dist > 5) {
+                    if (dist > 200) {
                         msg = `<div class="alert alert-danger border-2 border-danger mb-0">
                                 <div class="d-flex align-items-center">
                                     <i class="bi bi-x-circle-fill fs-2 me-3"></i>
