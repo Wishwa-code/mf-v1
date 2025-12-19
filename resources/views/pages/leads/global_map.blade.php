@@ -101,18 +101,18 @@
                 if (!lead.latitude || !lead.longitude) return;
 
                 // Choose color based on status
-                let iconColorClass = "text-primary";
-                if (lead.is_visited || lead.status === 'approved') {
-                    iconColorClass = "text-success";
-                } else if (lead.status === 'pending') {
-                    iconColorClass = "text-warning";
-                }
+                let iconColorClass = "text-danger";
+                // if (lead.is_visited || lead.status === 'approved') {
+                //     iconColorClass = "text-danger";
+                // } else if (lead.status === 'pending') {
+                //     iconColorClass = "text-warning";
+                // }
 
                 // Create content DOM node using Bootstrap icons
                 const iconContainer = document.createElement('div');
                 iconContainer.className = iconColorClass;
                 iconContainer.style.fontSize = '2.5rem';
-                iconContainer.style.filter = 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))';
+                iconContainer.style.filter = 'drop-shadow(0 4px 6px rgba(28, 1, 1, 0.45))';
                 iconContainer.innerHTML = '<i class="bi bi-geo-alt-fill"></i>';
 
                 const position = {

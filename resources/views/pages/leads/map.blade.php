@@ -51,7 +51,7 @@
 @section('content')
 <div class="container-fluid p-0 mt-3">
     {{-- Header overlay or top bar --}}
-    <div class="header-card px-4 py-3 d-flex justify-content-between align-items-center shadow-sm sticky-top">
+    <div class="header-card px-4 py-3 d-flex justify-content-between align-items-center shadow-sm">
         <div>
             <h5 class="fw-bold mb-0 text-dark">
                 <i class="bi bi-map-fill me-2 text-primary"></i>Lead Location Map
@@ -80,7 +80,7 @@ $locations[] = [
 'lng' => (float)$lead->longitude,
 'type' => 'Captured Location',
 'iconClass' => 'bi-geo-alt-fill lead-location',
-'wrapperClass' => 'text-primary'
+'wrapperClass' => 'text-danger'
 ];
 }
 if ($lead->is_visited && $lead->visited_latitude && $lead->visited_longitude) {
@@ -124,7 +124,7 @@ $locations[] = [
                 const iconContainer = document.createElement('div');
                 iconContainer.className = loc.wrapperClass;
                 iconContainer.style.fontSize = '2.5rem';
-                iconContainer.style.filter = 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))';
+                iconContainer.style.filter = 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.95))';
                 iconContainer.innerHTML = `<i class="bi ${loc.iconClass}"></i>`;
 
                 const position = {
