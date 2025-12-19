@@ -19,7 +19,7 @@ class CustomerLeadController extends Controller
     public function index()
     {
         try {
-            $leads = CustomerLead::with(['images', 'businessCategory'])->get();
+            $leads = CustomerLead::with(['images', 'businessCategory'])->where('status', 'pending-approved')->get();
             $businessCategories = BusinessCategory::all();
 
             // Get image types from app_settings

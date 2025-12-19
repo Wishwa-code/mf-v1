@@ -392,7 +392,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Loan Amount *</label>
-                                <input type="number" name="loan_amount" step="0.01" class="form-control form-control-lg @error('loan_amount') is-invalid @enderror" placeholder="E.g. 50000" value="{{ old('loan_amount') }}">
+                                <input type="number" name="loan_amount" step="0.01" class="form-control form-control-lg @error('loan_amount') is-invalid @enderror" placeholder="E.g. 50000" value="{{ old('loan_amount') }}" min="1000">
                                 <small class="text-muted">Expected loan amount.</small>
                                 <div class="invalid-feedback d-block">
                                     @error('loan_amount') {{ $message }} @enderror
@@ -417,7 +417,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Periods *</label>
-                                <input type="text" name="periods" class="form-control form-control-lg @error('periods') is-invalid @enderror" placeholder="E.g. 12 months, 24 months" value="{{ old('periods') }}">
+                                <input type="number" name="periods" class="form-control form-control-lg @error('periods') is-invalid @enderror" placeholder="E.g. 12, 24" value="{{ old('periods') }}" min="1">
                                 <small class="text-muted">Enter the loan period duration.</small>
                                 @error('periods')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
