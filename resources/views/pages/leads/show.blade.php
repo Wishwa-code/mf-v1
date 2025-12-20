@@ -231,6 +231,14 @@
                                     @if($lead->is_visited)
                                     <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i> Visited</span>
                                     <div class="small text-muted mt-1">{{ $lead->visited_latitude ?? '-' }} / {{ $lead->visited_longitude ?? '-' }}</div>
+                                    @if($lead->verification_image)
+                                    <div class="mt-2">
+                                        <a href="{{ asset('storage/' . $lead->verification_image) }}" target="_blank">
+                                            <img src="{{ asset('storage/' . $lead->verification_image) }}" class="rounded shadow-sm border" style="width: 100px; height: 100px; object-fit: cover;" alt="Verification Image">
+                                        </a>
+                                        <div class="small text-muted mt-1">Evidence</div>
+                                    </div>
+                                    @endif
                                     @else
                                     <span class="text-muted"><i class="bi bi-circle me-1"></i> Not Visited</span>
                                     @endif

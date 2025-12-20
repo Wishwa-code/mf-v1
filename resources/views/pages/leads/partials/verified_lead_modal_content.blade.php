@@ -112,6 +112,13 @@
                     <div class="small text-muted mt-1" style="font-size: 0.65rem;">
                         {{ $lead->visited_latitude }}, {{ $lead->visited_longitude }}
                     </div>
+                    @if($lead->verification_image)
+                    <div class="mt-2">
+                        <a href="{{ asset('storage/' . $lead->verification_image) }}" target="_blank">
+                            <img src="{{ asset('storage/' . $lead->verification_image) }}" class="rounded shadow-sm border" style="width: 80px; height: 80px; object-fit: cover;" alt="Verification Image">
+                        </a>
+                    </div>
+                    @endif
                     @endif
                 </div>
             </div>

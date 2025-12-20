@@ -30,7 +30,8 @@ class CustomerLead extends Model
         'visited_longitude',
         'visited_latitude',
         'loan_amount',
-        'business_category_id'
+        'business_category_id',
+        'verification_image'
     ];
 
     public function images()
@@ -41,5 +42,22 @@ class CustomerLead extends Model
     public function businessCategory()
     {
         return $this->belongsTo(BusinessCategory::class);
+    }
+
+    public function activities()
+    {
+        return $this->hasMany(LeadActivity::class, 'lead_id')->orderByDesc('created_at');
+    }
+
+    public function logActivity($action, $description, $properties = [])
+    {
+        $this->activities()->create([
+            'user_id' => session('userid') ?? auth()->id(), // Fallback to auth() if session not set
+            'action' => $action,
+            'description' => $description,
+            'properties' => $properties,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
     }
 }

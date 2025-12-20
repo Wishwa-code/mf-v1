@@ -458,12 +458,18 @@ Route::middleware(['web', 'auth'])->group(function () {
 
     // Agreement Image Upload
     Route::post('/leads/agreement-images/upload', [CustomerLeadController::class, 'uploadAgreementImages'])->name('leads.agreementImages.upload');
-    
+    Route::get('/leads/agreement-sign', [CustomerLeadController::class, 'agreement_index'])->name('leads.agreement');
+
     // Verified Lead History Actions
     Route::get('/leads/verified-data', [CustomerLeadController::class, 'verifiedData'])->name('leads.verifiedData');
     Route::get('/leads/verified-details-modal/{id}', [CustomerLeadController::class, 'getVerifiedLeadDetailsModal'])->name('leads.getVerifiedLeadDetailsModal');
     Route::get('/leads/verified-details/{id}', [CustomerLeadController::class, 'showVerifiedDetails'])->name('leads.showVerifiedDetails');
     Route::post('/leads/{id}/reject', [CustomerLeadController::class, 'reject'])->name('leads.reject');
+
+    // Lead Activity Logs
+    Route::get('/leads/activity-logs', [CustomerLeadController::class, 'activityLogs'])->name('leads.activityLogs');
+    Route::get('/leads/activity-logs/data', [CustomerLeadController::class, 'activityLogsData'])->name('leads.activityLogsData');
+    Route::get('/leads/activity-logs/{id}/details', [CustomerLeadController::class, 'getActivityDetails'])->name('leads.activityDetails');
 
     //loan_settlement
     Route::get('/loan_settlement', '\App\Http\Controllers\PaymentLoanController@settlment')->name('loan_settlement.index');
@@ -994,7 +1000,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     // Ajax – penalty deduction details for a single loan
     Route::get('/report/penalty-deduction/details/{loan}', [\App\Http\Controllers\ReportController::class, 'penaltyDeductionDetails'])
         ->name('report.penaltyDeduction.details');
-    
+
     //Lead Management Routes
 
     // Lead approval – list + data source + approve action
@@ -1004,11 +1010,12 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/leads/approvals/data', [CustomerLeadController::class, 'approvalData'])
         ->name('leads.approvals.data');
 
+    Route::get('/leads/{lead}/data', [CustomerLeadController::class, 'getLeadData'])->name('leads.data'); // For Edit Page AJAX
+
     Route::post('/leads/{lead}/approve', [CustomerLeadController::class, 'approve'])
         ->name('leads.approve');
-        
-    Route::resource('leads', CustomerLeadController::class)->names('leads');
 
+    Route::resource('leads', CustomerLeadController::class)->names('leads');
 });
 
 
