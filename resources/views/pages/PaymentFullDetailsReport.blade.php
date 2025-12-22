@@ -176,6 +176,7 @@
                         <option value="Not Paid" {{ request('paid_type') == 'Not Paid' ? 'selected' : '' }}>Not Paid</option>
                         {{--                        <option value="Over Paid" {{ request('paid_type') == 'Over Paid' ? 'selected' : '' }}>Over Paid</option>--}}
                         <option value="Under Paid" {{ request('paid_type') == 'Under Paid' ? 'selected' : '' }}>Under Paid</option>
+                        <option value="Over Paid" {{ request('paid_type') == 'Over Paid' ? 'selected' : '' }}>Over Paid</option>
                         <option value="Normal" {{ request('paid_type') == 'Normal' ? 'selected' : '' }}>Normal</option>
                     </select>
                 </div>

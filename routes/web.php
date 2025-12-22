@@ -670,7 +670,6 @@ Route::post('/recover_password','\App\Http\Controllers\UserController@recover_pa
     Route::delete('/holidays/delete/{id}','\App\Http\Controllers\UserController@deleteHoliday')->name('holidays.delete');
     Route::get('/get-holidays','\App\Http\Controllers\UserController@getHolidays')->name('get.holidays');
     Route::post('/generate-due-skip','\App\Http\Controllers\UserController@generateDueSkip')->name('save.holidays');
-
     Route::get('/poya-days','\App\Http\Controllers\HolidayController@fetchPoya')->name('get.fetchPoya');
 
 
