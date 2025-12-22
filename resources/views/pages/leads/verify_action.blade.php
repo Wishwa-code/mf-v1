@@ -204,11 +204,11 @@
 
                                 <input class="d-none" type="file" id="verification_image" name="verification_image" accept="image/*" onchange="handleFileSelect(this)">
 
-                                <div class="d-flex justify-content-center gap-2 mb-3">
-                                    <button type="button" class="btn btn-outline-primary btn-modern" id="openWebcamBtn" disabled>
+                                <div class="d-flex flex-column flex-sm-row justify-content-center gap-2 mb-3">
+                                    <button type="button" class="btn btn-outline-primary btn-modern flex-grow-1 flex-sm-grow-0 px-4" id="openWebcamBtn" disabled>
                                         <i class="bi bi-camera-video me-1"></i> Camera
                                     </button>
-                                    <button type="button" class="btn btn-light btn-modern border" id="openFileBtn" onclick="$('#verification_image').click()" disabled>
+                                    <button type="button" class="btn btn-light btn-modern border flex-grow-1 flex-sm-grow-0 px-4" id="openFileBtn" onclick="$('#verification_image').click()" disabled>
                                         <i class="bi bi-folder2-open me-1"></i> Select File
                                     </button>
                                 </div>

@@ -59,7 +59,7 @@
             <small class="text-muted">Showing {{ count($leads) }} leads with captured locations</small>
         </div>
         <div>
-            <a href="{{ route('leads.index') }}" class="btn btn-outline-secondary rounded-pill px-4">
+            <a href="{{ route('leads.verifiedList') }}" class="btn btn-outline-secondary rounded-pill px-4">
                 <i class="bi bi-list-ul me-1"></i> View List
             </a>
         </div>

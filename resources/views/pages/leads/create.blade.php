@@ -341,18 +341,18 @@
                                     <input type="hidden" id="{{ $fieldName }}_lng" name="{{ $fieldName }}_longitude">
 
                                     <div class="mt-auto"> <!-- Push to bottom -->
-                                        <div class="d-flex gap-2 mb-3">
-                                            <button type="button" class="btn btn-outline-primary btn-modern flex-grow-1 py-1 px-2 text-truncate" style="font-size:0.85rem;"
+                                        <div class="d-flex flex-column flex-sm-row gap-2 mb-3">
+                                            <button type="button" class="btn btn-outline-primary btn-modern flex-grow-1 py-2 px-3 text-truncate" style="font-size:0.85rem;"
                                                 onclick="getSpecificLocation('{{ $fieldName }}_lat', '{{ $fieldName }}_lng', '{{ $fieldName }}_location_status')">
-                                                <i class="bi bi-geo-alt me-1"></i> Get Location
+                                                <i class="bi bi-geo-alt me-1"></i> Get GPS
                                             </button>
-                                            <button type="button" class="btn btn-outline-dark btn-modern flex-grow-1 py-1 px-2 text-truncate" style="font-size:0.85rem;"
+                                            <button type="button" class="btn btn-outline-dark btn-modern flex-grow-1 py-2 px-3 text-truncate" style="font-size:0.85rem;"
                                                 onclick="openWebcamModal('{{ $fieldName }}', '{{ $fieldName }}_preview', '{{ $fieldName }}_lat', '{{ $fieldName }}_lng')">
-                                                <i class="bi bi-camera-video me-1"></i> Cam
+                                                <i class="bi bi-camera-video me-1"></i> Camera
                                             </button>
-                                            <button type="button" class="btn btn-light btn-modern flex-grow-1 border text-dark py-1 px-2 text-truncate" style="font-size:0.85rem;"
+                                            <button type="button" class="btn btn-light btn-modern flex-grow-1 border text-dark py-2 px-3 text-truncate" style="font-size:0.85rem;"
                                                 onclick="triggerFileSelect('{{ $fieldName }}')">
-                                                <i class="bi bi-folder2-open me-1"></i> File
+                                                <i class="bi bi-folder2-open me-1"></i> Upload
                                             </button>
                                         </div>
                                         <div class="text-center" style="min-height: 100px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px;">
@@ -411,18 +411,18 @@
                                     </div>
 
                                     <div class="mt-auto">
-                                        <div class="d-flex gap-2 mb-3">
-                                            <button type="button" class="btn btn-outline-primary btn-modern flex-grow-1 py-1 px-2 text-truncate" style="font-size:0.85rem;"
+                                        <div class="d-flex flex-column flex-sm-row gap-2 mb-3">
+                                            <button type="button" class="btn btn-outline-primary btn-modern flex-grow-1 py-2 px-3 text-truncate" style="font-size:0.85rem;"
                                                 onclick="getSpecificLocation('{{ $fieldName }}_lat', '{{ $fieldName }}_lng', '{{ $fieldName }}_location_status')">
-                                                <i class="bi bi-geo-alt me-1"></i> Get Location
+                                                <i class="bi bi-geo-alt me-1"></i> Get GPS
                                             </button>
-                                            <button type="button" class="btn btn-outline-dark btn-modern flex-grow-1 py-1 px-2 text-truncate" style="font-size:0.85rem;"
+                                            <button type="button" class="btn btn-outline-dark btn-modern flex-grow-1 py-2 px-3 text-truncate" style="font-size:0.85rem;"
                                                 onclick="openWebcamModal('{{ $fieldName }}', '{{ $fieldName }}_preview', '{{ $fieldName }}_lat', '{{ $fieldName }}_lng')">
-                                                <i class="bi bi-camera me-1"></i> Cam
+                                                <i class="bi bi-camera me-1"></i> Camera
                                             </button>
-                                            <button type="button" class="btn btn-light btn-modern flex-grow-1 border text-dark py-1 px-2 text-truncate" style="font-size:0.85rem;"
+                                            <button type="button" class="btn btn-light btn-modern flex-grow-1 border text-dark py-2 px-3 text-truncate" style="font-size:0.85rem;"
                                                 onclick="triggerFileSelect('{{ $fieldName }}')">
-                                                <i class="bi bi-folder2 me-1"></i>
+                                                <i class="bi bi-folder2 me-1"></i> Upload
                                             </button>
                                         </div>
                                         <div class="text-center" style="min-height: 100px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px;">
@@ -480,18 +480,18 @@
                                     </div>
 
                                     <div class="mt-auto">
-                                        <div class="d-flex gap-2 mb-3">
-                                            <button type="button" class="btn btn-outline-primary btn-modern flex-grow-1 py-1 px-2 text-truncate" style="font-size:0.85rem;"
+                                        <div class="d-flex flex-column flex-sm-row gap-2 mb-3">
+                                            <button type="button" class="btn btn-outline-primary btn-modern flex-grow-1 py-2 px-3 text-truncate" style="font-size:0.85rem;"
                                                 onclick="getSpecificLocation('{{ $fieldName }}_lat', '{{ $fieldName }}_lng', '{{ $fieldName }}_location_status')">
-                                                <i class="bi bi-geo-alt me-1"></i> Get Location
+                                                <i class="bi bi-geo-alt me-1"></i> Get GPS
                                             </button>
-                                            <button type="button" class="btn btn-outline-dark btn-modern flex-grow-1 py-1 px-2 text-truncate" style="font-size:0.85rem;"
+                                            <button type="button" class="btn btn-outline-dark btn-modern flex-grow-1 py-2 px-3 text-truncate" style="font-size:0.85rem;"
                                                 onclick="openWebcamModal('{{ $fieldName }}', '{{ $fieldName }}_preview', '{{ $fieldName }}_lat', '{{ $fieldName }}_lng')">
-                                                <i class="bi bi-camera me-1"></i> Cam
+                                                <i class="bi bi-camera me-1"></i> Camera
                                             </button>
-                                            <button type="button" class="btn btn-light btn-modern flex-grow-1 border text-dark py-1 px-2 text-truncate" style="font-size:0.85rem;"
+                                            <button type="button" class="btn btn-light btn-modern flex-grow-1 border text-dark py-2 px-3 text-truncate" style="font-size:0.85rem;"
                                                 onclick="triggerFileSelect('{{ $fieldName }}')">
-                                                <i class="bi bi-folder2 me-1"></i>
+                                                <i class="bi bi-folder2 me-1"></i> Upload
                                             </button>
                                         </div>
                                         <div class="text-center" style="min-height: 100px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px;">
@@ -581,17 +581,103 @@
 
     // --- Location Functions ---
     function getLeadLocation() {
-        if (navigator.geolocation) {
-            $('#lead_lat_display').html('<span class="spinner-border spinner-border-sm"></span>');
-            $('#lead_lng_display').html('<span class="spinner-border spinner-border-sm"></span>');
-
-            navigator.geolocation.getCurrentPosition(showLeadPosition, showLeadError, {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
-            });
-        } else {
+        if (!navigator.geolocation) {
             Swal.fire('Error', 'Geolocation is not supported by this browser.', 'error');
+            return;
+        }
+
+        let watchId = null;
+        let bestPosition = null;
+        let bestAccuracy = Infinity;
+        const TARGET_ACCURACY = 10; // meters
+        const TIMEOUT_MS = 10000; // 10 seconds
+
+        Swal.fire({
+            title: 'Acquiring GPS Signal',
+            html: 'Improving accuracy...<br>Current Accuracy: <strong id="gps-acc-display" class="text-primary">--</strong> meters',
+            allowOutsideClick: false,
+            showCancelButton: true,
+            cancelButtonText: 'Use Current Best',
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        }).then((result) => {
+            if (result.dismiss === Swal.DismissReason.cancel) {
+                // User chose to stop early and use what we have
+                if (watchId) navigator.geolocation.clearWatch(watchId);
+                if (bestPosition) {
+                    showLeadPosition(bestPosition);
+                } else {
+                    // It's possible we have NOTHING yet if they cancelled instantly
+                    Swal.fire('Warning', 'No location locked yet. Please try again.', 'warning');
+                }
+            }
+        });
+
+        watchId = navigator.geolocation.watchPosition(
+            (position) => {
+                const accuracy = position.coords.accuracy;
+
+                // Update UI
+                const display = document.getElementById('gps-acc-display');
+                if (display) display.textContent = Math.round(accuracy);
+
+                // Track best
+                if (accuracy < bestAccuracy) {
+                    bestAccuracy = accuracy;
+                    bestPosition = position;
+                }
+
+                // Threshold Check
+                if (accuracy <= TARGET_ACCURACY) {
+                    finishWithPosition(position);
+                }
+            },
+            (error) => {
+                console.warn("GPS Watch Error:", error);
+                // We don't stop strictly on error, we wait for timeout or next success, 
+                // unless it's permission denied which is fatal.
+                if (error.code === error.PERMISSION_DENIED) {
+                    finishWithError(error);
+                }
+            }, {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0
+            }
+        );
+
+        // Global Timeout
+        setTimeout(() => {
+            if (watchId) {
+                // Time is up, take whatever we have
+                finishWithPosition(bestPosition);
+            }
+        }, TIMEOUT_MS);
+
+        function finishWithPosition(pos) {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            // Close the modal programmatically - this might trigger 'undefined' dismiss usually
+            Swal.close();
+
+            if (pos) {
+                // Slight delay to allow Swal to close smoothly before we do showLeadPosition logic
+                setTimeout(() => showLeadPosition(pos), 200);
+            } else {
+                Swal.fire('Location Error', 'Unable to get a usable GPS signal.', 'error');
+            }
+        }
+
+        function finishWithError(err) {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            Swal.close();
+            showLeadError(err);
         }
     }
 
@@ -605,6 +691,37 @@
         $('#lead_lng_display').text(lng.toFixed(6));
 
         $('#viewMapBtn').attr('href', `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`).removeClass('d-none');
+
+        // Reverse Geocoding to get Address
+        const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`;
+
+        // Show loading state in address
+        $('textarea[name="address"]').attr('placeholder', 'Fetching address...');
+
+        fetch(geocodeUrl)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'OK') {
+                    if (data.results && data.results.length > 0) {
+                        $('textarea[name="address"]').val(data.results[0].formatted_address);
+                    } else if (data.plus_code) {
+                        let compoundCode = data.plus_code.compound_code;
+                        const parts = compoundCode.split(',');
+                        if (parts.length > 1) {
+                            compoundCode = parts.slice(0, -1).join(',').trim();
+                        }
+                        $('textarea[name="address"]').val(compoundCode);
+                    }
+                } else {
+                    console.error('Geocode was not successful for the following reason: ' + data.status);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                $('textarea[name="address"]').attr('placeholder', 'Full residential/business address');
+            });
     }
 
     function showLeadError(error) {
@@ -660,7 +777,7 @@
                         cancelButtonText: 'Add Another'
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            window.location.href = "{{ route('leads.index') }}";
+                            window.location.href = "{{ route('leads.verifiedList') }}";
                         } else {
                             window.location.reload();
                         }
@@ -734,7 +851,7 @@
     let currentPreviewId = null;
     let currentLatFieldId = null;
     let currentLngFieldId = null;
-    let facingMode = 'user';
+    let facingMode = 'environment';
 
     function openWebcamModal(fieldId, previewId, latFieldId, lngFieldId) {
         currentFieldId = fieldId;
@@ -743,6 +860,8 @@
         currentLngFieldId = lngFieldId;
 
         // Reset UI
+        document.getElementById('webcamVideo').style.display = 'none';
+        document.getElementById('webcamPlaceholder').style.display = 'block';
         document.getElementById('capturedImagePreview').style.display = 'none';
         document.getElementById('captureBtn').style.display = 'inline-block';
         document.getElementById('usePhotoBtn').style.display = 'none';
@@ -789,14 +908,9 @@
 
             video.srcObject = webcamStream;
             video.style.display = 'block';
+            video.play();
             placeholder.style.display = 'none';
-            // Switch button check
-            try {
-                const devicez = await navigator.mediaDevices.enumerateDevices();
-                const vids = devicez.filter(d => d.kind === 'videoinput');
-                document.getElementById('switchCameraBtn').style.display = (vids.length > 1) ? 'inline-block' : 'none';
-            } catch (e) {}
-
+            document.getElementById('switchCameraBtn').style.display = 'inline-block';
         } catch (err) {
             console.error(err);
             placeholder.style.display = 'none';
