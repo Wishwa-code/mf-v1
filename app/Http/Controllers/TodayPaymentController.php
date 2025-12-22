@@ -229,66 +229,9 @@ class TodayPaymentController extends Controller
         $loanQuery->orderBy('customer_loan.idCustomer_Loan', 'asc'); // Add this line to order by loan number
         // Paginate the loans
         $loan = $loanQuery->paginate(10);
-        $loanQuery_2 = DB::table('installments')
-            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
-            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
-            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
-            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
-            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
-            ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
-            ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
-            ->select(
-                'Customer_Loan_idCustomer_Loan',
-                DB::raw('COUNT(idInstallments) as Calculated_Installment_Count'),
-                DB::raw('SUM(Total_Balance) as Total_Balance'),
-                DB::raw('SUM(Paid_Amount) as Total_Paid_Amount'),
-                DB::raw("SUM(CASE WHEN Installment_Date <= '$today' THEN Total_Balance ELSE 0 END) as Total_Balance_until"),
-                DB::raw("SUM(CASE WHEN Installment_Date = '$today' THEN Total_Balance ELSE 0 END) as Today_installment"),
-                DB::raw("SUM(CASE WHEN Installment_Date < '$today' THEN Total_Balance ELSE 0 END) as arrease")
-            )
-            ->where('installments.branch_id','=',session('branch_id'))
-            ->where('customer_loan.Status', '=', '0')
-            ->groupBy('Customer_Loan_idCustomer_Loan');
 
-        if ($collector == 1) {
-            $loanQuery_2->join('collector_has_route', 'customer.route_id', '=', 'collector_has_route.route_id')
-                ->where('collector_has_route.collector_id', '=', $user_id);
-        }
-        if ($center_details != '0') {
-            $loanQuery_2->where('center.idCenter', '=', $center_details);
-        }
-        if ($route != '0') {
-            $loanQuery_2->where('route.id_route', '=', $route);
-        }
-        if ($group != '0') {
-            $loanQuery_2->where('customer_group.idCustomer_Group', '=', $group);
-        }
-        if ($customer != '0') {
-            $loanQuery_2->where('customer.idCustomer', '=', $customer);
-        }
-        if ($recovery_officer != '0') {
-            $loanQuery_2->where('customer_loan.collector_id', '=', $recovery_officer);
-        }
-        if ($lending_officer != '0') {
-            $loanQuery_2->where('customer_loan.lending_officer_id', '=', $lending_officer);
-        }
 
-        // Apply status-specific filters (equivalent to main query)
-        if ($status == '0') {
-            $loanQuery_2->havingRaw("SUM(CASE WHEN Installment_Date <= '$today' THEN Total_Balance ELSE 0 END) > 0");
-        } elseif ($status == '2') {
-            $loanQuery_2->havingRaw("SUM(CASE WHEN Installment_Date < '$today' THEN Total_Balance ELSE 0 END) > 0");
-        } elseif ($status == '1') {
-            $loanQuery_2->havingRaw("SUM(CASE WHEN DATE(Installment_Date) = '$today' THEN Total_Balance ELSE 0 END) > 0");
-        }
-
-        if ($loan_number != '0') {
-            $loanQuery_2->where('customer_loan.idCustomer_Loan', '=', $loan_number);
-        }
-
-        $gettotal = $loanQuery_2->get();
-
-        return response()->json(['item' => $loan, 'message' => 'all', 'gettotal' => $gettotal], 200);
+        return response()->json(['item' => $loan, 'message' => 'all'], 200);
     }
 
 
@@ -392,6 +335,7 @@ class TodayPaymentController extends Controller
                     'last_payment.Last_Payment_Amount'
                 );
         } else {
+
             // --------------------------
             // STATUS != -1
             // --------------------------
@@ -556,9 +500,7 @@ class TodayPaymentController extends Controller
     ");
 
             if ($installmentFilter === 'maturity') {
-                // Generic maturity:
-                // - loan is matured (Last_Installment_Date < today)
-                // - at least 3 overdue installments
+
                 $loanQuery->havingRaw("
             Last_Installment_Date < CURDATE()
             AND Overdue_Count >= 3
@@ -570,10 +512,6 @@ class TodayPaymentController extends Controller
                     $days = 7; // fallback
                 }
 
-                // ❗ For maturity21: this means
-                //  - Overdue_Count >= 3  (3+ overdue installments)
-                //  - Loan is matured (Last_Installment_Date < today)
-                //  - At least 21 days passed after maturity
                 $loanQuery->havingRaw(
                     'Last_Installment_Date < CURDATE()
              AND Overdue_Count >= 3
@@ -588,6 +526,192 @@ class TodayPaymentController extends Controller
 
         return response()->json(['item' => $loan, 'message' => 'all'], 200);
     }
+
+
+
+
+
+    public function latePayment_arrease(Request $request)
+    {
+        $center_details    = $request->center_details;
+        $group             = $request->group;
+        $customer          = $request->customer;
+        $route             = $request->route;
+        $lending_officer   = $request->lending;
+        $installmentFilter = $request->installment_filter; // maturity | maturity7 | maturity14 | maturity21
+        $today = date('Y-m-d'); // before query build
+
+        $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
+            ->join('installments', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+
+            ->leftJoin(DB::raw('(
+            SELECT 
+                ghc.cus_id,
+                cg.idCustomer_Group AS group_id,
+                cg.Group_No AS group_name,
+                ce.idCenter AS center_id,
+                ce.Name AS center_name
+            FROM group_has_customer ghc
+            JOIN customer_group cg ON ghc.group_id = cg.idCustomer_Group
+            JOIN center ce ON cg.center_id = ce.idCenter
+            WHERE ghc.id = (
+                SELECT MAX(id)
+                FROM group_has_customer x
+                WHERE x.cus_id = ghc.cus_id
+            )
+        ) AS gmap'), 'customer.idCustomer', '=', 'gmap.cus_id')
+
+            ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
+            ->join('user', 'customer_loan.User_idUser', '=', 'user.id')
+            ->leftJoin(DB::raw('(
+    SELECT 
+        cp1.Customer_Loan_idCustomer_Loan,
+        cp1.Date  AS Last_Payment_Date,
+        cp1.Time  AS Last_Payment_Time,
+        cp1.Amount AS Last_Payment_Amount
+    FROM customer_payments cp1
+    INNER JOIN (
+        SELECT 
+            Customer_Loan_idCustomer_Loan,
+            MAX(CONCAT(Date, " ", Time)) AS MaxDateTime
+        FROM customer_payments
+        GROUP BY Customer_Loan_idCustomer_Loan
+    ) cp2
+      ON cp1.Customer_Loan_idCustomer_Loan = cp2.Customer_Loan_idCustomer_Loan
+     AND CONCAT(cp1.Date, " ", cp1.Time) = cp2.MaxDateTime
+) AS last_payment'),
+                'customer_loan.idCustomer_Loan',
+                '=',
+                'last_payment.Customer_Loan_idCustomer_Loan')
+
+            ->where('customer_loan.Status', 0)
+
+            // ✅ ONLY loan id in group by. Everything else aggregated.
+            ->selectRaw("
+            customer_loan.idCustomer_Loan AS idCustomer_Loan,
+
+            MAX(customer_loan.Loan_No) AS Loan_No,
+            MAX(customer_loan.Date_Time) AS Date_Time,
+            MAX(customer_loan.Amount) AS Loan_Amount,
+            MAX(customer_loan.Balance_Amount) AS Balance_Amount,
+            MAX(customer_loan.capital_balance) AS capital_balance,
+            MAX(customer_loan.Installment_Amount) AS Installment_Amount,
+            MAX(customer_loan.Vehicle_No) AS Vehicle_No,
+            MAX(customer_loan.type) AS type,
+
+            MAX(customer.idCustomer) AS idCustomer,
+            MAX(customer.First_Name) AS customer_name,
+            MAX(customer.Last_Name) AS customer_lastname,
+            MAX(customer.Contact_No) AS Contact_No,
+            MAX(customer.Nic) AS NIC,
+            IFNULL(last_payment.Last_Payment_Date, '-') AS Last_Payment_Date,
+            IFNULL(last_payment.Last_Payment_Amount, 0) AS Last_Payment_Amount,
+            MAX(IFNULL(gmap.center_name, '-')) AS center_no,
+            MAX(IFNULL(gmap.group_name, '-')) AS group_name,
+            MAX(route.name) AS routename,
+
+            SUM(
+                CASE 
+                    WHEN installments.Status = 0 
+                     AND installments.Installment_Date < CURDATE()
+                    THEN 1 ELSE 0
+                END
+            ) AS Overdue_Count,
+            
+             SUM(
+        CASE 
+            WHEN installments.Status = 0 
+             AND installments.Installment_Date < CURDATE()
+            THEN 1 ELSE 0
+        END
+    ) AS Installment_Count,
+
+            MAX(installments.Installment_Date) AS Last_Installment_Date,
+
+            ROUND(SUM(installments.Total_Balance),2) AS Total_Balance,
+
+            ROUND(SUM(
+                CASE 
+                    WHEN installments.Installment_Date < CURDATE()
+                    THEN installments.Total_Balance ELSE 0
+                END
+            ),2) AS arrears
+        ")
+            ->groupBy('customer_loan.idCustomer_Loan');
+
+        // -------------------------
+        // COMMON FILTERS
+        // -------------------------
+        if ($center_details != '0') {
+            $loanQuery->where('gmap.center_id', $center_details);
+        }
+        if ($group != '0') {
+            $loanQuery->where('gmap.group_id', $group);
+        }
+        if ($customer != '0') {
+            $loanQuery->where('customer.idCustomer', $customer);
+        }
+        if ($route != '0') {
+            $loanQuery->where('route.id_route', $route);
+        }
+        if ($lending_officer != '0') {
+            $loanQuery->where('customer_loan.lending_officer_id', $lending_officer);
+        }
+
+        if ($installmentFilter === 'maturity') {
+
+            // maturity expired OR overdue >= 3
+            $loanQuery->havingRaw("
+        (Last_Installment_Date < ?)
+        OR Overdue_Count > 3
+    ", [$today]);
+
+        } elseif ($installmentFilter === 'maturity7') {
+
+            // maturity expired +7 OR overdue >= 3
+            $loanQuery->havingRaw("
+        (
+            Last_Installment_Date < ?
+            AND DATEDIFF(?, Last_Installment_Date) >= 7
+        )
+        OR Overdue_Count > 3
+    ", [$today, $today]);
+
+        } elseif ($installmentFilter === 'maturity14') {
+
+            // maturity expired +14 OR overdue >= 3
+            $loanQuery->havingRaw("
+        (
+            Last_Installment_Date < ?
+            AND DATEDIFF(?, Last_Installment_Date) >= 14
+        )
+        OR Overdue_Count > 3
+    ", [$today, $today]);
+
+        } elseif ($installmentFilter === 'maturity21') {
+
+            // maturity expired +21 OR overdue >= 3
+            $loanQuery->havingRaw("
+        (
+            Last_Installment_Date < ?
+            AND DATEDIFF(?, Last_Installment_Date) >= 21
+        )
+        OR Overdue_Count > 3
+    ", [$today, $today]);
+
+        }
+
+
+        $loan = $loanQuery->get();
+
+        return response()->json([
+            'item' => $loan,
+            'message' => 'all'
+        ], 200);
+    }
+
+
 
 
 
@@ -4144,7 +4268,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             }
 
             // Send SMS
-            $sms_template = DB::table('sms_template')->where('type', '=', 'payment_undo')->where('status', '=', '1')->first();
+            $sms_template = tableWithBranch('sms_template')->where('type', '=', 'payment_undo')->where('status', '=', '1')->first();
             if ($sms_template) {
                 $customer = DB::table('customer')->where('idCustomer', '=', $loan->Customer_idCustomer)->first();
                 $loan_balance=DB::table('customer_loan')->where('idCustomer_Loan','=',$loan_id)->value('Balance_Amount');
@@ -4167,7 +4291,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
                 }
 
                 // Log the SMS message
-                $this->smsLogController->index($loan_id, $loan_number_txt, "Undo Payment");
+                $this->smsLogController->index($loan->Customer_idCustomer, $loan_number_txt, "Undo Payment");
             }
 
             DB::commit();

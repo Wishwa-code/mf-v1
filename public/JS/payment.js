@@ -80,6 +80,18 @@ function load_table(page = 1) {
                 }
 
 
+                const cameraButton = `
+    <button type="button"
+        class="btn btn-light me-2"
+        data-bs-toggle="modal"
+        data-bs-target="#standard-modal_2"
+        onclick="set_cus(${item.idCustomer_Loan})">
+        <i class="bi bi-camera fs-4"></i>
+    </button>
+`;
+
+
+
 
                 // Add row data to the table
                 $("#loan_table tbody").append(`
@@ -110,7 +122,7 @@ function load_table(page = 1) {
                             <a href="/invoice/${item.idCustomer_Loan}" target="_blank" class="btn btn-danger"><i class="bi bi-file-earmark-text"></i></a>
                             ${agreementButton} 
                             ${extra_chargeButton} 
-                       
+                       ${cameraButton}
                         </td>
                     </tr>
                 `);
@@ -149,6 +161,63 @@ function load_table(page = 1) {
         }
     });
 }
+
+
+
+
+function saveDocument() {
+
+    var loan_location_id = $('#loan_location_id').val();
+    var description = $('#description').val();
+    var file = $('#file')[0].files[0]; // Get the first selected file
+
+    var formData = new FormData();
+    formData.append('id', loan_location_id);
+    formData.append('documentNames', description);
+    formData.append('documents', file);
+
+    Swal.fire({
+        title: "Are you sure?",
+        text: "Do you want to save this Document ?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, Upload it!",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '/save-files-pending',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+                },
+                success: function (data, textStatus, xhr) {
+                    if (xhr.status === 200) {
+                        Swal.fire({
+                            position: "center",
+                            icon: "success",
+                            title: "Successfully saved!",
+                        }).then(function () {
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire("Error!", "Failed to save data!", "error");
+                    }
+                },
+                error: function(xhr, status, error) {
+                    // Handle error response
+                    console.error('Error saving document:', error);
+                }
+            });
+
+        }
+    });
+}
+
 
 // Function to format the name as required
 function formatName(firstName, lastName) {

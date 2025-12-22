@@ -31,7 +31,7 @@ function load_payment_table(page = 1) {
                 let data = response.item.data;
                 let currentPage = response.item.current_page;
                 let lastPage = response.item.last_page;
-                const getTotalData = response.gettotal;
+
 
 
                 let tot = 0.0;
@@ -112,18 +112,6 @@ function load_payment_table(page = 1) {
                 });
 
 
-                getTotalData.forEach(function (item) {
-                     tot += parseFloat(item.Total_Balance);
-                     pending_amount += parseFloat(item.Total_Balance_until);
-                     ins += parseFloat(item.Today_installment);
-                     arrese += parseFloat(item.arrease);
-                });
-
-                // Update totals
-                $("#tot_amount").text(tot.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                $("#balance_until").text(pending_amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                $("#today_installment").text(ins.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                $("#total_arrease").text(arrese.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
                 // Add pagination controls
                 let paginationControls = '';

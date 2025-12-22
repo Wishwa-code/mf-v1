@@ -1898,27 +1898,56 @@ class UserController extends Controller
     }
 
 
-    public function generateDueSkip(Request $request, HolidayController $holidayController)
+//    public function generateDueSkip(Request $request, HolidayController $holidayController)
+//    {
+//        $request->validate([
+//            'skip_for'  => 'required|in:all,loan,branch,center,product',
+//            'skip_type' => 'required|in:installment,day',
+//            'target_id' => 'nullable|integer',
+//        ]);
+//
+//        $skipFor  = $request->input('skip_for');
+//        $targetId = $request->input('target_id');
+//        $skipType = $request->input('skip_type');
+//
+//        // Call service method from HolidayController
+//        $result = $holidayController->runDueSkip($skipFor, $targetId, $skipType);
+//
+//        return response()->json([
+//            'success' => true,
+//            'message' => 'Due skip processed successfully.',
+//            'data'    => $result,
+//        ]);
+//    }
+
+
+
+    public function generateDueSkip(Request $request)
     {
-        $request->validate([
-            'skip_for'  => 'required|in:all,loan,branch,center,product',
-            'skip_type' => 'required|in:installment,day',
-            'target_id' => 'nullable|integer',
-        ]);
+        $skipFor   = $request->skip_for;
+        $targetId  = $request->target_id;
+        $skipType  = $request->skip_type;
 
-        $skipFor  = $request->input('skip_for');
-        $targetId = $request->input('target_id');
-        $skipType = $request->input('skip_type');
+        // ✅ Selected holiday dates from frontend
+        $selectedDates = $request->input('selected_dates', []);
 
-        // Call service method from HolidayController
-        $result = $holidayController->runDueSkip($skipFor, $targetId, $skipType);
+        if (empty($selectedDates)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No holiday dates selected'
+            ], 422);
+        }
+
+        // Call existing logic
+        $holiday = new \App\Http\Controllers\HolidayController();
+        $holiday->index($skipFor, $targetId, $skipType, $selectedDates);
 
         return response()->json([
             'success' => true,
-            'message' => 'Due skip processed successfully.',
-            'data'    => $result,
+            'message' => 'Due skip processed successfully'
         ]);
     }
+
 
 
     public function getUserDetails($id)
