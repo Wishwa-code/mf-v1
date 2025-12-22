@@ -985,7 +985,7 @@ Route::get('/dailycollectionratio', [\App\Http\Controllers\ReportController::cla
 Route::get('/ajax/branch/centers-routes', [\App\Http\Controllers\ReportController::class, 'ajaxCentersRoutes'])
     ->name('ajax.centers.routes');
 
-
+Route::post('/latePayment_arrease','\App\Http\Controllers\TodayPaymentController@latePayment_arrease')->name('latePayment_arrease');
 
 // use App\Services\SmsService;
 

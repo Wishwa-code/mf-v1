@@ -372,48 +372,7 @@
                             <div id="pagination" class="d-flex justify-content-end mt-3 me-3"></div>
                         </div>
 
-                        <div class="row mt-3 mb-3 p-3 bg-white rounded shadow-sm border">
-                            <div class="col-md-6 mb-3">
-                                <div class="d-flex align-items-center">
-                                    <div class="text-dark fw-bold" style="width: 180px;">
-                                        Total Loan Balance
-                                    </div>
-                                    <div class="ms-2">
-                                        <span id="tot_amount" class="text-dark fw-bold" >0.00</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <div class="d-flex align-items-center">
-                                    <div class="text-dark fw-bold" style="width: 180px;">
-                                        Balance Until Today
-                                    </div>
-                                    <div class="ms-2">
-                                        <span id="balance_until" class="text-dark fw-bold">0.00</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <div class="d-flex align-items-center">
-                                    <div class="text-dark fw-bold" style="width: 180px;">
-                                        Today's Installment
-                                    </div>
-                                    <div class="ms-2">
-                                        <span id="today_installment" class="text-dark fw-bold">0.00</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <div class="d-flex align-items-center">
-                                    <div class="text-dark fw-bold" style="width: 180px;">
-                                        Total Arrears
-                                    </div>
-                                    <div class="ms-2">
-                                        <span id="total_arrease" class="text-dark fw-bold">0.00</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+
 
 
 

@@ -3,6 +3,7 @@
 let dueSkipProgressInterval = null;
 
 $(document).ready(function () {
+
     // DataTables for holiday list
     $('#holiday_table').DataTable();
 
@@ -12,6 +13,28 @@ $(document).ready(function () {
         placeholder: 'Select an option',
         allowClear: true
     });
+
+    // Select all holidays checkbox
+    $('#selectAllHolidays').on('change', function () {
+        const checked = $(this).is(':checked');
+        $('.holiday-check').prop('checked', checked).trigger('change');
+    });
+
+// Update selected count + handle indeterminate state
+    $(document).on('change', '.holiday-check', function () {
+        const total = $('.holiday-check').length;
+        const selected = $('.holiday-check:checked').length;
+
+        $('#selectedHolidayCount').text(selected + ' selected');
+
+        const all = (selected === total);
+        const none = (selected === 0);
+
+        $('#selectAllHolidays')
+            .prop('checked', all)
+            .prop('indeterminate', !all && !none);
+    });
+
 
     // Focus on reason input initially
     $("#account_name").focus().select();
@@ -231,7 +254,7 @@ function calculateWeekendDays(year) {
 /**
  * Validate and submit holiday
  */
-const validateSubmitBank = (event) => {
+const validateSubmitHoliday = (event) => {
     event.preventDefault();
 
     let err = 0;
@@ -239,14 +262,14 @@ const validateSubmitBank = (event) => {
     err = check_validate(arr, err);
 
     if (err === 0) {
-        savebank(event);
+        saveHoliday(event);
     } else {
         Swal.fire("Error!", "Please fill the required fields !", "error");
         return false;
     }
 };
 
-const savebank = (e) => {
+const saveHoliday = (e) => {
     e.preventDefault();
 
     const date = $("#holiday_date").val();
@@ -367,47 +390,54 @@ function finishDueSkipProgress(message) {
  * Generate Due Skip
  */
 function generateDueSkip() {
-    const skipFor = $('#skipFor').val();
-    const skipType = $('#skipType').val();
+    const skipFor   = $('#skipFor').val();
+    const skipType  = $('#skipType').val();
+
+    // ✅ Selected holiday dates
+    const selectedDates = $('.holiday-check:checked').map(function () {
+        return $(this).val();
+    }).get();
+
+    if (selectedDates.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Select holiday dates',
+            text: 'Please select at least one holiday date to process.'
+        });
+        return;
+    }
 
     let targetValue = null;
-    let targetText = null;
+    let targetText  = null;
 
     if (skipFor === 'loan') {
         targetValue = $('#loanSelect').val();
-        targetText = $('#loanSelect option:selected').text();
+        targetText  = $('#loanSelect option:selected').text();
     } else if (skipFor === 'branch') {
         targetValue = $('#branchSelect').val();
-        targetText = $('#branchSelect option:selected').text();
+        targetText  = $('#branchSelect option:selected').text();
     } else if (skipFor === 'center') {
         targetValue = $('#centerSelect').val();
-        targetText = $('#centerSelect option:selected').text();
+        targetText  = $('#centerSelect option:selected').text();
     } else if (skipFor === 'product') {
         targetValue = $('#productSelect').val();
-        targetText = $('#productSelect option:selected').text();
+        targetText  = $('#productSelect option:selected').text();
     }
 
-    // Basic validation
     if (skipFor !== 'all' && (!targetValue || targetValue === '')) {
         Swal.fire("Validation", "Please select a target for the selected mode.", "warning");
         return;
     }
 
-    let displayText = `<b>Skip For:</b> ${skipFor}<br>`;
-    if (targetValue) {
-        displayText += `<b>Target:</b> ${targetText} (ID: ${targetValue})<br>`;
-    }
-    displayText += `<b>Skip Type:</b> ${skipType}`;
-
+    // ✅ Simple confirm text (no heavy HTML)
     Swal.fire({
-        title: 'Generate Due Skip',
-        html: displayText,
+        title: 'Generate Due Skip?',
+        text: `Selected dates: ${selectedDates.length} | Mode: ${skipFor} | Type: ${skipType}`,
         icon: 'info',
         showCancelButton: true,
         confirmButtonText: 'Proceed',
     }).then((result) => {
         if (result.isConfirmed) {
-
             startDueSkipProgress();
 
             $.ajax({
@@ -419,26 +449,20 @@ function generateDueSkip() {
                 data: {
                     skip_for: skipFor,
                     target_id: targetValue,
-                    skip_type: skipType
+                    skip_type: skipType,
+                    selected_dates: selectedDates, // ✅ send selected holidays
                 },
                 success: function (response) {
                     finishDueSkipProgress('Due skip processed successfully.');
 
                     setTimeout(() => {
                         $('#dueSkipProgressModal').modal('hide');
-
                         Swal.fire({
-                            title: 'Success',
-                            html: `
-                                <b>Message:</b> ${response.message || 'Success'}<br>
-                                <b>Loans Processed:</b> ${response.data?.processed_loans ?? 0}<br>
-                                <b>Installments Affected:</b> ${response.data?.processed_installments ?? 0}
-                            `,
                             icon: 'success',
-                        }).then(() => {
-                            window.location.reload();
-                        });
-
+                            title: 'Done!',
+                            text: 'Due skip completed successfully.',
+                            showConfirmButton: true,
+                        }).then(() => window.location.reload());
                     }, 800);
                 },
                 error: function (xhr) {
@@ -446,9 +470,9 @@ function generateDueSkip() {
                     setTimeout(() => {
                         $('#dueSkipProgressModal').modal('hide');
                         Swal.fire({
-                            title: 'Error',
-                            text: 'Something went wrong! Please check logs.',
-                            icon: 'error'
+                            icon: 'error',
+                            title: 'Failed',
+                            text: 'Something went wrong. Please try again.',
                         });
                         console.error(xhr.responseText);
                     }, 600);

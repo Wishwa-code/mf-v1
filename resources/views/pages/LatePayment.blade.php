@@ -215,13 +215,12 @@
                                     <label for="installment_filter" class="form-label">Pending Installments Filter</label>
                                     <select class="form-control select2" id="installment_filter">
                                         <option value="all">All</option>
-                                        <option value="more_than_3">More than 3</option>
-                                        <option value="maturity">More than 3 and maturity expired</option>
-                                        <option value="maturity7">Maturity +7 days</option>
-                                        <option value="maturity14">Maturity +14 days</option>
-                                        <option value="maturity21">Maturity +21 days</option>
+                                        <option value="more_than_3">More than 3 overdue installments</option>
+                                        <option value="maturity">Maturity exceeded by 3 days or 3 overdue installments</option>
+                                        <option value="maturity7">Maturity exceeded by 7 days or 3 overdue installments</option>
+                                        <option value="maturity14">Maturity exceeded by 14 days or 3 overdue installments</option>
+                                        <option value="maturity21">Maturity exceeded by 21 days or 3 overdue installments</option>
                                     </select>
-
                                 </div>
                             </div>
 
@@ -283,8 +282,8 @@
                                     <th>Member Contact No</th>
                                     <th>Member Name</th>
                                     <th>Installment Amount</th>
-                                    <th>Pending Installments</th>
-                                    <th>Penalty Total</th>
+                                    <th>Arrease Count</th>
+                                    <th>Maturity Date</th>
                                     <th>Loan Balance</th>
                                     <th>Capital Balance</th>
                                     <th>Arrears</th>
@@ -537,7 +536,7 @@
 
             $.ajax({
                 type: "POST",
-                url: `/latePayment_load_check?page=${page}`,
+                url: `/latePayment_arrease?page=${page}`,
                 headers: {
                     "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                 },
@@ -606,7 +605,7 @@
                             <td>${item.customer_name} ${item.customer_lastname}</td>
                             <td>${parseFloat(item.Installment_Amount).toFixed(2)}</td>
                             <td>${item.Installment_Count}</td>
-                            <td>${parseFloat(item.Panalty_Balance).toFixed(2)}</td>
+                            <td>${item.Last_Installment_Date}</td>
                             <td>${parseFloat(item.Balance_Amount).toFixed(2)}</td>
                             <td>${parseFloat(item.capital_balance).toFixed(2)}</td>
                             <td>${parseFloat(item.arrears ?? 0).toFixed(2)}</td>

@@ -734,19 +734,28 @@ $banner = DB::select($query);
             @endif
         </div>
         <ul class="topbar-menu d-flex align-items-center gap-3">
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('approval.pending') }}">
-                    <i class="ri-notification-3-line"></i>
-                    <span>Approvals</span>
+            @php
+                $isCollector = DB::table('user')
+                    ->where('id', session('userid'))
+                    ->value('collector');
+            @endphp
 
-                    {{-- Badge only for Head Office --}}
-                    @if(session('branch_id') == -1)
-                        <span id="approvalBadge"
-                              class="badge bg-danger ms-1"
-                              style="display:none; min-width:20px;">0</span>
-                    @endif
-                </a>
-            </li>
+            @if($isCollector != 1)
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('approval.pending') }}">
+                        <i class="ri-notification-3-line"></i>
+                        <span>Approvals</span>
+
+                        {{-- Badge only for Head Office --}}
+                        @if(session('branch_id') == -1)
+                            <span id="approvalBadge"
+                                  class="badge bg-danger ms-1"
+                                  style="display:none; min-width:20px;">0</span>
+                        @endif
+                    </a>
+                </li>
+            @endif
+
 
             <li class="d-none d-sm-inline-block">
                 <div class="nav-link" id="light-dark-mode">

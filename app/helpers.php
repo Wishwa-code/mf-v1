@@ -304,7 +304,7 @@ if (!function_exists('format_member_name')) {
 function getTargetLoans($skipFor, $targetId)
 {
     if ($skipFor === 'all') {
-        return tableWithBranch('customer_loan')->where('Status', '0')->get();
+        return tableWithBranch('customer_loan')->where('Status','!=', '-2')->get();
     }
 
     if ($skipFor === 'loan') {
@@ -312,15 +312,30 @@ function getTargetLoans($skipFor, $targetId)
     }
 
     if ($skipFor === 'branch') {
-        return DB::table('customer_loan')->where('branch_id', $targetId)->get();
+        return DB::table('customer_loan')->where('Status','!=', '-2')->where('branch_id', $targetId)->get();
+    }
+    if ($skipFor === 'center') {
+
+        return tableWithBranch('customer_loan', 'customer_loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin(DB::raw('(
+            SELECT
+                ghc.cus_id,
+                IFNULL(cg.Group_No, "-") AS group_name
+            FROM group_has_customer ghc
+            LEFT JOIN customer_group cg ON ghc.group_id = cg.idCustomer_Group
+        ) AS subquery'), 'customer.idCustomer', '=', 'subquery.cus_id')
+            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->where('center.idCenter', $targetId)   // ✅ filter via center table
+            ->where('customer_loan.Status', '!=', '-2')
+            ->get();
     }
 
-    if ($skipFor === 'center') {
-        return tableWithBranch('customer_loan')->where('Center_Id', $targetId)->where('Status', '0')->get();
-    }
 
     if ($skipFor === 'product') {
-        return tableWithBranch('customer_loan')->where('Loan_Category_idLoan_Category', $targetId)->where('Status', '0')->get();
+        return tableWithBranch('customer_loan')->where('Loan_Category_idLoan_Category', $targetId)->where('Status','!=', '-2')->get();
     }
 
     return collect(); // empty if none match
@@ -329,6 +344,9 @@ function getTargetLoans($skipFor, $targetId)
 
 function processInstallmentSkip($loan, $installment, $companySetting,$branch_id)
 {
+
+
+
     $product = DB::table('loan_category')->where('branch_id','=',$branch_id)->where('idLoan_Category', $loan->Loan_Category_idLoan_Category)->first();
     $Repayment_type = $product->Repayment_type;
     $max_date = DB::table('installments')

@@ -97,6 +97,7 @@ class LoanController extends Controller
                 ->first();
             $cus_loan_count = tableWithBranch('customer_loan')
                 ->where('Customer_idCustomer', '=', $customer_id)
+                ->where('Status', '!=', '-2')
                 ->count();
 
             // Check max allowed loans limit
@@ -1278,8 +1279,20 @@ class LoanController extends Controller
 
         $Collecting_Officer = DB::table('user')->where('id', $loan->collector_id)->first();
 
+
+        $capital_amountSum = $installments->sum('capital_amount');
+        $interest_amountSum = $installments->sum('interest_amount');
+        $Saving_Sum = $installments->sum('Saving_amount');
+        $total_sum=$capital_amountSum+$interest_amountSum+$Saving_Sum;
+        $Saving_balance = $installments->sum('Saving_balance');
+        $Ins_Total_Balance = $installments->sum('Total_Balance');
+
+
         // Pass the data to the view with compact and handle potential nulls
         return view('pages.LoanView', compact(
+            'Ins_Total_Balance',
+            'Saving_balance',
+            'total_sum',
             'Collecting_Officer',
             'ins_count',
             'Total_Balance',

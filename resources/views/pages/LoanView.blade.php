@@ -417,16 +417,17 @@
                                 <tr>
                                     <th>Loan Stock</th>
                                     <th>Loan Portfolio</th>
+                                    <th>Total Loan Amount</th>
                                     <th>Paid Loan Amount</th>
                                     <th>Paid Saving Amount</th>
                                     <th>Extra Payment</th>
 
                                     <th>Total Paid Penalty</th>
                                     <th>Total Penalty Balance</th>
-                                    <th>Savings Balance</th>
-                                    <th>Capital Balance</th>
-                                    <th>Interest Balance</th>
-
+                                    <th>Savings Due</th>
+{{--                                    <th>Capital Balance</th>--}}
+{{--                                    <th>Interest Balance</th>--}}
+                                    <th>Installment Total Balance</th>
                                     <th>Extra Charge Balance</th>
                                     <th>Total Outstanding</th>
                                     <th>Maturity Date</th>
@@ -437,15 +438,17 @@
                                 <tr>
                                     <td>{{ number_format($loan->Amount, 2) }}</td>
                                     <td>{{ number_format($loan->Total_Loan_Amount, 2) }}</td>
+                                    <td>{{ number_format(ceil($total_sum), 2) }}</td>
                                     <td>{{ number_format(max($total_paid_amount - $savingBalanceSum, 0), 2) }}</td>
                                     <td>{{ number_format($savingBalanceSum, 2) }}</td>
                                     <td>{{ number_format($totalExtraPayments, 2) }}</td>
 
                                     <td>{{ number_format($Panalty_Amount, 2) }}</td>
                                     <td>{{ number_format($Panalty_BalanceSum, 2) }}</td>
-                                    <td>{{ number_format($loan_saving_balance, 2) }}</td>
-                                    <td>{{ number_format($loan->capital_balance, 2) }}</td>
-                                    <td>{{ number_format($loan->installment_balance, 2) }}</td>
+                                    <td>{{ number_format($Saving_balance, 2) }}</td>
+                                    <td>{{ number_format($Ins_Total_Balance, 2) }}</td>
+{{--                                    <td>{{ number_format($loan->capital_balance, 2) }}</td>--}}
+{{--                                    <td>{{ number_format($loan->installment_balance, 2) }}</td>--}}
 
                                     <td>{{ number_format($extraChargelatestBalance, 2) }}</td>
                                     <td>{{ number_format($Total_Balance + $extraChargelatestBalance, 2, '.', ',') }}</td>

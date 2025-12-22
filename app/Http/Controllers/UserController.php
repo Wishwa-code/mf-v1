@@ -1924,13 +1924,30 @@ class UserController extends Controller
 
     public function generateDueSkip(Request $request)
     {
-        $skipFor = $request->skip_for;
-        $targetId = $request->target_id;
-        $skipType = $request->skip_type;
-        $holiday=new HolidayController();
-        $holiday->index($skipFor,$targetId,$skipType);
+        $skipFor   = $request->skip_for;
+        $targetId  = $request->target_id;
+        $skipType  = $request->skip_type;
 
+        // ✅ Selected holiday dates from frontend
+        $selectedDates = $request->input('selected_dates', []);
+
+        if (empty($selectedDates)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No holiday dates selected'
+            ], 422);
+        }
+
+        // Call existing logic
+        $holiday = new \App\Http\Controllers\HolidayController();
+        $holiday->index($skipFor, $targetId, $skipType, $selectedDates);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Due skip processed successfully'
+        ]);
     }
+
 
 
     public function getUserDetails($id)

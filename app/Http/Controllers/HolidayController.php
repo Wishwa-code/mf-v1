@@ -13,10 +13,14 @@ class HolidayController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index($skipFor, $targetId, $skipType)
+    public function index($skipFor, $targetId, $skipType, array $selectedDates = [])
     {
         $companySetting = tableWithBranch('company')->value('saturday_sunday');
-        $holidays = tableWithBranch('holidays')->get();
+        $holidays = tableWithBranch('holidays')
+            ->when(!empty($selectedDates), function ($q) use ($selectedDates) {
+                $q->whereIn('date', $selectedDates);
+            })
+            ->get();
         $branch_id=session('branch_id');
         foreach ($holidays as $holiday) {
             $holidayDate = $holiday->date;
@@ -34,6 +38,7 @@ class HolidayController extends Controller
                     ->get();
 
                 foreach ($installments as $installment) {
+
                     if ($skipType === 'installment') {
                         processInstallmentSkip($loan, $installment, $companySetting,$branch_id);
                     } else {

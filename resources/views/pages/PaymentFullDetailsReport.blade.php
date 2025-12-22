@@ -170,23 +170,23 @@
                 </div>
 
                 <div class="col-md-3 mt-3">
-                    <label>Installment Type</label>
+                    <label>Payment Type</label>
                     <select name="paid_type" class="form-control">
                         <option value="All" {{ request('paid_type') == 'All' ? 'selected' : '' }}>All</option>
                         <option value="Not Paid" {{ request('paid_type') == 'Not Paid' ? 'selected' : '' }}>Not Paid</option>
-{{--                        <option value="Over Paid" {{ request('paid_type') == 'Over Paid' ? 'selected' : '' }}>Over Paid</option>--}}
+                        {{--                        <option value="Over Paid" {{ request('paid_type') == 'Over Paid' ? 'selected' : '' }}>Over Paid</option>--}}
                         <option value="Under Paid" {{ request('paid_type') == 'Under Paid' ? 'selected' : '' }}>Under Paid</option>
                         <option value="Normal" {{ request('paid_type') == 'Normal' ? 'selected' : '' }}>Normal</option>
                     </select>
                 </div>
 
                 <div class="col-md-3 mt-3">
-                    <label>Installment Start Date</label>
+                    <label>Payment Start Date</label>
                     <input type="date" name="start_date" class="form-control" value="{{ request('start_date') ?? date('Y-m-d') }}">
                 </div>
 
                 <div class="col-md-3 mt-3">
-                    <label>Installment End Date</label>
+                    <label>Payment End Date</label>
                     <input type="date" name="end_date" class="form-control" value="{{ request('end_date') ?? date('Y-m-d') }}">
                 </div>
 
@@ -217,6 +217,12 @@
                         <th>Group</th>
                         <th>Loan No</th>
                         <th>Customer Name</th>
+                        <th>Customer No</th>
+                        <th>Phone</th>
+                        <th>Customer Total Arrease</th>
+                        <th>Last Payment Date</th>
+                        <th>Last Payment Amount</th>
+
                         <th>Loan Product</th>
                         <th>Loan Amount</th>
                         <th>Installment Amount</th>
@@ -225,11 +231,12 @@
                         <th>Total Payable</th>
                         <th>Paid Ins. Amount</th>
                         <th>Paid Amount</th>
-                        <th>Paid Arrears</th>
+
                         <th>Over Paid</th>
                         <th>Balance Amount</th>
-                        <th>Installment Type</th>
+                        <th>Payment Type</th>
                         <th>Loan Balance</th>
+                        <th>Arrease Amount</th>
                         <th>Collector</th>
                         <th>Action</th>
                     </tr>
@@ -247,7 +254,12 @@
                         $totalRealPaidAmount = 0;
                         $totalArrease = 0;
                         $totalOverPay = 0;
+
+                        // ✅ add these
+                        $totalCustomerTotalArrease = 0;
+                        $totalLastPaymentAmount = 0;
                     @endphp
+
 
                     @foreach($payments as $payment)
                         @php
@@ -270,13 +282,14 @@
                                 $additional_paid=$orginal_paid-$ins_paid;
                                 if($payable_amount>$ins_paid){
                                     $arrears=$additional_paid;
-                                }else if($payable_amount=$ins_paid){
+                                }else if($payable_amount==$ins_paid){
                                     $over_pay=$additional_paid;
                                 }
                             }
                             $totalArrease+=$arrears;
                             $totalOverPay+=$over_pay;
-
+                            $totalCustomerTotalArrease += ($payment->CustomerTotalArrease ?? 0);
+                            $totalLastPaymentAmount += ($payment->LastPaymentAmount ?? 0);
 
                         @endphp
                         <tr>
@@ -286,6 +299,12 @@
                             <td>{{ $payment->GroupName }}</td>
                             <td>{{ $payment->LoanNo }}</td>
                             <td style="text-align: left">{{ $payment->CustomerName }}</td>
+                            <td>{{ $payment->MemberNo ?? '-' }}</td>
+                            <td>{{ $payment->Phone ?? '-' }}</td>
+                            <td style="text-align:right">{{ number_format($payment->CustomerTotalArrease ?? 0, 2) }}</td>
+                            <td>{{ $payment->LastPaymentDate ?? '-' }}</td>
+                            <td style="text-align:right">{{ number_format($payment->LastPaymentAmount ?? 0, 2) }}</td>
+
                             <td>{{ $payment->LoanProduct }}</td>
                             <td>{{ number_format($payment->LoanAmount, 2) }}</td>
                             <td>{{ number_format($payment->InstallmentAmount, 2) }}</td>
@@ -294,21 +313,29 @@
                             <td>{{ number_format($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount, 2) }}</td>
                             <td>{{ number_format($payment->TotalPaidAmount, 2) }}</td>
                             <td>{{ number_format($payment->TotalRealPaidAmount, 2) }}</td>
-                            <td>{{ number_format($arrears, 2) }}</td>
+
                             <td>{{ number_format($over_pay, 2) }}</td>
                             <td>{{ number_format(max(($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) - $payment->TotalPaidAmount, 0), 2) }}</td>
                             <td>
-                                @if ($payment->TotalPaidAmount < 1)
-                                    <span class="text-danger font-weight-bold">Not Paid</span>
-                                @elseif (($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) > $payment->TotalPaidAmount)
-                                    <span class="text-warning font-weight-bold">Under Paid</span>
-                                @elseif (($payment->TotalInstallmentAmount + $payment->TotalPenaltyAmount) < $payment->TotalPaidAmount)
+                                @php
+                                    $totalPayable = ($payment->TotalInstallmentAmount ?? 0) + ($payment->TotalPenaltyAmount ?? 0);
+                                    $paidAmount   = $payment->TotalRealPaidAmount ?? 0; // ✅ Paid Amount (customer_payments sum)
+                                    $diff         = $paidAmount - $totalPayable;
+                                @endphp
+
+                                @if ($diff > 0)
                                     <span class="text-success font-weight-bold">Over Paid</span>
+                                @elseif ($paidAmount == 0)
+                                    <span class="text-danger font-weight-bold">Not Paid</span>
+                                @elseif ($paidAmount < $totalPayable)
+                                    <span class="text-warning font-weight-bold">Under Paid</span>
                                 @else
                                     <span class="text-primary font-weight-bold">Normal</span>
                                 @endif
                             </td>
+
                             <td>{{ number_format($payment->Balance_Amount, 2) }}</td>
+                            <td>{{ number_format($payment->CustomerTotalArrease, 2) }}</td>
                             <td>{{ $payment->Collector }}</td>
                             <td>
                                 <a href="{{ url('loanview/' . $payment->idCustomer_Loan) }}" target="_blank" class="btn btn-warning">
@@ -319,24 +346,67 @@
                     @endforeach
                     </tbody>
                     <tfoot>
-                    <tr class="font-weight-bold bg-light">
-                        <td colspan="7" class="text-right">Total:</td>
-                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalLoanAmount, 2) }}</strong></td>
-                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalInstallmentAmount, 2) }}</strong></td>
-                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalInstallmentTotal, 2) }}</strong></td>
-                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalPenaltyAmount, 2) }}</strong></td>
-                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalPayableAmount, 2) }}</strong></td>
-                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalPaidAmount, 2) }}</strong></td>
-                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalRealPaidAmount, 2) }}</strong></td>
-                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalArrease, 2) }}</strong></td>
-                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalOverPay, 2) }}</strong></td>
-                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalBalanceAmount, 2) }}</strong></td>
-                        <td></td> <!-- Empty for Paid Type -->
-                        <td class="text-right" style="text-align: right"><strong>{{ number_format($totalLoanBalance, 2) }}</strong></td>
-                        <td></td> <!-- Empty for Collector -->
-                        <td></td> <!-- Empty for Action -->
-                    </tr>
+                    <tfoot>
+                        <tr class="font-weight-bold bg-light">
+                            <td colspan="8" class="text-right">Total:</td>
+
+                            {{-- Customer Total Arrease (col 9) --}}
+                            <td class="text-right" style="text-align:right">
+                                <strong>{{ number_format($totalCustomerTotalArrease, 2) }}</strong>
+                            </td>
+
+                            {{-- Last Payment Date (col 10) - no total --}}
+                            <td></td>
+
+                            {{-- Last Payment Amount (col 11) --}}
+                            <td class="text-right" style="text-align:right">
+                                <strong>{{ number_format($totalLastPaymentAmount, 2) }}</strong>
+                            </td>
+
+                            {{-- Loan Product (col 12) - no total --}}
+                            <td></td>
+
+                            {{-- Loan Amount (col 13) --}}
+                            <td class="text-right" style="text-align: right"><strong>{{ number_format($totalLoanAmount, 2) }}</strong></td>
+
+                            {{-- Installment Amount (col 14) --}}
+                            <td class="text-right" style="text-align: right"><strong>{{ number_format($totalInstallmentAmount, 2) }}</strong></td>
+
+                            {{-- Total Installment (col 15) --}}
+                            <td class="text-right" style="text-align: right"><strong>{{ number_format($totalInstallmentTotal, 2) }}</strong></td>
+
+                            {{-- Penalty Amount (col 16) --}}
+                            <td class="text-right" style="text-align: right"><strong>{{ number_format($totalPenaltyAmount, 2) }}</strong></td>
+
+                            {{-- Total Payable (col 17) --}}
+                            <td class="text-right" style="text-align: right"><strong>{{ number_format($totalPayableAmount, 2) }}</strong></td>
+
+                            {{-- Paid Ins. Amount (col 18) --}}
+                            <td class="text-right" style="text-align: right"><strong>{{ number_format($totalPaidAmount, 2) }}</strong></td>
+
+                            {{-- Paid Amount (col 19) --}}
+                            <td class="text-right" style="text-align: right"><strong>{{ number_format($totalRealPaidAmount, 2) }}</strong></td>
+
+                            {{-- Over Paid (col 20) --}}
+                            <td class="text-right" style="text-align: right"><strong>{{ number_format($totalOverPay, 2) }}</strong></td>
+
+                            {{-- Balance Amount (col 21) --}}
+                            <td class="text-right" style="text-align: right"><strong>{{ number_format($totalBalanceAmount, 2) }}</strong></td>
+
+                            {{-- Installment Type (col 22) --}}
+                            <td></td>
+
+                            {{-- Loan Balance (col 23) --}}
+                            <td class="text-right" style="text-align: right"><strong>{{ number_format($totalLoanBalance, 2) }}</strong></td>
+
+                            {{-- Collector (col 24) --}}
+                            <td></td>
+
+                            {{-- Action (col 25) --}}
+                            <td></td>
+                        </tr>
                     </tfoot>
+
 
 
 
