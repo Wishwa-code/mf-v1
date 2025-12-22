@@ -48,10 +48,10 @@ class StoreCustomerLeadRequest extends FormRequest
                     
                     if (isset($imageType['is_required']) && $imageType['is_required']) {
                         // Required field
-                        $rules[$fieldName] = ['required', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:10240']; // 10MB max
+                        $rules[$fieldName] = ['required', 'image', 'mimes:jpeg,jpg,png,gif,webp,pdf', 'max:10240']; // 10MB max
                     } else {
                         // Optional field (nullable)
-                        $rules[$fieldName] = ['nullable', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:10240'];
+                        $rules[$fieldName] = ['nullable', 'image', 'mimes:jpeg,jpg,png,gif,webp,pdf', 'max:10240'];
                     }
                 }
             }

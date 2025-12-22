@@ -76,9 +76,9 @@ class UpdateCustomerLeadRequest extends FormRequest
                     }
 
                     if ($isRequired && !$imageExists) {
-                        $rules[$fieldName] = 'required|image|mimes:jpeg,png,jpg,gif';
+                        $rules[$fieldName] = 'required|image|mimes:jpeg,jpg,png,gif,webp,pdf';
                     } else {
-                        $rules[$fieldName] = 'nullable|image|mimes:jpeg,png,jpg,gif';
+                        $rules[$fieldName] = 'nullable|image|mimes:jpeg,jpg,png,gif,webp,pdf';
                     }
 
                     // Also validate location if image is uploaded? 
