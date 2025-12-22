@@ -75,9 +75,8 @@ function load_payment_table() {
                         addButton = `<button type="button" class="btn btn-primary btn-sm ${item.pay_status != '0' ? 'disabled' : ''}" onclick="addSlip('${item.Inv_no}')">
                         <i class="bi bi-plus"></i>
                      </button>`;
-
                         // print receipt / view receipt btn
-                        paymentButton = `<button type="button" class="btn btn-warning btn-sm ${item.pay_status != '0' ? 'disabled' : ''}" onclick="payment_slip(${item.loan_id})">
+                        paymentButton = `<button type="button" class="btn btn-warning btn-sm ${item.pay_status != '0' ? 'disabled' : ''}" onclick="payment_slip(${item.Inv_no})">
                             <i class="bi bi-file-earmark-text"></i>
                          </button>`;
 

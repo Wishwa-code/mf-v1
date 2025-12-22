@@ -111,7 +111,7 @@
                                         </div>
                                     </div>
                                     <button type="button" class="btn btn-success" id="addBankBtn"
-                                            onclick="validateSubmitBank(event)">
+                                            onclick="validateSubmitHoliday(event)">
                                         Save Holiday
                                     </button>
                                 </div>
@@ -187,19 +187,33 @@
                                             <table class="table table-bordered">
                                                 <thead>
                                                 <tr class="table-primary">
+                                                    <th style="width:60px;">
+                                                        <input type="checkbox" id="selectAllHolidays">
+                                                    </th>
                                                     <th>Date</th>
                                                     <th>Note</th>
                                                 </tr>
                                                 </thead>
+
                                                 <tbody id="due-skip-table-body">
                                                 @foreach($holidays as $item)
                                                     <tr>
+                                                        <td class="text-center">
+                                                            <input type="checkbox"
+                                                                   class="holiday-check"
+                                                                   value="{{ $item->date }}">
+                                                        </td>
                                                         <td>{{ $item->date }}</td>
                                                         <td>{{ $item->reason }}</td>
                                                     </tr>
                                                 @endforeach
                                                 </tbody>
+
                                             </table>
+                                            <div class="mb-2">
+                                                <span class="badge bg-secondary" id="selectedHolidayCount">0 selected</span>
+                                            </div>
+
                                         </div>
                                     </div>
 
@@ -243,7 +257,7 @@
                                                 <option value="">-- Select Center --</option>
                                                 @foreach($centers as $center)
                                                     <option value="{{ $center->idCenter }}">
-                                                        {{ $center->Name }}
+                                                        {{ $center->No }}-{{ $center->Name }}
                                                     </option>
                                                 @endforeach
                                             </select>

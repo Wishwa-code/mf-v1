@@ -1531,37 +1531,59 @@ class PendingLoanController extends Controller
             $default1 = tableWithBranch('company_bank_accounts')->where('Bank_Type', 'System_default_1')->first();
             $default9 = tableWithBranch('company_bank_accounts')->where('Bank_Type', 'System_default_9')->first();
 
-            // Reverse Issue Loan
-            if ($companyBankId && $default1) {
-                $comment = "REVERSAL of Issue Loan\nLoan Number : {$loan->Loan_No}\nLoan Amount : {$loan->Amount}\n";
-                // company bank DEBIT (reverse)
-                $this->bankLogController->index($companyBankId, "Reversal - Issue Loan", $comment, "-", "debit", $loan->Amount, $default1->Idbank);
-                // default_1 CREDIT (reverse)
-                $this->bankLogController->index($default1->Idbank, "Reversal - Issue Loan", $comment, "-", "credit", $loan->Amount, $companyBankId);
+
+            $isCancelledLoan = $loan->Status;
+            Log::info($isCancelledLoan);
+            if ($isCancelledLoan!=-1){
+                if ($companyBankId && $default1) {
+                    $comment = "REVERSAL of Issue Loan\nLoan Number : {$loan->Loan_No}\nLoan Amount : {$loan->Amount}\n";
+
+                    $this->bankLogController->index(
+                        $companyBankId,
+                        "Reversal - Issue Loan",
+                        $comment,
+                        "-",
+                        "debit",
+                        $loan->Amount,
+                        $default1->Idbank
+                    );
+
+                    $this->bankLogController->index(
+                        $default1->Idbank,
+                        "Reversal - Issue Loan",
+                        $comment,
+                        "-",
+                        "credit",
+                        $loan->Amount,
+                        $companyBankId
+                    );
+
+
+                    // Reverse Doc Charges
+                    $sumOther = DB::table('loan_other_charges')->where('Customer_Loan_idCustomer_Loan', $loanId)->where('branch_id', $branchId)->sum('Amount');
+                    if ($sumOther > 0) {
+                        $docComment = "REVERSAL of Loan Document Charges\nLoan Number : {$loan->Loan_No}\nAmount : {$sumOther}\n";
+                        // company CREDIT
+                        $this->bankLogController->index($companyBankId, "Reversal - Loan Document Charges", $docComment, "-", "credit", $sumOther, $default9->Idbank);
+                        // default_9 DEBIT
+                        $this->bankLogController->index($default9->Idbank, "Reversal - Loan Document Charges", $docComment, "-", "debit", $sumOther, $companyBankId);
+
+                        // Neutralize income with compensating Expense
+                        $reason = "Reversal of Other loan charges for loan number: ({$loan->Loan_No}), Customer name: ({$customer->First_Name} {$customer->Last_Name})";
+                        $exp = new \App\Models\Expenses();
+                        $exp->type       = "Expense";
+                        $exp->reason     = $reason;
+                        $exp->date       = date('Y-m-d');
+                        $exp->amount     = $sumOther;
+                        $exp->category_id= optional(tableWithBranch('income_category')->where('description','Other')->first())->id;
+                        $exp->bank_id    = 1;
+                        $exp->user_id    = $actorUserId;
+                        $exp->branch_id  = $branchId;
+                        $exp->save();
+                    }
+                }
             }
 
-            // Reverse Doc Charges
-            $sumOther = DB::table('loan_other_charges')->where('Customer_Loan_idCustomer_Loan', $loanId)->where('branch_id', $branchId)->sum('Amount');
-            if ($sumOther > 0) {
-                $docComment = "REVERSAL of Loan Document Charges\nLoan Number : {$loan->Loan_No}\nAmount : {$sumOther}\n";
-                // company CREDIT
-                $this->bankLogController->index($companyBankId, "Reversal - Loan Document Charges", $docComment, "-", "credit", $sumOther, $default9->Idbank);
-                // default_9 DEBIT
-                $this->bankLogController->index($default9->Idbank, "Reversal - Loan Document Charges", $docComment, "-", "debit", $sumOther, $companyBankId);
-
-                // Neutralize income with compensating Expense
-                $reason = "Reversal of Other loan charges for loan number: ({$loan->Loan_No}), Customer name: ({$customer->First_Name} {$customer->Last_Name})";
-                $exp = new \App\Models\Expenses();
-                $exp->type       = "Expense";
-                $exp->reason     = $reason;
-                $exp->date       = date('Y-m-d');
-                $exp->amount     = $sumOther;
-                $exp->category_id= optional(tableWithBranch('income_category')->where('description','Other')->first())->id;
-                $exp->bank_id    = 1;
-                $exp->user_id    = $actorUserId;
-                $exp->branch_id  = $branchId;
-                $exp->save();
-            }
 
             // Logs (customer + loan)
             $custLogReq = new Request([

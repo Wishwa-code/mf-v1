@@ -1,10 +1,6 @@
 ######### Login
-#POST http://127.0.0.1:8000/api/login
-#Content-Type: application/json
-#
-#{ "email": "admin@gmail.com", "password": "123" }
-
-
-GET http://127.0.0.1:8000/api/payments/1/receipt
-Authorization: Bearer 1|ud3dCylAP50Hi6WWFjbCG97aIwPMxkR4zKxwhqTd90952198
+POST https://peoplescreditinvestment51.asipbook.com/api/login
 Content-Type: application/json
+
+{ "email": "admin@gmail.com", "password": "123" }
+
