@@ -34,6 +34,11 @@ class UpdateCustomerLeadRequest extends FormRequest
             // Using latitude/longitude to match the form inputs in edit.blade.php
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
+            'route_id' => 'nullable|exists:route,id_route',
+            'district' => 'nullable|string',
+            'city' => 'nullable|string',
+            'source' => 'nullable|string',
+            'notes' => 'nullable|string',
         ];
 
         // Dynamic Image Validation

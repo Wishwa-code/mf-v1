@@ -98,6 +98,10 @@ class CustomerLeadController extends Controller
                 'latitude'    => $lead->latitude,
                 'longitude'   => $lead->longitude,
                 'created_at'  => optional($lead->created_at_lead)->format('Y-m-d H:i'),
+                'route_name'  => optional($lead->route)->name,
+                'source'      => $lead->source,
+                'district'    => $lead->district,
+                'city'        => $lead->city,
             ];
         })->values();
 
@@ -306,9 +310,14 @@ class CustomerLeadController extends Controller
         $guarantorImageTypes = $guarantorImageTypesSetting ? json_decode($guarantorImageTypesSetting, true) : [];
 
         $businessCategories = BusinessCategory::all();
+        $routes = \App\Models\Route::all();
+
+        if ($lead->source !== 'recovery-officer') {
+            return view('pages.leads.edit_online', compact('lead', 'imageTypes', 'guardianImageTypes', 'guarantorImageTypes', 'businessCategories', 'routes'));
+        }
 
         // Pass the lead ID to the view so JS can fetch data
-        return view('pages.leads.edit', compact('lead', 'imageTypes', 'guardianImageTypes', 'guarantorImageTypes', 'businessCategories'));
+        return view('pages.leads.edit', compact('lead', 'imageTypes', 'guardianImageTypes', 'guarantorImageTypes', 'businessCategories', 'routes'));
     }
 
     /**
@@ -494,9 +503,21 @@ class CustomerLeadController extends Controller
      */
     public function verifiedData(Request $request)
     {
-        $leads = CustomerLead::orderByDesc('created_at_lead');
+        $leads = CustomerLead::with('route')->orderByDesc('created_at_lead');
 
         return \Yajra\DataTables\Facades\DataTables::of($leads)
+            ->addColumn('route_name', function ($row) {
+                return $row->route ? $row->route->name : '-';
+            })
+            ->addColumn('source', function ($row) {
+                return $row->source ? ucfirst($row->source) : '-';
+            })
+            ->addColumn('district', function ($row) {
+                return $row->district ?? '-';
+            })
+            ->addColumn('city', function ($row) {
+                return $row->city ?? '-';
+            })
             ->addColumn('action', function ($row) {
                 $btn = '';
 
@@ -590,43 +611,43 @@ class CustomerLeadController extends Controller
         try {
             //code...
             $request->validate([
-            'visited_latitude'  => 'required|numeric',
-            'visited_longitude' => 'required|numeric',
-            'visit_notes'       => 'required|string|max:5000',
-            'verification_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120', // Max 5MB
-        ]);
+                'visited_latitude'  => 'required|numeric',
+                'visited_longitude' => 'required|numeric',
+                'visit_notes'       => 'required|string|max:5000',
+                'verification_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120', // Max 5MB
+            ]);
 
-        $lead->is_visited = 1;
-        $lead->visited_latitude = $request->visited_latitude;
-        $lead->visited_longitude = $request->visited_longitude;
-        $lead->visit_notes = $request->visit_notes;
-        $lead->updated_by = session('userid', 1);
+            $lead->is_visited = 1;
+            $lead->visited_latitude = $request->visited_latitude;
+            $lead->visited_longitude = $request->visited_longitude;
+            $lead->visit_notes = $request->visit_notes;
+            $lead->updated_by = session('userid', 1);
 
-        // Handle Image Upload
-        if ($request->hasFile('verification_image')) {
-            $file = $request->file('verification_image');
-            $path = \Illuminate\Support\Facades\Storage::disk('public')->put('verification_images', $file);
-            $lead->verification_image = $path;
-        }
+            // Handle Image Upload
+            if ($request->hasFile('verification_image')) {
+                $file = $request->file('verification_image');
+                $path = \Illuminate\Support\Facades\Storage::disk('public')->put('verification_images', $file);
+                $lead->verification_image = $path;
+            }
 
-        $lead->save();
+            $lead->save();
 
-        $logProperties = [
-            'visited_latitude' => $request->visited_latitude,
-            'visited_longitude' => $request->visited_longitude,
-            'visit_notes' => $request->visit_notes
-        ];
+            $logProperties = [
+                'visited_latitude' => $request->visited_latitude,
+                'visited_longitude' => $request->visited_longitude,
+                'visit_notes' => $request->visit_notes
+            ];
 
-        if (isset($lead->verification_image)) {
-            $logProperties['verification_image'] = $lead->verification_image;
-        }
+            if (isset($lead->verification_image)) {
+                $logProperties['verification_image'] = $lead->verification_image;
+            }
 
-        $lead->logActivity('visited', 'Lead marked as visited', $logProperties);
+            $lead->logActivity('visited', 'Lead marked as visited', $logProperties);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Lead marked as visited successfully.',
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Lead marked as visited successfully.',
+            ]);
         } catch (\Throwable $th) {
             //throw $th;
             return response()->json([
@@ -798,6 +819,6 @@ class CustomerLeadController extends Controller
     public function getActivityDetails($id)
     {
         $activity = \App\Models\LeadActivity::with(['lead', 'user'])->findOrFail($id);
-        return view('pages.leads.partials.activity_log_details', compact('activity'));
+        return response()->json($activity);
     }
 }

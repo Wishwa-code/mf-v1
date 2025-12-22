@@ -31,7 +31,11 @@ class CustomerLead extends Model
         'visited_latitude',
         'loan_amount',
         'business_category_id',
-        'verification_image'
+        'verification_image',
+        'source',
+        'route_id',
+        'district',
+        'city',
     ];
 
     public function images()
@@ -59,5 +63,9 @@ class CustomerLead extends Model
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
         ]);
+    }
+    public function route()
+    {
+        return $this->belongsTo(Route::class, 'route_id', 'id_route');
     }
 }

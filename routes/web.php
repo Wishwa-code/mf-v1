@@ -152,6 +152,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/leads/data', [CustomerLeadController::class, 'verifiedData'])->name('leads.verifiedData');
     Route::get('/api/leads/{lead}/details', [CustomerLeadController::class, 'getLeadDetails'])->name('leads.details');
     Route::post('/leads/{lead}/mark-visited', [CustomerLeadController::class, 'markAsVisited'])->name('leads.markVisited');
+    Route::put('/leads/{lead}', [CustomerLeadController::class, 'update'])->name('leads.update');
 
 
 
@@ -162,6 +163,9 @@ Route::middleware(['web', 'auth'])->group(function () {
 
     Route::get('/customers/delete/{id}', '\App\Http\Controllers\CustomerController@deletecus')->name('customers.deletecus');
     Route::get('/customers/bank/{id}', '\App\Http\Controllers\CustomerController@load_bank')->name('load_bank');
+
+    Route::get('/online-leads/create', [\App\Http\Controllers\OnlineLeadController::class, 'create'])->name('online-leads.create');
+    Route::post('/online-leads/store', [\App\Http\Controllers\OnlineLeadController::class, 'store'])->name('online-leads.store');
 
 
     Route::get('/calender', function () {

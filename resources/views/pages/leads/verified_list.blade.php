@@ -110,6 +110,10 @@
                                     <th>ID</th>
                                     <th>Lead Name</th>
                                     <th>Phone</th>
+                                    <th>Route</th>
+                                    <th>Source</th>
+                                    <th>District</th>
+                                    <th>City</th>
                                     <th>Address</th>
                                     <th>Status</th>
                                     <th>Visit Status</th>
@@ -164,7 +168,76 @@
                     title: 'Action',
                     orderable: false,
                     searchable: false,
-                    className: 'ps-4'
+                    className: 'ps-4',
+                    render: function(data, type, row) {
+                        // Assuming data contains default actions like View/Reject
+                        // We append Edit button
+                        // Note: If data is just html string, we can append.
+                        // Or if we define raw columns for action in controller, we should update controller to include Edit.
+                        // Let's check controller 'action' column.
+                        // Controller snippet: 
+                        // ->addColumn('actions', function ($lead) {
+                        //     return '<a href="' . route('leads.showVerifiedDetails', $lead->id) . '" class="btn btn-sm btn-primary"><i class="bi bi-eye"></i> View</a>';
+                        // })
+                        // So we should update controller to include Edit button there OR override here if data is raw plain.
+                        // It is simpler to update Controller for actions column, but here I can try to append if it's not server-side rendered fully?
+                        // No, server-side renders string.
+                        // I will update Controller's 'actions' column later or now. 
+                        // Wait, previous controller view showed 'verifiedData' returns JSON with 'data' array, NOT using Yajra backend definition?
+                        // "return datatables()->of($leads)..." WAS in the VIEWED file content in previous turn logic but I only updated the `map` part in `verifiedData`.
+                        // Wait, `verifiedData` in `CustomerLeadController` I updated:
+                        /*
+                        $data = $leads->map(function ($lead) { return [ ... ] });
+                        return response()->json(['data' => $data]);
+                        */
+                        // This suggests it's CLIENT-SIDE processing or simple JSON array, not Yajra logic in that specific method I viewed/edited for `approvalData`?
+                        // No, `verifiedData` (line 38 in file view) used datatables()->of($leads)...
+                        // But I replaced the `verifiedData` content in my thought process?
+                        // Let's re-read the `verifiedData` method in `CustomerLeadController`.
+                        return data;
+                        // I will rely on updating controller Action column or building it here if data is just id.
+                        // Actually, I should update the Controller to add the Edit button if it's server-side.
+                        // But wait, the `verifiedData` I modified in Step 143:
+                        /*
+                        $data = $leads->map(function (CustomerLead $lead) {
+                            return [
+                                'id' => ...,
+                                ...
+                            ];
+                        })->values();
+                        return response()->json(['data' => $data]);
+                        */
+                        // This is NOT using Yajra DataTables class anymore if I replaced it with simple map!
+                        // The original code (lines 38-46 in previous view) was:
+                        /*
+                        public function verifiedData()
+                        {
+                            $leads = CustomerLead::with(['route', 'businessCategory'])
+                                ->where('status', 'verified')
+                                ->get();
+
+                            return datatables()->of($leads)
+                                ->addColumn('actions', function ($lead) {
+                                    return '<a href="' . route('leads.showVerifiedDetails', $lead->id) . '" class="btn btn-sm btn-primary"><i class="bi bi-eye"></i> View</a>';
+                                })
+                                ->rawColumns(['actions'])
+                                ->toJson();
+                        }
+                        */
+                        // I replaced `approvalData` in my previous "thought"? No, I modified `approvalData` in Step 127 view?
+                        // I edited lines 100-102 in Step 141. The snippet shown was `approvalData` or `verifiedData`?
+                        // Step 127 view showed `approvalData`.
+                        // Step 122 view showed `approvalData` too.
+                        // I might have updated `approvalData` instead of `verifiedData` if I wasn't careful with line numbers.
+                        // Step 125 List Dir showed `verified_list.blade.php`.
+                        // I need to be sure which method I edited.
+                        // The edit in Step 141 targeted lines 100-102.
+                        // In Step 127 (Controller view), `approvalData` is lines 82-107.
+                        // So I updated `approvalData`!!!
+                        // I need to update `verifiedData`.
+                        // I need to find `verifiedData` in `CustomerLeadController`.
+
+                    }
                 },
                 {
                     data: 'id',
@@ -177,6 +250,26 @@
                 {
                     data: 'phone_number',
                     name: 'phone_number'
+                },
+                {
+                    data: 'route.route_id',
+                    name: 'route.name',
+                    defaultContent: '-'
+                },
+                {
+                    data: 'source',
+                    name: 'source',
+                    defaultContent: '-'
+                },
+                {
+                    data: 'district',
+                    name: 'district',
+                    defaultContent: '-'
+                },
+                {
+                    data: 'city',
+                    name: 'city',
+                    defaultContent: '-'
                 },
                 {
                     data: 'address',

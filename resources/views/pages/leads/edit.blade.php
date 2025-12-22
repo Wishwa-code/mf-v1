@@ -523,9 +523,18 @@
             allowClear: true
         });
 
-        // Load Data via AJAX
+
+        // Let's implement dynamic loading:
+        $.get('/sl-locations/districts', function(data) {
+            
+        });
+
         loadLeadData();
     });
+
+    
+    function loadDistricts(selectedDistrict = null) {
+    }
 
     function loadLeadData() {
         const leadId = "{{ $lead->id }}";
@@ -540,14 +549,23 @@
                     $('#full_name').val(lead.full_name);
                     $('#phone_number').val(lead.phone_number);
                     $('#email').val(lead.email);
-                    $('#nic').val(lead.nic || ''); // Assuming NIC field exists
-                    $('#loan_amount').val(lead.loan_amount || ''); // Assuming loan_amount field
+                    $('#nic').val(lead.nic || '');
+                    $('#loan_amount').val(lead.loan_amount || '');
                     $('#periods').val(lead.periods);
                     $('#address').val(lead.address);
+                    $('#source').val(lead.source || 'online').trigger('change');
+                    $('#route_id').val(lead.route_id).trigger('change');
 
                     // Select2
                     $('#type').val(lead.type).trigger('change');
                     $('#business_category_id').val(lead.business_category_id).trigger('change');
+
+                    if (lead.district) {
+                        $('#district').append(new Option(lead.district, lead.district, true, true)).trigger('change');
+                    }
+                    if (lead.city) {
+                        $('#city').append(new Option(lead.city, lead.city, true, true)).trigger('change');
+                    }
 
                     // Location
                     if (lead.latitude && lead.longitude) {

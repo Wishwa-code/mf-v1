@@ -193,6 +193,9 @@
                         <a href="{{ route('leads.index') }}">Lead Create</a>
                     </li>
                     <li>
+                        <a href="{{ route('online-leads.create') }}">Create Online Lead</a>
+                    </li>
+                    <li>
                         <a href="{{ route('leads.approvals') }}">Lead Approvals</a>
                     </li>
                     <li>
