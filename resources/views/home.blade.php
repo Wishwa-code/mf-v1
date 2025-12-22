@@ -266,7 +266,7 @@
                 $loan_completion_percentage = $all_loan > 0 ? round(($setteled_loan_Count / $all_loan) * 100, 2) : 0;
             @endphp
 
-            <div class="container-fluid py-4">
+
                 {{-- Welcome Banner --}}
                 <div class="row mb-4">
                     <div class="col-12">
@@ -367,7 +367,7 @@
                         @endforeach
 
                         {{-- This Week Arrears --}}
-                        <div class="col-md-6 col-lg-5 mb-4">
+                        <div class="col-md-6 col-lg-6 mb-4">
                             <a href="#" onclick="showWeeklyNotPaidModal()" class="text-decoration-none">
                                 <div class="glass-card card text-white shadow animated-card" style="background: linear-gradient(135deg, #8e44ad, #2c3e50);">
                                     <div class="card-body">
@@ -398,7 +398,7 @@
                         </div>
 
                         {{-- Current Week Pending Payment --}}
-                        <div class="col-md-6 col-lg-5 mb-4">
+                        <div class="col-md-6 col-lg-6 mb-4">
                             <a href="#" onclick="showCurrentWeekPendingModal()" class="text-decoration-none">
                                 <div class="glass-card card text-white shadow animated-card" style="background: linear-gradient(135deg, #3498db, #2c3e50);">
                                     <div class="card-body">
@@ -458,7 +458,7 @@
                             </div>
                         </div>
 
-                        <div class="col-lg-3 mb-4">
+                        <div class="col-lg-6 mb-4">
                             <div class="glass-card card shadow animated-card">
                                 <div class="card-body">
                                     <h5 class="card-title mb-3">✅ Loan Completion</h5>
@@ -521,7 +521,6 @@
                             </div>
                         @endforeach
                     </div>
-                </div>
             </div>
 
             {{-- Hidden button for loan process --}}
@@ -821,12 +820,12 @@
         document.addEventListener("DOMContentLoaded", function () {
             // Animate Stat Cards
             const statValues = [
-                {{ $customer_loan_pending_Amount }},
-                {{ $customer_loan_current_Amount }},
-                {{ $setteled_loan_current_Amount }},
-                {{ $portfolio }},
-                {{ $currentMonthLending }},
-                {{ $customerCount }}
+                {{ $customer_loan_pending_Amount ?? 0 }},
+                {{ $customer_loan_current_Amount ?? 0 }},
+                {{ $setteled_loan_current_Amount ?? 0 }},
+                {{ $portfolio ?? 0 }},
+                {{ $currentMonthLending ?? 0 }},
+                {{ $customerCount ?? 0 }}
             ];
             const prefixes = ['', '', '', '', '', ''];
 
