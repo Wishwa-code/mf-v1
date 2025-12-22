@@ -14,6 +14,11 @@
                         <li class="breadcrumb-item active text-primary">Edit Lead</li>
                     </ol>
                 </div>
+                <div>
+                    <a href="{{ route('leads.verifiedList') }}" class="btn btn-light border btn-sm rounded-pill px-3 fw-bold">
+                        <i class="bi bi-arrow-left me-1"></i> Back
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -318,19 +323,19 @@
                             {{-- Optional Location Display --}}
                             <div class="col-12">
                                 <label class="form-label">Location (Read-Only/Update)</label>
-                                <div class="p-3 bg-light rounded-3 border d-flex gap-3 align-items-end">
-                                    <div class="flex-grow-1 row">
-                                        <div class="col-6">
+                                <div class="p-3 bg-light rounded-3 border d-flex flex-column flex-md-row gap-3 align-items-md-end">
+                                    <div class="flex-grow-1 row g-3">
+                                        <div class="col-12 col-md-6">
                                             <small class="text-muted fw-bold">Latitude</small>
                                             <input type="text" name="latitude" id="lead_lat" class="form-control" value="{{ $lead->latitude }}">
                                         </div>
-                                        <div class="col-6">
+                                        <div class="col-12 col-md-6">
                                             <small class="text-muted fw-bold">Longitude</small>
                                             <input type="text" name="longitude" id="lead_lng" class="form-control" value="{{ $lead->longitude }}">
                                         </div>
                                     </div>
-                                    <div>
-                                        <button type="button" class="btn btn-primary btn-modern" onclick="getLeadLocation()">
+                                    <div class="d-grid d-md-block">
+                                        <button type="button" class="btn btn-primary btn-modern w-100" onclick="getLeadLocation()">
                                             <i class="bi bi-geo-alt-fill"></i> Get GPS
                                         </button>
                                     </div>
@@ -392,9 +397,14 @@
                 {{-- GUARDIAN / GUARANTOR SECTIONS REMOVED FOR BREVITY IN EDIT ONLINE, ADD IF NEEDED --}}
 
                 <div class="d-grid mb-5">
-                    <button type="button" class="btn btn-success btn-lg py-3 rounded-pill shadow fw-bold" onclick="updateLead()" id="updateLeadBtn">
-                        <i class="bi bi-check-circle-fill me-2"></i> Update Lead Information
-                    </button>
+                    <div class="d-flex flex-column flex-md-row gap-2 justify-content-center">
+                        <a href="{{ route('leads.verifiedList') }}" class="btn btn-light btn-lg py-3 rounded-pill shadow-sm fw-bold px-5 border">
+                            Close
+                        </a>
+                        <button type="button" class="btn btn-success btn-lg py-3 rounded-pill shadow bw-bold flex-grow-1" onclick="updateLead()" id="updateLeadBtn">
+                            <i class="bi bi-check-circle-fill me-2"></i> Update Lead Information
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>

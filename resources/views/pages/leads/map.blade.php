@@ -49,29 +49,6 @@
 @endsection
 
 @section('content')
-<div class="container-fluid p-0 mt-3">
-    {{-- Header overlay or top bar --}}
-    <div class="header-card px-4 py-3 d-flex justify-content-between align-items-center shadow-sm">
-        <div>
-            <h5 class="fw-bold mb-0 text-dark">
-                <i class="bi bi-map-fill me-2 text-primary"></i>Lead Location Map
-            </h5>
-            <small class="text-muted">{{ $lead->full_name }} • {{ $lead->address ?? 'No Address' }}</small>
-        </div>
-        <div>
-            <a href="{{ route('leads.show', $lead->id) }}" class="btn btn-outline-secondary rounded-pill px-4">
-                <i class="bi bi-arrow-left me-1"></i> Back to Details
-            </a>
-        </div>
-    </div>
-
-    <div class="p-3">
-        <div id="leadMap" class="map-container shadow border"></div>
-    </div>
-</div>
-@endsection
-
-@section('script')
 @php
 $locations = [];
 if ($lead->latitude && $lead->longitude) {
@@ -93,10 +70,45 @@ $locations[] = [
 ];
 }
 @endphp
+<div class="container-fluid p-0 mt-3">
+    {{-- Header overlay or top bar --}}
+    <div class="d-flex flex-column flex-md-row 
+            justify-content-between align-items-start align-items-md-center
+            shadow-sm mt-3 px-4 py-3 bg-white">
+
+        <!-- Left content -->
+        <div class="mb-2 mb-md-0">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-map-fill me-2 text-primary"></i>Lead Location Map
+            </h5>
+            <small class="text-muted">
+                {{ $lead->full_name }} • {{ $lead->address ?? 'No Address' }}
+            </small>
+        </div>
+
+        <!-- Right button -->
+        <div class="ms-md-auto w-100 w-md-auto text-center text-md-end">
+            <a href="{{ route('leads.show', $lead->id) }}"
+                class="btn btn-outline-secondary rounded-pill px-4">
+                <i class="bi bi-arrow-left me-1"></i> Back to Details
+            </a>
+        </div>
+
+    </div>
+
+
+    <div class="p-3">
+        <div id="leadMap" class="map-container shadow border" data-locations="{{ json_encode($locations) }}"></div>
+    </div>
+</div>
+@endsection
+
+@section('script')
+
 
 <script>
     $(async function() {
-        const locations = {!! json_encode($locations) !!};
+        const locations = JSON.parse(document.getElementById('leadMap')?.dataset.locations || '[]');
 
         if (locations.length > 0) {
             // Import libraries

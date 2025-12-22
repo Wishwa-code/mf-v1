@@ -50,24 +50,38 @@
 
 @section('content')
 <div class="container-fluid p-0">
-    {{-- Header overlay or top bar --}}
-    <div class="header-card px-4 py-3 d-flex justify-content-between align-items-center shadow-sm sticky-top mt-3">
-        <div>
-            <h5 class="fw-bold mb-0 text-dark">
-                <i class="bi bi-map-fill me-2 text-primary"></i>All Leads Location Map
+
+    {{-- Header --}}
+    <div class="header-card px-3 px-md-4 py-3
+                d-flex flex-column flex-md-row
+                justify-content-between align-items-start align-items-md-center
+                shadow-sm sticky-top mt-3">
+
+        {{-- Title --}}
+        <div class="mb-2 mb-md-0">
+            <h5 class="fw-bold mb-1 text-dark">
+                <i class="bi bi-map-fill me-2 text-primary"></i>
+                All Leads Location Map
             </h5>
-            <small class="text-muted">Showing {{ count($leads) }} leads with captured locations</small>
+            <small class="text-muted">
+                Showing {{ count($leads) }} leads with captured locations
+            </small>
         </div>
-        <div>
-            <a href="{{ route('leads.verifiedList') }}" class="btn btn-outline-secondary rounded-pill px-4">
+
+        {{-- Button --}}
+        <div class="mt-2 mt-md-0 w-100 w-md-auto">
+            <a href="{{ route('leads.verifiedList') }}"
+               class="btn btn-outline-secondary btn-sm rounded-pill px-4 w-100 w-md-auto">
                 <i class="bi bi-list-ul me-1"></i> View List
             </a>
         </div>
     </div>
 
-    <div class="p-3">
+    {{-- Map --}}
+    <div class="p-2 p-md-3">
         <div id="leadsMap" class="map-container shadow border"></div>
     </div>
+
 </div>
 @endsection
 

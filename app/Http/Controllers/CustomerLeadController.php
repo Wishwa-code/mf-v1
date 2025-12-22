@@ -132,7 +132,7 @@ class CustomerLeadController extends Controller
 
     public function agreement_index()
     {
-        $leads = CustomerLead::all();
+        $leads = CustomerLead::where('status', 'pending-approved')->where('is_visited','!=',0)->get();
         $agreementImageTypesSetting = AppSettings::where('key', 'agreement_image_types')->value('value');
         $agreementImageTypes = $agreementImageTypesSetting ? json_decode($agreementImageTypesSetting, true) : [];
 

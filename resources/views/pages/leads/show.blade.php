@@ -154,103 +154,164 @@
                     </div>
                 </div>
                 <div class="card-body px-3 px-md-4 pb-4 pt-0">
-                    <div class="p-3 bg-light rounded-3 mb-4">
-                        <div class="d-flex align-items-center">
-                            <div class="avatar bg-white rounded-circle p-2 shadow-sm me-3 text-center" style="width: 48px; height: 48px;">
-                                <i class="bi bi-person fs-4 text-primary"></i>
-                            </div>
-                            <div>
-                                <h5 class="mb-0 fw-bold">{{ $lead->full_name ?? '-' }}</h5>
-                                <small class="text-muted">
+                    <div class="row g-4">
+                        {{-- Contact Info (Full Width) --}}
+                        <div class="col-12">
+                            <div class="mb-4 text-center">
+                                <div class="avatar bg-light rounded-circle p-3 mx-auto mb-3 shadow-sm" style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
+                                    <span class="fs-2 fw-bold text-primary">{{ substr($lead->full_name, 0, 1) }}</span>
+                                </div>
+                                <h5 class="fw-bold mb-1">{{ $lead->full_name ?? '-' }}</h5>
+                                <div class="text-muted small">
                                     Created: {{ optional($lead->created_at_lead)->format('d M Y, h:i A') ?? '-' }}
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="p-3 border rounded-3 h-100">
-                                <div class="detail-label"><i class="bi bi-telephone me-1"></i> Phone</div>
-                                <div class="detail-value">{{ $lead->phone_number ?? '-' }}</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="p-3 border rounded-3 h-100">
-                                <div class="detail-label"><i class="bi bi-envelope me-1"></i> Email</div>
-                                <div class="detail-value">{{ $lead->email ?? '-' }}</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="p-3 border rounded-3 h-100">
-                                <div class="detail-label"><i class="bi bi-credit-card me-1"></i> Loan Type</div>
-                                <div class="detail-value">{{ $lead->type ?? '-' }}</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="p-3 border rounded-3 h-100">
-                                <div class="detail-label"><i class="bi bi-calendar-check me-1"></i> Periods</div>
-                                <div class="detail-value">{{ $lead->periods ?? '-' }}</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="p-3 border rounded-3 h-100">
-                                <div class="detail-label"><i class="bi bi-cash-stack me-1"></i> Loan Amount</div>
-                                <div class="detail-value">{{ $lead->loan_amount ? number_format($lead->loan_amount, 2) : '-' }}</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="p-3 border rounded-3 h-100">
-                                <div class="detail-label"><i class="bi bi-tag me-1"></i> Business Category</div>
-                                <div class="detail-value">{{ $lead->businessCategory->name ?? '-' }}</div>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <div class="p-3 border rounded-3 h-100">
-                                <div class="detail-label"><i class="bi bi-geo-alt me-1"></i> Address</div>
-                                <div class="detail-value">{{ $lead->address ?? '-' }}</div>
-                            </div>
-                        </div>
-
-                        <div class="col-12 mt-4">
-                            <h6 class="fw-bold mb-3 text-dark border-bottom pb-2">Additional Details</h6>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="mb-2">
-                                <div class="detail-label">Captured Location (GPS)</div>
-                                <div class="detail-value text-break monospace fs-6">
-                                    {{ $lead->latitude ?? '-' }}, {{ $lead->longitude ?? '-' }}
+                                    @if($lead->status)
+                                    <span class="badg ms-2 bg-primary bg-opacity-10 text-primary px-3 py-1 rounded-pill small fw-bold">{{ ucfirst($lead->status) }}</span>
+                                    @endif
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-2">
-                                <div class="detail-label">Visit Status</div>
-                                <div class="detail-value">
-                                    @if($lead->is_visited)
-                                    <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i> Visited</span>
-                                    <div class="small text-muted mt-1">{{ $lead->visited_latitude ?? '-' }} / {{ $lead->visited_longitude ?? '-' }}</div>
-                                    @if($lead->verification_image)
-                                    <div class="mt-2">
-                                        <a href="{{ asset('storage/' . $lead->verification_image) }}" target="_blank">
-                                            <img src="{{ asset('storage/' . $lead->verification_image) }}" class="rounded shadow-sm border" style="width: 100px; height: 100px; object-fit: cover;" alt="Verification Image">
-                                        </a>
-                                        <div class="small text-muted mt-1">Evidence</div>
+
+                            <div class="mb-4" style="max-width: 600px; margin: 0 auto;">
+                                <label class="small text-muted text-uppercase fw-bold mb-3" style="font-size: 0.75rem; letter-spacing: 0.5px;">Contact Information</label>
+
+                                <div class="row g-4">
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-square bg-primary bg-opacity-10 text-primary rounded-circle p-2 me-3" style="width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="bi bi-telephone text-primary"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="small fw-semibold text-muted" style="font-size: 0.75rem;">Phone</div>
+                                                <div class="fw-medium text-dark">{{ $lead->phone_number ?? '-' }}</div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    @endif
-                                    @else
-                                    <span class="text-muted"><i class="bi bi-circle me-1"></i> Not Visited</span>
-                                    @endif
+
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-square bg-info bg-opacity-10 text-info rounded-circle p-2 me-3" style="width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="bi bi-envelope text-info"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="small fw-semibold text-muted" style="font-size: 0.75rem;">Email</div>
+                                                <div class="fw-medium text-dark text-break">{{ $lead->email ?? '-' }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-square bg-success bg-opacity-10 text-success rounded-circle p-2 me-3" style="width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="bi bi-signpost-split text-success"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="small fw-semibold text-muted" style="font-size: 0.75rem;">Route</div>
+                                                <div class="fw-medium text-dark">{{ $lead->route ? $lead->route->name : '-' }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-square bg-warning bg-opacity-10 text-warning rounded-circle p-2 me-3" style="width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="bi bi-globe text-warning"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="small fw-semibold text-muted" style="font-size: 0.75rem;">Source</div>
+                                                <div class="fw-medium text-dark">{{ ucfirst($lead->source ?? '-') }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-square bg-danger bg-opacity-10 text-danger rounded-circle p-2 me-3" style="width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="bi bi-geo text-danger"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="small fw-semibold text-muted" style="font-size: 0.75rem;">City / District</div>
+                                                <div class="fw-medium text-dark">{{ $lead->city ?? '-' }} / {{ $lead->district ?? '-' }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-start">
+                                            <div class="icon-square bg-secondary bg-opacity-10 text-secondary rounded-circle p-2 me-3" style="width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="bi bi-geo-alt text-secondary"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="small fw-semibold text-muted" style="font-size: 0.75rem;">Address</div>
+                                                <div class="fw-medium text-dark">{{ $lead->address ?? '-' }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+
+                        {{-- Divider --}}
+                        <div class="col-12 px-5">
+                            <hr class="text-muted opacity-25">
+                        </div>
+
+                        {{-- Loan Info & Extras (Full Width) --}}
                         <div class="col-12">
-                            <div class="p-3 bg-light rounded-3">
-                                <div class="detail-label">Notes</div>
-                                <p class="mb-0 text-dark fst-italic">
-                                    "{{ $lead->notes ?: 'No additional notes provided.' }}"
-                                </p>
+                            <div class="mb-4" style="max-width: 600px; margin: 0 auto;">
+                                <label class="small text-muted text-uppercase fw-bold mb-3" style="font-size: 0.75rem; letter-spacing: 0.5px;">Loan Details</label>
+                                <div class="bg-light rounded-3 p-4">
+                                    <div class="row g-4">
+                                        <div class="col-12 col-md-6">
+                                            <div class="small text-muted mb-1">Type</div>
+                                            <div class="fw-bold text-dark fs-5">{{ ucfirst($lead->type ?? '-') }}</div>
+                                        </div>
+                                        <div class="col-12 col-md-6 text-md-end">
+                                            <div class="small text-muted mb-1">Amount</div>
+                                            <div class="fw-bold text-dark fs-5">{{ $lead->loan_amount ? number_format($lead->loan_amount, 2) : '-' }}</div>
+                                        </div>
+                                        <div class="col-12 border-top my-2 opacity-50"></div>
+                                        <div class="col-12 col-md-6">
+                                            <div class="small text-muted mb-1">Periods</div>
+                                            <div class="fw-semibold">{{ $lead->periods ?? '-' }} Months</div>
+                                        </div>
+                                        <div class="col-12 col-md-6 text-md-end">
+                                            <div class="small text-muted mb-1">Category</div>
+                                            <div class="fw-semibold">{{ $lead->businessCategory->name ?? '-' }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3" style="max-width: 600px; margin: 0 auto;">
+                                <label class="small text-muted text-uppercase fw-bold mb-3" style="font-size: 0.75rem; letter-spacing: 0.5px;">Verification & Notes</label>
+
+                                <div class="mb-3">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="small fw-semibold text-muted">Visit Status</span>
+                                        @if($lead->is_visited)
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">Visited</span>
+                                        @else
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3">Not Visited</span>
+                                        @endif
+                                    </div>
+                                    @if($lead->is_visited)
+                                    <div class="p-2 border rounded bg-white small mb-2 d-inline-block">
+                                        <i class="bi bi-pin-map text-danger me-1"></i> {{ $lead->visited_latitude ?? '-' }}, {{ $lead->visited_longitude ?? '-' }}
+                                    </div>
+                                    @if($lead->verification_image)
+                                    <a href="{{ asset('storage/' . $lead->verification_image) }}" target="_blank" class="d-flex align-items-center p-2 border rounded bg-white text-decoration-none text-dark d-inline-block ms-2">
+                                        <img src="{{ asset('storage/' . $lead->verification_image) }}" class="rounded me-2" style="width: 30px; height: 30px; object-fit: cover;">
+                                        <span class="small fw-semibold">View Evidence</span>
+                                    </a>
+                                    @endif
+                                    @endif
+                                </div>
+
+                                <div>
+                                    <span class="small fw-semibold text-muted d-block mb-1">Notes</span>
+                                    <div class="p-3 bg-light rounded-3 text-dark small fst-italic">
+                                        "{{ $lead->notes ?: 'No additional notes provided.' }}"
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

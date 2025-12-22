@@ -8,20 +8,18 @@
         }
     }
 
-    @media (min-width: 768px) {
-        .border-end-md {}
+    /* Desktop styles if needed */
 
-        gmp-map {
-            width: 100%;
-            height: 300px;
-            border-radius: 12px;
-            display: block;
-        }
+    gmp-map {
+        width: 100%;
+        height: 300px;
+        border-radius: 12px;
+        display: block;
     }
 </style>
 <div class="row g-4">
     {{-- Left Column: Customer Details --}}
-    <div class="col-md-5 border-end-md">
+    <div class="col-md-12 border-end-md">
         <div class="text-center mb-4">
             <div class="avatar bg-light rounded-circle p-3 mx-auto mb-3 shadow-sm" style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
                 <span class="fs-2 fw-bold text-primary">{{ substr($lead->full_name, 0, 1) }}</span>
@@ -35,48 +33,63 @@
         <div class="px-2">
             <div class="mb-3">
                 <label class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Contact Info</label>
-                <div class="d-flex align-items-center mb-2">
-                    <i class="bi bi-telephone text-primary me-3 bg-primary bg-opacity-10 p-2 rounded-circle"></i>
-                    <div>
-                        <div class="small fw-semibold">Phone</div>
-                        <div>{{ $lead->phone_number }}</div>
+                <div class="row g-2">
+                    <div class="col-12 col-md-6">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-telephone text-primary me-3 bg-primary bg-opacity-10 p-2 rounded-circle"></i>
+                            <div>
+                                <div class="small fw-semibold">Phone</div>
+                                <div>{{ $lead->phone_number }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-envelope text-primary me-3 bg-primary bg-opacity-10 p-2 rounded-circle"></i>
+                            <div>
+                                <div class="small fw-semibold">Email</div>
+                                <div class="text-break">{{ $lead->email ?? '-' }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-signpost-split text-primary me-3 bg-primary bg-opacity-10 p-2 rounded-circle"></i>
+                            <div>
+                                <div class="small fw-semibold">Route</div>
+                                <div>{{ $lead->route ? $lead->route->name : '-' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-globe text-primary me-3 bg-primary bg-opacity-10 p-2 rounded-circle"></i>
+                            <div>
+                                <div class="small fw-semibold">Source</div>
+                                <div>{{ ucfirst($lead->source ?? '-') }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-geo text-primary me-3 bg-primary bg-opacity-10 p-2 rounded-circle"></i>
+                            <div>
+                                <div class="small fw-semibold">City / District</div>
+                                <div>{{ $lead->city ?? '-' }} / {{ $lead->district ?? '-' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-geo-alt text-primary me-3 bg-primary bg-opacity-10 p-2 rounded-circle"></i>
+                            <div>
+                                <div class="small fw-semibold">Address</div>
+                                <div>{{ $lead->address }}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="d-flex align-items-start mb-2">
-                    <i class="bi bi-envelope text-primary me-3 bg-primary bg-opacity-10 p-2 rounded-circle"></i>
-                    <div>
-                        <div class="small fw-semibold">Email</div>
-                        <div class="text-break">{{ $lead->email ?? '-' }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="d-flex align-items-center mb-2">
-            <i class="bi bi-signpost-split text-primary me-3 bg-primary bg-opacity-10 p-2 rounded-circle"></i>
-            <div>
-                <div class="small fw-semibold">Route</div>
-                <div>{{ $lead->route ? $lead->route->name : '-' }}</div>
-            </div>
-        </div>
-        <div class="d-flex align-items-center mb-2">
-            <i class="bi bi-globe text-primary me-3 bg-primary bg-opacity-10 p-2 rounded-circle"></i>
-            <div>
-                <div class="small fw-semibold">Source</div>
-                <div>{{ ucfirst($lead->source ?? '-') }}</div>
-            </div>
-        </div>
-        <div class="d-flex align-items-center mb-2">
-            <i class="bi bi-geo text-primary me-3 bg-primary bg-opacity-10 p-2 rounded-circle"></i>
-            <div>
-                <div class="small fw-semibold">City / District</div>
-                <div>{{ $lead->city ?? '-' }} / {{ $lead->district ?? '-' }}</div>
-            </div>
-        </div>
-        <div class="d-flex align-items-start">
-            <i class="bi bi-geo-alt text-primary me-3 bg-primary bg-opacity-10 p-2 rounded-circle"></i>
-            <div>
-                <div class="small fw-semibold">Address</div>
-                <div>{{ $lead->address }}</div>
             </div>
         </div>
     </div>
@@ -86,25 +99,25 @@
     <div class="mb-3">
         <label class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Loan Details</label>
         <div class="row g-2">
-            <div class="col-6">
+            <div class="col-12 col-md-6">
                 <div class="p-2 bg-light rounded-3">
                     <small class="d-block text-muted" style="font-size: 0.7rem;">Type</small>
                     <span class="fw-semibold">{{ $lead->type ?? '-' }}</span>
                 </div>
             </div>
-            <div class="col-6">
+            <div class="col-12 col-md-6">
                 <div class="p-2 bg-light rounded-3">
                     <small class="d-block text-muted" style="font-size: 0.7rem;">Amount</small>
                     <span class="fw-semibold">{{ $lead->loan_amount ? number_format($lead->loan_amount, 2) : '-' }}</span>
                 </div>
             </div>
-            <div class="col-6">
+            <div class="col-12 col-md-6">
                 <div class="p-2 bg-light rounded-3">
                     <small class="d-block text-muted" style="font-size: 0.7rem;">Periods</small>
                     <span class="fw-semibold">{{ $lead->periods ?? '-' }}</span>
                 </div>
             </div>
-            <div class="col-6">
+            <div class="col-12 col-md-6">
                 <div class="p-2 bg-light rounded-3">
                     <small class="d-block text-muted" style="font-size: 0.7rem;">Business Cat.</small>
                     <span class="fw-semibold text-truncate d-block" title="{{ $lead->businessCategory->name ?? '-' }}">{{ $lead->businessCategory->name ?? '-' }}</span>
@@ -166,7 +179,7 @@
 
 {{-- Right Column: Images Gallery --}}
 <div class="col-md-7">
-    <h6 class="fw-bold mb-3 border-bottom pb-2">Docs & Images <span class="badge bg-secondary rounded-pill ms-1">{{ $lead->images->count() }}</span></h6>
+    <h6 class="fw-bold mb-3 border-bottom pb-2 mt-2">Docs & Images <span class="badge bg-secondary rounded-pill ms-1">{{ $lead->images->count() }}</span></h6>
 
     @if($lead->images->isEmpty())
     <div class="text-center py-5 bg-light rounded-3">
