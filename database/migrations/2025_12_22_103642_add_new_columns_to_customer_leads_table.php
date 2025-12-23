@@ -1,4 +1,4 @@
-<?php
+ <?php
 
 use App\Models\Route;
 use Illuminate\Database\Migrations\Migration;

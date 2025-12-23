@@ -71,7 +71,7 @@
         {{-- Button --}}
         <div class="mt-2 mt-md-0 w-100 w-md-auto">
             <a href="{{ route('leads.verifiedList') }}"
-               class="btn btn-outline-secondary btn-sm rounded-pill px-4 w-100 w-md-auto">
+                class="btn btn-outline-secondary btn-sm rounded-pill px-4 w-100 w-md-auto">
                 <i class="bi bi-list-ul me-1"></i> View List
             </a>
         </div>
@@ -79,7 +79,13 @@
 
     {{-- Map --}}
     <div class="p-2 p-md-3">
+        @if(optional($privilege)->view_lead_map == 1)
         <div id="leadsMap" class="map-container shadow border"></div>
+        @else
+        <div class="alert alert-danger">
+            <i class="bi bi-lock-fill me-2"></i> You do not have permission to view the lead map.
+        </div>
+        @endif
     </div>
 
 </div>

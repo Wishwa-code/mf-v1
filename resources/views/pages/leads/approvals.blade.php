@@ -34,92 +34,103 @@
 @endsection
 
 @section('script')
-    <script>
-        $(document).ready(function () {
-            $('#leads_approval_table').DataTable({
-                ajax: {
-                    url: "{{ route('leads.approvals.data') }}",
-                    dataSrc: 'data'
+<script>
+    $(document).ready(function() {
+        $('#leads_approval_table').DataTable({
+            ajax: {
+                url: "{{ route('leads.approvals.data') }}",
+                dataSrc: 'data'
+            },
+            processing: true,
+            pageLength: 10,
+            order: [
+                [0, 'asc']
+            ],
+            language: {
+                searchPlaceholder: "Search records",
+                search: "",
+            },
+            dom: 'Bfrtip',
+            buttons: [{
+                    extend: 'copy',
+                    className: 'btn btn-light btn-sm'
                 },
-                processing: true,
-                pageLength: 10,
-                order: [[0, 'asc']],
-                language: {
-                    searchPlaceholder: "Search records",
-                    search: "",
+                {
+                    extend: 'csv',
+                    className: 'btn btn-light btn-sm'
                 },
-                dom: 'Bfrtip',
-                buttons: [
-                    {
-                        extend: 'copy',
-                        className: 'btn btn-light btn-sm'
-                    },
-                    {
-                        extend: 'csv',
-                        className: 'btn btn-light btn-sm'
-                    },
-                    {
-                        extend: 'excel',
-                        className: 'btn btn-light btn-sm'
-                    },
-                    {
-                        extend: 'pdf',
-                        className: 'btn btn-light btn-sm'
-                    },
-                    {
-                        extend: 'print',
-                        className: 'btn btn-light btn-sm'
+                {
+                    extend: 'excel',
+                    className: 'btn btn-light btn-sm'
+                },
+                {
+                    extend: 'pdf',
+                    className: 'btn btn-light btn-sm'
+                },
+                {
+                    extend: 'print',
+                    className: 'btn btn-light btn-sm'
+                }
+            ],
+            columns: [{
+                    data: 'id',
+                    render: function(data, type, row, meta) {
+                        return meta.row + 1;
                     }
-                ],
-                columns: [
-                    {
-                        data: 'id',
-                        render: function (data, type, row, meta) {
-                            return meta.row + 1;
+                },
+                {
+                    data: 'full_name',
+                    className: 'fw-medium'
+                },
+                {
+                    data: 'email'
+                },
+                {
+                    data: 'phone_number'
+                },
+                {
+                    data: 'type',
+                    render: function(data) {
+                        return `<span class="badge bg-soft-info text-info">${data.charAt(0).toUpperCase() + data.slice(1)}</span>`;
+                    }
+                },
+                {
+                    data: 'status',
+                    render: function(data) {
+                        let cls = 'badge bg-soft-warning text-warning';
+                        let text = 'Pending';
+
+                        if (data === 'pending-approved') {
+                            cls = 'badge bg-soft-success text-success';
+                            text = 'Approved';
                         }
-                    },
-                    {data: 'full_name', className: 'fw-medium'},
-                    {data: 'email'},
-                    {data: 'phone_number'},
-                    {
-                        data: 'type',
-                        render: function(data) {
-                            return `<span class="badge bg-soft-info text-info">${data.charAt(0).toUpperCase() + data.slice(1)}</span>`;
-                        }
-                    },
-                    {
-                        data: 'status',
-                        render: function (data) {
-                            let cls = 'badge bg-soft-warning text-warning';
-                            let text = 'Pending';
-                            
-                            if (data === 'pending-approved') {
-                                cls = 'badge bg-soft-success text-success';
-                                text = 'Approved';
-                            }
-                            
-                            return `<span class="${cls}">${text}</span>`;
-                        }
-                    },
-                    {
-                        data: null,
-                        orderable: false,
-                        searchable: false,
-                        render: function (data, type, row) {
-                            const url = "{{ route('leads.show', ['lead' => '__ID__']) }}".replace('__ID__', row.id);
-                            return `
+
+                        return `<span class="${cls}">${text}</span>`;
+                    }
+                },
+                {
+                    data: null,
+                    orderable: false,
+                    searchable: false,
+                    render: function(data, type, row) {
+                        const url = "{{ route('leads.show', ['lead' => '__ID__']) }}".replace('__ID__', row.id);
+                        let html = '';
+                        @if(optional($privilege) - > view_leads == 1)
+                        html += `
                                 <a href="${url}" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" style="border-radius: 6px;">
                                     <i class="bi bi-eye"></i> View
                                 </a>
                             `;
-                        }
+                        @endif
+                        return html;
                     }
-                ],
-                initComplete: function() {
-                    $('.dataTables_filter input').addClass('form-control').css('margin-left','10px');
-                    $('.dt-buttons .btn').removeClass('btn-secondary').addClass('btn-light btn-sm border');
                 }
-            });
+            ],
+            initComplete: function() {
+                $('.dataTables_filter input').addClass('form-control').css('margin-left', '10px');
+                $('.dt-buttons .btn').removeClass('btn-secondary').addClass('btn-light btn-sm border');
+            }
         });
-    </script>
+    });
+</script>
 @endsection
