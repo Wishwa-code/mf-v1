@@ -31,14 +31,14 @@ class UserController extends Controller
      */
     public function index()
     {
-        $userData= tableWithBranch('user')->get();
-        $designation= tableWithBranch('designation')->get();
-        $branch=DB::table('branch')->where('branch_id','=',session('branch_id'))->get();
-        if (session('branch_access')==1){
-            $branch=DB::table('branch')->get();
+        $userData = tableWithBranch('user')->get();
+        $designation = tableWithBranch('designation')->get();
+        $branch = DB::table('branch')->where('branch_id', '=', session('branch_id'))->get();
+        if (session('branch_access') == 1) {
+            $branch = DB::table('branch')->get();
         }
 
-        return view('pages.User',compact('userData','designation','branch'));
+        return view('pages.User', compact('userData', 'designation', 'branch'));
     }
 
     /**
@@ -47,19 +47,19 @@ class UserController extends Controller
     public function create(Request $request)
     {
         $request->validate([
-            'full_name'=>'required',
-            'email'=>'required',
-            'password'=>'required'
+            'full_name' => 'required',
+            'email' => 'required',
+            'password' => 'required'
         ]);
 
-        $tp=$request->tp;
-        if ($tp===null){
-            $tp="-";
+        $tp = $request->tp;
+        if ($tp === null) {
+            $tp = "-";
         }
 
         if (DB::table('user')->where('email', '=', $request->email)->exists()) {
-            return redirect()->intended(route('pages.user'))->with("error","This user is already exist !");
-        }else{
+            return redirect()->intended(route('pages.user'))->with("error", "This user is already exist !");
+        } else {
 
             // Generate OTP
             $otp = Str::random(6); // Or use a more secure method to generate OTP
@@ -67,19 +67,19 @@ class UserController extends Controller
 
 
 
-            $data['Full_Name']=$request->full_name;
-            $data['email']=$request->email;
-            $data['password']=Hash::make($request->password);
-            $data['TP']=$tp;
-            $data['Designation']=$request->desi;
-            $data['Epf_no']=$request->epf_no;
-            $data['Nic']=$request->nic;
-            $data['lending_officer']=$request->has('lending_officer') ? 1 : 0;
-            $data['otp']=$otp;
-            $data['branch_id']=$request->branches[0] ?? session('branch_id');
-            $data['branch_access']=$request->has('branch_access') ? 1 : 0;
-            $data['cashier']=$request->has('cashier') ? 1 : 0;
-            $data['collector']=$request->has('collecting_officer') ? 1 : 0;
+            $data['Full_Name'] = $request->full_name;
+            $data['email'] = $request->email;
+            $data['password'] = Hash::make($request->password);
+            $data['TP'] = $tp;
+            $data['Designation'] = $request->desi;
+            $data['Epf_no'] = $request->epf_no;
+            $data['Nic'] = $request->nic;
+            $data['lending_officer'] = $request->has('lending_officer') ? 1 : 0;
+            $data['otp'] = $otp;
+            $data['branch_id'] = $request->branches[0] ?? session('branch_id');
+            $data['branch_access'] = $request->has('branch_access') ? 1 : 0;
+            $data['cashier'] = $request->has('cashier') ? 1 : 0;
+            $data['collector'] = $request->has('collecting_officer') ? 1 : 0;
 
             // Store request data for approval
             $requestData = [
@@ -104,7 +104,7 @@ class UserController extends Controller
         }
     }
 
-//
+    //
 
     public function store(Request $request, Store $session)
     {
@@ -124,11 +124,11 @@ class UserController extends Controller
 
                 // Store user information in session
 
-                $session->put('userid',(int) $item->id);
+                $session->put('userid', (int) $item->id);
                 $session->put('Full_Name', $item->Full_Name);
                 $session->put('designation', $item->Designation);
-                $session->put('branch_id',(int) $item->branch_id);
-                $session->put('branch_access',(int) $item->branch_access);
+                $session->put('branch_id', (int) $item->branch_id);
+                $session->put('branch_access', (int) $item->branch_access);
                 $company = DB::table('company')->first();
                 $session->put('company_name', $company->company_name);
                 // Get branch information
@@ -140,7 +140,7 @@ class UserController extends Controller
                     return redirect()->route('login')->with("error", "Please contact Admin!");
                 }
             }
-// Check if 'log_tracking_no' column exists in 'company_bank_has_log'
+            // Check if 'log_tracking_no' column exists in 'company_bank_has_log'
             if (!Schema::hasColumn('company_bank_has_log', 'log_tracking_no')) {
                 DB::statement("ALTER TABLE `company_bank_has_log` ADD `log_tracking_no` VARCHAR(10) NULL");
             }
@@ -288,7 +288,7 @@ class UserController extends Controller
         if ($getuser) {
             $newStatus = $getuser->Status == "1" ? "0" : "1"; // Toggle the Status
             $actionType = $newStatus == "1" ? "Activate User" : "Deactivate User";
-            
+
             // Store user status change data for approval
             $requestData = [
                 'user_id' => $id,
@@ -308,9 +308,9 @@ class UserController extends Controller
                 'data_time' => now(),
                 'status' => 0
             ]);
-            
+
             return response()->json(['message' => 'User status change request sent for approval!'], 200);
-            
+
             // OLD CODE - keeping for approval handler reference
             /*
             DB::table('user')->where('id', $id)->update(['Status' => $newStatus]);
@@ -327,13 +327,12 @@ class UserController extends Controller
     public function update(Request $request)
     {
 
-        $user= tableWithBranch('user')->where('idUser', $request->user_id)->get();
-        foreach ($user as $item){
-            $data['password']=Hash::make($request->c_pass);
+        $user = tableWithBranch('user')->where('idUser', $request->user_id)->get();
+        foreach ($user as $item) {
+            $data['password'] = Hash::make($request->c_pass);
             DB::table('user')->where('idUser', $request->user_id)->update($data);
             return redirect()->intended(route('pages.user'))->with("success", "Password updated !");
         }
-
     }
 
     /**
@@ -403,7 +402,6 @@ class UserController extends Controller
                 DB::commit();
 
                 $createdCount++;
-
             } catch (\Throwable $e) {
                 DB::rollBack();
 
@@ -420,32 +418,33 @@ class UserController extends Controller
 
 
 
-    public function showdashboard(Store $session){
+    public function showdashboard(Store $session)
+    {
 
-//            $this->syncRecoveryAccountsForBranch();
-//        // YOUR LOOPS (unchanged, as you asked)
-//
-//        $loans = tableWithBranch('customer_loan')->get();
-//
-//        foreach ($loans as $loan) {
-//            $ins_count_loan = (int)$loan->Installment_Count;
-//
-//            $installment_count = tableWithBranch('installments')
-//                ->where('Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
-//                ->count();
-//
-//            // your logic
-//            $ins_count_loan++;
-//
-//            if ($ins_count_loan != $installment_count) {
-//                $this->fixLoanInstallmentsOnce((int)$loan->idCustomer_Loan);
-//                $this->fixLoanInstallmentsOnce_2((int)$loan->idCustomer_Loan);
-//            }
-//        }
-//        dd([
-//            'default' => DB::getDefaultConnection(),
-//            'db_name' => DB::select('SELECT DATABASE() as db')[0]->db,
-//        ]);
+        //            $this->syncRecoveryAccountsForBranch();
+        //        // YOUR LOOPS (unchanged, as you asked)
+        //
+        //        $loans = tableWithBranch('customer_loan')->get();
+        //
+        //        foreach ($loans as $loan) {
+        //            $ins_count_loan = (int)$loan->Installment_Count;
+        //
+        //            $installment_count = tableWithBranch('installments')
+        //                ->where('Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
+        //                ->count();
+        //
+        //            // your logic
+        //            $ins_count_loan++;
+        //
+        //            if ($ins_count_loan != $installment_count) {
+        //                $this->fixLoanInstallmentsOnce((int)$loan->idCustomer_Loan);
+        //                $this->fixLoanInstallmentsOnce_2((int)$loan->idCustomer_Loan);
+        //            }
+        //        }
+        //        dd([
+        //            'default' => DB::getDefaultConnection(),
+        //            'db_name' => DB::select('SELECT DATABASE() as db')[0]->db,
+        //        ]);
 
 
         if (!Auth::check()) {
@@ -455,41 +454,41 @@ class UserController extends Controller
         // Head Office aggregated dashboard: show all branches overview
         if ((int)session('branch_id') === -1) {
             // Fetch active branches excluding head office itself
-            $branches = DB::table('branch')->where('status',1)->where('branch_id','!=',-1)->get();
+            $branches = DB::table('branch')->where('status', 1)->where('branch_id', '!=', -1)->get();
 
             $branchMetrics = [];
             foreach ($branches as $b) {
                 $branchId = $b->branch_id;
                 // Helper closure forcing branch scope manually
-                $scoped = function($table) use ($branchId) {
-                    return DB::table($table)->where($table.'.branch_id',$branchId);
+                $scoped = function ($table) use ($branchId) {
+                    return DB::table($table)->where($table . '.branch_id', $branchId);
                 };
 
                 $customers = $scoped('customer')->count();
-                $loanPendingQ = $scoped('customer_loan')->where('Status','-1');
-                $loanCurrentQ = $scoped('customer_loan')->where('Status','0');
-                $loanSettledQ = $scoped('customer_loan')->where('Status','1');
+                $loanPendingQ = $scoped('customer_loan')->where('Status', '-1');
+                $loanCurrentQ = $scoped('customer_loan')->where('Status', '0');
+                $loanSettledQ = $scoped('customer_loan')->where('Status', '1');
                 $pendingCount = $loanPendingQ->count();
-                $pendingAmount = $scoped('customer_loan')->where('Status','-1')->sum('Amount');
+                $pendingAmount = $scoped('customer_loan')->where('Status', '-1')->sum('Amount');
                 $currentCount = $loanCurrentQ->count();
-                $currentAmount = $scoped('customer_loan')->where('Status','0')->sum('Amount');
+                $currentAmount = $scoped('customer_loan')->where('Status', '0')->sum('Amount');
                 $settledCount = $loanSettledQ->count();
                 $portfolio = $scoped('installments')->sum('capital_balance');
                 $todayInstallment = DB::table('installments')
-                    ->join('customer_loan','installments.Customer_Loan_idCustomer_Loan','=','customer_loan.idCustomer_Loan')
-                    ->where('installments.branch_id',$branchId)
-                    ->where('customer_loan.branch_id',$branchId)
-                    ->whereDate('installments.Installment_Date',date('Y-m-d'))
-                    ->where('customer_loan.Status','0')
+                    ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+                    ->where('installments.branch_id', $branchId)
+                    ->where('customer_loan.branch_id', $branchId)
+                    ->whereDate('installments.Installment_Date', date('Y-m-d'))
+                    ->where('customer_loan.Status', '0')
                     ->sum('installments.Total_Balance');
-                $todayCollected = $scoped('customer_payments')->where('Date',date('Y-m-d'))->sum('Amount');
+                $todayCollected = $scoped('customer_payments')->where('Date', date('Y-m-d'))->sum('Amount');
                 // arrears: overdue installments (date < today) still active
                 $arrears = DB::table('installments')
-                    ->join('customer_loan','installments.Customer_Loan_idCustomer_Loan','=','customer_loan.idCustomer_Loan')
-                    ->where('installments.branch_id',$branchId)
-                    ->where('customer_loan.branch_id',$branchId)
-                    ->where('customer_loan.Status','0')
-                    ->whereDate('installments.Installment_Date','<',date('Y-m-d'))
+                    ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+                    ->where('installments.branch_id', $branchId)
+                    ->where('customer_loan.branch_id', $branchId)
+                    ->where('customer_loan.Status', '0')
+                    ->whereDate('installments.Installment_Date', '<', date('Y-m-d'))
                     ->sum('installments.Total_Balance');
 
                 $branchMetrics[] = [
@@ -556,14 +555,14 @@ class UserController extends Controller
 
 
 
-        $loan=tableWithBranch('customer_loan')->where('Status','!=','1')->get();
+        $loan = tableWithBranch('customer_loan')->where('Status', '!=', '1')->get();
         $CapitalBalanceController = new CapitalBalanceController();
-        foreach ($loan as $loans){
+        foreach ($loan as $loans) {
             $CapitalBalanceController->create($loans->idCustomer_Loan);
         }
 
 
-//        $CapitalBalanceController->panelty_remove();
+        //        $CapitalBalanceController->panelty_remove();
 
 
         // Call to the penalty creation function
@@ -571,13 +570,13 @@ class UserController extends Controller
 
 
         $customerCount = tableWithBranch('customer')->count();
-        $customer_loan_pending_Count = tableWithBranch('customer_loan')->where('Status','=','-1')->count();
-        $customer_loan_pending_Amount = tableWithBranch('customer_loan')->where('Status','=','-1')->sum('Amount');
-        $customer_loan_current_Count = tableWithBranch('customer_loan')->where('Status','=','0')->count();
-        $customer_loan_current_Amount = tableWithBranch('customer_loan')->where('Status','=','0')->sum('Amount');
-        $setteled_loan_Count = tableWithBranch('customer_loan')->where('Status','=','1')->count();
-        $deleted_loan_Count = tableWithBranch('customer_loan')->where('Status','=','-2')->count();
-        $setteled_loan_current_Amount = tableWithBranch('customer_loan')->where('Status','=','1')->sum('Amount');
+        $customer_loan_pending_Count = tableWithBranch('customer_loan')->where('Status', '=', '-1')->count();
+        $customer_loan_pending_Amount = tableWithBranch('customer_loan')->where('Status', '=', '-1')->sum('Amount');
+        $customer_loan_current_Count = tableWithBranch('customer_loan')->where('Status', '=', '0')->count();
+        $customer_loan_current_Amount = tableWithBranch('customer_loan')->where('Status', '=', '0')->sum('Amount');
+        $setteled_loan_Count = tableWithBranch('customer_loan')->where('Status', '=', '1')->count();
+        $deleted_loan_Count = tableWithBranch('customer_loan')->where('Status', '=', '-2')->count();
+        $setteled_loan_current_Amount = tableWithBranch('customer_loan')->where('Status', '=', '1')->sum('Amount');
         $portfolio = tableWithBranch('installments', 'installments')
             ->join('customer_loan as cl', 'cl.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
             ->where('cl.Status', 0)
@@ -609,32 +608,32 @@ class UserController extends Controller
             ->where('installments.Installment_Date', '=', date('Y-m-d'))
             ->where('customer_loan.Status', '=', '0')
             ->sum('installments.Total_Balance');
-        $todaycollected = tableWithBranch('customer_payments')->where('Date',date('Y-m-d'))->sum('Amount');
+        $todaycollected = tableWithBranch('customer_payments')->where('Date', date('Y-m-d'))->sum('Amount');
 
 
 
-        $checqueamount = tableWithBranch('Cheque_payment')->where('payment_date',date('Y-m-d'))->where('chq_status','=','0')->sum('payment_amount');
-        $shortcut=tableWithBranch('shortcut')->get();
-        $shortcut_count=tableWithBranch('shortcut')->count();
+        $checqueamount = tableWithBranch('Cheque_payment')->where('payment_date', date('Y-m-d'))->where('chq_status', '=', '0')->sum('payment_amount');
+        $shortcut = tableWithBranch('shortcut')->get();
+        $shortcut_count = tableWithBranch('shortcut')->count();
 
-        $all_loan=$customer_loan_current_Count+$setteled_loan_Count;
+        $all_loan = $customer_loan_current_Count + $setteled_loan_Count;
 
 
 
-        $todaycollection=tableWithBranch('installments','installments')
+        $todaycollection = tableWithBranch('installments', 'installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->join('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->join('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->join('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category')
-            ->select('customer.*','customer_group.Name as group_name','installments.*','customer_loan.*','loan_category.Name as loan_name')
-            ->whereDate('Installment_Date','=',date('Y-m-d'))
-            ->where('installments.Status','=','0')
+            ->select('customer.*', 'customer_group.Name as group_name', 'installments.*', 'customer_loan.*', 'loan_category.Name as loan_name')
+            ->whereDate('Installment_Date', '=', date('Y-m-d'))
+            ->where('installments.Status', '=', '0')
             ->where('customer_loan.Status', '=', '0')
             ->get();
 
 
-        $loanQuery_2 = tableWithBranch('installments','installments')
+        $loanQuery_2 = tableWithBranch('installments', 'installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->select(
@@ -645,14 +644,14 @@ class UserController extends Controller
             ->where('customer_loan.Status', '=', '0')
             ->first();  // Try without grouping for now
 
-// Assign the values to variables
+        // Assign the values to variables
         $todayInstallment = $loanQuery_2->Today_installment;
         $arrease = $loanQuery_2->arrease;
         $totalBalanceUntil = $loanQuery_2->Total_Balance_until;
-        $totalBalanceUntil=$totalBalanceUntil+$checqueamount;
+        $totalBalanceUntil = $totalBalanceUntil + $checqueamount;
 
         // Total Outstanding: capital balance + interest balance where status = 0
-        $totalOutstanding = tableWithBranch('installments','installments')
+        $totalOutstanding = tableWithBranch('installments', 'installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->select(
                 DB::raw('SUM(installments.capital_balance + installments.Interest_Balance) as total_outstanding')
@@ -662,7 +661,7 @@ class UserController extends Controller
         $totalOutstanding = $totalOutstanding->total_outstanding ?? 0;
 
         // Penalty Balance: sum of penalty balance where status = 0
-        $penaltyBalance = tableWithBranch('installments','installments')
+        $penaltyBalance = tableWithBranch('installments', 'installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->select(
                 DB::raw('SUM(installments.Panalty_Balance) as penalty_balance')
@@ -671,12 +670,12 @@ class UserController extends Controller
             ->first();
         $penaltyBalance = $penaltyBalance->penalty_balance ?? 0;
 
-        $userid=session('userid');
+        $userid = session('userid');
 
-        $getuser = DB::table('user_privileges_has_user')->where('user_id', $userid)->where('permission_key','=','dashboard')->first();
-        $dashboard=0;
-        if ($getuser){
-            $dashboard=$getuser->value;
+        $getuser = DB::table('user_privileges_has_user')->where('user_id', $userid)->where('permission_key', '=', 'dashboard')->first();
+        $dashboard = 0;
+        if ($getuser) {
+            $dashboard = $getuser->value;
         }
 
         $currentYear = date('Y');
@@ -733,17 +732,16 @@ class UserController extends Controller
         $profitTarget = 1000000; // 1 million
 
 
-        $user=tableWithBranch('user')->where('id','=',$userid)->first();
+        $user = tableWithBranch('user')->where('id', '=', $userid)->first();
 
 
-        if ($user){
+        if ($user) {
             if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $userid)->exists()) {
-
-            }else {
+            } else {
 
                 $Bank = [
                     'Bank_Type' => "Collector",
-                    'code' => $user->id.'/Collector',
+                    'code' => $user->id . '/Collector',
                     'Bank_Name' => "Collector",
                     'Account_Name' => $user->Full_Name,
                     'Account_No' => $user->id,
@@ -757,7 +755,7 @@ class UserController extends Controller
 
 
                 $insertedId = insertWithBranch('company_bank_accounts', $Bank);
-// Convert the BankLog object to an array for insertion
+                // Convert the BankLog object to an array for insertion
                 $bankLogData = [
                     'Bank_Account_Id' => $insertedId,
                     'Date_Time' => date('Y-m-d H:i:s'),
@@ -771,34 +769,34 @@ class UserController extends Controller
                     'branch_id' => session('branch_id'),
                 ];
 
-// Insert the BankLog entry using the helper function
+                // Insert the BankLog entry using the helper function
                 insertWithBranch('company_bank_has_log', $bankLogData);
             }
         }
 
 
-// Check if 'log_tracking_no' column exists in 'company_bank_has_log'
+        // Check if 'log_tracking_no' column exists in 'company_bank_has_log'
         if (!Schema::hasColumn('company_bank_has_log', 'log_tracking_no')) {
             DB::statement("ALTER TABLE `company_bank_has_log` ADD `log_tracking_no` VARCHAR(10) NULL");
         }
 
         // ----------------------
-// Date boundaries
-// ----------------------
+        // Date boundaries
+        // ----------------------
         $today      = Carbon::today();
         $todayDate  = $today->toDateString();
         $weekStart  = $today->copy()->startOfWeek(Carbon::SUNDAY)->toDateString();   // Sunday
         $weekEnd    = $today->copy()->endOfWeek(Carbon::SATURDAY)->toDateString();   // Saturday
 
-// ----------------------
-// 1) THIS WEEK ARREARS
-//    (Sunday → yesterday)
-// ----------------------
+        // ----------------------
+        // 1) THIS WEEK ARREARS
+        //    (Sunday → yesterday)
+        // ----------------------
         if ($todayDate > $weekStart) {
             $arrearsEnd = $today->toDateString();
 
 
-            $weeklyUnpaidQuery = tableWithBranch('installments','installments')
+            $weeklyUnpaidQuery = tableWithBranch('installments', 'installments')
                 ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
                 ->where('customer_loan.Status', '=', '0')
                 ->where('installments.Status', '=', '0')
@@ -817,11 +815,11 @@ class UserController extends Controller
             $weeklyUnpaidCustomerCount = 0;
         }
 
-// ----------------------
-// 2) CURRENT WEEK PENDING
-//    (today → Saturday)
-// ----------------------
-        $currentWeekPendingQuery = tableWithBranch('installments','installments')
+        // ----------------------
+        // 2) CURRENT WEEK PENDING
+        //    (today → Saturday)
+        // ----------------------
+        $currentWeekPendingQuery = tableWithBranch('installments', 'installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->where('customer_loan.Status', '=', '0')
             ->where('installments.Status', '=', '0')
@@ -837,14 +835,42 @@ class UserController extends Controller
 
 
 
-        return view('home',compact(
-            'currentMonthLending','portfolio','profit','todaycollected','profitTarget','weeklyComparison',
-            'deleted_loan_Count','all_loan','monthlyData','dashboard','checqueamount','totalBalanceUntil','arrease',
-            'todayInstallment','setteled_loan_current_Amount','customer_loan_pending_Amount','customer_loan_current_Amount',
-            'setteled_loan_Count','shortcut_count','shortcut','customerCount','customer_loan_pending_Count',
-            'customer_loan_current_Count','todayinstallment','todaycollection','todayNotPaid',
-            'weeklyUnpaidCount','weeklyUnpaidAmount','weeklyUnpaidCustomerCount','totalOutstanding','penaltyBalance',
-            'currentWeekPendingCount','currentWeekPendingAmount','currentWeekPendingCustomerCount','todayinstallment_balance'
+        return view('home', compact(
+            'currentMonthLending',
+            'portfolio',
+            'profit',
+            'todaycollected',
+            'profitTarget',
+            'weeklyComparison',
+            'deleted_loan_Count',
+            'all_loan',
+            'monthlyData',
+            'dashboard',
+            'checqueamount',
+            'totalBalanceUntil',
+            'arrease',
+            'todayInstallment',
+            'setteled_loan_current_Amount',
+            'customer_loan_pending_Amount',
+            'customer_loan_current_Amount',
+            'setteled_loan_Count',
+            'shortcut_count',
+            'shortcut',
+            'customerCount',
+            'customer_loan_pending_Count',
+            'customer_loan_current_Count',
+            'todayinstallment',
+            'todaycollection',
+            'todayNotPaid',
+            'weeklyUnpaidCount',
+            'weeklyUnpaidAmount',
+            'weeklyUnpaidCustomerCount',
+            'totalOutstanding',
+            'penaltyBalance',
+            'currentWeekPendingCount',
+            'currentWeekPendingAmount',
+            'currentWeekPendingCustomerCount',
+            'todayinstallment_balance'
         ));
     }
 
@@ -854,7 +880,7 @@ class UserController extends Controller
         $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY)->toDateString();
         $weekEnd = Carbon::now()->endOfWeek(Carbon::SATURDAY)->toDateString();
 
-        $currentWeekPendingData = tableWithBranch('installments','installments')
+        $currentWeekPendingData = tableWithBranch('installments', 'installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->select(
@@ -864,7 +890,7 @@ class UserController extends Controller
                 'customer_loan.Amount as capital_amount',
                 'customer_loan.Total_Loan_Amount as full_loan_amount',
                 // Current week pending amount (installments between Sunday and Saturday of current week)
-                DB::raw('SUM(CASE WHEN installments.Installment_Date BETWEEN "'.$weekStart.'" AND "'.$weekEnd.'" THEN installments.Total_Balance ELSE 0 END) as current_week_pending'),
+                DB::raw('SUM(CASE WHEN installments.Installment_Date BETWEEN "' . $weekStart . '" AND "' . $weekEnd . '" THEN installments.Total_Balance ELSE 0 END) as current_week_pending'),
                 // Total arrears (all overdue installments)
                 DB::raw('SUM(CASE WHEN installments.Installment_Date < CURDATE() THEN installments.Total_Balance ELSE 0 END) as total_arrears'),
                 // Not paid installment count
@@ -1095,7 +1121,7 @@ class UserController extends Controller
 
     public function totalOutstandingData()
     {
-        $totalOutstandingData = tableWithBranch('installments','installments')
+        $totalOutstandingData = tableWithBranch('installments', 'installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->select(
@@ -1107,9 +1133,9 @@ class UserController extends Controller
                 DB::raw('SUM(installments.capital_balance + installments.Interest_Balance) as total_outstanding')
             )
             ->where('customer_loan.Status', '=', '0')
-            ->where(function($query) {
+            ->where(function ($query) {
                 $query->where('installments.capital_balance', '>', 0)
-                      ->orWhere('installments.Interest_Balance', '>', 0);
+                    ->orWhere('installments.Interest_Balance', '>', 0);
             })
             ->groupBy('customer_loan.idCustomer_Loan', 'customer.idCustomer', 'customer.First_Name', 'customer.Last_Name', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount')
             ->havingRaw('total_outstanding > 0')
@@ -1121,7 +1147,7 @@ class UserController extends Controller
 
     public function penaltyBalanceData()
     {
-        $penaltyBalanceData = tableWithBranch('installments','installments')
+        $penaltyBalanceData = tableWithBranch('installments', 'installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->select(
@@ -1149,7 +1175,7 @@ class UserController extends Controller
         $weekStart = Carbon::now()->startOfWeek()->toDateString();
         $weekToday = date('Y-m-d');
 
-        $weeklyNotPaidData = tableWithBranch('installments','installments')
+        $weeklyNotPaidData = tableWithBranch('installments', 'installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->select(
@@ -1159,7 +1185,7 @@ class UserController extends Controller
                 'customer_loan.Amount as capital_amount',
                 'customer_loan.Total_Loan_Amount as full_loan_amount',
                 // This week not paid amount (installments between week start and today)
-                DB::raw('SUM(CASE WHEN installments.Installment_Date BETWEEN "'.$weekStart.'" AND "'.$weekToday.'" THEN installments.Total_Balance ELSE 0 END) as this_week_not_paid'),
+                DB::raw('SUM(CASE WHEN installments.Installment_Date BETWEEN "' . $weekStart . '" AND "' . $weekToday . '" THEN installments.Total_Balance ELSE 0 END) as this_week_not_paid'),
                 // Total arrears (all overdue installments)
                 DB::raw('SUM(CASE WHEN installments.Installment_Date < CURDATE() THEN installments.Total_Balance ELSE 0 END) as total_arrears'),
                 // Not paid installment count
@@ -1182,21 +1208,21 @@ class UserController extends Controller
 
     public function create_panelty()
     {
-        $date=date('Y-m-d');
+        $date = date('Y-m-d');
 
 
-        $installment=tableWithBranch('installments','installments')
+        $installment = tableWithBranch('installments', 'installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->where('customer_loan.Status', '=', '0')
             ->where('installments.Status', '=', '0')
             ->whereDate('Panelty_date', '<=', $date)
-            ->select('installments.*', 'customer_loan.Panalty_Rate','customer_loan.Panelty_period as Loan_Panelty_period','customer_loan.panelty_method','customer_loan.Panelty_period','customer_loan.idCustomer_Loan','customer_loan.Customer_idCustomer')
+            ->select('installments.*', 'customer_loan.Panalty_Rate', 'customer_loan.Panelty_period as Loan_Panelty_period', 'customer_loan.panelty_method', 'customer_loan.Panelty_period', 'customer_loan.idCustomer_Loan', 'customer_loan.Customer_idCustomer')
             ->get();
 
         $today  = Carbon::today('Asia/Colombo');
-        foreach ($installment as $item){
+        foreach ($installment as $item) {
 
-            $Panelty_period=$item->Loan_Panelty_period;
+            $Panelty_period = $item->Loan_Panelty_period;
             $penaltyDate = Carbon::parse($item->Panelty_date);
             $days = max(0, $penaltyDate->diffInDays($today, false));
 
@@ -1212,10 +1238,10 @@ class UserController extends Controller
 
             if ($missing > 0) {
 
-                $ins_amount=$item->capital_balance + $item->Interest_Balance;
-                $panelty_amount=($ins_amount*$item->Panalty_Rate)/100;
+                $ins_amount = $item->capital_balance + $item->Interest_Balance;
+                $panelty_amount = ($ins_amount * $item->Panalty_Rate) / 100;
 
-                $count=$paneltyCount;
+                $count = $paneltyCount;
 
                 for ($i = 1; $i <= $missing; $i++) {
                     $count++;
@@ -1234,20 +1260,20 @@ class UserController extends Controller
                         ]);
 
 
-                    $user_id= session('userid');
-                    $date=date('Y-m-d');
-                    $time=date('H:i:s');
+                    $user_id = session('userid');
+                    $date = date('Y-m-d');
+                    $time = date('H:i:s');
 
-                    $customer_table=tableWithBranch('customer')
-                        ->where('idCustomer','=',$item->Customer_idCustomer)
+                    $customer_table = tableWithBranch('customer')
+                        ->where('idCustomer', '=', $item->Customer_idCustomer)
                         ->first();
 
 
-                    $panelty_amount=number_format($panelty_amount, 2,'.','');
+                    $panelty_amount = number_format($panelty_amount, 2, '.', '');
 
                     DB::table('customer_log')->insert([
                         'customer_id' => $item->Customer_idCustomer,
-                        'customer_name' => $customer_table->First_Name.' '.$customer_table->Last_Name,
+                        'customer_name' => $customer_table->First_Name . ' ' . $customer_table->Last_Name,
                         'date' => $date,
                         'time' => $time,
                         'description' => "{$panelty_amount} LKR Penalty added for ({$item->idCustomer_Loan})\nInstallment No : {$item->idInstallments}",
@@ -1261,30 +1287,38 @@ class UserController extends Controller
 
                     $loanLogController = new LoanLogController();
 
-                    $last_log = DB::table('Loan_Log')->where('Loan_ID','=',$item->idCustomer_Loan)->orderBy('Loan_Log_ID', 'desc')->first();
+                    $last_log = DB::table('Loan_Log')->where('Loan_ID', '=', $item->idCustomer_Loan)->orderBy('Loan_Log_ID', 'desc')->first();
                     $Panelty_Balance = number_format((float)$last_log->Panelty_Balance + (float)$panelty_amount, 2, '.', '');
                     $Total_Pending_Balance = number_format((float)$last_log->Total_Pending_Balance + (float)$panelty_amount, 2, '.', '');
                     $loanLogController->index(
-                        $item->idCustomer_Loan, 'Penalty', $item->idInstallments,
-                        'Penalty-Installment No : '.$item->idInstallments.' Penalty Count : '.$count, $panelty_amount,
-                        '0.00', '0.00',
-                        '0.00','0.00', $Panelty_Balance,
-                        $last_log->Interest_Balance, $last_log->Capital_Balance, $Total_Pending_Balance, $last_log->Saving_Account_Balance
+                        $item->idCustomer_Loan,
+                        'Penalty',
+                        $item->idInstallments,
+                        'Penalty-Installment No : ' . $item->idInstallments . ' Penalty Count : ' . $count,
+                        $panelty_amount,
+                        '0.00',
+                        '0.00',
+                        '0.00',
+                        '0.00',
+                        $Panelty_Balance,
+                        $last_log->Interest_Balance,
+                        $last_log->Capital_Balance,
+                        $Total_Pending_Balance,
+                        $last_log->Saving_Account_Balance
                     );
 
-                    Log::info($item->idCustomer_Loan.'-'.$count);
+                    Log::info($item->idCustomer_Loan . '-' . $count);
 
                     $bankLogController = new BankLogController();
 
-                    $System_default_5=tableWithBranch('company_bank_accounts')
-                        ->where('Bank_Type','=','System_default_5')
+                    $System_default_5 = tableWithBranch('company_bank_accounts')
+                        ->where('Bank_Type', '=', 'System_default_5')
                         ->first();
-                    $System_default_6=tableWithBranch('company_bank_accounts')
-                        ->where('Bank_Type','=','System_default_6')
+                    $System_default_6 = tableWithBranch('company_bank_accounts')
+                        ->where('Bank_Type', '=', 'System_default_6')
                         ->first();
-                    $bankLogController->index($System_default_5->Idbank,"Penalty","Penalty","-","debit",$panelty_amount,$System_default_6->Idbank);
-                    $bankLogController->index($System_default_6->Idbank,"Penalty","Penalty","-","credit",$panelty_amount,$System_default_5->Idbank);
-
+                    $bankLogController->index($System_default_5->Idbank, "Penalty", "Penalty", "-", "debit", $panelty_amount, $System_default_6->Idbank);
+                    $bankLogController->index($System_default_6->Idbank, "Penalty", "Penalty", "-", "credit", $panelty_amount, $System_default_5->Idbank);
                 }
             }
         }
@@ -1299,91 +1333,91 @@ class UserController extends Controller
 
 
 
-//
-//
-//        $date=date('Y-m-d');
-//
-//        $poya=tableWithBranch('holidays')->get();
-//        $poyaDates = $poya->pluck('date')->toArray(); // Extract only the dates
-//
-//
-//        $installment=tableWithBranch('installments','installments')
-//            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
-//            ->where('customer_loan.Status', '=', '0')
-//            ->where('installments.Status', '=', '0')
-//            ->where('Panelty_status', '=', '0')
-//            ->whereDate('Panelty_date', '<=', $date)
-//            ->whereNotIn('Panelty_date', $poyaDates) // Exclude dates in $poya
-//            ->select('installments.*', 'customer_loan.Panalty_Rate','customer_loan.idCustomer_Loan','customer_loan.Customer_idCustomer')
-//            ->get();
-//
-//
-//        foreach ($installment as $item){
-//            $total_balance=$item->Total_Balance;
-//            $panelty_amount=($total_balance*$item->Panalty_Rate)/100;
-//            $newPanaltyBalance = str_replace(',', '', number_format($item->Panalty_Balance + $panelty_amount, 2));
-//            $tot_balance = str_replace(',', '', number_format($total_balance + $panelty_amount, 2));
-//
-//
-//            DB::table('installments')
-//                ->where('idInstallments', $item->idInstallments)
-//                ->where('branch_id', session('branch_id'))
-//                ->update([
-//                    'Panalty_Amount' => number_format($panelty_amount, 2, '.', ''),
-//                    'Panalty_Balance' => number_format($newPanaltyBalance, 2, '.', ''),
-//                    'Total_Amount' => DB::raw('ROUND(Total_Amount + ' . $panelty_amount . ', 2)'),
-//                    'Total_Balance' => number_format($tot_balance, 2, '.', ''),
-//                    'Panelty_status' => '1'
-//                ]);
-//
-//            $user_id= session('userid');
-//            $date=date('Y-m-d');
-//            $time=date('H:i:s');
-//
-//            $customer_table=tableWithBranch('customer')
-//                ->where('idCustomer','=',$item->Customer_idCustomer)
-//                ->first();
-//
-//            $panelty_amount=number_format($panelty_amount, 2,'.','');
-//
-//            DB::table('customer_log')->insert([
-//                'customer_id' => $item->Customer_idCustomer,
-//                'customer_name' => $customer_table->First_Name.' '.$customer_table->Last_Name,
-//                'date' => $date,
-//                'time' => $time,
-//                'description' => "{$panelty_amount} LKR Penalty added for ({$item->idCustomer_Loan})\nInstallment No : {$item->idInstallments}",
-//                'description_id' => $item->idInstallments,
-//                'comment' => ' ',
-//                'type' => 'Penalty',
-//                'user' => $user_id,
-//                'branch_id' => session('branch_id')
-//            ]);
-//            $loanLogController = new LoanLogController();
-//
-//            $last_log = DB::table('Loan_Log')->where('Loan_ID','=',$item->idCustomer_Loan)->orderBy('Loan_Log_ID', 'desc')->first();
-//            $Panelty_Balance = number_format((float)$last_log->Panelty_Balance + (float)$panelty_amount, 2, '.', '');
-//            $Total_Pending_Balance = number_format((float)$last_log->Total_Pending_Balance + (float)$panelty_amount, 2, '.', '');
-//            $loanLogController->index(
-//                $item->Customer_idCustomer, 'Penalty', $item->idInstallments,
-//                'Penalty-Installment No : '.$item->idInstallments, $panelty_amount,
-//                '0.00', '0.00',
-//                '0.00','0.00', $Panelty_Balance,
-//                $last_log->Interest_Balance, $last_log->Capital_Balance, $Total_Pending_Balance, $last_log->Saving_Account_Balance
-//            );
-//
-//            $bankLogController = new BankLogController();
-//
-//            $System_default_5=tableWithBranch('company_bank_accounts')
-//                ->where('Bank_Type','=','System_default_5')
-//                ->first();
-//            $System_default_6=tableWithBranch('company_bank_accounts')
-//                ->where('Bank_Type','=','System_default_6')
-//                ->first();
-//            $bankLogController->index($System_default_5->Idbank,"Penalty","Penalty","-","debit",$panelty_amount,$System_default_6->Idbank);
-//            $bankLogController->index($System_default_6->Idbank,"Penalty","Penalty","-","credit",$panelty_amount,$System_default_5->Idbank);
-//
-//
-//        }
+        //
+        //
+        //        $date=date('Y-m-d');
+        //
+        //        $poya=tableWithBranch('holidays')->get();
+        //        $poyaDates = $poya->pluck('date')->toArray(); // Extract only the dates
+        //
+        //
+        //        $installment=tableWithBranch('installments','installments')
+        //            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+        //            ->where('customer_loan.Status', '=', '0')
+        //            ->where('installments.Status', '=', '0')
+        //            ->where('Panelty_status', '=', '0')
+        //            ->whereDate('Panelty_date', '<=', $date)
+        //            ->whereNotIn('Panelty_date', $poyaDates) // Exclude dates in $poya
+        //            ->select('installments.*', 'customer_loan.Panalty_Rate','customer_loan.idCustomer_Loan','customer_loan.Customer_idCustomer')
+        //            ->get();
+        //
+        //
+        //        foreach ($installment as $item){
+        //            $total_balance=$item->Total_Balance;
+        //            $panelty_amount=($total_balance*$item->Panalty_Rate)/100;
+        //            $newPanaltyBalance = str_replace(',', '', number_format($item->Panalty_Balance + $panelty_amount, 2));
+        //            $tot_balance = str_replace(',', '', number_format($total_balance + $panelty_amount, 2));
+        //
+        //
+        //            DB::table('installments')
+        //                ->where('idInstallments', $item->idInstallments)
+        //                ->where('branch_id', session('branch_id'))
+        //                ->update([
+        //                    'Panalty_Amount' => number_format($panelty_amount, 2, '.', ''),
+        //                    'Panalty_Balance' => number_format($newPanaltyBalance, 2, '.', ''),
+        //                    'Total_Amount' => DB::raw('ROUND(Total_Amount + ' . $panelty_amount . ', 2)'),
+        //                    'Total_Balance' => number_format($tot_balance, 2, '.', ''),
+        //                    'Panelty_status' => '1'
+        //                ]);
+        //
+        //            $user_id= session('userid');
+        //            $date=date('Y-m-d');
+        //            $time=date('H:i:s');
+        //
+        //            $customer_table=tableWithBranch('customer')
+        //                ->where('idCustomer','=',$item->Customer_idCustomer)
+        //                ->first();
+        //
+        //            $panelty_amount=number_format($panelty_amount, 2,'.','');
+        //
+        //            DB::table('customer_log')->insert([
+        //                'customer_id' => $item->Customer_idCustomer,
+        //                'customer_name' => $customer_table->First_Name.' '.$customer_table->Last_Name,
+        //                'date' => $date,
+        //                'time' => $time,
+        //                'description' => "{$panelty_amount} LKR Penalty added for ({$item->idCustomer_Loan})\nInstallment No : {$item->idInstallments}",
+        //                'description_id' => $item->idInstallments,
+        //                'comment' => ' ',
+        //                'type' => 'Penalty',
+        //                'user' => $user_id,
+        //                'branch_id' => session('branch_id')
+        //            ]);
+        //            $loanLogController = new LoanLogController();
+        //
+        //            $last_log = DB::table('Loan_Log')->where('Loan_ID','=',$item->idCustomer_Loan)->orderBy('Loan_Log_ID', 'desc')->first();
+        //            $Panelty_Balance = number_format((float)$last_log->Panelty_Balance + (float)$panelty_amount, 2, '.', '');
+        //            $Total_Pending_Balance = number_format((float)$last_log->Total_Pending_Balance + (float)$panelty_amount, 2, '.', '');
+        //            $loanLogController->index(
+        //                $item->Customer_idCustomer, 'Penalty', $item->idInstallments,
+        //                'Penalty-Installment No : '.$item->idInstallments, $panelty_amount,
+        //                '0.00', '0.00',
+        //                '0.00','0.00', $Panelty_Balance,
+        //                $last_log->Interest_Balance, $last_log->Capital_Balance, $Total_Pending_Balance, $last_log->Saving_Account_Balance
+        //            );
+        //
+        //            $bankLogController = new BankLogController();
+        //
+        //            $System_default_5=tableWithBranch('company_bank_accounts')
+        //                ->where('Bank_Type','=','System_default_5')
+        //                ->first();
+        //            $System_default_6=tableWithBranch('company_bank_accounts')
+        //                ->where('Bank_Type','=','System_default_6')
+        //                ->first();
+        //            $bankLogController->index($System_default_5->Idbank,"Penalty","Penalty","-","debit",$panelty_amount,$System_default_6->Idbank);
+        //            $bankLogController->index($System_default_6->Idbank,"Penalty","Penalty","-","credit",$panelty_amount,$System_default_5->Idbank);
+        //
+        //
+        //        }
 
 
 
@@ -1394,37 +1428,39 @@ class UserController extends Controller
     }
 
 
-    public function privileges(Request $request,Store $session)
+    public function privileges(Request $request, Store $session)
     {
         $userId = $request->input('userId');
         $privileges = $request->input('privileges', []);
 
-        // Get user details for description
+        // Get user details
         $user = DB::table('user')->where('id', $userId)->first();
         if (!$user) {
             return response()->json(['status' => 'error', 'message' => 'User not found']);
         }
 
-        // Store privilege change data for approval
-        $requestData = [
-            'user_id' => $userId,
-            'privileges' => $privileges,
-            'user_email' => $user->email
-        ];
+        foreach ($privileges as $key => $value) {
+            // Check if permission exists
+            $exists = DB::table('user_privileges_has_user')
+                ->where('user_id', $userId)
+                ->where('permission_key', $key)
+                ->exists();
 
-        // Create approval request
-        DB::table('approval_request')->insert([
-            'type' => 'User Privilege Change',
-            'typeid' => 103,
-            'description' => 'User Privilege Change: ' . $user->Full_Name . ' (' . $user->email . ')',
-            'data' => json_encode($requestData),
-            'userid' => session('userid'),
-            'branch_id' => session('branch_id'),
-            'data_time' => now(),
-            'status' => 0
-        ]);
+            if ($exists) {
+                DB::table('user_privileges_has_user')
+                    ->where('user_id', $userId)
+                    ->where('permission_key', $key)
+                    ->update(['value' => $value]);
+            } else {
+                DB::table('user_privileges_has_user')->insert([
+                    'user_id' => $userId,
+                    'permission_key' => $key,
+                    'value' => $value
+                ]);
+            }
+        }
 
-        return response()->json(['status' => 'success', 'message' => 'Privilege change request sent for approval!']);
+        return response()->json(['status' => 'success', 'message' => 'Privileges updated successfully!']);
     }
 
     public function showprivileges($id)
@@ -1438,14 +1474,15 @@ class UserController extends Controller
     }
 
 
-    public function check_mail(Request $request){
+    public function check_mail(Request $request)
+    {
 
         $email = $request->email;
         $user = DB::table('user')->where('email', $email)->first();
 
         if ($user) {
 
-            $branch_id=$user->branch_id;
+            $branch_id = $user->branch_id;
             $client = new Client([
                 'base_uri' => 'https://e-sms.dialog.lk/api/v1/',
             ]);
@@ -1462,7 +1499,7 @@ class UserController extends Controller
 
             $responseData = json_decode($response->getBody()->getContents(), true);
 
-            $token=$responseData['token'];
+            $token = $responseData['token'];
             if (!$token) {
                 return response()->json(['error' => 'Token not found in session'], 401);
             }
@@ -1478,9 +1515,9 @@ class UserController extends Controller
                 ->where('email', $email)
                 ->update(['otp' => $otp]);
 
-            $message="Your OTP is ".$otp;
+            $message = "Your OTP is " . $otp;
 
-            $company=DB::table('company')->where('branch_id','=',$branch_id)->first();
+            $company = DB::table('company')->where('branch_id', '=', $branch_id)->first();
 
             $client_data = new Client([
                 'base_uri' => 'https://e-sms.dialog.lk/api/v1/',
@@ -1506,9 +1543,9 @@ class UserController extends Controller
             ]);
             $responseData_result = json_decode($response_data->getBody()->getContents(), true);
 
-            if ($responseData_result['status']==="success") {
+            if ($responseData_result['status'] === "success") {
 
-                $user_details=DB::table('user')->where('email',$email)->first();
+                $user_details = DB::table('user')->where('email', $email)->first();
 
                 DB::table('sms')->insert([
                     'cus_id' => $user_details->id,
@@ -1520,19 +1557,18 @@ class UserController extends Controller
                     'time' => date('H:i:s'),
                     'branch_id' => $branch_id
                 ]);
-                return view('recover_password',compact('email'));
-            }else{
+                return view('recover_password', compact('email'));
+            } else {
                 return redirect()->route('forget_password')->with("error", "Please contact your provider !");
             }
-
-
         } else {
             return redirect()->route('forget_password')->with("error", "Please check your email address !");
         }
     }
 
 
-    public function recover_password(Request $request){
+    public function recover_password(Request $request)
+    {
 
         $validator = Validator::make($request->all(), [
             'email' => 'required|email|exists:user,email',
@@ -1545,7 +1581,7 @@ class UserController extends Controller
         $password = $request->password;
 
         if ($validator->fails()) {
-            return view('recover_password',compact('email'));
+            return view('recover_password', compact('email'));
         }
 
         // Check OTP
@@ -1565,8 +1601,9 @@ class UserController extends Controller
     }
 
 
-    public function designation(Request $request){
-        $designation=DB::table('designation')->insert([
+    public function designation(Request $request)
+    {
+        $designation = DB::table('designation')->insert([
             'name' => $request->designation,
             'desi_level' => $request->desi_level,
             'loan_creat' => $request->loan_create,
@@ -1575,20 +1612,21 @@ class UserController extends Controller
             'max_issue_amount' => str_replace(',', '', $request->max_amount_approve),
             'branch_id' => session('branch_id')
         ]);
-        if ($designation){
+        if ($designation) {
             return response()->json(['data' => $designation], 200);
         }
         return response()->json(['data' => $designation], 404);
     }
 
-    public function updatedesignation(Request $request){
+    public function updatedesignation(Request $request)
+    {
         // Get current designation for comparison
         $designation = DB::table('designation')
             ->where('idDesignation', '=', $request->id)
             ->where('branch_id', session('branch_id'))
             ->first();
 
-        if (!$designation){
+        if (!$designation) {
             return response()->json(['error' => 'Designation not found'], 404);
         }
 
@@ -1641,7 +1679,7 @@ class UserController extends Controller
         $designationId = $request->input('designationId');
         $privileges = $request->input('privileges', []);
 
-        if(!$designationId){
+        if (!$designationId) {
             return response()->json(['error' => 'Invalid designation id'], 422);
         }
 
@@ -1651,7 +1689,7 @@ class UserController extends Controller
             ->where('branch_id', session('branch_id'))
             ->first();
 
-        if(!$designation){
+        if (!$designation) {
             return response()->json(['error' => 'Designation not found'], 404);
         }
 
@@ -1690,14 +1728,14 @@ class UserController extends Controller
             ->select('privileges')
             ->first();
 
-        if(!$designation){
+        if (!$designation) {
             return response()->json(['privileges' => (object)[]]);
         }
 
         $privileges = [];
-        if($designation->privileges){
+        if ($designation->privileges) {
             $decoded = json_decode($designation->privileges, true);
-            if(is_array($decoded)){
+            if (is_array($decoded)) {
                 $privileges = $decoded;
             }
         }
@@ -1898,27 +1936,27 @@ class UserController extends Controller
     }
 
 
-//    public function generateDueSkip(Request $request, HolidayController $holidayController)
-//    {
-//        $request->validate([
-//            'skip_for'  => 'required|in:all,loan,branch,center,product',
-//            'skip_type' => 'required|in:installment,day',
-//            'target_id' => 'nullable|integer',
-//        ]);
-//
-//        $skipFor  = $request->input('skip_for');
-//        $targetId = $request->input('target_id');
-//        $skipType = $request->input('skip_type');
-//
-//        // Call service method from HolidayController
-//        $result = $holidayController->runDueSkip($skipFor, $targetId, $skipType);
-//
-//        return response()->json([
-//            'success' => true,
-//            'message' => 'Due skip processed successfully.',
-//            'data'    => $result,
-//        ]);
-//    }
+    //    public function generateDueSkip(Request $request, HolidayController $holidayController)
+    //    {
+    //        $request->validate([
+    //            'skip_for'  => 'required|in:all,loan,branch,center,product',
+    //            'skip_type' => 'required|in:installment,day',
+    //            'target_id' => 'nullable|integer',
+    //        ]);
+    //
+    //        $skipFor  = $request->input('skip_for');
+    //        $targetId = $request->input('target_id');
+    //        $skipType = $request->input('skip_type');
+    //
+    //        // Call service method from HolidayController
+    //        $result = $holidayController->runDueSkip($skipFor, $targetId, $skipType);
+    //
+    //        return response()->json([
+    //            'success' => true,
+    //            'message' => 'Due skip processed successfully.',
+    //            'data'    => $result,
+    //        ]);
+    //    }
 
 
 
@@ -2031,7 +2069,7 @@ class UserController extends Controller
         return response()->json(['success' => true, 'message' => 'User update request sent for approval!']);
     }
 
-    public function resetPassword($id,Request $request)
+    public function resetPassword($id, Request $request)
     {
         $updated = DB::table('user')
             ->where('id', $id)
@@ -2049,7 +2087,7 @@ class UserController extends Controller
     {
         // Retrieve all holiday dates from the database using DB::table()
         $holidays = DB::table('holidays') // Replace 'holidays' with your actual table name
-        ->select('date')
+            ->select('date')
             ->get()
             ->pluck('date')
             ->toArray(); // Convert the collection to an array
@@ -2069,9 +2107,9 @@ class UserController extends Controller
         // Try to find designation by name first, then by ID as fallback
         $designation = DB::table('designation')
             ->where('branch_id', session('branch_id'))
-            ->where(function($query) use ($designationIdentifier) {
+            ->where(function ($query) use ($designationIdentifier) {
                 $query->where('name', $designationIdentifier)
-                      ->orWhere('idDesignation', $designationIdentifier);
+                    ->orWhere('idDesignation', $designationIdentifier);
             })
             ->first();
 
@@ -2081,7 +2119,7 @@ class UserController extends Controller
 
         // Parse the JSON privileges
         $privileges = json_decode($designation->privileges, true);
-        
+
         if (!is_array($privileges)) {
             return; // Invalid JSON or not an array
         }
@@ -2105,7 +2143,7 @@ class UserController extends Controller
         try {
             $designationId = $request->id;
             $branchId = session('branch_id');
-            
+
             // Check if designation exists in current branch
             $designation = DB::table('designation')
                 ->where('idDesignation', $designationId)
@@ -2114,7 +2152,7 @@ class UserController extends Controller
 
             if (!$designation) {
                 return response()->json([
-                    'success' => false, 
+                    'success' => false,
                     'message' => 'Designation not found in current branch'
                 ], 404);
             }
@@ -2127,7 +2165,7 @@ class UserController extends Controller
 
             if ($usersCount > 0) {
                 return response()->json([
-                    'success' => false, 
+                    'success' => false,
                     'message' => "Cannot delete designation '{$designation->name}'. It is currently assigned to {$usersCount} user(s). Please reassign users before deleting."
                 ], 400);
             }
@@ -2140,24 +2178,21 @@ class UserController extends Controller
 
             if ($deleted) {
                 return response()->json([
-                    'success' => true, 
+                    'success' => true,
                     'message' => "Designation '{$designation->name}' has been successfully deleted."
                 ]);
             } else {
                 return response()->json([
-                    'success' => false, 
+                    'success' => false,
                     'message' => 'Failed to delete designation.'
                 ], 500);
             }
-
         } catch (\Exception $e) {
             Log::error('Error deleting designation: ' . $e->getMessage());
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'An error occurred while deleting the designation.'
             ], 500);
         }
     }
-
-
 }
