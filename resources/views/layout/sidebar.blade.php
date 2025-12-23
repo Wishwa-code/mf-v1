@@ -176,6 +176,8 @@
         @endif
 
         {{-- @if (optional($privilege)->customer == 1) --}}
+        {{-- CUSTOMER LEADS SECTION --}}
+        @if (optional($privilege)->customer_leads == 1)
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#lead" aria-expanded="false"
                 aria-controls="sidebarPagesAuth" class="side-nav-link">
@@ -185,36 +187,48 @@
             </a>
             <div class="collapse" id="lead">
                 <ul class="side-nav-second-level">
-                    {{-- @if (optional($privilege)->add_customer == 1) --}}
+                    @if (optional($privilege)->view_leads == 1)
                     <li>
                         <a href="{{ route('leads.verifiedList') }}">Lead List</a>
                     </li>
+                    @endif
+                    @if (optional($privilege)->create_lead == 1)
                     <li>
                         <a href="{{ route('leads.index') }}">Lead Create</a>
                     </li>
                     <li>
                         <a href="{{ route('online-leads.create') }}">Create Online Lead</a>
                     </li>
+                    @endif
+                    @if (optional($privilege)->lead_approvals == 1)
                     <li>
                         <a href="{{ route('leads.approvals') }}">Lead Approvals</a>
                     </li>
+                    @endif
+                    @if (optional($privilege)->verify_lead == 1)
                     <li>
                         <a href="{{ route('leads.verifyAction') }}">Lead Verification</a>
                     </li>
+                    @endif
+                    @if (optional($privilege)->lead_agreement == 1)
                     <li>
                         <a href="{{ route('leads.agreement') }}">Agreement Sign</a>
                     </li>
-                    {{-- @endif --}}
+                    @endif
+                    @if (optional($privilege)->view_lead_map == 1)
                     <li>
                         <a href="{{ route('leads.globalMap') }}">All Leads Map</a>
                     </li>
+                    @endif
+                    @if (optional($privilege)->lead_activity_logs == 1)
                     <li>
                         <a href="{{ route('leads.activityLogs') }}">Activity Logs</a>
                     </li>
+                    @endif
                 </ul>
             </div>
-
         </li>
+        @endif
 
         <li class="side-nav-item">
             <a href="{{ route('business-categories.index') }}" class="side-nav-link">

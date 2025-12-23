@@ -15,9 +15,11 @@
                         </ol>
                     </nav>
                 </div>
+                @if(optional($privilege)->create_lead == 1)
                 <a href="{{ route('leads.create') }}" class="btn btn-primary btn-modern shadow-sm">
                     <i class="bi bi-plus-lg me-1"></i> Add New Lead
                 </a>
+                @endif
             </div>
         </div>
     </div>
@@ -109,12 +111,16 @@
                                 <tr>
                                     <td class="ps-4">
                                         <div class="d-flex gap-2">
+                                            @if(optional($privilege)->create_lead == 1)
                                             <a href="{{ route('leads.edit', $lead->id) }}" class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1" style="border-radius: 6px;" title="Edit Lead">
                                                 <i class="bi bi-pencil-square"></i> Edit
                                             </a>
+                                            @endif
+                                            @if(optional($privilege)->view_leads == 1)
                                             <a href="{{ route('leads.show', $lead->id) }}" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" style="border-radius: 6px;" title="View Details">
                                                 <i class="bi bi-eye"></i> View
                                             </a>
+                                            @endif
                                         </div>
                                     </td>
                                     <td><span class="fw-bold text-dark">#{{ $lead->id }}</span></td>
