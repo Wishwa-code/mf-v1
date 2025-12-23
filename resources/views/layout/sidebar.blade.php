@@ -187,11 +187,14 @@
             </a>
             <div class="collapse" id="lead">
                 <ul class="side-nav-second-level">
-                    @if (optional($privilege)->view_leads == 1)
+                    @if (optional($privilege)->bussiness_categories == 1)
                     <li>
-                        <a href="{{ route('leads.verifiedList') }}">Lead List</a>
+                        <a href="{{ route('business-categories.index') }}">
+                            Business Categories
+                        </a>
                     </li>
                     @endif
+
                     @if (optional($privilege)->create_lead == 1)
                     <li>
                         <a href="{{ route('leads.index') }}">Lead Create</a>
@@ -225,18 +228,17 @@
                         <a href="{{ route('leads.activityLogs') }}">Activity Logs</a>
                     </li>
                     @endif
+                    @if (optional($privilege)->view_leads == 1)
+                    <li>
+                        <a href="{{ route('leads.verifiedList') }}">Lead List</a>
+                    </li>
+                    @endif
+
                 </ul>
             </div>
         </li>
         @endif
 
-        <li class="side-nav-item">
-            <a href="{{ route('business-categories.index') }}" class="side-nav-link">
-                <i class="ri-layout-grid-fill"></i>
-                <span> Business Categories </span>
-            </a>
-        </li>
-        {{-- @endif --}}
 
         @if (optional($privilege)->customer == 1)
         <li class="side-nav-item">
