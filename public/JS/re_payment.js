@@ -4,15 +4,16 @@ $(function () {
 });
 
 function load_payment_table() {
-    let center_details = $("#center_details").val();
-    let group = $("#group").val();
-    let customer = $("#customer_id").val();
     let date = $("#select_date").val();
     let date_to = $("#select_date_to").val();
-    let user = $("#agent").val();
-    let route = $("#route").val();
-    let loan_number_search = $("#loan_number_search").val();
-    let payment_type = $("#payment_type").val();
+    let center_details     = $('#center_details').val() || [];
+    let group              = $('#group').val() || [];
+    let customer           = $('#customer_id').val() || [];
+    let user               = $('#agent').val() || [];
+    let route              = $('#route').val() || [];
+    let loan_number_search = $('#loan_number_search').val() || [];
+    let payment_type       = $('#payment_type').val() || [];
+
 
     $.ajax({
         type: "POST",

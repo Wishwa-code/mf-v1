@@ -260,44 +260,48 @@
                             <div class="col-lg-3">
                                 <div class="mb-2"> <!-- Reduced bottom margin -->
                                     <label for="route" class="form-label">Route</label>
-                                    <select class="form-control select2" id="route">
-                                        <option value="0">All</option>
+                                    <select class="form-control select2" id="route" multiple data-placeholder="Select routes">
                                         @foreach($route as $item)
-                                            <option value="{{$item->id_route}}">{{ $item->name }} - {{ $item->Full_Name }}</option>
+                                            <option value="{{ $item->id_route }}">
+                                                {{ $item->name }} - {{ $item->Full_Name }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
                             </div>
                             <div class="col-lg-3">
                                 <div class="mb-3">
-                                    <label for="simpleinput" class="form-label">Center</label>
-                                    <select class="form-control select2" id="center_details">
-                                        <option value="0">All</option>
-                                        @foreach($center as $item)
-                                            <option value="{{$item->idCenter}}">{{ $item->Name }}-{{ $item->Route }}</option>
-                                        @endforeach
-                                    </select>
+                                    <label class="form-label">Center</label>
+<select class="form-control select2" id="center_details" multiple data-placeholder="Select centers">
+    @foreach($center as $item)
+        <option value="{{ $item->idCenter }}">{{ $item->Name }}-{{ $item->Route }}</option>
+    @endforeach
+</select>
+
                                 </div>
                             </div>
 
                             <div class="col-lg-3">
                                 <div class="mb-3">
-                                    <label for="group" class="form-label">Group</label>
-                                    <select class="form-control select2" id="group">
-                                        <option value="0">All</option>
-                                    </select>
+                                    <label class="form-label">Group</label>
+<select class="form-control select2" id="group" multiple data-placeholder="Select groups">
+    {{-- will load by ajax --}}
+</select>
+
                                 </div>
                             </div>
 
                             <div class="col-lg-3">
                                 <div class="mb-3">
-                                    <label for="simpleinput" class="form-label">Customer</label>
-                                    <select class="form-control select2" id="customer_id">
-                                        <option value="0">All</option>
-                                        @foreach($customers as $item)
-                                            <option value="{{$item->idCustomer}}">{{ $item->First_Name }} {{$item->Last_Name}}-{{ $item->Nic }}-{{ $item->Contact_No }}</option>
-                                        @endforeach
-                                    </select>
+                                    <label class="form-label">Customer</label>
+<select class="form-control select2" id="customer_id" multiple data-placeholder="Select customers">
+    @foreach($customers as $item)
+        <option value="{{ $item->idCustomer }}">
+            {{ $item->First_Name }} {{ $item->Last_Name }} - {{ $item->Nic }} - {{ $item->Contact_No }}
+        </option>
+    @endforeach
+</select>
+
                                 </div>
                             </div>
                             <div class="col-lg-3">
@@ -313,13 +317,13 @@
                             </div>
                             <div class="col-lg-3">
                                 <div class="mb-3">
-                                    <label for="simpleinput" class="form-label">Loan Number</label>
-                                    <select class="form-control select2" id="loan_number_search" onchange="load_payment_table()">
-                                        <option value="0">All</option>
-                                        @foreach($loan as $item)
-                                            <option value="{{$item->idCustomer_Loan}}">{{ $item->Loan_No }}</option>
-                                        @endforeach
-                                    </select>
+                                    <label class="form-label">Loan Number</label>
+<select class="form-control select2" id="loan_number_search" multiple data-placeholder="Select loans">
+    @foreach($loan as $item)
+        <option value="{{ $item->idCustomer_Loan }}">{{ $item->Loan_No }}</option>
+    @endforeach
+</select>
+
                                 </div>
                             </div>
 
@@ -1378,7 +1382,14 @@
             decimalFormat(["#payment_amount"]);
 
             // Initialize Select2
-            $('.select2').select2();
+            $('.select2').select2({
+        width: '100%',
+        placeholder: function(){
+            return $(this).data('placeholder');
+        },
+        allowClear: true,
+        closeOnSelect: false  // ✅ better UX for multi
+    });
             $('.select2bs4').select2({ theme: 'bootstrap4' });
 
             // Submit loan comment
@@ -1720,7 +1731,7 @@
                 url: '/get-groups-by-center/' + centerId,
                 type: 'GET',
                 success: function (data) {
-                    $groupSelect.empty().append('<option value="0">All</option>');
+
 
                     if (data && data.length > 0) {
                         data.forEach(group => {
@@ -1730,8 +1741,6 @@
                         </option>`
                             );
                         });
-                    } else {
-                        $groupSelect.append('<option value="0">No groups found</option>');
                     }
 
                     // Refresh Select2

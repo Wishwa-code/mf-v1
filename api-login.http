@@ -1,6 +1,10 @@
-######### Login
-POST https://peoplescreditinvestment51.asipbook.com/api/login
+########## Login
+#POST https://peoplescreditinvestment51.asipbook.com/api/login
+#Content-Type: application/json
+#
+#{ "email": "admin@gmail.com", "password": "123" }
+
+POST https://bsms.hutch.lk/api/login
 Content-Type: application/json
 
-{ "email": "admin@gmail.com", "password": "123" }
-
+{ "email": "finance.asipiya@gmail.com", "password": "Asipiya@hutch123" }
