@@ -9,8 +9,8 @@ function load_payment_table(page = 1) {
     let center_details = $("#center_details").val();
     let group = $("#group").val();
     let customer = $("#customer_id").val();
-    let status = $("#status").val();
     let loan_number_search = $("#loan_number_search").val();
+    let status = $("#status").val();
     const currentType = window.APP_SETTINGS.payment_member_name;
     $.ajax({
         type: "POST",
