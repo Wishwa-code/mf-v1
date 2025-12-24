@@ -4,6 +4,7 @@ use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AssetManagementController;
 use App\Http\Controllers\BankController;
+use App\Http\Controllers\CapitalBalanceController;
 use App\Http\Controllers\CashFlowController;
 use App\Http\Controllers\CashierController;
 use App\Http\Controllers\CustomerController;
@@ -847,6 +848,10 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/settings/all', '\App\Http\Controllers\CapitalBalanceController@all')->name('');
     Route::post('/settings/upsert', '\App\Http\Controllers\CapitalBalanceController@upsert')->name('upsert');
 
+    Route::get('/commissions/all', [CapitalBalanceController::class, 'commission_all']);
+    Route::post('/commissions/rates/save', [CapitalBalanceController::class, 'commission_save_rates']);
+    Route::post('/commissions/person/store', [CapitalBalanceController::class, 'commission_store_person']);
+    Route::get('/branches/all', [CapitalBalanceController::class, 'branches_all']);
 
 
     //depletion
