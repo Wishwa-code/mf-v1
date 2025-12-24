@@ -391,16 +391,59 @@
                                             </button>
                                         </div>
                                         <div class="text-center" style="min-height: 100px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px;">
-                                            <div id="{{ $fieldName }}_preview_container" class="d-flex flex-wrap justify-content-center gap-2 p-2">
+                                            <div id="{{ $fieldName }}_preview_container" class="d-flex flex-wrap justify-content-center gap-2 p-2 w-100">
+                                                {{-- Existing Images (Carousel or Single) --}}
                                                 @if($existingImages->count() > 0)
-                                                @foreach($existingImages as $img)
-                                                <div class="position-relative d-inline-block">
-                                                    <a href="{{ Storage::url($img->image_path) }}" target="_blank">
-                                                        <img src="{{ Storage::url($img->image_path) }}" class="rounded shadow-sm border" style="width: 80px; height: 80px; object-fit: cover;">
-                                                    </a>
+                                                <div class="w-100 mb-3">
+                                                    @if($existingImages->count() > 1)
+                                                    <div id="carousel-{{ $fieldName }}" class="carousel slide" data-bs-ride="false">
+                                                        <div class="carousel-inner rounded shadow-sm overflow-hidden">
+                                                            @foreach($existingImages as $key => $img)
+                                                            <div class="carousel-item {{ $key == 0 ? 'active' : '' }}">
+                                                                <div class="ratio ratio-4x3 bg-light">
+                                                                    <a href="{{ Storage::url($img->image_path) }}" target="_blank">
+                                                                        <img src="{{ Storage::url($img->image_path) }}" class="d-block w-100 h-100 object-fit-cover" alt="{{ $imageType['name'] }}">
+                                                                    </a>
+                                                                </div>
+                                                                @if($img->latitude && $img->longitude)
+                                                                <div class="carousel-caption p-1 bg-dark bg-opacity-50 rounded-3 mb-2 mx-5" style="bottom: 0;">
+                                                                    <small class="text-white d-block" style="font-size: 0.7rem;">
+                                                                        <i class="bi bi-geo-alt"></i> {{ number_format($img->latitude, 4) }}, {{ number_format($img->longitude, 4) }}
+                                                                    </small>
+                                                                </div>
+                                                                @endif
+                                                            </div>
+                                                            @endforeach
+                                                        </div>
+                                                        <button class="carousel-control-prev" type="button" data-bs-target="#carousel-{{ $fieldName }}" data-bs-slide="prev">
+                                                            <span class="carousel-control-prev-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.3); border-radius: 50%;"></span>
+                                                            <span class="visually-hidden">Previous</span>
+                                                        </button>
+                                                        <button class="carousel-control-next" type="button" data-bs-target="#carousel-{{ $fieldName }}" data-bs-slide="next">
+                                                            <span class="carousel-control-next-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.3); border-radius: 50%;"></span>
+                                                            <span class="visually-hidden">Next</span>
+                                                        </button>
+                                                    </div>
+                                                    @else
+                                                    {{-- Single Image --}}
+                                                    @php $img = $existingImages->first(); @endphp
+                                                    <div class="ratio ratio-4x3 rounded shadow-sm overflow-hidden bg-light position-relative">
+                                                        <a href="{{ Storage::url($img->image_path) }}" target="_blank">
+                                                            <img src="{{ Storage::url($img->image_path) }}" class="w-100 h-100 object-fit-cover" alt="{{ $imageType['name'] }}">
+                                                        </a>
+                                                        @if($img->latitude && $img->longitude)
+                                                        <div class="position-absolute bottom-0 start-0 w-100 p-1 text-center" style="background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);">
+                                                            <small class="text-white" style="font-size: 0.7rem;">
+                                                                <i class="bi bi-geo-alt"></i> {{ number_format($img->latitude, 4) }}, {{ number_format($img->longitude, 4) }}
+                                                            </small>
+                                                        </div>
+                                                        @endif
+                                                    </div>
+                                                    @endif
                                                 </div>
-                                                @endforeach
                                                 @endif
+
+                                                {{-- Placeholder for NEW uploads --}}
                                                 <span class="text-muted small d-block my-auto {{ $existingImages->count() > 0 ? 'd-none' : '' }}" id="{{ $fieldName }}_placeholder">No image</span>
                                             </div>
                                         </div>
@@ -431,9 +474,8 @@
                             $fieldName = 'image_' . str_replace(' ', '_', strtolower($imageType['name']));
                             $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
 
-                            // Check if image exists
-                            $existingImage = $lead->images->where('image_type', $imageType['name'])->first();
-                            $existingUrl = $existingImage ? Storage::url($existingImage->image_path) : null;
+                            // Check if image exists (multiple)
+                            $existingImages = $lead->images->where('image_type', $imageType['name']);
                             @endphp
                             <div class="col-md-6">
                                 <div class="upload-area">
@@ -441,7 +483,7 @@
                                         <label class="form-label mb-0">{{ $imageType['name'] }}</label>
                                     </div>
 
-                                    <input type="file" name="{{ $fieldName }}" id="{{ $fieldName }}" class="d-none" accept="image/*"
+                                    <input type="file" name="{{ $fieldName }}[]" id="{{ $fieldName }}" class="d-none" accept="image/*" multiple
                                         onchange="handleImageUpload(this, '{{ $fieldName }}_preview')"
                                         data-image-type="{{ $imageType['name'] }}">
 
@@ -449,12 +491,65 @@
                                         <div class="d-flex flex-column flex-sm-row gap-2 mb-3">
                                             <button type="button" class="btn btn-light btn-modern flex-grow-1 border text-dark py-2 px-3 text-truncate" style="font-size:0.85rem;"
                                                 onclick="triggerFileSelect('{{ $fieldName }}')">
-                                                <i class="bi bi-folder2-open me-1"></i> {{ $existingUrl ? 'Change' : 'Upload' }}
+                                                <i class="bi bi-folder2-open me-1"></i> {{ $existingImages->count() > 0 ? 'Add More' : 'Upload' }}
                                             </button>
                                         </div>
                                         <div class="text-center" style="min-height: 100px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px;">
-                                            <img id="{{ $fieldName }}_preview" src="{{ $existingUrl ?? '' }}" class="{{ $existingUrl ? '' : 'd-none' }} rounded shadow-sm" style="max-height: 100px; max-width: 100%;">
-                                            <span class="text-muted small {{ $existingUrl ? 'd-none' : 'd-block' }}" id="{{ $fieldName }}_placeholder">No image</span>
+                                            <div id="{{ $fieldName }}_preview_container" class="d-flex flex-wrap justify-content-center gap-2 p-2 w-100">
+                                                {{-- Existing Images (Carousel or Single) --}}
+                                                @if($existingImages->count() > 0)
+                                                <div class="w-100 mb-3">
+                                                    @if($existingImages->count() > 1)
+                                                    <div id="carousel-{{ $fieldName }}" class="carousel slide" data-bs-ride="false">
+                                                        <div class="carousel-inner rounded shadow-sm overflow-hidden">
+                                                            @foreach($existingImages as $key => $img)
+                                                            <div class="carousel-item {{ $key == 0 ? 'active' : '' }}">
+                                                                <div class="ratio ratio-4x3 bg-light">
+                                                                    <a href="{{ Storage::url($img->image_path) }}" target="_blank">
+                                                                        <img src="{{ Storage::url($img->image_path) }}" class="d-block w-100 h-100 object-fit-cover" alt="{{ $imageType['name'] }}">
+                                                                    </a>
+                                                                </div>
+                                                                @if($img->latitude && $img->longitude)
+                                                                <div class="carousel-caption p-1 bg-dark bg-opacity-50 rounded-3 mb-2 mx-5" style="bottom: 0;">
+                                                                    <small class="text-white d-block" style="font-size: 0.7rem;">
+                                                                        <i class="bi bi-geo-alt"></i> {{ number_format($img->latitude, 4) }}, {{ number_format($img->longitude, 4) }}
+                                                                    </small>
+                                                                </div>
+                                                                @endif
+                                                            </div>
+                                                            @endforeach
+                                                        </div>
+                                                        <button class="carousel-control-prev" type="button" data-bs-target="#carousel-{{ $fieldName }}" data-bs-slide="prev">
+                                                            <span class="carousel-control-prev-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.3); border-radius: 50%;"></span>
+                                                            <span class="visually-hidden">Previous</span>
+                                                        </button>
+                                                        <button class="carousel-control-next" type="button" data-bs-target="#carousel-{{ $fieldName }}" data-bs-slide="next">
+                                                            <span class="carousel-control-next-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.3); border-radius: 50%;"></span>
+                                                            <span class="visually-hidden">Next</span>
+                                                        </button>
+                                                    </div>
+                                                    @else
+                                                    {{-- Single Image --}}
+                                                    @php $img = $existingImages->first(); @endphp
+                                                    <div class="ratio ratio-4x3 rounded shadow-sm overflow-hidden bg-light position-relative">
+                                                        <a href="{{ Storage::url($img->image_path) }}" target="_blank">
+                                                            <img src="{{ Storage::url($img->image_path) }}" class="w-100 h-100 object-fit-cover" alt="{{ $imageType['name'] }}">
+                                                        </a>
+                                                        @if($img->latitude && $img->longitude)
+                                                        <div class="position-absolute bottom-0 start-0 w-100 p-1 text-center" style="background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);">
+                                                            <small class="text-white" style="font-size: 0.7rem;">
+                                                                <i class="bi bi-geo-alt"></i> {{ number_format($img->latitude, 4) }}, {{ number_format($img->longitude, 4) }}
+                                                            </small>
+                                                        </div>
+                                                        @endif
+                                                    </div>
+                                                    @endif
+                                                </div>
+                                                @endif
+
+                                                {{-- Placeholder for NEW uploads --}}
+                                                <span class="text-muted small d-block my-auto {{ $existingImages->count() > 0 ? 'd-none' : '' }}" id="{{ $fieldName }}_placeholder">No image</span>
+                                            </div>
                                         </div>
                                         @error($fieldName) <div class="text-danger small mt-2 text-center fw-bold">{{ $message }}</div> @enderror
                                     </div>
@@ -483,9 +578,8 @@
                             $fieldName = 'image_' . str_replace(' ', '_', strtolower($imageType['name']));
                             $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
 
-                            // Check if image exists
-                            $existingImage = $lead->images->where('image_type', $imageType['name'])->first();
-                            $existingUrl = $existingImage ? Storage::url($existingImage->image_path) : null;
+                            // Check if image exists (multiple)
+                            $existingImages = $lead->images->where('image_type', $imageType['name']);
                             @endphp
                             <div class="col-md-6">
                                 <div class="upload-area">
@@ -493,7 +587,7 @@
                                         <label class="form-label mb-0">{{ $imageType['name'] }}</label>
                                     </div>
 
-                                    <input type="file" name="{{ $fieldName }}" id="{{ $fieldName }}" class="d-none" accept="image/*"
+                                    <input type="file" name="{{ $fieldName }}[]" id="{{ $fieldName }}" class="d-none" accept="image/*" multiple
                                         onchange="handleImageUpload(this, '{{ $fieldName }}_preview')"
                                         data-image-type="{{ $imageType['name'] }}">
 
@@ -501,12 +595,65 @@
                                         <div class="d-flex flex-column flex-sm-row gap-2 mb-3">
                                             <button type="button" class="btn btn-light btn-modern flex-grow-1 border text-dark py-2 px-3 text-truncate" style="font-size:0.85rem;"
                                                 onclick="triggerFileSelect('{{ $fieldName }}')">
-                                                <i class="bi bi-folder2-open me-1"></i> {{ $existingUrl ? 'Change' : 'Upload' }}
+                                                <i class="bi bi-folder2-open me-1"></i> {{ $existingImages->count() > 0 ? 'Add More' : 'Upload' }}
                                             </button>
                                         </div>
                                         <div class="text-center" style="min-height: 100px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px;">
-                                            <img id="{{ $fieldName }}_preview" src="{{ $existingUrl ?? '' }}" class="{{ $existingUrl ? '' : 'd-none' }} rounded shadow-sm" style="max-height: 100px; max-width: 100%;">
-                                            <span class="text-muted small {{ $existingUrl ? 'd-none' : 'd-block' }}" id="{{ $fieldName }}_placeholder">No image</span>
+                                            <div id="{{ $fieldName }}_preview_container" class="d-flex flex-wrap justify-content-center gap-2 p-2 w-100">
+                                                {{-- Existing Images (Carousel or Single) --}}
+                                                @if($existingImages->count() > 0)
+                                                <div class="w-100 mb-3">
+                                                    @if($existingImages->count() > 1)
+                                                    <div id="carousel-{{ $fieldName }}" class="carousel slide" data-bs-ride="false">
+                                                        <div class="carousel-inner rounded shadow-sm overflow-hidden">
+                                                            @foreach($existingImages as $key => $img)
+                                                            <div class="carousel-item {{ $key == 0 ? 'active' : '' }}">
+                                                                <div class="ratio ratio-4x3 bg-light">
+                                                                    <a href="{{ Storage::url($img->image_path) }}" target="_blank">
+                                                                        <img src="{{ Storage::url($img->image_path) }}" class="d-block w-100 h-100 object-fit-cover" alt="{{ $imageType['name'] }}">
+                                                                    </a>
+                                                                </div>
+                                                                @if($img->latitude && $img->longitude)
+                                                                <div class="carousel-caption p-1 bg-dark bg-opacity-50 rounded-3 mb-2 mx-5" style="bottom: 0;">
+                                                                    <small class="text-white d-block" style="font-size: 0.7rem;">
+                                                                        <i class="bi bi-geo-alt"></i> {{ number_format($img->latitude, 4) }}, {{ number_format($img->longitude, 4) }}
+                                                                    </small>
+                                                                </div>
+                                                                @endif
+                                                            </div>
+                                                            @endforeach
+                                                        </div>
+                                                        <button class="carousel-control-prev" type="button" data-bs-target="#carousel-{{ $fieldName }}" data-bs-slide="prev">
+                                                            <span class="carousel-control-prev-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.3); border-radius: 50%;"></span>
+                                                            <span class="visually-hidden">Previous</span>
+                                                        </button>
+                                                        <button class="carousel-control-next" type="button" data-bs-target="#carousel-{{ $fieldName }}" data-bs-slide="next">
+                                                            <span class="carousel-control-next-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.3); border-radius: 50%;"></span>
+                                                            <span class="visually-hidden">Next</span>
+                                                        </button>
+                                                    </div>
+                                                    @else
+                                                    {{-- Single Image --}}
+                                                    @php $img = $existingImages->first(); @endphp
+                                                    <div class="ratio ratio-4x3 rounded shadow-sm overflow-hidden bg-light position-relative">
+                                                        <a href="{{ Storage::url($img->image_path) }}" target="_blank">
+                                                            <img src="{{ Storage::url($img->image_path) }}" class="w-100 h-100 object-fit-cover" alt="{{ $imageType['name'] }}">
+                                                        </a>
+                                                        @if($img->latitude && $img->longitude)
+                                                        <div class="position-absolute bottom-0 start-0 w-100 p-1 text-center" style="background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);">
+                                                            <small class="text-white" style="font-size: 0.7rem;">
+                                                                <i class="bi bi-geo-alt"></i> {{ number_format($img->latitude, 4) }}, {{ number_format($img->longitude, 4) }}
+                                                            </small>
+                                                        </div>
+                                                        @endif
+                                                    </div>
+                                                    @endif
+                                                </div>
+                                                @endif
+
+                                                {{-- Placeholder for NEW uploads --}}
+                                                <span class="text-muted small d-block my-auto {{ $existingImages->count() > 0 ? 'd-none' : '' }}" id="{{ $fieldName }}_placeholder">No image</span>
+                                            </div>
                                         </div>
                                         @error($fieldName) <div class="text-danger small mt-2 text-center fw-bold">{{ $message }}</div> @enderror
                                     </div>
@@ -829,13 +976,57 @@
                     const errors = xhr.responseJSON.errors;
                     // Cleanup old errors
                     $('.is-invalid').removeClass('is-invalid');
+                    $('.upload-area').removeClass('border-danger'); // Remove border from upload areas
                     $('.text-danger.small').remove();
+                    $('.error-msg').remove(); // Remove custom error messages
 
                     // Show new errors
                     $.each(errors, function(field, messages) {
-                        const input = $('[name="' + field + '"]');
-                        input.addClass('is-invalid');
-                        input.after('<div class="text-danger small mt-1">' + messages[0] + '</div>');
+                        // Handle array field inputs (e.g. image_nic.0 -> image_nic[], or image_nic -> image_nic[])
+                        let inputName = field;
+                        let input = $('[name="' + inputName + '"]');
+
+                        if (input.length === 0) {
+                            // Try appending []
+                            input = $('[name="' + inputName + '[]"]');
+                        }
+
+                        if (input.length === 0 && inputName.includes('.')) {
+                            // Split dot notation (e.g. image_nic.0)
+                            let parts = inputName.split('.');
+                            // Assume the first part is the base name
+                            let baseName = parts[0];
+                            input = $('[name="' + baseName + '[]"]');
+
+                            if (input.length === 0) {
+                                input = $('[name="' + baseName + '"]');
+                            }
+                        }
+
+                        if (input.length > 0) {
+                            input.addClass('is-invalid');
+                            // Find the error container - usually we want to place it after the parent upload-area or specific container
+                            // In our case, the input is hidden, so we should append to the upload-area or verify where to show.
+                            // The current code appends after input. 
+                            // In edit_online.blade.php, input is inside .upload-area, but hidden.
+                            // The error should probably be inside the .upload-area div, at the bottom.
+
+                            // Let's try to find the existing error div or append to the parent
+                            // input.after(...) works if parent is visible, but here input is d-none.
+                            // But .is-invalid on d-none input is invisible.
+
+                            // Better approach for our custom UI:
+                            // Find the closest .upload-area
+                            let container = input.closest('.upload-area');
+                            if (container.length > 0) {
+                                // Add error message at the bottom of upload area
+                                container.append('<div class="text-danger small mt-2 text-center fw-bold error-msg">' + messages[0] + '</div>');
+                                container.addClass('border-danger'); // Highlight container
+                            } else {
+                                // Fallback
+                                input.after('<div class="text-danger small mt-1">' + messages[0] + '</div>');
+                            }
+                        }
                     });
 
                     Swal.fire('Validation Error', 'Please check the form for errors.', 'warning');

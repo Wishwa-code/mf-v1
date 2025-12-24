@@ -790,13 +790,45 @@
 
                     // Cleanup old errors
                     $('.is-invalid').removeClass('is-invalid');
+                    $('.upload-area').removeClass('border-danger');
                     $('.text-danger.small').remove();
+                    $('.error-msg').remove();
 
                     // Show new errors
                     $.each(errors, function(field, messages) {
-                        const input = $('[name="' + field + '"]');
-                        input.addClass('is-invalid');
-                        input.after('<div class="text-danger small mt-1">' + messages[0] + '</div>');
+                        // Handle array field inputs (e.g. image_nic.0 -> image_nic[], or image_nic -> image_nic[])
+                        let inputName = field;
+                        let input = $('[name="' + inputName + '"]');
+
+                        if (input.length === 0) {
+                            // Try appending []
+                            input = $('[name="' + inputName + '[]"]');
+                        }
+
+                        if (input.length === 0 && inputName.includes('.')) {
+                            // Split dot notation (e.g. image_nic.0)
+                            let parts = inputName.split('.');
+                            let baseName = parts[0];
+                            input = $('[name="' + baseName + '[]"]');
+
+                            if (input.length === 0) {
+                                input = $('[name="' + baseName + '"]');
+                            }
+                        }
+
+                        if (input.length > 0) {
+                            input.addClass('is-invalid');
+                            // Find the closest .upload-area to invoke improved visibility
+                            let container = input.closest('.upload-area');
+                            if (container.length > 0) {
+                                // Add error message at the bottom of upload area
+                                container.append('<div class="text-danger small mt-2 text-center fw-bold error-msg">' + messages[0] + '</div>');
+                                container.addClass('border-danger');
+                            } else {
+                                // Fallback
+                                input.after('<div class="text-danger small mt-1">' + messages[0] + '</div>');
+                            }
+                        }
                     });
 
                     Swal.fire('Validation Error', 'Please check the form for errors.', 'warning');

@@ -191,7 +191,6 @@
         @php
         $groupedImages = $lead->images->groupBy('image_type');
         @endphp
-
         @foreach($groupedImages as $type => $images)
         <div class="col-12 col-md-6">
             <div class="card h-100 border-0 shadow-sm">
