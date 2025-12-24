@@ -243,7 +243,7 @@
         'Customer Leads' => [
         'view_leads', 'create_lead', 'view_lead_map',
         'verify_lead', 'lead_agreement',
-        'lead_activity_logs', 'lead_approvals','bussiness_categories'
+        'lead_activity_logs', 'lead_approvals','bussiness_categories','create_online_lead'
         ],
         'Loan Center' => [
         'create_route', 'create_center', 'view_center',

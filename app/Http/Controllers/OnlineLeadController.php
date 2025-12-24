@@ -147,19 +147,30 @@ class OnlineLeadController extends Controller
                     $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
 
                     if ($request->hasFile($fieldName)) {
-                        $file = $request->file($fieldName);
-                        $path = Storage::disk('public')->putFile($directory, $file);
+                        $files = $request->file($fieldName);
 
-                        $imageLat = $request->input($fieldName . '_latitude');
-                        $imageLng = $request->input($fieldName . '_longitude');
+                        // Normalize to array if single file
+                        if (!is_array($files)) {
+                            $files = [$files];
+                        }
 
-                        LeadHasImages::create([
-                            'lead_id' => $lead->id,
-                            'image_path' => $path,
-                            'image_type' => $type['name'],
-                            'latitude' => $imageLat,
-                            'longitude' => $imageLng,
-                        ]);
+                        foreach ($files as $file) {
+                            $path = Storage::disk('public')->putFile($directory, $file);
+
+                            // For multiple files, we take the main lat/lng fields (which might be single values for the whole batch or per-file key if implemented that way)
+                            // The create.blade.php implementation sends single lat/lng per field name.
+                            // If we want per-image location, we'd need array inputs for location too, but for now we use the available inputs.
+                            $imageLat = $request->input($fieldName . '_latitude');
+                            $imageLng = $request->input($fieldName . '_longitude');
+
+                            LeadHasImages::create([
+                                'lead_id' => $lead->id,
+                                'image_path' => $path,
+                                'image_type' => $type['name'],
+                                'latitude' => $imageLat,
+                                'longitude' => $imageLng,
+                            ]);
+                        }
                     }
                 }
             }
