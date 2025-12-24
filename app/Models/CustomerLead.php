@@ -36,11 +36,17 @@ class CustomerLead extends Model
         'route_id',
         'district',
         'city',
+        'recovery_officer_id',
     ];
 
     public function images()
     {
         return $this->hasMany(LeadHasImages::class, 'lead_id');
+    }
+
+    public function recoveryOfficer()
+    {
+        return $this->belongsTo(User::class, 'recovery_officer_id');
     }
 
     public function businessCategory()

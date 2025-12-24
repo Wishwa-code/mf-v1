@@ -132,7 +132,7 @@ class CustomerLeadController extends Controller
 
     public function agreement_index()
     {
-        $leads = CustomerLead::where('status', 'pending-approved')->where('is_visited','!=',0)->get();
+        $leads = CustomerLead::where('status', 'pending-approved')->where('is_visited', '!=', 0)->get();
         $agreementImageTypesSetting = AppSettings::where('key', 'agreement_image_types')->value('value');
         $agreementImageTypes = $agreementImageTypesSetting ? json_decode($agreementImageTypesSetting, true) : [];
 
@@ -178,21 +178,29 @@ class CustomerLeadController extends Controller
                         $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
 
                         if ($request->hasFile($fieldName)) {
-                            $file = $request->file($fieldName);
-                            $path = Storage::disk('public')->putFile($directory, $file);
+                            $files = $request->file($fieldName);
+                            // Normalize to array if single file (though validation ensures array)
+                            if (!is_array($files)) {
+                                $files = [$files];
+                            }
 
-                            // Get image location if provided
+                            // Get image location if provided (assuming same location for batch or single from first capture)
+                            // Note: If multiple files, they heavily rely on one location capture for the batch in current UI.
                             $imageLat = $request->input($fieldName . '_latitude');
                             $imageLng = $request->input($fieldName . '_longitude');
 
-                            // Save image record
-                            LeadHasImages::create([
-                                'lead_id' => $lead->id,
-                                'image_path' => $path,
-                                'image_type' => $imageType['name'],
-                                'latitude' => $imageLat,
-                                'longitude' => $imageLng,
-                            ]);
+                            foreach ($files as $file) {
+                                $path = Storage::disk('public')->putFile($directory, $file);
+
+                                // Save image record
+                                LeadHasImages::create([
+                                    'lead_id' => $lead->id,
+                                    'image_path' => $path,
+                                    'image_type' => $imageType['name'],
+                                    'latitude' => $imageLat,
+                                    'longitude' => $imageLng,
+                                ]);
+                            }
                         }
                     }
                 }
@@ -214,19 +222,22 @@ class CustomerLeadController extends Controller
                         $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
 
                         if ($request->hasFile($fieldName)) {
-                            $file = $request->file($fieldName);
-                            $path = Storage::disk('public')->putFile($directory, $file);
+                            $files = $request->file($fieldName);
+                            if (!is_array($files)) $files = [$files];
 
                             $imageLat = $request->input($fieldName . '_latitude');
                             $imageLng = $request->input($fieldName . '_longitude');
 
-                            LeadHasImages::create([
-                                'lead_id' => $lead->id,
-                                'image_path' => $path,
-                                'image_type' => $imageType['name'],
-                                'latitude' => $imageLat,
-                                'longitude' => $imageLng,
-                            ]);
+                            foreach ($files as $file) {
+                                $path = Storage::disk('public')->putFile($directory, $file);
+                                LeadHasImages::create([
+                                    'lead_id' => $lead->id,
+                                    'image_path' => $path,
+                                    'image_type' => $imageType['name'],
+                                    'latitude' => $imageLat,
+                                    'longitude' => $imageLng,
+                                ]);
+                            }
                         }
                     }
                 }
@@ -248,19 +259,22 @@ class CustomerLeadController extends Controller
                         $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
 
                         if ($request->hasFile($fieldName)) {
-                            $file = $request->file($fieldName);
-                            $path = Storage::disk('public')->putFile($directory, $file);
+                            $files = $request->file($fieldName);
+                            if (!is_array($files)) $files = [$files];
 
                             $imageLat = $request->input($fieldName . '_latitude');
                             $imageLng = $request->input($fieldName . '_longitude');
 
-                            LeadHasImages::create([
-                                'lead_id' => $lead->id,
-                                'image_path' => $path,
-                                'image_type' => $imageType['name'],
-                                'latitude' => $imageLat,
-                                'longitude' => $imageLng,
-                            ]);
+                            foreach ($files as $file) {
+                                $path = Storage::disk('public')->putFile($directory, $file);
+                                LeadHasImages::create([
+                                    'lead_id' => $lead->id,
+                                    'image_path' => $path,
+                                    'image_type' => $imageType['name'],
+                                    'latitude' => $imageLat,
+                                    'longitude' => $imageLng,
+                                ]);
+                            }
                         }
                     }
                 }
@@ -310,7 +324,8 @@ class CustomerLeadController extends Controller
         $guarantorImageTypes = $guarantorImageTypesSetting ? json_decode($guarantorImageTypesSetting, true) : [];
 
         $businessCategories = BusinessCategory::all();
-        $routes = \App\Models\Route::all();
+        $businessCategories = BusinessCategory::all();
+        $routes = \App\Models\Route::with('officer')->get();
 
         if ($lead->source !== 'recovery-officer') {
             return view('pages.leads.edit_online', compact('lead', 'imageTypes', 'guardianImageTypes', 'guarantorImageTypes', 'businessCategories', 'routes'));
@@ -402,22 +417,25 @@ class CustomerLeadController extends Controller
                     $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
 
                     if ($request->hasFile($fieldName)) {
-                        $file = $request->file($fieldName);
-                        $path = Storage::disk('public')->putFile($directory, $file);
+                        $files = $request->file($fieldName);
+                        if (!is_array($files)) $files = [$files];
 
                         $imageLat = $request->input($fieldName . '_latitude');
                         $imageLng = $request->input($fieldName . '_longitude');
 
-                        // Delete old image of this type if exists
-                        LeadHasImages::where('lead_id', $lead->id)->where('image_type', $type['name'])->delete();
+                        // NOTE: We do NOT delete old images. We append new ones.
+                        // LeadHasImages::where('lead_id', $lead->id)->where('image_type', $type['name'])->delete();
 
-                        LeadHasImages::create([
-                            'lead_id' => $lead->id,
-                            'image_path' => $path,
-                            'image_type' => $type['name'],
-                            'latitude' => $imageLat,
-                            'longitude' => $imageLng,
-                        ]);
+                        foreach ($files as $file) {
+                            $path = Storage::disk('public')->putFile($directory, $file);
+                            LeadHasImages::create([
+                                'lead_id' => $lead->id,
+                                'image_path' => $path,
+                                'image_type' => $type['name'],
+                                'latitude' => $imageLat,
+                                'longitude' => $imageLng,
+                            ]);
+                        }
 
                         $updatedImages[] = $type['name'];
                     }
@@ -519,19 +537,20 @@ class CustomerLeadController extends Controller
                 return $row->city ?? '-';
             })
             ->addColumn('action', function ($row) {
-                $btn = '';
+                $btn = '<div class="d-flex gap-3 align-items-center">';
 
                 // Edit Button
-                $btn .= '<a href="' . route('leads.edit', $row->id) . '" class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1 me-1" style="border-radius: 6px;" title="Edit Lead"><i class="bi bi-pencil-square"></i> Edit</a>';
+                $btn .= '<a href="' . route('leads.edit', $row->id) . '" class="text-secondary" data-bs-toggle="tooltip" title="Edit Lead"><i class="bi bi-pencil-square fs-5"></i></a>';
 
                 // View Details Button (Triggers Modal)
-                $btn .= '<button onclick="viewLeadModal(' . $row->id . ')" class="btn btn-sm btn-outline-info d-inline-flex align-items-center gap-1 me-1" style="border-radius: 6px;" title="View Details"><i class="bi bi-eye"></i> View</button>';
+                $btn .= '<a href="javascript:void(0)" onclick="viewLeadModal(' . $row->id . ')" class="text-primary" data-bs-toggle="tooltip" title="View Details"><i class="bi bi-eye fs-5"></i></a>';
 
                 // Reject Button (if not visited)
                 if (!$row->is_visited && $row->status != 'rejected') {
-                    $btn .= '<button onclick="rejectLead(' . $row->id . ')" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1" style="border-radius: 6px;" title="Reject Lead"><i class="bi bi-x"></i> Reject</button>';
+                    $btn .= '<a href="javascript:void(0)" onclick="rejectLead(' . $row->id . ')" class="text-danger" data-bs-toggle="tooltip" title="Reject Lead"><i class="bi bi-x-circle fs-5"></i></a>';
                 }
 
+                $btn .= '</div>';
                 return $btn;
             })
             ->editColumn('status', function ($row) {

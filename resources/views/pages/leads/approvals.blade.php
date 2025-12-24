@@ -115,13 +115,11 @@
                     render: function(data, type, row) {
                         const url = "{{ route('leads.show', ['lead' => '__ID__']) }}".replace('__ID__', row.id);
                         let html = '';
-                        @if(optional($privilege) - > view_leads == 1)
                         html += `
                                 <a href="${url}" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" style="border-radius: 6px;">
                                     <i class="bi bi-eye"></i> View
                                 </a>
                             `;
-                        @endif
                         return html;
                     }
                 }

@@ -201,13 +201,14 @@
                                     <option value="">Select Route</option>
                                     @if(isset($routes))
                                     @foreach($routes as $route)
-                                    <option value="{{ $route->id_route }}" {{ old('route_id') == $route->id_route ? 'selected' : '' }}>
+                                    <option value="{{ $route->id_route }}"
+                                        {{ old('route_id') == $route->id_route ? 'selected' : '' }}>
                                         {{ $route->name }} - {{ $route->root_code }}
                                     </option>
                                     @endforeach
                                     @endif
                                 </select>
-                                @error('route_id') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                                @error('route_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                             </div>
 
                             <!-- Source Selection Second -->
@@ -222,7 +223,16 @@
                                     <option value="website" {{ old('source') == 'website' ? 'selected' : '' }}>Website</option>
                                     <option value="other" {{ old('source') == 'other' ? 'selected' : '' }}>Other</option>
                                 </select>
-                                @error('source') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                                @error('source') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                            </div>
+
+                            <!-- Recovery Officer Selection -->
+                            <div class="col-md-6">
+                                <label class="form-label">Recovery Officer</label>
+                                <select name="recovery_officer_id" id="recovery_officer_id" class="form-control select2-officers @error('recovery_officer_id') is-invalid @enderror">
+                                    <option value="">Select Route First</option>
+                                </select>
+                                @error('recovery_officer_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                             </div>
 
                             <div class="col-md-6">
@@ -231,7 +241,7 @@
                                     <span class="input-group-text bg-white border-end-0 rounded-start-3 text-muted"><i class="bi bi-person"></i></span>
                                     <input type="text" name="full_name" class="form-control border-start-0 ps-0 @error('full_name') is-invalid @enderror" placeholder="Ex: John Doe" value="{{ old('full_name') }}">
                                 </div>
-                                @error('full_name') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                                @error('full_name') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                             </div>
 
                             <div class="col-md-6">
@@ -240,7 +250,7 @@
                                     <span class="input-group-text bg-white border-end-0 rounded-start-3 text-muted"><i class="bi bi-telephone"></i></span>
                                     <input type="text" name="phone_number" class="form-control border-start-0 ps-0 @error('phone_number') is-invalid @enderror" placeholder="Ex: 0771234567" value="{{ old('phone_number') }}">
                                 </div>
-                                @error('phone_number') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                                @error('phone_number') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                             </div>
 
                             <div class="col-md-6">
@@ -249,7 +259,7 @@
                                     <span class="input-group-text bg-white border-end-0 rounded-start-3 text-muted"><i class="bi bi-envelope"></i></span>
                                     <input type="email" name="email" class="form-control border-start-0 ps-0 @error('email') is-invalid @enderror" placeholder="name@example.com" value="{{ old('email') }}">
                                 </div>
-                                @error('email') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                                @error('email') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                             </div>
 
                             <div class="col-md-6">
@@ -261,7 +271,7 @@
                                     <option value="business" {{ old('type') == 'business' ? 'selected' : '' }}>Business</option>
                                     <option value="leasing" {{ old('type') == 'leasing' ? 'selected' : '' }}>Leasing</option>
                                 </select>
-                                @error('type') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                                @error('type') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                             </div>
 
                             <div class="col-md-6">
@@ -276,7 +286,7 @@
                                     @endforeach
                                     @endif
                                 </select>
-                                @error('business_category_id') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                                @error('business_category_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                             </div>
 
                             <div class="col-md-3">
@@ -285,13 +295,13 @@
                                     <span class="input-group-text bg-white border-end-0 rounded-start-3 text-muted">Rs.</span>
                                     <input type="number" name="loan_amount" step="0.01" class="form-control border-start-0 ps-0 @error('loan_amount') is-invalid @enderror" placeholder="0.00" value="{{ old('loan_amount') }}">
                                 </div>
-                                @error('loan_amount') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                                @error('loan_amount') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                             </div>
 
                             <div class="col-md-3">
                                 <label class="form-label">Periods (Months) <span class="text-danger">*</span></label>
                                 <input type="number" name="periods" class="form-control @error('periods') is-invalid @enderror" placeholder="12" value="{{ old('periods') }}" min="1">
-                                @error('periods') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                                @error('periods') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                             </div>
 
                             <!-- District and City -->
@@ -316,7 +326,7 @@
                             <div class="col-12">
                                 <label class="form-label">Address</label>
                                 <textarea name="address" class="form-control @error('address') is-invalid @enderror" placeholder="Full residential/business address">{{ old('address') }}</textarea>
-                                @error('address') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                                @error('address') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                             </div>
 
                             {{-- Optional Location, not strict --}}
@@ -397,6 +407,7 @@
                                             <img id="{{ $fieldName }}_preview" src="" class="d-none rounded shadow-sm" style="max-height: 100px; max-width: 100%;">
                                             <span class="text-muted small d-block" id="{{ $fieldName }}_placeholder">No image selected</span>
                                         </div>
+                                        @error($fieldName) <div class="text-danger small mt-2 text-center fw-bold">{{ $message }}</div> @enderror
                                     </div>
                                 </div>
                             </div>
@@ -451,6 +462,7 @@
                                             <img id="{{ $fieldName }}_preview" src="" class="d-none rounded shadow-sm" style="max-height: 100px; max-width: 100%;">
                                             <span class="text-muted small d-block" id="{{ $fieldName }}_placeholder">No image</span>
                                         </div>
+                                        @error($fieldName) <div class="text-danger small mt-2 text-center fw-bold">{{ $message }}</div> @enderror
                                     </div>
                                 </div>
                             </div>
@@ -502,6 +514,7 @@
                                             <img id="{{ $fieldName }}_preview" src="" class="d-none rounded shadow-sm" style="max-height: 100px; max-width: 100%;">
                                             <span class="text-muted small d-block" id="{{ $fieldName }}_placeholder">No image</span>
                                         </div>
+                                        @error($fieldName) <div class="text-danger small mt-2 text-center fw-bold">{{ $message }}</div> @enderror
                                     </div>
                                 </div>
                             </div>
@@ -588,6 +601,63 @@
             var data = e.params.data;
             $('#city_text').val(data.text);
         });
+
+        // Initialize Select2 for Officers separately if needed or reuse
+        $('.select2-officers').select2({
+            width: '100%',
+            placeholder: 'Select Route First',
+            allowClear: true
+        });
+
+        // Auto-select Recovery Officer based on Route
+        $('select[name="route_id"]').on('change', function() {
+            var routeId = $(this).val();
+            var officerSelect = $('#recovery_officer_id');
+
+            // Clear current options
+            officerSelect.empty().trigger('change');
+
+            if (routeId) {
+                // Show loading state
+                var loadingOption = new Option('Loading...', '', false, false);
+                officerSelect.append(loadingOption).trigger('change');
+                officerSelect.prop('disabled', true);
+
+                $.ajax({
+                    url: '/leads/routes/' + routeId + '/officers',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(data) {
+                        officerSelect.empty();
+                        officerSelect.append(new Option('Select Recovery Officer', '', true, true)).trigger('change');
+
+                        if (data.length > 0) {
+                            $.each(data, function(index, officer) {
+                                var option = new Option(officer.text, officer.id, false, false);
+                                officerSelect.append(option);
+                            });
+
+                            // Auto-select if there's only one officer (optional but good UX)
+                            if (data.length === 1) {
+                                officerSelect.val(data[0].id).trigger('change');
+                            }
+                        } else {
+                            officerSelect.append(new Option('No officers found', '', false, false));
+                        }
+                    },
+                    error: function() {
+                        officerSelect.empty();
+                        officerSelect.append(new Option('Error loading officers', '', false, false));
+                        Swal.fire('Error', 'Failed to load recovery officers.', 'error');
+                    },
+                    complete: function() {
+                        officerSelect.prop('disabled', false);
+                    }
+                });
+            } else {
+                officerSelect.append(new Option('Select Route First', '', true, true)).trigger('change');
+            }
+        });
     });
 
     // --- Location Functions (Simplified for Online Lead) ---
@@ -633,12 +703,22 @@
 
     function handleImageUpload(input, previewId) {
         if (input.files && input.files[0]) {
+            var file = input.files[0];
             var reader = new FileReader();
+            var placeholderId = previewId.replace('_preview', '_placeholder');
+
             reader.onload = function(e) {
-                $('#' + previewId).attr('src', e.target.result).removeClass('d-none');
-                $('#' + previewId.replace('_preview', '_placeholder')).addClass('d-none');
+                if (file.type === 'application/pdf') {
+                    // Show PDF icon or text
+                    $('#' + previewId).addClass('d-none'); // Hide image tag
+                    $('#' + placeholderId).removeClass('d-none').html('<i class="bi bi-file-earmark-pdf text-danger fs-1"></i><br>' + file.name);
+                } else {
+                    // Show Image
+                    $('#' + previewId).attr('src', e.target.result).removeClass('d-none');
+                    $('#' + placeholderId).addClass('d-none');
+                }
             }
-            reader.readAsDataURL(input.files[0]);
+            reader.readAsDataURL(file);
         }
     }
 

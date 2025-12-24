@@ -35,27 +35,33 @@ class StoreCustomerLeadRequest extends FormRequest
             'business_category_id' => ['required', 'exists:business_categories,id'],
         ];
 
-        // Get image types from app_settings
-        $imageTypesSetting = AppSettings::where('key', 'image_types')->value('value');
-        
-        if ($imageTypesSetting) {
-            $imageTypes = json_decode($imageTypesSetting, true);
-            
-            if (is_array($imageTypes) && count($imageTypes) > 0) {
-                foreach ($imageTypes as $imageType) {
-                    $fieldName = 'image_' . str_replace(' ', '_', strtolower($imageType['name']));
-                    $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
-                    
-                    if (isset($imageType['is_required']) && $imageType['is_required']) {
-                        // Required field
-                        $rules[$fieldName] = ['required', 'image', 'mimes:jpeg,jpg,png,gif,webp,pdf', 'max:10240']; // 10MB max
-                    } else {
-                        // Optional field (nullable)
-                        $rules[$fieldName] = ['nullable', 'image', 'mimes:jpeg,jpg,png,gif,webp,pdf', 'max:10240'];
+        // Helper closure to add rules
+        $addRules = function ($settingKey) use (&$rules) {
+            $setting = AppSettings::where('key', $settingKey)->value('value');
+            if ($setting) {
+                $types = json_decode($setting, true);
+                if (is_array($types)) {
+                    foreach ($types as $type) {
+                        $fieldName = 'image_' . str_replace(' ', '_', strtolower($type['name']));
+                        $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
+
+                        $isRequired = isset($type['is_required']) && $type['is_required'];
+
+                        // Rule for the array itself
+                        $rules[$fieldName] = $isRequired ? ['required', 'array'] : ['nullable', 'array'];
+
+                        // Rule for each file inside the array
+                        // We use * wildcard to validate each item in the array
+                        $rules[$fieldName . '.*'] = ['file', 'mimes:jpeg,jpg,png,gif,webp,pdf', 'max:10240'];
                     }
                 }
             }
-        }
+        };
+
+        // Add rules for each image type category
+        $addRules('image_types');
+        $addRules('guardian_image_types');
+        $addRules('guarantor_image_types');
 
         return $rules;
     }
@@ -79,16 +85,16 @@ class StoreCustomerLeadRequest extends FormRequest
 
         // Get image types from app_settings for custom messages
         $imageTypesSetting = AppSettings::where('key', 'image_types')->value('value');
-        
+
         if ($imageTypesSetting) {
             $imageTypes = json_decode($imageTypesSetting, true);
-            
+
             if (is_array($imageTypes) && count($imageTypes) > 0) {
                 foreach ($imageTypes as $imageType) {
                     $fieldName = 'image_' . str_replace(' ', '_', strtolower($imageType['name']));
                     $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
                     $displayName = $imageType['name'];
-                    
+
                     $messages[$fieldName . '.required'] = "{$displayName} image is required.";
                     $messages[$fieldName . '.image'] = "{$displayName} must be an image file.";
                     $messages[$fieldName . '.mimes'] = "{$displayName} must be a jpeg, jpg, png, gif, or webp file.";
