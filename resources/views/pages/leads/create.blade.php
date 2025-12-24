@@ -334,7 +334,7 @@
                                         <div id="{{ $fieldName }}_location_status"></div>
                                     </div>
 
-                                    <input type="file" name="{{ $fieldName }}" id="{{ $fieldName }}" class="d-none" accept="image/*" capture="user"
+                                    <input type="file" name="{{ $fieldName }}[]" id="{{ $fieldName }}" class="d-none" accept="image/*" multiple
                                         onchange="handleImageUpload(this, '{{ $fieldName }}_preview', '{{ $fieldName }}_lat', '{{ $fieldName }}_lng')"
                                         data-image-type="{{ $imageType['name'] }}">
                                     <input type="hidden" id="{{ $fieldName }}_lat" name="{{ $fieldName }}_latitude">
@@ -356,8 +356,9 @@
                                             </button>
                                         </div>
                                         <div class="text-center" style="min-height: 100px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px;">
-                                            <img id="{{ $fieldName }}_preview" src="" class="d-none rounded shadow-sm" style="max-height: 100px; max-width: 100%;">
-                                            <span class="text-muted small d-block" id="{{ $fieldName }}_placeholder">No image selected</span>
+                                            <div id="{{ $fieldName }}_preview_container" class="d-flex flex-wrap justify-content-center gap-2">
+                                                <span class="text-muted small d-block my-auto" id="{{ $fieldName }}_placeholder">No image selected</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -396,7 +397,7 @@
                                         <div id="{{ $fieldName }}_location_status"></div>
                                     </div>
 
-                                    <input type="file" name="{{ $fieldName }}" id="{{ $fieldName }}" class="d-none" accept="image/*" capture="user"
+                                    <input type="file" name="{{ $fieldName }}[]" id="{{ $fieldName }}" class="d-none" accept="image/*" multiple
                                         onchange="handleImageUpload(this, '{{ $fieldName }}_preview', '{{ $fieldName }}_lat', '{{ $fieldName }}_lng')"
                                         data-image-type="{{ $imageType['name'] }}">
 
@@ -426,8 +427,9 @@
                                             </button>
                                         </div>
                                         <div class="text-center" style="min-height: 100px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px;">
-                                            <img id="{{ $fieldName }}_preview" src="" class="d-none rounded shadow-sm" style="max-height: 100px; max-width: 100%;">
-                                            <span class="text-muted small d-block" id="{{ $fieldName }}_placeholder">No image</span>
+                                            <div id="{{ $fieldName }}_preview_container" class="d-flex flex-wrap justify-content-center gap-2">
+                                                <span class="text-muted small d-block my-auto" id="{{ $fieldName }}_placeholder">No image</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -466,7 +468,7 @@
                                         <div id="{{ $fieldName }}_location_status"></div>
                                     </div>
 
-                                    <input type="file" name="{{ $fieldName }}" id="{{ $fieldName }}" class="d-none" accept="image/*" capture="user"
+                                    <input type="file" name="{{ $fieldName }}[]" id="{{ $fieldName }}" class="d-none" accept="image/*" multiple
                                         onchange="handleImageUpload(this, '{{ $fieldName }}_preview', '{{ $fieldName }}_lat', '{{ $fieldName }}_lng')"
                                         data-image-type="{{ $imageType['name'] }}">
 
@@ -495,8 +497,9 @@
                                             </button>
                                         </div>
                                         <div class="text-center" style="min-height: 100px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px;">
-                                            <img id="{{ $fieldName }}_preview" src="" class="d-none rounded shadow-sm" style="max-height: 100px; max-width: 100%;">
-                                            <span class="text-muted small d-block" id="{{ $fieldName }}_placeholder">No image</span>
+                                            <div id="{{ $fieldName }}_preview_container" class="d-flex flex-wrap justify-content-center gap-2">
+                                                <span class="text-muted small d-block my-auto" id="{{ $fieldName }}_placeholder">No image</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -957,13 +960,21 @@
                 type: 'image/jpeg'
             });
 
-            // Assign to input
+            const input = document.getElementById(currentFieldId);
             const dataTransfer = new DataTransfer();
+
+            // Append existing files if any?
+            // Note: input.files is read-only directly, but we can read from it.
+            // If user wants to take multiple photos, we need to keep previous ones.
+            if (input.files) {
+                Array.from(input.files).forEach(f => dataTransfer.items.add(f));
+            }
+
             dataTransfer.items.add(file);
-            document.getElementById(currentFieldId).files = dataTransfer.files;
+            input.files = dataTransfer.files;
 
             closeWebcamModal();
-            handleImageUpload(document.getElementById(currentFieldId), currentPreviewId, currentLatFieldId, currentLngFieldId);
+            handleImageUpload(input, null, currentLatFieldId, currentLngFieldId);
 
         }, 'image/jpeg', 0.9);
     }
@@ -978,23 +989,38 @@
         document.getElementById(id).click();
     }
 
-    function handleImageUpload(input, previewId, latId, lngId) {
-        const file = input.files[0];
-        if (!file) return;
+    function handleImageUpload(input, previewIdUnused, latId, lngId) {
+        // previewIdUnused is kept for signature compatibility but we deduce container from input.id
+        const containerId = input.id + '_preview_container';
+        const placeholderId = input.id + '_placeholder';
+        const container = document.getElementById(containerId);
+        const placeholder = document.getElementById(placeholderId);
 
-        // Preview
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const p = document.getElementById(previewId);
-            p.src = e.target.result;
-            p.classList.remove('d-none');
-            const ph = document.getElementById(previewId.replace('_preview', '_placeholder'));
-            if (ph) ph.style.display = 'none';
+        if (input.files && input.files.length > 0) {
+            // Clear existing previews if it's a fresh file select (standard behavior)
+            // Or should we append? Standard <input type=file> replaces selection unless we manage custom DataTransfer.
+            // For now, let's treat input change as "replacing current queue", but we render all of them.
+            container.innerHTML = '';
+
+            if (placeholder) placeholder.style.display = 'none';
+
+            Array.from(input.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'rounded shadow-sm';
+                    img.style.maxHeight = '100px';
+                    img.style.maxWidth = '100px';
+                    img.style.objectFit = 'cover';
+                    container.appendChild(img);
+                }
+                reader.readAsDataURL(file);
+            });
+
+            // Auto-get location (just once is enough as they are uploaded together)
+            getSpecificLocation(latId, lngId, input.id + '_location_status');
         }
-        reader.readAsDataURL(file);
-
-        // Auto-get location
-        getSpecificLocation(latId, lngId, input.id + '_location_status');
     }
 </script>
 @endsection

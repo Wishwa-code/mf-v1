@@ -79,13 +79,7 @@
 
     {{-- Map --}}
     <div class="p-2 p-md-3">
-        @if(optional($privilege)->view_lead_map == 1)
         <div id="leadsMap" class="map-container shadow border"></div>
-        @else
-        <div class="alert alert-danger">
-            <i class="bi bi-lock-fill me-2"></i> You do not have permission to view the lead map.
-        </div>
-        @endif
     </div>
 
 </div>

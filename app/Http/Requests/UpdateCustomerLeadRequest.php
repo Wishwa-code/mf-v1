@@ -39,6 +39,7 @@ class UpdateCustomerLeadRequest extends FormRequest
             'city' => 'nullable|string',
             'source' => 'nullable|string',
             'notes' => 'nullable|string',
+            'recovery_officer_id' => 'nullable|exists:user,id',
         ];
 
         // Dynamic Image Validation
@@ -75,15 +76,18 @@ class UpdateCustomerLeadRequest extends FormRequest
                             ->exists();
                     }
 
+                    // For update, if it's required and no image exists, we need at least one file.
+                    // But if an image exists, we can still accept uploads (appending).
+                    // So 'required' applies if NO images exist.
+
                     if ($isRequired && !$imageExists) {
-                        $rules[$fieldName] = 'required|image|mimes:jpeg,jpg,png,gif,webp,pdf';
+                        $rules[$fieldName] = 'required|array';
                     } else {
-                        $rules[$fieldName] = 'nullable|image|mimes:jpeg,jpg,png,gif,webp,pdf';
+                        $rules[$fieldName] = 'nullable|array';
                     }
 
-                    // Also validate location if image is uploaded? 
-                    // Usually we might want to validate the hidden lat/lng fields if the image is present.
-                    // But for now sticking to the core image validation request.
+                    // Validate contents of the array
+                    $rules[$fieldName . '.*'] = 'file|mimes:jpeg,jpg,png,gif,webp,pdf';
                 }
             }
         }

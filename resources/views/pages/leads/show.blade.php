@@ -254,6 +254,20 @@
                             <hr class="text-muted opacity-25">
                         </div>
 
+                        @if($lead->source == 'online' && $lead->recoveryOfficer)
+                        <div class="col-12 col-md-6 mb-4 px-4">
+                            <div class="d-flex align-items-center">
+                                <div class="icon-square bg-white border text-dark rounded-circle p-2 me-3" style="width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-person-badge text-primary"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="small fw-semibold text-muted" style="font-size: 0.75rem;">Recovery Officer</div>
+                                    <div class="fw-medium text-dark">{{ $lead->recoveryOfficer->name ?? '-' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
                         {{-- Loan Info & Extras (Full Width) --}}
                         <div class="col-12">
                             <div class="mb-4" style="max-width: 600px; margin: 0 auto;">
@@ -332,23 +346,62 @@
                     </div>
                     @else
                     <div class="row g-3">
-                        @foreach($lead->images as $image)
-                        <div class="col-md-4 col-sm-6">
+                        @php
+                        $groupedImages = $lead->images->groupBy('image_type');
+                        @endphp
+
+                        @foreach($groupedImages as $type => $images)
+                        <div class="col-md-6">
                             <div class="card h-100 border-0 shadow-sm image-card overflow-hidden rounded-3">
-                                <div class="ratio ratio-4x3 cursor-pointer bg-light">
-                                    <img src="{{ asset('storage/' . $image->image_path) }}"
-                                        class="w-100 h-100"
-                                        alt="{{ $image->image_type }}"
-                                        style="object-fit: cover;">
+                                <div class="card-header bg-white border-0 py-2 d-flex justify-content-between align-items-center">
+                                    <div class="small fw-bold text-truncate" title="{{ $type }}">{{ $type }}</div>
+                                    <span class="badge bg-light text-dark border">{{ $images->count() }}</span>
                                 </div>
-                                <div class="card-footer bg-white border-top-0 p-2">
-                                    <div class="small fw-semibold text-truncate" title="{{ $image->image_type }}">
-                                        {{ $image->image_type }}
+                                <div class="card-body p-0 position-relative bg-light">
+                                    @if($images->count() > 1)
+                                    <div id="carousel-{{ \Illuminate\Support\Str::slug($type) }}-{{ $loop->index }}" class="carousel slide" data-bs-ride="false">
+                                        <div class="carousel-inner">
+                                            @foreach($images as $key => $image)
+                                            <div class="carousel-item {{ $key == 0 ? 'active' : '' }}">
+                                                <div class="ratio ratio-4x3 cursor-pointer">
+                                                    <a href="{{ asset('storage/' . $image->image_path) }}" target="_blank">
+                                                        <img src="{{ asset('storage/' . $image->image_path) }}" class="d-block w-100 h-100 object-fit-cover" alt="{{ $type }}">
+                                                    </a>
+                                                </div>
+                                                @if($image->latitude && $image->longitude)
+                                                <div class="carousel-caption p-1 bg-dark bg-opacity-50 rounded-3 mb-2 mx-5" style="bottom: 0;">
+                                                    <small class="text-white d-block" style="font-size: 0.7rem;">
+                                                        <i class="bi bi-geo-alt"></i> {{ number_format($image->latitude, 4) }}, {{ number_format($image->longitude, 4) }}
+                                                    </small>
+                                                </div>
+                                                @endif
+                                            </div>
+                                            @endforeach
+                                        </div>
+                                        <button class="carousel-control-prev" type="button" data-bs-target="#carousel-{{ \Illuminate\Support\Str::slug($type) }}-{{ $loop->index }}" data-bs-slide="prev">
+                                            <span class="carousel-control-prev-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.3); border-radius: 50%;"></span>
+                                            <span class="visually-hidden">Previous</span>
+                                        </button>
+                                        <button class="carousel-control-next" type="button" data-bs-target="#carousel-{{ \Illuminate\Support\Str::slug($type) }}-{{ $loop->index }}" data-bs-slide="next">
+                                            <span class="carousel-control-next-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.3); border-radius: 50%;"></span>
+                                            <span class="visually-hidden">Next</span>
+                                        </button>
+                                    </div>
+                                    @else
+                                    @foreach($images as $image)
+                                    <div class="ratio ratio-4x3 cursor-pointer">
+                                        <a href="{{ asset('storage/' . $image->image_path) }}" target="_blank">
+                                            <img src="{{ asset('storage/' . $image->image_path) }}" class="w-100 h-100 object-fit-cover" alt="{{ $type }}">
+                                        </a>
                                     </div>
                                     @if($image->latitude && $image->longitude)
-                                    <small class="text-muted d-block" style="font-size: 0.7rem;">
-                                        <i class="bi bi-geo-alt"></i> {{ number_format($image->latitude, 4) }}, {{ number_format($image->longitude, 4) }}
-                                    </small>
+                                    <div class="position-absolute bottom-0 start-0 w-100 p-2 text-center" style="background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);">
+                                        <small class="text-white" style="font-size: 0.7rem;">
+                                            <i class="bi bi-geo-alt"></i> {{ number_format($image->latitude, 4) }}, {{ number_format($image->longitude, 4) }}
+                                        </small>
+                                    </div>
+                                    @endif
+                                    @endforeach
                                     @endif
                                 </div>
                             </div>

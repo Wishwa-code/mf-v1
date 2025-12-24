@@ -188,9 +188,60 @@
     </div>
     @else
     <div class="row g-3 pe-1">
-        @foreach($lead->images as $img)
-        <div class="col-6 col-md-6">
+        @php
+        $groupedImages = $lead->images->groupBy('image_type');
+        @endphp
+
+        @foreach($groupedImages as $type => $images)
+        <div class="col-12 col-md-6">
             <div class="card h-100 border-0 shadow-sm">
+
+                @if($images->count() > 1)
+                {{-- Carousel for multiple images --}}
+                <div id="carousel-modal-{{ \Illuminate\Support\Str::slug($type) }}-{{ $loop->index }}" class="carousel slide" data-bs-ride="false">
+                    <div class="carousel-inner rounded-top">
+                        @foreach($images as $key => $img)
+                        <div class="carousel-item {{ $key == 0 ? 'active' : '' }}">
+                            <a href="{{ Storage::url($img->image_path) }}" target="_blank" class="position-relative d-block">
+                                <div class="ratio ratio-4x3 bg-light">
+                                    <img src="{{ Storage::url($img->image_path) }}" class="d-block w-100 object-fit-cover" alt="{{ $type }}">
+                                </div>
+                                <div class="position-absolute bottom-0 start-0 w-100 p-1 bg-dark bg-opacity-50 text-white text-center small">
+                                    Click to View
+                                </div>
+                            </a>
+                            {{-- Footer info for this specific image in carousel --}}
+                            <div class="card-body p-2 bg-light rounded-bottom border-top">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="text-truncate fw-bold text-dark small" style="max-width: 120px;" title="{{ $type }}">
+                                        {{ $type }} <span class="badge bg-secondary rounded-pill ms-1" style="font-size: 0.6rem;">{{ $key + 1 }}/{{ $images->count() }}</span>
+                                    </div>
+                                    @if($img->latitude)
+                                    <a href="https://www.google.com/maps/search/?api=1&query={{ $img->latitude }},{{ $img->longitude }}" target="_blank" class="text-primary" title="Image Location">
+                                        <i class="bi bi-geo-alt-fill"></i>
+                                    </a>
+                                    @endif
+                                </div>
+                                <small class="text-muted d-block mt-1" style="font-size: 0.65rem;">
+                                    {{ $img->created_at->format('d M, H:i') }}
+                                </small>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carousel-modal-{{ \Illuminate\Support\Str::slug($type) }}-{{ $loop->index }}" data-bs-slide="prev" style="width: 10%;">
+                        <span class="carousel-control-prev-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.5); border-radius: 50%; padding: 10px;"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carousel-modal-{{ \Illuminate\Support\Str::slug($type) }}-{{ $loop->index }}" data-bs-slide="next" style="width: 10%;">
+                        <span class="carousel-control-next-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.5); border-radius: 50%; padding: 10px;"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                </div>
+
+                @else
+                {{-- Single Image - Standard Display --}}
+                @foreach($images as $img)
                 <a href="{{ Storage::url($img->image_path) }}" target="_blank" class="position-relative d-block">
                     <div class="ratio ratio-4x3 bg-light rounded-top">
                         <img src="{{ Storage::url($img->image_path) }}" class="card-img-top object-fit-cover" alt="{{ $img->image_type }}">
@@ -214,6 +265,9 @@
                         {{ $img->created_at->format('d M, H:i') }}
                     </small>
                 </div>
+                @endforeach
+                @endif
+
             </div>
         </div>
         @endforeach
