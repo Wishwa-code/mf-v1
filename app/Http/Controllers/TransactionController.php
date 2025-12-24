@@ -416,12 +416,18 @@ class TransactionController extends Controller
         return view('pages.DailyRepaymentFinwin', compact('center','group', 'grouped_loans','center_details','group_details','name_mode'));
     }
 
-    public function getGroupsByCenter($centerId)
+    public function getGroupsByCenter(Request $request)
     {
-        $groups = tableWithBranch('customer_group')->where('center_id', $centerId)->get();
+        $centerIds = (array) $request->input('center_ids', []);
 
-        return response()->json($groups);
+        return DB::table('customer_group')
+            ->where('branch_id', session('branch_id'))
+            ->whereIn('center_id', $centerIds)
+            ->select('idCustomer_Group','Group_No','Name')
+            ->orderBy('Group_No')
+            ->get();
     }
+
 
 
 

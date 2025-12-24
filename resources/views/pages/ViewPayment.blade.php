@@ -255,80 +255,85 @@
                             <!-- Center Selection -->
                             <div class="col-lg-3 mb-3">
                                 <label for="center_details" class="form-label">Center</label>
-                                <select class="form-control select2" id="center_details">
-                                    <option value="0">All</option>
+                                <select class="form-control select2" id="center_details" multiple data-placeholder="Select Centers">
                                     @foreach($center as $item)
                                         <option value="{{ $item->idCenter }}">{{ $item->Name }} - {{ $item->Route }}</option>
                                     @endforeach
                                 </select>
+
                             </div>
 
                             <!-- Group Selection -->
                             <div class="col-lg-3 mb-3">
                                 <label for="group" class="form-label">Group</label>
-                                <select class="form-control select2" id="group">
-                                    <option value="0">All</option>
+                                <select class="form-control select2" id="group" multiple data-placeholder="Select Groups">
                                     @foreach($group as $item)
                                         <option value="{{ $item->idCustomer_Group }}">{{ $item->Group_No }} - {{ $item->Name }}</option>
                                     @endforeach
                                 </select>
+
                             </div>
 
                             <!-- Customer Selection -->
                             <div class="col-lg-3 mb-3">
                                 <label for="customer_id" class="form-label">Customer</label>
-                                <select class="form-control select2" id="customer_id">
-                                    <option value="0">All</option>
+                                <select class="form-control select2" id="customer_id" multiple data-placeholder="Select Customers">
                                     @foreach($customers as $item)
-                                        <option value="{{ $item->idCustomer }}">{{ $item->First_Name }} {{ $item->Last_Name }} - {{ $item->Nic }} - {{ $item->Contact_No }}</option>
+                                        <option value="{{ $item->idCustomer }}">
+                                            {{ $item->First_Name }} {{ $item->Last_Name }} - {{ $item->Nic }} - {{ $item->Contact_No }}
+                                        </option>
                                     @endforeach
                                 </select>
+
                             </div>
 
                             <!-- Agent Selection -->
                             <div class="col-lg-3 mb-3">
                                 <label for="agent" class="form-label">Agent</label>
-                                <select class="form-control select2" id="agent">
-                                    <option value="0">All</option>
+                                <select class="form-control select2" id="agent" multiple data-placeholder="Select Agents">
                                     @foreach($user as $item)
-                                        <option value="{{ $item->id }}">{{ $item->Full_Name }} - {{ $item->email }} - {{ $item->TP }}</option>
+                                        <option value="{{ $item->id }}">
+                                            {{ $item->Full_Name }} - {{ $item->email }} - {{ $item->TP }}
+                                        </option>
                                     @endforeach
                                 </select>
+
                             </div>
 
                             <!-- Route Selection -->
                             <div class="col-lg-3 mb-3">
                                 <label for="route" class="form-label">Route</label>
-                                <select class="form-control select2" id="route">
-                                    <option value="0">All</option>
+                                <select class="form-control select2" id="route" multiple data-placeholder="Select Routes">
                                     @foreach($route as $item)
                                         <option value="{{ $item->id_route }}">{{ $item->name }} - {{ $item->Full_Name }}</option>
                                     @endforeach
                                 </select>
+
                             </div>
 
                             <!-- Payment Type Filter -->
                             <div class="col-lg-3 mb-3">
                                 <label for="payment_type" class="form-label">Payment Type</label>
-                                <select class="form-control select2" id="payment_type">
-                                    <option value="0">All</option>
+                                <select class="form-control select2" id="payment_type" multiple data-placeholder="Select Payment Types">
                                     <option value="Cash">Cash</option>
                                     <option value="Bank Deposit">Bank Deposit</option>
                                     <option value="Cheque">Cheque</option>
                                     <option value="Collector">Collector</option>
                                     <option value="Cashier">Cashier</option>
+                                    <option value="Extra Payment">Extra Payment</option>
                                 </select>
+
                             </div>
 
                             <!-- Search Box -->
                             <div class="col-lg-3 mb-3">
                                 <label for="simpleinput" class="form-label">Loan Number</label>
-                                <select class="form-control select2" id="loan_number_search" onchange="load_payment_table()">
-                                    <option value="0">All</option>
+                                <select class="form-control select2" id="loan_number_search" multiple data-placeholder="Select Loan Numbers">
                                     @foreach($loan as $item)
                                         <option value="{{$item->idCustomer_Loan}}">{{ $item->Loan_No }}</option>
                                     @endforeach
                                 </select>
+
                             </div>
 
                             <!-- Search Button -->
@@ -633,7 +638,15 @@
     <script>
 
         $(document).ready(function() {
-            $('#customer_id').select2();
+            $('.select2').select2({
+                width: '100%',
+                allowClear: true,
+                closeOnSelect: false,
+                placeholder: function() {
+                    return $(this).data('placeholder') || 'Select';
+                }
+            });
+
             $('#loyalty_section').hide();
             // Initialize or re-initialize DataTable
             $('#loan_table').DataTable({
@@ -745,13 +758,15 @@
 
             let x = ["#payment_amount"];
             decimalFormat(x);
-            //Initialize Select2 Elements
-            $('.select2').select2()
+            $('.select2').select2({
+                width: '100%',
+                allowClear: true,
+                closeOnSelect: false,
+                placeholder: function() {
+                    return $(this).data('placeholder') || 'Select';
+                }
+            });
 
-            //Initialize Select2 Elements
-            $('.select2bs4').select2({
-                theme: 'bootstrap4'
-            })
 
         })
 

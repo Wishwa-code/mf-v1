@@ -115,12 +115,12 @@ class TodayPaymentController extends Controller
      */
     public function create(Request $request)
     {
-        $center_details = $request->center_details;
-        $route = $request->route;
-        $group = $request->group;
-        $customer = $request->customer;
-        $status = $request->status;
-        $loan_number = $request->loan_number_search;
+        $route         = (array) $request->input('route', []);
+        $centerDetails = (array) $request->input('center_details', []);
+        $group         = (array) $request->input('group', []);
+        $customer      = (array) $request->input('customer', []);
+        $loanNumbers   = (array) $request->input('loan_number_search', []);
+        $status        = $request->status; // keep single
 
         $user_id = (int)session('userid');
 
@@ -188,17 +188,17 @@ class TodayPaymentController extends Controller
             ->where('customer_loan.Status', '=', '0');
 
         // Apply filters based on center, group, customer, etc.
-        if ($center_details != '0') {
-            $loanQuery->where('center.idCenter', '=', $center_details);
+        if (!empty($centerDetails)) {
+            $loanQuery->whereIn('center.idCenter', $centerDetails);
         }
-        if ($route != '0') {
-            $loanQuery->where('route.id_route', '=', $route);
+        if (!empty($route)) {
+            $loanQuery->whereIn('route.id_route', $route);
         }
-        if ($group != '0') {
-            $loanQuery->where('customer_group.idCustomer_Group', '=', $group);
+        if (!empty($group)) {
+            $loanQuery->whereIn('customer_group.idCustomer_Group', $group);
         }
-        if ($customer != '0') {
-            $loanQuery->where('customer.idCustomer', '=', $customer);
+        if (!empty($customer)) {
+            $loanQuery->whereIn('customer.idCustomer', $customer);
         }
         if ($recovery_officer != '0') {
             $loanQuery->where('customer_loan.collector_id', '=', $recovery_officer);
@@ -223,8 +223,8 @@ class TodayPaymentController extends Controller
 
 
 
-        if ($loan_number != '0') {
-            $loanQuery->where('customer_loan.idCustomer_Loan', '=', $loan_number);
+        if (!empty($loanNumbers)) {
+            $loanQuery->whereIn('customer_loan.idCustomer_Loan', $loanNumbers);
         }
         $loanQuery->orderBy('customer_loan.idCustomer_Loan', 'asc'); // Add this line to order by loan number
         // Paginate the loans
@@ -3270,13 +3270,15 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
     {
         $date = $request->date;
         $date_to = $request->date_to;
-        $center_details = $request->center_details;
-        $group = $request->group;
-        $customer = $request->customer;
-        $user = $request->user;
-        $route = $request->route;
-        $loan_number_search = $request->loan_number_search;
-        $payment_type = $request->payment_type;
+
+        $center_details     = (array) $request->input('center_details', []);
+        $group              = (array) $request->input('group', []);
+        $customer           = (array) $request->input('customer', []);
+        $user               = (array) $request->input('user', []);
+        $route              = (array) $request->input('route', []);
+        $loan_number_search = (array) $request->input('loan_number_search', []);
+        $payment_type       = (array) $request->input('payment_type', []);
+
 
         // -------- NORMAL PAYMENTS ----------
         $normalPayments = tableWithBranch('customer_payments','customer_payments')
@@ -3397,39 +3399,40 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
         // ---------- FILTERS ----------
 
         // loan number filter
-        if (!empty($loan_number_search) && $loan_number_search != '0') {
-            $unionQuery->where('loan_id', '=', $loan_number_search);
+        if (!empty($loan_number_search)) {
+            $unionQuery->whereIn('loan_id', $loan_number_search);
         }
 
-        // center filter
-        if ($center_details != '0') {
-            $unionQuery->where('center_id', '=', $center_details);
+// center filter
+        if (!empty($center_details)) {
+            $unionQuery->whereIn('center_id', $center_details);
         }
 
-        // group filter
-        if ($group != '0') {
-            $unionQuery->where('group_id', '=', $group);
+// group filter
+        if (!empty($group)) {
+            $unionQuery->whereIn('group_id', $group);
         }
 
-        // customer filter
-        if ($customer != '0') {
-            $unionQuery->where('customer_id', '=', $customer);
+// customer filter
+        if (!empty($customer)) {
+            $unionQuery->whereIn('customer_id', $customer);
         }
 
-        // user/agent filter
-        if ($user != '0') {
-            $unionQuery->where('user_id', '=', $user);
+// user/agent filter
+        if (!empty($user)) {
+            $unionQuery->whereIn('user_id', $user);
         }
 
-        // route filter
-        if ($route != '0') {
-            $unionQuery->where('route_id', '=', $route);
+// route filter
+        if (!empty($route)) {
+            $unionQuery->whereIn('route_id', $route);
         }
 
-        // payment type filter (Cash / Bank Deposit / Cheque / etc.)
-        if ($payment_type != '0') {
-            $unionQuery->where('pay_method', '=', $payment_type);
+// payment type filter
+        if (!empty($payment_type)) {
+            $unionQuery->whereIn('pay_method', $payment_type);
         }
+
 
         // date filter
         $unionQuery->whereBetween('pay_date', [$date, $date_to]);
