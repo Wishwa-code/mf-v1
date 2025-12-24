@@ -303,7 +303,7 @@ class CustomerLeadController extends Controller
     {
         $customerLead = CustomerLead::findOrFail($customerLead);
         $lead = $customerLead->load(['images', 'businessCategory']);
-        $images = LeadHasImages::where('lead_id', $customerLead)->get();
+        $images = $lead->images;
 
         return view('pages.leads.show', compact('lead', 'images'));
     }
