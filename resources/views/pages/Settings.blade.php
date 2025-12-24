@@ -1550,6 +1550,16 @@
             saveLoanRestrictions(documentUpload, guarantees, changeProduct, dailyDays, weeklyDays,
                 monthlyDays);
         });
+// remember last tab
+        $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+            localStorage.setItem('last_settings_tab', $(e.target).attr('data-bs-target'));
+        });
+
+        const lastTab = localStorage.getItem('last_settings_tab');
+        if (lastTab) {
+            const triggerEl = document.querySelector(`button[data-bs-target="${lastTab}"]`);
+            if (triggerEl) new bootstrap.Tab(triggerEl).show();
+        }
 
     });
 
