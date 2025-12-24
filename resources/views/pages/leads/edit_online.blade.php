@@ -371,16 +371,15 @@
                             $fieldName = 'image_' . str_replace(' ', '_', strtolower($imageType['name']));
                             $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
 
-                            // Check if image exists
-                            $existingImage = $lead->images->where('image_type', $imageType['name'])->first();
-                            $existingUrl = $existingImage ? Storage::url($existingImage->image_path) : null;
+                            // Check if image exists (multiple)
+                            $existingImages = $lead->images->where('image_type', $imageType['name']);
                             @endphp
                             <div class="col-md-6">
                                 <div class="upload-area">
                                     <div class="d-flex justify-content-between align-items-start mb-3">
                                         <label class="form-label mb-0">{{ $imageType['name'] }}</label>
                                     </div>
-                                    <input type="file" name="{{ $fieldName }}" id="{{ $fieldName }}" class="d-none" accept="image/*"
+                                    <input type="file" name="{{ $fieldName }}[]" id="{{ $fieldName }}" class="d-none" accept="image/*" multiple
                                         onchange="handleImageUpload(this, '{{ $fieldName }}_preview')"
                                         data-image-type="{{ $imageType['name'] }}">
 
@@ -388,12 +387,22 @@
                                         <div class="d-flex flex-column flex-sm-row gap-2 mb-3">
                                             <button type="button" class="btn btn-light btn-modern flex-grow-1 border text-dark py-2 px-3 text-truncate" style="font-size:0.85rem;"
                                                 onclick="triggerFileSelect('{{ $fieldName }}')">
-                                                <i class="bi bi-folder2-open me-1"></i> {{ $existingUrl ? 'Change' : 'Upload' }}
+                                                <i class="bi bi-folder2-open me-1"></i> {{ $existingImages->count() > 0 ? 'Add More' : 'Upload' }}
                                             </button>
                                         </div>
                                         <div class="text-center" style="min-height: 100px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px;">
-                                            <img id="{{ $fieldName }}_preview" src="{{ $existingUrl ?? '' }}" class="{{ $existingUrl ? '' : 'd-none' }} rounded shadow-sm" style="max-height: 100px; max-width: 100%;">
-                                            <span class="text-muted small {{ $existingUrl ? 'd-none' : 'd-block' }}" id="{{ $fieldName }}_placeholder">No image</span>
+                                            <div id="{{ $fieldName }}_preview_container" class="d-flex flex-wrap justify-content-center gap-2 p-2">
+                                                @if($existingImages->count() > 0)
+                                                @foreach($existingImages as $img)
+                                                <div class="position-relative d-inline-block">
+                                                    <a href="{{ Storage::url($img->image_path) }}" target="_blank">
+                                                        <img src="{{ Storage::url($img->image_path) }}" class="rounded shadow-sm border" style="width: 80px; height: 80px; object-fit: cover;">
+                                                    </a>
+                                                </div>
+                                                @endforeach
+                                                @endif
+                                                <span class="text-muted small d-block my-auto {{ $existingImages->count() > 0 ? 'd-none' : '' }}" id="{{ $fieldName }}_placeholder">No image</span>
+                                            </div>
                                         </div>
                                         @error($fieldName) <div class="text-danger small mt-2 text-center fw-bold">{{ $message }}</div> @enderror
                                     </div>
@@ -754,23 +763,34 @@
     }
 
     function handleImageUpload(input, previewId) {
-        if (input.files && input.files[0]) {
-            var file = input.files[0];
-            var reader = new FileReader();
-            var placeholderId = previewId.replace('_preview', '_placeholder');
+        var container = $('#' + previewId + '_container');
+        var placeholder = $('#' + previewId.replace('_preview', '_placeholder'));
 
-            reader.onload = function(e) {
-                if (file.type === 'application/pdf') {
-                    // Show PDF icon or text
-                    $('#' + previewId).addClass('d-none'); // Hide image tag
-                    $('#' + placeholderId).removeClass('d-none').html('<i class="bi bi-file-earmark-pdf text-danger fs-1"></i><br>' + file.name);
-                } else {
-                    // Show Image
-                    $('#' + previewId).attr('src', e.target.result).removeClass('d-none');
-                    $('#' + placeholderId).addClass('d-none');
+        if (input.files && input.files.length > 0) {
+            placeholder.addClass('d-none'); // Hide placeholder
+
+            Array.from(input.files).forEach(file => {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var html = '';
+                    if (file.type === 'application/pdf') {
+                        html = `
+                            <div class="position-relative d-inline-block">
+                                <i class="bi bi-file-earmark-pdf text-danger fs-1"></i>
+                                <div class="small fw-bold text-truncate" style="max-width: 80px;">${file.name}</div>
+                            </div>
+                         `;
+                    } else {
+                        html = `
+                            <div class="position-relative d-inline-block">
+                                <img src="${e.target.result}" class="rounded shadow-sm border" style="width: 80px; height: 80px; object-fit: cover;">
+                            </div>
+                        `;
+                    }
+                    container.append(html);
                 }
-            }
-            reader.readAsDataURL(file);
+                reader.readAsDataURL(file);
+            });
         }
     }
 

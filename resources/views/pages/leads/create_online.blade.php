@@ -391,10 +391,12 @@
                                         </label>
                                     </div>
 
-                                    <input type="file" name="{{ $fieldName }}" id="{{ $fieldName }}" class="d-none" accept="image/*"
+                                    <input type="file" name="{{ $fieldName }}[]" id="{{ $fieldName }}" class="d-none" accept="image/*" multiple
                                         onchange="handleImageUpload(this, '{{ $fieldName }}_preview')"
                                         data-image-type="{{ $imageType['name'] }}">
                                     <!-- No strict location for images in online lead -->
+                                    <input type="hidden" id="{{ $fieldName }}_lat" name="{{ $fieldName }}_latitude">
+                                    <input type="hidden" id="{{ $fieldName }}_lng" name="{{ $fieldName }}_longitude">
 
                                     <div class="mt-auto">
                                         <div class="d-flex flex-column flex-sm-row gap-2 mb-3">
@@ -404,8 +406,9 @@
                                             </button>
                                         </div>
                                         <div class="text-center" style="min-height: 100px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px;">
-                                            <img id="{{ $fieldName }}_preview" src="" class="d-none rounded shadow-sm" style="max-height: 100px; max-width: 100%;">
-                                            <span class="text-muted small d-block" id="{{ $fieldName }}_placeholder">No image selected</span>
+                                            <div id="{{ $fieldName }}_preview_container" class="d-flex flex-wrap justify-content-center gap-2">
+                                                <span class="text-muted small d-block my-auto" id="{{ $fieldName }}_placeholder">No image selected</span>
+                                            </div>
                                         </div>
                                         @error($fieldName) <div class="text-danger small mt-2 text-center fw-bold">{{ $message }}</div> @enderror
                                     </div>
@@ -702,23 +705,53 @@
     }
 
     function handleImageUpload(input, previewId) {
-        if (input.files && input.files[0]) {
-            var file = input.files[0];
-            var reader = new FileReader();
-            var placeholderId = previewId.replace('_preview', '_placeholder');
+        var containerId = previewId + '_container';
+        var placeholderId = previewId + '_placeholder'; // e.g. fieldname_preview_placeholder
+        // Note: previewId passed is typically "fieldname_preview", but our container is "_preview_container" and placeholder is inside.
+        // The implementation in PHP section uses "fieldname_preview_container" and "fieldname_placeholder".
+        // Let's adjust variable mapping.
 
-            reader.onload = function(e) {
-                if (file.type === 'application/pdf') {
-                    // Show PDF icon or text
-                    $('#' + previewId).addClass('d-none'); // Hide image tag
-                    $('#' + placeholderId).removeClass('d-none').html('<i class="bi bi-file-earmark-pdf text-danger fs-1"></i><br>' + file.name);
-                } else {
-                    // Show Image
-                    $('#' + previewId).attr('src', e.target.result).removeClass('d-none');
-                    $('#' + placeholderId).addClass('d-none');
+        // Actually, in the PHP above, I used 'fieldname_preview_container' ID.
+        // In the original call, it was passed as 'fieldname_preview'.
+        // So `containerId` should be the element to append to.
+
+        // Correct Logic:
+        // The input call is: handleImageUpload(this, '{{ $fieldName }}_preview')
+        // ID of container: {{ $fieldName }}_preview_container
+        // ID of placeholder: {{ $fieldName }}_placeholder
+
+        // So if previewId = 'foo_preview'
+        // container = $('#foo_preview_container')
+        // placeholder = $('#foo_placeholder') (which I named in PHP block)
+
+        var container = $('#' + previewId + '_container');
+        var placeholder = $('#' + previewId.replace('_preview', '_placeholder'));
+
+        if (input.files && input.files.length > 0) {
+            placeholder.addClass('d-none'); // Hide placeholder
+
+            Array.from(input.files).forEach(file => {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var html = '';
+                    if (file.type === 'application/pdf') {
+                        html = `
+                            <div class="position-relative d-inline-block">
+                                <i class="bi bi-file-earmark-pdf text-danger fs-1"></i>
+                                <div class="small fw-bold text-truncate" style="max-width: 80px;">${file.name}</div>
+                            </div>
+                         `;
+                    } else {
+                        html = `
+                            <div class="position-relative d-inline-block">
+                                <img src="${e.target.result}" class="rounded shadow-sm border" style="width: 80px; height: 80px; object-fit: cover;">
+                            </div>
+                        `;
+                    }
+                    container.append(html);
                 }
-            }
-            reader.readAsDataURL(file);
+                reader.readAsDataURL(file);
+            });
         }
     }
 

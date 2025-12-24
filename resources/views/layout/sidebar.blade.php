@@ -30,12 +30,12 @@
         @endif
 
 
-        <li class="side-nav-item">
+        <!-- <li class="side-nav-item">
             <a href="{{ route('business-categories.index') }}" class="side-nav-link">
                 <i class="ri-layout-grid-fill"></i>
                 <span> Business Categories </span>
             </a>
-        </li>
+        </li> -->
 
         @if (optional($privilege)->customer == 1 && (optional($privilege)->view_customer == 1 || optional($privilege)->kyc == 1))
         <li class="side-nav-item">
@@ -199,6 +199,8 @@
                     <li>
                         <a href="{{ route('leads.index') }}">Lead Create</a>
                     </li>
+                    @endif
+                    @if (optional($privilege)->create_online_lead == 1)
                     <li>
                         <a href="{{ route('online-leads.create') }}">Create Online Lead</a>
                     </li>
