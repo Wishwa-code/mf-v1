@@ -391,10 +391,12 @@
                                         </label>
                                     </div>
 
-                                    <input type="file" name="{{ $fieldName }}" id="{{ $fieldName }}" class="d-none" accept="image/*"
+                                    <input type="file" name="{{ $fieldName }}[]" id="{{ $fieldName }}" class="d-none" accept="image/*" multiple
                                         onchange="handleImageUpload(this, '{{ $fieldName }}_preview')"
                                         data-image-type="{{ $imageType['name'] }}">
                                     <!-- No strict location for images in online lead -->
+                                    <input type="hidden" id="{{ $fieldName }}_lat" name="{{ $fieldName }}_latitude">
+                                    <input type="hidden" id="{{ $fieldName }}_lng" name="{{ $fieldName }}_longitude">
 
                                     <div class="mt-auto">
                                         <div class="d-flex flex-column flex-sm-row gap-2 mb-3">
@@ -404,8 +406,9 @@
                                             </button>
                                         </div>
                                         <div class="text-center" style="min-height: 100px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px;">
-                                            <img id="{{ $fieldName }}_preview" src="" class="d-none rounded shadow-sm" style="max-height: 100px; max-width: 100%;">
-                                            <span class="text-muted small d-block" id="{{ $fieldName }}_placeholder">No image selected</span>
+                                            <div id="{{ $fieldName }}_preview_container" class="d-flex flex-wrap justify-content-center gap-2">
+                                                <span class="text-muted small d-block my-auto" id="{{ $fieldName }}_placeholder">No image selected</span>
+                                            </div>
                                         </div>
                                         @error($fieldName) <div class="text-danger small mt-2 text-center fw-bold">{{ $message }}</div> @enderror
                                     </div>
@@ -447,20 +450,24 @@
                                         </label>
                                     </div>
 
-                                    <input type="file" name="{{ $fieldName }}" id="{{ $fieldName }}" class="d-none" accept="image/*"
+                                    <input type="file" name="{{ $fieldName }}[]" id="{{ $fieldName }}" class="d-none" accept="image/*" multiple
                                         onchange="handleImageUpload(this, '{{ $fieldName }}_preview')"
                                         data-image-type="{{ $imageType['name'] }}">
+                                    <!-- No strict location for images in online lead -->
+                                    <input type="hidden" id="{{ $fieldName }}_lat" name="{{ $fieldName }}_latitude">
+                                    <input type="hidden" id="{{ $fieldName }}_lng" name="{{ $fieldName }}_longitude">
 
                                     <div class="mt-auto">
                                         <div class="d-flex flex-column flex-sm-row gap-2 mb-3">
                                             <button type="button" class="btn btn-light btn-modern flex-grow-1 border text-dark py-2 px-3 text-truncate" style="font-size:0.85rem;"
                                                 onclick="triggerFileSelect('{{ $fieldName }}')">
-                                                <i class="bi bi-folder2 me-1"></i> Upload
+                                                <i class="bi bi-folder2-open me-1"></i> Upload
                                             </button>
                                         </div>
                                         <div class="text-center" style="min-height: 100px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px;">
-                                            <img id="{{ $fieldName }}_preview" src="" class="d-none rounded shadow-sm" style="max-height: 100px; max-width: 100%;">
-                                            <span class="text-muted small d-block" id="{{ $fieldName }}_placeholder">No image</span>
+                                            <div id="{{ $fieldName }}_preview_container" class="d-flex flex-wrap justify-content-center gap-2">
+                                                <span class="text-muted small d-block my-auto" id="{{ $fieldName }}_placeholder">No image selected</span>
+                                            </div>
                                         </div>
                                         @error($fieldName) <div class="text-danger small mt-2 text-center fw-bold">{{ $message }}</div> @enderror
                                     </div>
@@ -499,20 +506,24 @@
                                         </label>
                                     </div>
 
-                                    <input type="file" name="{{ $fieldName }}" id="{{ $fieldName }}" class="d-none" accept="image/*"
+                                    <input type="file" name="{{ $fieldName }}[]" id="{{ $fieldName }}" class="d-none" accept="image/*" multiple
                                         onchange="handleImageUpload(this, '{{ $fieldName }}_preview')"
                                         data-image-type="{{ $imageType['name'] }}">
+                                    <!-- No strict location for images in online lead -->
+                                    <input type="hidden" id="{{ $fieldName }}_lat" name="{{ $fieldName }}_latitude">
+                                    <input type="hidden" id="{{ $fieldName }}_lng" name="{{ $fieldName }}_longitude">
 
                                     <div class="mt-auto">
                                         <div class="d-flex flex-column flex-sm-row gap-2 mb-3">
                                             <button type="button" class="btn btn-light btn-modern flex-grow-1 border text-dark py-2 px-3 text-truncate" style="font-size:0.85rem;"
                                                 onclick="triggerFileSelect('{{ $fieldName }}')">
-                                                <i class="bi bi-folder2 me-1"></i> Upload
+                                                <i class="bi bi-folder2-open me-1"></i> Upload
                                             </button>
                                         </div>
                                         <div class="text-center" style="min-height: 100px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px;">
-                                            <img id="{{ $fieldName }}_preview" src="" class="d-none rounded shadow-sm" style="max-height: 100px; max-width: 100%;">
-                                            <span class="text-muted small d-block" id="{{ $fieldName }}_placeholder">No image</span>
+                                            <div id="{{ $fieldName }}_preview_container" class="d-flex flex-wrap justify-content-center gap-2">
+                                                <span class="text-muted small d-block my-auto" id="{{ $fieldName }}_placeholder">No image selected</span>
+                                            </div>
                                         </div>
                                         @error($fieldName) <div class="text-danger small mt-2 text-center fw-bold">{{ $message }}</div> @enderror
                                     </div>
@@ -697,29 +708,132 @@
         );
     }
 
+    // Global store for DataTransfer objects per input
+    const fileStore = {};
+
     function triggerFileSelect(id) {
         $('#' + id).click();
     }
 
     function handleImageUpload(input, previewId) {
-        if (input.files && input.files[0]) {
-            var file = input.files[0];
-            var reader = new FileReader();
-            var placeholderId = previewId.replace('_preview', '_placeholder');
+        const inputId = input.id;
+        const container = $('#' + previewId + '_container');
+        const placeholder = $('#' + previewId.replace('_preview', '_placeholder'));
 
-            reader.onload = function(e) {
-                if (file.type === 'application/pdf') {
-                    // Show PDF icon or text
-                    $('#' + previewId).addClass('d-none'); // Hide image tag
-                    $('#' + placeholderId).removeClass('d-none').html('<i class="bi bi-file-earmark-pdf text-danger fs-1"></i><br>' + file.name);
-                } else {
-                    // Show Image
-                    $('#' + previewId).attr('src', e.target.result).removeClass('d-none');
-                    $('#' + placeholderId).addClass('d-none');
-                }
-            }
-            reader.readAsDataURL(file);
+        // Initialize DataTransfer for this input if not exists
+        if (!fileStore[inputId]) {
+            fileStore[inputId] = new DataTransfer();
         }
+
+        const dt = fileStore[inputId];
+
+        // Add NEW files to DataTransfer
+        if (input.files && input.files.length > 0) {
+            Array.from(input.files).forEach(file => {
+                dt.items.add(file);
+            });
+        }
+
+        // Update the input's files to match DataTransfer (so they are submitted)
+        input.files = dt.files;
+
+        // Re-render previews
+        renderPreviews(inputId, container, placeholder);
+    }
+
+    function renderPreviews(inputId, container, placeholder) {
+        container.empty();
+        // Add placeholder back (hidden if has files)?? 
+        // Actually, let's keep placeholder outside or append it if empty.
+        // My PHP verification logic checked if container has children. 
+        // For simplicity, let's just append previews. 
+        // If empty, show placeholder check? 
+        // The placeholder element is separate in blade: <span>...</span>. 
+        // In my logic above, I got it by ID.
+
+        const dt = fileStore[inputId];
+
+        if (dt.files.length > 0) {
+            placeholder.addClass('d-none');
+            // existing placeholder might have been removed by .empty if it was inside container?
+            // In blade: <div id="container"><span id="placeholder"></span></div>. 
+            // YES. .empty() removes placeholder.
+            // We should re-append placeholder or hide/show it.
+            // Better: Hide the placeholder if files exist. If no files, append it back?
+            // Actually, let's handle placeholder visibility separately or re-create it.
+            // The blade implementation had placeholder INSIDE container.
+
+            Array.from(dt.files).forEach((file, index) => {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var html = '';
+                    if (file.type === 'application/pdf') {
+                        html = `
+                            <div class="position-relative d-inline-block m-1" id="file-${inputId}-${index}">
+                                <div class="ratio ratio-1x1 border rounded bg-light d-flex align-items-center justify-content-center shadow-sm" style="width: 80px; height: 80px;">
+                                    <div class="text-center">
+                                        <i class="bi bi-file-earmark-pdf text-danger fs-3"></i>
+                                        <div class="small fw-bold text-truncate" style="max-width: 70px; font-size: 0.6rem;">${file.name}</div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-danger btn-sm p-0 position-absolute top-0 end-0 translate-middle rounded-circle shadow-sm d-flex align-items-center justify-content-center" 
+                                    style="width: 20px; height: 20px; font-size: 0.7rem;" onclick="removeFile('${inputId}', ${index})">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                         `;
+                    } else {
+                        html = `
+                            <div class="position-relative d-inline-block m-1" id="file-${inputId}-${index}">
+                                <img src="${e.target.result}" class="rounded shadow-sm border" style="width: 80px; height: 80px; object-fit: cover;">
+                                <button type="button" class="btn btn-danger btn-sm p-0 position-absolute top-0 end-0 translate-middle rounded-circle shadow-sm d-flex align-items-center justify-content-center" 
+                                    style="width: 20px; height: 20px; font-size: 0.7rem;" onclick="removeFile('${inputId}', ${index})">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        `;
+                    }
+                    container.append(html);
+                }
+                reader.readAsDataURL(file);
+            });
+        } else {
+            // No files, show placeholder
+            // Since we emptied container, we need to add placeholder back if we want it inside.
+            // Or assumes it's hidden. 
+            // In blade: <span ... id="..._placeholder">No image selected</span>.
+            // If I stripped it, I must recreate it.
+            container.html(`<span class="text-muted small d-block my-auto" id="${inputId.replace('image_', '')}_placeholder">No image selected</span>`);
+            // Wait, ID logic for placeholder was specific in blade... 
+            // let's pass placeholder text or just standard text.
+            // Or simpler: Don't empty container immediately, just remove file elements? No, simpler to rebuild.
+            // Let's just put generic text.
+            container.append(`<span class="text-muted small d-block my-auto">No image selected</span>`);
+            placeholder.removeClass('d-none'); // references original obj? if removed from DOM, this ref is stale? 
+            // Yes, if placeholder was child of container, `placeholder` var is detached DOM node.
+        }
+    }
+
+    function removeFile(inputId, index) {
+        if (!fileStore[inputId]) return;
+        const dt = fileStore[inputId];
+        const newDt = new DataTransfer();
+
+        // Copy all files EXCEPT index
+        Array.from(dt.files).forEach((file, i) => {
+            if (i !== index) newDt.items.add(file);
+        });
+
+        // Update Store and Input
+        fileStore[inputId] = newDt;
+        document.getElementById(inputId).files = newDt.files;
+
+        // Re-render
+        const container = $('#' + inputId + '_preview_container');
+        // Placeholder handling is tricky if we don't pass it. 
+        // But renderPreviews reconstructs.
+        // We can pass null for placeholder since we rebuild it if empty.
+        renderPreviews(inputId, container, null);
     }
 
     // --- Form Submission ---
@@ -757,13 +871,45 @@
 
                     // Cleanup old errors
                     $('.is-invalid').removeClass('is-invalid');
+                    $('.upload-area').removeClass('border-danger');
                     $('.text-danger.small').remove();
+                    $('.error-msg').remove();
 
                     // Show new errors
                     $.each(errors, function(field, messages) {
-                        const input = $('[name="' + field + '"]');
-                        input.addClass('is-invalid');
-                        input.after('<div class="text-danger small mt-1">' + messages[0] + '</div>');
+                        // Handle array field inputs (e.g. image_nic.0 -> image_nic[], or image_nic -> image_nic[])
+                        let inputName = field;
+                        let input = $('[name="' + inputName + '"]');
+
+                        if (input.length === 0) {
+                            // Try appending []
+                            input = $('[name="' + inputName + '[]"]');
+                        }
+
+                        if (input.length === 0 && inputName.includes('.')) {
+                            // Split dot notation (e.g. image_nic.0)
+                            let parts = inputName.split('.');
+                            let baseName = parts[0];
+                            input = $('[name="' + baseName + '[]"]');
+
+                            if (input.length === 0) {
+                                input = $('[name="' + baseName + '"]');
+                            }
+                        }
+
+                        if (input.length > 0) {
+                            input.addClass('is-invalid');
+                            // Find the closest .upload-area to invoke improved visibility
+                            let container = input.closest('.upload-area');
+                            if (container.length > 0) {
+                                // Add error message at the bottom of upload area
+                                container.append('<div class="text-danger small mt-2 text-center fw-bold error-msg">' + messages[0] + '</div>');
+                                container.addClass('border-danger');
+                            } else {
+                                // Fallback
+                                input.after('<div class="text-danger small mt-1">' + messages[0] + '</div>');
+                            }
+                        }
                     });
 
                     Swal.fire('Validation Error', 'Please check the form for errors.', 'warning');
