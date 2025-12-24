@@ -139,7 +139,6 @@
         </div>
     </div>
 
-    @if(optional($privilege)->lead_activity_logs == 1)
     <div class="row">
         <div class="col-12">
             <div class="card card-modern">
@@ -162,11 +161,6 @@
             </div>
         </div>
     </div>
-    @else
-    <div class="alert alert-danger mt-4">
-        <i class="bi bi-lock-fill me-2"></i> You do not have permission to view activity logs.
-    </div>
-    @endif
 </div>
 
 <!-- Activity Details Modal -->

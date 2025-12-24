@@ -284,7 +284,7 @@
                                         <div id="{{ $fieldName }}_location_status"></div>
                                     </div>
 
-                                    <input type="file" name="{{ $fieldName }}" id="{{ $fieldName }}" class="d-none" accept="image/*" capture="user"
+                                    <input type="file" name="{{ $fieldName }}[]" id="{{ $fieldName }}" class="d-none" accept="image/*" multiple
                                         onchange="handleImageUpload(this, '{{ $fieldName }}_preview', '{{ $fieldName }}_lat', '{{ $fieldName }}_lng')"
                                         data-image-type="{{ $imageType['name'] }}">
                                     <input type="hidden" id="{{ $fieldName }}_lat" name="{{ $fieldName }}_latitude">
@@ -306,12 +306,11 @@
                                             </button>
                                         </div>
                                         <div class="text-center" style="min-height: 100px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px;">
-                                            <img id="{{ $fieldName }}_preview" src="" class="d-none rounded shadow-sm" style="max-height: 100px; max-width: 100%;">
-                                            <span class="text-muted small d-block" id="{{ $fieldName }}_placeholder">No image selected</span>
+                                            <div id="{{ $fieldName }}_preview_container" class="d-flex flex-wrap justify-content-center gap-2">
+                                                <span class="text-muted small d-block my-auto" id="{{ $fieldName }}_placeholder">No image selected</span>
+                                            </div>
                                         </div>
-                                        <div id="{{ $fieldName }}_current_link" class="mt-2 text-center small d-none">
-                                            <a href="#" target="_blank" class="text-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">View Current Image</a>
-                                        </div>
+                                        {{-- Current Link logic might need adjustment for multiple images, simplified to just show previews above --}}
                                     </div>
                                 </div>
                             </div>
@@ -345,7 +344,7 @@
                                         <div id="{{ $fieldName }}_location_status"></div>
                                     </div>
 
-                                    <input type="file" name="{{ $fieldName }}" id="{{ $fieldName }}" class="d-none" accept="image/*" capture="user"
+                                    <input type="file" name="{{ $fieldName }}[]" id="{{ $fieldName }}" class="d-none" accept="image/*" multiple
                                         onchange="handleImageUpload(this, '{{ $fieldName }}_preview', '{{ $fieldName }}_lat', '{{ $fieldName }}_lng')"
                                         data-image-type="{{ $imageType['name'] }}">
 
@@ -375,11 +374,9 @@
                                             </button>
                                         </div>
                                         <div class="text-center" style="min-height: 100px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px;">
-                                            <img id="{{ $fieldName }}_preview" src="" class="d-none rounded shadow-sm" style="max-height: 100px; max-width: 100%;">
-                                            <span class="text-muted small d-block" id="{{ $fieldName }}_placeholder">No image selected</span>
-                                        </div>
-                                        <div id="{{ $fieldName }}_current_link" class="mt-2 text-center small d-none">
-                                            <a href="#" target="_blank" class="text-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">View Current Image</a>
+                                            <div id="{{ $fieldName }}_preview_container" class="d-flex flex-wrap justify-content-center gap-2">
+                                                <span class="text-muted small d-block my-auto" id="{{ $fieldName }}_placeholder">No image selected</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -414,7 +411,7 @@
                                         <div id="{{ $fieldName }}_location_status"></div>
                                     </div>
 
-                                    <input type="file" name="{{ $fieldName }}" id="{{ $fieldName }}" class="d-none" accept="image/*" capture="user"
+                                    <input type="file" name="{{ $fieldName }}[]" id="{{ $fieldName }}" class="d-none" accept="image/*" multiple
                                         onchange="handleImageUpload(this, '{{ $fieldName }}_preview', '{{ $fieldName }}_lat', '{{ $fieldName }}_lng')"
                                         data-image-type="{{ $imageType['name'] }}">
 
@@ -444,11 +441,9 @@
                                             </button>
                                         </div>
                                         <div class="text-center" style="min-height: 100px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px;">
-                                            <img id="{{ $fieldName }}_preview" src="" class="d-none rounded shadow-sm" style="max-height: 100px; max-width: 100%;">
-                                            <span class="text-muted small d-block" id="{{ $fieldName }}_placeholder">No image selected</span>
-                                        </div>
-                                        <div id="{{ $fieldName }}_current_link" class="mt-2 text-center small d-none">
-                                            <a href="#" target="_blank" class="text-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">View Current Image</a>
+                                            <div id="{{ $fieldName }}_preview_container" class="d-flex flex-wrap justify-content-center gap-2">
+                                                <span class="text-muted small d-block my-auto" id="{{ $fieldName }}_placeholder">No image selected</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -526,15 +521,14 @@
 
         // Let's implement dynamic loading:
         $.get('/sl-locations/districts', function(data) {
-            
+
         });
 
         loadLeadData();
     });
 
-    
-    function loadDistricts(selectedDistrict = null) {
-    }
+
+    function loadDistricts(selectedDistrict = null) {}
 
     function loadLeadData() {
         const leadId = "{{ $lead->id }}";
@@ -581,26 +575,32 @@
                     if (res.images) {
                         $.each(res.images, function(type, images) {
                             if (images && images.length > 0) {
-                                const img = images[0]; // Take first one
                                 const fieldName = 'image_' + type.toLowerCase().replace(/ /g, '_').replace(/[^a-z0-9_]/g, '_');
 
-                                // Show preview of existing
-                                const preview = document.getElementById(fieldName + '_preview');
+                                const container = document.getElementById(fieldName + '_preview_container');
                                 const placeholder = document.getElementById(fieldName + '_placeholder');
-                                const link = document.getElementById(fieldName + '_current_link');
 
-                                if (preview) {
-                                    preview.src = "/storage/" + img.image_path; // Adjust for public storage path
-                                    preview.classList.remove('d-none');
+                                if (container) {
                                     if (placeholder) placeholder.style.display = 'none';
-                                    if (link) {
-                                        link.classList.remove('d-none');
-                                        link.querySelector('a').href = "/storage/" + img.image_path;
-                                    }
 
-                                    // Set hidden lat/lngs to existing values so they pass validation if not changed
-                                    $(`#${fieldName}_lat`).val(img.latitude);
-                                    $(`#${fieldName}_lng`).val(img.longitude);
+                                    // Iterate ALL images for this type
+                                    images.forEach(img => {
+                                        const imgEl = document.createElement('img');
+                                        imgEl.src = "/storage/" + img.image_path;
+                                        imgEl.className = 'rounded shadow-sm';
+                                        imgEl.style.maxHeight = '100px';
+                                        imgEl.style.maxWidth = '100px';
+                                        imgEl.style.objectFit = 'cover';
+                                        imgEl.style.cursor = 'pointer';
+                                        imgEl.onclick = () => window.open(imgEl.src, '_blank');
+
+                                        container.appendChild(imgEl);
+                                    });
+
+                                    // Set hidden lat/lngs to existing values of the FIRST image (as a fallback/reference)
+                                    // ideally we don't rely on hidden lat/lng for existing images, only new uploads
+                                    $(`#${fieldName}_lat`).val(images[0].latitude);
+                                    $(`#${fieldName}_lng`).val(images[0].longitude);
                                 }
                             }
                         });
@@ -963,16 +963,75 @@
         document.getElementById(id).click();
     }
 
-    function handleImageUpload(input, previewId, latId, lngId) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById(previewId).src = e.target.result;
-                document.getElementById(previewId).classList.remove('d-none');
-                getSpecificLocation(latId, lngId, input.id + '_location_status');
-            }
-            reader.readAsDataURL(input.files[0]);
+    function handleImageUpload(input, previewIdUnused, latId, lngId) {
+        // Deduced container ID
+        const containerId = input.id + '_preview_container';
+        const placeholderId = input.id + '_placeholder';
+        const container = document.getElementById(containerId);
+        const placeholder = document.getElementById(placeholderId);
+
+        if (input.files && input.files.length > 0) {
+            // NOTE: In edit mode, do we want to clear existing "DB" images when user selects new files?
+            // Usually <input file> selection replaces the "new files to upload" list.
+            // But visuals of existing images might need to stay?
+            // "Append" logic in backend means we add new files to existing DB checks.
+            // So visually, we should probably Keep DB images and just Add new previews?
+            // BUT, input.files change triggers this.
+
+            // Let's create a visual separation or just append to container?
+            // If we just append, user might be confused which is new.
+            // But for simplicity, let's append new previews. 
+            // Warning: if user selects files again, we should probably clear *only new* previews. 
+            // Hard to distinguish without extra markup.
+            // Simplified approach: Clear container and re-render everything? No, we can't re-render DB images easily without fetching again.
+            // Better approach: Create a specific 'new-previews' container inside main container?
+            // Or just append. If user changes mind and selects different files, we'd have duplicates if we don't clear.
+
+            // For now: We remove any element that has class 'new-upload-preview' before adding new ones.
+            const existingNew = container.querySelectorAll('.new-upload-preview');
+            existingNew.forEach(el => el.remove());
+
+            if (placeholder) placeholder.style.display = 'none';
+
+            Array.from(input.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'rounded shadow-sm new-upload-preview'; // Add class to identify
+                    img.style.maxHeight = '100px';
+                    img.style.maxWidth = '100px';
+                    img.style.objectFit = 'cover';
+                    img.style.border = '2px solid #556ee6'; // Highlight new uploads
+                    container.appendChild(img);
+                }
+                reader.readAsDataURL(file);
+            });
+
+            getSpecificLocation(latId, lngId, input.id + '_location_status');
         }
+    }
+
+    function useCapturedPhoto() {
+        const canvas = document.getElementById('webcamCanvas');
+        canvas.toBlob(function(blob) {
+            const file = new File([blob], `cam_${Date.now()}.jpg`, {
+                type: 'image/jpeg'
+            });
+
+            const input = document.getElementById(currentFieldId);
+            const dataTransfer = new DataTransfer();
+
+            if (input.files) {
+                Array.from(input.files).forEach(f => dataTransfer.items.add(f));
+            }
+            dataTransfer.items.add(file);
+            input.files = dataTransfer.files;
+
+            closeWebcamModal();
+            // Trigger handle to show preview
+            handleImageUpload(input, null, currentLatFieldId, currentLngFieldId);
+        }, 'image/jpeg', 0.9);
     }
 </script>
 @endsection

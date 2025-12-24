@@ -156,7 +156,6 @@
                                 <div class="flex-grow-1 ms-3 border-bottom"></div>
                             </div>
 
-                            @if(optional($privilege)->lead_agreement == 1)
                             @if(isset($agreementImageTypes) && count($agreementImageTypes) > 0)
                             <div class="row g-4">
                                 @foreach($agreementImageTypes as $imageType)
@@ -221,11 +220,6 @@
                             @else
                             <div class="alert alert-warning border-0 shadow-sm rounded-3">
                                 <i class="bi bi-exclamation-circle-fill me-2"></i> No Agreement Image Types configured in Settings.
-                            </div>
-                            @endif
-                            @else
-                            <div class="alert alert-danger">
-                                <i class="bi bi-lock-fill me-2"></i> You do not have permission to sign agreements.
                             </div>
                             @endif
                         </div>
