@@ -4,7 +4,24 @@
 #
 #{ "email": "admin@gmail.com", "password": "123" }
 
-POST https://bsms.hutch.lk/api/login
+### Get Firing Detail (Basic Auth)
+POST http://erpdev.rcl.lk:8000/webservices/rest/rblauto/getfiringdetail/
 Content-Type: application/json
+Accept: application/json
+Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
 
-{ "email": "finance.asipiya@gmail.com", "password": "Asipiya@hutch123" }
+{
+  "GETFIRINGDETAIL_Input": {
+    "RESTHeader": {
+      "Responsibility": "ROCELL",
+      "RespApplication": "XRCL",
+      "SecurityGroup": "STANDARD",
+      "NLSLanguage": "AMERICAN"
+    },
+    "InputParameters": {
+      "P_QR_CODE": "AA0000003"
+    }
+  }
+}
+
+
