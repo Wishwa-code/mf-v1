@@ -905,39 +905,145 @@
         );
     }
 
+    // Global store for DataTransfer objects per input
+    const fileStore = {};
+
     function triggerFileSelect(id) {
         $('#' + id).click();
     }
 
     function handleImageUpload(input, previewId) {
-        var container = $('#' + previewId + '_container');
-        var placeholder = $('#' + previewId.replace('_preview', '_placeholder'));
+        const inputId = input.id;
+        // The container holds existing images + placeholder
+        const mainContainer = $('#' + previewId + '_container');
+        const placeholder = $('#' + previewId.replace('_preview', '_placeholder')); // e.g. fieldname_placeholder
 
+        // Create or Get a container for NEW previews
+        let newContainerId = inputId + '_new_previews';
+        let newContainer = $('#' + newContainerId);
+
+        if (newContainer.length === 0) {
+            // Append a new div for new files inside the main container, before the placeholder? 
+            // Or just append to mainContainer.
+            // Note: placeholder is usually last or in the middle. 
+            // Let's prepend new files to a specific area or just append to mainContainer.
+            // Main container has "flex-wrap", so order matters.
+            // Let's append to mainContainer, but before placeholder if possible.
+            // Actually, simply appending to mainContainer is fine, but we need to target it for clearing.
+            newContainer = $('<div id="' + newContainerId + '" class="d-flex flex-wrap justify-content-center gap-2 w-100 mt-2"></div>');
+            // Insert before placeholder if it exists, else append
+            if (placeholder.length > 0) {
+                placeholder.before(newContainer);
+            } else {
+                mainContainer.append(newContainer);
+            }
+        }
+
+        // Initialize DataTransfer
+        if (!fileStore[inputId]) {
+            fileStore[inputId] = new DataTransfer();
+        }
+
+        const dt = fileStore[inputId];
+
+        // Add NEW files
         if (input.files && input.files.length > 0) {
-            placeholder.addClass('d-none'); // Hide placeholder
-
             Array.from(input.files).forEach(file => {
-                var reader = new FileReader();
-                reader.onload = function(e) {
-                    var html = '';
-                    if (file.type === 'application/pdf') {
-                        html = `
-                            <div class="position-relative d-inline-block">
-                                <i class="bi bi-file-earmark-pdf text-danger fs-1"></i>
-                                <div class="small fw-bold text-truncate" style="max-width: 80px;">${file.name}</div>
-                            </div>
-                         `;
-                    } else {
-                        html = `
-                            <div class="position-relative d-inline-block">
-                                <img src="${e.target.result}" class="rounded shadow-sm border" style="width: 80px; height: 80px; object-fit: cover;">
-                            </div>
-                        `;
-                    }
-                    container.append(html);
-                }
-                reader.readAsDataURL(file);
+                dt.items.add(file);
             });
+        }
+
+        // Update Input
+        input.files = dt.files;
+
+        // Render Previews
+        renderPreviews(inputId, newContainer);
+
+        // Update Placeholder Visibility (checking both existing and new)
+        updatePlaceholder(mainContainer, inputId);
+    }
+
+    function renderPreviews(inputId, container) {
+        container.empty();
+        const dt = fileStore[inputId];
+
+        Array.from(dt.files).forEach((file, index) => {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var html = '';
+                if (file.type === 'application/pdf') {
+                    html = `
+                        <div class="position-relative d-inline-block m-1" id="file-${inputId}-${index}">
+                            <div class="ratio ratio-1x1 border rounded bg-light d-flex align-items-center justify-content-center shadow-sm" style="width: 80px; height: 80px;">
+                                <div class="text-center">
+                                    <i class="bi bi-file-earmark-pdf text-danger fs-3"></i>
+                                    <div class="small fw-bold text-truncate" style="max-width: 70px; font-size: 0.6rem;">${file.name}</div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-danger btn-sm p-0 position-absolute top-0 end-0 translate-middle rounded-circle shadow-sm d-flex align-items-center justify-content-center" 
+                                style="width: 20px; height: 20px; font-size: 0.7rem;" onclick="removeFile('${inputId}', ${index})">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                     `;
+                } else {
+                    html = `
+                        <div class="position-relative d-inline-block m-1" id="file-${inputId}-${index}">
+                            <img src="${e.target.result}" class="rounded shadow-sm border" style="width: 80px; height: 80px; object-fit: cover;">
+                            <button type="button" class="btn btn-danger btn-sm p-0 position-absolute top-0 end-0 translate-middle rounded-circle shadow-sm d-flex align-items-center justify-content-center" 
+                                style="width: 20px; height: 20px; font-size: 0.7rem;" onclick="removeFile('${inputId}', ${index})">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+                container.append(html);
+            }
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function removeFile(inputId, index) {
+        if (!fileStore[inputId]) return;
+        const dt = fileStore[inputId];
+        const newDt = new DataTransfer();
+
+        Array.from(dt.files).forEach((file, i) => {
+            if (i !== index) newDt.items.add(file);
+        });
+
+        fileStore[inputId] = newDt;
+        document.getElementById(inputId).files = newDt.files;
+
+        // Render
+        const newContainer = $('#' + inputId + '_new_previews');
+        renderPreviews(inputId, newContainer);
+
+        // Update Placeholder
+        // We need mainContainer to check existing. Logic: find parent of newContainer?
+        const mainContainer = newContainer.parent();
+        updatePlaceholder(mainContainer, inputId);
+    }
+
+    function updatePlaceholder(mainContainer, inputId) {
+        // Placeholder ID convention:
+        // inputId = 'image_nic' -> placeholder = 'image_nic_placeholder' BUT
+        // the passing logic in blade was '{{ $fieldName }}_preview' -> replace '_preview' with '_placeholder'.
+        // My PHP variable for placeholder was $fieldName . '_placeholder'.
+        // So `inputId` (which is $fieldName) + '_placeholder' should work.
+        const placeholder = $('#' + inputId + '_placeholder');
+
+        // 1. Check existing images (carousel or ratio div for single)
+        const hasExisting = mainContainer.find('.carousel, .ratio').length > 0;
+
+        // 2. Check new files
+        const dt = fileStore[inputId];
+        const hasNew = dt && dt.files.length > 0;
+
+        if (hasExisting || hasNew) {
+            placeholder.addClass('d-none');
+        } else {
+            placeholder.removeClass('d-none');
         }
     }
 
