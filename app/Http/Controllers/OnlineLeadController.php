@@ -8,6 +8,7 @@ use App\Models\CustomerLead;
 use App\Models\LeadHasImages;
 use App\Models\BusinessCategory;
 use App\Models\Route; // Using the Route model
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -32,9 +33,28 @@ class OnlineLeadController extends Controller
         $businessCategories = BusinessCategory::all();
 
         // Fetch all routes for the dropdown
-        $routes = Route::all();
+        $routes = Route::with('officer')->get();
 
         return view('pages.leads.create_online', compact('imageTypes', 'guardianImageTypes', 'guarantorImageTypes', 'businessCategories', 'routes'));
+    }
+
+    /**
+     * Get Recovery Officers for a specific Route via AJAX.
+     */
+    public function getRecoveryOfficersByRoute($routeId)
+    {
+        try {
+            $officers = DB::table('collector_has_route')
+                ->join('user', 'collector_has_route.collector_id', '=', 'user.id')
+                ->where('collector_has_route.route_id', $routeId)
+                ->where('user.Status', 1)
+                ->select('user.id', 'user.Full_Name as text') // formatted for Select2
+                ->get();
+
+            return response()->json($officers);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -52,9 +72,10 @@ class OnlineLeadController extends Controller
             'periods' => 'required|integer|min:1',
             'address' => 'nullable|string',
             'notes' => 'nullable|string',
-            'route_id' => 'nullable|exists:route,id_route', 
+            'route_id' => 'nullable|exists:route,id_route',
             'city' => 'nullable|string',
             'source' => 'required|string',
+            'recovery_officer_id' => 'nullable|exists:user,id',
         ];
 
         $request->validate($rules);
@@ -74,7 +95,8 @@ class OnlineLeadController extends Controller
                 'route_id',
                 'district',
                 'city',
-                'source'
+                'source',
+                'recovery_officer_id'
             ]);
 
             $data['status'] = 'pending';

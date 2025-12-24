@@ -141,6 +141,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/customer/map-data', [\App\Http\Controllers\CustomerController::class, 'mapData'])
         ->name('customers.mapData');
 
+    Route::get('/leads/routes/{id}/officers', [\App\Http\Controllers\OnlineLeadController::class, 'getRecoveryOfficersByRoute'])->name('leads.getRouteOfficers');
     Route::get('/leads/global-map', [CustomerLeadController::class, 'globalMap'])->name('leads.globalMap');
 
     Route::get('/leads/{lead}/map', function (\App\Models\CustomerLead $lead) {
@@ -1028,7 +1029,7 @@ Route::get('/dailycollectionratio', [\App\Http\Controllers\ReportController::cla
 Route::get('/ajax/branch/centers-routes', [\App\Http\Controllers\ReportController::class, 'ajaxCentersRoutes'])
     ->name('ajax.centers.routes');
 
-Route::post('/latePayment_arrease','\App\Http\Controllers\TodayPaymentController@latePayment_arrease')->name('latePayment_arrease');
+Route::post('/latePayment_arrease', '\App\Http\Controllers\TodayPaymentController@latePayment_arrease')->name('latePayment_arrease');
 
 // use App\Services\SmsService;
 

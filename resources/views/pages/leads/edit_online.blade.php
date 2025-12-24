@@ -220,7 +220,8 @@
                                     <option value="">Select Route</option>
                                     @if(isset($routes))
                                     @foreach($routes as $route)
-                                    <option value="{{ $route->id_route }}" {{ (old('route_id') ?? $lead->route_id) == $route->id_route ? 'selected' : '' }}>
+                                    <option value="{{ $route->id_route }}"
+                                        {{ (old('route_id') ?? $lead->route_id) == $route->id_route ? 'selected' : '' }}>
                                         {{ $route->name }} - {{ $route->root_code }}
                                     </option>
                                     @endforeach
@@ -236,6 +237,15 @@
                                     @foreach(['online', 'facebook', 'whatsapp', 'instagram', 'tiktok', 'website', 'other'] as $src)
                                     <option value="{{ $src }}" {{ (old('source') ?? $lead->source) == $src ? 'selected' : '' }}>{{ ucfirst($src) }}</option>
                                     @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Recovery Officer Selection -->
+                            <div class="col-md-6">
+                                <label class="form-label">Recovery Officer</label>
+                                <input type="hidden" id="current_recovery_officer_id" value="{{ old('recovery_officer_id') ?? $lead->recovery_officer_id }}">
+                                <select name="recovery_officer_id" id="recovery_officer_id" class="form-control select2-officers @error('recovery_officer_id') is-invalid @enderror">
+                                    <option value="">Select Route First</option>
                                 </select>
                             </div>
 
@@ -385,6 +395,7 @@
                                             <img id="{{ $fieldName }}_preview" src="{{ $existingUrl ?? '' }}" class="{{ $existingUrl ? '' : 'd-none' }} rounded shadow-sm" style="max-height: 100px; max-width: 100%;">
                                             <span class="text-muted small {{ $existingUrl ? 'd-none' : 'd-block' }}" id="{{ $fieldName }}_placeholder">No image</span>
                                         </div>
+                                        @error($fieldName) <div class="text-danger small mt-2 text-center fw-bold">{{ $message }}</div> @enderror
                                     </div>
                                 </div>
                             </div>
@@ -394,7 +405,109 @@
                 </div>
                 @endif
 
-                {{-- GUARDIAN / GUARANTOR SECTIONS REMOVED FOR BREVITY IN EDIT ONLINE, ADD IF NEEDED --}}
+                {{-- SECTION 3: GUARDIAN INFO --}}
+                @if(isset($guardianImageTypes) && count($guardianImageTypes) > 0)
+                <div class="card card-modern bg-card-warning">
+                    <div class="card-body p-4">
+                        <div class="section-header">
+                            <div class="section-icon bg-warning-subtle text-warning">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <h5 class="mb-0 fw-bold text-dark">Guardian Documents</h5>
+                        </div>
+
+                        <div class="row g-4">
+                            @foreach($guardianImageTypes as $imageType)
+                            @php
+                            $fieldName = 'image_' . str_replace(' ', '_', strtolower($imageType['name']));
+                            $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
+
+                            // Check if image exists
+                            $existingImage = $lead->images->where('image_type', $imageType['name'])->first();
+                            $existingUrl = $existingImage ? Storage::url($existingImage->image_path) : null;
+                            @endphp
+                            <div class="col-md-6">
+                                <div class="upload-area">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <label class="form-label mb-0">{{ $imageType['name'] }}</label>
+                                    </div>
+
+                                    <input type="file" name="{{ $fieldName }}" id="{{ $fieldName }}" class="d-none" accept="image/*"
+                                        onchange="handleImageUpload(this, '{{ $fieldName }}_preview')"
+                                        data-image-type="{{ $imageType['name'] }}">
+
+                                    <div class="mt-auto">
+                                        <div class="d-flex flex-column flex-sm-row gap-2 mb-3">
+                                            <button type="button" class="btn btn-light btn-modern flex-grow-1 border text-dark py-2 px-3 text-truncate" style="font-size:0.85rem;"
+                                                onclick="triggerFileSelect('{{ $fieldName }}')">
+                                                <i class="bi bi-folder2-open me-1"></i> {{ $existingUrl ? 'Change' : 'Upload' }}
+                                            </button>
+                                        </div>
+                                        <div class="text-center" style="min-height: 100px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px;">
+                                            <img id="{{ $fieldName }}_preview" src="{{ $existingUrl ?? '' }}" class="{{ $existingUrl ? '' : 'd-none' }} rounded shadow-sm" style="max-height: 100px; max-width: 100%;">
+                                            <span class="text-muted small {{ $existingUrl ? 'd-none' : 'd-block' }}" id="{{ $fieldName }}_placeholder">No image</span>
+                                        </div>
+                                        @error($fieldName) <div class="text-danger small mt-2 text-center fw-bold">{{ $message }}</div> @enderror
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                {{-- SECTION 4: GUARANTOR INFO --}}
+                @if(isset($guarantorImageTypes) && count($guarantorImageTypes) > 0)
+                <div class="card card-modern bg-card-secondary">
+                    <div class="card-body p-4">
+                        <div class="section-header">
+                            <div class="section-icon bg-secondary-subtle text-secondary">
+                                <i class="bi bi-person-badge"></i>
+                            </div>
+                            <h5 class="mb-0 fw-bold text-dark">Guarantor Documents</h5>
+                        </div>
+
+                        <div class="row g-4">
+                            @foreach($guarantorImageTypes as $imageType)
+                            @php
+                            $fieldName = 'image_' . str_replace(' ', '_', strtolower($imageType['name']));
+                            $fieldName = preg_replace('/[^a-z0-9_]/', '_', $fieldName);
+
+                            // Check if image exists
+                            $existingImage = $lead->images->where('image_type', $imageType['name'])->first();
+                            $existingUrl = $existingImage ? Storage::url($existingImage->image_path) : null;
+                            @endphp
+                            <div class="col-md-6">
+                                <div class="upload-area">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <label class="form-label mb-0">{{ $imageType['name'] }}</label>
+                                    </div>
+
+                                    <input type="file" name="{{ $fieldName }}" id="{{ $fieldName }}" class="d-none" accept="image/*"
+                                        onchange="handleImageUpload(this, '{{ $fieldName }}_preview')"
+                                        data-image-type="{{ $imageType['name'] }}">
+
+                                    <div class="mt-auto">
+                                        <div class="d-flex flex-column flex-sm-row gap-2 mb-3">
+                                            <button type="button" class="btn btn-light btn-modern flex-grow-1 border text-dark py-2 px-3 text-truncate" style="font-size:0.85rem;"
+                                                onclick="triggerFileSelect('{{ $fieldName }}')">
+                                                <i class="bi bi-folder2-open me-1"></i> {{ $existingUrl ? 'Change' : 'Upload' }}
+                                            </button>
+                                        </div>
+                                        <div class="text-center" style="min-height: 100px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px;">
+                                            <img id="{{ $fieldName }}_preview" src="{{ $existingUrl ?? '' }}" class="{{ $existingUrl ? '' : 'd-none' }} rounded shadow-sm" style="max-height: 100px; max-width: 100%;">
+                                            <span class="text-muted small {{ $existingUrl ? 'd-none' : 'd-block' }}" id="{{ $fieldName }}_placeholder">No image</span>
+                                        </div>
+                                        @error($fieldName) <div class="text-danger small mt-2 text-center fw-bold">{{ $message }}</div> @enderror
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                @endif
 
                 <div class="d-grid mb-5">
                     <div class="d-flex flex-column flex-md-row gap-2 justify-content-center">
@@ -482,6 +595,76 @@
             var data = e.params.data;
             $('#city_text').val(data.text);
         });
+
+        // Initialize Select2 for Officers
+        $('.select2-officers').select2({
+            width: '100%',
+            placeholder: 'Select Route First',
+            allowClear: true
+        });
+
+        // Function to load officers
+        function loadOfficers(routeId, selectedOfficerId = null) {
+            var officerSelect = $('#recovery_officer_id');
+
+            // Clear current options
+            officerSelect.empty().trigger('change');
+
+            if (routeId) {
+                // Show loading state
+                var loadingOption = new Option('Loading...', '', false, false);
+                officerSelect.append(loadingOption).trigger('change');
+                officerSelect.prop('disabled', true);
+
+                $.ajax({
+                    url: '/leads/routes/' + routeId + '/officers',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(data) {
+                        officerSelect.empty();
+                        officerSelect.append(new Option('Select Recovery Officer', '', true, true)).trigger('change');
+
+                        if (data.length > 0) {
+                            $.each(data, function(index, officer) {
+                                var isSelected = (selectedOfficerId && officer.id == selectedOfficerId);
+                                var option = new Option(officer.text, officer.id, isSelected, isSelected);
+                                officerSelect.append(option);
+                            });
+
+                            // If explicit selection provided, ensure it's selected (Select2 needs trigger)
+                            if (selectedOfficerId) {
+                                officerSelect.val(selectedOfficerId).trigger('change');
+                            }
+                        } else {
+                            officerSelect.append(new Option('No officers found', '', false, false));
+                        }
+                    },
+                    error: function() {
+                        officerSelect.empty();
+                        officerSelect.append(new Option('Error loading officers', '', false, false));
+                    },
+                    complete: function() {
+                        officerSelect.prop('disabled', false);
+                    }
+                });
+            } else {
+                officerSelect.append(new Option('Select Route First', '', true, true)).trigger('change');
+            }
+        }
+
+        // Auto-select Recovery Officer based on Route
+        $('select[name="route_id"]').on('change', function() {
+            var routeId = $(this).val();
+            loadOfficers(routeId);
+        });
+
+        // Initial Load
+        var initialRouteId = $('select[name="route_id"]').val();
+        var initialOfficerId = $('#current_recovery_officer_id').val();
+
+        if (initialRouteId) {
+            loadOfficers(initialRouteId, initialOfficerId);
+        }
 
         // ===================== INITIAL DATA LOADING =====================
         var dbDistrict = "{{ $lead->district }}";
@@ -572,12 +755,22 @@
 
     function handleImageUpload(input, previewId) {
         if (input.files && input.files[0]) {
+            var file = input.files[0];
             var reader = new FileReader();
+            var placeholderId = previewId.replace('_preview', '_placeholder');
+
             reader.onload = function(e) {
-                $('#' + previewId).attr('src', e.target.result).removeClass('d-none');
-                $('#' + previewId.replace('_preview', '_placeholder')).addClass('d-none');
+                if (file.type === 'application/pdf') {
+                    // Show PDF icon or text
+                    $('#' + previewId).addClass('d-none'); // Hide image tag
+                    $('#' + placeholderId).removeClass('d-none').html('<i class="bi bi-file-earmark-pdf text-danger fs-1"></i><br>' + file.name);
+                } else {
+                    // Show Image
+                    $('#' + previewId).attr('src', e.target.result).removeClass('d-none');
+                    $('#' + placeholderId).addClass('d-none');
+                }
             }
-            reader.readAsDataURL(input.files[0]);
+            reader.readAsDataURL(file);
         }
     }
 

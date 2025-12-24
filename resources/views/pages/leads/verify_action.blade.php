@@ -190,7 +190,6 @@
                         </div>
 
 
-                        @if(optional($privilege)->verify_lead == 1)
                         <div class="mb-4">
                             <label class="form-label fw-bold mb-2">Verification Evidence</label>
 
@@ -227,11 +226,7 @@
                                 <i class="bi bi-check-circle-fill me-2"></i> Mark as Verified
                             </button>
                         </div>
-                        @else
-                        <div class="alert alert-warning">
-                            <i class="bi bi-lock-fill me-2"></i> You do not have permission to verify leads.
-                        </div>
-                        @endif
+                     
                     </form>
 
                 </div>
