@@ -36,4 +36,9 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password'          => 'hashed',
     ];
+
+
+    public function user_has_privileges(){
+        return $this->hasMany(UserHasPrivileges::class,'user_id','id');
+    }
 }
