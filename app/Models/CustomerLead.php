@@ -49,6 +49,11 @@ class CustomerLead extends Model
         return $this->belongsTo(User::class, 'recovery_officer_id');
     }
 
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     public function businessCategory()
     {
         return $this->belongsTo(BusinessCategory::class);

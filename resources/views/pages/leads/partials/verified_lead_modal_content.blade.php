@@ -187,29 +187,34 @@
         <p class="text-muted small mb-0">No images uploaded.</p>
     </div>
     @else
+    @php
+    // Flatten all images for the gallery modal
+    $allImages = $lead->images;
+    @endphp
+
     <div class="row g-3 pe-1">
         @php
         $groupedImages = $lead->images->groupBy('image_type');
+        $globalIndex = 0; // Track index across groups
         @endphp
         @foreach($groupedImages as $type => $images)
         <div class="col-12 col-md-6">
             <div class="card h-100 border-0 shadow-sm">
 
                 @if($images->count() > 1)
-                {{-- Carousel for multiple images --}}
+                {{-- Inline Carousel for Preview --}}
                 <div id="carousel-modal-{{ \Illuminate\Support\Str::slug($type) }}-{{ $loop->index }}" class="carousel slide" data-bs-ride="false">
                     <div class="carousel-inner rounded-top">
                         @foreach($images as $key => $img)
                         <div class="carousel-item {{ $key == 0 ? 'active' : '' }}">
-                            <a href="{{ Storage::url($img->image_path) }}" target="_blank" class="position-relative d-block">
+                            <a href="javascript:void(0)" onclick="openGallery({{ $globalIndex }})" class="position-relative d-block">
                                 <div class="ratio ratio-4x3 bg-light">
                                     <img src="{{ Storage::url($img->image_path) }}" class="d-block w-100 object-fit-cover" alt="{{ $type }}">
                                 </div>
                                 <div class="position-absolute bottom-0 start-0 w-100 p-1 bg-dark bg-opacity-50 text-white text-center small">
-                                    Click to View
+                                    <i class="bi bi-arrows-fullscreen me-1"></i> Click to View Gallery
                                 </div>
                             </a>
-                            {{-- Footer info for this specific image in carousel --}}
                             <div class="card-body p-2 bg-light rounded-bottom border-top">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div class="text-truncate fw-bold text-dark small" style="max-width: 120px;" title="{{ $type }}">
@@ -226,27 +231,28 @@
                                 </small>
                             </div>
                         </div>
+                        @php $globalIndex++; @endphp
                         @endforeach
                     </div>
-                    <button class="carousel-control-prev" type="button" data-bs-target="#carousel-modal-{{ \Illuminate\Support\Str::slug($type) }}-{{ $loop->index }}" data-bs-slide="prev" style="width: 10%;">
-                        <span class="carousel-control-prev-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.5); border-radius: 50%; padding: 10px;"></span>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carousel-modal-{{ \Illuminate\Support\Str::slug($type) }}-{{ $loop->index }}" data-bs-slide="prev" style="width: 15%;">
+                        <span class="carousel-control-prev-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.5); border-radius: 50%; padding: 8px; background-size: 60%;"></span>
                         <span class="visually-hidden">Previous</span>
                     </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#carousel-modal-{{ \Illuminate\Support\Str::slug($type) }}-{{ $loop->index }}" data-bs-slide="next" style="width: 10%;">
-                        <span class="carousel-control-next-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.5); border-radius: 50%; padding: 10px;"></span>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carousel-modal-{{ \Illuminate\Support\Str::slug($type) }}-{{ $loop->index }}" data-bs-slide="next" style="width: 15%;">
+                        <span class="carousel-control-next-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.5); border-radius: 50%; padding: 8px; background-size: 60%;"></span>
                         <span class="visually-hidden">Next</span>
                     </button>
                 </div>
 
                 @else
-                {{-- Single Image - Standard Display --}}
+                {{-- Single Image Preview --}}
                 @foreach($images as $img)
-                <a href="{{ Storage::url($img->image_path) }}" target="_blank" class="position-relative d-block">
+                <a href="javascript:void(0)" onclick="openGallery({{ $globalIndex }})" class="position-relative d-block">
                     <div class="ratio ratio-4x3 bg-light rounded-top">
                         <img src="{{ Storage::url($img->image_path) }}" class="card-img-top object-fit-cover" alt="{{ $img->image_type }}">
                     </div>
                     <div class="position-absolute bottom-0 start-0 w-100 p-1 bg-dark bg-opacity-50 text-white text-center small">
-                        Click to View
+                        <i class="bi bi-arrows-fullscreen me-1"></i> Click to View Gallery
                     </div>
                 </a>
                 <div class="card-body p-2 bg-light rounded-bottom">
@@ -264,6 +270,7 @@
                         {{ $img->created_at->format('d M, H:i') }}
                     </small>
                 </div>
+                @php $globalIndex++; @endphp
                 @endforeach
                 @endif
 
@@ -273,4 +280,45 @@
     </div>
     @endif
 </div>
+</div>
+
+{{-- Fullscreen Gallery Modal --}}
+<div class="modal fade" id="imageGalleryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen modal-dialog-centered">
+        <div class="modal-content border-0 shadow-none" style="background-color: rgba(0, 0, 0, 0.9); backdrop-filter: blur(10px);">
+            <div class="modal-header border-0 p-0 position-absolute top-0 end-0 m-3" style="z-index: 1055;">
+                <button type="button" class="btn-close btn-close-black bg-white p-3 rounded-circle" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0 d-flex align-items-center justify-content-center h-100">
+                <div id="galleryCarousel" class="carousel slide w-100 h-100" data-bs-ride="false" data-bs-interval="false">
+                    <div class="carousel-inner h-100 d-flex align-items-center">
+                        @if(isset($allImages))
+                        @foreach($allImages as $index => $img)
+                        <div class="carousel-item {{ $index == 0 ? 'active' : '' }} h-100">
+                            <div class="d-flex align-items-center justify-content-center h-100 w-100 position-relative">
+                                <img src="{{ Storage::url($img->image_path) }}" class="d-block mw-100 mh-100" style="object-fit: contain;" alt="{{ $img->image_type }}">
+                                <div class="position-absolute bottom-0 start-50 translate-middle-x mb-5 text-white bg-dark bg-opacity-75 px-4 py-2 rounded-pill" style="z-index: 1060; pointer-events: none;">
+                                    <span class="fw-bold">{{ $img->image_type }}</span>
+                                    <span class="mx-2">|</span>
+                                    <small>{{ $img->created_at->format('d M Y, h:i A') }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                        @endif
+                    </div>
+                    @if(isset($allImages) && $allImages->count() > 1)
+                    <button class="carousel-control-prev" type="button" data-bs-target="#galleryCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon p-4 bg-dark rounded-circle bg-opacity-50" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#galleryCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon p-4 bg-dark rounded-circle bg-opacity-50" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

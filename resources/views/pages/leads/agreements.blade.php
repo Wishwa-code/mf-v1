@@ -1,5 +1,10 @@
 @extends('layout.admin')
 
+@section('head')
+<!-- DataTables -->
+<link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+@endsection
+
 @section('content')
 <div class="container-fluid pb-5">
     <!-- Page Header -->
@@ -107,9 +112,89 @@
             border-radius: 20px;
             box-shadow: 0 8px 20px rgba(85, 110, 230, 0.2);
         }
+
+        /* Avatar */
+        .avatar-lg-modern {
+            width: 80px;
+            height: 80px;
+            font-size: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(85, 110, 230, 0.2);
+        }
+
+        /* Table Styling */
+        .table-modern thead th {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #edf2f9;
+            padding: 1rem 0.75rem;
+        }
+
+        .table-modern tbody td {
+            padding: 1rem 0.75rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #edf2f9;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+
+        .table-modern tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-modern tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        .table-modern tbody tr:hover {
+            background-color: #f8f9fa;
+        }
     </style>
 
-    <div class="row g-4">
+    <!-- Agreements List Table -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card card-modern">
+                <div class="card-header bg-white border-bottom-0 py-4 px-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <h5 class="mb-0 fw-bold text-dark">Pending Agreements</h5>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="small text-muted fw-bold text-nowrap">Filter by Creator:</label>
+                        <select id="filter_created_by" class="form-select form-select-sm" style="width: 200px;">
+                            <option value="">All Users</option>
+                            @foreach($users as $user)
+                            <option value="{{ $user->id }}">{{ $user->Full_Name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive p-3">
+                        <table id="agreements-table" class="table table-modern table-borderless dt-responsive nowrap w-100">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Lead Name</th>
+                                    <th>Phone</th>
+                                    <th>Route</th>
+                                    <th>Status</th>
+                                    <th>Created By</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4" id="action-section">
         <!-- Left Side: Selection and Upload -->
         <div class="col-lg-8">
             <div class="card card-modern h-100">
@@ -298,6 +383,8 @@
 @endsection
 
 @section('script')
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script>
     const GOOGLE_MAPS_API_KEY = "{{ config('services.google_maps.key') }}";
 
@@ -318,15 +405,99 @@
     }
 
     $(document).ready(function() {
-        // Initialize Select2 instead of Choices.js
+        // Initialize Select2
         $('.select2-agreement').select2({
             placeholder: 'Search and select a customer...',
             allowClear: true,
             width: '100%',
-            dropdownParent: $('body') // Ensures dropdown isn't cut off
+            dropdownParent: $('body')
         });
 
-        // Handle Change
+        // DataTable Initialization
+        const table = $('#agreements-table').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: "{{ route('leads.agreementData') }}",
+                data: function(d) {
+                    d.created_by = $('#filter_created_by').val();
+                }
+            },
+            columns: [{
+                    data: 'id',
+                    name: 'id'
+                },
+                {
+                    data: 'full_name',
+                    name: 'full_name'
+                },
+                {
+                    data: 'phone_number',
+                    name: 'phone_number'
+                },
+                {
+                    data: 'route.name',
+                    name: 'route.name',
+                    defaultContent: '-'
+                },
+                {
+                    data: 'status',
+                    name: 'status',
+                    render: function(data) {
+                        return `<span class="badge bg-soft-info text-info font-size-12">${data}</span>`;
+                    }
+                },
+                {
+                    data: 'created_by_name',
+                    name: 'creator.Full_Name',
+                    defaultContent: '-'
+                },
+                {
+                    data: 'action',
+                    name: 'action',
+                    orderable: false,
+                    searchable: false
+                }
+            ],
+            order: [
+                [0, 'desc']
+            ],
+            language: {
+                searchPlaceholder: "Search...",
+                search: ""
+            },
+            dom: "<'row mb-3'<'col-sm-12 col-md-6 d-flex align-items-center'B><'col-sm-12 col-md-6'f>>" +
+                "<'row'<'col-sm-12'tr>>" +
+                "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+            buttons: [{
+                    extend: 'csv',
+                    className: 'btn btn-light btn-sm border'
+                },
+                {
+                    extend: 'excel',
+                    className: 'btn btn-light btn-sm border'
+                },
+                {
+                    extend: 'pdf',
+                    className: 'btn btn-light btn-sm border'
+                },
+                {
+                    extend: 'print',
+                    className: 'btn btn-light btn-sm border'
+                }
+            ],
+            initComplete: function() {
+                $('.dataTables_filter input').addClass('form-control form-control-sm').css('margin-left', '10px');
+                $('.dt-buttons').addClass('d-flex gap-1');
+            }
+        });
+
+        // Filter Change
+        $('#filter_created_by').change(function() {
+            table.draw();
+        });
+
+        // Handle Select2 Change
         $('.select2-agreement').on('select2:select', function(e) {
             const leadId = e.params.data.id;
             if (leadId) {
@@ -336,12 +507,33 @@
             }
         });
 
+        // Clear Selection
         $('.select2-agreement').on('select2:clear', function(e) {
             $('#image_upload_section_agreement').slideUp(300);
             $('#select_lead_msg_agreement').slideDown(300);
             resetAgreementLeadDetails();
         });
     });
+
+    // Function called by "Verify" button in table
+    window.selectLead = function(id) {
+        // Set Select2 Value
+        $('.select2-agreement').val(id).trigger('change');
+
+        // Since triggering change might rely on actual selection event which Select2 manual trigger might miss for 'select2:select'
+        // We ensure we load details manually if the event doesn't fire as expected or to be safe.
+        // Actually .val().trigger('change') fires 'change' but not 'select2:select'. 
+        // So we need to call the load function manually too.
+
+        loadAgreementLeadDetails(id);
+        $('#image_upload_section_agreement').slideDown(300);
+        $('#select_lead_msg_agreement').slideUp(300);
+
+        // Scroll to action section
+        $('html, body').animate({
+            scrollTop: $("#action-section").offset().top - 20
+        }, 500);
+    };
 
     // Agreement Images Functions
     function loadAgreementLeadDetails(leadId) {

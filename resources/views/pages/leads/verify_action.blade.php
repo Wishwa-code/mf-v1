@@ -2,7 +2,7 @@
 
 @section('head')
 <!-- Choices.js CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+<link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 <style>
     /* Modern Card Styling */
     .card-modern {
@@ -11,7 +11,7 @@
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         background: #fff;
-        /* overflow: hidden; Removed to allow dropdown to expand */
+        overflow: hidden;
         margin-bottom: 1.5rem;
     }
 
@@ -85,154 +85,172 @@
 </div>
 
 <div class="row justify-content-center">
-    <div class="col-lg-8">
-
-        <!-- Step 1: Select Lead -->
-        <div class="card card-modern">
+    <!-- Lead List -->
+    <div class="col-lg-10">
+        <div class="card card-modern h-100">
             <div class="card-body p-4">
                 <div class="section-header">
                     <div class="section-icon bg-primary-subtle text-primary">
                         <i class="bi bi-person-check-fill"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <h5 class="mb-0 fw-bold text-dark">Step 1: Select Lead</h5>
+                        <h5 class="mb-0 fw-bold text-dark">Select Lead</h5>
                         <small class="text-muted">Choose a pending lead to start verification</small>
                     </div>
                     <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2">Pending</span>
                 </div>
 
-                @if($leads->isEmpty())
-                <div class="alert alert-success text-center border-0 bg-success-subtle text-success py-4">
-                    <i class="bi bi-check-circle-fill fs-1 mb-2 d-block"></i>
-                    <h5 class="fw-bold">All Caught Up!</h5>
-                    <p class="mb-0">There are no pending leads requiring verification at this moment.</p>
+                <div class="table-responsive">
+                    <table id="verifyTable" class="table table-hover align-middle table-modern w-100">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Name</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Phone</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Address</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Type</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
-                @else
-                <div class="mb-2">
-                    <label class="form-label fw-bold text-dark">Search Customer</label>
-                    <select class="form-control" id="lead_select">
-                        <option value="">Select a lead to verify...</option>
-                        @foreach($leads as $lead)
-                        <option value="{{ $lead->id }}">{{ $lead->full_name }} - {{ $lead->phone_number }} ({{ $lead->address }})</option>
-                        @endforeach
-                    </select>
-                    <div class="form-text mt-2"><i class="bi bi-search me-1"></i> Type name or phone number to search.</div>
-                </div>
-                @endif
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Lead Details & Verification (Hidden initially) -->
-        <div id="verification_section" style="display: none;">
-
-            <div class="card card-modern border-0">
-                <div class="card-body p-4">
-                    <div class="section-header">
-                        <div class="section-icon bg-info-subtle text-info">
-                            <i class="bi bi-info-circle-fill"></i>
-                        </div>
-                        <h5 class="mb-0 fw-bold text-dark">Lead Details</h5>
+<!-- Verification Details Modal -->
+<div class="modal fade" id="verificationModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-bottom-0 px-4 py-3">
+                <div class="d-flex align-items-center">
+                    <div class="section-icon bg-info-subtle text-info me-3 rounded-circle" style="width: 40px; height: 40px; font-size: 1.2rem;">
+                        <i class="bi bi-shield-check"></i>
                     </div>
-
-                    <input type="hidden" id="selected_lead_id">
-                    <input type="hidden" id="lead_lat">
-                    <input type="hidden" id="lead_lng">
-
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="small text-muted text-uppercase fw-bold">Full Name</label>
-                            <div class="fs-5 fw-bold text-dark" id="disp_name"></div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="small text-muted text-uppercase fw-bold">Phone Number</label>
-                            <div class="fs-5 text-dark" id="disp_phone"></div>
-                        </div>
-                        <div class="col-12">
-                            <label class="small text-muted text-uppercase fw-bold">Address</label>
-                            <div class="text-dark bg-light p-3 rounded-3" id="disp_address"></div>
-                        </div>
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0">Lead Verification</h5>
+                        <small class="text-muted" id="modal_lead_name_header"></small>
                     </div>
                 </div>
+                <button type="button" class="btn-close bg-light p-2 rounded-circle" onclick="closeVerification()"></button>
             </div>
+            <div class="modal-body p-0 bg-light">
+                <div class="container-fluid py-3">
+                    <div class="row justify-content-center">
+                        <div class="col-12">
+                            <!-- Lead Details -->
+                            <div id="verification_section">
+                                <div class="card card-modern border-0 mb-3 shadow-sm">
+                                    <div class="card-body p-4">
+                                        <h6 class="fw-bold mb-3 text-uppercase text-muted small">Customer Details</h6>
 
-            <!-- Step 2: Location & Comment -->
-            <div class="card card-modern">
-                <div class="card-body p-4">
-                    <div class="section-header">
-                        <div class="section-icon bg-success-subtle text-success">
-                            <i class="bi bi-geo-alt-fill"></i>
-                        </div>
-                        <h5 class="mb-0 fw-bold text-dark">Step 2: Verification</h5>
-                    </div>
+                                        <input type="hidden" id="selected_lead_id">
+                                        <input type="hidden" id="lead_lat">
+                                        <input type="hidden" id="lead_lng">
 
-                    <div class="text-center mb-4">
-                        <div id="locationStatus" class="mt-3">
-                            <div class="p-3 bg-light rounded border text-muted">
-                                <span class="spinner-border spinner-border-sm me-2"></span> Waiting to detect location...
-                            </div>
-                        </div>
-                        <div class="mt-2">
-                            <button type="button" class="btn btn-sm btn-link text-decoration-none" onclick="detectUserLocation()">
-                                <i class="bi bi-arrow-clockwise me-1"></i> Refresh Location
-                            </button>
-                        </div>
-                    </div>
-
-                    <form id="verifyForm">
-                        <input type="hidden" id="visited_latitude" name="visited_latitude">
-                        <input type="hidden" id="visited_longitude" name="visited_longitude">
-
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">Visit Comments</label>
-                            <textarea class="form-control" id="visit_notes" name="visit_notes" rows="4"
-                                placeholder="Verification disabled. Please detect location first..." disabled></textarea>
-                            <div class="form-text">You must be within 300 meters of the lead to verify.</div>
-                        </div>
-
-
-                        <div class="mb-4">
-                            <label class="form-label fw-bold mb-2">Verification Evidence</label>
-
-                            <div class="upload-area disabled" id="verification_upload_area">
-                                <div class="d-flex justify-content-center align-items-center mb-3">
-                                    <div class="bg-light rounded-circle p-3 text-primary">
-                                        <i class="bi bi-camera-fill fs-3"></i>
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="small text-muted text-uppercase fw-bold">Full Name</label>
+                                                <div class="fs-5 fw-bold text-dark" id="disp_name"></div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="small text-muted text-uppercase fw-bold">Phone Number</label>
+                                                <div class="fs-5 text-dark" id="disp_phone"></div>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="small text-muted text-uppercase fw-bold">Address</label>
+                                                <div class="text-dark bg-light p-3 rounded-3" id="disp_address"></div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <h6 class="fw-bold text-dark mb-1">Upload Photo</h6>
-                                <p class="text-muted small mb-3">Take a photo or upload file</p>
 
-                                <input class="d-none" type="file" id="verification_image" name="verification_image" accept="image/*" onchange="handleFileSelect(this)">
+                                <!-- Step 2: Location & Comment -->
+                                <div class="card card-modern">
+                                    <div class="card-body p-4">
+                                        <div class="section-header">
+                                            <div class="section-icon bg-success-subtle text-success">
+                                                <i class="bi bi-geo-alt-fill"></i>
+                                            </div>
+                                            <h5 class="mb-0 fw-bold text-dark">Step 2: Verification</h5>
+                                        </div>
 
-                                <div class="d-flex flex-column flex-sm-row justify-content-center gap-2 mb-3">
-                                    <button type="button" class="btn btn-outline-primary btn-modern flex-grow-1 flex-sm-grow-0 px-4" id="openWebcamBtn" disabled>
-                                        <i class="bi bi-camera-video me-1"></i> Camera
-                                    </button>
-                                    <button type="button" class="btn btn-light btn-modern border flex-grow-1 flex-sm-grow-0 px-4" id="openFileBtn" onclick="$('#verification_image').click()" disabled>
-                                        <i class="bi bi-folder2-open me-1"></i> Select File
-                                    </button>
-                                </div>
+                                        <div class="text-center mb-4">
+                                            <div id="locationStatus" class="mt-3">
+                                                <div class="p-3 bg-light rounded border text-muted">
+                                                    <span class="spinner-border spinner-border-sm me-2"></span> Waiting to detect location...
+                                                </div>
+                                            </div>
+                                            <div class="mt-2">
+                                                <button type="button" class="btn btn-sm btn-link text-decoration-none" onclick="detectUserLocation()">
+                                                    <i class="bi bi-arrow-clockwise me-1"></i> Refresh Location
+                                                </button>
+                                            </div>
+                                        </div>
 
-                                <div id="capturedImagePreview" class="d-none position-relative d-inline-block">
-                                    <img src="" class="img-thumbnail rounded-3 shadow-sm border-0" style="max-height: 120px; object-fit: cover;">
-                                    <button type="button" class="btn-close position-absolute top-0 end-0 bg-white shadow-sm p-1 m-1"
-                                        aria-label="Remove" onclick="resetCapture()"></button>
+                                        <form id="verifyForm">
+                                            <input type="hidden" id="visited_latitude" name="visited_latitude">
+                                            <input type="hidden" id="visited_longitude" name="visited_longitude">
+
+                                            <div class="mb-4">
+                                                <label class="form-label fw-bold">Visit Comments</label>
+                                                <textarea class="form-control" id="visit_notes" name="visit_notes" rows="4"
+                                                    placeholder="Verification disabled. Please detect location first..." disabled></textarea>
+                                                <div class="form-text">You must be within 300 meters of the lead to verify.</div>
+                                            </div>
+
+
+                                            <div class="mb-4">
+                                                <label class="form-label fw-bold mb-2">Verification Evidence</label>
+
+                                                <div class="upload-area disabled" id="verification_upload_area">
+                                                    <div class="d-flex justify-content-center align-items-center mb-3">
+                                                        <div class="bg-light rounded-circle p-3 text-primary">
+                                                            <i class="bi bi-camera-fill fs-3"></i>
+                                                        </div>
+                                                    </div>
+                                                    <h6 class="fw-bold text-dark mb-1">Upload Photo</h6>
+                                                    <p class="text-muted small mb-3">Take a photo or upload file</p>
+
+                                                    <input class="d-none" type="file" id="verification_image" name="verification_images[]" accept="image/*" multiple onchange="handleFileSelect(this)">
+
+                                                    <div class="d-grid gap-2 d-sm-flex justify-content-center mb-3">
+                                                        <button type="button" class="btn btn-outline-primary btn-modern flex-grow-1" id="openWebcamBtn" disabled>
+                                                            <i class="bi bi-camera-video me-1"></i> Camera
+                                                        </button>
+                                                        <button type="button" class="btn btn-light btn-modern border flex-grow-1" id="openFileBtn" onclick="$('#verification_image').click()" disabled>
+                                                            <i class="bi bi-folder2-open me-1"></i> Select File
+                                                        </button>
+                                                    </div>
+
+                                                    <div id="capturedImagePreview" class="d-none mt-3">
+                                                        <div class="d-flex flex-wrap gap-2 justify-content-center" id="imagePreviewContainer">
+                                                            <!-- Images will be appended here -->
+                                                        </div>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger mt-2 rounded-pill" onclick="resetCapture()">
+                                                            <i class="bi bi-trash me-1"></i> Clear All Images
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="d-grid mb-3">
+                                                <button type="button" class="btn btn-primary btn-lg rounded-pill shadow-sm" id="submitVerificationBtn" disabled>
+                                                    <i class="bi bi-check-circle-fill me-2"></i> Mark as Verified
+                                                </button>
+                                            </div>
+
+                                        </form>
+
+                                    </div>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="d-grid mb-3">
-                            <button type="button" class="btn btn-primary btn-lg rounded-pill shadow-sm" id="submitVerificationBtn" disabled>
-                                <i class="bi bi-check-circle-fill me-2"></i> Mark as Verified
-                            </button>
-                        </div>
-                     
-                    </form>
-
+                    </div>
                 </div>
             </div>
         </div>
-
     </div>
 </div>
 
@@ -262,33 +280,70 @@
 @endsection
 
 @section('script')
-<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Init Choices.js
-        const element = document.getElementById('lead_select');
-        const choices = new Choices(element, {
-            searchEnabled: true,
-            itemSelectText: '',
-            placeholder: true,
-            placeholderValue: 'Type to search...'
+    $(function() {
+        // Initialize DataTable
+        var table = $('#verifyTable').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: "{{ route('leads.verifyData') }}",
+            columns: [{
+                    data: 'full_name',
+                    name: 'full_name',
+                    class: 'fw-bold'
+                },
+                {
+                    data: 'phone_number',
+                    name: 'phone_number'
+                },
+                {
+                    data: 'address',
+                    name: 'address'
+                },
+                {
+                    data: 'type',
+                    name: 'type'
+                },
+                {
+                    data: 'action',
+                    name: 'action',
+                    orderable: false,
+                    searchable: false,
+                    class: 'text-end'
+                }
+            ],
+            language: {
+                searchPlaceholder: "Search leads...",
+                search: "",
+                emptyTable: "No pending leads found for verification."
+            },
+            dom: "<'row mb-3'<'col-12'f>>" +
+                "<'row'<'col-sm-12'tr>>" +
+                "<'row mt-3'<'col-sm-12'p>>",
+            initComplete: function() {
+                $('.dataTables_filter input').addClass('form-control');
+                $('.dataTables_length select').addClass('form-select');
+            }
         });
 
-        // Handle Selection
-        element.addEventListener('change', function(e) {
-            const leadId = e.detail.value;
-            if (!leadId) {
-                $('#verification_section').slideUp();
-                return;
-            }
+        // Global function for the Verify button
+        window.loadLeadVerification = function(leadId) {
 
-            // Fetch info
+            // Show Modal
+            var myModal = new bootstrap.Modal(document.getElementById('verificationModal'), {
+                keyboard: false
+            });
+            myModal.show();
+
             $.ajax({
                 url: "{{ url('/api/leads') }}/" + leadId + "/details",
                 method: 'GET',
                 success: function(res) {
                     if (res.success) {
                         $('#selected_lead_id').val(res.id);
+                        $('#modal_lead_name_header').text(res.full_name); // Set header name
                         $('#disp_name').text(res.full_name);
                         $('#disp_phone').text(res.phone_number);
                         $('#disp_address').text(res.address);
@@ -298,30 +353,31 @@
 
                         // Reset form
                         $('#locationStatus').html('');
-                        // Reset form
-                        $('#locationStatus').html('');
-                        $('#visit_notes').val('').prop('disabled', true);
-                        $('#locationStatus').html('');
                         $('#visit_notes').val('').prop('disabled', true);
 
                         $('#verification_upload_area').addClass('disabled');
                         $('#openWebcamBtn').prop('disabled', true);
                         $('#openFileBtn').prop('disabled', true);
+                        $('#openFileBtn').prop('disabled', true);
                         resetCapture();
 
-                        $('#submitVerificationBtn').prop('disabled', true);
                         $('#submitVerificationBtn').prop('disabled', true);
                         $('#visited_latitude').val('');
                         $('#visited_longitude').val('');
 
-                        $('#verification_section').slideDown(400, function() {
-                            // Auto-detect location once visible
-                            detectUserLocation();
-                        });
+                        // Auto-detect location
+                        detectUserLocation();
                     }
                 }
             });
-        });
+        };
+
+        window.closeVerification = function() {
+            // Hide modal
+            $('#verificationModal').modal('hide');
+            // reset form data/UI if needed
+            $('#selected_lead_id').val('');
+        }
 
         // Haversine
         function getDistanceFromLatLonInM(lat1, lon1, lat2, lon2) {
@@ -463,9 +519,10 @@
             formData.append('visited_latitude', lat);
             formData.append('visited_longitude', lng);
 
-            const fileInput = document.getElementById('verification_image');
-            if (fileInput.files.length > 0) {
-                formData.append('verification_image', fileInput.files[0]);
+            if (selectedFiles.length > 0) {
+                for (let i = 0; i < selectedFiles.length; i++) {
+                    formData.append('verification_images[]', selectedFiles[i]);
+                }
             }
 
             $.ajax({
@@ -549,34 +606,65 @@
                     type: "image/jpeg"
                 });
 
-                // Set file to input
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(file);
-                document.getElementById('verification_image').files = dataTransfer.files;
-
-                // Show preview
-                $('#capturedImagePreview img').attr('src', URL.createObjectURL(blob));
-                $('#capturedImagePreview').removeClass('d-none');
+                selectedFiles.push(file);
+                renderPreviews();
 
                 modal.hide();
             }, 'image/jpeg', 0.8);
         });
 
+        // Store selected files
+        let selectedFiles = [];
+
+        window.renderPreviews = function() {
+            const container = $('#imagePreviewContainer');
+            container.html('');
+
+            if (selectedFiles.length === 0) {
+                $('#capturedImagePreview').addClass('d-none');
+                return;
+            }
+
+            $('#capturedImagePreview').removeClass('d-none');
+
+            selectedFiles.forEach((file, index) => {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    const imgHtml = `
+                        <div class="position-relative d-inline-block">
+                            <img src="${e.target.result}" class="img-thumbnail rounded-3 shadow-sm border-0" style="width: 100px; height: 100px; object-fit: cover;">
+                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 rounded-circle p-0 d-flex align-items-center justify-content-center shadow-sm" 
+                                style="width: 20px; height: 20px;" onclick="removeImage(${index})">
+                                <i class="bi bi-x small"></i>
+                            </button>
+                        </div>
+                    `;
+                    container.append(imgHtml);
+                }
+                reader.readAsDataURL(file);
+            });
+        }
+
+        window.removeImage = function(index) {
+            selectedFiles.splice(index, 1);
+            renderPreviews();
+        }
+
         window.resetCapture = function() {
             document.getElementById('verification_image').value = "";
-            $('#capturedImagePreview').addClass('d-none');
-            $('#capturedImagePreview img').attr('src', '');
+            selectedFiles = [];
+            renderPreviews();
         }
 
         window.handleFileSelect = function(input) {
-            if (input.files && input.files[0]) {
-                var reader = new FileReader();
-                reader.onload = function(e) {
-                    $('#capturedImagePreview img').attr('src', e.target.result);
-                    $('#capturedImagePreview').removeClass('d-none');
-                }
-                reader.readAsDataURL(input.files[0]);
+            if (input.files && input.files.length > 0) {
+                Array.from(input.files).forEach(file => {
+                    selectedFiles.push(file);
+                });
+                renderPreviews();
             }
+            // Clear input so same files can be selected again if needed
+            input.value = '';
         }
     });
 </script>

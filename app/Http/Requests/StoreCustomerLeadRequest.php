@@ -52,7 +52,7 @@ class StoreCustomerLeadRequest extends FormRequest
 
                         // Rule for each file inside the array
                         // We use * wildcard to validate each item in the array
-                        $rules[$fieldName . '.*'] = ['file', 'mimes:jpeg,jpg,png,gif,webp,pdf', 'max:10240'];
+                        $rules[$fieldName . '.*'] = ['file', 'mimes:jpeg,jpg,png,gif,webp,pdf'];
                     }
                 }
             }

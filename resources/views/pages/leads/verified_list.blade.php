@@ -115,6 +115,7 @@
                                     <th>City</th>
                                     <th>Address</th>
                                     <th>Status</th>
+                                    <th>Created By</th>
                                     <th>Visit Status</th>
                                 </tr>
                             </thead>
@@ -149,6 +150,20 @@
 @section('script')
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script>
+    function openGallery(index) {
+        // Initialize carousel to specific index
+        const myCarousel = document.querySelector('#galleryCarousel');
+        const carousel = new bootstrap.Carousel(myCarousel, {
+            interval: false
+        });
+
+        carousel.to(index);
+
+        const myModal = new bootstrap.Modal(document.getElementById('imageGalleryModal'));
+        myModal.show();
+    }
+</script>
 <script>
     $(function() {
         (async () => {
@@ -208,6 +223,11 @@
                 {
                     data: 'status',
                     name: 'status'
+                },
+                {
+                    data: 'created_by',
+                    name: 'creator.Full_Name',
+                    defaultContent: '-'
                 },
                 {
                     data: 'is_visited',
