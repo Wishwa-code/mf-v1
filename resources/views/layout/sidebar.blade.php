@@ -1,3 +1,4 @@
+@include('layout.partials.sidebar-styles')
 <!-- Sidebar -left -->
 <div class="h-100" id="leftside-menu-container" data-simplebar>
     <!--- Sidemenu -->
