@@ -883,10 +883,20 @@ class UserController extends Controller
         $currentWeekPendingData = tableWithBranch('installments', 'installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
             ->select(
                 'customer_loan.idCustomer_Loan as loan_id',
                 'customer.idCustomer as customer_id',
                 DB::raw('CONCAT(customer.First_Name, " ", customer.Last_Name) as customer_name'),
+
+                // ✅ IMPORTANT: DO NOT SELECT center.No / center.Name directly
+                DB::raw('MAX(center.idCenter) as center_id'),
+                DB::raw('IFNULL(MAX(CONCAT(center.No, " - ", center.Name)), "-") as center_name'),
+
+
+
                 'customer_loan.Amount as capital_amount',
                 'customer_loan.Total_Loan_Amount as full_loan_amount',
                 // Current week pending amount (installments between Sunday and Saturday of current week)
@@ -1178,8 +1188,18 @@ class UserController extends Controller
         $weeklyNotPaidData = tableWithBranch('installments', 'installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            // ✅ Center joins
+            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
             ->select(
                 'customer_loan.idCustomer_Loan as loan_id',
+
+                // ✅ IMPORTANT: DO NOT SELECT center.No / center.Name directly
+                DB::raw('MAX(center.idCenter) as center_id'),
+                DB::raw('IFNULL(MAX(CONCAT(center.No, " - ", center.Name)), "-") as center_name'),
+
+
                 'customer.idCustomer as customer_id',
                 DB::raw('CONCAT(customer.First_Name, " ", customer.Last_Name) as customer_name'),
                 'customer_loan.Amount as capital_amount',
@@ -1195,7 +1215,7 @@ class UserController extends Controller
             ->where('installments.Status', '=', '0')
             ->where('installments.Total_Balance', '>', 0)
             ->whereBetween('installments.Installment_Date', [$weekStart, $weekToday])
-            ->groupBy('customer_loan.idCustomer_Loan', 'customer.idCustomer', 'customer.First_Name', 'customer.Last_Name', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount')
+            ->groupBy('center.idCenter','customer_loan.idCustomer_Loan', 'customer.idCustomer', 'customer.First_Name', 'customer.Last_Name', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount')
             ->havingRaw('this_week_not_paid > 0')
             ->orderBy('this_week_not_paid', 'DESC')
             ->get();

@@ -782,6 +782,7 @@
                                     <thead class="modern-table-header modern-table-warning">
                                         <tr>
                                             <th>Loan ID</th>
+                                            <th>Center</th>
                                             <th>Customer ID</th>
                                             <th>Customer Name</th>
                                             <th class="text-end" title="Loan Amount - Capital amount">Capital Amount</th>
@@ -849,6 +850,7 @@
                                     <thead class="modern-table-header">
                                         <tr>
                                             <th>Loan ID</th>
+                                            <th>Center</th>
                                             <th>Customer ID</th>
                                             <th>Customer Name</th>
                                             <th class="text-end" title="Loan Amount - Capital amount">Capital Amount</th>
@@ -941,6 +943,7 @@
 @endsection
 
 @section('script')
+
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/countup.js/2.0.7/countUp.umd.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -958,6 +961,9 @@
     <script type="text/javascript" charset="utf8"
         src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
     <script>
+        const fmt = (v) => new Intl.NumberFormat().format(parseFloat(v || 0).toFixed(2));
+        const safe = (v) => (v === null || v === undefined || v === '') ? '-' : v;
+
         $(document).on('click', '.btn-close', function() {
             ['#totalOutstandingModal',
                 '#weeklyNotPaidModal',
@@ -1319,6 +1325,7 @@
                         tbody += `
                             <tr>
                                 <td>${item.loan_id}</td>
+                                <td>${safe(item.center_name)}</td>
                                 <td>${item.customer_id}</td>
                                 <td>${item.customer_name}</td>
                                 <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.capital_amount).toFixed(2))}</td>
@@ -1405,6 +1412,7 @@
                         tbody += `
                             <tr>
                                 <td>${item.loan_id}</td>
+                                <td>${safe(item.center_name)}</td>
                                 <td>${item.customer_id}</td>
                                 <td>${item.customer_name}</td>
                                 <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.capital_amount).toFixed(2))}</td>
