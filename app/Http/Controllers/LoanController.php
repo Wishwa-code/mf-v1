@@ -707,7 +707,7 @@ class LoanController extends Controller
             $skip = DB::table('app_settings')
                 ->where('key', '=','due_skip_type')
                 ->value('value');
-            Log::info($skip);
+
             $skipType="installment";
             if ($skip=="skip_day"){
                 $skipType="day";
