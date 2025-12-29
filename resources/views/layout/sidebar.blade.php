@@ -724,6 +724,10 @@
                                     <a href="/report/penalty-deduction">Penalty Deduction Report</a>
                                 </li>
 
+                                    <li>
+                                        <a href="/reports/commission">Commission Report</a>
+                                    </li>
+
 
                             </ul>
                         </div>

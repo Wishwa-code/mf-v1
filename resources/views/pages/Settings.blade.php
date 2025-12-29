@@ -5,6 +5,8 @@
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css">
 <!-- Font Awesome CSS -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+<meta name="session-branch" content="{{ (int)session('branch_id') }}">
+
 <!-- Custom CSS -->
 <style>
     .main-topic {
@@ -1090,40 +1092,55 @@
                 </div>
 
                 <!-- 7) Commission -->
+                <!-- 7) Commission -->
                 <div class="tab-pane fade" id="pane-commission" role="tabpanel">
+
                     <div class="card mt-3">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Commission Settings</h5>
-                                <button class="btn btn-outline-success btn-sm" id="btnAddCommissionPerson">
+
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div>
+                                    <h5 class="mb-0">Commission Settings</h5>
+                                    <small class="text-muted">Load products for selected branch and enter commission amounts for collectors/commission people.</small>
+                                </div>
+
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="btnAddCommissionPerson">
                                     <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
 
-                            <small class="text-muted d-block mb-3">Set commission rates by product for collectors and other members.</small>
-                            <div class="d-flex gap-2 align-items-end mb-3">
-                                <div style="max-width: 320px;">
+                            <div class="row g-2 align-items-end mb-3">
+                                <div class="col-md-3">
                                     <label class="form-label fw-bold mb-1">Branch</label>
-                                    <select id="commission_branch" class="form-select">
+                                    <select class="form-select form-select-sm" id="commission_branch">
                                         <option value="0">-- Select Branch --</option>
                                     </select>
                                 </div>
 
-                                <button class="btn btn-primary" id="btnReloadCommission">
-                                    <i class="fa-solid fa-rotate me-1"></i> Load
-                                </button>
+                                <div class="col-md-2">
+                                    <button class="btn btn-success btn-sm w-100" id="btnReloadCommission">
+                                        <i class="fa-solid fa-rotate"></i> Load
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="table-responsive">
-                                <table class="table table-bordered align-middle" id="commissionTable">
+                                <table class="table table-bordered table-sm align-middle" id="commissionTable">
                                     <thead class="table-dark"></thead>
-                                    <tbody></tbody>
+                                    <tbody>
+                                    <tr>
+                                        <td class="text-center text-muted">Select a branch to load commissions.</td>
+                                    </tr>
+                                    </tbody>
                                 </table>
                             </div>
 
-                            <button class="btn btn-primary" id="btnSaveCommissionRates">
-                                <i class="fa-solid fa-floppy-disk me-1"></i> Save Commission Rates
-                            </button>
+                            <div class="mt-3">
+                                <button class="btn btn-primary btn-sm" id="btnSaveCommissionRates">
+                                    <i class="fa-solid fa-floppy-disk me-1"></i> Save Commission Rates
+                                </button>
+                            </div>
+
                         </div>
                     </div>
 
@@ -1193,7 +1210,9 @@
                             </div>
                         </div>
                     </div>
+
                 </div>
+
 
             </div>
         </div>
@@ -1550,6 +1569,16 @@
             saveLoanRestrictions(documentUpload, guarantees, changeProduct, dailyDays, weeklyDays,
                 monthlyDays);
         });
+// remember last tab
+        $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+            localStorage.setItem('last_settings_tab', $(e.target).attr('data-bs-target'));
+        });
+
+        const lastTab = localStorage.getItem('last_settings_tab');
+        if (lastTab) {
+            const triggerEl = document.querySelector(`button[data-bs-target="${lastTab}"]`);
+            if (triggerEl) new bootstrap.Tab(triggerEl).show();
+        }
 
     });
 
