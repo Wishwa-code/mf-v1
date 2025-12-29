@@ -776,30 +776,31 @@
                     </div>
                 </div>
 
-                <div id="weekly-content">
-                    <div class="table-responsive modern-table-container">
-                        <table class="table modern-table mb-0" id="weekly_not_paid_table_modal">
-                            <thead class="modern-table-header modern-table-warning">
-                                <tr>
-                                    <th>Loan ID</th>
-                                    <th>Customer ID</th>
-                                    <th>Customer Name</th>
-                                    <th class="text-end" title="Loan Amount - Capital amount">Capital Amount</th>
-                                    <th class="text-end" title="Full Loan Amount - Capital + interest">Full Loan
-                                        Amount</th>
-                                    <th class="text-end" title="This Week Not Paid Amount">Week Not Paid</th>
-                                    <th class="text-end" title="Total Not Paid Amount - Arrears">Total Arrears
-                                    </th>
-                                    <th class="text-center" title="Not Paid Installment Count">Unpaid Count</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Data via AJAX -->
-                            </tbody>
-                        </table>
+                        <div id="weekly-content">
+                            <div class="table-responsive modern-table-container">
+                                <table class="table modern-table mb-0" id="weekly_not_paid_table_modal">
+                                    <thead class="modern-table-header modern-table-warning">
+                                        <tr>
+                                            <th>Loan ID</th>
+                                            <th>Center</th>
+                                            <th>Customer ID</th>
+                                            <th>Customer Name</th>
+                                            <th class="text-end" title="Loan Amount - Capital amount">Capital Amount</th>
+                                            <th class="text-end" title="Full Loan Amount - Capital + interest">Full Loan
+                                                Amount</th>
+                                            <th class="text-end" title="This Week Not Paid Amount">Week Not Paid</th>
+                                            <th class="text-end" title="Total Not Paid Amount - Arrears">Total Arrears
+                                            </th>
+                                            <th class="text-center" title="Not Paid Installment Count">Unpaid Count</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Data via AJAX -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
 
         </div>
     </div>
@@ -843,29 +844,30 @@
                     </div>
                 </div>
 
-                <div id="current-week-content">
-                    <div class="table-responsive modern-table-container">
-                        <table class="table modern-table mb-0" id="current_week_pending_table_modal">
-                            <thead class="modern-table-header">
-                                <tr>
-                                    <th>Loan ID</th>
-                                    <th>Customer ID</th>
-                                    <th>Customer Name</th>
-                                    <th class="text-end" title="Loan Amount - Capital amount">Capital Amount</th>
-                                    <th class="text-end" title="Full Loan Amount - Capital + interest">Full Loan
-                                        Amount</th>
-                                    <th class="text-end" title="Current Week Pending Amount">Week Pending</th>
-                                    <th class="text-end" title="Total Not Paid Amount - Arrears">Total Arrears
-                                    </th>
-                                    <th class="text-center" title="Not Paid Installment Count">Unpaid Count</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Data via AJAX -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                        <div id="current-week-content">
+                            <div class="table-responsive modern-table-container">
+                                <table class="table modern-table mb-0" id="current_week_pending_table_modal">
+                                    <thead class="modern-table-header">
+                                        <tr>
+                                            <th>Loan ID</th>
+                                            <th>Center</th>
+                                            <th>Customer ID</th>
+                                            <th>Customer Name</th>
+                                            <th class="text-end" title="Loan Amount - Capital amount">Capital Amount</th>
+                                            <th class="text-end" title="Full Loan Amount - Capital + interest">Full Loan
+                                                Amount</th>
+                                            <th class="text-end" title="Current Week Pending Amount">Week Pending</th>
+                                            <th class="text-end" title="Total Not Paid Amount - Arrears">Total Arrears
+                                            </th>
+                                            <th class="text-center" title="Not Paid Installment Count">Unpaid Count</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Data via AJAX -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
 
             </div>
         </div>
@@ -941,35 +943,39 @@
 @endsection
 
 @section('script')
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/countup.js/2.0.7/countUp.umd.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
-<script type="text/javascript" charset="utf8"
-    src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
-<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/2.2.3/js/buttons.html5.min.js">
-</script>
-<script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js">
-</script>
-<script type="text/javascript" charset="utf8"
-    src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-<script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js">
-</script>
-<script type="text/javascript" charset="utf8"
-    src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
-<script>
-    $(document).on('click', '.btn-close', function() {
-        ['#totalOutstandingModal',
-            '#weeklyNotPaidModal',
-            '#currentWeekPendingModal',
-            '#penaltyBalanceModal'
-        ].forEach(function(sel) {
-            $(sel).modal('hide');
-        });
-    });
-</script>
 
-<script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/countup.js/2.0.7/countUp.umd.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+    <script type="text/javascript" charset="utf8"
+        src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/2.2.3/js/buttons.html5.min.js">
+    </script>
+    <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js">
+    </script>
+    <script type="text/javascript" charset="utf8"
+        src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js">
+    </script>
+    <script type="text/javascript" charset="utf8"
+        src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+    <script>
+        const fmt = (v) => new Intl.NumberFormat().format(parseFloat(v || 0).toFixed(2));
+        const safe = (v) => (v === null || v === undefined || v === '') ? '-' : v;
+
+        $(document).on('click', '.btn-close', function() {
+            ['#totalOutstandingModal',
+                '#weeklyNotPaidModal',
+                '#currentWeekPendingModal',
+                '#penaltyBalanceModal'
+            ].forEach(function(sel) {
+                $(sel).modal('hide');
+            });
+        });
+    </script>
+   
+   <script>
     // Live DateTime
     function updateDateTime() {
         const dt = new Date();
@@ -1354,6 +1360,7 @@
                     tbody += `
                             <tr>
                                 <td>${item.loan_id}</td>
+                                <td>${safe(item.center_name)}</td>
                                 <td>${item.customer_id}</td>
                                 <td>${item.customer_name}</td>
                                 <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.capital_amount).toFixed(2))}</td>
@@ -1440,6 +1447,7 @@
                     tbody += `
                             <tr>
                                 <td>${item.loan_id}</td>
+                                <td>${safe(item.center_name)}</td>
                                 <td>${item.customer_id}</td>
                                 <td>${item.customer_name}</td>
                                 <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.capital_amount).toFixed(2))}</td>

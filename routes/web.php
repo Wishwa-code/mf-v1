@@ -1,14 +1,12 @@
 <?php
 
-use App\Http\Controllers\API\AuthController;
+
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AssetManagementController;
 use App\Http\Controllers\BankController;
-use App\Http\Controllers\CapitalBalanceController;
 use App\Http\Controllers\CashFlowController;
 use App\Http\Controllers\CashierController;
 use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\KYCController;
 use App\Http\Controllers\LiveLankaPayController;
 use App\Http\Controllers\LoanCategoryController;
 use App\Http\Controllers\LoanController;
@@ -850,10 +848,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/settings/all', '\App\Http\Controllers\CapitalBalanceController@all')->name('');
     Route::post('/settings/upsert', '\App\Http\Controllers\CapitalBalanceController@upsert')->name('upsert');
 
-    Route::get('/commissions/all', [CapitalBalanceController::class, 'commission_all']);
-    Route::post('/commissions/rates/save', [CapitalBalanceController::class, 'commission_save_rates']);
-    Route::post('/commissions/person/store', [CapitalBalanceController::class, 'commission_store_person']);
-    Route::get('/branches/all', [CapitalBalanceController::class, 'branches_all']);
+
 
 
     //depletion
@@ -1028,6 +1023,17 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->name('leads.approve');
 
     Route::resource('leads', CustomerLeadController::class)->names('leads');
+
+
+    Route::get('/commissions/all', [\App\Http\Controllers\CommissionController::class, 'commission_all']);
+    Route::post('/commissions/rates/save', [\App\Http\Controllers\CommissionController::class, 'commission_save_rates']);
+    Route::post('/commissions/person/store', [\App\Http\Controllers\CommissionController::class, 'commission_store_person']);
+    Route::get('/branches/all', [\App\Http\Controllers\CommissionController::class, 'branches_all']);
+
+
+    Route::get('/reports/commission', [\App\Http\Controllers\CommissionReportController::class, 'index'])->name('reports.commission');
+    Route::get('/reports/commission/load', [\App\Http\Controllers\CommissionReportController::class, 'load'])->name('reports.commission.load');
+    Route::get('/reports/commission/print', [\App\Http\Controllers\CommissionReportController::class, 'print'])->name('reports.commission.print');
 });
 
 Route::get('/dailycollectionratio', [\App\Http\Controllers\ReportController::class, 'dailyCollectionRatioToday'])
