@@ -150,11 +150,13 @@ Route::middleware(['web', 'auth'])->group(function () {
     })->name('leads.map');
 
     Route::get('/leads/verify', [CustomerLeadController::class, 'verifyActionPage'])->name('leads.verifyAction');
+    Route::get('/leads/verify-data', [CustomerLeadController::class, 'verifyData'])->name('leads.verifyData');
     Route::get('/leads/verified-list', [CustomerLeadController::class, 'verifiedListPage'])->name('leads.verifiedList');
     Route::get('/leads/data', [CustomerLeadController::class, 'verifiedData'])->name('leads.verifiedData');
     Route::get('/api/leads/{lead}/details', [CustomerLeadController::class, 'getLeadDetails'])->name('leads.details');
     Route::post('/leads/{lead}/mark-visited', [CustomerLeadController::class, 'markAsVisited'])->name('leads.markVisited');
-    Route::put('/leads/{lead}', [CustomerLeadController::class, 'update'])->name('leads.update');
+    Route::get('/leads/agreement-data', [CustomerLeadController::class, 'agreementData'])->name('leads.agreementData');
+    Route::post('/leads/agreement-images/upload', [CustomerLeadController::class, 'uploadAgreementImages'])->name('leads.agreementImages.upload');
 
 
 

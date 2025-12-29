@@ -136,7 +136,39 @@ class CustomerLeadController extends Controller
         $agreementImageTypesSetting = AppSettings::where('key', 'agreement_image_types')->value('value');
         $agreementImageTypes = $agreementImageTypesSetting ? json_decode($agreementImageTypesSetting, true) : [];
 
-        return view('pages.leads.agreements', compact('leads', 'agreementImageTypes'));
+        // Fetch all users for the filter dropdown
+        $users = \App\Models\User::all();
+
+        return view('pages.leads.agreements', compact('agreementImageTypes', 'users', 'leads'));
+    }
+
+    public function agreementData(Request $request)
+    {
+        $leads = CustomerLead::with(['route', 'creator'])
+            ->where('status', 'pending-approved')
+            ->where('is_visited', '!=', 0)
+            ->orderByDesc('created_at_lead');
+
+        // Filter by Created By if provided
+        if ($request->has('created_by') && $request->created_by != '') {
+            $leads->where('created_by', $request->created_by);
+        }
+
+        return \Yajra\DataTables\Facades\DataTables::of($leads)
+            ->addIndexColumn()
+            ->addColumn('action', function ($row) {
+                // Determine CSS class based on status
+                $btnClass = 'btn-outline-primary';
+
+                return '<button class="btn btn-sm ' . $btnClass . ' rounded-pill fw-bold" onclick="selectLead(' . $row->id . ')">
+                            <i class="bi bi-shield-check me-1"></i> Agreement Sign
+                        </button>';
+            })
+            ->addColumn('created_by_name', function ($row) {
+                return $row->creator ? $row->creator->Full_Name : '-';
+            })
+            ->rawColumns(['action'])
+            ->make(true);
     }
 
 
@@ -501,6 +533,26 @@ class CustomerLeadController extends Controller
     }
 
     /**
+     * JSON data for verify action table (leads pending verification).
+     */
+    public function verifyData(Request $request)
+    {
+        $leads = CustomerLead::where('status', 'pending-approved')
+            ->where('is_visited', 0)
+            ->orderByDesc('created_at_lead');
+
+        return \Yajra\DataTables\Facades\DataTables::of($leads)
+            ->addColumn('action', function ($row) {
+                return '<button type="button" class="btn btn-sm btn-primary rounded-pill px-3" onclick="loadLeadVerification(' . $row->id . ')">Verify <i class="bi bi-arrow-right ms-1"></i></button>';
+            })
+            ->editColumn('created_at', function ($row) {
+                return $row->created_at_lead ? \Carbon\Carbon::parse($row->created_at_lead)->format('Y-m-d H:i') : '-';
+            })
+            ->rawColumns(['action'])
+            ->make(true);
+    }
+
+    /**
      * API to get lead details for the dropdown.
      */
     public function getLeadDetails(CustomerLead $lead)
@@ -521,11 +573,14 @@ class CustomerLeadController extends Controller
      */
     public function verifiedData(Request $request)
     {
-        $leads = CustomerLead::with('route')->orderByDesc('created_at_lead');
+        $leads = CustomerLead::with(['route', 'creator'])->orderByDesc('created_at_lead');
 
         return \Yajra\DataTables\Facades\DataTables::of($leads)
             ->addColumn('route_name', function ($row) {
                 return $row->route ? $row->route->name : '-';
+            })
+            ->addColumn('created_by', function ($row) {
+                return $row->creator ? $row->creator->Full_Name : '-';
             })
             ->addColumn('source', function ($row) {
                 return $row->source ? ucfirst($row->source) : '-';
