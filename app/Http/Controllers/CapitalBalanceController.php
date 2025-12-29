@@ -82,8 +82,34 @@ class CapitalBalanceController extends Controller
                     $capital_amount = $loans->Amount;
                     $interest_amount = $loans->Interest_Amount;
 
-                    $ins_capital = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', '=', $loan_id)->sum('capital_amount');
-                    $ins_interest = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', '=', $loan_id)->sum('interest_amount');
+                    $firstInstallment = DB::table('installments')
+                        ->where('Customer_Loan_idCustomer_Loan', $loan_id)
+                        ->orderBy('idInstallments')   // ASC order
+                        ->first();
+
+                    $ins_capital=0;
+                    $ins_interest=0;
+
+                    if ($firstInstallment){
+                        $firstId           = $firstInstallment->idInstallments;
+                        $Installment_Amount=$firstInstallment->Installment_Amount;
+                        $capital_amount=$firstInstallment->capital_amount;
+                        if ($Installment_Amount==$capital_amount){
+                            $ins_capital = tableWithBranch('installments')
+                                ->where('Customer_Loan_idCustomer_Loan', $loan_id)
+                                ->where('idInstallments', '!=', $firstId)
+                                ->sum('capital_amount');
+
+                            $ins_interest = tableWithBranch('installments')
+                                ->where('Customer_Loan_idCustomer_Loan', $loan_id)
+                                ->where('idInstallments', '!=', $firstId)
+                                ->sum('interest_amount');
+                        }else{
+                            $ins_capital = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', '=', $loan_id)->sum('capital_amount');
+                            $ins_interest = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', '=', $loan_id)->sum('interest_amount');
+                        }
+                    }
+
                     $capital_additional_amount = 0;
                     $interest_additional_amount = 0;
 
