@@ -64,7 +64,7 @@ Route::post('/recover_password', '\App\Http\Controllers\UserController@recover_p
 
 
 
-Route::middleware(['web', 'auth'])->group(function () {
+Route::middleware(['central.auth'])->group(function () {
     Route::get('/', '\App\Http\Controllers\UserController@showdashboard')->name('home');
     Route::get('/privileges', function () {
         return view('pages.Privilages');
