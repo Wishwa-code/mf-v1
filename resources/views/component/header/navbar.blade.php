@@ -1,20 +1,14 @@
- <?php
-    // All active branches (used for super users)
+<?php
+// ...existing code...
+use Illuminate\Support\Facades\DB;
 
-    use Illuminate\Support\Facades\DB;
+// All branches
+$branch = session('user_data')['branches'] ?? [];
 
-    $query = 'SELECT * FROM branch where status=1';
-    $branch = DB::select($query);
+// Allowed branches 
+$allowedBranches = $branch;
 
-    // Allowed branches for the current user (used for non-super users)
-    $allowedBranches = collect([]);
-    if (session('branch_access') !== 1) {
-        $userId = session('userid');
-        if ($userId) {
-            $allowedBranches = \Illuminate\Support\Facades\DB::table('user_has_branches')->join('branch', 'user_has_branches.branch_id', '=', 'branch.branch_id')->where('user_has_branches.user_id', $userId)->where('branch.status', 1)->select('branch.branch_id', 'branch.Name')->get();
-        }
-    }
-    ?>
+?>
  <style>
      .navbar-custom,
      .topbar {
@@ -435,7 +429,8 @@
                          <i class="ri-building-2-line me-2"></i>
                          <span class="branch-text text-truncate d-inline-block" style="max-width: 200px; vertical-align: middle;">
                              @foreach ($branch as $item)
-                             @if (session('branch_id') == $item->branch_id)
+                             @php $item = (object) $item; @endphp
+                             @if (session('branch_id') == $item->idBranch)
                              {{ $item->Name }} Branch
                              @endif
                              @endforeach
@@ -444,13 +439,14 @@
                      </button>
                      <ul class="dropdown-menu modern-dropdown-menu" style="max-height: 300px; overflow-y: auto;">
                          @foreach ($branch as $item)
+                         @php $item = (object) $item; @endphp
                          <li>
                              <a class="dropdown-item modern-dropdown-item branch-option" href="#"
-                                 data-branch-id="{{ $item->branch_id }}"
+                                 data-branch-id="{{ $item->idBranch }}"
                                  data-branch-name="{{ $item->Name }} Branch">
                                  <i class="ri-building-2-line me-2"></i>
                                  {{ $item->Name }} Branch
-                                 @if (session('branch_id') == $item->branch_id)
+                                 @if (session('branch_id') == $item->idBranch)
                                  <i class="ri-check-line ms-auto text-success"></i>
                                  @endif
                              </a>
@@ -462,27 +458,32 @@
                  </div>
              </div>
              @else
-             @if (isset($allowedBranches) && $allowedBranches->count() > 1)
+             @if (isset($allowedBranches))
              <div class="modern-branch-switcher">
                  <div class="dropdown">
                      <button type="button" class="btn modern-dropdown-toggle" data-bs-toggle="dropdown"
                          aria-expanded="false">
                          <i class="ri-building-2-line me-2"></i>
                          <span class="branch-text text-truncate d-inline-block" style="max-width: 200px; vertical-align: middle;">
-                             @php $currentName = optional($allowedBranches->firstWhere('branch_id', session('branch_id')))->Name; @endphp
+                             @php
+                                $col = collect($allowedBranches)->map(function($item){ return (object)$item; });
+                                $current = $col->firstWhere('idBranch', session('branch_id'));
+                                $currentName = optional($current)->Name;
+                             @endphp
                              {{ ($currentName ?? session('branch_name')) . ' Branch' }}
                          </span>
                          <i class="ri-arrow-down-s-line ms-2 dropdown-arrow"></i>
                      </button>
                      <ul class="dropdown-menu modern-dropdown-menu" style="max-height: 300px; overflow-y: auto;">
                          @foreach ($allowedBranches as $item)
+                         @php $item = (object) $item; @endphp
                          <li>
                              <a class="dropdown-item modern-dropdown-item branch-option" href="#"
-                                 data-branch-id="{{ $item->branch_id }}"
+                                 data-branch-id="{{ $item->idBranch }}"
                                  data-branch-name="{{ $item->Name }} Branch">
                                  <i class="ri-building-2-line me-2"></i>
                                  {{ $item->Name }} Branch
-                                 @if (session('branch_id') == $item->branch_id)
+                                 @if (session('branch_id') == $item->idBranch)
                                  <i class="ri-check-line ms-auto text-success"></i>
                                  @endif
                              </a>
@@ -495,10 +496,10 @@
              <h2 id="date" class="d-none d-md-block">{{ session('branch_name') . ' Branch' }}</h2>
              @endif
              @endif
-             
+
              <!-- Animated Account Button (No Dropdown) -->
              <div class="position-relative" style="width: 35px; height: 35px;">
-                 <a href="/" class="account-btn-animated position-absolute top-0 start-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Account Center">
+                 <a href="https://accountcenter.asipbook.com/" class="account-btn-animated position-absolute top-0 start-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Account Center">
                      <i class="ri-bank-fill svgIcon"></i>
                  </a>
              </div>

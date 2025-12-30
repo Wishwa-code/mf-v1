@@ -92,11 +92,6 @@ $banner = DB::select($query);
 
 
 
-        if (!session('userid')) {
-            echo "<script>window.location.href = '".route('login')."'</script>";
-            exit;
-        }
-
         $user_id = session('userid');
         $permissions = DB::table('user_privileges_has_user')
             ->where('user_id', $user_id)

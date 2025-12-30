@@ -1,6 +1,6 @@
 <?php
 
-
+use App\Http\Controllers\AccountCenterAutoLoginController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AssetManagementController;
 use App\Http\Controllers\BankController;
@@ -28,11 +28,14 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
+
+Route::get('/auto-login', [AccountCenterAutoLoginController::class, 'autoLogin'])->name('auto-login');
+
+
+
 Route::get('/storage_link', function () {
     Artisan::call('storage:link');
 });
-
-
 
 // API for branch hierarchy dropdown
 Route::get('/api/branch-hierarchy/{branchId}', '\App\Http\Controllers\CenterController@getBranchHierarchy');
@@ -40,9 +43,16 @@ Route::get('/api/branch-hierarchy/{branchId}', '\App\Http\Controllers\CenterCont
 
 
 //user
+// Route::get('/login', function () {
+//     return view('login');
+// })->name('login');
+
 Route::get('/login', function () {
-    return view('login');
+    return redirect('https://accountcenter.asipbook.com/');
 })->name('login');
+
+
+
 Route::get('/user', '\App\Http\Controllers\UserController@index')->name('pages.user');
 Route::get('/user/update/{id}', '\App\Http\Controllers\UserController@edit')->name('pages.edit');
 Route::post('/login/store', '\App\Http\Controllers\UserController@store')->name('user.store');
@@ -62,7 +72,7 @@ Route::post('/recover_password', '\App\Http\Controllers\UserController@recover_p
 
 
 
-Route::middleware(['web', 'auth'])->group(function () {
+Route::middleware(['auth.central'])->group(function () {
     Route::get('/', '\App\Http\Controllers\UserController@showdashboard')->name('home');
     Route::get('/privileges', function () {
         return view('pages.Privilages');

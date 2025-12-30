@@ -447,9 +447,9 @@ class UserController extends Controller
         //        ]);
 
 
-        if (!Auth::check()) {
-            return redirect()->route('login')->with("error", "Session expired! Please Login");
-        }
+        // if (!Auth::check()) {
+        //     return redirect()->route('login')->with("error", "Session expired! Please Login");
+        // }
 
         // Head Office aggregated dashboard: show all branches overview
         if ((int)session('branch_id') === -1) {

@@ -1,8 +1,4 @@
-@if (!session()->has('username'))
-    <script>
-        window.location.href = "{{ route('login') }}"
-    </script>
-@endif
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

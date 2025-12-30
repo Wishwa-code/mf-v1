@@ -7,13 +7,75 @@
 
         use Illuminate\Support\Facades\DB;
 
-        $query = "SELECT * FROM company where branch_id='" . session('branch_id') . "'";
-        $check = DB::select($query);
-        ?>
+        // $query = "SELECT * FROM company where branch_id='" . session('branch_id') . "'";
+        // $com = DB::select($query);
 
-        @foreach ($check as $item)
-        <li class="side-nav-title" style="color: red">{{ $item->company_name }}</li>
-        @endforeach
+        $userData = session('user_data');
+        $sessionPrivileges = $userData['privileges'] ?? [];
+        $privilege = new stdClass();
+
+        // Initialize parent keys to 0
+        $parentKeys = ['customer', 'customer_leads', 'loan_center', 'account_center', 'account_department', 'payment_voucher', 'expenses', 'user', 'reports', 'guarantee', 'product', 'payment_details'];
+        foreach ($parentKeys as $pk) {
+            $privilege->{$pk} = 0;
+        }
+
+        // Define Groups
+        $groups = [
+            'customer' => ['add_customer', 'view_customer', 'view_blacklist_customer', 'customer_saving_acc', 'kyc', 'insurance'],
+            'customer_leads' => ['view_leads', 'create_lead', 'view_lead_map', 'verify_lead', 'lead_agreement', 'lead_activity_logs', 'lead_approvals', 'bussiness_categories', 'create_online_lead'],
+            'loan_center' => ['create_route', 'create_center', 'view_center', 'create_group', 'view_group', 'add_customer_to_group'],
+            'guarantee' => ['add_guarantee', 'view_guarantee'],
+            'product' => ['add_product', 'view_product', 'create_loan', 'change_collector', 'pending_loan', 'loan_disbursement', 'current_loans', 'settled_loans', 'loan_status'],
+            'payment_details' => ['add_repayment', 'bulk_repayment', 'loan_settlement', 'loan_reschedule', 'view_payment', 'collector_wise_collection'],
+            'account_center' => ['bank_cash_account', 'internal_bank_transfer', 'collector_account', 'cheque_details'],
+            'account_department' => ['add_asset', 'asset_management', 'bank_reconciliation', 'manual_journal', 'chart_of_account'],
+            'expenses' => ['add_expenses', 'view_expenses'],
+            'user' => ['create_user', 'user_privileges'],
+            'reports' => ['main_reports_dashboard', 'loan_disbursement_performance', 'payment_detail_report', 'prediction_report', 'full_loan_detail', 'loan_summary', 'par_monthly', 'par_weekly', 'cashflow_accumulated', 'cashflow_monthly', 'profit_loss', 'balance_sheet', 'trial_balance', 'daily_collection_sheet', 'center_collection_detail', 'center_collection_summary', 'route_collections']
+        ];
+
+        if (is_array($sessionPrivileges)) {
+            foreach ($sessionPrivileges as $p) {
+                // Handle both array and object format if necessary, assuming array from dump
+                $desc = isset($p['Description']) ? strtoupper($p['Description']) : '';
+                if ($desc) {
+                    $key = strtolower(str_replace(' ', '_', $desc));
+                    $privilege->{$key} = 1;
+
+                    // Specific Manual Mappings
+                    if ($desc === 'ADMIN') {
+                        $privilege->dashboard = 1;
+                        $privilege->reports = 1;
+                        foreach ($parentKeys as $pk) {
+                            $privilege->{$pk} = 1;
+                        }
+                    }
+                    if ($desc === 'USER CREATE') {
+                        if ($key === 'user_create') {
+                            $privilege->create_user = 1;
+                        }
+                    }
+                    if ($desc === 'CUSTOMER CREATE') {
+                        $privilege->add_customer = 1;
+                    }
+                }
+            }
+
+            // Post-processing: Activate Parents based on Children
+            foreach ($groups as $parent => $children) {
+                foreach ($children as $child) {
+                    if (isset($privilege->{$child}) && $privilege->{$child} == 1) {
+                        $privilege->{$parent} = 1;
+                        break;
+                    }
+                }
+            }
+        }
+        ?>
+    {{-- {{dd( session('user_data')['branches'])}} --}}
+
+        <li class="side-nav-title" style="color: red">{{ session('user_data')['company']['Company_Name'] }}</li>
 
 
         @if ($privilege)
@@ -74,7 +136,7 @@
             </div>
         </li>
         @endif
-
+        <!-- 
         @if (optional($privilege)->account_center == 1)
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#account" aria-expanded="false" aria-controls="center"
@@ -123,7 +185,7 @@
                 </ul>
             </div>
         </li>
-        @endif
+        @endif -->
 
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#payment_voucher" aria-expanded="false"
@@ -477,7 +539,7 @@
         </li>
         @endif
 
-        @if (optional($privilege)->account_center == 1)
+        <!-- @if (optional($privilege)->account_center == 1)
 
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#account" aria-expanded="false" aria-controls="center"
@@ -551,7 +613,7 @@
                 </ul>
             </div>
         </li>
-        @endif
+        @endif -->
 
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#payment_voucher" aria-expanded="false"
@@ -625,7 +687,7 @@
         </li>
         @endif
 
-        @if (optional($privilege)->user == 1)
+        <!-- @if (optional($privilege)->user == 1)
 
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#user" aria-expanded="false" aria-controls="user"
@@ -652,7 +714,7 @@
                 </ul>
             </div>
         </li>
-        @endif
+        @endif -->
 
         @if (optional($privilege)->reports == 1)
         <li class="side-nav-item">
@@ -725,9 +787,9 @@
                                     <a href="/report/penalty-deduction">Penalty Deduction Report</a>
                                 </li>
 
-                                    <li>
-                                        <a href="/reports/commission">Commission Report</a>
-                                    </li>
+                                <li>
+                                    <a href="/reports/commission">Commission Report</a>
+                                </li>
 
 
                             </ul>

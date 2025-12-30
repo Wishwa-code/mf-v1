@@ -290,7 +290,8 @@
 @endsection
 
 @section('content')
-@if ($dashboard == 1)
+
+<!-- @if ($dashboard == 1) -->
 <div class="container-fluid py-4 animated-dashboard">
     @php
     $all_loan = $customer_loan_current_Count + $setteled_loan_Count;
@@ -321,7 +322,7 @@
             </div>
         </div>
 
-        {{-- Statistic Cards --}}
+        <!-- {{-- Statistic Cards --}}
         <div class="row">
             @php
             $cards = [
@@ -521,7 +522,7 @@
                     </div>
                 </a>
             </div>
-        </div>
+        </div> -->
 
         {{-- Charts --}}
         <div class="row">
@@ -939,7 +940,7 @@
 </div>
 
 {{-- ================== END MODALS =================== --}}
-@endif
+<!-- @endif -->
 @endsection
 
 @section('script')
