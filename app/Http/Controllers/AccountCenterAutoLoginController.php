@@ -34,7 +34,21 @@ class AccountCenterAutoLoginController extends Controller
 
         // Store user info in Laravel session
         session(['auth_user' => $response['user']]);
-        session(['user_data' => $response['userData']]);
+
+        // Filter branches where idBranch != -1
+        $filteredBranches = array_values(array_filter($response['userData']['branches'] ?? []));
+
+        $userData = $response['userData'];
+        $userData['branches'] = $filteredBranches;
+
+        session(['user_data' => $userData]);
+
+        if (!empty($filteredBranches)) {
+            session(['branch_id' => $filteredBranches[0]['idBranch']]);
+            if (isset($filteredBranches[0]['Name'])) {
+                session(['branch_name' => $filteredBranches[0]['Name']]);
+            }
+        }
 
         if (isset($response['userData']['privileges'])) {
             session(['privileges' => $response['userData']['privileges']]);
