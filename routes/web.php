@@ -439,7 +439,7 @@ Route::middleware(['auth.central'])->group(function () {
 
 
     //settings
-    Route::get('/setting', '\App\Http\Controllers\CompanyController@setting')->name('company.setting')->middleware('privilege:SETTINGS');
+    Route::get('/setting', [\App\Http\Controllers\SettingsController::class, 'index'])->name('company.setting')->middleware('privilege:SETTINGS');
     Route::post('/shortcuts', '\App\Http\Controllers\CompanyController@shortcuts')->name('company.shortcuts');
     Route::get('/shortcuts/all', '\App\Http\Controllers\CompanyController@show')->name('company.show');
 
@@ -853,8 +853,8 @@ Route::middleware(['auth.central'])->group(function () {
     Route::post('/get-customer-bank-details', [LoanController::class, 'getCustomerBankDetails']);
 
 
-    Route::get('/settings/all', '\App\Http\Controllers\CapitalBalanceController@all')->name('');
-    Route::post('/settings/upsert', '\App\Http\Controllers\CapitalBalanceController@upsert')->name('upsert');
+    Route::get('/settings/all', [\App\Http\Controllers\SettingsController::class, 'all'])->name('settings.all');
+    Route::post('/settings/upsert', [\App\Http\Controllers\SettingsController::class, 'upsert'])->name('settings.upsert');
 
 
 
