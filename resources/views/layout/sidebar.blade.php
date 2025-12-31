@@ -3,94 +3,24 @@
 <div class="h-100" id="leftside-menu-container" data-simplebar>
     <!--- Sidemenu -->
     <ul class="side-nav">
-        <?php
 
-        use Illuminate\Support\Facades\DB;
-
-        // $query = "SELECT * FROM company where branch_id='" . session('branch_id') . "'";
-        // $com = DB::select($query);
-
-        $userData = session('user_data');
-        $sessionPrivileges = $userData['privileges'] ?? [];
-        $privilege = new stdClass();
-
-        // Initialize parent keys to 0
-        $parentKeys = ['customer', 'customer_leads', 'loan_center', 'account_center', 'account_department', 'payment_voucher', 'expenses', 'user', 'reports', 'guarantee', 'product', 'payment_details'];
-        foreach ($parentKeys as $pk) {
-            $privilege->{$pk} = 0;
-        }
-
-        // Define Groups
-        $groups = [
-            'customer' => ['add_customer', 'view_customer', 'view_blacklist_customer', 'customer_saving_acc', 'kyc', 'insurance'],
-            'customer_leads' => ['view_leads', 'create_lead', 'view_lead_map', 'verify_lead', 'lead_agreement', 'lead_activity_logs', 'lead_approvals', 'bussiness_categories', 'create_online_lead'],
-            'loan_center' => ['create_route', 'create_center', 'view_center', 'create_group', 'view_group', 'add_customer_to_group'],
-            'guarantee' => ['add_guarantee', 'view_guarantee'],
-            'product' => ['add_product', 'view_product', 'create_loan', 'change_collector', 'pending_loan', 'loan_disbursement', 'current_loans', 'settled_loans', 'loan_status'],
-            'payment_details' => ['add_repayment', 'bulk_repayment', 'loan_settlement', 'loan_reschedule', 'view_payment', 'collector_wise_collection'],
-            'account_center' => ['bank_cash_account', 'internal_bank_transfer', 'collector_account', 'cheque_details'],
-            'account_department' => ['add_asset', 'asset_management', 'bank_reconciliation', 'manual_journal', 'chart_of_account'],
-            'expenses' => ['add_expenses', 'view_expenses'],
-            'user' => ['create_user', 'user_privileges'],
-            'reports' => ['main_reports_dashboard', 'loan_disbursement_performance', 'payment_detail_report', 'prediction_report', 'full_loan_detail', 'loan_summary', 'par_monthly', 'par_weekly', 'cashflow_accumulated', 'cashflow_monthly', 'profit_loss', 'balance_sheet', 'trial_balance', 'daily_collection_sheet', 'center_collection_detail', 'center_collection_summary', 'route_collections']
-        ];
-
-        if (is_array($sessionPrivileges)) {
-            foreach ($sessionPrivileges as $p) {
-                // Handle both array and object format if necessary, assuming array from dump
-                $desc = isset($p['Description']) ? strtoupper($p['Description']) : '';
-                if ($desc) {
-                    $key = strtolower(str_replace(' ', '_', $desc));
-                    $privilege->{$key} = 1;
-
-                    // Specific Manual Mappings
-                    if ($desc === 'ADMIN') {
-                        $privilege->dashboard = 1;
-                        $privilege->reports = 1;
-                        foreach ($parentKeys as $pk) {
-                            $privilege->{$pk} = 1;
-                        }
-                    }
-                    if ($desc === 'USER CREATE') {
-                        if ($key === 'user_create') {
-                            $privilege->create_user = 1;
-                        }
-                    }
-                    if ($desc === 'CUSTOMER CREATE') {
-                        $privilege->add_customer = 1;
-                    }
-                }
-            }
-
-            // Post-processing: Activate Parents based on Children
-            foreach ($groups as $parent => $children) {
-                foreach ($children as $child) {
-                    if (isset($privilege->{$child}) && $privilege->{$child} == 1) {
-                        $privilege->{$parent} = 1;
-                        break;
-                    }
-                }
-            }
-        }
-        ?>
-    {{-- {{dd( session('user_data')['branches'])}} --}}
+        {{-- {{dd( session('user_data')['branches'])}} --}}
 
         <li class="side-nav-title" style="color: red">{{ session('user_data')['company']['Company_Name'] }}</li>
 
-
-        @if ($privilege)
-        @php $isHeadOffice = session('branch_id') == -1; @endphp
+        @php $isHeadOffice = session('head_branch') == session('branch_id'); @endphp
 
         @if ($isHeadOffice)
         {{-- Head Office restricted menu: Dashboard, View Customer, KYC, View Center --}}
-        @if (optional($privilege)->dashboard == 1)
+
+        @hasPrivilege('DASHBOARD')
         <li class="side-nav-item">
             <a href="/" class="side-nav-link">
                 <i class="ri-dashboard-3-line"></i>
                 <span> Dashboard </span>
             </a>
         </li>
-        @endif
+        @endhasPrivilege
 
 
         <!-- <li class="side-nav-item">
@@ -100,7 +30,7 @@
             </a>
         </li> -->
 
-        @if (optional($privilege)->customer == 1 && (optional($privilege)->view_customer == 1 || optional($privilege)->kyc == 1))
+        @hasPrivilege('CUSTOMER')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#customer" aria-expanded="false" aria-controls="customer"
                 class="side-nav-link">
@@ -110,18 +40,18 @@
             </a>
             <div class="collapse" id="customer">
                 <ul class="side-nav-second-level">
-                    @if (optional($privilege)->view_customer == 1)
+                    @hasPrivilege('VIEW_CUSTOMER')
                     <li><a href="/showcustomers">View Customer</a></li>
-                    @endif
-                    @if (optional($privilege)->kyc == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('KYC')
                     <li><a href="/kyc">KYC</a></li>
-                    @endif
+                    @endhasPrivilege
                 </ul>
             </div>
         </li>
-        @endif
+        @endhasPrivilege
 
-        @if (optional($privilege)->loan_center == 1 && optional($privilege)->view_center == 1)
+        @hasPrivilege('LOAN_CENTER')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#center" aria-expanded="false" aria-controls="center"
                 class="side-nav-link">
@@ -135,9 +65,10 @@
                 </ul>
             </div>
         </li>
-        @endif
+        @endhasPrivilege
+
         <!-- 
-        @if (optional($privilege)->account_center == 1)
+        @hasPrivilege('ACCOUNT_CENTER')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#account" aria-expanded="false" aria-controls="center"
                 class="side-nav-link">
@@ -147,22 +78,22 @@
             </a>
             <div class="collapse" id="account">
                 <ul class="side-nav-second-level">
-                    @if (optional($privilege)->bank_cash_account == 1)
+                    @hasPrivilege('BANK_CASH_ACCOUNT')
                     <li>
                         <a href="/bank_account">Bank/Cash Account</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->internal_bank_transfer == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('INTERNAL_BANK_TRANSFER')
                     <li>
                         <a href="/InnerBankTransfer">Internal Account Transfer</a>
                     </li>
-                    @endif
+                    @endhasPrivilege
                 </ul>
             </div>
         </li>
-        @endif
+        @endhasPrivilege
 
-        @if (optional($privilege)->account_department == 1)
+        @hasPrivilege('ACCOUNT_DEPARTMENT_1')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#accountmanagement" aria-expanded="false"
                 aria-controls="center" class="side-nav-link">
@@ -172,20 +103,20 @@
             </a>
             <div class="collapse" id="accountmanagement">
                 <ul class="side-nav-second-level">
-                    @if (optional($privilege)->manual_journal == 1)
+                    @hasPrivilege('MANUAL_JOURNAL')
                     <li>
                         <a href="/ManualJournal">Manual Journal</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->chart_of_account == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('CHART_OF_ACCOUNT')
                     <li>
                         <a href="/ChartOfAccount">Chart Of Account</a>
                     </li>
-                    @endif
+                    @endhasPrivilege
                 </ul>
             </div>
         </li>
-        @endif -->
+        @endhasPrivilege -->
 
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#payment_voucher" aria-expanded="false"
@@ -209,7 +140,7 @@
             </div>
         </li>
 
-        @if (optional($privilege)->expenses == 1)
+        @hasPrivilege('EXPENSES')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#expences" aria-expanded="false" aria-controls="expences"
                 class="side-nav-link">
@@ -219,28 +150,29 @@
             </a>
             <div class="collapse" id="expences">
                 <ul class="side-nav-second-level">
-                    @if (optional($privilege)->add_expenses == 1)
+                    @hasPrivilege('ADD_EXPENSES')
                     <li>
                         <a href="/expenses">Add Expenses</a>
                     </li>
-                    @endif
+                    @endhasPrivilege
                 </ul>
             </div>
         </li>
-        @endif
+        @endhasPrivilege
         @else
-        @if (optional($privilege)->dashboard == 1)
+
+        @hasPrivilege('DASHBOARD')
         <li class="side-nav-item">
             <a href="/" class="side-nav-link">
                 <i class="ri-dashboard-3-line"></i>
                 <span> Dashboard </span>
             </a>
         </li>
-        @endif
+        @endhasPrivilege
 
-        {{-- @if (optional($privilege)->customer == 1) --}}
+        {{-- @hasPrivilege('CUSTOMER') --}}
         {{-- CUSTOMER LEADS SECTION --}}
-        @if (optional($privilege)->customer_leads == 1)
+        @hasPrivilege('CUSTOMER_LEADS')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#lead" aria-expanded="false"
                 aria-controls="sidebarPagesAuth" class="side-nav-link">
@@ -250,62 +182,62 @@
             </a>
             <div class="collapse" id="lead">
                 <ul class="side-nav-second-level">
-                    @if (optional($privilege)->bussiness_categories == 1)
+                    @hasPrivilege('BUSSINESS_CATEGORIES')
                     <li>
                         <a href="{{ route('business-categories.index') }}">
                             Business Categories
                         </a>
                     </li>
-                    @endif
+                    @endhasPrivilege
 
-                    @if (optional($privilege)->create_lead == 1)
+                    @hasPrivilege('CREATE_LEAD')
                     <li>
                         <a href="{{ route('leads.index') }}">Lead Create</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->create_online_lead == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('CREATE_ONLINE_LEAD')
                     <li>
                         <a href="{{ route('online-leads.create') }}">Create Online Lead</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->lead_approvals == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('LEAD_APPROVALS')
                     <li>
                         <a href="{{ route('leads.approvals') }}">Lead Approvals</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->verify_lead == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('VERIFY_LEAD')
                     <li>
                         <a href="{{ route('leads.verifyAction') }}">Lead Verification</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->lead_agreement == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('LEAD_AGREEMENT')
                     <li>
                         <a href="{{ route('leads.agreement') }}">Agreement Sign</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->view_lead_map == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('VIEW_LEAD_MAP')
                     <li>
                         <a href="{{ route('leads.globalMap') }}">All Leads Map</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->lead_activity_logs == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('LEAD_ACTIVITY_LOGS')
                     <li>
                         <a href="{{ route('leads.activityLogs') }}">Activity Logs</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->view_leads == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('VIEW_LEADS')
                     <li>
                         <a href="{{ route('leads.verifiedList') }}">Lead List</a>
                     </li>
-                    @endif
+                    @endhasPrivilege
 
                 </ul>
             </div>
         </li>
-        @endif
+        @endhasPrivilege
 
 
-        @if (optional($privilege)->customer == 1)
+        @hasPrivilege('CUSTOMER')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#customer" aria-expanded="false"
                 aria-controls="sidebarPagesAuth" class="side-nav-link">
@@ -315,39 +247,39 @@
             </a>
             <div class="collapse" id="customer">
                 <ul class="side-nav-second-level">
-                    @if (optional($privilege)->add_customer == 1)
+                    @hasPrivilege('ADD_CUSTOMER')
                     <li>
                         <a href="/customers">Add Customer</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->view_customer == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('VIEW_CUSTOMER')
                     <li>
                         <a href="/showcustomers">View Customer</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->view_blacklist_customer == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('VIEW_BLACKLIST_CUSTOMER')
                     <li>
                         <a href="/showblacklistcustomers">View Blacklist Customer</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->customer_saving_acc == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('CUSTOMER_SAVING_ACC')
                     <li>
                         <a href="/showcustomerssaving">Customer Saving Acc.</a>
                     </li>
                     <li>
                         <a href="/showcustomersrecovery">Customer Recovery Acc.</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->kyc == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('KYC')
                     <li>
                         <a href="/kyc">KYC</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->insurance == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('INSURANCE')
                     <li>
                         <a href="/insurance">Insurance</a>
                     </li>
-                    @endif
+                    @endhasPrivilege
 
                     <li>
                         <a href="{{ route('customers.map') }}">
@@ -358,9 +290,9 @@
             </div>
 
         </li>
-        @endif
+        @endhasPrivilege
 
-        @if (optional($privilege)->loan_center == 1)
+        @hasPrivilege('LOAN_CENTER')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#center" aria-expanded="false" aria-controls="center"
                 class="side-nav-link">
@@ -370,42 +302,42 @@
             </a>
             <div class="collapse" id="center">
                 <ul class="side-nav-second-level">
-                    @if (optional($privilege)->create_route == 1)
+                    @hasPrivilege('CREATE_ROUTE')
                     <li>
                         <a href="/viewroutes">Create Route</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->create_center == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('CREATE_CENTER')
                     <li>
                         <a href="/center">Create Center</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->view_center == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('VIEW_CENTER')
                     <li>
                         <a href="/viewcenter">View Center</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->create_group == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('CREATE_GROUP')
                     <li>
                         <a href="/customergroup">Create Group</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->view_group == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('VIEW_GROUP')
                     <li>
                         <a href="/viewgroups">View Group</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->add_customer_to_group == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('ADD_CUSTOMER_TO_GROUP')
                     <li>
                         <a href="/customergroupassign">Add Customers To Group</a>
                     </li>
-                    @endif
+                    @endhasPrivilege
                 </ul>
             </div>
         </li>
-        @endif
+        @endhasPrivilege
 
-        @if (optional($privilege)->guarantee == 1)
+        @hasPrivilege('GUARANTEE')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#Guarantee" aria-expanded="false"
                 aria-controls="sidebarPagesAuth" class="side-nav-link">
@@ -415,23 +347,23 @@
             </a>
             <div class="collapse" id="Guarantee">
                 <ul class="side-nav-second-level">
-                    @if (optional($privilege)->add_guarantee == 1)
+                    @hasPrivilege('ADD_GUARANTEE')
                     <li>
                         <a href="/guardian">Add Guarantee</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->view_guarantee == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('VIEW_GUARANTEE')
                     <li>
                         <a href="/showguardian">View Guarantee</a>
                     </li>
-                    @endif
+                    @endhasPrivilege
                 </ul>
             </div>
 
         </li>
-        @endif
+        @endhasPrivilege
 
-        @if (optional($privilege)->product == 1)
+        @hasPrivilege('PRODUCT')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#sidebarPages" aria-expanded="false"
                 aria-controls="sidebarPages" class="side-nav-link">
@@ -441,37 +373,37 @@
             </a>
             <div class="collapse" id="sidebarPages">
                 <ul class="side-nav-second-level">
-                    @if (optional($privilege)->add_product == 1)
+                    @hasPrivilege('ADD_PRODUCT')
                     <li>
                         <a href="/product">Add Product</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->view_product == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('VIEW_PRODUCT')
                     <li>
                         <a href="/viewproduct">View Product</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->create_loan == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('CREATE_LOAN')
                     <li>
                         <a href="/loan">Create Loans</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->change_collector == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('CHANGE_COLLECTOR')
                     <li>
                         <a href="/changeCollector">Change Collector In Loan</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->pending_loan == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('PENDING_LOAN')
                     <li>
                         <a href="/pendingloan">Pending Loans</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->loan_disbursement == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('LOAN_DISBURSEMENT')
                     <li>
                         <a href="/loan_disbursement">Loans Disbursement</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->current_loans == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('CURRENT_LOANS')
                     <li>
                         <a href="/payment_step_1">Current Loans</a>
                     </li>
@@ -479,22 +411,22 @@
                     <li>
                         <a href="/penalty-deduction">Panelty Deduction</a>
                     </li>
-                    @endif
+                    @endhasPrivilege
 
 
-                    @if (optional($privilege)->settled_loans == 1)
+                    @hasPrivilege('SETTLED_LOANS')
                     <li>
                         <a href="/showsettleloan">Settled Loans</a>
                     </li>
-                    @endif
+                    @endhasPrivilege
                 </ul>
             </div>
         </li>
-        @endif
+        @endhasPrivilege
 
 
 
-        @if (optional($privilege)->payment_details == 1)
+        @hasPrivilege('PAYMENT_DETAILS')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#payment" aria-expanded="false" aria-controls="center"
                 class="side-nav-link">
@@ -504,43 +436,42 @@
             </a>
             <div class="collapse" id="payment">
                 <ul class="side-nav-second-level">
-                    @if (optional($privilege)->add_repayment == 1)
+                    @hasPrivilege('ADD_REPAYMENT')
                     <li>
                         <a href="/payment">Add Repayment</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->bulk_repayment == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('BULK_REPAYMENT')
                     <li>
                         <a href="/bulk_repayment">Bulk Repayment</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->loan_settlement == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('LOAN_SETTLEMENT')
                     <li>
                         <a href="/loan_settlement">Loan Settlement</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->loan_reschedule == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('LOAN_RESCHEDULE')
                     <li>
                         <a href="/loan_reschedule">Loan Reschedule</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->view_payment == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('VIEW_PAYMENT')
                     <li>
                         <a href="/viewpayment">View Repayment</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->collector_wise_collection == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('COLLECTOR_WISE_COLLECTION')
                     <li>
                         <a href="/collection">Collector Wise Collection</a>
                     </li>
-                    @endif
+                    @endhasPrivilege
                 </ul>
             </div>
         </li>
-        @endif
+        @endhasPrivilege
 
-        <!-- @if (optional($privilege)->account_center == 1)
-
+        <!-- @hasPrivilege('ACCOUNT_CENTER')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#account" aria-expanded="false" aria-controls="center"
                 class="side-nav-link">
@@ -550,32 +481,32 @@
             </a>
             <div class="collapse" id="account">
                 <ul class="side-nav-second-level">
-                    @if (optional($privilege)->bank_cash_account == 1)
+                    @hasPrivilege('BANK_CASH_ACCOUNT')
                     <li>
                         <a href="/bank_account">Bank/Cash Account</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->internal_bank_transfer == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('INTERNAL_BANK_TRANSFER')
                     <li>
                         <a href="/InnerBankTransfer">Internal Account Transfer</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->collector_account == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('COLLECTOR_ACCOUNT')
                     <li>
                         <a href="/collector_index">Collector Account</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->cheque_details == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('CHEQUE_DETAILS')
                     <li>
                         <a href="/chq">Cheque Details</a>
                     </li>
-                    @endif
+                    @endhasPrivilege
                 </ul>
             </div>
         </li>
-        @endif
+        @endhasPrivilege
 
-        @if (optional($privilege)->account_department == 1)
+        @hasPrivilege('ACCOUNT_DEPARTMENT_1')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#accountmanagement" aria-expanded="false"
                 aria-controls="center" class="side-nav-link">
@@ -585,35 +516,35 @@
             </a>
             <div class="collapse" id="accountmanagement">
                 <ul class="side-nav-second-level">
-                    @if (optional($privilege)->add_asset == 1)
+                    @hasPrivilege('ADD_ASSET')
                     <li>
                         <a href="/AddAssetManagement">Add Asset Management</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->asset_management == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('ASSET_MANAGEMENT')
                     <li>
                         <a href="/AssetManagement">Asset Management</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->bank_reconciliation == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('BANK_RECONCILIATION')
                     <li>
                         <a href="/BankReconciliation">Bank Reconciliation</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->manual_journal == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('MANUAL_JOURNAL')
                     <li>
                         <a href="/ManualJournal">Manual Journal</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->chart_of_account == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('CHART_OF_ACCOUNT')
                     <li>
                         <a href="/ChartOfAccount">Chart Of Account</a>
                     </li>
-                    @endif
+                    @endhasPrivilege
                 </ul>
             </div>
         </li>
-        @endif -->
+        @endhasPrivilege -->
 
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#payment_voucher" aria-expanded="false"
@@ -643,25 +574,25 @@
             </div>
         </li>
 
-        @if (optional($privilege)->loan_calculator == 1)
+        @hasPrivilege('LOAN_CALCULATOR')
         <li class="side-nav-item">
             <a href="/calculator" class="side-nav-link">
                 <i class="ri-dashboard-3-line"></i>
                 <span> Loan Calculator </span>
             </a>
         </li>
-        @endif
+        @endhasPrivilege
 
-        @if (optional($privilege)->calendar == 1)
+        @hasPrivilege('CALENDAR')
         <li class="side-nav-item">
             <a href="/calender" class="side-nav-link">
                 <i class="ri-dashboard-3-line"></i>
                 <span> Calender </span>
             </a>
         </li>
-        @endif
+        @endhasPrivilege
 
-        @if (optional($privilege)->expenses == 1)
+        @hasPrivilege('EXPENSES')
 
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#expences" aria-expanded="false" aria-controls="expences"
@@ -672,22 +603,22 @@
             </a>
             <div class="collapse" id="expences">
                 <ul class="side-nav-second-level">
-                    @if (optional($privilege)->add_expenses == 1)
+                    @hasPrivilege('ADD_EXPENSES')
                     <li>
                         <a href="/expenses">Add Expenses</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->view_expenses == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('VIEW_EXPENSES')
                     <li>
                         <a href="/view_expenses">View Expenses</a>
                     </li>
-                    @endif
+                    @endhasPrivilege
                 </ul>
             </div>
         </li>
-        @endif
+        @endhasPrivilege
 
-        <!-- @if (optional($privilege)->user == 1)
+        <!-- @hasPrivilege('USER')
 
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#user" aria-expanded="false" aria-controls="user"
@@ -698,25 +629,25 @@
             </a>
             <div class="collapse" id="user" style="">
                 <ul class="side-nav-second-level">
-                    @if (optional($privilege)->create_user == 1)
+                    @hasPrivilege('CREATE_USER')
                     <li>
                         <a href="/user" class="active">Manage User</a>
                     </li>
-                    @endif
-                    @if (optional($privilege)->user_privileges == 1)
+                    @endhasPrivilege
+                    @hasPrivilege('USER_PRIVILEGES')
                     <li>
                         <a href="/privileges">User Privileges</a>
                     </li>
-                    @endif
+                    @endhasPrivilege
                     <li>
                         <a href="/designation-privileges">Designation Privileges</a>
                     </li>
                 </ul>
             </div>
         </li>
-        @endif -->
+        @endhasPrivilege -->
 
-        @if (optional($privilege)->reports == 1)
+        @hasPrivilege('REPORTS')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#reports_section" aria-expanded="false"
                 class="side-nav-link">
@@ -734,43 +665,43 @@
                         </a>
                         <div class="collapse" id="main_report">
                             <ul class="side-nav-third-level">
-                                @if (optional($privilege)->main_reports_dashboard == 1)
+                                @hasPrivilege('MAIN_REPORTS_DASHBOARD')
                                 <li>
                                     <a href="/portfolio_performance">Portfolio & Performance -
                                         Dashboard</a>
                                 </li>
-                                @endif
-                                @if (optional($privilege)->loan_disbursement_performance == 1)
+                                @endhasPrivilege
+                                @hasPrivilege('LOAN_DISBURSEMENT_PERFORMANCE')
                                 <li>
                                     <a href="/loan-report">Loan Disbursement Performance -
                                         Dashboard</a>
                                 </li>
-                                @endif
-                                @if (optional($privilege)->payment_detail_report == 1)
+                                @endhasPrivilege
+                                @hasPrivilege('PAYMENT_DETAIL_REPORT')
                                 <li>
                                     <a href="/PaymentFullDetailsReport">Payment Details Report</a>
                                 </li>
                                 <li>
                                     <a href="/prediction_report">Payment Prediction</a>
                                 </li>
-                                @endif
-                                @if (optional($privilege)->full_loan_detail == 1)
+                                @endhasPrivilege
+                                @hasPrivilege('FULL_LOAN_DETAIL')
                                 <li><a href="/AllLoanDetailReport">Full Loan Detail Report</a></li>
-                                @endif
-                                @if (optional($privilege)->loan_summary == 1)
+                                @endhasPrivilege
+                                @hasPrivilege('LOAN_SUMMARY')
                                 <li><a href="/loansummaryreport">Loan Summary Report</a></li>
-                                @endif
-                                @if (optional($privilege)->par_monthly == 1)
+                                @endhasPrivilege
+                                @hasPrivilege('PAR_MONTHLY')
                                 <li><a href="/par">PAR (Monthly)</a></li>
-                                @endif
-                                @if (optional($privilege)->par_weekly == 1)
+                                @endhasPrivilege
+                                @hasPrivilege('PAR_WEEKLY')
                                 <li><a href="/par_weekly">PAR (Weekly)</a></li>
-                                @endif
-                                @if (optional($privilege)->loan_status == 1)
+                                @endhasPrivilege
+                                @hasPrivilege('LOAN_STATUS')
                                 <li>
                                     <a href="/loanStatus">Loan Status</a>
                                 </li>
-                                @endif
+                                @endhasPrivilege
 
                                 <li>
                                     <a href="/depletion">Depletion Report Executive Summary</a>
@@ -799,238 +730,89 @@
                     <li class="side-nav-item">
                         <a data-bs-toggle="collapse" href="#acc_report" aria-expanded="false"
                             class="side-nav-link">
-                            <span> Accounting Reports </span>
+                            <span> Account Reports </span>
                             <span class="menu-arrow"></span>
                         </a>
                         <div class="collapse" id="acc_report">
                             <ul class="side-nav-third-level">
-                                @if (optional($privilege)->cashflow_accumulated == 1)
-                                <li>
-                                    <a href="/CashFlow">CashFlow Accumulated</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->cashflow_monthly == 1)
-                                <li>
-                                    <a href="/CashFlowMonthly">CashFlow Monthly</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->profit_loss == 1)
-                                <li>
-                                    <a href="/ProfitLoss">Profit & Loss (P&L)</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->balance_sheet == 1)
-                                <li>
-                                    <a href="/BalanceSheet">Balance Sheet</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->trial_balance == 1)
-                                <li>
-                                    <a href="/trialBalanceAccounting">Trial Balance</a>
-                                </li>
-                                @endif
+                                @hasPrivilege('CASHFLOW_ACCUMULATED')
+                                <li><a href="/CashFlow">CashFlow Accumulated</a></li>
+                                @endhasPrivilege
+                                @hasPrivilege('CASHFLOW_MONTHLY')
+                                <li><a href="/CashFlowMonthly">CashFlow Monthly</a></li>
+                                @endhasPrivilege
+                                @hasPrivilege('PROFIT_LOSS')
+                                <li><a href="/ProfitLoss">Profit & Loss</a></li>
+                                @endhasPrivilege
+                                @hasPrivilege('BALANCE_SHEET')
+                                <li><a href="/BalanceSheet">Balance Sheet</a></li>
+                                @endhasPrivilege
+                                @hasPrivilege('TRIAL_BALANCE')
+                                <li><a href="/trialBalanceAccounting">Trial Balance</a></li>
+                                @endhasPrivilege
                             </ul>
                         </div>
                     </li>
 
-                    <li class="side-nav-item">
-                        <a data-bs-toggle="collapse" href="#payment_report" aria-expanded="false"
+
+                    <!-- <li class="side-nav-item">
+                        <a data-bs-toggle="collapse" href="#expensess_reports" aria-expanded="false"
                             class="side-nav-link">
-                            <span> Payment Reports </span>
+                            <span> Expenses Reports </span>
                             <span class="menu-arrow"></span>
                         </a>
-                        <div class="collapse" id="payment_report">
+                        <div class="collapse" id="expensess_reports">
                             <ul class="side-nav-third-level">
-                                @if (optional($privilege)->daily_collection_sheet == 1)
                                 <li>
-                                    <a href="/daily">Daily Collection Sheet</a>
+                                    <a href="/report">Expenses Report</a>
                                 </li>
-                                @endif
-                                @if (optional($privilege)->center_collection_detail == 1)
                                 <li>
-                                    <a href="/center_collection">Center Wise collection Detail</a>
+                                    <a href="/income">Income Report</a>
                                 </li>
-                                @endif
-                                @if (optional($privilege)->center_collection_summary == 1)
-                                <li>
-                                    <a href="/center_collection_summary">Center Wise collection
-                                        Summary</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->route_collections == 1)
-                                <li>
-                                    <a href="/root_wise_collection">Route Wise Daily Collection</a>
-                                </li>
-                                @endif
                             </ul>
                         </div>
-                    </li>
-                    <li class="side-nav-item">
-                        <a data-bs-toggle="collapse" href="#repayment_report" aria-expanded="false"
-                            class="side-nav-link">
-                            <span> Re Payment Reports </span>
-                            <span class="menu-arrow"></span>
-                        </a>
-                        <div class="collapse" id="repayment_report">
-                            <ul class="side-nav-third-level">
-                                @if (optional($privilege)->repayment_sheet_01 == 1)
-                                <li>
-                                    <a href="/daily_repayment_sheet">Repayment Sheet 01</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->repayment_sheet_02 == 1)
-                                <li>
-                                    <a href="/RightWayDailyRepayment">Repayment Sheet 02</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->repayment_sheet_03 == 1)
-                                <li>
-                                    <a href="/daily_repayment_sheet_hm">Repayment Sheet 03</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->repayment_sheet_04 == 1)
-                                <li>
-                                    <a href="/daily_repayment_sheet_lasantha">Repayment Sheet 04</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->repayment_sheet_05 == 1)
-                                <li>
-                                    <a href="/daily_repayment_sheet_finwin">Repayment Sheet 05</a>
-                                </li>
-                                @endif
-
-                                @if (optional($privilege)->repayment_sheet_06 == 1)
-                                <li>
-                                    <a href="/GreenLankaTrustRepayment">Repayment Sheet 06</a>
-                                </li>
-                                @endif
-
-                                @if (optional($privilege)->repayment_sheet_07 == 1)
-                                <li>
-                                    <a href="/DandDRepayment">Repayment Sheet 07</a>
-                                </li>
-                                @endif
-
-                                @if (optional($privilege)->repayment_sheet_08 == 1)
-                                <li>
-                                    <a href="/dailyreport">Repayment Sheet 08</a>
-                                </li>
-                                @endif
-
-                                {{-- TEMPORARY: Show Repayment Sheet 09 without permission check for testing --}}
-                                {{-- @if (optional($privilege)->repayment_sheet_09 == 1) --}}
-                                <li>
-                                    <a href="/repaymntseet9">Repayment Sheet 09</a>
-                                </li>
-                                {{-- @endif --}}
-
-                                {{-- Repayment Sheet 10 --}}
-                                {{-- @if (optional($privilege)->repayment_sheet_10 == 1) --}}
-                                <li>
-                                    <a href="/RepaymentSheet10">Repayment Sheet 10</a>
-                                </li>
-                                {{-- @endif --}}
-                            </ul>
-                        </div>
-                    </li>
-                    <li class="side-nav-item">
-                        <a data-bs-toggle="collapse" href="#sub_report" aria-expanded="false"
-                            class="side-nav-link">
-                            <span> Sub Reports </span>
-                            <span class="menu-arrow"></span>
-                        </a>
-                        <div class="collapse" id="sub_report">
-                            <ul class="side-nav-third-level">
-                                @if (optional($privilege)->other_charges_report == 1)
-                                <li><a href="/LoanChargers">Loan Chargers Report</a></li>
-                                @endif
-                                @if (optional($privilege)->center_dashboard == 1)
-                                <li><a href="/dandlreport">Center Collection Dashboard</a></li>
-                                @endif
-                                @if (optional($privilege)->repayment_summary == 1)
-                                <li><a href="/monthlyprofit">Loan Repayment Summary Report</a></li>
-                                @endif
-                                @if (optional($privilege)->savings_report == 1)
-                                <li><a href="/savings_report">Savings Report</a></li>
-                                @endif
-                                @if (optional($privilege)->arrears_report == 1)
-                                <li><a href="/latePayment">Loan In Areas</a></li>
-                                @endif
-                                @if (optional($privilege)->arrears_overview == 1)
-                                <li><a href="/late_payment_report">Arrease Details</a></li>
-                                @endif
-                                @if (optional($privilege)->datewise_cashflow == 1)
-                                <li><a href="/ViewDateWiseCashFlow">Date Wise Cash Flow Details</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->loan_detail_report == 1)
-                                <li><a href="/loanreport">Loan Details</a></li>
-                                @endif
-                                @if (optional($privilege)->collector_report == 1)
-                                <li><a href="/repaymentreport">Collector Wise Repayment Collection</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->sms_history == 1)
-                                <li><a href="/sms_history">SMS History Report</a></li>
-                                @endif
-                            </ul>
-                        </div>
-                    </li>
+                    </li> -->
 
                     <li class="side-nav-item">
-                        <a data-bs-toggle="collapse" href="#people_report" aria-expanded="false"
+                        <a data-bs-toggle="collapse" href="#collection_report" aria-expanded="false"
                             class="side-nav-link">
-                            <span> People Reports </span>
+                            <span> Collection Reports </span>
                             <span class="menu-arrow"></span>
                         </a>
-                        <div class="collapse" id="people_report">
+                        <div class="collapse" id="collection_report">
                             <ul class="side-nav-third-level">
-                                @if (optional($privilege)->customer_detail_report == 1)
-                                <li><a href="/customerreport_details">All Customer Details</a></li>
-                                @endif
-                                @if (optional($privilege)->officer_customer_detail == 1)
-                                <li><a href="/customerreport_details_recover_officer">Recover Officer
-                                        Wise Customers</a></li>
-                                @endif
-                                @if (optional($privilege)->guardian_detail_report == 1)
-                                <li><a href="/borrowerreport">Guardian Details</a></li>
-                                @endif
+                                @hasPrivilege('DAILY_COLLECTION_SHEET')
+                                <li><a href="/daily_repayment_sheet">Daily Collection Sheet</a></li>
+                                <li><a href="/daily_repayment_sheet_lasantha">Daily Collection Sheet L</a></li>
+                                @endhasPrivilege
+                                @hasPrivilege('CENTER_COLLECTION_DETAIL')
+                                <li><a href="/center_collection">Center Collection Detail</a></li>
+                                @endhasPrivilege
+                                @hasPrivilege('CENTER_COLLECTION_SUMMARY')
+                                <li><a href="/center_collection_summary">Center Collection
+                                        Summary</a></li>
+                                @endhasPrivilege
+                                @hasPrivilege('ROUTE_COLLECTIONS')
+                                <li><a href="/root_wise_collection">Route Collections</a></li>
+                                @endhasPrivilege
                             </ul>
-
-
                         </div>
                     </li>
-
-
                 </ul>
             </div>
         </li>
+        @endhasPrivilege
         @endif
 
-        @endif {{-- end isHeadOffice condition --}}
 
-        {{-- Approval menu - Available to all users --}}
         <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#approval" aria-expanded="false" aria-controls="approval"
-                class="side-nav-link">
-                <i class="ri-checkbox-circle-line"></i>
-                <span> Approval </span>
-                <span class="menu-arrow"></span>
+            <a href="/logout" class="side-nav-link">
+                <i class="ri-logout-box-line"></i>
+                <span> Logout </span>
             </a>
-            <div class="collapse" id="approval">
-                <ul class="side-nav-second-level">
-                    <li><a href="/pending_approval">Pending Approval</a></li>
-                    <li><a href="/approved_history">Approved History</a></li>
-                    <li><a href="/rejected_approval">Rejected Approval</a></li>
-                    <li>
-                        <a href="loan_delete_requests">Delete Loans Approval</a>
-                    </li>
-                </ul>
-            </div>
         </li>
-
-        @endif
     </ul>
 
+    <!--- End Sidemenu -->
     <div class="clearfix"></div>
 </div>

@@ -10,39 +10,95 @@ class AccountCenterAutoLoginController extends Controller
 {
     public function autoLogin(Request $request)
     {
-        // Get token from cookie or POST
-        $token = $request->input('token') ?? $request->cookie('access_token');
-        // dd($token);
+        $accountCenterUrl = rtrim(env('ACCOUNT_CENTER_URL', 'https://accountcenter.asipbook.com'), '/');
+        $serverUrl = rtrim(env('ACCOUNT_CENTER_SERVER_URL', 'https://accountcenterserver.asipbook.com'), '/');
+        $appUrl = env('APP_URL', 'https://192.168.1.18');
+
+        $token = $this->getToken($request);
 
         if (!$token) {
-            return redirect('https://accountcenter.asipbook.com/');
+            return redirect($accountCenterUrl);
         }
 
-        // Call MERN backend to verify JWT
-        $response = Http::withHeaders([
-            'Authorization' => "Bearer $token"
-        ])->post('https://accountcenterserver.asipbook.com/api/auth/micro-finance-auth-verify');
+        $userData = $this->fetchUserData($token, $serverUrl);
 
-        // dd($response, !$response->ok() || !$response['valid']);
-        if (!$response->ok() || !$response['valid']) {
-            $userData = Http::withHeaders([
+        if (empty($userData)) {
+            return redirect("$accountCenterUrl/api/auth/check-auth");
+        }
+
+        $this->setSessionData($userData);
+
+        // Optionally set cookie for further requests
+        cookie()->queue('access_token', $token, 20); // 20 minutes
+
+        return redirect($appUrl);
+    }
+
+    private function getToken(Request $request)
+    {
+        return $request->input('token') ?? $request->cookie('access_token');
+    }
+
+    private function fetchUserData($token, $serverUrl)
+    {
+        try {
+            // 1. Initial Verification (POST)
+            $response = Http::timeout(60)->withHeaders([
                 'Authorization' => "Bearer $token"
-            ])->get('https://accountcenterserver.asipbook.com/api/auth/check-auth');
+            ])->post("$serverUrl/api/auth/micro-finance-auth-verify");
 
-            return redirect('https://accountcenter.asipbook.com/api/auth/check-auth');
+            if ($response->ok() && $response->reason() == 'OK') {
+                $data = $response->json();
+                if (!empty($data)) {
+                    return $data;
+                }
+            }
+        } catch (\Exception $e) {
+            // Continue to fallback
         }
 
-        // Store user info in Laravel session
-        session(['auth_user' => $response['user']]);
+        try {
+            // 2. Fallback Verification (GET)
+            $authResponse = Http::timeout(60)->withHeaders([
+                'Authorization' => "Bearer $token"
+            ])->get("$serverUrl/api/auth/check-auth");
 
-        // Filter branches where idBranch != -1
-        $filteredBranches = array_values(array_filter($response['userData']['branches'] ?? []));
+            if ($authResponse->ok()) {
+                return $authResponse->json();
+            }
+        } catch (\Exception $e) {
+            return null;
+        }
 
-        $userData = $response['userData'];
+        return null;
+    }
+
+    private function setSessionData($responseData)
+    {
+        // Store user info
+        session(['auth_user' => $responseData['user'] ?? null]);
+
+        $userData = $responseData['userData'] ?? [];
+
+        // Filter branches
+        $filteredBranches = array_values(array_filter($userData['branches'] ?? [], function ($branch) {
+            return ($branch['idBranch'] ?? null) != -1;
+        }));
+
         $userData['branches'] = $filteredBranches;
-
         session(['user_data' => $userData]);
+        session(['head_branch' => $userData['microfinanceHeadBranchId'] ?? null]);
 
+        $hasBranchAccess = 0;
+        if (isset($userData['privileges']) && is_array($userData['privileges'])) {
+            foreach ($userData['privileges'] as $priv) {
+                if (isset($priv['Description']) && $priv['Description'] === 'BRANCH_ACCESS') {
+                    $hasBranchAccess = 1;
+                    break;
+                }
+            }
+        }
+        session(['branch_access' => $hasBranchAccess]);
         if (!empty($filteredBranches)) {
             session(['branch_id' => $filteredBranches[0]['idBranch']]);
             if (isset($filteredBranches[0]['Name'])) {
@@ -50,13 +106,8 @@ class AccountCenterAutoLoginController extends Controller
             }
         }
 
-        if (isset($response['userData']['privileges'])) {
-            session(['privileges' => $response['userData']['privileges']]);
+        if (isset($userData['privileges'])) {
+            session(['privileges' => $userData['privileges']]);
         }
-
-        // Optionally set cookie for further requests
-        cookie()->queue('access_token', $token, 20); // 20 minutes
-        // dd($response['userData']['privileges']   );
-        return redirect('https://192.168.1.18/'); // dashboard route
     }
 }

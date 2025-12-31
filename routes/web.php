@@ -422,7 +422,7 @@ Route::middleware(['auth.central'])->group(function () {
 
     //SMS
     //Route::post('/send-sms','\App\Http\Controllers\SmsController@index')->name('sms.index');
-    Route::get('/sms', '\App\Http\Controllers\SmsController@create')->name('sms.create');
+    Route::get('/sms', '\App\Http\Controllers\SmsController@create')->name('sms.create')->middleware('privilege:SMS_FORMAT');
     Route::post('/save_sms', '\App\Http\Controllers\SmsController@store')->name('sms.store');
     Route::post('/load_sms', '\App\Http\Controllers\SmsController@show')->name('sms.show');
     Route::post('/updatesmsstatus', '\App\Http\Controllers\SmsController@edit')->name('sms.edit');
@@ -436,12 +436,12 @@ Route::middleware(['auth.central'])->group(function () {
 
 
     //company
-    Route::get('/company', '\App\Http\Controllers\CompanyController@index')->name('company.index');
+    Route::get('/company', '\App\Http\Controllers\CompanyController@index')->name('company.index')->middleware('privilege:MY_ACCOUNT');
     Route::post('/company-profile', '\App\Http\Controllers\CompanyController@store')->name('company.store');
 
 
     //settings
-    Route::get('/setting', '\App\Http\Controllers\CompanyController@setting')->name('company.setting');
+    Route::get('/setting', '\App\Http\Controllers\CompanyController@setting')->name('company.setting')->middleware('privilege:SETTINGS');
     Route::post('/shortcuts', '\App\Http\Controllers\CompanyController@shortcuts')->name('company.shortcuts');
     Route::get('/shortcuts/all', '\App\Http\Controllers\CompanyController@show')->name('company.show');
 
@@ -466,7 +466,7 @@ Route::middleware(['auth.central'])->group(function () {
     //agreement
     Route::get('/agreement', function () {
         return view('pages.Agreement');
-    });
+    })->middleware('privilege:DOCUMENT_FORMAT');
     Route::get('/agreement_view/{type}/{id}', '\App\Http\Controllers\AgreementController@agreement_view')->name('sms.agreement_view');
     Route::post('/save_agreement', '\App\Http\Controllers\AgreementController@store')->name('sms.store');
     Route::post('/load_agreement', '\App\Http\Controllers\AgreementController@show')->name('sms.show');
@@ -709,7 +709,7 @@ Route::middleware(['auth.central'])->group(function () {
 
 
 
-    Route::get('/holidays', '\App\Http\Controllers\UserController@holidays')->name('holidays.index');
+    Route::get('/holidays', '\App\Http\Controllers\UserController@holidays')->name('holidays.index')->middleware('privilege:COMPANY_HOLIDAYS');
     Route::post('/poya-days/save', '\App\Http\Controllers\UserController@poya_days_save')->name('poya_days_save.index');
     Route::post('/holidays', '\App\Http\Controllers\UserController@holidays_save')->name('holidays.store');
     Route::delete('/holidays/delete/{id}', '\App\Http\Controllers\UserController@deleteHoliday')->name('holidays.delete');
@@ -722,7 +722,7 @@ Route::middleware(['auth.central'])->group(function () {
 
 
     //branches
-    Route::get('/branch', '\App\Http\Controllers\BranchController@index')->name('branch');
+    Route::get('/branch', '\App\Http\Controllers\BranchController@index')->name('branch')->middleware('privilege:BRANCHES');
     Route::post('/save-branch', '\App\Http\Controllers\BranchController@create')->name('save.branch');
     Route::post('/update-branch', '\App\Http\Controllers\BranchController@updateBranch')->name('update.branch');
 
@@ -760,10 +760,10 @@ Route::middleware(['auth.central'])->group(function () {
 
 
     //Cashier
-    Route::post('/save-cashier-data', [CashierController::class, 'store'])->name('cashier.save');
+    Route::post('/save-cashier-data', [CashierController::class, 'store'])->name('cashier.save')->middleware('privilege:CASHIER_START');
     Route::get('/get-today-cashier-data', [CashierController::class, 'getTodayData'])->name('cashier.getTodayData');
     Route::get('/cashier/day-end-data', [CashierController::class, 'getDayEndData'])->name('cashier.dayEndData');
-    Route::post('/cashier/save-day-end', [CashierController::class, 'saveDayEnd'])->name('cashier.saveDayEnd');
+    Route::post('/cashier/save-day-end', [CashierController::class, 'saveDayEnd'])->name('cashier.saveDayEnd')->middleware('privilege:CASHIER_CLOSE');
     Route::get('/cashier/get-saved-day-end', [CashierController::class, 'getSavedDayEndData'])->name('cashier.getSavedDayEndData');
     Route::get('/cashier/bank-list', [CashierController::class, 'getBankList']);
 

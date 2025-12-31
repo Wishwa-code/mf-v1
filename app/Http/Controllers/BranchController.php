@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Mail\BranchCreated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +16,7 @@ class BranchController extends Controller
     public function index()
     {
         $branches = DB::table('branch')->get();
-        return view('pages.Branches',compact('branches'));
+        return view('pages.Branches', compact('branches'));
     }
 
     /**
@@ -209,7 +210,7 @@ class BranchController extends Controller
         // Ensure all bank accounts are inserted successfully
         DB::table('company_bank_accounts')->insert($Bank);
 
-// Define the agreement types to be inserted
+        // Define the agreement types to be inserted
         $agreementTypes = [
             [
                 'type' => "Voucher",
@@ -255,7 +256,7 @@ class BranchController extends Controller
             ]
         ];
 
-// Insert all agreement types at once
+        // Insert all agreement types at once
         DB::table('agreement_type')->insert($agreementTypes);
 
 
@@ -339,7 +340,7 @@ class BranchController extends Controller
 
         if ($company) {
             // Generate the activation link (modify this URL as per your application)
-            $activationLink = url('/activate-branch/'.$id); // Assuming the URL is like /activate-branch/{id}
+            $activationLink = url('/activate-branch/' . $id); // Assuming the URL is like /activate-branch/{id}
 
             Mail::to('asipiyasoftsolution@gmail.com')->send(new BranchCreated($request->branch, $activationLink));
 
@@ -347,8 +348,6 @@ class BranchController extends Controller
         } else {
             return response()->json(['success' => true, 'message' => 'Branch saved successfully and email sent.']);
         }
-
-
     }
 
     /**
@@ -399,33 +398,48 @@ class BranchController extends Controller
             'branch_id' => 'required|integer',
         ]);
 
-        // Authorization: Only allow super access or users assigned to the branch
-        $userId = session('userid');
-        $isSuper = session('branch_access') === 1;
+        $targetBranchId = $request->branch_id;
+        $hasAccess = false;
+        $branchName = null;
 
-        if (!$isSuper) {
-            $assigned = DB::table('user_has_branches')
-                ->where('user_id', $userId)
-                ->where('branch_id', $request->branch_id)
-                ->exists();
+        // Check in session allowed branches
+        $allowedBranches = session('user_data')['branches'] ?? [];
+        foreach ($allowedBranches as $branch) {
+            // Handle array access (expected from session storage)
+            // dd($branch['idBranch'] );
+            if (isset($branch['idBranch']) && $branch['idBranch'] == $targetBranchId) {
+                $hasAccess = true;
+                $branchName = $branch['Name'];
+                break;
+            }
+        }
+        // dd(session('branch_access'),$request->branch_id);
 
-            if (!$assigned) {
-                return response()->json(['success' => false, 'message' => 'You are not assigned to this branch'], 403);
+        // Fallback for Super Admin (branch_access == 1)
+        if (!$hasAccess && session('branch_access') === 1) {
+            $hasAccess = true;
+            // Fetch name from DB
+            $dbBranch = DB::table('branch')->where('branch_id', $targetBranchId)->first();
+            if ($dbBranch) {
+                $branchName = $dbBranch->Name;
             }
         }
 
-        // Update the session with the new branch ID
-        session(['branch_id' => $request->branch_id]);
+        if (!$hasAccess) {
+            return response()->json(['success' => false, 'message' => 'You are not assigned to this branch'], 403);
+        }
 
-        $branch = DB::table('branch')->where('branch_id', '=', $request->branch_id)->first();
+        // Update session
+        session(['branch_id' => $targetBranchId]);
+        if ($branchName) {
+            session(['branch_name' => $branchName]);
+        }
 
-        session(['branch_name' => $branch->Name]);
 
-    $userController = new UserController();
+        $userController = new UserController();
 
         // Call the create_panelty function
         $userController->create_panelty();
-
 
         return response()->json(['success' => true, 'message' => 'Branch updated successfully']);
     }
@@ -448,8 +462,4 @@ class BranchController extends Controller
             return redirect()->route('login')->with('error', 'Branch activation failed! Please check your activation code.');
         }
     }
-
-
-
-
 }

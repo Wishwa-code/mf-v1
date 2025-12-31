@@ -35,9 +35,18 @@ class AppServiceProvider extends ServiceProvider
                     DB::statement("ALTER TABLE customer_loan ADD COLUMN created_at DATETIME NULL AFTER Date_Time");
                     DB::statement("UPDATE customer_loan SET created_at = Date_Time WHERE Date_Time IS NOT NULL");
                 } catch (\Exception $e) {
-                    logger()->warning('Could not add customer_loan.created_at: '.$e->getMessage());
+                    logger()->warning('Could not add customer_loan.created_at: ' . $e->getMessage());
                 }
             }
+
+            // Register Blade Directive for Privileges
+            \Illuminate\Support\Facades\Blade::if('hasPrivilege', function ($expression) {
+                $privileges = collect(session('privileges', []))
+                    ->pluck('Description')
+                    ->map(fn($d) => strtoupper($d))
+                    ->toArray();
+                return in_array(strtoupper($expression), $privileges);
+            });
         } catch (\Exception $e) {
             // Log and skip during deploy if DB is not ready
             logger()->warning("Skipping settings load: " . $e->getMessage());
