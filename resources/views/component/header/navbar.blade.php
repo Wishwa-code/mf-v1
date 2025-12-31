@@ -176,14 +176,14 @@ $allowedBranches = $branch;
                     </a>
                     @endhasPrivilege
 
-                    <!-- @if (session('branch_id') == -1) -->
+                    @if (session('head_branch') == session('branch_id'))
                     @hasPrivilege('SETTINGS')
                     <a href="/setting" class="dropdown-item">
                         <i class="ri-settings-4-line fs-18 align-middle me-1"></i>
                         <span>Settings</span>
                     </a>
                     @endhasPrivilege
-                    <!-- @endif -->
+                    @endif
 
                     @hasPrivilege('SMS_FORMAT')
 

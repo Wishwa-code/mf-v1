@@ -24,6 +24,7 @@ use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\CustomerLeadController;
 use App\Http\Controllers\VoucherDashboardController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -73,7 +74,8 @@ Route::post('/recover_password', '\App\Http\Controllers\UserController@recover_p
 
 
 Route::middleware(['auth.central'])->group(function () {
-    Route::get('/', '\App\Http\Controllers\UserController@showdashboard')->name('home');
+    Route::get('/', [DashboardController::class, 'index'])->name('home');
+    
     Route::get('/privileges', function () {
         return view('pages.Privilages');
     });
