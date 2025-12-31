@@ -233,6 +233,9 @@ Route::middleware(['auth.central'])->group(function () {
     //Penalty Balance
     Route::get('/penalty-balance-data', '\App\Http\Controllers\UserController@penaltyBalanceData')->name('penalty-balance.data');
 
+    //Current Week Pending
+    Route::get('/current-week-pending-data', '\App\Http\Controllers\UserController@currentWeekPendingData')->name('current-week-pending.data');
+
 
     //payment
     Route::get('/payment_step_1', '\App\Http\Controllers\PaymentLoanController@index')->name('payment_step_1.index');

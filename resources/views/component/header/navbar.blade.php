@@ -10,12 +10,12 @@ $allowedBranches = $branch;
 
 ?>
 
-@include('component.header.navbarcss')
+
 
 <div class="navbar-custom">
-    <div class="topbar container-fluid">
+    <div class="topbar container-fluid d-flex flex-wrap justify-content-between align-items-center">
 
-        <div class="d-flex align-items-center">
+        <div class="d-flex align-items-center mb-2 mb-md-0">
 
             <!-- Sidebar Menu Toggle Button -->
             <button class="button-toggle-menu me-2">

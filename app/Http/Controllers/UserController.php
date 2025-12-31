@@ -1202,6 +1202,39 @@ class UserController extends Controller
         return response()->json(['data' => $weeklyNotPaidData]);
     }
 
+    public function currentWeekPendingData()
+    {
+        // Get current week date range
+        $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY)->toDateString();
+        $weekEnd   = Carbon::now()->endOfWeek(Carbon::SATURDAY)->toDateString();
+
+        $weekPendingData = tableWithBranch('installments', 'installments')
+            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
+            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
+            ->select(
+                'customer_loan.idCustomer_Loan as loan_id',
+                DB::raw('MAX(center.idCenter) as center_id'),
+                DB::raw('IFNULL(MAX(CONCAT(center.No, " - ", center.Name)), "-") as center_name'),
+                'customer.idCustomer as customer_id',
+                DB::raw('CONCAT(customer.First_Name, " ", customer.Last_Name) as customer_name'),
+                'customer_loan.Amount as capital_amount',
+                'customer_loan.Total_Loan_Amount as full_loan_amount',
+                DB::raw('SUM(installments.Total_Balance) as current_week_pending')
+            )
+            ->where('customer_loan.Status', '=', '0')
+            ->where('installments.Status', '=', '0')
+            ->whereBetween('installments.Installment_Date', [$weekStart, $weekEnd])
+            ->groupBy('center.idCenter', 'customer_loan.idCustomer_Loan', 'customer.idCustomer', 'customer.First_Name', 'customer.Last_Name', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount')
+            ->havingRaw('current_week_pending > 0')
+            ->orderBy('current_week_pending', 'DESC')
+            ->get();
+
+        return response()->json(['data' => $weekPendingData]);
+    }
+
 
 
 

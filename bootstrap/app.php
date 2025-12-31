@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth' => \App\Http\Middleware\Authenticate::class,
             'auth.central' => \App\Http\Middleware\VerifyAuthToken::class,
             'branch.from.user' => \App\Http\Middleware\ApplyBranchFromUser::class,
+            'privilege' => \App\Http\Middleware\CheckPrivilege::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

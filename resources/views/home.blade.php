@@ -1,1593 +1,1158 @@
 @extends('layout.admin')
 
 @section('head')
+<!-- CSS Dependencies -->
 <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.2.3/css/buttons.dataTables.min.css">
-<link rel="stylesheet" type="text/css"
-    href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css">
 
 <style>
-    body {
-        background: linear-gradient(120deg, #f6f9ff, #e9f3ff);
-        background-size: 400% 400%;
-        animation: gradientBackground 20s ease infinite;
-    }
-
-    @keyframes gradientBackground {
-        0% {
-            background-position: 0% 50%;
-        }
-
-        50% {
-            background-position: 100% 50%;
-        }
-
-        100% {
-            background-position: 0% 50%;
-        }
-    }
-
-    .glass-card {
-        background: rgba(255, 255, 255, 0.2);
+    /* Glassmorphism / Card Class */
+    .glass-panel {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
         border-radius: 16px;
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
-        transition: all 0.3s ease-in-out;
+        /* Modern rounded corners */
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-    .glass-card:hover {
-        transform: scale(1.02);
+    .glass-panel:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.12);
     }
 
-    .animated-dashboard {
-        animation: fadeInDashboard 1s ease-in-out both;
-    }
-
-    @keyframes fadeInDashboard {
-        from {
-            opacity: 0;
-            transform: translateY(15px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .animated-card {
-        animation: fadeInUp 0.8s ease forwards;
-    }
-
-    @keyframes fadeInUp {
-        0% {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-
-        100% {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* Modern Modal Styles */
-    .modern-modal {
-        border: none;
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-        backdrop-filter: blur(10px);
-    }
-
-    .modern-modal-header {
-        border-radius: 16px 16px 0 0 !important;
+    /* Stats Cards */
+    .stat-card {
         padding: 1.5rem;
         position: relative;
         overflow: hidden;
+        height: 100%;
     }
 
-    .modal-icon-container {
+    .stat-icon-bg {
+        position: absolute;
+        right: -10px;
+        bottom: -10px;
+        font-size: 5rem;
+        opacity: 0.1;
+        transform: rotate(-15deg);
+    }
+
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--dark-color);
+        margin-bottom: 0.2rem;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: #64748b;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Welcome Banner */
+    .welcome-banner {
+        padding: 2rem;
+        background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+        /* Deep Dark for Contrast */
+        color: white;
+        border-radius: 12px;
+        position: relative;
+        overflow: hidden;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .gradient-card-1 {
+        background: linear-gradient(135deg, #6a5e87 0%, #8e7db3 100%);
+        color: white;
+        border: none;
+    }
+
+    .gradient-card-2 {
+        background: linear-gradient(135deg, #ea7074 0%, #ff8f94 100%);
+        color: white;
+        border: none;
+    }
+
+    .gradient-card-3 {
+        background: linear-gradient(135deg, #ffc184 0%, #ffd4a3 100%);
+        color: white;
+        border: none;
+    }
+
+    .gradient-card-4 {
+        background: linear-gradient(135deg, #313a46 0%, #1f262d 100%);
+        color: white;
+        border: none;
+    }
+
+    .gradient-card .stat-label {
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    .gradient-card .stat-value {
+        color: white !important;
+    }
+
+    .gradient-card .badge {
+        background-color: rgba(255, 255, 255, 0.25) !important;
+        color: white !important;
+        border: none !important;
+    }
+
+    .gradient-card .icon-circle {
+        background-color: rgba(255, 255, 255, 0.2) !important;
+        color: white !important;
+    }
+
+    .gradient-card .stat-icon-bg {
+        color: rgba(255, 255, 255, 0.15) !important;
+    }
+
+    .welcome-pattern {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    /* Charts */
+    .chart-container {
+        padding: 1.5rem;
+        height: 100%;
+    }
+
+    .chart-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--dark-color);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Shortcut Grid */
+    .shortcut-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        text-align: center;
+        height: 100%;
+        color: var(--dark-color);
+        text-decoration: none;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        background: rgba(255, 255, 255, 0.6);
+        border-radius: 16px;
+        transition: all 0.3s ease;
+    }
+
+    .shortcut-btn:hover {
+        background: white;
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        color: var(--primary-color);
+    }
+
+    .shortcut-icon-circle {
         width: 50px;
         height: 50px;
-        border-radius: 12px;
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: none;
+        font-size: 1.5rem;
+        margin-bottom: 0.8rem;
+        background: rgba(0, 121, 107, 0.1);
+        color: var(--primary-color);
+        transition: all 0.3s;
     }
 
-    .modern-modal-body {
-        padding: 2rem;
-        background: #fafbfc;
-    }
-
-    /* Modern Table Styles */
-    .modern-table-container {
-        background: white;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        border: 1px solid rgba(0, 0, 0, 0.08);
-    }
-
-    .modern-table {
-        border-radius: 12px;
-        overflow: hidden;
-        border: none;
-    }
-
-    .modern-table-header {
-        background: #f8f9fa;
-        color: #495057;
-        position: relative;
-        border-bottom: 2px solid #dee2e6;
-    }
-
-    .modern-table-warning {
-        background: #f8f9fa !important;
-        color: #495057 !important;
-        border-bottom: 2px solid #ffc107 !important;
-    }
-
-    .modern-table-danger {
-        background: #f8f9fa !important;
-        color: #495057 !important;
-        border-bottom: 2px solid #dc3545 !important;
-    }
-
-    .modern-table-header th {
-        border: none;
-        padding: 1rem;
-        font-weight: 600;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        position: relative;
-        background: #f8f9fa;
-    }
-
-    /* Remove DataTable sorting arrows */
-    .modern-table thead th.sorting:before,
-    .modern-table thead th.sorting:after,
-    .modern-table thead th.sorting_asc:before,
-    .modern-table thead th.sorting_asc:after,
-    .modern-table thead th.sorting_desc:before,
-    .modern-table thead th.sorting_desc:after {
-        display: none !important;
-    }
-
-    .modern-table thead th {
-        cursor: default !important;
-    }
-
-    .modern-table tbody tr {
-        transition: all 0.3s ease;
-        border: none;
-    }
-
-    .modern-table tbody tr:hover {
-        background: linear-gradient(135deg, #f8f9ff, #e3f2fd);
-        transform: translateX(2px);
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .modern-table tbody td {
-        border: none;
-        padding: 1rem;
-        vertical-align: middle;
-        border-bottom: 1px solid #f1f3f4;
-    }
-
-    .modern-table tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    /* Loading Skeleton */
-    .skeleton-loader {
-        padding: 0 2rem;
-    }
-
-    .skeleton-row {
-        height: 20px;
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 200% 100%;
-        animation: skeleton-loading 2s infinite;
-        border-radius: 4px;
-        margin: 0.75rem 0;
-    }
-
-    @keyframes skeleton-loading {
-        0% {
-            background-position: 200% 0;
-        }
-
-        100% {
-            background-position: -200% 0;
-        }
-    }
-
-    /* Enhanced DataTable Styling */
-    .modern-table-container .dataTables_wrapper .dataTables_length,
-    .modern-table-container .dataTables_wrapper .dataTables_filter {
-        margin: 1rem;
-    }
-
-    .modern-table-container .dataTables_wrapper .dataTables_info,
-    .modern-table-container .dataTables_wrapper .dataTables_paginate {
-        margin: 1rem;
-    }
-
-    .modern-table-container .dt-buttons {
-        margin: 1rem;
-    }
-
-    .modern-table-container .dt-button {
-        background: linear-gradient(135deg, #667eea, #764ba2) !important;
-        border: none !important;
-        color: white !important;
-        border-radius: 8px !important;
-        padding: 0.5rem 1rem !important;
-        margin-right: 0.5rem !important;
-        transition: all 0.3s ease !important;
-    }
-
-    .modern-table-container .dt-button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
-    }
-
-    /* Modal Animation */
-    .modal.fade .modal-dialog {
-        transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out;
-        transform: translate(0, -100px) scale(0.9);
-    }
-
-    .modal.show .modal-dialog {
-        transform: translate(0, 0) scale(1);
-    }
-
-    .modern-table-header th[title] {
-        cursor: help;
-        position: relative;
-    }
-
-    .modern-table-header th[title]:hover {
-        background: #e9ecef !important;
-    }
-
-    /* Shortcut tiles */
-    .shortcut-tile {
-        border-radius: 12px;
-        transition: all 0.25s ease-in-out;
+    .shortcut-btn:hover .shortcut-icon-circle {
+        background: var(--primary-color);
         color: white;
     }
 
-    .shortcut-tile:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    /* Utility specific colors */
+    .text-teal {
+        color: #009688;
     }
 
-    .shortcut-icon {
-        font-size: 1.8rem;
+    .text-blue {
+        color: #2196f3;
     }
 
-    .shortcut-label {
-        font-size: 0.9rem;
-        font-weight: 500;
-        margin-top: 6px;
+    .text-orange {
+        color: #ff9800;
     }
 
-    /* Make modal body scroll instead of full page */
-    .modal-dialog.modal-dialog-scrollable .modern-modal-body {
-        max-height: calc(100vh - 200px);
-        overflow-y: auto;
+    .text-red {
+        color: #f44336;
+    }
+
+    .text-purple {
+        color: #9c27b0;
+    }
+
+    .bg-gradient-teal {
+        background: linear-gradient(135deg, #48a999 0%, #00796b 100%);
+    }
+
+    .bg-gradient-blue {
+        background: linear-gradient(135deg, #42a5f5 0%, #1565c0 100%);
+    }
+
+    .bg-gradient-orange {
+        background: linear-gradient(135deg, #ffcc80 0%, #ef6c00 100%);
+    }
+
+    .bg-gradient-purple {
+        background: linear-gradient(135deg, #ce93d8 0%, #7b1fa2 100%);
+    }
+
+    /* Modal Overrides */
+    .modal-content {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+        background: var(--light-bg);
+        border-radius: 20px 20px 0 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        padding: 1.5rem;
+    }
+
+    .table-responsive {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .table thead th {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #edf2f7;
+        color: #8898aa;
+        font-weight: 600;
     }
 </style>
 @endsection
 
 @section('content')
-
 @hasPrivilege('DASHBOARD')
-<div class="container-fluid py-4 animated-dashboard">
-    @php
-    $all_loan = $customer_loan_current_Count + $setteled_loan_Count;
-    $loan_completion_percentage = $all_loan > 0 ? round(($setteled_loan_Count / $all_loan) * 100, 2) : 0;
-    @endphp
+<div class="container-fluid py-4">
 
-
-    {{-- Welcome Banner --}}
+    <!-- Welcome Section -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="glass-card card text-white shadow-lg animated-card"
-                style="background: linear-gradient(135deg, #667eea, #764ba2);">
-                <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-center text-center text-md-start">
-                    <div class="mb-3 mb-md-0">
-                        @if (session('head_branch') == session('branch_id'))
-                        <h2 class="mb-1">All Branches Overview 🏢</h2>
-                        @else
-                        <h2 class="mb-1">Welcome Back 👋</h2>
-                        @endif
-                        <p class="mb-0" id="live-datetime"></p>
+            <div class="welcome-banner shadow-lg animated-card">
+                <div class="welcome-pattern"></div>
+                <div class="d-flex justify-content-between align-items-center position-relative" style="z-index: 1;">
+                    <div>
+                        <h2 class="fw-bold mb-1">
+                            @if (session('head_branch') == session('branch_id'))
+                            Headquarters Overview 🏢
+                            @else
+                            Dashboard Overview 👋
+                            @endif
+                        </h2>
+                        <p class="mb-0 opacity-75" id="live-datetime-display">Loading date...</p>
                     </div>
-                    @if (session('head_branch') == session('branch_id'))
-                    <i class="ri-building-2-line display-4"></i>
-                    @else
-                    <i class="ri-user-smile-line display-4"></i>
-                    @endif
+                    <div class="d-none d-md-block">
+                        <span class="badge bg-white text-primary px-3 py-2 rounded-pill fs-6 shadow-sm">
+                            <i class="ri-user-star-line me-1"></i> {{ session('user_data')['name'] ?? 'User' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Primary KPI Cards -->
+    <div class="row g-4 mb-4">
+        <!-- Pending Loans -->
+        <div class="col-xl-3 col-md-6">
+            <a href="/pendingloan" class="text-decoration-none">
+                <div class="glass-panel stat-card gradient-card gradient-card-1">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="stat-label">Pending Loans</p>
+                            <h3 class="stat-value">
+                                <span class="counter" data-target="{{ $customer_loan_pending_Amount ?? 0 }}">0</span>
+                            </h3>
+                            <div class="d-flex align-items-center mt-2">
+                                <span class="badge rounded-pill px-2">
+                                    {{ $customer_loan_pending_Count ?? 0 }} Appls.
+                                </span>
+                            </div>
+                        </div>
+                        <div class="icon-circle rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="ri-loader-4-line fs-4"></i>
+                        </div>
+                    </div>
+                    <i class="ri-loader-4-line stat-icon-bg"></i>
+                </div>
+            </a>
+        </div>
+
+        <!-- Ongoing Loans -->
+        <div class="col-xl-3 col-md-6">
+            <a href="/payment_step_1" class="text-decoration-none">
+                <div class="glass-panel stat-card gradient-card gradient-card-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="stat-label">Active Portfolio</p>
+                            <h3 class="stat-value">
+                                <span class="counter" data-target="{{ $customer_loan_current_Amount ?? 0 }}">0</span>
+                            </h3>
+                            <div class="d-flex align-items-center mt-2">
+                                <span class="badge rounded-pill px-2">
+                                    {{ $customer_loan_current_Count ?? 0 }} Active
+                                </span>
+                            </div>
+                        </div>
+                        <div class="icon-circle rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="ri-wallet-3-line fs-4"></i>
+                        </div>
+                    </div>
+                    <i class="ri-wallet-3-line stat-icon-bg"></i>
+                </div>
+            </a>
+        </div>
+
+        <!-- Settled Loans -->
+        <div class="col-xl-3 col-md-6">
+            <a href="/showsettleloan" class="text-decoration-none">
+                <div class="glass-panel stat-card gradient-card gradient-card-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="stat-label">Settled Loans</p>
+                            <h3 class="stat-value">
+                                <span class="counter" data-target="{{ $setteled_loan_current_Amount ?? 0 }}">0</span>
+                            </h3>
+                            <div class="d-flex align-items-center mt-2">
+                                <span class="badge rounded-pill px-2">
+                                    {{ $setteled_loan_Count ?? 0 }} Closed
+                                </span>
+                            </div>
+                        </div>
+                        <div class="icon-circle rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="ri-checkbox-circle-line fs-4"></i>
+                        </div>
+                    </div>
+                    <i class="ri-checkbox-circle-line stat-icon-bg"></i>
+                </div>
+            </a>
+        </div>
+
+        <!-- Current Month Lending -->
+        <div class="col-xl-3 col-md-6">
+            <div class="glass-panel stat-card gradient-card gradient-card-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="stat-label">Month Lending</p>
+                        <h3 class="stat-value">
+                            <span class="counter" data-target="{{ $currentMonthLending ?? 0 }}">0</span>
+                        </h3>
+                        <div class="d-flex align-items-center mt-2">
+                            <span class="badge rounded-pill px-2">
+                                This Month
+                            </span>
+                        </div>
+                    </div>
+                    <div class="icon-circle rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                        <i class="ri-calendar-check-line fs-4"></i>
+                    </div>
+                </div>
+                <i class="ri-calendar-check-line stat-icon-bg"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Secondary Metrics Slide/Grid -->
+    <div class="row g-4 mb-4">
+        <!-- Total Outstanding -->
+        <div class="col-lg-3 col-md-6">
+            <a href="#" onclick="showTotalOutstandingModal()" class="text-decoration-none">
+                <div class="glass-panel p-3 d-flex align-items-center justify-content-between h-100">
+                    <div>
+                        <p class="text-muted small mb-1 text-uppercase fw-bold">Total Portfolio</p>
+                        <h4 class="mb-0 fw-bold text-dark"><span class="counter" data-target="{{ $totalOutstanding ?? 0 }}">0</span></h4>
+                    </div>
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: #e0f2f1; color: #00897b;">
+                        <i class="ri-bank-line fs-5"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Today Collected -->
+        <div class="col-lg-3 col-md-6">
+            <div class="glass-panel p-3 d-flex align-items-center justify-content-between h-100">
+                <div>
+                    <p class="text-muted small mb-1 text-uppercase fw-bold">Today Collected</p>
+                    <h4 class="mb-0 fw-bold text-success"><span class="counter" data-target="{{ $todaycollected ?? 0 }}">0</span></h4>
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: #e8f5e9; color: #2e7d32;">
+                    <i class="ri-hand-coin-line fs-5"></i>
                 </div>
             </div>
         </div>
 
-        {{-- Statistic Cards --}}
-        <div class="row">
+        <!-- Today Due -->
+        <div class="col-lg-3 col-md-6">
+            <div class="glass-panel p-3 d-flex align-items-center justify-content-between h-100">
+                <div>
+                    <p class="text-muted small mb-1 text-uppercase fw-bold">Today Due</p>
+                    <h4 class="mb-0 fw-bold text-primary"><span class="counter" data-target="{{ $todayinstallment ?? 0 }}">0</span></h4>
+                    <small class="text-danger" style="font-size: 0.75rem;">Bal: {{ number_format($todayinstallment_balance ?? 0, 2) }}</small>
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: #e3f2fd; color: #1565c0;">
+                    <i class="ri-calendar-event-line fs-5"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Penalty Balance -->
+        <div class="col-lg-3 col-md-6">
+            <a href="#" onclick="showPenaltyBalanceModal()" class="text-decoration-none">
+                <div class="glass-panel p-3 d-flex align-items-center justify-content-between h-100">
+                    <div>
+                        <p class="text-muted small mb-1 text-uppercase fw-bold">Penalty Balance</p>
+                        <h4 class="mb-0 fw-bold text-danger"><span class="counter" data-target="{{ $penaltyBalance ?? 0 }}">0</span></h4>
+                    </div>
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: #ffebee; color: #c62828;">
+                        <i class="ri-alarm-warning-line fs-5"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="row g-4 mb-4">
+        <!-- Monthly Collections -->
+        <div class="col-lg-8">
+            <div class="glass-panel chart-container">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="chart-title"><i class="ri-line-chart-line text-primary"></i> Monthly Collections</h5>
+                </div>
+                <div id="monthly-revenue-chart" style="min-height: 320px;"></div>
+            </div>
+        </div>
+
+        <!-- Weekly Comparison -->
+        <div class="col-lg-4">
+            <div class="glass-panel chart-container">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="chart-title"><i class="ri-bar-chart-groupped-line text-success"></i> Weekly Performance</h5>
+                </div>
+                <div id="bar-comparison-chart" style="min-height: 320px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- Loan Completion Radial -->
+        <div class="col-lg-4">
+            <div class="glass-panel chart-container">
+                <h5 class="chart-title"><i class="ri-pie-chart-line text-warning"></i> Portfolio Health</h5>
+                <div id="loan-type-chart" style="min-height: 300px;"></div>
+            </div>
+        </div>
+
+        <!-- Arrears Warning Cards -->
+        <div class="col-lg-8">
+            <div class="row h-100 g-4">
+                <div class="col-md-6">
+                    <a href="#" onclick="showWeeklyNotPaidModal()" class="text-decoration-none">
+                        <div class="glass-panel p-4 h-100 position-relative overflow-hidden" style="background: linear-gradient(135deg, #fff3e0, #ffffff);">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="ri-calendar-close-line fs-3 text-warning me-2"></i>
+                                <h6 class="fw-bold text-dark mb-0">This Week Arrears</h6>
+                            </div>
+                            <div class="row text-center mt-3">
+                                <div class="col-4 border-end">
+                                    <h4 class="fw-bold mb-0">{{ $weeklyUnpaidCount ?? 0 }}</h4>
+                                    <small class="text-muted">Loans</small>
+                                </div>
+                                <div class="col-8">
+                                    <h4 class="fw-bold mb-0 text-danger">{{ number_format($weeklyUnpaidAmount ?? 0, 2) }}</h4>
+                                    <small class="text-muted">Total Amount</small>
+                                </div>
+                            </div>
+                            <div class="position-absolute bottom-0 end-0 opacity-10 p-2">
+                                <i class="ri-error-warning-fill" style="font-size: 6rem; color: #ff9800;"></i>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-6">
+                    <a href="#" onclick="showCurrentWeekPendingModal()" class="text-decoration-none">
+                        <div class="glass-panel p-4 h-100 position-relative overflow-hidden" style="background: linear-gradient(135deg, #e3f2fd, #ffffff);">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="ri-time-line fs-3 text-primary me-2"></i>
+                                <h6 class="fw-bold text-dark mb-0">Week Pending</h6>
+                            </div>
+                            <div class="row text-center mt-3">
+                                <div class="col-4 border-end">
+                                    <h4 class="fw-bold mb-0">{{ $currentWeekPendingCount ?? 0 }}</h4>
+                                    <small class="text-muted">Due</small>
+                                </div>
+                                <div class="col-8">
+                                    <h4 class="fw-bold mb-0 text-primary">{{ number_format($currentWeekPendingAmount ?? 0, 2) }}</h4>
+                                    <small class="text-muted">Total Due</small>
+                                </div>
+                            </div>
+                            <div class="position-absolute bottom-0 end-0 opacity-10 p-2">
+                                <i class="ri-time-fill" style="font-size: 6rem; color: #2196f3;"></i>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Shortcuts -->
+    @if ($shortcut_count > 0)
+    <div class="mb-5">
+        <h5 class="fw-bold mb-3 text-dark"><i class="ri-apps-line me-2"></i>Quick Access</h5>
+        <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-3">
             @php
-            $cards = [
-            [
-            'title' => 'Pending Loans',
-            'icon' => 'ri-eye-line',
-            'value' => $customer_loan_pending_Amount,
-            'count' => $customer_loan_pending_Count,
-            'link' => '/pendingloan',
-            'bg' => '#ff758c',
-            'prefix' => '',
-            ],
-            [
-            'title' => 'Current Loans',
-            'icon' => 'ri-wallet-2-line',
-            'value' => $customer_loan_current_Amount,
-            'count' => $customer_loan_current_Count,
-            'link' => '/payment_step_1',
-            'bg' => '#43cea2',
-            'prefix' => '',
-            ],
-            [
-            'title' => 'Settled Loans',
-            'icon' => 'ri-file-paper-2-fill',
-            'value' => $setteled_loan_current_Amount,
-            'count' => $setteled_loan_Count,
-            'link' => '/showsettleloan',
-            'bg' => '#f7971e',
-            'prefix' => '',
-            ],
-            [
-            'title' => 'Portfolio',
-            'icon' => 'ri-pie-chart-line',
-            'value' => $portfolio,
-            'count' => '',
-            'link' => '',
-            'bg' => '#9b59b6',
-            'prefix' => '',
-            ],
-            [
-            'title' => 'Current Month Lending',
-            'icon' => 'ri-calendar-line',
-            'value' => $currentMonthLending,
-            'count' => '',
-            'link' => '',
-            'bg' => '#1abc9c',
-            'prefix' => '',
-            ],
-            [
-            'title' => 'Customers',
-            'icon' => 'ri-group-2-line',
-            'value' => $customerCount,
-            'count' => '',
-            'link' => '/showcustomers',
-            'bg' => '#667eea',
-            'prefix' => '',
-            ],
+            $icons = [
+            'Add_Customer' => 'ri-user-add-line',
+            'View_Customer' => 'ri-team-line',
+            'Assign_Customers_to_group' => 'ri-user-follow-line',
+            'View_Products' => 'ri-shopping-bag-3-line',
+            'Pending_Loans' => 'ri-loader-2-line',
+            'Current_Loans' => 'ri-hand-coin-line',
+            'Loan_In_arrears' => 'ri-alarm-warning-line',
+            'Add_Repayment' => 'ri-money-dollar-circle-line',
+            'Repayment_details' => 'ri-file-list-3-line',
+            'Collector_wise_collections' => 'ri-user-location-line',
+            'Loan_Calculator' => 'ri-calculator-line',
+            'Add_Expenses' => 'ri-file-reduce-line',
+            'Add_Income' => 'ri-file-add-line',
+            ];
+            $links = [
+            'Add_Customer' => '/customers',
+            'View_Customer' => '/showcustomers',
+            'Assign_Customers_to_group' => '/customergroupassign',
+            'View_Products' => '/viewproduct',
+            'Pending_Loans' => '/pendingloan',
+            'Current_Loans' => '/payment_step_1',
+            'Loan_In_arrears' => '/latePayment',
+            'Add_Repayment' => '/payment',
+            'Repayment_details' => '/viewpayment',
+            'Collector_wise_collections' => '/collection',
+            'Loan_Calculator' => '/calculator',
+            'Add_Expenses' => '/expenses',
+            'Add_Income' => '/income',
+            ];
+            $labels = [
+            'Add_Customer' => 'Add Customer',
+            'View_Customer' => 'Customers',
+            'Assign_Customers_to_group' => 'Group Assign',
+            'View_Products' => 'Products',
+            'Pending_Loans' => 'Pending',
+            'Current_Loans' => 'Active Loans',
+            'Loan_In_arrears' => 'Arrears',
+            'Add_Repayment' => 'Repayment',
+            'Repayment_details' => 'History',
+            'Collector_wise_collections' => 'Collections',
+            'Loan_Calculator' => 'Calculator',
+            'Add_Expenses' => 'Expenses',
+            'Add_Income' => 'Income',
             ];
             @endphp
 
-            @foreach ($cards as $index => $card)
-            <div class="col-md-3 mb-4">
-                <a href="{{ $card['link'] }}" class="text-decoration-none">
-                    <div class="glass-card card text-white shadow animated-card"
-                        style="background-color: {{ $card['bg'] }};">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="text-uppercase">{{ $card['title'] }} {!! $card['count'] !== '' ? '(' . $card['count'] . ')' : '' !!}</h6>
-                                    <h4><span id="stat-card-{{ $index }}"></span></h4>
-                                </div>
-                                <i class="{{ $card['icon'] }} fs-2"></i>
-                            </div>
-                        </div>
+            @foreach ($shortcut as $item)
+            @if(array_key_exists($item->name, $links))
+            <div class="col">
+                <a href="{{ $links[$item->name] }}" class="shortcut-btn glass-panel">
+                    <div class="shortcut-icon-circle">
+                        <i class="{{ $icons[$item->name] ?? 'ri-star-line' }}"></i>
                     </div>
+                    <span class="small fw-semibold">{{ $labels[$item->name] ?? $item->name }}</span>
                 </a>
             </div>
-            @endforeach
-
-            {{-- Summary Cards --}}
-            @php
-            $extra = [
-            ['title' => 'Today Due Amount', 'value' => $todayinstallment, 'color' => '#1e3c72'],
-            [
-            'title' => 'Today Due Balance',
-            'value' => $todayinstallment_balance,
-            'color' => '#f7971e',
-            ],
-            ['title' => 'Today Not Paid', 'value' => $todayNotPaid, 'color' => '#e74c3c'],
-            ['title' => 'Total Arrears', 'value' => $arrease, 'color' => '#ef473a'],
-            ['title' => 'Cheque Payments', 'value' => $checqueamount, 'color' => '#3498db'],
-            [
-            'title' => 'Due Outstanding (Installment Due + Arrears)',
-            'value' => $todayNotPaid + $arrease,
-            'color' => '#0072ff',
-            ],
-            ['title' => 'Today Collected Amount', 'value' => $todaycollected, 'color' => '#ef803a'],
-            ['title' => 'Total Outstanding', 'value' => $totalOutstanding, 'color' => '#01503c'],
-            ['title' => 'Penalty Balance', 'value' => $penaltyBalance, 'color' => '#c0392b'],
-            ];
-            @endphp
-
-            @foreach ($extra as $i => $item)
-            <div class="col-md-2 mb-4">
-                @if ($item['title'] === 'Total Outstanding')
-                <a href="#" onclick="showTotalOutstandingModal()" class="text-decoration-none">
-                    <div class="glass-card card text-white shadow animated-card"
-                        style="background-color: {{ $item['color'] }};">
-                        <div class="card-body">
-                            <h6 class="text-uppercase">{{ $item['title'] }}</h6>
-                            <h4><span id="extra-card-{{ $i }}"></span></h4>
-                        </div>
-                    </div>
-                </a>
-                @elseif($item['title'] === 'Penalty Balance')
-                <a href="#" onclick="showPenaltyBalanceModal()" class="text-decoration-none">
-                    <div class="glass-card card text-white shadow animated-card"
-                        style="background-color: {{ $item['color'] }};">
-                        <div class="card-body">
-                            <h6 class="text-uppercase">{{ $item['title'] }}</h6>
-                            <h4><span id="extra-card-{{ $i }}"></span></h4>
-                        </div>
-                    </div>
-                </a>
-                @else
-                <div class="glass-card card text-white shadow animated-card"
-                    style="background-color: {{ $item['color'] }};">
-                    <div class="card-body">
-                        <h6 class="text-uppercase">{{ $item['title'] }}</h6>
-                        <h4><span id="extra-card-{{ $i }}"></span></h4>
-                    </div>
-                </div>
-                @endif
-            </div>
-            @endforeach
-
-            {{-- This Week Arrears --}}
-            <div class="col-md-6 col-lg-6 mb-4">
-                <a href="#" onclick="showWeeklyNotPaidModal()" class="text-decoration-none">
-                    <div class="glass-card card text-white shadow animated-card"
-                        style="background: linear-gradient(135deg, #8e44ad, #2c3e50);">
-                        <div class="card-body">
-                            <h6 class="text-uppercase mb-3">This Week Arers</h6>
-                            <div class="row g-3 align-items-stretch">
-                                <div class="col-4">
-                                    <div class="text-center">
-                                        <h4><span id="weekly-unpaid-count"></span></h4>
-                                        <small class="text-light">Installments</small>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="text-center">
-                                        <h4><span id="weekly-unpaid-headcount"></span></h4>
-                                        <small class="text-light">Customers</small>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="text-center">
-                                        <h4><span id="weekly-unpaid-amount"></span></h4>
-                                        <small class="text-light">Amount</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
-            {{-- Current Week Pending Payment --}}
-            <div class="col-md-6 col-lg-6 mb-4">
-                <a href="#" onclick="showCurrentWeekPendingModal()" class="text-decoration-none">
-                    <div class="glass-card card text-white shadow animated-card"
-                        style="background: linear-gradient(135deg, #3498db, #2c3e50);">
-                        <div class="card-body">
-                            <h6 class="text-uppercase mb-3">Current Week Pending Payment</h6>
-                            <div class="row g-3 align-items-stretch">
-                                <div class="col-4">
-                                    <div class="text-center">
-                                        <h4><span id="current-week-pending-count"></span></h4>
-                                        <small class="text-light">Installments</small>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="text-center">
-                                        <h4><span id="current-week-pending-headcount"></span></h4>
-                                        <small class="text-light">Customers</small>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="text-center">
-                                        <h4><span id="current-week-pending-amount"></span></h4>
-                                        <small class="text-light">Amount</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        </div>
-
-        {{-- Charts --}}
-        <div class="row">
-            <div class="col-lg-6 mb-4">
-                <div class="glass-card card shadow animated-card">
-                    <div class="card-body">
-                        <h5 class="card-title mb-3">📈 Monthly Payments</h5>
-                        <div id="monthly-revenue-chart" style="height: 300px;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-6 mb-4">
-                <div class="glass-card card shadow animated-card">
-                    <div class="card-body">
-                        <h5 class="card-title mb-3">💼 Loan Status</h5>
-                        <div id="loan-type-chart" style="height: 300px;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-6 mb-4">
-                <div class="glass-card card shadow animated-card">
-                    <div class="card-body">
-                        <h5 class="card-title mb-3">📊 Weekly Comparison</h5>
-                        <div id="bar-comparison-chart" style="height: 300px;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-6 mb-4">
-                <div class="glass-card card shadow animated-card">
-                    <div class="card-body">
-                        <h5 class="card-title mb-3">✅ Loan Completion</h5>
-                        <div id="radial-progress-chart" style="height: 300px;"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Shortcuts --}}
-        @if ($shortcut_count > 0)
-        <div class="row mt-5">
-            <div class="col-12 mb-3">
-                <div class="glass-card card border-0 shadow-sm animated-card"
-                    style="background: rgba(255,255,255,0.15); backdrop-filter: blur(6px);">
-                    <div class="card-body d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0 text-dark fw-bold">Quick Access Shortcuts</h4>
-                    </div>
-                </div>
-            </div>
-        </div>
-        @endif
-
-        @php
-        $colors = ['#f1c40f', '#2ecc71', '#e67e22', '#3498db', '#9b59b6', '#1abc9c', '#34495e', '#e74c3c'];
-        @endphp
-
-        <div class="row g-3">
-            @foreach ($shortcut as $index => $item)
-            @php
-            $url = '/';
-            $name = '';
-            $icon = '';
-            $bgColor = $colors[$index % count($colors)];
-
-            switch ($item->name) {
-            case 'Add_Customer':
-            $url = '/customers';
-            $name = 'Add Customer';
-            $icon = 'fas fa-user-plus';
-            break;
-            case 'View_Customer':
-            $url = '/showcustomers';
-            $name = 'View Customers';
-            $icon = 'fas fa-users';
-            break;
-            case 'Assign_Customers_to_group':
-            $url = '/customergroupassign';
-            $name = 'Assign to Group';
-            $icon = 'fas fa-user-friends';
-            break;
-            case 'View_Products':
-            $url = '/viewproduct';
-            $name = 'View Products';
-            $icon = 'fas fa-box-open';
-            break;
-            case 'Pending_Loans':
-            $url = '/pendingloan';
-            $name = 'Pending Loans';
-            $icon = 'fas fa-hourglass-half';
-            break;
-            case 'Current_Loans':
-            $url = '/payment_step_1';
-            $name = 'Current Loans';
-            $icon = 'fas fa-hand-holding-usd';
-            break;
-            case 'Loan_In_arrears':
-            $url = '/latePayment';
-            $name = 'Loan Arrears';
-            $icon = 'fas fa-exclamation-triangle';
-            break;
-            case 'Add_Repayment':
-            $url = '/payment';
-            $name = 'Add Repayment';
-            $icon = 'fas fa-money-check-alt';
-            break;
-            case 'Repayment_details':
-            $url = '/viewpayment';
-            $name = 'View Repayment';
-            $icon = 'fas fa-file-invoice-dollar';
-            break;
-            case 'Collector_wise_collections':
-            $url = '/collection';
-            $name = 'Agent Collections';
-            $icon = 'fas fa-user-tie';
-            break;
-            case 'Loan_Calculator':
-            $url = '/calculator';
-            $name = 'Loan Calculator';
-            $icon = 'fas fa-calculator';
-            break;
-            case 'Add_Expenses':
-            $url = '/expenses';
-            $name = 'Add Expenses';
-            $icon = 'fas fa-receipt';
-            break;
-            case 'Add_Income':
-            $url = '/income';
-            $name = 'Add Income';
-            $icon = 'fas fa-hand-holding-usd';
-            break;
-            }
-            @endphp
-
-            <div class="col-lg-2 col-md-3 col-sm-4 col-6">
-                <a href="{{ $url }}" class="text-decoration-none">
-                    <div class="shortcut-tile text-center p-3 shadow-sm animated-card"
-                        style="background-color: {{ $bgColor }};">
-                        <i class="{{ $icon }} shortcut-icon"></i>
-                        <div class="shortcut-label">{{ $name }}</div>
-                    </div>
-                </a>
-            </div>
+            @endif
             @endforeach
         </div>
     </div>
+    @endif
 
     {{-- Hidden button for loan process --}}
     <button id="startLoanProcess" hidden>Start Processing Loans</button>
+
 </div>
+@endhasPrivilege
 
-        @endhasPrivilege
-
-{{-- ===================== MODALS ===================== --}}
-
+<!-- Modals Section -->
 <!-- Total Outstanding Modal -->
-<!-- Total Outstanding Modal -->
-<div class="modal fade" id="totalOutstandingModal" tabindex="-1" aria-labelledby="totalOutstandingModalLabel"
-    aria-hidden="true" data-backdrop="static" data-keyboard="false">
-
+<div class="modal fade" id="totalOutstandingModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content modern-modal">
-            <div class="modal-header modern-modal-header"
-                style="background: #ffffff; color: #2d3748; border-bottom: 1px solid #e2e8f0;">
-                <div class="d-flex align-items-center">
-                    <div class="modal-icon-container me-3" style="background: #edf2f7; color: #01503c;">
-                        <i class="ri-money-dollar-circle-line fs-4"></i>
-                    </div>
-                    <div>
-                        <h4 class="modal-title mb-0" id="totalOutstandingModalLabel">💰 Total Outstanding</h4>
-                        <small class="text-muted">Complete loan portfolio overview</small>
-                    </div>
-                </div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="ri-money-dollar-circle-line me-2 text-primary"></i>Total Outstanding</h5>
                 <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
             </div>
-
-            <div class="modal-body modern-modal-body">
-                <!-- Loading State -->
-                <div id="outstanding-loading" class="d-none">
-                    <div class="text-center py-5">
-                        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
-                        <h5 class="text-muted">Loading outstanding loans...</h5>
-                        <div class="skeleton-loader mt-4">
-                            <div class="skeleton-row"></div>
-                            <div class="skeleton-row"></div>
-                            <div class="skeleton-row"></div>
-                        </div>
-                    </div>
+            <div class="modal-body bg-light">
+                <div id="outstanding-loading" class="text-center py-5 d-none">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Loading data...</p>
                 </div>
-
-                <!-- Table Container -->
-                <div id="outstanding-content">
-                    <div class="table-responsive modern-table-container">
-                        <table class="table modern-table mb-0" id="outstanding_table_modal">
-                            <thead class="modern-table-header">
-                                <tr>
-                                    <th>Loan ID</th>
-                                    <th>Customer ID</th>
-                                    <th>Customer Name</th>
-                                    <th class="text-end" title="Loan Amount - Capital amount">Capital Amount</th>
-                                    <th class="text-end" title="Full Loan Amount - Capital and interest">Full Loan
-                                        Amount</th>
-                                    <th class="text-end"
-                                        title="Total Outstanding Amount - Capital balance + interest balance">Total
-                                        Outstanding</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Data will be loaded via AJAX -->
-                            </tbody>
-                        </table>
-                    </div>
+                <div id="outstanding-content" class="table-responsive bg-white p-3 shadow-sm rounded">
+                    <table class="table table-hover w-100" id="outstanding_table_modal">
+                        <thead>
+                            <tr>
+                                <th>Loan ID</th>
+                                <th>Customer ID</th>
+                                <th>Name</th>
+                                <th class="text-end">Capital</th>
+                                <th class="text-end">Full Amount</th>
+                                <th class="text-end">Outstanding</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
-
         </div>
     </div>
 </div>
-
 
 <!-- Weekly Not Paid Modal -->
-<!-- Weekly Not Paid Modal -->
-<div class="modal fade" id="weeklyNotPaidModal" tabindex="-1" aria-labelledby="weeklyNotPaidModalLabel"
-    aria-hidden="true" data-backdrop="static" data-keyboard="false">
-
+<div class="modal fade" id="weeklyNotPaidModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content modern-modal">
-            <div class="modal-header modern-modal-header"
-                style="background: #ffffff; color: #2d3748; border-bottom: 1px solid #e2e8f0;">
-                <div class="d-flex align-items-center">
-                    <div class="modal-icon-container me-3" style="background: #fef5e7; color: #f39c12;">
-                        <i class="ri-calendar-event-line fs-4"></i>
-                    </div>
-                    <div>
-                        <h4 class="modal-title mb-0" id="weeklyNotPaidModalLabel">📅 This Week Arers</h4>
-                        <small class="text-muted">Loans with missed payments this week (Sunday To Today)</small>
-                    </div>
-                </div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="ri-calendar-close-line me-2 text-warning"></i>This Week Arrears</h5>
                 <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
             </div>
-
-            <div class="modal-body modern-modal-body">
-                <div id="weekly-loading" class="d-none">
-                    <div class="text-center py-5">
-                        <div class="spinner-border text-warning mb-3" style="width: 3rem; height: 3rem;"></div>
-                        <h5 class="text-muted">Loading weekly unpaid loans...</h5>
-                        <div class="skeleton-loader mt-4">
-                            <div class="skeleton-row"></div>
-                            <div class="skeleton-row"></div>
-                            <div class="skeleton-row"></div>
-                        </div>
-                    </div>
+            <div class="modal-body bg-light">
+                <div id="weekly-loading" class="text-center py-5 d-none">
+                    <div class="spinner-border text-warning" role="status"></div>
                 </div>
-
-                <div id="weekly-content">
-                    <div class="table-responsive modern-table-container">
-                        <table class="table modern-table mb-0" id="weekly_not_paid_table_modal">
-                            <thead class="modern-table-header modern-table-warning">
-                                <tr>
-                                    <th>Loan ID</th>
-                                    <th>Center</th>
-                                    <th>Customer ID</th>
-                                    <th>Customer Name</th>
-                                    <th class="text-end" title="Loan Amount - Capital amount">Capital Amount</th>
-                                    <th class="text-end" title="Full Loan Amount - Capital + interest">Full Loan
-                                        Amount</th>
-                                    <th class="text-end" title="This Week Not Paid Amount">Week Not Paid</th>
-                                    <th class="text-end" title="Total Not Paid Amount - Arrears">Total Arrears
-                                    </th>
-                                    <th class="text-center" title="Not Paid Installment Count">Unpaid Count</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Data via AJAX -->
-                            </tbody>
-                        </table>
-                    </div>
+                <div id="weekly-content" class="table-responsive bg-white p-3 shadow-sm rounded">
+                    <table class="table table-hover w-100" id="weekly_not_paid_table_modal">
+                        <thead>
+                            <tr>
+                                <th>Loan ID</th>
+                                <th>Center</th>
+                                <th>Cus ID</th>
+                                <th>Name</th>
+                                <th class="text-end">Capital</th>
+                                <th class="text-end">Full Amount</th>
+                                <th class="text-end text-danger">Unpaid</th>
+                                <th class="text-end">Total Arrears</th>
+                                <th class="text-center">Count</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
-            </div>
-
-        </div>
-    </div>
-</div>
-
-
-<!-- Current Week Pending Payment Modal -->
-<!-- Current Week Pending Payment Modal -->
-<div class="modal fade" id="currentWeekPendingModal" tabindex="-1"
-    aria-labelledby="currentWeekPendingModalLabel" aria-hidden="true" data-backdrop="static"
-    data-keyboard="false">
-
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content modern-modal">
-            <div class="modal-header modern-modal-header"
-                style="background: #ffffff; color: #2d3748; border-bottom: 1px solid #e2e8f0;">
-                <div class="d-flex align-items-center">
-                    <div class="modal-icon-container me-3" style="background: #e3f2fd; color: #2196f3;">
-                        <i class="ri-calendar-check-line fs-4"></i>
-                    </div>
-                    <div>
-                        <h4 class="modal-title mb-0" id="currentWeekPendingModalLabel">📅 Current Week Pending
-                            Payment</h4>
-                        <small class="text-muted">All pending payments for the current week (Sunday to
-                            Saturday)</small>
-                    </div>
-                </div>
-                <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
-            </div>
-
-            <div class="modal-body modern-modal-body">
-                <div id="current-week-loading" class="d-none">
-                    <div class="text-center py-5">
-                        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
-                        <h5 class="text-muted">Loading current week pending payments...</h5>
-                        <div class="skeleton-loader mt-4">
-                            <div class="skeleton-row"></div>
-                            <div class="skeleton-row"></div>
-                            <div class="skeleton-row"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="current-week-content">
-                    <div class="table-responsive modern-table-container">
-                        <table class="table modern-table mb-0" id="current_week_pending_table_modal">
-                            <thead class="modern-table-header">
-                                <tr>
-                                    <th>Loan ID</th>
-                                    <th>Center</th>
-                                    <th>Customer ID</th>
-                                    <th>Customer Name</th>
-                                    <th class="text-end" title="Loan Amount - Capital amount">Capital Amount</th>
-                                    <th class="text-end" title="Full Loan Amount - Capital + interest">Full Loan
-                                        Amount</th>
-                                    <th class="text-end" title="Current Week Pending Amount">Week Pending</th>
-                                    <th class="text-end" title="Total Not Paid Amount - Arrears">Total Arrears
-                                    </th>
-                                    <th class="text-center" title="Not Paid Installment Count">Unpaid Count</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Data via AJAX -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
             </div>
         </div>
     </div>
 </div>
 
+<!-- Current Week Pending Modal -->
+<div class="modal fade" id="currentWeekPendingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="ri-time-line me-2 text-primary"></i>Current Week Pending</h5>
+                <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <div id="current-week-loading" class="text-center py-5 d-none">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+                <div id="current-week-content" class="table-responsive bg-white p-3 shadow-sm rounded">
+                    <table class="table table-hover w-100" id="current_week_pending_table_modal">
+                        <thead>
+                            <tr>
+                                <th>Loan ID</th>
+                                <th>Center</th>
+                                <th>Cus ID</th>
+                                <th>Name</th>
+                                <th class="text-end">Capital</th>
+                                <th class="text-end">Full Amount</th>
+                                <th class="text-end text-primary">Pending</th>
+                                <th class="text-end">Total Arrears</th>
+                                <th class="text-center">Count</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Total Outstanding Modal -->
+<div class="modal fade" id="totalOutstandingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="ri-money-dollar-circle-line me-2 text-primary"></i>Total Outstanding Portfolio</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <div class="text-center py-5 d-none spinner">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+                <div class="table-responsive bg-white p-3 shadow-sm rounded content">
+                    <table class="table table-hover w-100" id="total_outstanding_table">
+                        <thead>
+                            <tr>
+                                <th>Loan ID</th>
+                                <th>Cus ID</th>
+                                <th>Name</th>
+                                <th class="text-end">Capital</th>
+                                <th class="text-end">Full Amount</th>
+                                <th class="text-end text-primary">Total Outstanding</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Weekly Arrears Modal -->
+<div class="modal fade" id="weeklyArrearsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="ri-calendar-close-line me-2 text-warning"></i>Weekly Arrears</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <div class="text-center py-5 d-none spinner">
+                    <div class="spinner-border text-warning" role="status"></div>
+                </div>
+                <div class="table-responsive bg-white p-3 shadow-sm rounded content">
+                    <table class="table table-hover w-100" id="weekly_arrears_table">
+                        <thead>
+                            <tr>
+                                <th>Loan ID</th>
+                                <th>Center</th>
+                                <th>Cus ID</th>
+                                <th>Name</th>
+                                <th class="text-end">Capital</th>
+                                <th class="text-end">Full Amount</th>
+                                <th class="text-end text-warning">This Week Not Paid</th>
+                                <th class="text-end text-danger">Total Arrears</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Current Week Pending Modal -->
+<div class="modal fade" id="weekPendingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="ri-time-line me-2 text-info"></i>Current Week Pending</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <div class="text-center py-5 d-none spinner">
+                    <div class="spinner-border text-info" role="status"></div>
+                </div>
+                <div class="table-responsive bg-white p-3 shadow-sm rounded content">
+                    <table class="table table-hover w-100" id="week_pending_table">
+                        <thead>
+                            <tr>
+                                <th>Loan ID</th>
+                                <th>Center</th>
+                                <th>Cus ID</th>
+                                <th>Name</th>
+                                <th class="text-end">Capital</th>
+                                <th class="text-end">Full Amount</th>
+                                <th class="text-end text-info">Week Pending</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Penalty Balance Modal -->
-<!-- Penalty Balance Modal -->
-<div class="modal fade" id="penaltyBalanceModal" tabindex="-1" aria-labelledby="penaltyBalanceModalLabel"
-    aria-hidden="true" data-backdrop="static" data-keyboard="false">
-
+<div class="modal fade" id="penaltyBalanceModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content modern-modal">
-            <div class="modal-header modern-modal-header"
-                style="background: #ffffff; color: #2d3748; border-bottom: 1px solid #e2e8f0;">
-                <div class="d-flex align-items-center">
-                    <div class="modal-icon-container me-3" style="background: #fed7d7; color: #c53030;">
-                        <i class="ri-error-warning-line fs-4"></i>
-                    </div>
-                    <div>
-                        <h4 class="modal-title mb-0" id="penaltyBalanceModalLabel">⚠️ Penalty Balance</h4>
-                        <small class="text-muted">Outstanding penalty charges</small>
-                    </div>
-                </div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="ri-error-warning-line me-2 text-danger"></i>Penalty Balance</h5>
                 <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
             </div>
-
-            <div class="modal-body modern-modal-body">
-                <div id="penalty-loading" class="d-none">
-                    <div class="text-center py-5">
-                        <div class="spinner-border text-danger mb-3" style="width: 3rem; height: 3rem;"></div>
-                        <h5 class="text-muted">Loading penalty balances...</h5>
-                        <div class="skeleton-loader mt-4">
-                            <div class="skeleton-row"></div>
-                            <div class="skeleton-row"></div>
-                            <div class="skeleton-row"></div>
-                        </div>
-                    </div>
+            <div class="modal-body bg-light">
+                <div id="penalty-loading" class="text-center py-5 d-none">
+                    <div class="spinner-border text-danger" role="status"></div>
                 </div>
-
-                <div id="penalty-content">
-                    <div class="table-responsive modern-table-container">
-                        <table class="table modern-table mb-0" id="penalty_balance_table_modal">
-                            <thead class="modern-table-header modern-table-danger">
-                                <tr>
-                                    <th>Loan ID</th>
-                                    <th>Customer ID</th>
-                                    <th>Customer Name</th>
-                                    <th class="text-end" title="Loan Amount - Capital amount">Capital Amount</th>
-                                    <th class="text-end" title="Full Loan Amount - Capital and interest">Full Loan
-                                        Amount</th>
-                                    <th class="text-end"
-                                        title="Total Outstanding Amount - Capital balance + interest balance">Total
-                                        Outstanding</th>
-                                    <th class="text-end" title="Penalty Balance">Penalty Balance</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Data via AJAX -->
-                            </tbody>
-                        </table>
-                    </div>
+                <div id="penalty-content" class="table-responsive bg-white p-3 shadow-sm rounded">
+                    <table class="table table-hover w-100" id="penalty_balance_table_modal">
+                        <thead>
+                            <tr>
+                                <th>Loan ID</th>
+                                <th>Cus ID</th>
+                                <th>Name</th>
+                                <th class="text-end">Capital</th>
+                                <th class="text-end">Full Amount</th>
+                                <th class="text-end">Outstanding</th>
+                                <th class="text-end text-danger">Penalty</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
-
             </div>
         </div>
     </div>
 </div>
 
-{{-- ================== END MODALS =================== --}}
 @endsection
 
 @section('script')
-
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/countup.js/2.0.7/countUp.umd.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
-<script type="text/javascript" charset="utf8"
-    src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
-<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/2.2.3/js/buttons.html5.min.js">
-</script>
-<script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js">
-</script>
-<script type="text/javascript" charset="utf8"
-    src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-<script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js">
-</script>
-<script type="text/javascript" charset="utf8"
-    src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
-<script>
-    const fmt = (v) => new Intl.NumberFormat().format(parseFloat(v || 0).toFixed(2));
-    const safe = (v) => (v === null || v === undefined || v === '') ? '-' : v;
-
-    $(document).on('click', '.btn-close', function() {
-        ['#totalOutstandingModal',
-            '#weeklyNotPaidModal',
-            '#currentWeekPendingModal',
-            '#penaltyBalanceModal'
-        ].forEach(function(sel) {
-            $(sel).modal('hide');
-        });
-    });
-</script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/2.2.3/js/buttons.html5.min.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
 
 <script>
-    // Live DateTime
-    function updateDateTime() {
-        const dt = new Date();
-        const el = document.getElementById('live-datetime');
-        if (el) el.innerText = dt.toLocaleString();
+    // Theme Colors
+    const colors = {
+        primary: '#313a46', // Sidebar
+        secondary: '#6a5e87', // Purple
+        success: '#ea7074', // Salmon
+        warning: '#f9a63a', // Orange
+        danger: '#f13a3b', // Red
+        info: '#ffc184' // Peach
+    };
+
+    // Live Clock
+    function updateClock() {
+        const now = new Date();
+        const options = {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        };
+        if (document.getElementById('live-datetime-display')) {
+            document.getElementById('live-datetime-display').innerText = now.toLocaleDateString('en-US', options);
+        }
     }
-
-    updateDateTime();
-    setInterval(updateDateTime, 1000);
+    setInterval(updateClock, 1000);
+    updateClock();
 
     document.addEventListener("DOMContentLoaded", function() {
-
-        /* =======================
-           MAIN STAT CARDS
-        ======================= */
-        const statValues = [
-            @json($customer_loan_pending_Amount ?? 0),
-            @json($customer_loan_current_Amount ?? 0),
-            @json($setteled_loan_current_Amount ?? 0),
-            @json($portfolio ?? 0),
-            @json($currentMonthLending ?? 0),
-            @json($customerCount ?? 0)
-        ];
-
-        statValues.forEach((val, i) => {
-            const anim = new countUp.CountUp(`stat-card-${i}`, val, {
-                separator: ',',
-                decimalPlaces: 0
-            });
-            if (!anim.error) anim.start();
+        // CountUp Animations
+        document.querySelectorAll('.counter').forEach(function(el) {
+            const target = parseFloat(el.getAttribute('data-target'));
+            if (!isNaN(target)) {
+                new countUp.CountUp(el, target, {
+                    separator: ',',
+                    decimalPlaces: target % 1 !== 0 ? 2 : 0,
+                    duration: 2
+                }).start();
+            }
         });
 
-        /* =======================
-           EXTRA STAT CARDS
-        ======================= */
-        const extraValues = [
-            @json($todayinstallment ?? 0),
-            @json($todayinstallment_balance ?? 0),
-            @json($todayNotPaid ?? 0),
-            @json($arrease ?? 0),
-            @json($checqueamount ?? 0),
-            @json(($todayNotPaid ?? 0) + ($arrease ?? 0)),
-            @json($todaycollected ?? 0),
-            @json($totalOutstanding ?? 0),
-            @json($penaltyBalance ?? 0)
-        ];
+        // --- APEX CHARTS CONFIG ---
 
-        extraValues.forEach((val, i) => {
-            const anim = new countUp.CountUp(`extra-card-${i}`, val, {
-                separator: ',',
-                decimalPlaces: 2
-            });
-            if (!anim.error) anim.start();
-        });
-
-        /* =======================
-           WEEKLY / CURRENT WEEK
-        ======================= */
-        new countUp.CountUp(
-            'weekly-unpaid-count',
-            @json($weeklyUnpaidCount ?? 0), {
-                separator: ',',
-                decimalPlaces: 0
-            }
-        ).start();
-
-        new countUp.CountUp(
-            'weekly-unpaid-headcount',
-            @json($weeklyUnpaidCustomerCount ?? 0), {
-                separator: ',',
-                decimalPlaces: 0
-            }
-        ).start();
-
-        new countUp.CountUp(
-            'weekly-unpaid-amount',
-            @json($weeklyUnpaidAmount ?? 0), {
-                separator: ',',
-                decimalPlaces: 2
-            }
-        ).start();
-
-        new countUp.CountUp(
-            'current-week-pending-count',
-            @json($currentWeekPendingCount ?? 0), {
-                separator: ',',
-                decimalPlaces: 0
-            }
-        ).start();
-
-        new countUp.CountUp(
-            'current-week-pending-headcount',
-            @json($currentWeekPendingCustomerCount ?? 0), {
-                separator: ',',
-                decimalPlaces: 0
-            }
-        ).start();
-
-        new countUp.CountUp(
-            'current-week-pending-amount',
-            @json($currentWeekPendingAmount ?? 0), {
-                separator: ',',
-                decimalPlaces: 2
-            }
-        ).start();
-
-        /* =======================
-           MONTHLY AREA CHART
-        ======================= */
-        new ApexCharts(
-            document.querySelector("#monthly-revenue-chart"), {
-                chart: {
-                    type: 'area',
-                    height: 300
+        // 1. Monthly Revenue (Area)
+        const monthlyOptions = {
+            chart: {
+                type: 'area',
+                height: 320,
+                toolbar: {
+                    show: false
                 },
-                series: [{
-                    name: 'Payments',
-                    data: @json($monthlyData ?? [])
-                }],
-                colors: ['#8e44ad'],
-                stroke: {
-                    curve: 'smooth',
-                    width: 3
-                },
-                xaxis: {
-                    categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                fontFamily: 'Inter, sans-serif'
+            },
+            series: [{
+                name: 'Revenue',
+                data: @json($monthlyData ?? [])
+            }],
+            colors: [colors.primary],
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.7,
+                    opacityTo: 0.2,
+                    stops: [0, 90, 100]
                 }
+            },
+            dataLabels: {
+                enabled: false
+            },
+            stroke: {
+                curve: 'smooth',
+                width: 2
+            },
+            xaxis: {
+                categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                axisBorder: {
+                    show: false
+                },
+                axisTicks: {
+                    show: false
+                }
+            },
+            grid: {
+                borderColor: '#f1f3fa',
+            },
+            tooltip: {
+                theme: 'light'
             }
-        ).render();
+        };
+        new ApexCharts(document.querySelector("#monthly-revenue-chart"), monthlyOptions).render();
 
-        /* =======================
-           LOAN TYPE PIE CHART
-        ======================= */
-        new ApexCharts(
-            document.querySelector("#loan-type-chart"), {
-                chart: {
-                    type: 'pie',
-                    height: 300
+        // 2. Weekly Comparison (Bar)
+        const weeklyOptions = {
+            chart: {
+                type: 'bar',
+                height: 320,
+                toolbar: {
+                    show: false
                 },
-                series: [
-                    @json($customer_loan_current_Count ?? 0),
-                    @json($customer_loan_pending_Count ?? 0),
-                    @json($setteled_loan_Count ?? 0),
-                    @json($deleted_loan_Count ?? 0)
-                ],
-                labels: ['Ongoing Loans', 'Pending Loans', 'Settled Loans', 'Deleted Loans'],
-                colors: ['#1abc9c', '#3498db', '#e67e22', '#e74c3c']
-            }
-        ).render();
-
-        /* =======================
-           WEEKLY COMPARISON BAR
-        ======================= */
-        new ApexCharts(
-            document.querySelector("#bar-comparison-chart"), {
-                chart: {
-                    type: 'bar',
-                    height: 300
-                },
-                series: [{
-                        name: 'This Week',
-                        data: @json($weeklyComparison['current'] ?? [])
-                    },
-                    {
-                        name: 'Last Week',
-                        data: @json($weeklyComparison['last'] ?? [])
-                    }
-                ],
-                xaxis: {
-                    categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-                },
-                colors: ['#1abc9c', '#e74c3c'],
-                plotOptions: {
-                    bar: {
-                        columnWidth: '50%'
+                fontFamily: 'Inter, sans-serif'
+            },
+            series: [{
+                name: 'This Week',
+                data: @json($weeklyComparison['current'] ?? [])
+            }, {
+                name: 'Last Week',
+                data: @json($weeklyComparison['last'] ?? [])
+            }],
+            colors: [colors.success, '#e0e0e0'],
+            plotOptions: {
+                bar: {
+                    borderRadius: 5,
+                    columnWidth: '60%',
+                    dataLabels: {
+                        position: 'top'
                     }
                 }
-            }
-        ).render();
-
-        /* =======================
-           RADIAL COMPLETION
-        ======================= */
-        new ApexCharts(
-            document.querySelector("#radial-progress-chart"), {
-                chart: {
-                    type: 'radialBar',
-                    height: 300
+            },
+            dataLabels: {
+                enabled: false
+            },
+            xaxis: {
+                categories: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                axisBorder: {
+                    show: false
                 },
-                series: [@json($loan_completion_percentage ?? 0)],
-                labels: ['Completion'],
-                colors: ['#f39c12'],
-                plotOptions: {
-                    radialBar: {
-                        dataLabels: {
+                axisTicks: {
+                    show: false
+                }
+            },
+            grid: {
+                borderColor: '#f1f3fa',
+            },
+            tooltip: {
+                theme: 'light'
+            }
+        };
+        new ApexCharts(document.querySelector("#bar-comparison-chart"), weeklyOptions).render();
+
+        // 3. Loan Status (Donut/Pie)
+        const loanStatusOptions = {
+            chart: {
+                type: 'donut',
+                height: 300,
+                fontFamily: 'Inter, sans-serif'
+            },
+            series: [
+                @json($customer_loan_current_Count ?? 0),
+                @json($customer_loan_pending_Count ?? 0),
+                @json($setteled_loan_Count ?? 0)
+            ],
+            labels: ['Active', 'Pending', 'Settled'],
+            colors: [colors.secondary, colors.primary, colors.warning],
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '70%',
+                        labels: {
+                            show: true,
                             name: {
-                                fontSize: '16px'
+                                fontSize: '14px'
                             },
                             value: {
-                                fontSize: '30px',
-                                fontWeight: 'bold'
+                                fontSize: '20px',
+                                fontWeight: 600
+                            },
+                            total: {
+                                show: true,
+                                label: 'Total',
+                                formatter: function(w) {
+                                    return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                                }
                             }
                         }
                     }
                 }
+            },
+            dataLabels: {
+                enabled: false
+            },
+            legend: {
+                position: 'bottom'
+            },
+            tooltip: {
+                theme: 'light'
             }
-        ).render();
+        };
+        new ApexCharts(document.querySelector("#loan-type-chart"), loanStatusOptions).render();
 
     });
-</script>
 
+    // Generic Table Loader
+    function loadTableData(modalId, url, tableId, columns) {
+        const modal = $(modalId);
+        const spinner = modal.find('.spinner-border').parent();
+        const content = modal.find('.table-responsive');
 
-{{-- Loan process Swal --}}
-<script>
+        spinner.removeClass('d-none');
+        content.addClass('d-none');
+
+        // Destroy existing DT if exists
+        if ($.fn.DataTable.isDataTable(tableId)) {
+            $(tableId).DataTable().destroy();
+        }
+
+        $.get(url, function(response) {
+            spinner.addClass('d-none');
+            content.removeClass('d-none');
+
+            const data = response.data || [];
+
+            $(tableId).DataTable({
+                data: data,
+                columns: columns.map(c => ({
+                    ...c,
+                    className: (c.className || '') + (['capital_amount', 'full_loan_amount', 'total_outstanding', 'this_week_not_paid', 'total_arrears', 'current_week_pending', 'penalty_balance'].includes(c.data) ? ' text-end' : '')
+                })),
+                dom: 'Bfrtip',
+                buttons: [{
+                        extend: 'excel',
+                        className: 'btn btn-success btn-sm',
+                        text: '<i class="ri-file-excel-2-line"></i> Excel'
+                    },
+                    {
+                        extend: 'pdf',
+                        className: 'btn btn-danger btn-sm',
+                        text: '<i class="ri-file-pdf-line"></i> PDF'
+                    }
+                ],
+                responsive: true,
+                pageLength: 10,
+                lengthMenu: [10, 25, 50],
+                language: {
+                    emptyTable: "No records found"
+                }
+            });
+        }).fail(function() {
+            spinner.addClass('d-none');
+            content.removeClass('d-none');
+            $(tableId).find('tbody').html('<tr><td colspan="' + columns.length + '" class="text-center text-danger">Failed to load data.</td></tr>');
+        });
+    }
+
+    // Modal Close Fix (Force Close on Click)
+    $(document).ready(function() {
+        $(document).on('click', '[data-bs-dismiss="modal"]', function() {
+            const modal = $(this).closest('.modal');
+            modal.modal('hide');
+        });
+    });
+
+    // Loan Processing Logic (Hidden) - Keeping generic structure
     $('#startLoanProcess').on('click', function() {
+        startLoanProcessingRPC();
+    });
+
+    function startLoanProcessingRPC() {
+        // Replicating original logic
         $.get('/get-loan-ids', function(data) {
             const loanIds = data.loan_ids;
             const total = loanIds.length;
             let index = 0;
-
             Swal.fire({
                 title: 'Processing Loans...',
-                html: `<div style="font-size:14px;">Please wait while we process ${total} loans.</div>
-                           <div id="swal-progress" style="margin-top:15px; background:#eee; border-radius:4px; overflow:hidden;">
-        <div id="swal-progress-bar" style="height:15px; width:0%; background:#4caf50;"></div>
-                           </div>
-                           <div style="margin-top:10px; font-size:13px;">
-                               <span id="swal-count">0/${total}</span>
-                           </div>`,
+                html: `<div style="font-size:14px;">Please wait while we process ${total} loans.</div><div style="margin-top:10px;"><span id="swal-count">0/${total}</span></div><div id="swal-progress" style="margin-top:10px; background:#ddd; height:5px; width:100%;"><div id="swal-bar" style="height:5px; width:0%; background:green;"></div></div>`,
                 showConfirmButton: false,
                 allowOutsideClick: false,
-                allowEscapeKey: false,
                 didOpen: () => {
                     processNextLoan();
                 }
             });
 
-            function updateProgress() {
-                const percentage = Math.round((index / total) * 100);
-                $('#swal-progress-bar').css('width', percentage + '%');
-                $('#swal-count').text(`${index}/${total}`);
-            }
-
             function processNextLoan() {
                 if (index >= total) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'All loans processed!',
-                        text: `${total} loans have been successfully updated.`,
-                        confirmButtonText: 'OK'
-                    });
+                    Swal.fire('Success', 'All loans processed', 'success');
                     return;
                 }
-
-                const loan_id = loanIds[index];
-
+                const pct = Math.round((index / total) * 100);
+                $('#swal-bar').css('width', pct + '%');
                 $.ajax({
-                    url: '/loan_log/' + loan_id,
+                    url: '/loan_log/' + loanIds[index],
                     method: 'GET',
-                    success: function(res) {
-                        console.log(`Loan ${loan_id}: `, res.message);
+                    success: () => {
                         index++;
-                        updateProgress();
+                        $('#swal-count').text(`${index}/${total}`);
                         processNextLoan();
                     },
-                    error: function(xhr) {
-                        console.error(`Loan ${loan_id} failed: `, xhr.responseText);
+                    error: () => {
                         index++;
-                        updateProgress();
+                        $('#swal-count').text(`${index}/${total}`);
                         processNextLoan();
                     }
                 });
             }
         });
-    });
-</script>
-
-{{-- DataTables + AJAX for Modals --}}
-<script>
-    let outstandingTable = null;
-    let weeklyNotPaidTable = null;
-    let currentWeekPendingTable = null;
-    let penaltyBalanceTable = null;
-
-    function showTotalOutstandingModal() {
-        $('#totalOutstandingModal').modal('show');
-        $('#outstanding-loading').removeClass('d-none');
-        $('#outstanding-content').addClass('d-none');
-
-        if (outstandingTable) {
-            outstandingTable.destroy();
-            outstandingTable = null;
-        }
-
-        $.get('/total-outstanding-data', function(response) {
-            $('#outstanding-loading').addClass('d-none');
-            $('#outstanding-content').removeClass('d-none');
-
-            if (response.data && response.data.length > 0) {
-                let tbody = '';
-                response.data.forEach(function(item) {
-                    tbody += `
-                            <tr>
-                                <td>${item.loan_id}</td>
-                                <td>${item.customer_id}</td>
-                                <td>${item.customer_name}</td>
-                                <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.capital_amount).toFixed(2))}</td>
-                                <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.full_loan_amount).toFixed(2))}</td>
-                                <td class="text-end"><strong>${new Intl.NumberFormat().format(parseFloat(item.total_outstanding).toFixed(2))}</strong></td>
-                            </tr>`;
-                });
-                $('#outstanding_table_modal tbody').html(tbody);
-
-                outstandingTable = $('#outstanding_table_modal').DataTable({
-                    dom: 'Bfrtip',
-                    buttons: [{
-                            extend: 'excel',
-                            text: 'Export Excel',
-                            className: 'btn btn-success btn-sm'
-                        },
-                        {
-                            extend: 'pdf',
-                            text: 'Export PDF',
-                            className: 'btn btn-danger btn-sm'
-                        }
-                    ],
-                    responsive: true,
-                    pageLength: 25,
-                    lengthMenu: [
-                        [10, 25, 50, 100, -1],
-                        [10, 25, 50, 100, "All"]
-                    ],
-                    order: [
-                        [5, 'desc']
-                    ],
-                    columnDefs: [{
-                            className: "text-end",
-                            targets: [3, 4, 5]
-                        },
-                        {
-                            orderable: false,
-                            targets: '_all'
-                        }
-                    ]
-                });
-            } else {
-                $('#outstanding_table_modal tbody').html(
-                    '<tr><td colspan="6" class="text-center">No outstanding loans found</td></tr>');
-            }
-        }).fail(function() {
-            $('#outstanding-loading').addClass('d-none');
-            $('#outstanding-content').removeClass('d-none');
-            $('#outstanding_table_modal tbody').html(
-                '<tr><td colspan="6" class="text-center text-danger">Error loading data</td></tr>');
-        });
     }
-
-    $('#totalOutstandingModal').on('hidden.bs.modal', function() {
-        if (outstandingTable) {
-            outstandingTable.destroy();
-            outstandingTable = null;
-        }
-    });
-
-    function showWeeklyNotPaidModal() {
-        $('#weeklyNotPaidModal').modal('show');
-        $('#weekly-loading').removeClass('d-none');
-        $('#weekly-content').addClass('d-none');
-
-        if (weeklyNotPaidTable) {
-            weeklyNotPaidTable.destroy();
-            weeklyNotPaidTable = null;
-        }
-
-        $.get('/weekly-not-paid-data', function(response) {
-            $('#weekly-loading').addClass('d-none');
-            $('#weekly-content').removeClass('d-none');
-
-            if (response.data && response.data.length > 0) {
-                let tbody = '';
-                response.data.forEach(function(item) {
-                    tbody += `
-                            <tr>
-                                <td>${item.loan_id}</td>
-                                <td>${safe(item.center_name)}</td>
-                                <td>${item.customer_id}</td>
-                                <td>${item.customer_name}</td>
-                                <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.capital_amount).toFixed(2))}</td>
-                                <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.full_loan_amount).toFixed(2))}</td>
-                                <td class="text-end"><strong>${new Intl.NumberFormat().format(parseFloat(item.this_week_not_paid).toFixed(2))}</strong></td>
-                                <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.total_arrears).toFixed(2))}</td>
-                                <td class="text-center">${item.not_paid_installment_count}</td>
-                            </tr>`;
-                });
-                $('#weekly_not_paid_table_modal tbody').html(tbody);
-
-                weeklyNotPaidTable = $('#weekly_not_paid_table_modal').DataTable({
-                    dom: 'Bfrtip',
-                    buttons: [{
-                            extend: 'excel',
-                            text: 'Export Excel',
-                            className: 'btn btn-success btn-sm'
-                        },
-                        {
-                            extend: 'pdf',
-                            text: 'Export PDF',
-                            className: 'btn btn-danger btn-sm'
-                        }
-                    ],
-                    responsive: true,
-                    pageLength: 25,
-                    lengthMenu: [
-                        [10, 25, 50, 100, -1],
-                        [10, 25, 50, 100, "All"]
-                    ],
-                    order: [
-                        [5, 'desc']
-                    ],
-                    columnDefs: [{
-                            className: "text-end",
-                            targets: [3, 4, 5, 6]
-                        },
-                        {
-                            className: "text-center",
-                            targets: [7]
-                        },
-                        {
-                            orderable: false,
-                            targets: '_all'
-                        }
-                    ]
-                });
-            } else {
-                $('#weekly_not_paid_table_modal tbody').html(
-                    '<tr><td colspan="8" class="text-center">No unpaid loans found for this week</td></tr>');
-            }
-        }).fail(function() {
-            $('#weekly-loading').addClass('d-none');
-            $('#weekly-content').removeClass('d-none');
-            $('#weekly_not_paid_table_modal tbody').html(
-                '<tr><td colspan="8" class="text-center text-danger">Error loading data</td></tr>');
-        });
-    }
-
-    $('#weeklyNotPaidModal').on('hidden.bs.modal', function() {
-        if (weeklyNotPaidTable) {
-            weeklyNotPaidTable.destroy();
-            weeklyNotPaidTable = null;
-        }
-    });
-
-    function showCurrentWeekPendingModal() {
-        $('#currentWeekPendingModal').modal('show');
-        $('#current-week-loading').removeClass('d-none');
-        $('#current-week-content').addClass('d-none');
-
-        if (currentWeekPendingTable) {
-            currentWeekPendingTable.destroy();
-            currentWeekPendingTable = null;
-        }
-
-        $.get('/current-week-pending-data', function(response) {
-            $('#current-week-loading').addClass('d-none');
-            $('#current-week-content').removeClass('d-none');
-
-            if (response.data && response.data.length > 0) {
-                let tbody = '';
-                response.data.forEach(function(item) {
-                    tbody += `
-                            <tr>
-                                <td>${item.loan_id}</td>
-                                <td>${safe(item.center_name)}</td>
-                                <td>${item.customer_id}</td>
-                                <td>${item.customer_name}</td>
-                                <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.capital_amount).toFixed(2))}</td>
-                                <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.full_loan_amount).toFixed(2))}</td>
-                                <td class="text-end"><strong>${new Intl.NumberFormat().format(parseFloat(item.current_week_pending).toFixed(2))}</strong></td>
-                                <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.total_arrears).toFixed(2))}</td>
-                                <td class="text-center">${item.not_paid_installment_count}</td>
-                            </tr>`;
-                });
-                $('#current_week_pending_table_modal tbody').html(tbody);
-
-                currentWeekPendingTable = $('#current_week_pending_table_modal').DataTable({
-                    dom: 'Bfrtip',
-                    buttons: [{
-                            extend: 'excel',
-                            text: 'Export Excel',
-                            className: 'btn btn-success btn-sm'
-                        },
-                        {
-                            extend: 'pdf',
-                            text: 'Export PDF',
-                            className: 'btn btn-danger btn-sm'
-                        }
-                    ],
-                    responsive: true,
-                    pageLength: 25,
-                    lengthMenu: [
-                        [10, 25, 50, 100, -1],
-                        [10, 25, 50, 100, "All"]
-                    ],
-                    order: [
-                        [5, 'desc']
-                    ],
-                    columnDefs: [{
-                            className: "text-end",
-                            targets: [3, 4, 5, 6]
-                        },
-                        {
-                            className: "text-center",
-                            targets: [7]
-                        },
-                        {
-                            orderable: false,
-                            targets: '_all'
-                        }
-                    ]
-                });
-            } else {
-                $('#current_week_pending_table_modal tbody').html(
-                    '<tr><td colspan="8" class="text-center">No pending payments found for this week</td></tr>'
-                );
-            }
-        }).fail(function() {
-            $('#current-week-loading').addClass('d-none');
-            $('#current-week-content').removeClass('d-none');
-            $('#current_week_pending_table_modal tbody').html(
-                '<tr><td colspan="8" class="text-center text-danger">Error loading data</td></tr>');
-        });
-    }
-
-    function showPenaltyBalanceModal() {
-        $('#penaltyBalanceModal').modal('show');
-        $('#penalty-loading').removeClass('d-none');
-        $('#penalty-content').addClass('d-none');
-
-        if (penaltyBalanceTable) {
-            penaltyBalanceTable.destroy();
-            penaltyBalanceTable = null;
-        }
-
-        $.get('/penalty-balance-data', function(response) {
-            $('#penalty-loading').addClass('d-none');
-            $('#penalty-content').removeClass('d-none');
-
-            if (response.data && response.data.length > 0) {
-                let tbody = '';
-                response.data.forEach(function(item) {
-                    tbody += `
-                            <tr>
-                                <td>${item.loan_id}</td>
-                                <td>${item.customer_id}</td>
-                                <td>${item.customer_name}</td>
-                                <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.capital_amount).toFixed(2))}</td>
-                                <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.full_loan_amount).toFixed(2))}</td>
-                                <td class="text-end">${new Intl.NumberFormat().format(parseFloat(item.total_outstanding).toFixed(2))}</td>
-                                <td class="text-end"><strong>${new Intl.NumberFormat().format(parseFloat(item.penalty_balance).toFixed(2))}</strong></td>
-                            </tr>`;
-                });
-                $('#penalty_balance_table_modal tbody').html(tbody);
-
-                penaltyBalanceTable = $('#penalty_balance_table_modal').DataTable({
-                    dom: 'Bfrtip',
-                    buttons: [{
-                            extend: 'excel',
-                            text: 'Export Excel',
-                            className: 'btn btn-success btn-sm'
-                        },
-                        {
-                            extend: 'pdf',
-                            text: 'Export PDF',
-                            className: 'btn btn-danger btn-sm'
-                        }
-                    ],
-                    responsive: true,
-                    pageLength: 25,
-                    lengthMenu: [
-                        [10, 25, 50, 100, -1],
-                        [10, 25, 50, 100, "All"]
-                    ],
-                    order: [
-                        [6, 'desc']
-                    ],
-                    columnDefs: [{
-                            className: "text-end",
-                            targets: [3, 4, 5, 6]
-                        },
-                        {
-                            orderable: false,
-                            targets: '_all'
-                        }
-                    ]
-                });
-            } else {
-                $('#penalty_balance_table_modal tbody').html(
-                    '<tr><td colspan="7" class="text-center">No penalty balances found</td></tr>');
-            }
-        }).fail(function() {
-            $('#penalty-loading').addClass('d-none');
-            $('#penalty-content').removeClass('d-none');
-            $('#penalty_balance_table_modal tbody').html(
-                '<tr><td colspan="7" class="text-center text-danger">Error loading data</td></tr>');
-        });
-    }
-
-    $('#penaltyBalanceModal').on('hidden.bs.modal', function() {
-        if (penaltyBalanceTable) {
-            penaltyBalanceTable.destroy();
-            penaltyBalanceTable = null;
-        }
-    });
 </script>
 @endsection
