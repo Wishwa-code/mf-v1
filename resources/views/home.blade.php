@@ -286,7 +286,7 @@
     <!-- Primary KPI Cards -->
     <div class="row g-4 mb-4">
         <!-- Pending Loans -->
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-3 col-md-6 col-12">
             <a href="/pendingloan" class="text-decoration-none">
                 <div class="glass-panel stat-card gradient-card gradient-card-1">
                     <div class="d-flex justify-content-between align-items-start">
@@ -311,7 +311,7 @@
         </div>
 
         <!-- Ongoing Loans -->
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-3 col-md-6 col-12">
             <a href="/payment_step_1" class="text-decoration-none">
                 <div class="glass-panel stat-card gradient-card gradient-card-2">
                     <div class="d-flex justify-content-between align-items-start">
@@ -336,7 +336,7 @@
         </div>
 
         <!-- Settled Loans -->
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-3 col-md-6 col-12">
             <a href="/showsettleloan" class="text-decoration-none">
                 <div class="glass-panel stat-card gradient-card gradient-card-3">
                     <div class="d-flex justify-content-between align-items-start">
@@ -361,7 +361,7 @@
         </div>
 
         <!-- Current Month Lending -->
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-3 col-md-6 col-12">
             <div class="glass-panel stat-card gradient-card gradient-card-4">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
@@ -387,7 +387,7 @@
     <!-- Secondary Metrics Slide/Grid -->
     <div class="row g-4 mb-4">
         <!-- Total Outstanding -->
-        <div class="col-lg-3 col-md-6">
+        <div class="col-lg-3 col-md-6 col-12">
             <a href="#" onclick="showTotalOutstandingModal()" class="text-decoration-none">
                 <div class="glass-panel p-3 d-flex align-items-center justify-content-between h-100">
                     <div>
@@ -402,7 +402,7 @@
         </div>
 
         <!-- Today Collected -->
-        <div class="col-lg-3 col-md-6">
+        <div class="col-lg-3 col-md-6 col-12">
             <div class="glass-panel p-3 d-flex align-items-center justify-content-between h-100">
                 <div>
                     <p class="text-muted small mb-1 text-uppercase fw-bold">Today Collected</p>
@@ -415,7 +415,7 @@
         </div>
 
         <!-- Today Due -->
-        <div class="col-lg-3 col-md-6">
+        <div class="col-lg-3 col-md-6 col-12">
             <div class="glass-panel p-3 d-flex align-items-center justify-content-between h-100">
                 <div>
                     <p class="text-muted small mb-1 text-uppercase fw-bold">Today Due</p>
@@ -429,7 +429,7 @@
         </div>
 
         <!-- Penalty Balance -->
-        <div class="col-lg-3 col-md-6">
+        <div class="col-lg-3 col-md-6 col-12">
             <a href="#" onclick="showPenaltyBalanceModal()" class="text-decoration-none">
                 <div class="glass-panel p-3 d-flex align-items-center justify-content-between h-100">
                     <div>
@@ -447,7 +447,7 @@
     <!-- Charts Section -->
     <div class="row g-4 mb-4">
         <!-- Monthly Collections -->
-        <div class="col-lg-8">
+        <div class="col-lg-8 col-12">
             <div class="glass-panel chart-container">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="chart-title"><i class="ri-line-chart-line text-primary"></i> Monthly Collections</h5>
@@ -457,7 +457,7 @@
         </div>
 
         <!-- Weekly Comparison -->
-        <div class="col-lg-4">
+        <div class="col-lg-4 col-12">
             <div class="glass-panel chart-container">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="chart-title"><i class="ri-bar-chart-groupped-line text-success"></i> Weekly Performance</h5>
@@ -469,7 +469,7 @@
 
     <div class="row g-4 mb-4">
         <!-- Loan Completion Radial -->
-        <div class="col-lg-4">
+        <div class="col-lg-4 col-12">
             <div class="glass-panel chart-container">
                 <h5 class="chart-title"><i class="ri-pie-chart-line text-warning"></i> Portfolio Health</h5>
                 <div id="loan-type-chart" style="min-height: 300px;"></div>
@@ -477,9 +477,9 @@
         </div>
 
         <!-- Arrears Warning Cards -->
-        <div class="col-lg-8">
+        <div class="col-lg-8 col-12">
             <div class="row h-100 g-4">
-                <div class="col-md-6">
+                <div class="col-md-6 col-12">
                     <a href="#" onclick="showWeeklyNotPaidModal()" class="text-decoration-none">
                         <div class="glass-panel p-4 h-100 position-relative overflow-hidden" style="background: linear-gradient(135deg, #fff3e0, #ffffff);">
                             <div class="d-flex align-items-center mb-3">
@@ -503,7 +503,7 @@
                     </a>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-6 col-12">
                     <a href="#" onclick="showCurrentWeekPendingModal()" class="text-decoration-none">
                         <div class="glass-panel p-4 h-100 position-relative overflow-hidden" style="background: linear-gradient(135deg, #e3f2fd, #ffffff);">
                             <div class="d-flex align-items-center mb-3">

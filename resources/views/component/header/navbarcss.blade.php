@@ -450,3 +450,90 @@
 
     /* Hiding on mobile to prevent layout issues if needed, or keeping it small */
 </style>
+
+<style>
+    /* 
+       GLASSMORPHISM & MODERN UI ENHANCEMENTS 
+       - Adds dynamic gradient mesh backgrounds.
+       - Applies 'True Glass' effect with backdrop-filter to cards, modals, and sidebars.
+       - Modernizes spacing and borders for a depth effect.
+    */
+
+    /* --- LIGHT MODE (Default) --- */
+    body {
+        background-color: #f3f4f6;
+        /* Pastel/Soft Gradient Mesh for Light Mode */
+        background-image:
+            radial-gradient(at 40% 20%, hsla(28, 100%, 74%, 0.1) 0px, transparent 50%),
+            radial-gradient(at 80% 0%, hsla(189, 100%, 56%, 0.1) 0px, transparent 50%),
+            radial-gradient(at 0% 50%, hsla(340, 100%, 76%, 0.1) 0px, transparent 50%),
+            radial-gradient(at 80% 50%, hsla(355, 100%, 93%, 0.1) 0px, transparent 50%),
+            radial-gradient(at 0% 100%, hsla(22, 100%, 77%, 0.1) 0px, transparent 50%),
+            radial-gradient(at 80% 100%, hsla(242, 100%, 70%, 0.1) 0px, transparent 50%),
+            radial-gradient(at 0% 0%, hsla(343, 100%, 76%, 0.1) 0px, transparent 50%);
+        background-attachment: fixed;
+    }
+
+    /* True Glass Cards */
+    .card,
+    .card-modern,
+    .modal-content,
+    .offcanvas {
+        background: rgba(255, 255, 255, 0.7) !important;
+        /* Semi-transparent White */
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.6) !important;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07) !important;
+    }
+
+    /* --- DARK MODE (Overrides) --- */
+    html[data-bs-theme="dark"] body,
+    html[data-layout-mode="dark"] body {
+        background-color: #0f0c29 !important;
+        /* Vivid / Deep Cosmic Gradient Mesh */
+        background-image:
+            radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+            radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+            radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(123, 31, 162, 0.4) 0%, transparent 50%),
+            radial-gradient(circle at 20% 80%, rgba(69, 104, 220, 0.4) 0%, transparent 50%);
+        background-attachment: fixed;
+    }
+
+    html[data-bs-theme="dark"] .card,
+    html[data-bs-theme="dark"] .card-modern,
+    html[data-bs-theme="dark"] .modal-content,
+    html[data-bs-theme="dark"] .offcanvas,
+    html[data-layout-mode="dark"] .card,
+    html[data-layout-mode="dark"] .card-modern,
+    html[data-layout-mode="dark"] .modal-content,
+    html[data-layout-mode="dark"] .offcanvas {
+        background: rgba(30, 30, 40, 0.6) !important;
+        /* Semi-transparent Dark */
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+        color: #e0e0e0 !important;
+    }
+
+    /* Text Adjustments for Glass */
+    html[data-bs-theme="dark"] .text-muted,
+    html[data-layout-mode="dark"] .text-muted {
+        color: rgba(224, 224, 224, 0.6) !important;
+    }
+
+    html[data-bs-theme="dark"] h1,
+    html[data-bs-theme="dark"] h2,
+    html[data-bs-theme="dark"] h3,
+    html[data-bs-theme="dark"] h4,
+    html[data-bs-theme="dark"] h5,
+    html[data-bs-theme="dark"] h6,
+    html[data-layout-mode="dark"] h1,
+    html[data-layout-mode="dark"] h2,
+    html[data-layout-mode="dark"] h3,
+    html[data-layout-mode="dark"] h4,
+    html[data-layout-mode="dark"] h5,
+    html[data-layout-mode="dark"] h6 {
+        color: #f0f0f0 !important;
+    }
+</style>
