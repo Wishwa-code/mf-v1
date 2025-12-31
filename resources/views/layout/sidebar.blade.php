@@ -4,9 +4,7 @@
     <!--- Sidemenu -->
     <ul class="side-nav">
 
-        {{-- {{dd( session('user_data')['branches'])}} --}}
-
-        <li class="side-nav-title" style="color: red">{{ session('user_data')['company']['Company_Name'] }}</li>
+        <li class="side-nav-title" style="text-color: red">{{ session('user_data')['company']['Company_Name'] }}</li>
 
         @php $isHeadOffice = session('head_branch') == session('branch_id'); @endphp
 
@@ -21,14 +19,6 @@
             </a>
         </li>
         @endhasPrivilege
-
-
-        <!-- <li class="side-nav-item">
-            <a href="{{ route('business-categories.index') }}" class="side-nav-link">
-                <i class="ri-layout-grid-fill"></i>
-                <span> Business Categories </span>
-            </a>
-        </li> -->
 
         @hasPrivilege('CUSTOMER')
         <li class="side-nav-item">
@@ -424,8 +414,6 @@
         </li>
         @endhasPrivilege
 
-
-
         @hasPrivilege('PAYMENT_DETAILS')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#payment" aria-expanded="false" aria-controls="center"
@@ -593,7 +581,6 @@
         @endhasPrivilege
 
         @hasPrivilege('EXPENSES')
-
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#expences" aria-expanded="false" aria-controls="expences"
                 class="side-nav-link">

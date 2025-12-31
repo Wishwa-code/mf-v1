@@ -100,9 +100,19 @@ class AccountCenterAutoLoginController extends Controller
         }
         session(['branch_access' => $hasBranchAccess]);
         if (!empty($filteredBranches)) {
-            session(['branch_id' => $filteredBranches[0]['idBranch']]);
-            if (isset($filteredBranches[0]['Name'])) {
-                session(['branch_name' => $filteredBranches[0]['Name']]);
+            $selectedBranch = $filteredBranches[0];
+            $headBranchId = $userData['microfinanceHeadBranchId'] ?? null;
+
+            foreach ($filteredBranches as $branch) {
+                if (($branch['idBranch'] ?? null) != $headBranchId) {
+                    $selectedBranch = $branch;
+                    break;
+                }
+            }
+
+            session(['branch_id' => $selectedBranch['idBranch']]);
+            if (isset($selectedBranch['Name'])) {
+                session(['branch_name' => $selectedBranch['Name']]);
             }
         }
 
