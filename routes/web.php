@@ -41,13 +41,6 @@ Route::get('/storage_link', function () {
 // API for branch hierarchy dropdown
 Route::get('/api/branch-hierarchy/{branchId}', '\App\Http\Controllers\CenterController@getBranchHierarchy');
 
-
-
-//user
-// Route::get('/login', function () {
-//     return view('login');
-// })->name('login');
-
 Route::get('/login', function () {
     return redirect('https://accountcenter.asipbook.com/');
 })->name('login');
@@ -75,7 +68,7 @@ Route::post('/recover_password', '\App\Http\Controllers\UserController@recover_p
 
 Route::middleware(['auth.central'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('home');
-    
+
     Route::get('/privileges', function () {
         return view('pages.Privilages');
     });

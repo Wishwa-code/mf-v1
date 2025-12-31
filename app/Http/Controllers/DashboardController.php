@@ -148,11 +148,14 @@ class DashboardController extends Controller
         $deleted_loan_Count = tableWithBranch('customer_loan')->where('Status', '=', '3')->count(); // Added this
 
         $portfolio = tableWithBranch('installments')->sum('capital_balance');
+        $currentMonthStart = date('Y-m-01 00:00:00'); // Start of month
+        $todayEnd = date('Y-m-d 23:59:59');          // End of today
 
         $currentMonthLending = tableWithBranch('customer_loan')
-            ->whereYear('Date', date('Y'))
-            ->whereMonth('Date', date('m'))
+            ->whereBetween('Date_Time', [$currentMonthStart, $todayEnd])
+            ->where('Status', '0')
             ->sum('Amount');
+
 
         $todayinstallment_balance = tableWithBranch('installments', 'installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
@@ -178,10 +181,8 @@ class DashboardController extends Controller
             ->whereDate('installments.Installment_Date', '=', date('Y-m-d'))
             ->sum('installments.Total_Balance');
 
-        $checqueamount = tableWithBranch('cheque')
-            ->where('cheque_date', '=', date('Y-m-d'))
-            ->where('status', '=', '0')
-            ->sum('amount');
+        $checqueamount = tableWithBranch('Cheque_payment')->where('payment_date', date('Y-m-d'))->where('chq_status', '=', '0')->sum('payment_amount');
+        $all_loan = $customer_loan_current_Count + $setteled_loan_Count;
 
 
         // Weekly Unpaid Calculation
@@ -248,7 +249,8 @@ class DashboardController extends Controller
             ->first();  // Try without grouping for now
 
         // Assign the values to variables
-        $todayInstallment = $loanQuery_2->Today_installment;
+        $todayinstallment = $loanQuery_2->Today_installment;
+
         $arrease = $loanQuery_2->arrease;
         $totalBalanceUntil = $loanQuery_2->Total_Balance_until;
         $totalBalanceUntil = $totalBalanceUntil + $checqueamount;
@@ -339,46 +341,7 @@ class DashboardController extends Controller
         $profitTarget = 1000000; // 1 million
 
 
-        $user = tableWithBranch('user')->where('id', '=', $userid)->first();
 
-
-        if ($user) {
-            if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $userid)->exists()) {
-            } else {
-
-                $Bank = [
-                    'Bank_Type' => "Collector",
-                    'code' => $user->id . '/Collector',
-                    'Bank_Name' => "Collector",
-                    'Account_Name' => $user->Full_Name,
-                    'Account_No' => $user->id,
-                    'Bank_Branch' => '-',
-                    'Account_Balance' => "0.00",
-                    'type' => "Cash and Bank",
-                    'cashflow' => "Non Applicable",
-                    'User' => $user->id,
-                    'branch_id' => session('branch_id'),
-                ];
-
-
-                $insertedId = insertWithBranch('company_bank_accounts', $Bank);
-                // Convert the BankLog object to an array for insertion
-                $bankLogData = [
-                    'Bank_Account_Id' => $insertedId,
-                    'Date_Time' => date('Y-m-d H:i:s'),
-                    'Type' => "Account Creation",
-                    'Description' => "Collector Account",
-                    'Note' => "",
-                    'Credit' => "0.00",
-                    'Debit' => "0.00",
-                    'Balance' => "0.00",
-                    'User' => $user->id,
-                    'branch_id' => session('branch_id'),
-                ];
-
-                DB::table('bank_log')->insert($bankLogData);
-            }
-        }
 
 
         //
@@ -400,7 +363,6 @@ class DashboardController extends Controller
             'checqueamount',
             'totalBalanceUntil',
             'arrease',
-            'todayInstallment',
             'setteled_loan_current_Amount',
             'customer_loan_pending_Amount',
             'customer_loan_current_Amount',
