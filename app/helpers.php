@@ -121,7 +121,6 @@ function numberToWords($number) {
 function tableWithBranch($table, $useBranchIdFromTable = null)
 {
 
-
     if (!Schema::hasColumn('customer_loan', 'panelty_method')) {
         DB::statement(
             "ALTER TABLE `customer_loan`
@@ -154,7 +153,6 @@ function tableWithBranch($table, $useBranchIdFromTable = null)
     if (Schema::hasColumn($table, 'branch_id')) {
         return $query->where('branch_id', session('branch_id'));
     }
-
     // Fallback: no branch column, return unscoped query
     return $query;
 }

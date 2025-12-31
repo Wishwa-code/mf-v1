@@ -1228,6 +1228,7 @@ class UserController extends Controller
                 $days++;
             }
 
+            // dd($item);
 
             $paneltyCount = (int) ($item->Panelty_count ?? 0);
             $missing      = max(0, $days - $paneltyCount);
@@ -1256,7 +1257,7 @@ class UserController extends Controller
                         ]);
 
 
-                    $user_id = session('userid');
+                    $user_id = session('user_data')['idUser'];
                     $date = date('Y-m-d');
                     $time = date('H:i:s');
 
@@ -1264,7 +1265,7 @@ class UserController extends Controller
                         ->where('idCustomer', '=', $item->Customer_idCustomer)
                         ->first();
 
-
+                    // dd($item->Customer_idCustomer,$item);
                     $panelty_amount = number_format($panelty_amount, 2, '.', '');
 
                     DB::table('customer_log')->insert([

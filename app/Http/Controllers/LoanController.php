@@ -1213,7 +1213,7 @@ class LoanController extends Controller
         // Fetch other customers in the same group
         $groupMembers = collect();
         if ($customerSummary && $customerSummary->group_id) {
-            $isHeadOffice = (int)session('branch_id') === -1;
+            $isHeadOffice = session('head_branch') == session('branch_id');
             $branch_id = session('branch_id');
 
             if ($isHeadOffice) {

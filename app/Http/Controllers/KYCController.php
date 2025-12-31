@@ -21,13 +21,13 @@ class KYCController extends Controller
      */
     public function index()
     {
-        $isHeadOffice = (int)session('branch_id') === -1;
+        $isHeadOffice = session('head_branch') == session('branch_id');
         if ($isHeadOffice) {
             $customers = DB::table('customer')->get();
         } else {
             $customers = tableWithBranch('customer')->get();
         }
-        return view('pages.Insurance.KYC',compact('customers'));
+        return view('pages.Insurance.KYC', compact('customers'));
     }
 
     /**
@@ -35,9 +35,9 @@ class KYCController extends Controller
      */
     public function create()
     {
-        $customers = tableWithBranch('customer')->select('idCustomer', 'First_Name', 'Last_Name','cus_number','Contact_No')->get();
+        $customers = tableWithBranch('customer')->select('idCustomer', 'First_Name', 'Last_Name', 'cus_number', 'Contact_No')->get();
         $categories = tableWithBranch('insurance_category')->select('id_insurance_category', 'description')->get();
-        return view('pages.Insurance.Insurance',compact('customers','categories'));
+        return view('pages.Insurance.Insurance', compact('customers', 'categories'));
     }
 
     /**
@@ -53,8 +53,8 @@ class KYCController extends Controller
             'note' => 'nullable|string',
             'documents.*' => 'nullable|file|max:5120' // each file max 5MB
         ]);
-        $branch_id=session('branch_id');
-        $user_id=session('userid');
+        $branch_id = session('branch_id');
+        $user_id = session('userid');
         DB::beginTransaction();
         try {
             $insuranceId = DB::table('insurance')->insertGetId([
@@ -97,7 +97,7 @@ class KYCController extends Controller
 
 
 
-// Ensure directory exists before storing files
+            // Ensure directory exists before storing files
             $directory = 'insurance_documents';
             if (!Storage::disk('public')->exists($directory)) {
                 Storage::disk('public')->makeDirectory($directory);
@@ -130,13 +130,13 @@ class KYCController extends Controller
      */
     public function show(string $id)
     {
-        $isHeadOffice = (int)session('branch_id') === -1;
+        $isHeadOffice = session('head_branch') == session('branch_id');
         if ($isHeadOffice) {
             $customers = DB::table('customer')->get();
         } else {
             $customers = tableWithBranch('customer')->get();
         }
-        return view('pages.Insurance.KYC',compact('customers','id'));
+        return view('pages.Insurance.KYC', compact('customers', 'id'));
     }
 
     /**
@@ -166,7 +166,7 @@ class KYCController extends Controller
     // KYCController.php
     public function loadSection($section, $id)
     {
-        $isHeadOffice = (int)session('branch_id') === -1;
+        $isHeadOffice = session('head_branch') == session('branch_id');
         $branch_id = session('branch_id');
 
         // Fetch customer: unscoped at HO, branch-scoped otherwise
@@ -274,9 +274,9 @@ class KYCController extends Controller
                     if ($groupIdRow && $groupIdRow->group_id) {
                         $memberQuery = $isHeadOffice
                             ? DB::table('customer as c')
-                                ->join('group_has_customer as ghc', 'ghc.cus_id', '=', 'c.idCustomer')
+                            ->join('group_has_customer as ghc', 'ghc.cus_id', '=', 'c.idCustomer')
                             : tableWithBranch('customer as c', 'c')
-                                ->join('group_has_customer as ghc', 'ghc.cus_id', '=', 'c.idCustomer');
+                            ->join('group_has_customer as ghc', 'ghc.cus_id', '=', 'c.idCustomer');
 
                         $groupMembers = $memberQuery
                             ->where('ghc.group_id', $groupIdRow->group_id)
@@ -287,7 +287,7 @@ class KYCController extends Controller
                     }
                 }
 
-                return view('pages.Insurance.kyc.summary', compact('summary','groupMembers'));
+                return view('pages.Insurance.kyc.summary', compact('summary', 'groupMembers'));
             case 'basic':
                 return view('pages.Insurance.kyc.basic', compact('customer'));
             case 'guardian':
@@ -321,8 +321,7 @@ class KYCController extends Controller
                         'c.First_Name',
                         'c.Last_Name'
                     )
-                    ->orderByDesc('cl.Date_Time')
-                    ;
+                    ->orderByDesc('cl.Date_Time');
                 if (!$isHeadOffice) {
                     $q->where('w.branch_id', $branch_id);
                 }
@@ -330,13 +329,13 @@ class KYCController extends Controller
                 return view('pages.Insurance.kyc.guranteed_loan', compact('guaranteedLoans'));
             case 'RoadMap':
                 $customer_log = $isHeadOffice
-                    ? DB::table('customer_log')->join('user','customer_log.user','=','user.id')->where('customer_id','=',$id)->get()
-                    : tableWithBranch('customer_log','customer_log')->join('user','customer_log.user','=','user.id')->where('customer_id','=',$id)->get();
+                    ? DB::table('customer_log')->join('user', 'customer_log.user', '=', 'user.id')->where('customer_id', '=', $id)->get()
+                    : tableWithBranch('customer_log', 'customer_log')->join('user', 'customer_log.user', '=', 'user.id')->where('customer_id', '=', $id)->get();
                 return view('pages.Insurance.kyc.RoadMap', compact('customer_log'));
             case 'insurance':
                 $designation = $isHeadOffice ? DB::table('designation')->get() : tableWithBranch('designation')->get();
                 $insurance_category = $isHeadOffice ? DB::table('insurance_category')->get() : tableWithBranch('insurance_category')->get();
-                return view('pages.Insurance.kyc.insurance', compact('designation','insurance_category','id'));
+                return view('pages.Insurance.kyc.insurance', compact('designation', 'insurance_category', 'id'));
             case 'history':
                 return view('pages.Insurance.kyc.history', compact('customer'));
             default:
@@ -349,7 +348,7 @@ class KYCController extends Controller
     {
         try {
             DB::beginTransaction();
-            $branch_id=session('branch_id');
+            $branch_id = session('branch_id');
             $categoryId = DB::table('insurance_category')->insertGetId([
                 'description' => $request->category_name,
                 'type' => $request->type,
@@ -392,7 +391,6 @@ class KYCController extends Controller
                     'amount' => $request->amount
                 ]
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -436,8 +434,7 @@ class KYCController extends Controller
                 DB::raw("GROUP_CONCAT(CONCAT(a.designation, ' (', u.Full_Name, ')') SEPARATOR ', ') as approved_by")
             )
             ->where('a.status', 'Approved')
-            ->groupBy('a.insurance_id')
-            ;
+            ->groupBy('a.insurance_id');
         if (!$isHeadOffice) {
             $approvalsQuery->where('a.branch_id', '=', $branch_id);
         }
@@ -479,7 +476,7 @@ class KYCController extends Controller
     {
         $branch_id = session('branch_id');
         $subApproved = DB::table('insurance_approval_status as s')
-            ->join('insurance_category_level_has_designations as d', function($join) {
+            ->join('insurance_category_level_has_designations as d', function ($join) {
                 $join->on('s.level_id', '=', 'd.insurance_category_level_id')
                     ->on('s.designation_id', '=', 'd.designation_id');
             })
@@ -594,7 +591,6 @@ class KYCController extends Controller
                 'designations' => $designationStatuses,
                 'is_approved' => $isLevelApproved
             ];
-
         }
 
         return response()->json($results);
@@ -695,10 +691,10 @@ class KYCController extends Controller
     }
 
 
-// YourController.php
+    // YourController.php
     public function getBankAccounts()
     {
-        $accounts = tableWithBranch('company_bank_accounts')->where('Bank_Type','=','Bank')->get();
+        $accounts = tableWithBranch('company_bank_accounts')->where('Bank_Type', '=', 'Bank')->get();
         return response()->json($accounts);
     }
 
@@ -724,12 +720,11 @@ class KYCController extends Controller
                 return response()->json(['error' => 'Insurance update failed.'], 400);
             }
 
-            $system_bank=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_11')->first();
-            if ($system_bank){
-                $system_bank_id=$system_bank->Idbank;
-
-            }else{
-                $system_bank_id=DB::table('company_bank_accounts')->insertGetId([
+            $system_bank = tableWithBranch('company_bank_accounts')->where('Bank_Type', '=', 'System_default_11')->first();
+            if ($system_bank) {
+                $system_bank_id = $system_bank->Idbank;
+            } else {
+                $system_bank_id = DB::table('company_bank_accounts')->insertGetId([
                     'Bank_Type' => "System_default_11",
                     'code' => "1121",
                     'Bank_Name' => "Insurance Payable",
@@ -745,16 +740,15 @@ class KYCController extends Controller
                 ]);
             }
 
-            $insurance=tableWithBranch('insurance')->where('id_insurance','=',$insuranceId)->first();
-            $fromAmount=$insurance->total_amount;
+            $insurance = tableWithBranch('insurance')->where('id_insurance', '=', $insuranceId)->first();
+            $fromAmount = $insurance->total_amount;
 
-            $this->bankLogController->index($bankId,"Insurance",'Insurance Claim'.' ('.$insuranceId.')','Insurance Claim',"credit",$fromAmount,$system_bank_id);
-            $this->bankLogController->index($system_bank_id,"Insurance",'Insurance Claim'.' ('.$insuranceId.')','Insurance Claim',"debit",$fromAmount,$bankId);
+            $this->bankLogController->index($bankId, "Insurance", 'Insurance Claim' . ' (' . $insuranceId . ')', 'Insurance Claim', "credit", $fromAmount, $system_bank_id);
+            $this->bankLogController->index($system_bank_id, "Insurance", 'Insurance Claim' . ' (' . $insuranceId . ')', 'Insurance Claim', "debit", $fromAmount, $bankId);
 
 
             DB::commit();
             return response()->json(['success' => true]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -763,6 +757,4 @@ class KYCController extends Controller
             ], 500);
         }
     }
-
-
 }

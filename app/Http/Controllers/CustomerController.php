@@ -30,13 +30,13 @@ class CustomerController extends Controller
     public function index(string $id)
     {
         $customers = tableWithBranch('customer')->where('idCustomer', '=', $id)->get();
-        $customer_loan = tableWithBranch('customer_loan','customer_loan')
+        $customer_loan = tableWithBranch('customer_loan', 'customer_loan')
             ->join('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category')
             ->select('customer_loan.*', 'loan_category.Name as loan_name')
             ->where('Customer_idCustomer', '=', $id)->get();
 
 
-        return response()->json(['item' => $customers,'loan' => $customer_loan], 200);
+        return response()->json(['item' => $customers, 'loan' => $customer_loan], 200);
     }
 
     /**
@@ -51,54 +51,54 @@ class CustomerController extends Controller
             'description' => 'required',
         ]);
 
-// Retrieve data from the request
+        // Retrieve data from the request
         $customer = $validatedData['customer'];
         $description = $validatedData['description'];
         $file = $request->file('file');
 
-// Define the directory where the file will be stored
+        // Define the directory where the file will be stored
         $directory = 'documents';
 
-// Check if the directory exists on the public disk, create it if not
+        // Check if the directory exists on the public disk, create it if not
         if (!Storage::disk('public')->exists($directory)) {
             Storage::disk('public')->makeDirectory($directory);
         }
 
-// Store the file on the public disk
+        // Store the file on the public disk
         $documentPath = Storage::disk('public')->putFile($directory, $file);
 
-// $documentPath now contains the path to the stored file relative to the 'public' disk
+        // $documentPath now contains the path to the stored file relative to the 'public' disk
 
-    // Get customer details for description
-    $customerData = tableWithBranch('customer')
-        ->where('idCustomer', $customer)
-        ->first();
+        // Get customer details for description
+        $customerData = tableWithBranch('customer')
+            ->where('idCustomer', $customer)
+            ->first();
 
-    $customerName = $customerData ? ($customerData->First_Name . ' ' . $customerData->Last_Name) : 'Unknown';
+        $customerName = $customerData ? ($customerData->First_Name . ' ' . $customerData->Last_Name) : 'Unknown';
 
-    // Store document upload data for approval
-    $requestData = [
-        'customer_id' => $customer,
-        'description' => $description,
-        'document_path' => $documentPath,
-    ];
+        // Store document upload data for approval
+        $requestData = [
+            'customer_id' => $customer,
+            'description' => $description,
+            'document_path' => $documentPath,
+        ];
 
-    // Create approval request
-    DB::table('approval_request')->insert([
-        'type' => 'Customer Document Upload',
-        'typeid' => 305,
-        'description' => 'Upload Document: ' . $description . ' (Customer: ' . $customerName . ')',
-        'data' => json_encode($requestData),
-        'userid' => session('userid'),
-        'branch_id' => session('branch_id'),
-        'data_time' => now(),
-        'status' => 0
-    ]);
+        // Create approval request
+        DB::table('approval_request')->insert([
+            'type' => 'Customer Document Upload',
+            'typeid' => 305,
+            'description' => 'Upload Document: ' . $description . ' (Customer: ' . $customerName . ')',
+            'data' => json_encode($requestData),
+            'userid' => session('userid'),
+            'branch_id' => session('branch_id'),
+            'data_time' => now(),
+            'status' => 0
+        ]);
 
-    return response()->json(['message' => 'Document upload request sent for approval!'], 200);
+        return response()->json(['message' => 'Document upload request sent for approval!'], 200);
 
-    // OLD CODE - keeping for approval handler reference
-    /*
+        // OLD CODE - keeping for approval handler reference
+        /*
     insertWithBranch('customer_documents', [
         'Customer_idCustomer' => $customer,
         'Description' => $description,
@@ -117,17 +117,20 @@ class CustomerController extends Controller
         if (DB::table('customer')
             ->Where('Nic', '=', $request->new_nic)
             ->where('branch_id', '=', session('branch_id')) // Check within the same branch
-            ->exists()) {
+            ->exists()
+        ) {
             return response()->json(['message' => 'This customer nic already exists!', 'id' => '0'], 200);
-        }  else if (DB::table('customer')
+        } else if (DB::table('customer')
             ->where('cus_number', '=', $request->cus_number)
             ->where('branch_id', '=', session('branch_id')) // Check within the same branch
-            ->exists()) {
+            ->exists()
+        ) {
             return response()->json(['message' => 'This customer number already exists!', 'id' => '0'], 200);
         } else if (DB::table('customer')
             ->Where('Contact_No', '=', $request->contact_number)
             ->where('branch_id', '=', session('branch_id')) // Check within the same branch
-            ->exists()) {
+            ->exists()
+        ) {
             return response()->json(['message' => 'This customer contact number already exists!', 'id' => '0'], 200);
         } else if (empty($request->root)) {
 
@@ -135,8 +138,7 @@ class CustomerController extends Controller
                 'message' => 'Root value is required!',
                 'id' => '0'
             ], 200);
-
-        }else{
+        } else {
 
             // Instantiate a new Customer object
             $customer = new Customer();
@@ -146,7 +148,7 @@ class CustomerController extends Controller
 
 
 
-// Set final customer number with branch prefix
+            // Set final customer number with branch prefix
             $customer->cus_number =  $request->cus_number;
             $customer->First_Name = $request->f_name;
             $customer->Last_Name = $request->last_name;
@@ -180,7 +182,7 @@ class CustomerController extends Controller
             $customer->Gua_occu = $request->gua_occu;
             $customer->Gua_contact = $request->gua_contact;
 
-            $customer->Gua_address = $request->gua_address_01.','.$request->gua_address_02.','.$request->gua_address_03;
+            $customer->Gua_address = $request->gua_address_01 . ',' . $request->gua_address_02 . ',' . $request->gua_address_03;
 
 
             $customer->Gua_nic = $request->gua_nic;
@@ -333,10 +335,6 @@ class CustomerController extends Controller
             }
             */
         }
-
-
-
-
     }
 
 
@@ -345,7 +343,7 @@ class CustomerController extends Controller
      */
     public function show(string $id)
     {
-        $customer_doc = tableWithBranch('customer_documents')->where('Customer_idCustomer','=',$id)->get();
+        $customer_doc = tableWithBranch('customer_documents')->where('Customer_idCustomer', '=', $id)->get();
         return response()->json(['item' => $customer_doc], 200);
     }
 
@@ -354,7 +352,7 @@ class CustomerController extends Controller
      */
     public function edit(Request $request)
     {
-        $isHeadOffice = (int)session('branch_id') === -1;
+        $isHeadOffice = session('head_branch') == session('branch_id');
         $perPage      = (int) $request->input('per_page', 10);
 
         // 🔹 For AJAX we NEVER use session search – only current value
@@ -465,7 +463,7 @@ class CustomerController extends Controller
             $route   = tableWithBranch('route')->get();
         }
 
-        return view('pages.ViewCustomer', compact('customers','route','group','center','company'));
+        return view('pages.ViewCustomer', compact('customers', 'route', 'group', 'center', 'company'));
     }
 
 
@@ -588,7 +586,7 @@ class CustomerController extends Controller
             fclose($handle);
         }, 200, [
             'Content-Type'        => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="'.$fileName.'"',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
             'Cache-Control'       => 'no-store, no-cache',
         ]);
     }
@@ -606,7 +604,7 @@ class CustomerController extends Controller
         // Load ALL active loan customers
         $query = tableWithBranch('customer', 'customer')
             ->join('customer_loan', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
-            ->where('customer_loan.Status', "=","1")  // only active loans
+            ->where('customer_loan.Status', "=", "1")  // only active loans
             ->whereNotNull('customer.Latitude')
             ->whereNotNull('customer.Longitude');
 
@@ -682,10 +680,10 @@ class CustomerController extends Controller
 
             return [
                 'id'          => $c->idCustomer,
-                'name'        => trim(($c->Title ? $c->Title.' ' : '') . $c->First_Name.' '.$c->Last_Name),
+                'name'        => trim(($c->Title ? $c->Title . ' ' : '') . $c->First_Name . ' ' . $c->Last_Name),
                 'cus_number'  => $c->cus_number,
                 'phone'       => $c->Contact_No,
-                'address'     => trim(($c->Address ?? '').' '.($c->Address_02 ?? '').' '.($c->Address_03 ?? '')),
+                'address'     => trim(($c->Address ?? '') . ' ' . ($c->Address_02 ?? '') . ' ' . ($c->Address_03 ?? '')),
                 'lat'         => (float) $c->Latitude,
                 'lng'         => (float) $c->Longitude,
                 'photo'       => $photoUrl,
@@ -713,25 +711,25 @@ class CustomerController extends Controller
 
     public function blacklist()
     {
-        $customers = tableWithBranch('customer','customer')
+        $customers = tableWithBranch('customer', 'customer')
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
-            ->where('customer.Status','=','0')
+            ->where('customer.Status', '=', '0')
             ->select('customer.*', 'customer_group.Name as group_name', 'center.Name as center_name')
             ->get();
         $group = tableWithBranch('customer_group')->get();
         $center = tableWithBranch('center')->get();
         $company = DB::table('company')->first();
-        $route= tableWithBranch('route')->get();
-        return view('pages.BlacklistCustomer', compact('customers','route','group','center','company'));
+        $route = tableWithBranch('route')->get();
+        return view('pages.BlacklistCustomer', compact('customers', 'route', 'group', 'center', 'company'));
     }
 
 
-//ViewCustomerSaving
+    //ViewCustomerSaving
     public function edit_saving()
     {
-        $customers = tableWithBranch('customer','customer')
+        $customers = tableWithBranch('customer', 'customer')
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
@@ -744,7 +742,7 @@ class CustomerController extends Controller
         $group = tableWithBranch('customer_group')->get();
         $center = tableWithBranch('center')->get();
         $company = DB::table('company')->first();
-        return view('pages.ViewCustomerSaving', compact('customers','group','center','company'));
+        return view('pages.ViewCustomerSaving', compact('customers', 'group', 'center', 'company'));
     }
 
     public function recovery()
@@ -766,8 +764,7 @@ class CustomerController extends Controller
 
         $company = DB::table('company')->first(); // you already seem to pass $company->company_name
 
-        return view('pages.recovery_accounts', compact('recoveryAccounts','company'));
-
+        return view('pages.recovery_accounts', compact('recoveryAccounts', 'company'));
     }
 
     public function logs($id)
@@ -788,7 +785,7 @@ class CustomerController extends Controller
         }
 
         $logs = DB::table('recovery_account_log as ral')
-            ->leftJoin('customer_loan as cl', function($join) {
+            ->leftJoin('customer_loan as cl', function ($join) {
                 $join->on('ral.loan_id', '=', 'cl.idCustomer_Loan');
             })
             ->where('ral.recovery_account_id', $id)
@@ -812,22 +809,23 @@ class CustomerController extends Controller
 
 
 
-    public function customer_saving($id){
-        $customers =tableWithBranch('customer')
-            ->where('idCustomer','=',$id)
+    public function customer_saving($id)
+    {
+        $customers = tableWithBranch('customer')
+            ->where('idCustomer', '=', $id)
             ->first();
-        $saving_account=tableWithBranch('Customer_Saving_Accounts')
-            ->where('Customer_Id','=',$id)
+        $saving_account = tableWithBranch('Customer_Saving_Accounts')
+            ->where('Customer_Id', '=', $id)
             ->get();
 
-        $total_balance=0;
+        $total_balance = 0;
         foreach ($saving_account as $item) {
-            $total_balance+=$item->Balance;
+            $total_balance += $item->Balance;
         }
-        $saving_account_count=tableWithBranch('Customer_Saving_Accounts')
-            ->where('Customer_Id','=',$id)
+        $saving_account_count = tableWithBranch('Customer_Saving_Accounts')
+            ->where('Customer_Id', '=', $id)
             ->count();
-        return view('pages.customerAccountReport', compact('customers','saving_account','saving_account_count','total_balance'));
+        return view('pages.customerAccountReport', compact('customers', 'saving_account', 'saving_account_count', 'total_balance'));
     }
 
     /**
@@ -835,7 +833,7 @@ class CustomerController extends Controller
      */
     public function update()
     {
-        $customers = tableWithBranch('customer','customer')
+        $customers = tableWithBranch('customer', 'customer')
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
@@ -846,7 +844,7 @@ class CustomerController extends Controller
 
     public function borrower()
     {
-        $customers = tableWithBranch('customer','customer')
+        $customers = tableWithBranch('customer', 'customer')
             ->join('customer_loan', 'customer.idCustomer', '=', 'customer_loan.Customer_idCustomer') // Ensure only customers with loans are selected
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
@@ -866,18 +864,18 @@ class CustomerController extends Controller
         $document = tableWithBranch('customer_documents')
             ->where('idCustomer_Documents', '=', $id)
             ->first();
-        
+
         if (!$document) {
             return response()->json(['message' => 'Document not found'], 404);
         }
-        
+
         // Get customer details for description
         $customer = tableWithBranch('customer')
             ->where('idCustomer', $document->Customer_idCustomer)
             ->first();
-        
+
         $customerName = $customer ? ($customer->First_Name . ' ' . $customer->Last_Name) : 'Unknown';
-        
+
         // Store document delete data for approval
         $requestData = [
             'document_id' => $id,
@@ -896,9 +894,9 @@ class CustomerController extends Controller
             'data_time' => now(),
             'status' => 0
         ]);
-        
+
         return response()->json(['message' => 'Document delete request sent for approval!'], 200);
-        
+
         // OLD CODE - keeping for approval handler reference
         /*
         tableWithBranch('customer_documents')->where('idCustomer_Documents', '=', $id)->delete();
@@ -906,9 +904,10 @@ class CustomerController extends Controller
         */
     }
 
-    public function updateCustomer(Request $request) {
+    public function updateCustomer(Request $request)
+    {
 
-        $documentPath=null;
+        $documentPath = null;
         // Handle file upload
         if ($request->hasFile('cus_phto')) {
             $file = $request->file('cus_phto');
@@ -968,33 +967,33 @@ class CustomerController extends Controller
             $data['Cus_phto'] = $documentPath;
         }
 
-// Get old customer data for comparison
-    $oldCustomer = DB::table('customer')->where('idCustomer', $request->id)->first();
-    
-    // Store customer update data for approval
-    $requestData = [
-        'customer_id' => $request->id,
-        'old_data' => (array)$oldCustomer,
-        'new_data' => $data,
-        'photo_path' => $documentPath,
-    ];
+        // Get old customer data for comparison
+        $oldCustomer = DB::table('customer')->where('idCustomer', $request->id)->first();
 
-    // Create approval request
-    DB::table('approval_request')->insert([
-        'type' => 'Customer Details Update',
-        'typeid' => 302,
-        'description' => 'Customer Update: ' . $request->f_name . ' ' . $request->last_name . ' (NIC: ' . $request->nic . ')',
-        'data' => json_encode($requestData),
-        'userid' => session('userid'),
-        'branch_id' => session('branch_id'),
-        'data_time' => now(),
-        'status' => 0
-    ]);
+        // Store customer update data for approval
+        $requestData = [
+            'customer_id' => $request->id,
+            'old_data' => (array)$oldCustomer,
+            'new_data' => $data,
+            'photo_path' => $documentPath,
+        ];
 
-    return response()->json(['message' => 'Customer update request sent for approval!'], 200);
+        // Create approval request
+        DB::table('approval_request')->insert([
+            'type' => 'Customer Details Update',
+            'typeid' => 302,
+            'description' => 'Customer Update: ' . $request->f_name . ' ' . $request->last_name . ' (NIC: ' . $request->nic . ')',
+            'data' => json_encode($requestData),
+            'userid' => session('userid'),
+            'branch_id' => session('branch_id'),
+            'data_time' => now(),
+            'status' => 0
+        ]);
 
-    // OLD CODE - keeping for approval handler reference
-    /*
+        return response()->json(['message' => 'Customer update request sent for approval!'], 200);
+
+        // OLD CODE - keeping for approval handler reference
+        /*
     updateWithBranch('customer', 'idCustomer', $request->id, $data);
     customer_number($request->id);
     $request = new Request([
@@ -1009,7 +1008,8 @@ class CustomerController extends Controller
     */
     }
 
-    public function updateCustomerLocation(Request $request) {
+    public function updateCustomerLocation(Request $request)
+    {
         try {
             // Validate the request
             $request->validate([
@@ -1033,10 +1033,11 @@ class CustomerController extends Controller
         }
     }
 
-    public function load(){
-        $center= tableWithBranch('center')->get();
-        $company= tableWithBranch('company')->first();
-        $route= tableWithBranch('route')->get();
+    public function load()
+    {
+        $center = tableWithBranch('center')->get();
+        $company = tableWithBranch('company')->first();
+        $route = tableWithBranch('route')->get();
 
         // Fetch the maximum customer ID
         $customer_max = tableWithBranch('customer')->max('idCustomer');
@@ -1047,7 +1048,7 @@ class CustomerController extends Controller
         // Format the ID with leading zeros (e.g., ##0 -> 001, 010, 100, etc.)
         // Adjust the length as needed (e.g., 3 means the format will be "001")
         $formatted_customer_id = str_pad($customer_max, 3, '0', STR_PAD_LEFT);
-        return view('pages.Customer',compact('center','company','formatted_customer_id','route'));
+        return view('pages.Customer', compact('center', 'company', 'formatted_customer_id', 'route'));
     }
 
     public function saveFiles(Request $request)
@@ -1061,7 +1062,7 @@ class CustomerController extends Controller
         // Define the directory where the file will be stored
         $directory = 'customer_documents';
 
-// Check if the directory exists, create it if not
+        // Check if the directory exists, create it if not
         if (!Storage::disk('public')->exists($directory)) {
             Storage::disk('public')->makeDirectory($directory);
         }
@@ -1081,18 +1082,17 @@ class CustomerController extends Controller
                 'Customer_idCustomer' => $request->id, // Adjust this according to your needs
             ];
 
-// Use the insertWithBranch helper function to insert the document data
+            // Use the insertWithBranch helper function to insert the document data
             insertWithBranch('customer_documents', $documentData);
-
         }
 
 
 
         return response()->json(['success' => true]);
-
     }
 
-    public function change_status(Request $request) {
+    public function change_status(Request $request)
+    {
         // Validate the request
         $validatedData = $request->validate([
             'id' => 'required', // Ensures id is present and valid
@@ -1178,58 +1178,61 @@ class CustomerController extends Controller
         */
     }
 
-    public function load_customers(string $id){
-        $customer = tableWithBranch('customer','customer')
-            ->join('group_has_customer','customer.idCustomer', '=', 'group_has_customer.cus_id')
+    public function load_customers(string $id)
+    {
+        $customer = tableWithBranch('customer', 'customer')
+            ->join('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->where('group_id', $id)
-            ->where('customer.Status','=','1')
+            ->where('customer.Status', '=', '1')
             ->get();
-        return response()->json(['message' => 'Customers updated successfully','item' => $customer], 200);
+        return response()->json(['message' => 'Customers updated successfully', 'item' => $customer], 200);
     }
 
-    public function load_individual_customer(){
-        $customer = tableWithBranch('customer')->where('customer.Status','=','1')->get();
-        return response()->json(['message' => 'Customers updated successfully','item' => $customer], 200);
+    public function load_individual_customer()
+    {
+        $customer = tableWithBranch('customer')->where('customer.Status', '=', '1')->get();
+        return response()->json(['message' => 'Customers updated successfully', 'item' => $customer], 200);
     }
 
-    public function deletecus(string $id){
-        $group=tableWithBranch('group_has_customer')->where('cus_id', '=', $id)->get();
-        $customer_loan=tableWithBranch('customer_loan')->where('Customer_idCustomer', '=', $id)->get();
+    public function deletecus(string $id)
+    {
+        $group = tableWithBranch('group_has_customer')->where('cus_id', '=', $id)->get();
+        $customer_loan = tableWithBranch('customer_loan')->where('Customer_idCustomer', '=', $id)->get();
 
         if ($group->isNotEmpty()) {
-            return response()->json(['message' => 'Customer has group','item'=>'error'], 200);
-        }else if($customer_loan->isNotEmpty()){
-            return response()->json(['message' => 'Customer has loan','item'=>'error'], 200);
-        }else{
-            deleteWithBranch('customer','idCustomer', $id);
-            return response()->json(['message' => 'Data deleted successfully','item'=>'success'], 200);
+            return response()->json(['message' => 'Customer has group', 'item' => 'error'], 200);
+        } else if ($customer_loan->isNotEmpty()) {
+            return response()->json(['message' => 'Customer has loan', 'item' => 'error'], 200);
+        } else {
+            deleteWithBranch('customer', 'idCustomer', $id);
+            return response()->json(['message' => 'Data deleted successfully', 'item' => 'success'], 200);
         }
     }
 
-    public function customer_road_map(string $id){
+    public function customer_road_map(string $id)
+    {
 
         $customer = tableWithBranch('customer')
             ->where('idCustomer', '=', $id)
             ->first();
 
-        if ($customer){
-            $customer_name = $customer->First_Name.' '.$customer->Last_Name;
+        if ($customer) {
+            $customer_name = $customer->First_Name . ' ' . $customer->Last_Name;
 
-            $customer_log=tableWithBranch('customer_log','customer_log')
-                ->join('user','customer_log.user', '=', 'user.id')
-                ->where('customer_id','=',$id)
+            $customer_log = tableWithBranch('customer_log', 'customer_log')
+                ->join('user', 'customer_log.user', '=', 'user.id')
+                ->where('customer_id', '=', $id)
                 ->get();
 
-            return view('pages.CustomerRoadMap',compact('id','customer_name','customer_log'));
+            return view('pages.CustomerRoadMap', compact('id', 'customer_name', 'customer_log'));
         }
 
         return redirect()->back();
-
-
     }
 
 
-    public function saveBank(Request $request){
+    public function saveBank(Request $request)
+    {
 
         // Retrieve the general ID
         $id = $request->input('id');
@@ -1263,27 +1266,27 @@ class CustomerController extends Controller
                     'bank_code' => $tableBankCode, // Bank code
                 ];
 
-// Use the insertWithBranch helper function to insert the bank data
+                // Use the insertWithBranch helper function to insert the bank data
                 insertWithBranch('customer_has_bank', $documentData);
-
             }
         }
 
         // Return a response
         return response()->json(['message' => 'Bank details saved successfully']);
-
     }
 
 
-    public function load_bank(string $id){
+    public function load_bank(string $id)
+    {
         $customer_acc = tableWithBranch('customer_has_bank')
             ->where('cus_id', '=', $id)
             ->get();
-        return response()->json(['message' => 'Bank details saved successfully','item'=>$customer_acc], 200);
+        return response()->json(['message' => 'Bank details saved successfully', 'item' => $customer_acc], 200);
     }
 
 
-    public function saveBankSingle(Request $request){
+    public function saveBankSingle(Request $request)
+    {
 
         $id = $request->input('id');
 
@@ -1303,28 +1306,35 @@ class CustomerController extends Controller
             'bank_code' => $tableBankCode, // Bank code
         ];
 
-// Use the insertWithBranch helper function to insert the bank data
+        // Use the insertWithBranch helper function to insert the bank data
         insertWithBranch('customer_has_bank', $documentData);
 
 
         return response()->json(['message' => 'Bank details saved successfully']);
     }
 
-    public function remove_bank(string $id){
+    public function remove_bank(string $id)
+    {
         $customer_acc = tableWithBranch('customer_has_bank')
             ->where('id', '=', $id)
             ->delete();
         return response()->json(['message' => 'Bank details saved successfully'], 200);
     }
 
-    public function get_account_transactions($id){
-        $transactions = tableWithBranch('Savings_Account_Log','Savings_Account_Log')
+    public function get_account_transactions($id)
+    {
+        $transactions = tableWithBranch('Savings_Account_Log', 'Savings_Account_Log')
             ->leftJoin('user', 'Savings_Account_Log.User', '=', 'user.id')
             ->where('Saving_Acount_Id', $id)
-            ->select('Savings_Account_Log.Date_Time as date', 'Savings_Account_Log.Type as type',
-                'Savings_Account_Log.Description as description', 'Savings_Account_Log.Credit as credit',
-                'Savings_Account_Log.Debit as debit', 'Savings_Account_Log.Balance as balance',
-                'user.Full_Name as user')
+            ->select(
+                'Savings_Account_Log.Date_Time as date',
+                'Savings_Account_Log.Type as type',
+                'Savings_Account_Log.Description as description',
+                'Savings_Account_Log.Credit as credit',
+                'Savings_Account_Log.Debit as debit',
+                'Savings_Account_Log.Balance as balance',
+                'user.Full_Name as user'
+            )
             ->orderBy('Savings_Account_Log.id', 'asc')
             ->get();
 
@@ -1333,8 +1343,8 @@ class CustomerController extends Controller
 
     public function load_customer_route($id)
     {
-        $customer = tableWithBranch('customer','customer')
-            ->join('route','customer.route_id','=','route.id_route')
+        $customer = tableWithBranch('customer', 'customer')
+            ->join('route', 'customer.route_id', '=', 'route.id_route')
             ->where('idCustomer', $id)
             ->first();
 
@@ -1351,6 +1361,4 @@ class CustomerController extends Controller
             'collection_date'  => $date, // '' when customizable
         ], 200);
     }
-
-
 }

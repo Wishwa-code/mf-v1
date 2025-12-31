@@ -14,8 +14,8 @@ class BankLogController extends Controller
      */
     public function index($bank_id,$type,$description,$note,$system,$amount,$contra_account, $payment_id = 0,$reconsilation_status = "0",$date_time = null)
     {
-        $user_id = (int)session('userid');
-        $isHeadOffice = (int)session('branch_id') === -1;
+        $user_id = (int)session('user_data')['user'];
+        $isHeadOffice = session('head_branch') == session('branch_id');
 // Create a new BankLog entry
         $BankLog = new BankLog();
         $BankLog->Bank_Account_Id = $bank_id;
