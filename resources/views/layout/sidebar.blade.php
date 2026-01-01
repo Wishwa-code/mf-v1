@@ -13,7 +13,7 @@
 
         @hasPrivilege('DASHBOARD')
         <li class="side-nav-item">
-            <a href="/" class="side-nav-link">
+            <a href="/" class="side-nav-link" data-tooltip="Dashboard">
                 <i class="ri-dashboard-3-line"></i>
                 <span> Dashboard </span>
             </a>
@@ -23,7 +23,7 @@
         @hasPrivilege('CUSTOMER')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#customer" aria-expanded="false" aria-controls="customer"
-                class="side-nav-link">
+                class="side-nav-link" data-tooltip="Customer">
                 <i class="ri-group-2-line"></i>
                 <span> Customer </span>
                 <span class="menu-arrow"></span>
@@ -44,7 +44,7 @@
         @hasPrivilege('LOAN_CENTER')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#center" aria-expanded="false" aria-controls="center"
-                class="side-nav-link">
+                class="side-nav-link" data-tooltip="Loan Center">
                 <i class="bi bi-building"></i>
                 <span> Loan Center </span>
                 <span class="menu-arrow"></span>
@@ -110,7 +110,7 @@
 
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#payment_voucher" aria-expanded="false"
-                aria-controls="payment_voucher" class="side-nav-link">
+                aria-controls="payment_voucher" class="side-nav-link" data-tooltip="Payment Voucher Module">
                 <i class="ri-file-list-3-line"></i>
                 <span> Payment Voucher Module </span>
                 <span class="menu-arrow"></span>
@@ -133,7 +133,7 @@
         @hasPrivilege('EXPENSES')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#expences" aria-expanded="false" aria-controls="expences"
-                class="side-nav-link">
+                class="side-nav-link" data-tooltip="Expenses">
                 <i class="ri-briefcase-line"></i>
                 <span> Expenses </span>
                 <span class="menu-arrow"></span>
@@ -153,7 +153,7 @@
 
         @hasPrivilege('DASHBOARD')
         <li class="side-nav-item">
-            <a href="/" class="side-nav-link">
+            <a href="/" class="side-nav-link" data-tooltip="Dashboard">
                 <i class="ri-dashboard-3-line"></i>
                 <span> Dashboard </span>
             </a>
@@ -165,7 +165,7 @@
         @hasPrivilege('CUSTOMER_LEADS')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#lead" aria-expanded="false"
-                aria-controls="sidebarPagesAuth" class="side-nav-link">
+                aria-controls="sidebarPagesAuth" class="side-nav-link" data-tooltip="Lead">
                 <i class="ri-article-fill"></i>
                 <span> Lead </span>
                 <span class="menu-arrow"></span>
@@ -230,7 +230,7 @@
         @hasPrivilege('CUSTOMER')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#customer" aria-expanded="false"
-                aria-controls="sidebarPagesAuth" class="side-nav-link">
+                aria-controls="sidebarPagesAuth" class="side-nav-link" data-tooltip="Customer">
                 <i class="ri-group-2-line"></i>
                 <span> Customer </span>
                 <span class="menu-arrow"></span>
@@ -285,7 +285,7 @@
         @hasPrivilege('LOAN_CENTER')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#center" aria-expanded="false" aria-controls="center"
-                class="side-nav-link">
+                class="side-nav-link" data-tooltip="Loan Center">
                 <i class="bi bi-building"></i>
                 <span> Loan Center </span>
                 <span class="menu-arrow"></span>
@@ -330,7 +330,7 @@
         @hasPrivilege('GUARANTEE')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#Guarantee" aria-expanded="false"
-                aria-controls="sidebarPagesAuth" class="side-nav-link">
+                aria-controls="sidebarPagesAuth" class="side-nav-link" data-tooltip="Guarantee">
                 <i class="ri-user-2-fill"></i>
                 <span> Guarantee </span>
                 <span class="menu-arrow"></span>
@@ -356,7 +356,7 @@
         @hasPrivilege('PRODUCT')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#sidebarPages" aria-expanded="false"
-                aria-controls="sidebarPages" class="side-nav-link">
+                aria-controls="sidebarPages" class="side-nav-link" data-tooltip="Product / Loan">
                 <i class="ri-pages-line"></i>
                 <span> Product / Loan </span>
                 <span class="menu-arrow"></span>
@@ -417,7 +417,7 @@
         @hasPrivilege('PAYMENT_DETAILS')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#payment" aria-expanded="false" aria-controls="center"
-                class="side-nav-link">
+                class="side-nav-link" data-tooltip="Payment Details">
                 <i class="bi bi-currency-dollar"></i>
                 <span> Payment Details </span>
                 <span class="menu-arrow"></span>
@@ -536,7 +536,7 @@
 
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#payment_voucher" aria-expanded="false"
-                aria-controls="payment_voucher" class="side-nav-link">
+                aria-controls="payment_voucher" class="side-nav-link" data-tooltip="Payment Voucher">
                 <i class="ri-file-list-3-line"></i>
                 <span> Payment Voucher </span>
                 <span class="menu-arrow"></span>
@@ -564,7 +564,7 @@
 
         @hasPrivilege('LOAN_CALCULATOR')
         <li class="side-nav-item">
-            <a href="/calculator" class="side-nav-link">
+            <a href="/calculator" class="side-nav-link" data-tooltip="Loan Calculator">
                 <i class="ri-dashboard-3-line"></i>
                 <span> Loan Calculator </span>
             </a>
@@ -573,7 +573,7 @@
 
         @hasPrivilege('CALENDAR')
         <li class="side-nav-item">
-            <a href="/calender" class="side-nav-link">
+            <a href="/calender" class="side-nav-link" data-tooltip="Calender">
                 <i class="ri-dashboard-3-line"></i>
                 <span> Calender </span>
             </a>
@@ -583,7 +583,7 @@
         @hasPrivilege('EXPENSES')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#expences" aria-expanded="false" aria-controls="expences"
-                class="side-nav-link">
+                class="side-nav-link" data-tooltip="Expenses">
                 <i class="ri-briefcase-line"></i>
                 <span> Expenses </span>
                 <span class="menu-arrow"></span>
@@ -637,7 +637,7 @@
         @hasPrivilege('REPORTS')
         <li class="side-nav-item">
             <a data-bs-toggle="collapse" href="#reports_section" aria-expanded="false"
-                class="side-nav-link">
+                class="side-nav-link" data-tooltip="Reports">
                 <i class="ri-file-paper-2-fill"></i>
                 <span> Reports </span>
                 <span class="menu-arrow"></span>
@@ -793,7 +793,7 @@
 
 
         <li class="side-nav-item">
-            <a href="/logout" class="side-nav-link">
+            <a href="/logout" class="side-nav-link" data-tooltip="Logout">
                 <i class="ri-logout-box-line"></i>
                 <span> Logout </span>
             </a>

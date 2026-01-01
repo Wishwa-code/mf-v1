@@ -3,7 +3,7 @@
     :root {
         --sidebar-width: 350px;
         /* Increased from 320px */
-        --sidebar-bg: rgba(49, 58, 70, 0.3);
+        --sidebar-bg: rgba(255, 255, 255, 1);
         /* Default Fallback */
         --sidebar-active-bg: #6a5e87;
         /* Solid Purple */
@@ -15,7 +15,7 @@
 
     /* Light Mode */
     html[data-layout-mode="light"] .leftside-menu {
-        --sidebar-bg: rgba(255, 255, 255, 0.9);
+        --sidebar-bg: #ffffff;
         --sidebar-text: #313a46;
         --sidebar-hover-bg: rgba(0, 0, 0, 0.05);
         border-right: 1px solid rgba(0, 0, 0, 0.1);
@@ -28,7 +28,7 @@
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
         backdrop-filter: blur(20px) !important;
         -webkit-backdrop-filter: blur(20px) !important;
-        --sidebar-text: #ced4da;
+        --sidebar-text: #313a46;;
         --sidebar-hover-bg: rgba(255, 255, 255, 0.1);
         border-right: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 5px 0 25px rgba(0, 0, 0, 0.2);
@@ -42,7 +42,7 @@
         -webkit-backdrop-filter: blur(12px);
         box-shadow: 4px 0 24px rgba(0, 0, 0, 0.1);
         border-right: 1px solid var(--sidebar-border);
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 1005 !important;
         /* Ensure it stays above content/navbar overlap if any */
         position: fixed;
@@ -182,18 +182,62 @@
         background: transparent !important;
     }
 
-    /* Condensed Sidebar Styles */
+    /* Condensed Sidebar Styles - Modern Icon-Only Mode */
     html[data-sidenav-size="condensed"] .leftside-menu {
         width: 70px !important;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(20px) !important;
+    }
+
+    /* Condensed Mode - Dark Theme Override */
+    html[data-layout-mode="dark"][data-sidenav-size="condensed"] .leftside-menu {
+        background: linear-gradient(180deg, #1e2530 0%, #141a23 100%) !important;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Condensed Mode - Light Theme Override */
+    html[data-layout-mode="light"][data-sidenav-size="condensed"] .leftside-menu {
+        background: #ffffff !important;
+        border-right: 1px solid rgba(0, 0, 0, 0.05);
     }
 
     html[data-sidenav-size="condensed"] .content-page {
         margin-left: 70px !important;
+        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html[data-sidenav-size="condensed"] #leftside-menu-container {
+        padding: 12px 0;
+    }
+
+    html[data-sidenav-size="condensed"] .side-nav {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    html[data-sidenav-size="condensed"] .side-nav-item {
+        margin: 2px 0;
+        width: 100%;
+        display: flex;
+        justify-content: center;
     }
 
     html[data-sidenav-size="condensed"] .side-nav-link {
         justify-content: center !important;
-        padding: 12px 0 !important;
+        padding: 14px 0 !important;
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        margin: 0 auto;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+
+    html[data-sidenav-size="condensed"] .side-nav-link:hover {
+        background: rgba(106, 94, 135, 0.6) !important;
+        transform: scale(1.1);
     }
 
     html[data-sidenav-size="condensed"] .side-nav-link span:not(.menu-arrow),
@@ -205,12 +249,91 @@
 
     html[data-sidenav-size="condensed"] .side-nav-link i {
         margin-right: 0 !important;
-        font-size: 1.4rem;
+        font-size: 1.35rem;
+        transition: all 0.25s ease;
     }
 
-    html[data-sidenav-size="condensed"] .side-nav-item {
-        margin: 4px 0;
-        /* Tighter margins for condensed */
+    /* Icon Colors - Dark Mode */
+    html[data-layout-mode="dark"][data-sidenav-size="condensed"] .side-nav-link i {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    html[data-layout-mode="dark"][data-sidenav-size="condensed"] .side-nav-link:hover i {
+        color: #fff;
+    }
+
+    /* Icon Colors - Light Mode */
+    html[data-layout-mode="light"][data-sidenav-size="condensed"] .side-nav-link i {
+        color: #6c757d;
+    }
+
+    html[data-layout-mode="light"][data-sidenav-size="condensed"] .side-nav-link:hover i {
+        color: #313a46;
+    }
+
+    html[data-sidenav-size="condensed"] .side-nav-link:hover {
+        transform: scale(1.1);
+    }
+
+    /* Hover BG - Dark Mode */
+    html[data-layout-mode="dark"][data-sidenav-size="condensed"] .side-nav-link:hover {
+        background: rgba(106, 94, 135, 0.6) !important;
+    }
+
+    /* Hover BG - Light Mode */
+    html[data-layout-mode="light"][data-sidenav-size="condensed"] .side-nav-link:hover {
+        background: rgba(0, 0, 0, 0.05) !important;
+    }
+
+    /* Active state in condensed mode */
+    html[data-sidenav-size="condensed"] .side-nav-item.menuitem-active>.side-nav-link,
+    html[data-sidenav-size="condensed"] .side-nav-link.active {
+        background: var(--sidebar-active-bg) !important;
+        box-shadow: 0 4px 15px rgba(106, 94, 135, 0.5);
+    }
+
+    html[data-sidenav-size="condensed"] .side-nav-item.menuitem-active>.side-nav-link i,
+    html[data-sidenav-size="condensed"] .side-nav-link.active i {
+        color: #fff !important;
+    }
+
+    /* Hide submenus in condensed mode */
+    html[data-sidenav-size="condensed"] .collapse,
+    html[data-sidenav-size="condensed"] .side-nav-second-level,
+    html[data-sidenav-size="condensed"] .side-nav-third-level {
+        display: none !important;
+    }
+
+    /* Tooltip for condensed mode - show menu name on hover */
+    html[data-sidenav-size="condensed"] .side-nav-link::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        left: 70px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #1e2530;
+        color: #fff;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 9999;
+        pointer-events: none;
+    }
+
+    html[data-sidenav-size="condensed"] .side-nav-link:hover::after {
+        opacity: 1;
+        visibility: visible;
+        left: 75px;
+    }
+
+    /* Navbar adjustment for condensed mode */
+    html[data-sidenav-size="condensed"] .navbar-custom {
+        left: 70px !important;
     }
 
     /* Logo Alignment */
@@ -221,7 +344,8 @@
     }
 
     /* Responsive Styles & Mobile Toggle */
-    @media (max-width: 1024px) {
+    /* Responsive Styles & Mobile Toggle */
+    @media (max-width: 768px) {
         .leftside-menu {
             transform: translateX(-100%);
             box-shadow: none;
@@ -239,5 +363,13 @@
             width: var(--sidebar-width) !important;
             /* Full width on mobile */
         }
+    }
+
+    /* Remove Offcanvas Backdrop Overlay */
+    .offcanvas-backdrop.show {
+        opacity: 0 !important;
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
     }
 </style>

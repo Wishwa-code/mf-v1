@@ -530,18 +530,28 @@
             });
 
             // Sidebar Toggle Logic
-            $(document).on('click', '.button-toggle-menu', function(e) {
+            // Sidebar Toggle Logic
+            $(document).off('click', '.button-toggle-menu').on('click', '.button-toggle-menu', function(e) {
                 e.preventDefault();
+                e.stopPropagation();
+
                 const windowWidth = $(window).width();
 
-                if (windowWidth < 1024) {
+                if (windowWidth < 768) {
                     // Mobile: Toggle sidebar-enable class on body
                     $('body').toggleClass('sidebar-enable');
                 } else {
                     // Desktop: Toggle between default and condensed
-                    const currentSize = $('html').attr('data-sidenav-size');
+                    const html = $('html');
+                    const currentSize = html.attr('data-sidenav-size') || 'default';
                     const newSize = (currentSize === 'condensed') ? 'default' : 'condensed';
-                    $('html').attr('data-sidenav-size', newSize);
+
+                    html.attr('data-sidenav-size', newSize);
+
+                    // Trigger resize event to smooth out charts/tables
+                    setTimeout(function() {
+                        window.dispatchEvent(new Event('resize'));
+                    }, 300);
                 }
             });
         });
