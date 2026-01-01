@@ -22,7 +22,7 @@ class LoanController extends Controller
     protected $customerLogController;
     protected $CapitalBalanceController;
 
-    public function __construct(CustomerLogController $customerLogController,CapitalBalanceController $capitalBalanceController)
+    public function __construct(CustomerLogController $customerLogController, CapitalBalanceController $capitalBalanceController)
     {
         $this->customerLogController = $customerLogController;
         $this->CapitalBalanceController = $capitalBalanceController;
@@ -33,15 +33,15 @@ class LoanController extends Controller
      */
     public function index()
     {
-        $customers = tableWithBranch('customer')->where('Status','=','1')->get();
+        $customers = tableWithBranch('customer')->where('Status', '=', '1')->get();
         $center = tableWithBranch('center')->get();
         $product = tableWithBranch('loan_category')->get();
         $company = DB::table('company')->first();
         $lending_officer = tableWithBranch('user')->where('lending_officer', '=', '1')->get();
         $collector = tableWithBranch('user')
-            ->where('collector','=','1')
+            ->where('collector', '=', '1')
             ->get();
-        return view('pages.IssueLoan', compact('customers', 'center', 'product', 'lending_officer','company','collector'));
+        return view('pages.IssueLoan', compact('customers', 'center', 'product', 'lending_officer', 'company', 'collector'));
     }
 
     /**
@@ -49,15 +49,15 @@ class LoanController extends Controller
      */
     public function create()
     {
-        $customers = tableWithBranch('customer')->where('Status','=','1')->get();
+        $customers = tableWithBranch('customer')->where('Status', '=', '1')->get();
         $center = tableWithBranch('center')->get();
         $product = tableWithBranch('loan_category')->get();
         $company = DB::table('company')->first();
         $lending_officer = tableWithBranch('user')->where('lending_officer', '=', '1')->get();
         $collector = tableWithBranch('user')
-            ->where('collector','=','1')
+            ->where('collector', '=', '1')
             ->get();
-        return view('pages.LoanCalculator', compact('customers', 'center', 'product', 'lending_officer','company','collector'));
+        return view('pages.LoanCalculator', compact('customers', 'center', 'product', 'lending_officer', 'company', 'collector'));
     }
 
     /**
@@ -67,7 +67,7 @@ class LoanController extends Controller
     {
         DB::beginTransaction();
         try {
-            $user_id = (int) session('userid');
+            $user_id = (int)session('user_data')["idUser"];
 
             $loan = new Loan();
             $loan->created_at = Carbon::now();
@@ -119,11 +119,11 @@ class LoanController extends Controller
                 $loanProduct = tableWithBranch('loan_category')
                     ->where('idLoan_Category', $request->loan_cate_id)
                     ->first();
-                
+
                 if ($loanProduct && $loanProduct->Guarantee_count > 0) {
                     $requiredGuaranteeCount = (int) $loanProduct->Guarantee_count;
                     $witnessesArray = $request->input('witnessesArray', []);
-                    
+
                     // Count valid guarantors (cus_id not empty or "0")
                     $validGuarantorCount = 0;
                     foreach ($witnessesArray as $witness) {
@@ -131,7 +131,7 @@ class LoanController extends Controller
                             $validGuarantorCount++;
                         }
                     }
-                    
+
                     // Ensure ALL required guarantors are provided
                     if ($validGuarantorCount < $requiredGuaranteeCount) {
                         DB::rollBack();
@@ -149,11 +149,11 @@ class LoanController extends Controller
                 $requiredDocumentsCount = tableWithBranch('required_documents')
                     ->where('Loan_Category_idLoan_Category', $request->loan_cate_id)
                     ->count();
-                
+
                 if ($requiredDocumentsCount > 0) {
                     // Get the count of uploaded documents from the request
                     $uploadedDocumentsCount = (int) $request->input('uploaded_documents_count', 0);
-                    
+
                     // Ensure ALL required documents are uploaded
                     if ($uploadedDocumentsCount < $requiredDocumentsCount) {
                         DB::rollBack();
@@ -167,22 +167,22 @@ class LoanController extends Controller
             // Check first installment date restriction
             $issueDate = $request->input('issue_date');
             $installments = $request->input('installment', []);
-            
+
             if ($issueDate && !empty($installments)) {
                 // Get the first installment date
                 $firstInstallment = is_array($installments) ? reset($installments) : null;
                 $firstInstallmentDate = $firstInstallment['installmentDate'] ?? null;
-                
+
                 if ($firstInstallmentDate) {
                     // Get loan product to determine the loan type
                     $loanProduct = tableWithBranch('loan_category')
                         ->where('idLoan_Category', $request->loan_cate_id)
                         ->first();
-                    
+
                     if ($loanProduct) {
                         $interestPeriod = $loanProduct->Interest_period;
                         $settingKey = null;
-                        
+
                         // Map Interest_period to the appropriate setting key
                         if (in_array($interestPeriod, ['Daily', 'Per Day'])) {
                             $settingKey = 'first_installment_daily';
@@ -191,19 +191,19 @@ class LoanController extends Controller
                         } elseif (in_array($interestPeriod, ['Per Month', 'Monthly'])) {
                             $settingKey = 'first_installment_monthly';
                         }
-                        
+
                         if ($settingKey) {
                             // Get the maximum allowed days from settings
                             $maxDays = (int) DB::table('app_settings')
                                 ->where('key', $settingKey)
                                 ->value('value');
-                            
+
                             if ($maxDays > 0) {
                                 // Calculate the difference in days
                                 $issueDateObj = new \DateTime($issueDate);
                                 $firstInstallmentDateObj = new \DateTime($firstInstallmentDate);
                                 $daysDifference = $issueDateObj->diff($firstInstallmentDateObj)->days;
-                                
+
                                 // Check if the first installment date exceeds the allowed days
                                 if ($daysDifference > $maxDays) {
                                     DB::rollBack();
@@ -489,7 +489,6 @@ class LoanController extends Controller
 
                     $saving_number_txt = "";
                     if ($saving_format === "Customize") {
-
                     } else {
                         $loan_no = tableWithBranch('customer', 'customer')
                             ->leftJoin('group_has_customer', 'group_has_customer.cus_id', '=', 'customer.idCustomer')
@@ -524,9 +523,9 @@ class LoanController extends Controller
                         'Customer_Id' => $customer_id,
                         'Loan_Id'     => $id,
                         'Loan_No'     => $loan_number_txt,
-                        'Created_Date'=> date('Y-m-d H:i:s'),
+                        'Created_Date' => date('Y-m-d H:i:s'),
                         'Account_No'  => $saving_number_txt,
-                        'Account_Type'=> "Saving",
+                        'Account_Type' => "Saving",
                         'Balance'     => "0.00",
                         'Status'      => "1",
                     ];
@@ -557,7 +556,7 @@ class LoanController extends Controller
             $routeCollectionType = (string) $request->input('route_collection_type', '-');
             $collectionDateMode  = (string) $request->input('collection_date_type_global', '-');
 
-// Only use the two extra fields in this mode:
+            // Only use the two extra fields in this mode:
             $useRouteCollection = ($routeCollectionType === 'fixed' && $collectionDateMode === 'according_to_route');
 
             foreach ($request->installment as $item) {
@@ -671,7 +670,7 @@ class LoanController extends Controller
                     'loan_id'    => $id,
                     'level'      => $item->type,
                     'level_id'   => $item->id,
-                    'description'=> $item->description,
+                    'description' => $item->description,
                     'comment'    => '',
                     'user_id'    => 0,
                     'date'       => '-',
@@ -684,7 +683,7 @@ class LoanController extends Controller
                     $loanChecklistData = [
                         'loan_id'    => $id,
                         'level'      => $item->id,
-                        'description'=> $check_item->description,
+                        'description' => $check_item->description,
                         'status'     => '0',
                     ];
                     insertWithBranch('loan_has_approval_checklist', $loanChecklistData);
@@ -705,16 +704,16 @@ class LoanController extends Controller
             $this->CapitalBalanceController->create($id);
 
             $skip = DB::table('app_settings')
-                ->where('key', '=','due_skip_type')
+                ->where('key', '=', 'due_skip_type')
                 ->value('value');
 
-            $skipType="installment";
-            if ($skip=="skip_day"){
-                $skipType="day";
+            $skipType = "installment";
+            if ($skip == "skip_day") {
+                $skipType = "day";
             }
 
-            $holiday=new HolidayController();
-            $holiday->index('loan',$id,$skipType);
+            $holiday = new HolidayController();
+            $holiday->index('loan', $id, $skipType);
 
             DB::commit();
 
@@ -763,11 +762,10 @@ class LoanController extends Controller
                 ],
                 'customer' => $customerPayload,
             ], 200);
-
         } catch (\Throwable $e) {
             DB::rollBack();
             // You can log the error if needed:
-             \Log::error('Create Loan failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            \Log::error('Create Loan failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'message' => 'Create loan failed. Transaction rolled back.',
                 'error'   => $e->getMessage()
@@ -802,21 +800,27 @@ class LoanController extends Controller
         $query = tableWithBranch('customer_loan', 'customer_loan')
             ->join('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
-            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
+            ->leftJoin(
+                DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
                  FROM group_has_customer
                  LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
-                'customer.idCustomer', '=', 'subquery.cus_id')
+                'customer.idCustomer',
+                '=',
+                'subquery.cus_id'
+            )
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
-            ->select('customer_loan.*',
+            ->select(
+                'customer_loan.*',
                 'loan_category.Name as loan_name',
                 DB::raw('IFNULL(center.No, "-") as center_no'),
                 DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
                 'customer.First_Name as First_Name',
                 'customer.cus_number as cus_number',
                 'customer.Last_Name as Last_Name',
-                'loan_category.Name as Name')
+                'loan_category.Name as Name'
+            )
             ->where('customer_loan.Status', '!=', '-1');
 
         // Apply center filter if center_id is provided
@@ -856,56 +860,57 @@ class LoanController extends Controller
     }
 
 
-//    public function saveFiles(Request $request)
-//    {
-//        // Define the directory where the file will be stored
-//        $directory = 'documents';
-//
-//// Check if the directory exists, create it if not
-//        if (!Storage::disk('public')->exists($directory)) {
-//            Storage::disk('public')->makeDirectory($directory);
-//        }
-//
-//        $documentsArray = $request->file('documents');
-//
-//        foreach ($documentsArray as $index => $file) {
-//            if ($file) {
-//                // Generate a unique filename to prevent overwriting files with the same name
-//                $fileName = uniqid() . '_' . $file->getClientOriginalName();
-//
-//                // Move the file to the storage directory
-//                $storedFile = Storage::disk('public')->putFileAs($directory, $file, $fileName);
-//
-//                // Retrieve document name and checked status from the request
-//                $documentName = $request->documentNames[$index];
-//                $issue_checked = $request->issue_checked[$index];
-//
-//                // Store document information in the database
-//                $documentData = [
-//                    'Name' => $documentName,
-//                    'Path' => $storedFile,
-//                    'Customer_Loan_idCustomer_Loan' => $request->id,
-//                    'create_loan_check' => $issue_checked,
-//                ];
-//
-//                DB::table('documents')->insert($documentData);
-//            }
-//        }
-//
-//        return response()->json(['message' => 'Documents saved successfully'], 200);
-//
-//
-//
-//        // Return a success response if the documents were processed successfully
-//        return response()->json(['message' => 'Documents processed successfully.']);
-//
-//
-//
-//
-//
-//    }
+    //    public function saveFiles(Request $request)
+    //    {
+    //        // Define the directory where the file will be stored
+    //        $directory = 'documents';
+    //
+    //// Check if the directory exists, create it if not
+    //        if (!Storage::disk('public')->exists($directory)) {
+    //            Storage::disk('public')->makeDirectory($directory);
+    //        }
+    //
+    //        $documentsArray = $request->file('documents');
+    //
+    //        foreach ($documentsArray as $index => $file) {
+    //            if ($file) {
+    //                // Generate a unique filename to prevent overwriting files with the same name
+    //                $fileName = uniqid() . '_' . $file->getClientOriginalName();
+    //
+    //                // Move the file to the storage directory
+    //                $storedFile = Storage::disk('public')->putFileAs($directory, $file, $fileName);
+    //
+    //                // Retrieve document name and checked status from the request
+    //                $documentName = $request->documentNames[$index];
+    //                $issue_checked = $request->issue_checked[$index];
+    //
+    //                // Store document information in the database
+    //                $documentData = [
+    //                    'Name' => $documentName,
+    //                    'Path' => $storedFile,
+    //                    'Customer_Loan_idCustomer_Loan' => $request->id,
+    //                    'create_loan_check' => $issue_checked,
+    //                ];
+    //
+    //                DB::table('documents')->insert($documentData);
+    //            }
+    //        }
+    //
+    //        return response()->json(['message' => 'Documents saved successfully'], 200);
+    //
+    //
+    //
+    //        // Return a success response if the documents were processed successfully
+    //        return response()->json(['message' => 'Documents processed successfully.']);
+    //
+    //
+    //
+    //
+    //
+    //    }
 
-    public function saveFiles(Request $request) {
+    public function saveFiles(Request $request)
+    {
         $documentNamesArray = $request->input('documentNames');
         $issueCheckedArray = $request->input('issue_checked');
         $documentsArray = $request->file('documents');
@@ -927,9 +932,8 @@ class LoanController extends Controller
                         'create_loan_check' => $issue_checked,
                     ];
 
-// Insert the document data with branch scoping
+                    // Insert the document data with branch scoping
                     insertWithBranch('documents', $documentData);
-
                 } else {
                     // Prepare data for the document insertion
                     $documentData = [
@@ -939,9 +943,8 @@ class LoanController extends Controller
                         'create_loan_check' => $issue_checked,
                     ];
 
-// Insert the document data with branch scoping
+                    // Insert the document data with branch scoping
                     insertWithBranch('documents', $documentData);
-
                 }
             }
             return response()->json(['message' => 'Documents saved successfully']);
@@ -966,7 +969,7 @@ class LoanController extends Controller
 
             $documentData = [
                 'Name' => $request->documentNames,
-                'Path' => $filePath.$fileName,
+                'Path' => $filePath . $fileName,
                 'Customer_Loan_idCustomer_Loan' => $request->id,
             ];
 
@@ -993,7 +996,7 @@ class LoanController extends Controller
         $center = tableWithBranch('center')->get(); // Get centers with branch filtering
         $product = tableWithBranch('loan_category')->get(); // Get loan categories with branch filtering
         $loan = tableWithBranch('customer_loan', 'idCustomer_Loan') // Get loan with branch filtering
-        ->where('idCustomer_Loan', $id)
+            ->where('idCustomer_Loan', $id)
             ->first();
 
         if (!$loan) {
@@ -1031,11 +1034,11 @@ class LoanController extends Controller
         $witnessCount = count($witnessDetails); // Get the length of the array
 
 
-        return view('pages.LoanView', compact('customers','company', 'center', 'product', 'id', 'loan', 'installments', 'witnessDetails', 'witnessCount'));
+        return view('pages.LoanView', compact('customers', 'company', 'center', 'product', 'id', 'loan', 'installments', 'witnessDetails', 'witnessCount'));
     }
 
 
-    public function loan_view_Np(string $id,int $type=0)
+    public function loan_view_Np(string $id, int $type = 0)
     {
         $this->ensureResheduleTable();
         $company = DB::table('company')->first();
@@ -1053,16 +1056,16 @@ class LoanController extends Controller
         $Total_Balance = $installments->sum('Total_Balance');
 
 
-        $loan_log_sum=tableWithBranch('Loan_Log')->where('Loan_ID','=',$id)->where('Type','=','Customer Payment')->get();
+        $loan_log_sum = tableWithBranch('Loan_Log')->where('Loan_ID', '=', $id)->where('Type', '=', 'Customer Payment')->get();
         $Panalty_Amount = $loan_log_sum->sum('Panelty_Payment');
 
-//        $savingBalanceSum=$Saving_amountSum-$Saving_balance;
-        $last_log = DB::table('Loan_Log')->where('Loan_ID','=',$id)->orderBy('Loan_Log_ID', 'desc')->first();
-        $savingBalanceSum=0.00;
-        if ($last_log){
+        //        $savingBalanceSum=$Saving_amountSum-$Saving_balance;
+        $last_log = DB::table('Loan_Log')->where('Loan_ID', '=', $id)->orderBy('Loan_Log_ID', 'desc')->first();
+        $savingBalanceSum = 0.00;
+        if ($last_log) {
             $savingBalanceSum = $last_log->Saving_Account_Balance;
         }
-        if ($savingBalanceSum==0){
+        if ($savingBalanceSum == 0) {
             $savingBalanceSum = $installments->sum('Saving_balance');
         }
 
@@ -1145,10 +1148,10 @@ class LoanController extends Controller
         }
         $user_id = (int)session('userid');
 
-        $payment_delete=DB::table('user')->where('id','=',$user_id)->first();
-        $payment_delete_status=0;
-        if ($payment_delete){
-            $payment_delete_status=(int)$payment_delete->payment_delete;
+        $payment_delete = DB::table('user')->where('id', '=', $user_id)->first();
+        $payment_delete_status = 0;
+        if ($payment_delete) {
+            $payment_delete_status = (int)$payment_delete->payment_delete;
         }
 
         $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
@@ -1163,7 +1166,7 @@ class LoanController extends Controller
         FROM loan_other_charges 
         GROUP BY Customer_Loan_idCustomer_Loan
     ) as charges_subquery'), 'customer_loan.idCustomer_Loan', '=', 'charges_subquery.Customer_Loan_idCustomer_Loan')
-            ->where('idCustomer_Loan','=',$id)
+            ->where('idCustomer_Loan', '=', $id)
             ->select(
                 'customer_loan.idCustomer_Loan',
                 DB::raw('IFNULL(approval_subquery.approval_count, 0) as approval_count'),
@@ -1177,7 +1180,7 @@ class LoanController extends Controller
             return redirect('/pendingloan');
         }
 
-        $loan_saving_balance=tableWithBranch('Customer_Saving_Accounts')->where('Loan_Id','=',$id)->value('Balance');
+        $loan_saving_balance = tableWithBranch('Customer_Saving_Accounts')->where('Loan_Id', '=', $id)->value('Balance');
 
         // Guard against legacy reshedule tables missing 'loan_id' column
         $exists = 0;
@@ -1247,22 +1250,22 @@ class LoanController extends Controller
         }
 
 
-        $loan_balance=DB::table('installments')
+        $loan_balance = DB::table('installments')
             ->where('installments.Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
             ->where('installments.Status', '=', '0')
             ->sum('installments.Total_Balance');
 
 
-        $loan_balance=$loan_balance ?? 0;
+        $loan_balance = $loan_balance ?? 0;
 
-        $loan_Total_Amount=DB::table('installments')
+        $loan_Total_Amount = DB::table('installments')
             ->where('installments.Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
             ->sum('installments.Total_Amount');
 
 
-        $loan_Total_Amount=$loan_Total_Amount ?? 0;
+        $loan_Total_Amount = $loan_Total_Amount ?? 0;
 
-        $ins_count=DB::table('installments')
+        $ins_count = DB::table('installments')
             ->where('installments.Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
             ->count();
 
@@ -1283,7 +1286,7 @@ class LoanController extends Controller
         $capital_amountSum = $installments->sum('capital_amount');
         $interest_amountSum = $installments->sum('interest_amount');
         $Saving_Sum = $installments->sum('Saving_amount');
-        $total_sum=$capital_amountSum+$interest_amountSum+$Saving_Sum;
+        $total_sum = $capital_amountSum + $interest_amountSum + $Saving_Sum;
         $Saving_balance = $installments->sum('Saving_balance');
         $Ins_Total_Balance = $installments->sum('Total_Balance');
 
@@ -1328,7 +1331,7 @@ class LoanController extends Controller
             'totalExtraCharges',
             'totalExtraPayments'
         ));
-  }
+    }
 
 
 
@@ -1349,7 +1352,7 @@ class LoanController extends Controller
                 ->orderBy('Installment_Date', 'desc') // Order by date descending
                 ->first(); // Get the first record in this order
 
-            if (!$nextInstallment){
+            if (!$nextInstallment) {
                 $nextInstallment = tableWithBranch('installments')
                     ->where('Customer_Loan_idCustomer_Loan', $id)
                     ->where('Installment_Date', '<', Carbon::now()->toDateString())
@@ -1374,7 +1377,7 @@ class LoanController extends Controller
             $paid_amount = $nextInstallment->Paid_Amount;
 
 
-            return response()->json(['paid_amount'=>$paid_amount,'loan' => $loan, 'Paid_Date' => $Paid_Date, 'installments' => $installments, 'success' => true, 'next_installment_date' => $nextInstallmentDate->format('Y-m-d'), 'days_from_last_payment_date' => $daysCount, 'capital' => $capital, 'interest' => $interest]);
+            return response()->json(['paid_amount' => $paid_amount, 'loan' => $loan, 'Paid_Date' => $Paid_Date, 'installments' => $installments, 'success' => true, 'next_installment_date' => $nextInstallmentDate->format('Y-m-d'), 'days_from_last_payment_date' => $daysCount, 'capital' => $capital, 'interest' => $interest]);
         }
         return response()->json(['success' => false]);
     }
@@ -1383,7 +1386,7 @@ class LoanController extends Controller
     {
         $dates = date('Y-m-d');
         $date_2 = date('Y-m-d');
-        $collection = tableWithBranch('customer_payments','customer_payments')
+        $collection = tableWithBranch('customer_payments', 'customer_payments')
             ->join('user', 'customer_payments.User_idUser', '=', 'user.id')
             ->whereBetween('customer_payments.Date', [$dates, $date_2])
             ->get();
@@ -1426,7 +1429,7 @@ class LoanController extends Controller
         $loan = tableWithBranch('customer_loan')->where('idCustomer_Loan', $id)->first();
         $bank = tableWithBranch('customer_has_bank')
             ->where('cus_id', $loan->Customer_idCustomer)->get();
-        return response()->json(['bank' => $bank,'bank_id' => $loan->cus_bank_account,'success' => true]);
+        return response()->json(['bank' => $bank, 'bank_id' => $loan->cus_bank_account, 'success' => true]);
     }
 
 
@@ -1462,7 +1465,7 @@ class LoanController extends Controller
         $center = tableWithBranch('center')->get();
         $product = tableWithBranch('loan_category')->get();
         $loan = tableWithBranch('customer_loan')->where('idCustomer_Loan', $id)->first();
-        $company= DB::table('company')->first();
+        $company = DB::table('company')->first();
 
         if (!$loan) {
             return redirect()->back()->with('error', 'Loan not found.');
@@ -1496,7 +1499,7 @@ class LoanController extends Controller
         }
 
         $witnessCount = count($witnessDetails);
-        $installments_log = tableWithBranch('installment_log','installment_log')
+        $installments_log = tableWithBranch('installment_log', 'installment_log')
             ->join('installments', 'installment_log.Installments_idInstallments', '=', 'installments.idInstallments')
             ->where('installments.Customer_Loan_idCustomer_Loan', $id)
             ->get();
@@ -1590,9 +1593,9 @@ class LoanController extends Controller
         $loan = DB::table('customer_loan')->where('branch_id', session('branch_id'))->where('idCustomer_Loan', $loan_id)->first();
         $company = DB::table('company')->first();
 
-        $Interest_period=$loan->Collection_Type;
-        $saturday_sunday=$company->saturday_sunday;
-        $panelty_date_count=$loan->Panalty_Date;
+        $Interest_period = $loan->Collection_Type;
+        $saturday_sunday = $company->saturday_sunday;
+        $panelty_date_count = $loan->Panalty_Date;
 
         // Return the installments as JSON response
         return response()->json([
@@ -1616,18 +1619,18 @@ class LoanController extends Controller
             ->where('idCustomer_Loan', $request->loan_id)
             ->where('branch_id', session('branch_id'))
             ->first();
-        
+
         if (!$loan) {
             return response()->json(['message' => 'Loan not found'], 404);
         }
-        
+
         // Get customer name
         $customer = DB::table('customer')
             ->where('idCustomer', $loan->Customer_idCustomer)
             ->first();
-        
+
         $customerName = $customer ? ($customer->First_Name . ' ' . $customer->Last_Name) : 'Unknown';
-        
+
         // Get current installments for comparison
         $currentInstallments = [];
         foreach ($request->installments as $installment) {
@@ -1636,7 +1639,7 @@ class LoanController extends Controller
                 ->where('No', $installment['no'])
                 ->where('branch_id', session('branch_id'))
                 ->first();
-            
+
             if ($current) {
                 $currentInstallments[] = [
                     'no' => $installment['no'],
@@ -1647,7 +1650,7 @@ class LoanController extends Controller
                 ];
             }
         }
-        
+
         // Store installment modification data for approval
         $requestData = [
             'loan_id' => $request->loan_id,
@@ -1662,14 +1665,14 @@ class LoanController extends Controller
             'typeid' => 403,
             'description' => 'Loan Installment Modification: Loan #' . $request->loan_id . ' (Customer: ' . $customerName . ', ' . count($request->installments) . ' installment(s))',
             'data' => json_encode($requestData),
-            'userid' => session('userid'),
+            'userid' => session('user_data')["idUser"],
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0
         ]);
 
         return response()->json(['message' => 'Installment modification request sent for approval!']);
-        
+
         // OLD CODE - keeping for approval handler reference
         /*
         foreach ($request->installments as $installment) {
@@ -1693,15 +1696,15 @@ class LoanController extends Controller
         $company = DB::table('company')->first();
         $lending_officer = DB::table('user')->where('lending_officer', '=', '1')->get();
         $collector = DB::table('user')
-            ->where('collector','=','1')
+            ->where('collector', '=', '1')
             ->get();
-        $loan=DB::table('customer_loan')
-            ->where('idCustomer_Loan','=',$loan_id)
+        $loan = DB::table('customer_loan')
+            ->where('idCustomer_Loan', '=', $loan_id)
             ->first();
-        $product_id=$loan->Loan_Category_idLoan_Category;
-        $loan_id=$loan->idCustomer_Loan;
-        $customer = DB::table('customer')->where('idCustomer','=',$loan->Customer_idCustomer)->first();
-        return view('pages.RescheduleIssueLoan', compact('customer','loan_id','product_id','loan', 'center', 'product', 'lending_officer','company','collector','loan_id','balance'));
+        $product_id = $loan->Loan_Category_idLoan_Category;
+        $loan_id = $loan->idCustomer_Loan;
+        $customer = DB::table('customer')->where('idCustomer', '=', $loan->Customer_idCustomer)->first();
+        return view('pages.RescheduleIssueLoan', compact('customer', 'loan_id', 'product_id', 'loan', 'center', 'product', 'lending_officer', 'company', 'collector', 'loan_id', 'balance'));
     }
 
 
@@ -1712,7 +1715,7 @@ class LoanController extends Controller
 
         $loan_id         = (int) $request->loan_id;
         $reschedule_type = (string) $request->reschedule_type;
-        $user_id         = (int) session('userid');
+        $user_id         = (int)session('user_data')["idUser"];
         $today           = Carbon::now()->toDateString();
 
         // minimal validation of required inputs you actually use below
@@ -1725,9 +1728,9 @@ class LoanController extends Controller
         ]);
 
         // simple num sanitizer for strings like "27,000.00"
-        $num = function($v) {
+        $num = function ($v) {
             if ($v === null) return null;
-            return (float) str_replace([',',' '], '', (string)$v);
+            return (float) str_replace([',', ' '], '', (string)$v);
         };
 
         $savingFlag = ($request->saving ?? '') === 'Yes';
@@ -1747,17 +1750,17 @@ class LoanController extends Controller
             // 2) Copy current loan to Reschedule (keeps history)
             $data = (array) $loanRow;
 
-// keep original data columns that match Reschedule, then add meta
+            // keep original data columns that match Reschedule, then add meta
             $data = Arr::only($data, (new Reschedule)->getFillable());
 
-// add your new meta fields
+            // add your new meta fields
             $data['loan_id']    = $loanRow->idCustomer_Loan;
             $data['created_by'] = $user_id;
 
-// if your model has $timestamps=false, set created_at manually:
+            // if your model has $timestamps=false, set created_at manually:
             $data['created_at'] = now();
 
-// also keep who owns the current loan (if you want to stamp this too)
+            // also keep who owns the current loan (if you want to stamp this too)
             $data['User_idUser'] = $user_id;
 
             Reschedule::create($data);
@@ -1787,14 +1790,16 @@ class LoanController extends Controller
             ];
 
             // Optional fields: only set if present in request
-            foreach ([
-                         'Loan_Category_idLoan_Category' => 'loan_cate_id',
-                         'Customer_idCustomer'           => 'customer_id',
-                         'Leasing_type'                  => 'lease_type',
-                         'Vehicle_No'                    => 'vehicle_num',
-                         'Other_Amount_Balance'          => 'loan_charge_balance',
-                         'repayment_duration'            => 'repayment_duration_period',
-                     ] as $col => $reqKey) {
+            foreach (
+                [
+                    'Loan_Category_idLoan_Category' => 'loan_cate_id',
+                    'Customer_idCustomer'           => 'customer_id',
+                    'Leasing_type'                  => 'lease_type',
+                    'Vehicle_No'                    => 'vehicle_num',
+                    'Other_Amount_Balance'          => 'loan_charge_balance',
+                    'repayment_duration'            => 'repayment_duration_period',
+                ] as $col => $reqKey
+            ) {
                 if ($request->filled($reqKey)) {
                     $update[$col] = $request->input($reqKey);
                 }
@@ -1940,9 +1945,9 @@ class LoanController extends Controller
     {
         $customerIds = $request->input('customer_ids', []);
         $results = DB::table('customer_has_bank')
-            ->join('customer','customer_has_bank.cus_id','=','customer.idCustomer')
+            ->join('customer', 'customer_has_bank.cus_id', '=', 'customer.idCustomer')
             ->whereIn('customer.idCustomer', $customerIds)
-            ->select('customer.idCustomer','customer_has_bank.bank_name','customer_has_bank.account_number')
+            ->select('customer.idCustomer', 'customer_has_bank.bank_name', 'customer_has_bank.account_number')
             ->get();
 
         $data = [];
@@ -1952,6 +1957,4 @@ class LoanController extends Controller
 
         return response()->json($data);
     }
-
-
 }

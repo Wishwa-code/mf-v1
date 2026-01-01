@@ -38,12 +38,20 @@ class ProcessPenalties implements ShouldQueue
                 ->where('i.Status', '=', 0)
                 ->whereDate('i.Panelty_date', '<=', $today)
                 ->select([
-                    'i.idInstallments', 'i.branch_id',
-                    'i.Panalty_Amount', 'i.Panalty_Balance', 'i.Total_Amount',
-                    'i.Interest_Balance', 'i.capital_balance', 'i.Panelty_count',
+                    'i.idInstallments',
+                    'i.branch_id',
+                    'i.Panalty_Amount',
+                    'i.Panalty_Balance',
+                    'i.Total_Amount',
+                    'i.Interest_Balance',
+                    'i.capital_balance',
+                    'i.Panelty_count',
                     'i.Panelty_date',
-                    'cl.Panalty_Rate', 'cl.panelty_method', 'cl.Panelty_period',
-                    'cl.idCustomer_Loan', 'cl.Customer_idCustomer'
+                    'cl.Panalty_Rate',
+                    'cl.panelty_method',
+                    'cl.Panelty_period',
+                    'cl.idCustomer_Loan',
+                    'cl.Customer_idCustomer'
                 ])
                 ->orderBy('i.idInstallments')
                 ->chunkById(500, function ($rows) use ($tz) {
@@ -73,7 +81,7 @@ class ProcessPenalties implements ShouldQueue
                                 'Total_Amount'    => DB::raw("ROUND(Total_Amount + {$batchTotal}, 2)"),
                                 'Total_Balance'   => DB::raw("ROUND(capital_balance + Interest_Balance + Panalty_Balance, 2)"),
                                 'Panelty_status'  => 1,
-                                'Panelty_count'   => DB::raw('COALESCE(Panelty_count,0) + '.$missing),
+                                'Panelty_count'   => DB::raw('COALESCE(Panelty_count,0) + ' . $missing),
                             ]);
 
                         // --- LOGGING ---
@@ -81,20 +89,20 @@ class ProcessPenalties implements ShouldQueue
                         // Otherwise (recommended), write one aggregated entry that mentions the count.
 
                         // Aggregated customer_log
-                        $userId = session('userid') ?? null; // scheduler may not have a session—fallback to system user id if you have one
+                        $userId = session('user_data')["idUser"] ?? null; // scheduler may not have a session—fallback to system user id if you have one
                         $now    = Carbon::now($tz);
                         $cust   = DB::table('customer')->where('idCustomer', $item->Customer_idCustomer)->first();
 
                         if ($cust) {
                             DB::table('customer_log')->insert([
                                 'customer_id'   => $item->Customer_idCustomer,
-                                'customer_name' => trim(($cust->First_Name ?? '').' '.($cust->Last_Name ?? '')),
+                                'customer_name' => trim(($cust->First_Name ?? '') . ' ' . ($cust->Last_Name ?? '')),
                                 'date'          => $now->toDateString(),
                                 'time'          => $now->format('H:i:s'),
-                                'description'   => number_format($batchTotal, 2, '.', '')." LKR Penalty added for ({$item->idCustomer_Loan})".
-                                    "\nInstallment No : {$item->idInstallments}".
-                                    "\nPenalty Count +{$missing} (since ".Carbon::parse($item->Panelty_date, $tz)->toDateString().")",
-                                'description_id'=> $item->idInstallments,
+                                'description'   => number_format($batchTotal, 2, '.', '') . " LKR Penalty added for ({$item->idCustomer_Loan})" .
+                                    "\nInstallment No : {$item->idInstallments}" .
+                                    "\nPenalty Count +{$missing} (since " . Carbon::parse($item->Panelty_date, $tz)->toDateString() . ")",
+                                'description_id' => $item->idInstallments,
                                 'comment'       => ' ',
                                 'type'          => 'Penalty',
                                 'user'          => $userId,
@@ -115,10 +123,12 @@ class ProcessPenalties implements ShouldQueue
                                 $item->idCustomer_Loan,
                                 'Penalty',
                                 $item->idInstallments,
-                                'Penalty (aggregated) - Installment No: '.$item->idInstallments.' | +'.$missing.' day(s)',
+                                'Penalty (aggregated) - Installment No: ' . $item->idInstallments . ' | +' . $missing . ' day(s)',
                                 number_format($batchTotal, 2, '.', ''), // amount
-                                '0.00', '0.00',
-                                '0.00','0.00',
+                                '0.00',
+                                '0.00',
+                                '0.00',
+                                '0.00',
                                 number_format($Panelty_Balance, 2, '.', ''),
                                 $last->Interest_Balance,
                                 $last->Capital_Balance,
@@ -128,8 +138,8 @@ class ProcessPenalties implements ShouldQueue
                         }
 
                         // Bank logs (aggregated)
-                        $acc5 = DB::table('company_bank_accounts')->where('branch_id', $item->branch_id)->where('Bank_Type','=','System_default_5')->first();
-                        $acc6 = DB::table('company_bank_accounts')->where('branch_id', $item->branch_id)->where('Bank_Type','=','System_default_6')->first();
+                        $acc5 = DB::table('company_bank_accounts')->where('branch_id', $item->branch_id)->where('Bank_Type', '=', 'System_default_5')->first();
+                        $acc6 = DB::table('company_bank_accounts')->where('branch_id', $item->branch_id)->where('Bank_Type', '=', 'System_default_6')->first();
 
                         if ($acc5 && $acc6) {
                             app(\App\Http\Controllers\BankLogController::class)

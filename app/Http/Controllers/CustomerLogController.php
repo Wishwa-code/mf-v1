@@ -29,12 +29,12 @@ class CustomerLogController extends Controller
      */
     public function store(Request $request)
     {
-        $user_id= session('userid');
-        $date=date('Y-m-d');
-        $time=date('H:i:s');
+        $user_id = session('user_data')["idUser"];
+        $date = date('Y-m-d');
+        $time = date('H:i:s');
 
-        $customer_table=tableWithBranch('customer')
-            ->where('idCustomer','=',$request->customer_id)
+        $customer_table = tableWithBranch('customer')
+            ->where('idCustomer', '=', $request->customer_id)
             ->first();
 
         // Prepare the customer log data for insertion
@@ -50,8 +50,8 @@ class CustomerLogController extends Controller
             'user' => $user_id, // User ID
         ];
 
-// Use the insertWithBranch helper function to insert the log data
-        $customerLog=insertWithBranch('customer_log', $logData);
+        // Use the insertWithBranch helper function to insert the log data
+        $customerLog = insertWithBranch('customer_log', $logData);
 
 
         return response()->json(['message' => 'Customer log created successfully', 'data' => $customerLog], 200);

@@ -89,7 +89,7 @@ class CustomerController extends Controller
             'typeid' => 305,
             'description' => 'Upload Document: ' . $description . ' (Customer: ' . $customerName . ')',
             'data' => json_encode($requestData),
-            'userid' => session('userid'),
+            'userid' => session('user_data')["idUser"],
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0
@@ -281,7 +281,7 @@ class CustomerController extends Controller
                 'typeid' => 301,
                 'description' => 'Customer Creation: ' . $customer->First_Name . ' ' . $customer->Last_Name . ' (NIC: ' . $customer->Nic . ')',
                 'data' => json_encode($requestData),
-                'userid' => session('userid'),
+                'userid' => session('user_data')["idUser"],
                 'branch_id' => session('branch_id'),
                 'data_time' => now(),
                 'status' => 0
@@ -889,7 +889,7 @@ class CustomerController extends Controller
             'typeid' => 305,
             'description' => 'Delete Document: ' . $document->Description . ' (Customer: ' . $customerName . ')',
             'data' => json_encode($requestData),
-            'userid' => session('userid'),
+            'userid' => session('user_data')["idUser"],
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0
@@ -984,7 +984,7 @@ class CustomerController extends Controller
             'typeid' => 302,
             'description' => 'Customer Update: ' . $request->f_name . ' ' . $request->last_name . ' (NIC: ' . $request->nic . ')',
             'data' => json_encode($requestData),
-            'userid' => session('userid'),
+            'userid' => session('user_data')["idUser"],
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0
@@ -1131,7 +1131,7 @@ class CustomerController extends Controller
             'typeid' => 304,
             'description' => $type . ': ' . $customer->First_Name . ' ' . $customer->Last_Name . ' (NIC: ' . $customer->Nic . ')',
             'data' => json_encode($requestData),
-            'userid' => session('userid'),
+            'userid' => session('user_data')["idUser"],
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0

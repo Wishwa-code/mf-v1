@@ -18,12 +18,12 @@ class BusinessCategoryController extends Controller
             $categories = BusinessCategory::select(['id', 'name']);
             return DataTables::of($categories)
                 ->addIndexColumn()
-                ->addColumn('action', function($row){
+                ->addColumn('action', function ($row) {
                     $editUrl = route('business-categories.edit', $row->id);
                     $deleteUrl = route('business-categories.destroy', $row->id);
                     $btn = '<div class="text-end">';
-                    $btn .= '<button type="button" class="btn btn-sm btn-outline-primary me-2 edit-btn" data-id="'.$row->id.'" data-name="'.$row->name.'" data-url="'.$editUrl.'"><i class="bi bi-pencil"></i> Edit</button>';
-                    $btn .= '<button type="button" class="btn btn-sm btn-outline-danger delete-btn" data-id="'.$row->id.'" data-url="'.$deleteUrl.'"><i class="bi bi-trash"></i> Delete</button>';
+                    $btn .= '<button type="button" class="btn btn-sm btn-outline-primary me-2 edit-btn" data-id="' . $row->id . '" data-name="' . $row->name . '" data-url="' . $editUrl . '"><i class="bi bi-pencil"></i> Edit</button>';
+                    $btn .= '<button type="button" class="btn btn-sm btn-outline-danger delete-btn" data-id="' . $row->id . '" data-url="' . $deleteUrl . '"><i class="bi bi-trash"></i> Delete</button>';
                     $btn .= '</div>';
                     return $btn;
                 })
@@ -48,10 +48,10 @@ class BusinessCategoryController extends Controller
     {
         try {
             $data = $request->validated();
-            $data['created_by'] = auth()->id() ?? 1; // Default to 1 if no auth for now
-            
+            $data['created_by'] = session('user_data')["idUser"] ?? 1; // Default to 1 if no auth for now
+
             BusinessCategory::create($data);
-            
+
             return response()->json(['success' => true, 'message' => 'Business Category created successfully.']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error creating category: ' . $e->getMessage()], 500);
@@ -73,10 +73,10 @@ class BusinessCategoryController extends Controller
     {
         try {
             $data = $request->validated();
-            $data['updated_by'] = auth()->id() ?? 1;
-            
+            $data['updated_by'] = session('user_data')["idUser"] ?? 1;
+
             $businessCategory->update($data);
-            
+
             return response()->json(['success' => true, 'message' => 'Business Category updated successfully.']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error updating category: ' . $e->getMessage()], 500);

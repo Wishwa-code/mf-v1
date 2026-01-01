@@ -176,7 +176,7 @@ class PaymentVoucherController extends Controller
             $branchName = DB::table('branch')->where('branch_id', $branchId)->value('Name') ?? '';
         }
 
-        $userId = (int) session('userid');
+        $userId = (int)session('user_data')["idUser"];
         $userName = (string) session('username');
 
         $voucherId = DB::transaction(function () use (

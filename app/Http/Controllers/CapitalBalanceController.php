@@ -87,14 +87,14 @@ class CapitalBalanceController extends Controller
                         ->orderBy('idInstallments')   // ASC order
                         ->first();
 
-                    $ins_capital=0;
-                    $ins_interest=0;
+                    $ins_capital = 0;
+                    $ins_interest = 0;
 
-                    if ($firstInstallment){
+                    if ($firstInstallment) {
                         $firstId           = $firstInstallment->idInstallments;
-                        $Installment_Amount=$firstInstallment->Installment_Amount;
-                        $capital_amount=$firstInstallment->capital_amount;
-                        if ($Installment_Amount==$capital_amount){
+                        $Installment_Amount = $firstInstallment->Installment_Amount;
+                        $capital_amount = $firstInstallment->capital_amount;
+                        if ($Installment_Amount == $capital_amount) {
                             $ins_capital = tableWithBranch('installments')
                                 ->where('Customer_Loan_idCustomer_Loan', $loan_id)
                                 ->where('idInstallments', '!=', $firstId)
@@ -104,7 +104,7 @@ class CapitalBalanceController extends Controller
                                 ->where('Customer_Loan_idCustomer_Loan', $loan_id)
                                 ->where('idInstallments', '!=', $firstId)
                                 ->sum('interest_amount');
-                        }else{
+                        } else {
                             $ins_capital = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', '=', $loan_id)->sum('capital_amount');
                             $ins_interest = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', '=', $loan_id)->sum('interest_amount');
                         }
@@ -392,7 +392,7 @@ class CapitalBalanceController extends Controller
 
             $key = $data['key'];
             $value = $data['value'];
-            $uid = auth()->id();
+            $uid = session('user_data')["idUser"];
 
             $setting = AppSettings::where('key', $key)->first();
             $oldValue = $setting?->value;
@@ -613,10 +613,4 @@ class CapitalBalanceController extends Controller
         //
         //        }
     }
-
-
-
-
-
-
 }

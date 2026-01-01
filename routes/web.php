@@ -25,6 +25,7 @@ use App\Http\Controllers\CustomerLeadController;
 use App\Http\Controllers\VoucherDashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -439,9 +440,9 @@ Route::middleware(['auth.central'])->group(function () {
 
 
     //settings
-    Route::get('/setting', [\App\Http\Controllers\SettingsController::class, 'index'])->name('company.setting')->middleware('privilege:SETTINGS');
-    Route::post('/shortcuts', '\App\Http\Controllers\CompanyController@shortcuts')->name('company.shortcuts');
-    Route::get('/shortcuts/all', '\App\Http\Controllers\CompanyController@show')->name('company.show');
+    Route::get('/setting', [SettingsController::class, 'index'])->name('company.setting')->middleware('privilege:SETTINGS');
+    Route::post('/shortcuts', [SettingsController::class, 'shortcuts'])->name('company.shortcuts')->middleware('privilege:SETTINGS');
+    Route::get('/shortcuts/all', [SettingsController::class, 'show'])->name('company.show')->middleware('privilege:SETTINGS');
 
     //Bank
     Route::get('/bank_account', '\App\Http\Controllers\BankController@index')->name('bank.index');

@@ -15,8 +15,8 @@ class CompanyController extends Controller
      */
     public function index()
     {
-        $company= tableWithBranch('company')->first();
-        return view('pages.Company',compact('company'));
+        $company = tableWithBranch('company')->first();
+        return view('pages.Company', compact('company'));
     }
 
     /**
@@ -45,7 +45,7 @@ class CompanyController extends Controller
             );
         }
 
-// Initialize an array to store the fields to be updated
+        // Initialize an array to store the fields to be updated
         $updateData = [
             'company_name' => isset($request->company_name) ? $request->company_name : '',
             'branch' => isset($request->branch) ? $request->branch : '',
@@ -72,7 +72,7 @@ class CompanyController extends Controller
 
 
 
-// Handle file uploads and update file paths if new files are provided
+        // Handle file uploads and update file paths if new files are provided
         foreach (['logo', 'company_header', 'company_footer'] as $fileKey) {
             if ($request->hasFile($fileKey)) {
                 $file = $request->file($fileKey);
@@ -91,13 +91,13 @@ class CompanyController extends Controller
             }
         }
 
-// Update the database with the constructed $updateData array
-        DB::table('company')->where('branch_id','=',session('branch_id'))->update($updateData);
+        // Update the database with the constructed $updateData array
+        DB::table('company')->where('branch_id', '=', session('branch_id'))->update($updateData);
 
 
-        if ($request->customer_format_scope=="all"){
-            $cus=tableWithBranch('customer')->get();
-            foreach ($cus as $item){
+        if ($request->customer_format_scope == "all") {
+            $cus = tableWithBranch('customer')->get();
+            foreach ($cus as $item) {
                 customer_number($item->idCustomer);
             }
         }
@@ -105,8 +105,6 @@ class CompanyController extends Controller
 
 
         return response()->json(['message' => 'Data saved successfully', 'id' => '1'], 200);
-
-
     }
 
     /**
@@ -114,7 +112,7 @@ class CompanyController extends Controller
      */
     public function show()
     {
-        $userData = tableWithBranch('shortcut')->get();
+        $userData = tableWithBranch('shortcut')->where('user_id', session('user_data')['idUser'])->get();
         return response()->json(['items' => $userData], 200);
     }
 
@@ -142,14 +140,15 @@ class CompanyController extends Controller
         //
     }
 
-    public function setting(){
+    public function setting()
+    {
         return view('pages.Settings');
     }
 
     public function shortcuts(Request $request)
     {
         $checkboxValues = $request->input('checkboxValues', []);
-        $user_id = session('userid');
+        $user_id = session('user_data')["idUser"];
 
         DB::table('shortcut')
             ->where('branch_id', session('branch_id'))
@@ -163,6 +162,4 @@ class CompanyController extends Controller
 
         return response()->json(['message' => 'Shortcuts updated successfully']);
     }
-
-
 }

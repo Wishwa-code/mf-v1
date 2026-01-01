@@ -95,7 +95,7 @@ class UserController extends Controller
                 'typeid' => 101,
                 'description' => 'User Creation: ' . $request->full_name . ' (' . $request->email . ')',
                 'data' => json_encode($requestData),
-                'userid' => session('userid'),
+                'userid' => session('user_data')["idUser"],
                 'branch_id' => session('branch_id'),
                 'data_time' => now(),
                 'status' => 0
@@ -304,7 +304,7 @@ class UserController extends Controller
                 'typeid' => 102,
                 'description' => $actionType . ': ' . $getuser->Full_Name . ' (ID: ' . $id . ')',
                 'data' => json_encode($requestData),
-                'userid' => session('userid'),
+                'userid' => session('user_data')["idUser"],
                 'branch_id' => session('branch_id'),
                 'data_time' => now(),
                 'status' => 0
@@ -347,7 +347,7 @@ class UserController extends Controller
     function syncRecoveryAccountsForBranch()
     {
         $branchId = session('branch_id');        // you already use session('branch_id') everywhere in your system
-        $userId   = session('userid');           // who is doing this sync
+        $userId   = session('user_data')["idUser"];           // who is doing this sync
         $now      = Carbon::now();
 
         // 1. get all active customers in this branch
@@ -1367,7 +1367,7 @@ class UserController extends Controller
         //                    'Panelty_status' => '1'
         //                ]);
         //
-        //            $user_id= session('userid');
+        //            $user_id=session('user_data')["idUser"];
         //            $date=date('Y-m-d');
         //            $time=date('H:i:s');
         //
@@ -1661,7 +1661,7 @@ class UserController extends Controller
             'typeid' => 201,
             'description' => 'Designation Details Update: ' . $request->designation . ' (Max Create: ' . $request->maxCreateAmount . ', Max Approve: ' . $request->maxIssueAmount . ')',
             'data' => json_encode($requestData),
-            'userid' => session('userid'),
+            'userid' => session('user_data')["idUser"],
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0
@@ -1707,7 +1707,7 @@ class UserController extends Controller
             'typeid' => 201,
             'description' => 'Designation Privileges Update: ' . $designation->name,
             'data' => json_encode($requestData),
-            'userid' => session('userid'),
+            'userid' => session('user_data')["idUser"],
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0
@@ -2057,7 +2057,7 @@ class UserController extends Controller
             'typeid' => 102,
             'description' => 'User Details Update: ' . $request->full_name . ' (' . $request->email . ')',
             'data' => json_encode($requestData),
-            'userid' => session('userid'),
+            'userid' => session('user_data')["idUser"],
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0

@@ -240,7 +240,7 @@ $allowedBranches = $branch;
                     </a>
 
                     <?php
-                    $user_id = session('userid');
+                    $user_id = session('user_data')["idUser"];
                     $cashier = DB::table('user')->where('id', $user_id)->where('cashier', '=', '1')->first();
                     ?>
                     @if ($cashier)

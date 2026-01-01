@@ -18,7 +18,6 @@ class PaymentsController extends Controller
     public function __construct(SmsController $smsLogController)
     {
         $this->smsLogController = $smsLogController;
-
     }
 
     /**
@@ -93,7 +92,7 @@ class PaymentsController extends Controller
             'sms'                  => '1',
         ];
 
-        // Legacy compatibility: many of your controllers read session('userid')
+        // Legacy compatibility: many of your controllers readsession('user_data')["idUser"]
         // Ensure it's set so TodayPaymentController::store() can use it.
         session([
             'userid'      => (int) $user->id,
@@ -130,7 +129,7 @@ class PaymentsController extends Controller
                 ],
             ], 201);
         } catch (\Throwable $e) {
-            Log::error('API payment error: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            Log::error('API payment error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Failed to record payment',
@@ -157,7 +156,7 @@ class PaymentsController extends Controller
             $loan = DB::table('customer_loan')
                 ->where('idCustomer_Loan', $customer_payment->Customer_Loan_idCustomer_Loan)
                 ->first();
-            $branch=$loan->branch_id;
+            $branch = $loan->branch_id;
 
             if (!$loan) {
                 return response()->json(['message' => 'Loan not found'], 404);
@@ -208,7 +207,7 @@ class PaymentsController extends Controller
             $sms_template = DB::table('sms_template')
                 ->where('type', 'loan_payment')
                 ->where('status', '1')
-                ->where('branch_id', '=',$branch)
+                ->where('branch_id', '=', $branch)
                 ->first();
 
             if ($sms_template) {
@@ -278,11 +277,8 @@ class PaymentsController extends Controller
                 'logo_url'        => $logo_url, // <-- added here
                 'company_name'        => $company->company_name, // <-- added here
             ], 200);
-
         } catch (\Exception $e) {
             return response()->json(['message' => 'Server error', 'error' => $e->getMessage()], 500);
         }
     }
-
-
 }

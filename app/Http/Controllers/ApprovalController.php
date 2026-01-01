@@ -417,7 +417,6 @@ class ApprovalController extends Controller
                             ]);
                         }
                     }
-
                 }
             }
 
@@ -531,7 +530,7 @@ class ApprovalController extends Controller
                     'description_id' => $customerId,
                     'comment'        => ' ',
                     'type'           => 'Customer Registration',
-                    'user'           => session('userid'),
+                    'user'           => session('user_data')["idUser"],
                     'branch_id'      => $branchId,
                 ]);
 
@@ -588,7 +587,7 @@ class ApprovalController extends Controller
                     'description_id' => $customerId,
                     'comment'        => ' ',
                     'type'           => 'Customer Update',
-                    'user'           => session('userid'),
+                    'user'           => session('user_data')["idUser"],
                     'branch_id'      => $approval->branch_id,
                 ]);
             }
@@ -627,7 +626,7 @@ class ApprovalController extends Controller
                         'description_id' => $customerId,
                         'comment'        => ' ',
                         'type'           => $actionType,
-                        'user'           => session('userid'),
+                        'user'           => session('user_data')["idUser"],
                         'branch_id'      => $approval->branch_id,
                     ]);
                 }
@@ -704,7 +703,7 @@ class ApprovalController extends Controller
                     'description_id' => $loan_id,
                     'comment'        => ' ',
                     'type'           => 'Delete Loan',
-                    'user'           => session('userid'),
+                    'user'           => session('user_data')["idUser"],
                 ];
 
                 insertWithBranch('customer_log', $logData);
@@ -762,7 +761,7 @@ class ApprovalController extends Controller
                             'debit_credit'  => 'debit',
                             'amount'        => $last_expenses->amount,
                             'other_bank_id' => $bank_id->Idbank,
-                            'user_id'       => session('userid'),
+                            'user_id'       => session('user_data')["idUser"],
                             'branch_id'     => $approval->branch_id,
                         ]);
 
@@ -775,7 +774,7 @@ class ApprovalController extends Controller
                             'debit_credit'  => 'credit',
                             'amount'        => $last_expenses->amount,
                             'other_bank_id' => $last_expenses->bank_id,
-                            'user_id'       => session('userid'),
+                            'user_id'       => session('user_data')["idUser"],
                             'branch_id'     => $approval->branch_id,
                         ]);
                     }
@@ -794,7 +793,7 @@ class ApprovalController extends Controller
                 ->where('id', $id)
                 ->update([
                     'status'             => 1,
-                    'approveduserid'     => session('userid'),
+                    'approveduserid'     => session('user_data')["idUser"],
                     'approved_date_time' => now(),
                     'comment'            => $comment,
                 ]);
@@ -863,7 +862,7 @@ class ApprovalController extends Controller
                 ->where('id', $id)
                 ->update([
                     'status'             => 2,
-                    'approveduserid'     => session('userid'),
+                    'approveduserid'     => session('user_data')["idUser"],
                     'approved_date_time' => now(),
                     'comment'            => $reason,
                 ]);
@@ -918,7 +917,7 @@ class ApprovalController extends Controller
                 ->where('id', $id)
                 ->update([
                     'status'             => -1,
-                    'approveduserid'     => session('userid'),
+                    'approveduserid'     => session('user_data')["idUser"],
                     'approved_date_time' => now(),
                     'comment'            => $comment,
                 ]);
@@ -960,29 +959,29 @@ class ApprovalController extends Controller
     {
         try {
             $approval = DB::table('approval_request')->where('id', $approvalId)->first();
-            
+
             if (!$approval || $approval->typeid != 401) {
                 return response()->json(['success' => false, 'message' => 'Loan approval request not found.']);
             }
-            
+
             $requestData = json_decode($approval->data, true);
             $loan_id = $requestData['loan_id'];
             $branch_id = $approval->branch_id;
-            
+
             $loan = DB::table('customer_loan')
                 ->where('idCustomer_Loan', $loan_id)
                 ->where('branch_id', $branch_id)
                 ->first();
-            
+
             if (!$loan) {
                 return response()->json(['success' => false, 'message' => 'Loan not found.']);
             }
-            
+
             $customer = DB::table('customer')->where('idCustomer', $loan->Customer_idCustomer)->where('branch_id', $branch_id)->first();
             $loanCategory = DB::table('loan_category')->where('idLoan_Category', $loan->Loan_Category_idLoan_Category)->where('branch_id', $branch_id)->first();
             $user = DB::table('user')->where('id', $loan->User_idUser)->first();
             $lendingOfficer = DB::table('user')->where('id', $loan->lending_officer_id)->first();
-            
+
             $installments = DB::table('installments')->where('Customer_Loan_idCustomer_Loan', $loan_id)->where('branch_id', $branch_id)->orderBy('idInstallments')->get();
             $witnesses = DB::table('witness')
                 ->where('Customer_Loan_idCustomer_Loan', $loan_id)
@@ -1045,7 +1044,7 @@ class ApprovalController extends Controller
                 ->values();
             $otherCharges = DB::table('loan_other_charges')->where('Customer_Loan_idCustomer_Loan', $loan_id)->where('branch_id', $branch_id)->get();
             $approvalLevels = DB::table('loan_has_approval')->where('loan_id', $loan_id)->where('branch_id', $branch_id)->get();
-            
+
             $html = view('partials.loan_details_modal', compact(
                 'loan',
                 'customer',
@@ -1057,7 +1056,7 @@ class ApprovalController extends Controller
                 'otherCharges',
                 'approvalLevels'
             ))->render();
-            
+
             return response()->json(['success' => true, 'html' => $html]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
@@ -1068,27 +1067,27 @@ class ApprovalController extends Controller
     {
         try {
             $approval = DB::table('approval_request')->where('id', $approvalId)->first();
-            
+
             if (!$approval || $approval->typeid != 201) {
                 return response()->json(['success' => false, 'message' => 'Designation approval request not found.']);
             }
-            
+
             $requestData = json_decode($approval->data, true);
             $designationId = $requestData['designation_id'];
-            
+
             // Get current designation from database
             $currentDesignation = DB::table('designation')
                 ->where('idDesignation', $designationId)
                 ->first();
-            
+
             $html = '';
-            
+
             // Check if this is a details update or privileges update
             if (isset($requestData['update_type']) && $requestData['update_type'] === 'details') {
                 // Details update - show old vs new comparison
                 $oldData = $requestData['old_data'];
                 $newData = $requestData['new_data'];
-                
+
                 $html = '
                 <div class="alert alert-info">
                     <i class="ri-information-line me-2"></i><strong>Designation Details Update Request</strong>
@@ -1125,11 +1124,11 @@ class ApprovalController extends Controller
                 // Privileges update - show old vs new privileges comparison
                 $oldPrivileges = $requestData['old_privileges'] ?? [];
                 $newPrivileges = $requestData['privileges'] ?? [];
-                
+
                 // Get all unique keys
                 $allKeys = array_unique(array_merge(array_keys($oldPrivileges), array_keys($newPrivileges)));
                 sort($allKeys);
-                
+
                 $html = '
                 <div class="alert alert-info">
                     <i class="ri-information-line me-2"></i><strong>Designation: ' . htmlspecialchars($requestData['designation_name']) . ' - Privileges Update Request</strong>
@@ -1145,18 +1144,18 @@ class ApprovalController extends Controller
                         </tr>
                     </thead>
                     <tbody>';
-                
+
                 $changesCount = 0;
                 foreach ($allKeys as $key) {
                     $oldVal = $oldPrivileges[$key] ?? 0;
                     $newVal = $newPrivileges[$key] ?? 0;
-                    
+
                     if ($oldVal != $newVal) {
                         $changesCount++;
                         $statusBadge = $newVal == 1 ? '<span class="badge bg-success">Enabled</span>' : '<span class="badge bg-danger">Disabled</span>';
                         $oldIcon = $oldVal == 1 ? '<i class="ri-checkbox-circle-fill text-success"></i>' : '<i class="ri-close-circle-fill text-danger"></i>';
                         $newIcon = $newVal == 1 ? '<i class="ri-checkbox-circle-fill text-success"></i>' : '<i class="ri-close-circle-fill text-danger"></i>';
-                        
+
                         $html .= '
                         <tr>
                             <td>' . htmlspecialchars(ucwords(str_replace('_', ' ', $key))) . '</td>
@@ -1166,11 +1165,11 @@ class ApprovalController extends Controller
                         </tr>';
                     }
                 }
-                
+
                 if ($changesCount == 0) {
                     $html .= '<tr><td colspan="4" class="text-center text-muted">No changes detected</td></tr>';
                 }
-                
+
                 $html .= '
                     </tbody>
                 </table>
@@ -1178,7 +1177,7 @@ class ApprovalController extends Controller
                     <strong>Total Changes:</strong> ' . $changesCount . ' permission(s)
                 </div>';
             }
-            
+
             return response()->json(['success' => true, 'html' => $html]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
@@ -1193,11 +1192,11 @@ class ApprovalController extends Controller
                 ->select('ar.*', 'u.Full_Name as user_full_name')
                 ->where('ar.id', $approvalId)
                 ->first();
-            
+
             if (!$approval || $approval->typeid != 402) {
                 return response()->json(['success' => false, 'message' => 'Loan rejection request not found.']);
             }
-            
+
             $requestData = json_decode($approval->data, true);
             $loan_id = $requestData['loan_id'];
             $customer_name = $requestData['customer_name'];
@@ -1205,7 +1204,7 @@ class ApprovalController extends Controller
             $amount = $requestData['amount'];
             $category_name = $requestData['category_name'];
             $reason = $requestData['reason'];
-            
+
             $html = '
             <div class="alert alert-danger">
                 <i class="ri-alert-line me-2"></i><strong>Loan Deletion/Rejection Request</strong>
@@ -1259,7 +1258,7 @@ class ApprovalController extends Controller
                 </ul>
             </div>
             ';
-            
+
             return response()->json(['success' => true, 'html' => $html]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
@@ -1274,14 +1273,14 @@ class ApprovalController extends Controller
                 ->select('ar.*', 'u.Full_Name as user_full_name')
                 ->where('ar.id', $approvalId)
                 ->first();
-            
+
             if (!$approval || $approval->typeid != 101) {
                 return response()->json(['success' => false, 'message' => 'User creation request not found.']);
             }
-            
+
             $requestData = json_decode($approval->data, true);
             $userData = $requestData['user_data'] ?? [];
-            
+
             $html = '
             <div class="alert alert-info">
                 <i class="ri-user-add-line me-2"></i><strong>New User Creation Request</strong>
@@ -1334,7 +1333,7 @@ class ApprovalController extends Controller
                 </tbody>
             </table>
             ';
-            
+
             return response()->json(['success' => true, 'html' => $html]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
@@ -1349,28 +1348,28 @@ class ApprovalController extends Controller
                 ->select('ar.*', 'u.Full_Name as user_full_name')
                 ->where('ar.id', $approvalId)
                 ->first();
-            
+
             if (!$approval || $approval->typeid != 102) {
                 return response()->json(['success' => false, 'message' => 'User update request not found.']);
             }
-            
+
             $requestData = json_decode($approval->data, true);
-            
+
             // Check if this is a status-only change or full update
             $isStatusChange = isset($requestData['new_data']) && isset($requestData['new_data']['Status']);
-            
+
             if ($isStatusChange) {
                 // Status-only change (active/inactive toggle)
                 $userId = $requestData['user_id'];
                 $oldData = $requestData['old_data'];
                 $newStatus = $requestData['new_data']['Status'];
                 $actionType = $requestData['action_type'] ?? 'Status Change';
-                
+
                 $user = DB::table('user')->where('id', $userId)->first();
                 $userName = $user ? $user->Full_Name : ($oldData['Full_Name'] ?? 'Unknown');
                 $statusText = $newStatus == '1' ? 'Active' : 'Inactive';
                 $oldStatusText = ($oldData['Status'] ?? '0') == '1' ? 'Active' : 'Inactive';
-                
+
                 $html = '
                 <div class="alert alert-info">
                     <i class="ri-user-settings-line me-2"></i><strong>' . htmlspecialchars($actionType) . '</strong>
@@ -1401,16 +1400,16 @@ class ApprovalController extends Controller
                     <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
                 </div>
                 ';
-                
+
                 return response()->json(['success' => true, 'html' => $html]);
             }
-            
+
             // Full user detail update
             $updateData = $requestData['update_data'] ?? [];
-            
+
             // Get current user data for comparison
             $user = DB::table('user')->where('id', $updateData['user_id'])->first();
-            
+
             $html = '
             <div class="alert alert-warning">
                 <i class="ri-user-settings-line me-2"></i><strong>User Details Update Request</strong>
@@ -1428,7 +1427,7 @@ class ApprovalController extends Controller
                     </tr>
                 </thead>
                 <tbody>';
-            
+
             $fields = [
                 'Full_Name' => 'Full Name',
                 'email' => 'Email',
@@ -1437,12 +1436,12 @@ class ApprovalController extends Controller
                 'Epf_no' => 'EPF Number',
                 'Designation' => 'Designation',
             ];
-            
+
             foreach ($fields as $key => $label) {
                 if (isset($updateData[$key])) {
                     $oldVal = $user->$key ?? 'N/A';
                     $newVal = $updateData[$key] ?? 'N/A';
-                    
+
                     if ($oldVal != $newVal) {
                         $html .= '
                         <tr>
@@ -1453,7 +1452,7 @@ class ApprovalController extends Controller
                     }
                 }
             }
-            
+
             // Add checkbox fields with checkmark icons
             $checkboxFields = [
                 'lending_officer' => 'Lending Officer',
@@ -1461,16 +1460,16 @@ class ApprovalController extends Controller
                 'cashier' => 'Cashier',
                 'branch_access' => 'Branch Access',
             ];
-            
+
             foreach ($checkboxFields as $key => $label) {
                 if (isset($updateData[$key])) {
                     $oldVal = ($user->$key ?? 0) == 1;
                     $newVal = ($updateData[$key] ?? 0) == 1;
-                    
+
                     if ($oldVal != $newVal) {
                         $oldDisplay = $oldVal ? '<i class="ri-checkbox-circle-fill text-success"></i> Yes' : '<i class="ri-close-circle-fill text-danger"></i> No';
                         $newDisplay = $newVal ? '<i class="ri-checkbox-circle-fill text-success"></i> Yes' : '<i class="ri-close-circle-fill text-danger"></i> No';
-                        
+
                         $html .= '
                         <tr>
                             <th>' . htmlspecialchars($label) . '</th>
@@ -1480,7 +1479,7 @@ class ApprovalController extends Controller
                     }
                 }
             }
-            
+
             // Check for branch changes
             if (isset($requestData['branches_changed']) && $requestData['branches_changed']) {
                 $html .= '
@@ -1489,7 +1488,7 @@ class ApprovalController extends Controller
                     <td colspan="2"><span class="badge bg-info">Branch assignments will be updated</span></td>
                 </tr>';
             }
-            
+
             $html .= '
                 </tbody>
             </table>
@@ -1499,7 +1498,7 @@ class ApprovalController extends Controller
                 <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
             </div>
             ';
-            
+
             return response()->json(['success' => true, 'html' => $html]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
@@ -1514,22 +1513,22 @@ class ApprovalController extends Controller
                 ->select('ar.*', 'u.Full_Name as user_full_name')
                 ->where('ar.id', $approvalId)
                 ->first();
-            
+
             if (!$approval || $approval->typeid != 103) {
                 return response()->json(['success' => false, 'message' => 'Privilege change request not found.']);
             }
-            
+
             $requestData = json_decode($approval->data, true);
             $userId = $requestData['user_id'];
             $newPrivileges = $requestData['privileges'] ?? [];
-            
+
             // Get current user and their privileges
             $user = DB::table('user')->where('id', $userId)->first();
             $currentPrivileges = DB::table('user_privileges_has_user')
                 ->where('user_id', $userId)
                 ->pluck('value', 'permission_key')
                 ->toArray();
-            
+
             $html = '
             <div class="alert alert-warning">
                 <i class="ri-shield-user-line me-2"></i><strong>User Privilege Change Request</strong>
@@ -1546,20 +1545,20 @@ class ApprovalController extends Controller
                     </tr>
                 </thead>
                 <tbody>';
-            
+
             $changesCount = 0;
             // Privileges are stored as flat key-value pairs
             foreach ($newPrivileges as $key => $value) {
                 if (empty($key)) continue;
-                
+
                 $newValue = (int)$value;
                 $currentValue = (int)($currentPrivileges[$key] ?? 0);
-                
+
                 if ($currentValue != $newValue) {
                     $changesCount++;
                     $currentIcon = $currentValue == 1 ? '<i class="ri-checkbox-circle-fill text-success"></i> Enabled' : '<i class="ri-close-circle-fill text-danger"></i> Disabled';
                     $newIcon = $newValue == 1 ? '<i class="ri-checkbox-circle-fill text-success"></i> Enabled' : '<i class="ri-close-circle-fill text-danger"></i> Disabled';
-                    
+
                     $html .= '
                     <tr>
                         <td>' . htmlspecialchars(ucwords(str_replace('_', ' ', $key))) . '</td>
@@ -1568,11 +1567,11 @@ class ApprovalController extends Controller
                     </tr>';
                 }
             }
-            
+
             if ($changesCount == 0) {
                 $html .= '<tr><td colspan="3" class="text-center text-muted">No privilege changes detected</td></tr>';
             }
-            
+
             $html .= '
                 </tbody>
             </table>
@@ -1588,7 +1587,7 @@ class ApprovalController extends Controller
                 <strong>Note:</strong> Approving this will update the user\'s access privileges.
             </div>
             ';
-            
+
             return response()->json(['success' => true, 'html' => $html]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
@@ -1603,14 +1602,14 @@ class ApprovalController extends Controller
                 ->select('ar.*', 'u.Full_Name as user_full_name')
                 ->where('ar.id', $approvalId)
                 ->first();
-            
+
             if (!$approval || $approval->typeid != 301) {
                 return response()->json(['success' => false, 'message' => 'Customer creation request not found.']);
             }
-            
+
             $requestData = json_decode($approval->data, true);
             $customerData = $requestData['customer_data'] ?? [];
-            
+
             $html = '
             <div class="alert alert-info">
                 <i class="ri-user-add-line me-2"></i><strong>New Customer Creation Request</strong>
@@ -1745,7 +1744,7 @@ class ApprovalController extends Controller
                 <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
             </div>
             ';
-            
+
             return response()->json(['success' => true, 'html' => $html]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
@@ -1760,15 +1759,15 @@ class ApprovalController extends Controller
                 ->select('ar.*', 'u.Full_Name as user_full_name')
                 ->where('ar.id', $approvalId)
                 ->first();
-            
+
             if (!$approval || $approval->typeid != 302) {
                 return response()->json(['success' => false, 'message' => 'Customer update request not found.']);
             }
-            
+
             $requestData = json_decode($approval->data, true);
             $oldData = $requestData['old_data'] ?? [];
             $newData = $requestData['new_data'] ?? [];
-            
+
             $html = '
             <div class="alert alert-warning">
                 <i class="ri-user-settings-line me-2"></i><strong>Customer Details Update Request</strong>
@@ -1786,7 +1785,7 @@ class ApprovalController extends Controller
                     </tr>
                 </thead>
                 <tbody>';
-            
+
             $fields = [
                 'First_Name' => 'First Name',
                 'Last_Name' => 'Last Name',
@@ -1805,16 +1804,16 @@ class ApprovalController extends Controller
                 'occu_monthly_salary' => 'Monthly Salary',
                 'Cus_phto' => 'Customer Photo',
             ];
-            
+
             $changesCount = 0;
             foreach ($fields as $key => $label) {
                 if (isset($newData[$key])) {
                     $oldVal = $oldData[$key] ?? 'N/A';
                     $newVal = $newData[$key] ?? 'N/A';
-                    
+
                     if ($oldVal != $newVal) {
                         $changesCount++;
-                        
+
                         // Special handling for photo field
                         if ($key === 'Cus_phto') {
                             $oldDisplay = '<span class="text-muted">No photo</span>';
@@ -1822,13 +1821,13 @@ class ApprovalController extends Controller
                                 $oldPhotoUrl = '/storage/' . $oldVal;
                                 $oldDisplay = '<img src="' . htmlspecialchars($oldPhotoUrl) . '" alt="Current Photo" style="max-width: 150px; max-height: 150px; border: 2px solid #ddd; border-radius: 5px; cursor: pointer;" onclick="window.open(this.src, \'_blank\')"><br><small class="text-muted">Click to enlarge</small>';
                             }
-                            
+
                             $newDisplay = '<span class="badge bg-success">📷 New photo</span>';
                             if ($newVal && $newVal !== 'N/A') {
                                 $newPhotoUrl = '/storage/' . $newVal;
                                 $newDisplay = '<img src="' . htmlspecialchars($newPhotoUrl) . '" alt="New Photo" style="max-width: 150px; max-height: 150px; border: 2px solid #28a745; border-radius: 5px; cursor: pointer;" onclick="window.open(this.src, \'_blank\')"><br><small class="text-success">📷 New photo - Click to enlarge</small>';
                             }
-                            
+
                             $html .= '
                             <tr>
                                 <th>' . htmlspecialchars($label) . '</th>
@@ -1846,11 +1845,11 @@ class ApprovalController extends Controller
                     }
                 }
             }
-            
+
             if ($changesCount == 0) {
                 $html .= '<tr><td colspan="3" class="text-center text-muted">No changes detected</td></tr>';
             }
-            
+
             $html .= '
                 </tbody>
             </table>
@@ -1861,7 +1860,7 @@ class ApprovalController extends Controller
                 <p class="text-muted mb-0"><strong>Total Changes:</strong> ' . $changesCount . ' field(s)</p>
             </div>
             ';
-            
+
             return response()->json(['success' => true, 'html' => $html]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
@@ -1876,15 +1875,15 @@ class ApprovalController extends Controller
                 ->select('ar.*', 'u.Full_Name as user_full_name')
                 ->where('ar.id', $approvalId)
                 ->first();
-            
+
             if (!$approval || $approval->typeid != 603) {
                 return response()->json(['success' => false, 'message' => 'Expense delete request not found.']);
             }
-            
+
             $requestData = json_decode($approval->data, true);
             $expenseData = $requestData['expense_data'] ?? [];
             $bankIdData = $requestData['bank_id_data'] ?? [];
-            
+
             $html = '
             <div class="alert alert-danger">
                 <i class="ri-delete-bin-line me-2"></i><strong>Expense Delete Request</strong>
@@ -1931,7 +1930,7 @@ class ApprovalController extends Controller
                 <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
             </div>
             ';
-            
+
             return response()->json(['success' => true, 'html' => $html]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
@@ -1946,11 +1945,11 @@ class ApprovalController extends Controller
                 ->select('ar.*', 'u.Full_Name as user_full_name')
                 ->where('ar.id', $approvalId)
                 ->first();
-            
+
             if (!$approval || $approval->typeid != 304) {
                 return response()->json(['success' => false, 'message' => 'Status change request not found.']);
             }
-            
+
             $requestData = json_decode($approval->data, true);
             $customerData = $requestData['customer_data'] ?? [];
             $oldStatus = $requestData['old_status'];
@@ -1958,13 +1957,13 @@ class ApprovalController extends Controller
             $note = $requestData['note'] ?? '';
             $actionType = $requestData['action_type'];
             $actionDescription = $requestData['action_description'];
-            
+
             $oldStatusText = $oldStatus == 1 ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-danger">Blacklisted</span>';
             $newStatusText = $newStatus == 1 ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-danger">Blacklisted</span>';
-            
+
             $alertClass = $newStatus == 0 ? 'alert-danger' : 'alert-success';
             $iconClass = $newStatus == 0 ? 'ri-user-unfollow-line' : 'ri-user-follow-line';
-            
+
             $html = '
             <div class="alert ' . $alertClass . '">
                 <i class="' . $iconClass . ' me-2"></i><strong>' . htmlspecialchars($actionType) . ' Request</strong>
@@ -2011,7 +2010,7 @@ class ApprovalController extends Controller
                 <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
             </div>
             ';
-            
+
             return response()->json(['success' => true, 'html' => $html]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
@@ -2026,17 +2025,17 @@ class ApprovalController extends Controller
                 ->select('ar.*', 'u.Full_Name as user_full_name')
                 ->where('ar.id', $approvalId)
                 ->first();
-            
+
             if (!$approval || $approval->typeid != 305) {
                 return response()->json(['success' => false, 'message' => 'Document request not found.']);
             }
-            
+
             $requestData = json_decode($approval->data, true);
-            
+
             // Check if this is upload or delete
             $isUpload = isset($requestData['document_path']);
             $isDelete = isset($requestData['document_id']);
-            
+
             if ($isDelete) {
                 $documentData = $requestData['document_data'] ?? [];
                 $customerId = $requestData['customer_id'] ?? null;
@@ -2048,21 +2047,21 @@ class ApprovalController extends Controller
                 ];
                 $customerId = $requestData['customer_id'] ?? null;
             }
-            
+
             // Get customer details
             $customer = DB::table('customer')
                 ->where('idCustomer', $customerId)
                 ->where('branch_id', $approval->branch_id)
                 ->first();
-            
+
             $customerName = $customer ? ($customer->First_Name . ' ' . $customer->Last_Name) : 'Unknown';
             $customerNumber = $customer->cus_number ?? 'N/A';
-            
+
             $alertClass = $isDelete ? 'alert-danger' : 'alert-info';
             $iconClass = $isDelete ? 'ri-file-damage-line' : 'ri-file-upload-line';
             $title = $isDelete ? 'Customer Document Delete Request' : 'Customer Document Upload Request';
             $subtitle = $isDelete ? 'Review document details before approving deletion' : 'Review document details before approving upload';
-            
+
             $html = '
             <div class="' . $alertClass . '">
                 <i class="' . $iconClass . ' me-2"></i><strong>' . $title . '</strong>
@@ -2111,7 +2110,7 @@ class ApprovalController extends Controller
                 <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
             </div>
             ';
-            
+
             return response()->json(['success' => true, 'html' => $html]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
@@ -2126,31 +2125,31 @@ class ApprovalController extends Controller
                 ->select('ar.*', 'u.Full_Name as user_full_name')
                 ->where('ar.id', $approvalId)
                 ->first();
-            
+
             if (!$approval || $approval->typeid != 403) {
                 return response()->json(['success' => false, 'message' => 'Loan installment modification request not found.']);
             }
-            
+
             $requestData = json_decode($approval->data, true);
             $loanId = $requestData['loan_id'];
             $customerId = $requestData['customer_id'];
             $changes = $requestData['changes'] ?? [];
-            
+
             // Get loan details
             $loan = DB::table('customer_loan')
                 ->where('idCustomer_Loan', $loanId)
                 ->where('branch_id', $approval->branch_id)
                 ->first();
-            
+
             // Get customer details
             $customer = DB::table('customer')
                 ->where('idCustomer', $customerId)
                 ->where('branch_id', $approval->branch_id)
                 ->first();
-            
+
             $customerName = $customer ? ($customer->First_Name . ' ' . $customer->Last_Name) : 'Unknown';
             $loanNumber = $loan->Loan_No ?? 'N/A';
-            
+
             $html = '
             <div class="alert alert-warning">
                 <i class="ri-calendar-schedule-line me-2"></i><strong>Loan Installment Modification Request</strong>
@@ -2189,7 +2188,7 @@ class ApprovalController extends Controller
                         </tr>
                     </thead>
                     <tbody>';
-            
+
             foreach ($changes as $change) {
                 $html .= '
                         <tr>
@@ -2200,7 +2199,7 @@ class ApprovalController extends Controller
                             <td><strong class="text-primary">' . htmlspecialchars($change['new_penalty_date']) . '</strong></td>
                         </tr>';
             }
-            
+
             $html .= '
                     </tbody>
                 </table>
@@ -2211,7 +2210,7 @@ class ApprovalController extends Controller
                 <p class="text-muted mb-0"><strong>Request Date:</strong> ' . date('d/m/Y h:i A', strtotime($approval->data_time)) . '</p>
             </div>
             ';
-            
+
             return response()->json(['success' => true, 'html' => $html]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
@@ -2280,7 +2279,7 @@ class ApprovalController extends Controller
             }
 
             return response()->json([
-                'success' => true, 
+                'success' => true,
                 'message' => 'Rejection undone successfully. Request moved back to pending approval.'
             ]);
         } catch (\Exception $e) {
@@ -2380,5 +2379,4 @@ class ApprovalController extends Controller
             'items'   => $items,
         ]);
     }
-
 }

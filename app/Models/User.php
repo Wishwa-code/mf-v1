@@ -38,7 +38,13 @@ class User extends Authenticatable
     ];
 
 
-    public function user_has_privileges(){
-        return $this->hasMany(UserHasPrivileges::class,'user_id','id');
+    public function user_has_privileges()
+    {
+        return $this->hasMany(UserHasPrivileges::class, 'user_id', 'id');
+    }
+
+    public function shortcuts()
+    {
+        return $this->hasMany(Shortcut::class, 'user_id', 'id');
     }
 }

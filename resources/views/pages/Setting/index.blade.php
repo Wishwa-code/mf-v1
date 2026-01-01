@@ -543,6 +543,27 @@
                                 </div>
                             </div>
 
+                            <!-- Designation Management -->
+                            <div class="accordion-item mb-3 border bg-white rounded">
+                                <h2 class="accordion-header" id="headingDesig">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDesig">
+                                        <i class="fa-solid fa-id-badge me-2"></i> Designation Management
+                                    </button>
+                                </h2>
+                                <div id="collapseDesig" class="accordion-collapse collapse" data-bs-parent="#accordionHO">
+                                    <div class="accordion-body p-0">
+                                        <div class="list-group list-group-flush rounded-bottom">
+                                            <label class="list-group-item d-flex justify-content-between align-items-center cursor-pointer">
+                                                <span>Designation Privileges Update</span>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input approval-toggle" type="checkbox" data-type="201" id="approval_201">
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Customer Management -->
                             <div class="accordion-item mb-3 border bg-white rounded">
                                 <h2 class="accordion-header" id="headingTwo">
@@ -577,6 +598,12 @@
                                                     <input class="form-check-input approval-toggle" type="checkbox" data-type="304" id="approval_304">
                                                 </div>
                                             </label>
+                                            <label class="list-group-item d-flex justify-content-between align-items-center cursor-pointer">
+                                                <span>Customer Document Update</span>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input approval-toggle" type="checkbox" data-type="305" id="approval_305">
+                                                </div>
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
@@ -599,6 +626,24 @@
                                                 </div>
                                             </label>
                                             <label class="list-group-item d-flex justify-content-between align-items-center cursor-pointer">
+                                                <span>Loan Rejection</span>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input approval-toggle" type="checkbox" data-type="402" id="approval_402">
+                                                </div>
+                                            </label>
+                                            <label class="list-group-item d-flex justify-content-between align-items-center cursor-pointer">
+                                                <span>Loan Modification</span>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input approval-toggle" type="checkbox" data-type="403" id="approval_403">
+                                                </div>
+                                            </label>
+                                            <label class="list-group-item d-flex justify-content-between align-items-center cursor-pointer">
+                                                <span>Bank Account Transfer</span>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input approval-toggle" type="checkbox" data-type="501" id="approval_501">
+                                                </div>
+                                            </label>
+                                            <label class="list-group-item d-flex justify-content-between align-items-center cursor-pointer">
                                                 <span>Payment Undo</span>
                                                 <div class="form-check form-switch">
                                                     <input class="form-check-input approval-toggle" type="checkbox" data-type="502" id="approval_502">
@@ -616,10 +661,28 @@
                                                     <input class="form-check-input approval-toggle" type="checkbox" data-type="601" id="approval_601">
                                                 </div>
                                             </label>
+                                            <label class="list-group-item d-flex justify-content-between align-items-center cursor-pointer">
+                                                <span>Expense Approval</span>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input approval-toggle" type="checkbox" data-type="602" id="approval_602">
+                                                </div>
+                                            </label>
+                                            <label class="list-group-item d-flex justify-content-between align-items-center cursor-pointer">
+                                                <span>Expense Modification</span>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input approval-toggle" type="checkbox" data-type="603" id="approval_603">
+                                                </div>
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="mt-4 text-end">
+                            <button id="btnSaveAllApprovals" class="btn btn-primary">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Save All Approval Settings
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -683,6 +746,83 @@
                                                     <option value="enabled">Enabled</option>
                                                 </select>
                                                 <button id="btnUpdatePaymentBackdate" class="btn btn-outline-secondary">Save</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Loan Order & Max Loans -->
+                            <div class="col-lg-6">
+                                <div class="card h-100 shadow-sm border-0">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold mb-3">Loan Configuration</h6>
+
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-bold">Loan Number Order</label>
+                                            <div class="input-group input-group-sm">
+                                                <select id="loan_order" class="form-select">
+                                                    <option value="create_date">Create Date</option>
+                                                    <option value="loan_number">Loan Number</option>
+                                                    <option value="issue_date">Issue Date</option>
+                                                </select>
+                                                <button id="btnUpdateLoanOrder" class="btn btn-outline-secondary">Save</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-1">
+                                            <label class="form-label small fw-bold">Maximum Allowed Loans</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" id="max_allowed_loans" class="form-control" min="1" max="50" value="3">
+                                                <button id="btnUpdateMaxLoans" class="btn btn-outline-secondary">Save</button>
+                                            </div>
+                                            <small class="text-muted">Max loans per customer (pending + current)</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Due Skip Type -->
+                            <div class="col-lg-6">
+                                <div class="card h-100 shadow-sm border-0">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold mb-3">Due Skip Type</h6>
+                                        <p class="text-muted small mb-3">Controls behavior when skipping a due.</p>
+                                        <div class="input-group input-group-sm">
+                                            <select id="due_skip_type" class="form-select">
+                                                <option value="skip_installment">Skip an Installment</option>
+                                                <option value="skip_day">Skip a Day</option>
+                                            </select>
+                                            <button id="btnUpdateDueSkipType" class="btn btn-outline-secondary">Save</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Collector Transaction Modes -->
+                            <div class="col-12">
+                                <div class="card shadow-sm border-0">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="fw-bold m-0">Collector Account Transaction Modes</h6>
+                                            <button id="btnUpdateCollectorModes" class="btn btn-sm btn-outline-primary">Save Modes</button>
+                                        </div>
+                                        <div class="d-flex flex-wrap gap-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input collector-mode" type="checkbox" id="mode_cash_bank" value="cash_bank">
+                                                <label class="form-check-label" for="mode_cash_bank">Cash</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input collector-mode" type="checkbox" id="mode_bank_deposit" value="bank_deposit">
+                                                <label class="form-check-label" for="mode_bank_deposit">Bank Deposit</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input collector-mode" type="checkbox" id="mode_cheques" value="cheques">
+                                                <label class="form-check-label" for="mode_cheques">Cheques</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input collector-mode" type="checkbox" id="mode_collector_account" value="collector_account">
+                                                <label class="form-check-label" for="mode_collector_account">Collector Account</label>
                                             </div>
                                         </div>
                                     </div>
@@ -985,9 +1125,84 @@
         $('#btnSaveCommissionRates').click(saveCommissionRates);
         $('#btnAddCommissionPerson').click(() => new bootstrap.Modal('#commissionPersonModal').show());
         $('#btnSaveCommissionPerson').click(saveCommissionPerson);
-        // Bind change event for branch fetch
-        // Note: Branches loaded via /branches/all route in existing app? Check routes.
-        // Route: /branches/all -> CommissionController@branches_all
+
+        // New Button Handlers
+        $('#btnUpdateLoanOrder').click(() => save_setting('loan_order', $('#loan_order').val()));
+        $('#btnUpdateMaxLoans').click(function() {
+            const val = $('#max_allowed_loans').val();
+            if (!val || val < 1 || val > 50) return Swal.fire('Warning', 'Max loans must be 1-50', 'warning');
+            save_setting('max_allowed_loans', val);
+        });
+        $('#btnUpdateDueSkipType').click(() => save_setting('due_skip_type', $('#due_skip_type').val()));
+        $('#btnUpdateCollectorModes').click(function() {
+            const modes = [];
+            $('.collector-mode:checked').each(function() {
+                modes.push($(this).val());
+            });
+            if (modes.length === 0) return Swal.fire('Warning', 'Select at least one mode', 'warning');
+            save_setting('collector_txn_modes', JSON.stringify(modes));
+        });
+        $('#btnUpdateCollectionDays').click(function() {
+            const days = [];
+            $('.collection-day:checked').each(function() {
+                days.push(parseInt($(this).val()));
+            });
+            if (days.length === 0) return Swal.fire('Warning', 'Select at least one day', 'warning');
+            save_setting('collection_days', JSON.stringify(days));
+        });
+
+        // Loan Restrictions Batch Update
+        $('#btnUpdateLoanRestrictions').click(function() {
+            const settings = [{
+                    key: 'document_upload_restriction',
+                    value: $('#document_upload_restriction').val()
+                },
+                {
+                    key: 'guarantees_restriction',
+                    value: $('#guarantees_restriction').val()
+                },
+                {
+                    key: 'change_product_details',
+                    value: $('#change_product_details').val()
+                },
+                {
+                    key: 'first_installment_daily',
+                    value: $('#first_installment_daily').val()
+                },
+                {
+                    key: 'first_installment_weekly',
+                    value: $('#first_installment_weekly').val()
+                },
+                {
+                    key: 'first_installment_monthly',
+                    value: $('#first_installment_monthly').val()
+                }
+            ];
+            saveBatchSettings(settings, 'Loan restrictions updated!');
+        });
+
+        // HO Approvals Batch Save
+        $('#btnSaveAllApprovals').click(function() {
+            const settings = [];
+            $('.approval-toggle').each(function() {
+                const type = $(this).data('type');
+                settings.push({
+                    key: 'headoffice_approval_' + type,
+                    value: $(this).is(':checked') ? 'required' : 'not_required'
+                });
+            });
+            saveBatchSettings(settings, 'All approval settings updated!');
+        });
+
+        // Last Tab Persistence
+        $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
+            localStorage.setItem('last_settings_tab', $(e.target).attr('data-bs-target'));
+        });
+        const lastTab = localStorage.getItem('last_settings_tab');
+        if (lastTab) {
+            const triggerEl = document.querySelector(`button[data-bs-target="${lastTab}"]`);
+            if (triggerEl) new bootstrap.Tab(triggerEl).show();
+        }
     });
 
     // Fetch All Settings
@@ -1004,6 +1219,20 @@
         if (APP_SETTINGS.payment_member_name) $('#payment_member_name').val(APP_SETTINGS.payment_member_name);
         if (APP_SETTINGS.payment_backdate) $('#payment_backdate').val(APP_SETTINGS.payment_backdate);
         if (APP_SETTINGS.recovery_account_status) $('#recovery_account_status').val(APP_SETTINGS.recovery_account_status);
+
+        // New General Settings
+        if (APP_SETTINGS.loan_order) $('#loan_order').val(APP_SETTINGS.loan_order);
+        if (APP_SETTINGS.max_allowed_loans) $('#max_allowed_loans').val(APP_SETTINGS.max_allowed_loans);
+        if (APP_SETTINGS.due_skip_type) $('#due_skip_type').val(APP_SETTINGS.due_skip_type);
+
+        // Collector Transaction Modes
+        if (APP_SETTINGS.collector_txn_modes) {
+            try {
+                const modes = JSON.parse(APP_SETTINGS.collector_txn_modes);
+                $('.collector-mode').prop('checked', false);
+                modes.forEach(m => $(`.collector-mode[value="${m}"]`).prop('checked', true));
+            } catch (e) {}
+        }
 
         // Loan Restrictions
         if (APP_SETTINGS.document_upload_restriction) $('#document_upload_restriction').val(APP_SETTINGS.document_upload_restriction);
@@ -1038,6 +1267,7 @@
     function fetchShortcuts() {
         // Calls the CompanyController@show
         $.get('/shortcuts/all', function(res) {
+            console.log(res);
             if (res.items) {
                 res.items.forEach(item => {
                     $(`input.access_module[id="${item.name}"]`).prop('checked', true);
@@ -1093,6 +1323,40 @@
                 showConfirmButton: false
             }),
             error: (xhr) => Swal.fire('Error', xhr.responseJSON?.message || 'Failed', 'error')
+        });
+    }
+
+    // Batch Save Multiple Settings
+    function saveBatchSettings(settings, successMsg) {
+        let completed = 0;
+        let hasError = false;
+
+        settings.forEach(s => {
+            $.ajax({
+                url: "{{ route('settings.upsert') }}",
+                type: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                data: s,
+                success: () => {
+                    completed++;
+                    if (completed === settings.length && !hasError) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: successMsg,
+                            timer: 1200,
+                            showConfirmButton: false
+                        });
+                    }
+                },
+                error: (xhr) => {
+                    if (!hasError) {
+                        hasError = true;
+                        Swal.fire('Error', xhr.responseJSON?.message || 'Failed', 'error');
+                    }
+                }
+            });
         });
     }
 

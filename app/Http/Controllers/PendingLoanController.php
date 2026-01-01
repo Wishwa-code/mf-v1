@@ -20,7 +20,7 @@ class PendingLoanController extends Controller
     protected $LoanLogController;
 
     // Single constructor to inject both controllers
-    public function __construct(CustomerLogController $customerLogController, SmsController $smsLogController,BankLogController $bankLogController,LoanLogController $LoanLogController)
+    public function __construct(CustomerLogController $customerLogController, SmsController $smsLogController, BankLogController $bankLogController, LoanLogController $LoanLogController)
     {
         $this->customerLogController = $customerLogController;
         $this->smsLogController = $smsLogController;
@@ -41,16 +41,16 @@ class PendingLoanController extends Controller
         $group = tableWithBranch('customer_group')->get();
         $loan_category = tableWithBranch('loan_category')->get();
         $customers = tableWithBranch('customer')->get();
-        $bank = tableWithBranch('company_bank_accounts')->where('Bank_Type','=','Bank')->where('status','=','1')->get();
+        $bank = tableWithBranch('company_bank_accounts')->where('Bank_Type', '=', 'Bank')->where('status', '=', '1')->get();
         if ($collector == 1) {
             $bank = DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $user_id)->where('status', '=', '1')->get();
         }
         $documents = tableWithBranch('documents')->get();
-        $route = tableWithBranch('route','route')
+        $route = tableWithBranch('route', 'route')
             ->join('user', 'route.id_officer', '=', 'user.id')
             ->get();
         $center = tableWithBranch('center')->get();
-        return view('pages.PendingLoan', compact('route','center','group', 'loan_category', 'customers','bank','documents'));
+        return view('pages.PendingLoan', compact('route', 'center', 'group', 'loan_category', 'customers', 'bank', 'documents'));
     }
 
     /**
@@ -67,23 +67,31 @@ class PendingLoanController extends Controller
 
         $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
-            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
+            ->leftJoin(
+                DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
         FROM group_has_customer 
         LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
-                'customer.idCustomer', '=', 'subquery.cus_id')
+                'customer.idCustomer',
+                '=',
+                'subquery.cus_id'
+            )
             ->join('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category')
             ->join('user as u1', 'customer_loan.User_idUser', '=', 'u1.id')
             ->join('user as u2', 'customer_loan.lending_officer_id', '=', 'u2.id')
             ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
             ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
-            ->leftJoin(DB::raw('(SELECT loan_id, COUNT(*) as approval_count, 
+            ->leftJoin(
+                DB::raw('(SELECT loan_id, COUNT(*) as approval_count, 
                 SUM(CASE WHEN date = "-" THEN 1 ELSE 0 END) as pending_approvals 
             FROM loan_has_approval 
             GROUP BY loan_id) as approval_subquery'),
-                'customer_loan.idCustomer_Loan', '=', 'approval_subquery.loan_id')
+                'customer_loan.idCustomer_Loan',
+                '=',
+                'approval_subquery.loan_id'
+            )
             ->where('customer_loan.Status', '=', $status)
             ->whereNotNull('approval_subquery.loan_id');
-        
+
         // For status -3 (awaiting head office), all internal approvals are done
         if ($status == '-3') {
             $loanQuery->whereRaw('COALESCE(approval_subquery.pending_approvals, 0) = 0');
@@ -91,19 +99,19 @@ class PendingLoanController extends Controller
             // For other statuses, show only loans with pending approvals
             $loanQuery->where('approval_subquery.pending_approvals', '>', 0);
         }
-        
+
         $loanQuery = $loanQuery->select(
-                'customer_loan.*',
-                'loan_category.Name as loan_name',
-                'customer.*',
-                DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
-                DB::raw('IFNULL(center.No, "-") as center_no'),
-                DB::raw('IFNULL(route.name, "-") as route_name'),
-                'u1.Full_Name as user_name',
-                'u2.Full_Name as lending_officer',
-                DB::raw('IFNULL(approval_subquery.approval_count, 0) as approval_count'),
-                DB::raw('IFNULL(approval_subquery.pending_approvals, 0) as pending_approvals')
-            );
+            'customer_loan.*',
+            'loan_category.Name as loan_name',
+            'customer.*',
+            DB::raw('IFNULL(subquery.group_name, "-") as group_name'),
+            DB::raw('IFNULL(center.No, "-") as center_no'),
+            DB::raw('IFNULL(route.name, "-") as route_name'),
+            'u1.Full_Name as user_name',
+            'u2.Full_Name as lending_officer',
+            DB::raw('IFNULL(approval_subquery.approval_count, 0) as approval_count'),
+            DB::raw('IFNULL(approval_subquery.pending_approvals, 0) as pending_approvals')
+        );
 
 
         // Apply filters based on input values
@@ -184,7 +192,7 @@ class PendingLoanController extends Controller
                 }
 
                 if ($bank->Account_Balance < $customer_loan->Amount) {
-                    return response()->json(['error' => 'Bank Balance is not enough','id' => 0], 200);
+                    return response()->json(['error' => 'Bank Balance is not enough', 'id' => 0], 200);
                 }
             }
 
@@ -241,7 +249,7 @@ class PendingLoanController extends Controller
                 $bank_log_doc_comment = "Loan Number : {$customer_loan->Loan_No}\nLoan Amount : {$customer_loan->Amount}\n";
 
                 $bank_id = tableWithBranch('company_bank_accounts')
-                    ->where('Bank_Type','=','System_default_9')
+                    ->where('Bank_Type', '=', 'System_default_9')
                     ->first();
 
                 // doc charge: company_bank (-debit) / default_9 (+credit)
@@ -367,7 +375,6 @@ class PendingLoanController extends Controller
                         'created_by'          => $user_id,
                         'branch_id'           => $branchId,
                     ]);
-
                 } else {
                     // 2. No recovery account yet → create new one for this CUSTOMER
                     $recoveryAccountId = DB::table('recovery_account')->insertGetId([
@@ -398,7 +405,7 @@ class PendingLoanController extends Controller
                     ]);
                 }
             }
-// >>> RECOVERY END
+            // >>> RECOVERY END
 
 
 
@@ -417,7 +424,9 @@ class PendingLoanController extends Controller
                 $customer_loan->Interest_Amount,
                 $customer_loan->capital_balance,
                 $customer_loan->Balance_Amount + $panelty_balance,
-                '0',0,$recovery_balance_for_log
+                '0',
+                0,
+                $recovery_balance_for_log
             );
 
             // Send SMS
@@ -477,12 +486,10 @@ class PendingLoanController extends Controller
                     'id'      => 1,
                     $document_details
                 ], 200);
-
             } else {
                 // no row affected means loan didn't update / branch mismatch etc
                 return response()->json(['error' => 'User not found'], 404);
             }
-
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -497,17 +504,17 @@ class PendingLoanController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id,string $loan)
+    public function edit(string $id, string $loan)
     {
         $customers = tableWithBranch('customer')
             ->where('idCustomer', '=', $id)->first();
 
-        $getloan=tableWithBranch('customer_loan')->where('idCustomer_Loan', '=', $loan)->first();
+        $getloan = tableWithBranch('customer_loan')->where('idCustomer_Loan', '=', $loan)->first();
 
-        $category=tableWithBranch('loan_category')->where('idLoan_Category', '=', $getloan->Loan_Category_idLoan_Category)->get();
-        $installments=tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', '=', $loan)->get();
-        $witnesses=tableWithBranch('witness')->where('Customer_Loan_idCustomer_Loan', '=', $loan)->get();
-        return view('pages.Show_Loan', compact('category','customers','id','getloan','installments','witnesses'));
+        $category = tableWithBranch('loan_category')->where('idLoan_Category', '=', $getloan->Loan_Category_idLoan_Category)->get();
+        $installments = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', '=', $loan)->get();
+        $witnesses = tableWithBranch('witness')->where('Customer_Loan_idCustomer_Loan', '=', $loan)->get();
+        return view('pages.Show_Loan', compact('category', 'customers', 'id', 'getloan', 'installments', 'witnesses'));
     }
 
     /**
@@ -521,11 +528,11 @@ class PendingLoanController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id,Request $request)
+    public function destroy(string $id, Request $request)
     {
         // Get loan details for approval request
         $customer_loan = tableWithBranch('customer_loan')
-            ->where('idCustomer_Loan','=',$id)
+            ->where('idCustomer_Loan', '=', $id)
             ->first();
 
         if (!$customer_loan) {
@@ -555,10 +562,10 @@ class PendingLoanController extends Controller
             'category_name' => $loan_category->Name ?? 'N/A',
         ];
 
-        $description = 'Loan Rejection: ' . $customer->First_Name . ' ' . $customer->Last_Name . 
-                       ' | Loan No: ' . $customer_loan->Loan_No . 
-                       ' | Amount: ' . $customer_loan->Amount . 
-                       ' | Reason: ' . $request->reason_for_dlt;
+        $description = 'Loan Rejection: ' . $customer->First_Name . ' ' . $customer->Last_Name .
+            ' | Loan No: ' . $customer_loan->Loan_No .
+            ' | Amount: ' . $customer_loan->Amount .
+            ' | Reason: ' . $request->reason_for_dlt;
 
         // Create approval request
         DB::table('approval_request')->insert([
@@ -566,7 +573,7 @@ class PendingLoanController extends Controller
             'typeid' => 402,
             'description' => $description,
             'data' => json_encode($requestData),
-            'userid' => session('userid'),
+            'userid' => session('user_data')["idUser"],
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0
@@ -579,12 +586,13 @@ class PendingLoanController extends Controller
     }
 
 
-    public function check_the_document(string $id){
+    public function check_the_document(string $id)
+    {
 
-        $customer_loan_doc=tableWithBranch('documents')
+        $customer_loan_doc = tableWithBranch('documents')
             ->where('Customer_Loan_idCustomer_Loan', '=', $id)
             ->get();
-        return response()->json(['item' => $customer_loan_doc],200);
+        return response()->json(['item' => $customer_loan_doc], 200);
     }
 
     public function check_the_approval(string $id)
@@ -620,11 +628,11 @@ class PendingLoanController extends Controller
         $shouldUpdate = $categoryUpdatedAt->diffInSeconds($now) <= $thresholdInSeconds;
 
 
-        if ($customer_loan->Status=="-1" && $shouldUpdate) {
+        if ($customer_loan->Status == "-1" && $shouldUpdate) {
             DB::table('loan_has_approval')->where('loan_id', $id)->delete();
             DB::table('loan_has_approval_checklist')->where('loan_id', $id)->delete();
-            $get_level=tableWithBranch('level')->where('product_id','=',$customer_loan->Loan_Category_idLoan_Category)->get();
-            foreach ($get_level as $item){
+            $get_level = tableWithBranch('level')->where('product_id', '=', $customer_loan->Loan_Category_idLoan_Category)->get();
+            foreach ($get_level as $item) {
                 // Prepare data for the loan approval
                 $loanApprovalData = [
                     'loan_id' => $id,
@@ -636,11 +644,11 @@ class PendingLoanController extends Controller
                     'date' => '-',
                 ];
 
-// Insert the loan approval data with branch scoping
+                // Insert the loan approval data with branch scoping
                 insertWithBranch('loan_has_approval', $loanApprovalData);
 
-                $checklist=tableWithBranch('approval_checklist')->where('level_id','=',$item->id)->get();
-                foreach ($checklist as $check_item){
+                $checklist = tableWithBranch('approval_checklist')->where('level_id', '=', $item->id)->get();
+                foreach ($checklist as $check_item) {
                     $loanChecklistData = [
                         'loan_id' => $id,
                         'level' => $item->id,
@@ -673,7 +681,8 @@ class PendingLoanController extends Controller
 
 
 
-    public function approve_loan(Request $request){
+    public function approve_loan(Request $request)
+    {
         $user_id = (int)session('userid');
 
         $affected = DB::table('loan_has_approval')
@@ -702,49 +711,49 @@ class PendingLoanController extends Controller
 
         if ($allApproved) {
             $loan_id = $request->loan_id;
-            
+
             $customer_loan = tableWithBranch('customer_loan')
                 ->where('idCustomer_Loan', '=', $loan_id)
                 ->first();
-            
+
             if ($customer_loan) {
                 $customer = tableWithBranch('customer')
                     ->where('idCustomer', '=', $customer_loan->Customer_idCustomer)
                     ->first();
-                
+
                 $loan_category = tableWithBranch('loan_category')
                     ->where('idLoan_Category', '=', $customer_loan->Loan_Category_idLoan_Category)
                     ->first();
-                
+
                 $requestData = [
                     'loan_id' => $loan_id,
                     'customer_id' => $customer_loan->Customer_idCustomer,
                     'loan_no' => $customer_loan->Loan_No,
                     'amount' => $customer_loan->Amount,
                 ];
-                
-                $description = 'Loan Approval: ' . $customer->First_Name . ' ' . $customer->Last_Name . 
-                               ' | Loan No: ' . $customer_loan->Loan_No . 
-                               ' | Amount: ' . $customer_loan->Amount .
-                               ' | Category: ' . $loan_category->Name;
-                
+
+                $description = 'Loan Approval: ' . $customer->First_Name . ' ' . $customer->Last_Name .
+                    ' | Loan No: ' . $customer_loan->Loan_No .
+                    ' | Amount: ' . $customer_loan->Amount .
+                    ' | Category: ' . $loan_category->Name;
+
                 DB::table('approval_request')->insert([
                     'type' => 'Loan Approval',
                     'typeid' => 401,
                     'description' => $description,
                     'data' => json_encode($requestData),
-                    'userid' => session('userid'),
+                    'userid' => session('user_data')["idUser"],
                     'branch_id' => session('branch_id'),
                     'data_time' => now(),
                     'status' => 0
                 ]);
-                
+
                 DB::table('customer_loan')
                     ->where('idCustomer_Loan', $loan_id)
                     ->where('branch_id', session('branch_id'))
                     ->update(['Status' => '-3']);
             }
-            
+
             return response()->json([
                 'item'     => $affected,
                 'redirect' => false,
@@ -752,7 +761,7 @@ class PendingLoanController extends Controller
             ], 200);
         }
 
-        return response()->json(['item' => $affected, 'redirect' => false],200);
+        return response()->json(['item' => $affected, 'redirect' => false], 200);
     }
 
 
@@ -762,9 +771,9 @@ class PendingLoanController extends Controller
     {
         $user_id = (int)session('userid');
         $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
-        $collector=0;
-        $cashier=0;
-        if ($collector_val){
+        $collector = 0;
+        $cashier = 0;
+        if ($collector_val) {
             $collector = $collector_val->collector;
             $cashier = $collector_val->cashier;
         }
@@ -773,17 +782,17 @@ class PendingLoanController extends Controller
         $group = tableWithBranch('customer_group')->get();
         $loan_category = tableWithBranch('loan_category')->get();
         $customers = tableWithBranch('customer')->get();
-        $bank = tableWithBranch('company_bank_accounts')->where('Bank_Type','=','Bank')->where('status','=','1')->get();
-        if ($collector == 1 || $cashier==1) {
+        $bank = tableWithBranch('company_bank_accounts')->where('Bank_Type', '=', 'Bank')->where('status', '=', '1')->get();
+        if ($collector == 1 || $cashier == 1) {
             $bank = DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $user_id)->where('status', '=', '1')->get();
         }
         $documents = tableWithBranch('documents')->get();
-        $route = tableWithBranch('route','route')
+        $route = tableWithBranch('route', 'route')
             ->join('user', 'route.id_officer', '=', 'user.id')
             ->get();
         $center = tableWithBranch('center')->get();
 
-        return view('pages.DisbursementLoan', compact('route','center','group', 'loan_category', 'customers','bank','documents'));
+        return view('pages.DisbursementLoan', compact('route', 'center', 'group', 'loan_category', 'customers', 'bank', 'documents'));
     }
 
     public function create_disbursement(Request $request)
@@ -932,9 +941,9 @@ class PendingLoanController extends Controller
 
     public function portfolio_performance()
     {
-        $branch = DB::table('branch')->where('status','=','1')->get();
-        $branch_access=session('branch_access');
-        return view('pages.PortfolioPerformance', compact('branch','branch_access'));
+        $branch = DB::table('branch')->where('status', '=', '1')->get();
+        $branch_access = session('branch_access');
+        return view('pages.PortfolioPerformance', compact('branch', 'branch_access'));
     }
 
     public function getRoutesCenters(Request $request)
@@ -1007,10 +1016,14 @@ class PendingLoanController extends Controller
         // 📌 1️⃣ Center-wise Summary Query (without Loan_Log)
         $centerSummaryQuery = DB::table('customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
-            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
+            ->leftJoin(
+                DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
             FROM group_has_customer 
             LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
-                'customer.idCustomer', '=', 'subquery.cus_id')
+                'customer.idCustomer',
+                '=',
+                'subquery.cus_id'
+            )
             ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
             ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
             ->join('branch', 'customer_loan.branch_id', '=', 'branch.branch_id')
@@ -1023,8 +1036,12 @@ class PendingLoanController extends Controller
             ->leftJoinSub($extra_charger_subquery, 'extra_charger', function ($join) {
                 $join->on('customer_loan.idCustomer_Loan', '=', 'extra_charger.loan_id');
             })
-            ->leftJoin(DB::raw('(SELECT Customer_idCustomer, COUNT(*) as loan_count FROM customer_loan GROUP BY Customer_idCustomer) as loan_count_table'),
-                'customer_loan.Customer_idCustomer', '=', 'loan_count_table.Customer_idCustomer')
+            ->leftJoin(
+                DB::raw('(SELECT Customer_idCustomer, COUNT(*) as loan_count FROM customer_loan GROUP BY Customer_idCustomer) as loan_count_table'),
+                'customer_loan.Customer_idCustomer',
+                '=',
+                'loan_count_table.Customer_idCustomer'
+            )
             ->select(
                 'center.Name as center_name',
                 'branch.Name as branch_name',
@@ -1060,10 +1077,14 @@ class PendingLoanController extends Controller
         // 📌 2️⃣ Loan-wise Details Query (also without Loan_Log)
         $loanDetailsQuery = DB::table('customer_loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
-            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
+            ->leftJoin(
+                DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
             FROM group_has_customer 
             LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
-                'customer.idCustomer', '=', 'subquery.cus_id')
+                'customer.idCustomer',
+                '=',
+                'subquery.cus_id'
+            )
             ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
             ->leftJoin('route', 'customer.route_id', '=', 'route.id_route')
             ->join('branch', 'customer_loan.branch_id', '=', 'branch.branch_id')
@@ -1124,7 +1145,6 @@ class PendingLoanController extends Controller
             if ($paid_type === "2" && floatval($loan->collected_repayments) <= 0) {
                 continue; // Paid: skip unpaid
             }
-
         }
 
         $finalData = [];
@@ -1177,8 +1197,8 @@ class PendingLoanController extends Controller
 
     public function report_disbursement()
     {
-        $branch_access=session('branch_access');
-        return view('pages.DisbursmentPerformanceReport',compact('branch_access')); // assuming this is your blade file
+        $branch_access = session('branch_access');
+        return view('pages.DisbursmentPerformanceReport', compact('branch_access')); // assuming this is your blade file
     }
 
     public function getFilters_disbursement()
@@ -1200,10 +1220,14 @@ class PendingLoanController extends Controller
     {
         $query = DB::table('customer_loan as cl')
             ->join('customer', 'cl.Customer_idCustomer', '=', 'customer.idCustomer')
-            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
+            ->leftJoin(
+                DB::raw('(SELECT group_has_customer.cus_id, customer_group.Name as group_name, customer_group.center_id 
             FROM group_has_customer 
             LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
-                'customer.idCustomer', '=', 'subquery.cus_id')
+                'customer.idCustomer',
+                '=',
+                'subquery.cus_id'
+            )
             ->leftJoin('center', 'subquery.center_id', '=', 'center.idCenter')
             ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
@@ -1318,7 +1342,7 @@ class PendingLoanController extends Controller
                 'Total_Loan_Amount' => number_format($loan->Total_Loan_Amount, 2),
                 'Total_Other_Amount' => number_format($loan->Total_Other_Amount, 2),
                 'capital_balance' => number_format($loan->capital_balance, 2),
-                'Other_Amount_Balance' => number_format($loan->Interest_Amount-$loan->installment_balance, 2),
+                'Other_Amount_Balance' => number_format($loan->Interest_Amount - $loan->installment_balance, 2),
                 'Balance_Amount' => number_format($loan->Balance_Amount, 2),
                 'Status' => $loan->Status,
                 'cus_number' => $loan->cus_number,
@@ -1344,12 +1368,12 @@ class PendingLoanController extends Controller
 
         $loanId   = (int) $request->loan_id;
         $branchId = (int) session('branch_id');
-        $userId   = (int) session('userid');
+        $userId   = (int)session('user_data')["idUser"];
         $mode     = $request->mode;
 
         if ($mode === 'password') {
             // Verify admin password of the current user (or any admin policy you have)
-            $user = DB::table('user')->where('id', $userId)->where('Designation','=','Admin')->first();
+            $user = DB::table('user')->where('id', $userId)->where('Designation', '=', 'Admin')->first();
             if (!$user || !Hash::check($request->admin_password ?? '', $user->password)) {
                 return response()->json(['error' => 'Invalid admin password.'], 403);
             }
@@ -1360,7 +1384,6 @@ class PendingLoanController extends Controller
                 return response()->json(['message' => 'Loan delete failed', 'error' => $msg], 500);
             }
             return response()->json(['message' => 'Loan deleted successfully. Disbursement reversed, data archived.', 'audit_id' => $payload['audit_id'] ?? null], 200);
-
         } else {
             // Create centralized approval request (Type 402)
             $loan = tableWithBranch('customer_loan')->where('idCustomer_Loan', $loanId)->first();
@@ -1380,10 +1403,10 @@ class PendingLoanController extends Controller
                 'category_name' => $product->Name ?? 'N/A',
             ];
 
-            $description = 'Loan Rejection: ' . trim(($customer->First_Name ?? '') . ' ' . ($customer->Last_Name ?? '')) . 
-                           ' | Loan No: ' . $loan->Loan_No . 
-                           ' | Amount: ' . $loan->Amount . 
-                           ' | Product: ' . ($product->Name ?? 'N/A');
+            $description = 'Loan Rejection: ' . trim(($customer->First_Name ?? '') . ' ' . ($customer->Last_Name ?? '')) .
+                ' | Loan No: ' . $loan->Loan_No .
+                ' | Amount: ' . $loan->Amount .
+                ' | Product: ' . ($product->Name ?? 'N/A');
 
             // Create approval request in centralized table
             $reqId = DB::table('approval_request')->insertGetId([
@@ -1408,7 +1431,7 @@ class PendingLoanController extends Controller
             'request_id' => 'required|integer'
         ]);
 
-        $approverId = (int) session('userid');
+        $approverId = (int)session('user_data')["idUser"];
         $branchId   = (int) session('branch_id');
 
         $req = DB::table('loan_delete_requests')->where('id', $request->request_id)->first();
@@ -1444,7 +1467,7 @@ class PendingLoanController extends Controller
             ->orderByDesc('idCustomer_Payments')
             ->get();
 
-// Keep a snapshot of all payment rows BEFORE undo
+        // Keep a snapshot of all payment rows BEFORE undo
         $paymentsBeforeUndo = $eligiblePayments->map(function ($p) {
             return (array)$p;
         })->values();
@@ -1473,13 +1496,15 @@ class PendingLoanController extends Controller
             }
         }
 
-// After all undos, fetch what those rows look like NOW (status/amount changed)
+        // After all undos, fetch what those rows look like NOW (status/amount changed)
         $paymentsAfterUndo = [];
         if ($undonePaymentIds) {
             $paymentsAfterUndo = DB::table('customer_payments')
                 ->whereIn('idCustomer_Payments', $undonePaymentIds)
                 ->get()
-                ->map(function ($p) { return (array)$p; })
+                ->map(function ($p) {
+                    return (array)$p;
+                })
                 ->values();
         }
 
@@ -1534,7 +1559,7 @@ class PendingLoanController extends Controller
 
             $isCancelledLoan = $loan->Status;
             Log::info($isCancelledLoan);
-            if ($isCancelledLoan!=-1){
+            if ($isCancelledLoan != -1) {
                 if ($companyBankId && $default1) {
                     $comment = "REVERSAL of Issue Loan\nLoan Number : {$loan->Loan_No}\nLoan Amount : {$loan->Amount}\n";
 
@@ -1575,7 +1600,7 @@ class PendingLoanController extends Controller
                         $exp->reason     = $reason;
                         $exp->date       = date('Y-m-d');
                         $exp->amount     = $sumOther;
-                        $exp->category_id= optional(tableWithBranch('income_category')->where('description','Other')->first())->id;
+                        $exp->category_id = optional(tableWithBranch('income_category')->where('description', 'Other')->first())->id;
                         $exp->bank_id    = 1;
                         $exp->user_id    = $actorUserId;
                         $exp->branch_id  = $branchId;
@@ -1619,7 +1644,7 @@ class PendingLoanController extends Controller
                 'deleted_by'       => $actorUserId,
                 'deleted_at'       => now(),
                 'loan_snapshot'    => json_encode($loan, JSON_UNESCAPED_UNICODE),
-                'related_snapshots'=> json_encode([
+                'related_snapshots' => json_encode([
                     'installments'                 => $installments,
                     'loan_other_charges'           => $loanOtherCharges,
                     'witnesses'                    => $witnesses,
@@ -1640,7 +1665,7 @@ class PendingLoanController extends Controller
                     'default9_bank_id'     => optional($default9)->Idbank,
                     'sum_other_charges'    => (float) $sumOther,
                     'undone_payment_ids'   => $undonePaymentIds,             // << added
-                    'undone_payments_count'=> count($undonePaymentIds),      // << added
+                    'undone_payments_count' => count($undonePaymentIds),      // << added
                     'payments_undo_reason' => $undoReason,                   // << added
                 ], JSON_UNESCAPED_UNICODE),
             ]);
@@ -1662,7 +1687,6 @@ class PendingLoanController extends Controller
 
             DB::commit();
             return [true, null, ['audit_id' => $auditId]];
-
         } catch (\Throwable $e) {
             Log::info($e);
             DB::rollBack();
@@ -1689,13 +1713,14 @@ class PendingLoanController extends Controller
                 'r.*',
                 'l.Loan_No',
                 'l.Amount',
-                'c.First_Name', 'c.Last_Name',
+                'c.First_Name',
+                'c.Last_Name',
                 DB::raw("u1.Full_Name as requester_name"),
                 DB::raw("u2.Full_Name as approver_name")
             )
             ->where('r.branch_id', $branchId);
 
-        if (in_array($status, ['PENDING','APPROVED','REJECTED'])) {
+        if (in_array($status, ['PENDING', 'APPROVED', 'REJECTED'])) {
             $q->where('r.status', $status);
         }
 
@@ -1740,7 +1765,7 @@ class PendingLoanController extends Controller
                     if ((empty($r->First_Name) && empty($r->Last_Name)) && empty($r->ctx_customer_name)) {
                         $cust = $related['customer'] ?? [];
                         $r->snap_customer_no    = $cust['cus_number'] ?? null;
-                        $r->snap_customer_name  = trim(($cust['First_Name'] ?? '').' '.($cust['Last_Name'] ?? '')) ?: null;
+                        $r->snap_customer_name  = trim(($cust['First_Name'] ?? '') . ' ' . ($cust['Last_Name'] ?? '')) ?: null;
                         $r->snap_customer_phone = $cust['Contact_No'] ?? ($cust['Gua_contact'] ?? null);
                     }
 
@@ -1787,7 +1812,7 @@ class PendingLoanController extends Controller
             ->where('branch_id', $branchId)
             ->first();
 
-        return view('pages.loan_delete_requests', compact('requests','counts','status','search'));
+        return view('pages.loan_delete_requests', compact('requests', 'counts', 'status', 'search'));
     }
 
 
@@ -1803,16 +1828,10 @@ class PendingLoanController extends Controller
 
         DB::table('loan_delete_requests')->where('id', $req->id)->update([
             'status'      => 'REJECTED',
-            'approved_by' => (int) session('userid'),
+            'approved_by' => (int)session('user_data')["idUser"],
             'approved_at' => now(),
         ]);
 
         return response()->json(['message' => 'Request rejected.'], 200);
     }
-
-
-
-
-
-
 }

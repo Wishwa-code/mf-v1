@@ -39,7 +39,7 @@ class CommissionController extends Controller
             ? (int) $request->branch_id
             : $sessionBranch;
 
-        $uid = auth()->id();
+        $uid = session('user_data')["idUser"];
 
         try {
             DB::beginTransaction();
@@ -109,7 +109,6 @@ class CommissionController extends Controller
                 'bank_account_id' => $bankAccountId,
                 'account_no' => $accountCode
             ]);
-
         } catch (\Throwable $e) {
             DB::rollBack();
             return response()->json([
@@ -128,7 +127,7 @@ class CommissionController extends Controller
         $branch_id = (int) $request->branch_id;
         $rates     = $request->rates ?? [];
 
-        $uid = auth()->id()
+        $uid = session('user_data')["idUser"]
             ?? session('user_id')
             ?? session('id')
             ?? session('idUser')
@@ -215,7 +214,6 @@ class CommissionController extends Controller
                 'saved_count' => $saved,
                 'invalid' => $invalid,
             ], 200);
-
         } catch (\Throwable $e) {
             DB::rollBack();
             return response()->json(['message' => 'save failed', 'error' => $e->getMessage()], 500);
@@ -311,7 +309,7 @@ class CommissionController extends Controller
      */
     private function ensureCollectorCommissionAccounts(int $branchId): array
     {
-        $uid = auth()->id() ?? session('user_id') ?? session('id') ?? session('idUser') ?? 1; // fallback 1 if needed
+        $uid = session('user_data')["idUser"] ?? session('user_id') ?? session('id') ?? session('idUser') ?? 1; // fallback 1 if needed
 
 
         $collectors = DB::table('user')
@@ -391,7 +389,7 @@ class CommissionController extends Controller
 
     private function ensureDefaultCommissionRates(int $branchId): array
     {
-        $uid = auth()->id() ?? session('user_id') ?? session('id') ?? session('idUser') ?? 1;
+        $uid = session('user_data')["idUser"] ?? session('user_id') ?? session('id') ?? session('idUser') ?? 1;
 
         // active products
         $products = DB::table('loan_category')
@@ -437,6 +435,4 @@ class CommissionController extends Controller
             'default_rates_created' => $created
         ];
     }
-
-
 }
