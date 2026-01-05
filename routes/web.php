@@ -8,6 +8,7 @@ use App\Http\Controllers\CashFlowController;
 use App\Http\Controllers\CashierController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\LiveLankaPayController;
+use App\Http\Controllers\GroupController;
 use App\Http\Controllers\LoanCategoryController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\PDFController;
@@ -73,6 +74,7 @@ Route::middleware(['auth.central'])->group(function () {
     Route::get('/privileges', function () {
         return view('pages.Privilages');
     });
+
     Route::post('/privileges', [UserController::class, 'privileges'])->name('privileges.save');
     Route::get('/privileges/load/{id}', [UserController::class, 'showprivileges'])->name('privileges.load');
 
@@ -93,58 +95,66 @@ Route::middleware(['auth.central'])->group(function () {
     Route::post('/update-designation', '\App\Http\Controllers\UserController@updatedesignation')->name('privileges.updatedesignation');
     Route::post('/designation/delete', '\App\Http\Controllers\UserController@deleteDesignation')->name('designation.delete');
 
+    //company
+    Route::get('/company', '\App\Http\Controllers\CompanyController@index')->name('company.index')->middleware('privilege:MY_ACCOUNT');
+    Route::post('/company-profile', '\App\Http\Controllers\CompanyController@store')->name('company.store');
+    Route::get('/company/branches-proxy', '\App\Http\Controllers\CompanyController@getBranchesProxy')->name('company.branches_proxy');
+
+
+
+
+
+
+
 
     //Group
-
-    Route::get('/customergroupassign', '\App\Http\Controllers\GroupController@assign_group')->name('customergroupassign');
-    Route::get('/customergroup', '\App\Http\Controllers\GroupController@load_group')->name('customergroup.load_group');
-    Route::get('/viewgroups', '\App\Http\Controllers\GroupController@index')->name('customergroup');
-    Route::post('/customergroup', '\App\Http\Controllers\GroupController@store')->name('customergroup.store');
-    Route::post('/group/update', '\App\Http\Controllers\GroupController@update')->name('center.update');
-    Route::get('/group/delete/{id}', '\App\Http\Controllers\GroupController@destroy')->name('center.destroy');
-    Route::post('/assigngrouomember', '\App\Http\Controllers\GroupController@assigngrouomember')->name('getcustomergroup.assigngrouomember');
-    Route::get('/load_group/{id}', '\App\Http\Controllers\GroupController@load_group_details')->name('load_group_details');
-    Route::post('/get_customer_details', '\App\Http\Controllers\GroupController@getCustomerDetails')->name('getCustomerDetails');
-    Route::post('/remove_customer_from_group', '\App\Http\Controllers\GroupController@removeCustomerFromGroup')->name('removeCustomerFromGroup');
+    Route::controller(GroupController::class)->group(function () {
+        Route::get('/customergroupassign', 'assign_group')->name('customergroupassign');
+        Route::get('/customergroup', 'load_group')->name('customergroup.load_group');
+        Route::get('/viewgroups', 'index')->name('customergroup');
+        Route::post('/customergroup', 'store')->name('customergroup.store');
+        Route::post('/group/update', 'update')->name('center.update');
+        Route::get('/group/delete/{id}', 'destroy')->name('center.destroy');
+        Route::post('/assigngrouomember', 'assigngrouomember')->name('getcustomergroup.assigngrouomember');
+        Route::get('/load_group/{id}', 'load_group_details')->name('load_group_details');
+        Route::post('/get_customer_details', 'getCustomerDetails')->name('getCustomerDetails');
+        Route::post('/remove_customer_from_group', 'removeCustomerFromGroup')->name('removeCustomerFromGroup');
+    });
 
     //customer
-    Route::get('/customers', '\App\Http\Controllers\CustomerController@load')->name('customers.load');
-    Route::post('/customers/status', '\App\Http\Controllers\CustomerController@change_status')->name('customers.change_status');
-    Route::get('/viewcustomer', '\App\Http\Controllers\CustomerController@edit')->name('customers.edit');
-    Route::post('/customers', '\App\Http\Controllers\CustomerController@store')->name('customers.store');
-    Route::post('/update-customer', '\App\Http\Controllers\CustomerController@updateCustomer')->name('customers.updateCustomer');
-    Route::post('/update-customer-location', '\App\Http\Controllers\CustomerController@updateCustomerLocation')->name('customers.updateCustomerLocation');
-    Route::get('/customers/{id}', '\App\Http\Controllers\CustomerController@index')->name('customers.index');
-    Route::post('/savecustomerdocument', '\App\Http\Controllers\CustomerController@create')->name('customers.create');
-    Route::get('/customerdoc/{id}', '\App\Http\Controllers\CustomerController@show')->name('customers.show');
-    Route::get('/cusdocument/delete/{id}', '\App\Http\Controllers\CustomerController@destroy')->name('customers.destroy');
-    Route::get('/showcustomers', '\App\Http\Controllers\CustomerController@edit')->name('customersdetails.edit');
-    Route::post('/save-files-customer', 'App\Http\Controllers\CustomerController@saveFiles')->name('customers.files');
-    Route::get('/load_customers/{id}', '\App\Http\Controllers\CustomerController@load_customers')->name('customers.load_customers');
-    Route::get('/load_individual_customer', '\App\Http\Controllers\CustomerController@load_individual_customer')->name('customers.load_individual_customer');
-    Route::get('/customer_road_map/{id}', '\App\Http\Controllers\CustomerController@customer_road_map')->name('customers.customer_road_map');
-    Route::get('/showcustomerssaving', '\App\Http\Controllers\CustomerController@edit_saving')->name('customers.edit_saving');
+    Route::controller(CustomerController::class)->group(function () {
+        Route::get('/customers', 'load')->name('customers.load');
+        Route::post('/customers/status', 'change_status')->name('customers.change_status');
+        Route::get('/viewcustomer', 'edit')->name('customers.edit');
+        Route::post('/customers', 'store')->name('customers.store');
+        Route::post('/update-customer', 'updateCustomer')->name('customers.updateCustomer');
+        Route::post('/update-customer-location', 'updateCustomerLocation')->name('customers.updateCustomerLocation');
+        Route::get('/customers/{id}', 'index')->name('customers.index');
+        Route::post('/savecustomerdocument', 'create')->name('customers.create');
+        Route::get('/customerdoc/{id}', 'show')->name('customers.show');
+        Route::get('/cusdocument/delete/{id}', 'destroy')->name('customers.destroy');
+        Route::get('/showcustomers', 'edit')->name('customersdetails.edit');
+        Route::post('/save-files-customer', 'saveFiles')->name('customers.files');
+        Route::get('/load_customers/{id}', 'load_customers')->name('customers.load_customers');
+        Route::get('/load_individual_customer', 'load_individual_customer')->name('customers.load_individual_customer');
+        Route::get('/customer_road_map/{id}', 'customer_road_map')->name('customers.customer_road_map');
+        Route::post('/customers/preview-number', 'previewCustomerNumber')->name('customers.preview_number');
+        Route::get('/get-document-types', 'getDocumentTypes')->name('customers.get_document_types');
+        Route::get('/showcustomerssaving', 'edit_saving')->name('customers.edit_saving');
 
-    Route::get('/showcustomersrecovery', '\App\Http\Controllers\CustomerController@recovery')->name('customers.recovery');
-    Route::get('/recovery-account/logs/{id}', '\App\Http\Controllers\CustomerController@logs')->name('customers.logs');
+        Route::get('/showcustomersrecovery', 'recovery')->name('customers.recovery');
+        Route::get('/recovery-account/logs/{id}', 'logs')->name('customers.logs');
 
-    Route::get('/customer_saving/{id}', '\App\Http\Controllers\CustomerController@customer_saving')->name('customers.customer_saving');
-    Route::get('/get-account-transactions/{id}', '\App\Http\Controllers\CustomerController@get_account_transactions')->name('customers.get_account_transactions');
+        Route::get('/customer_saving/{id}', 'customer_saving')->name('customers.customer_saving');
+        Route::get('/get-account-transactions/{id}', 'get_account_transactions')->name('customers.get_account_transactions');
 
+        Route::post('/customer/upload-photo', 'uploadPhoto')->name('customer.uploadPhoto');
+        Route::get('/customer/export-excel', 'exportExcel')->name('customers.exportExcel');
 
-
-
-    Route::post('/customer/upload-photo', '\App\Http\Controllers\CustomerController@uploadPhoto')->name('customer.uploadPhoto');
-    Route::get('/customer/export-excel', [CustomerController::class, 'exportExcel'])
-        ->name('customers.exportExcel');
-
-
-    // Customer Locations Map
-    Route::get('/customer/map', [\App\Http\Controllers\CustomerController::class, 'mapView'])
-        ->name('customers.map');
-
-    Route::get('/customer/map-data', [\App\Http\Controllers\CustomerController::class, 'mapData'])
-        ->name('customers.mapData');
+        // Customer Locations Map
+        Route::get('/customer/map', 'mapView')->name('customers.map');
+        Route::get('/customer/map-data', 'mapData')->name('customers.mapData');
+    });
 
     Route::get('/leads/routes/{id}/officers', [\App\Http\Controllers\OnlineLeadController::class, 'getRecoveryOfficersByRoute'])->name('leads.getRouteOfficers');
     Route::get('/leads/global-map', [CustomerLeadController::class, 'globalMap'])->name('leads.globalMap');
@@ -433,11 +443,6 @@ Route::middleware(['auth.central'])->group(function () {
     Route::post('/backupdb', '\App\Http\Controllers\BackupController@runBackup')->name('backup.run');
 
 
-
-    //company
-    Route::get('/company', '\App\Http\Controllers\CompanyController@index')->name('company.index')->middleware('privilege:MY_ACCOUNT');
-    Route::post('/company-profile', '\App\Http\Controllers\CompanyController@store')->name('company.store');
-    Route::get('/company/branches-proxy', '\App\Http\Controllers\CompanyController@getBranchesProxy')->name('company.branches_proxy');
 
 
     //settings

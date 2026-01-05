@@ -153,6 +153,7 @@ function tableWithBranch($table, $useBranchIdFromTable = null)
     if (Schema::hasColumn($table, 'branch_id')) {
         return $query->where('branch_id', session('branch_id'));
     }
+
     // Fallback: no branch column, return unscoped query
     return $query;
 }

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Http\Controllers\SettingsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -111,186 +113,103 @@ class CustomerController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(\App\Http\Requests\StoreCustomerRequest $request)
     {
+        // Validation is handled by StoreCustomerRequest automatically
 
-        if (DB::table('customer')
-            ->Where('Nic', '=', $request->new_nic)
-            ->where('branch_id', '=', session('branch_id')) // Check within the same branch
-            ->exists()
-        ) {
-            return response()->json(['message' => 'This customer nic already exists!', 'id' => '0'], 200);
-        } else if (DB::table('customer')
-            ->where('cus_number', '=', $request->cus_number)
-            ->where('branch_id', '=', session('branch_id')) // Check within the same branch
-            ->exists()
-        ) {
-            return response()->json(['message' => 'This customer number already exists!', 'id' => '0'], 200);
-        } else if (DB::table('customer')
-            ->Where('Contact_No', '=', $request->contact_number)
-            ->where('branch_id', '=', session('branch_id')) // Check within the same branch
-            ->exists()
-        ) {
-            return response()->json(['message' => 'This customer contact number already exists!', 'id' => '0'], 200);
-        } else if (empty($request->root)) {
+        $data = [
+            'Title' => $request->title,
+            'Customer_Group_idCustomer_Group' => 1,
+            'cus_number' => $request->cus_number,
+            'First_Name' => $request->f_name,
+            'Last_Name' => $request->last_name,
+            'Email' => $request->email,
+            'Contact_No' => $request->contact_number,
+            'contact_number_2' => $request->contact_number_2,
+            'business_registration' => $request->business_registration,
+            'Nic' => $request->nic,
+            'Gender' => $request->gender,
+            'Dob' => $request->dob,
+            'Address' => $request->curr_address_01,
+            'Address_02' => $request->curr_address_02,
+            'Address_03' => $request->curr_address_03,
+            'Per_Address_01' => $request->per_address_01,
+            'Per_Address_02' => $request->per_address_02,
+            'Per_Address_03' => $request->per_address_03,
+            'City' => $request->city,
+            'State' => $request->state,
+            'Landline' => $request->landline,
+            'Note' => $request->note,
+            'Longitude' => $request->longitude,
+            'Latitude' => $request->latitude,
+            'Gua_title' => $request->gua_title,
+            'Gua_name' => $request->gua_name,
+            'Guardian_gender' => $request->guardian_gender,
+            'Gua_relation' => $request->gua_relation,
+            'Gua_occu' => $request->gua_occu,
+            'Gua_contact' => $request->gua_contact,
+            'Gua_address' => $request->gua_address_01 . ',' . $request->gua_address_02 . ',' . $request->gua_address_03,
+            'Gua_nic' => $request->gua_nic,
+            'Customer_Risk_Level' => $request->risk_level,
+            'civil_status' => $request->civil_status,
+            'occu_job_position' => $request->occu_job_position,
+            'occu_monthly_salary' => $request->occu_monthly_salary,
+            'occu_address_01' => $request->occu_address_01,
+            'occu_address_02' => $request->occu_address_02,
+            'occu_address_03' => $request->occu_address_03,
+            'occu_contact_no' => $request->occu_contact_no,
+            'occu_longitude' => $request->occu_longitude,
+            'occu_latitude' => $request->occu_latitude,
+            'route_id' => $request->root,
+            'branch_id' => session('branch_id'),
+        ];
 
-            return response()->json([
-                'message' => 'Root value is required!',
-                'id' => '0'
-            ], 200);
-        } else {
+        // Instantiate and fill customer model (without saving) to validate mass assignment/structure
+        $customer = new Customer($data);
 
-            // Instantiate a new Customer object
-            $customer = new Customer();
-            $customer->Title = $request->title;
-            $customer->Customer_Group_idCustomer_Group = 1;
+        // Handle file upload
+        if ($request->hasFile('cus_phto')) {
+            $file = $request->file('cus_phto');
+            $directory = 'documents';
 
-
-
-
-            // Set final customer number with branch prefix
-            $customer->cus_number =  $request->cus_number;
-            $customer->First_Name = $request->f_name;
-            $customer->Last_Name = $request->last_name;
-            $customer->Email = $request->email;
-            $customer->Contact_No = $request->contact_number;
-            $customer->contact_number_2 = $request->contact_number_2;
-            $customer->business_registration = $request->business_registration;
-            $customer->Nic = $request->nic;
-            $customer->Gender = $request->gender;
-            $customer->Dob = $request->dob;
-
-            $customer->Address = $request->curr_address_01;
-            $customer->Address_02 = $request->curr_address_02;
-            $customer->Address_03 = $request->curr_address_03;
-
-            $customer->Per_Address_01 = $request->per_address_01;
-            $customer->Per_Address_02 = $request->per_address_02;
-            $customer->Per_Address_03 = $request->per_address_03;
-
-
-            $customer->City = $request->city;
-            $customer->State = $request->state;
-            $customer->Landline = $request->landline;
-            $customer->Note = $request->note;
-            $customer->Longitude = $request->longitude;
-            $customer->Latitude = $request->latitude;
-            $customer->Gua_title = $request->gua_title;
-            $customer->Gua_name = $request->gua_name;
-            $customer->Guardian_gender = $request->guardian_gender;
-            $customer->Gua_relation = $request->gua_relation;
-            $customer->Gua_occu = $request->gua_occu;
-            $customer->Gua_contact = $request->gua_contact;
-
-            $customer->Gua_address = $request->gua_address_01 . ',' . $request->gua_address_02 . ',' . $request->gua_address_03;
-
-
-            $customer->Gua_nic = $request->gua_nic;
-            $customer->Customer_Risk_Level = $request->risk_level;
-            $customer->civil_status = $request->civil_status;
-
-
-            $customer->occu_job_position = $request->occu_job_position;
-            $customer->occu_monthly_salary = $request->occu_monthly_salary;
-            $customer->occu_address_01 = $request->occu_address_01;
-            $customer->occu_address_02 = $request->occu_address_02;
-            $customer->occu_address_03 = $request->occu_address_03;
-            $customer->occu_contact_no = $request->occu_contact_no;
-            $customer->occu_longitude = $request->occu_longitude;
-            $customer->occu_latitude = $request->occu_latitude;
-            $customer->route_id = $request->root;
-            $customer->branch_id = session('branch_id');
-
-
-
-            // Handle file upload
-            if ($request->hasFile('cus_phto')) {
-                $file = $request->file('cus_phto');
-                $directory = 'documents';
-
-                // Check if the directory exists on the public disk, create it if not
-                if (!Storage::disk('public')->exists($directory)) {
-                    Storage::disk('public')->makeDirectory($directory);
-                }
-
-                // Store the file on the public disk
-                $documentPath = Storage::disk('public')->putFile($directory, $file);
-                $customer->Cus_phto = $documentPath;
+            if (!Storage::disk('public')->exists($directory)) {
+                Storage::disk('public')->makeDirectory($directory);
             }
 
+            $documentPath = Storage::disk('public')->putFile($directory, $file);
+            $customer->Cus_phto = $documentPath;
+        }
+
+        // Prepare data for approval request
+        // Using $customer->toArray() extracts only the fillable attributes populated above
+        $customerData = $customer->toArray();
 
 
 
 
-            // Store customer data for approval instead of direct save
-            $customerData = [
-                'Title' => $customer->Title,
-                'Customer_Group_idCustomer_Group' => $customer->Customer_Group_idCustomer_Group,
-                'cus_number' => $customer->cus_number,
-                'First_Name' => $customer->First_Name,
-                'Last_Name' => $customer->Last_Name,
-                'Email' => $customer->Email,
-                'Contact_No' => $customer->Contact_No,
-                'contact_number_2' => $customer->contact_number_2,
-                'business_registration' => $customer->business_registration,
-                'Nic' => $customer->Nic,
-                'Gender' => $customer->Gender,
-                'Dob' => $customer->Dob,
-                'Address' => $customer->Address,
-                'Address_02' => $customer->Address_02,
-                'Address_03' => $customer->Address_03,
-                'Per_Address_01' => $customer->Per_Address_01,
-                'Per_Address_02' => $customer->Per_Address_02,
-                'Per_Address_03' => $customer->Per_Address_03,
-                'City' => $customer->City,
-                'State' => $customer->State,
-                'Landline' => $customer->Landline,
-                'Note' => $customer->Note,
-                'Longitude' => $customer->Longitude,
-                'Latitude' => $customer->Latitude,
-                'Gua_title' => $customer->Gua_title,
-                'Gua_name' => $customer->Gua_name,
-                'Guardian_gender' => $customer->Guardian_gender,
-                'Gua_relation' => $customer->Gua_relation,
-                'Gua_occu' => $customer->Gua_occu,
-                'Gua_contact' => $customer->Gua_contact,
-                'Gua_address' => $customer->Gua_address,
-                'Gua_nic' => $customer->Gua_nic,
-                'Customer_Risk_Level' => $customer->Customer_Risk_Level,
-                'civil_status' => $customer->civil_status,
-                'occu_job_position' => $customer->occu_job_position,
-                'occu_monthly_salary' => $customer->occu_monthly_salary,
-                'occu_address_01' => $customer->occu_address_01,
-                'occu_address_02' => $customer->occu_address_02,
-                'occu_address_03' => $customer->occu_address_03,
-                'occu_contact_no' => $customer->occu_contact_no,
-                'occu_longitude' => $customer->occu_longitude,
-                'occu_latitude' => $customer->occu_latitude,
-                'route_id' => $customer->route_id,
-                'branch_id' => $customer->branch_id,
-                'Cus_phto' => $customer->Cus_phto,
-            ];
+        $requestData = [
+            'customer_data' => $customerData,
+        ];
 
-            $requestData = [
-                'customer_data' => $customerData,
-            ];
+        // Create approval request
+        DB::table('approval_request')->insert([
+            'type' => 'Customer Creation',
+            'typeid' => 301,
+            'description' => 'Customer Creation: ' . $customer->First_Name . ' ' . $customer->Last_Name . ' (NIC: ' . $customer->Nic . ')',
+            'data' => json_encode($requestData),
+            'userid' => session('user_data')["idUser"],
+            'branch_id' => session('branch_id'),
+            'data_time' => now(),
+            'status' => 0
+        ]);
 
-            // Create approval request
-            DB::table('approval_request')->insert([
-                'type' => 'Customer Creation',
-                'typeid' => 301,
-                'description' => 'Customer Creation: ' . $customer->First_Name . ' ' . $customer->Last_Name . ' (NIC: ' . $customer->Nic . ')',
-                'data' => json_encode($requestData),
-                'userid' => session('user_data')["idUser"],
-                'branch_id' => session('branch_id'),
-                'data_time' => now(),
-                'status' => 0
-            ]);
+        return response()->json(['message' => 'Customer creation request sent for approval!', 'id' => '0'], 200);
 
-            return response()->json(['message' => 'Customer creation request sent for approval!', 'id' => '0'], 200);
-
-            // OLD CODE - keeping for approval handler reference
-            /*
+        // OLD CODE - keeping for approval handler reference
+        /*
             if ($customer->save()) {
                 $id = $customer->id;
                 $request = new Request([
@@ -334,7 +253,6 @@ class CustomerController extends Controller
                 return response()->json(['message' => 'Failed to save data'], 500);
             }
             */
-        }
     }
 
 
@@ -975,21 +893,6 @@ class CustomerController extends Controller
         ]);
 
         return response()->json(['message' => 'Customer update request sent for approval!'], 200);
-
-        // OLD CODE - keeping for approval handler reference
-        /*
-    updateWithBranch('customer', 'idCustomer', $request->id, $data);
-    customer_number($request->id);
-    $request = new Request([
-        'customer_id' =>  $request->id,
-        'description' => 'Customer Update',
-        'description_id' =>  $request->id,
-        'comment' => ' ',
-        'type' => 'Customer Update',
-    ]);
-    $this->customerLogController->store($request);
-    return response()->json(['message' => 'Customer updated successfully'], 200);
-    */
     }
 
     public function updateCustomerLocation(Request $request)
@@ -1022,7 +925,6 @@ class CustomerController extends Controller
         $center = tableWithBranch('center')->get();
         $company = tableWithBranch('company')->first();
         $route = tableWithBranch('route')->get();
-
         // Fetch the maximum customer ID
         $customer_max = tableWithBranch('customer')->max('idCustomer');
 
@@ -1032,7 +934,8 @@ class CustomerController extends Controller
         // Format the ID with leading zeros (e.g., ##0 -> 001, 010, 100, etc.)
         // Adjust the length as needed (e.g., 3 means the format will be "001")
         $formatted_customer_id = str_pad($customer_max, 3, '0', STR_PAD_LEFT);
-        return view('pages.Customer', compact('center', 'company', 'formatted_customer_id', 'route'));
+
+        return view('pages.Customers.Customer', compact('center', 'company', 'formatted_customer_id', 'route'));
     }
 
     public function saveFiles(Request $request)
@@ -1344,5 +1247,62 @@ class CustomerController extends Controller
             'collection_type'  => $customer->collection_type,
             'collection_date'  => $date, // '' when customizable
         ], 200);
+    }
+
+    public function previewCustomerNumber(Request $request)
+    {
+        $company = tableWithBranch('company')->first();
+
+        // Fetch the maximum customer ID for Auto_ID replacement
+        $customer_max = tableWithBranch('customer')->max('idCustomer');
+        $customer_max = $customer_max + 1;
+        $formatted_customer_id = str_pad($customer_max, 3, '0', STR_PAD_LEFT);
+
+        // Get the format string from company settings
+        $format = $company?->customer_format ?? '';
+
+        // Perform replacements (server-side version of the Blade logic)
+        $newnum = str_replace(
+            ['@Center_No@', '@Group_No@', '@Customize_No@', '@Auto_ID@', '@Branch_No@', '@Root@', '@Center_Cus_Count@'],
+            ['C000', 'G000', $request->input('custom_val', 'Customize No'), $formatted_customer_id, '@Branch_No@', '@Root@', 'CenterCustomerCount'],
+            $format
+        );
+
+        return response()->json(['formatted_number' => $newnum]);
+    }
+    /**
+     * Get document types from settings.
+     */
+    public function getDocumentTypes()
+    {
+        $docTypes = DB::table('app_settings')->where('key', 'document_types')->value('value');
+        if (!$docTypes) {
+            // Fallback default
+            return response()->json([
+                ['description' => 'NIC Copy'],
+                ['description' => 'Billing Proof'],
+                ['description' => 'Gramasewaka Certificate'],
+                ['description' => 'Other']
+            ]);
+        }
+
+        // Assuming the setting is a JSON string or comma separated
+        // If it's stored as JSON:
+        $decoded = json_decode($docTypes, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            // If it's a simple array of strings, map to objects
+            if (isset($decoded[0]) && is_string($decoded[0])) {
+                return response()->json(array_map(fn($t) => ['description' => $t], $decoded));
+            }
+            return response()->json($decoded);
+        }
+
+        // If it's comma separated
+        $types = explode(',', $docTypes);
+        $result = array_map(function ($type) {
+            return ['description' => trim($type)];
+        }, $types);
+
+        return response()->json($result);
     }
 }
