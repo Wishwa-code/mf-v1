@@ -696,19 +696,6 @@ class CustomerController extends Controller
         ]);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     public function blacklist()
     {
         $customers = tableWithBranch('customer', 'customer')
@@ -804,9 +791,6 @@ class CustomerController extends Controller
             'logs' => $logs
         ], 200);
     }
-
-
-
 
 
     public function customer_saving($id)

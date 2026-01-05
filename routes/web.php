@@ -437,12 +437,14 @@ Route::middleware(['auth.central'])->group(function () {
     //company
     Route::get('/company', '\App\Http\Controllers\CompanyController@index')->name('company.index')->middleware('privilege:MY_ACCOUNT');
     Route::post('/company-profile', '\App\Http\Controllers\CompanyController@store')->name('company.store');
+    Route::get('/company/branches-proxy', '\App\Http\Controllers\CompanyController@getBranchesProxy')->name('company.branches_proxy');
 
 
     //settings
     Route::get('/setting', [SettingsController::class, 'index'])->name('company.setting')->middleware('privilege:SETTINGS');
     Route::post('/shortcuts', [SettingsController::class, 'shortcuts'])->name('company.shortcuts')->middleware('privilege:SETTINGS');
     Route::get('/shortcuts/all', [SettingsController::class, 'show'])->name('company.show')->middleware('privilege:SETTINGS');
+    Route::post('/settings/number-formats', '\App\Http\Controllers\CompanyController@updateNumberFormats')->name('settings.number_formats')->middleware('privilege:SETTINGS');
 
     //Bank
     Route::get('/bank_account', '\App\Http\Controllers\BankController@index')->name('bank.index');

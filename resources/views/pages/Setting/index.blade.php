@@ -233,6 +233,9 @@
                     <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-commission">
                         <i class="fa-solid fa-percent"></i> Commission
                     </button>
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-number-formats">
+                        <i class="fa-solid fa-list-ol"></i> Number Formats
+                    </button>
                 </div>
             </nav>
         </div>
@@ -487,6 +490,87 @@
                                 <i class="fa-solid fa-floppy-disk me-1"></i> Update Restrictions
                             </button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- 7. Number Formats -->
+                <div class="tab-pane fade" id="tab-number-formats" role="tabpanel">
+                    <div class="glass-card p-4">
+                        <div class="section-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="section-title">Number Formatting</h2>
+                                <p class="section-desc">Customize how reference numbers are generated.</p>
+                            </div>
+                            <button id="btnSaveNumberFormats" class="btn btn-primary btn-sm">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Save Formats
+                            </button>
+                        </div>
+
+                        <form id="numberFormatsForm">
+                            <!-- Customer Number Format -->
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <h6 class="fw-bold text-danger mb-2">Customer Number Format</h6>
+                                            <select class="form-select" id="customer_format_selection">
+                                                <option value="Customize">Customize</option>
+                                                <option value="Format">Format</option>
+                                            </select>
+                                            <input type="hidden" id="customer_format_scope" name="customer_format_scope" value="">
+                                        </div>
+                                    </div>
+                                    <div id="format_section_customer" class="mt-3"></div>
+                                </div>
+                            </div>
+
+                            <!-- Loan Number Format -->
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <h6 class="fw-bold text-danger mb-2">Loan Number Format</h6>
+                                            <select class="form-select" id="loan_format_selection">
+                                                <option value="Customize">Auto</option>
+                                                <option value="Format">Format</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div id="format_section_loan" class="mt-3"></div>
+                                </div>
+                            </div>
+
+                            <!-- Inv Loan Number Format -->
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <h6 class="fw-bold text-danger mb-2">Inv Loan Number Format</h6>
+                                            <select class="form-select" id="inv_loan_format_selection">
+                                                <option value="Customize">Auto</option>
+                                                <option value="Format">Format</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div id="format_section_inv_loan" class="mt-3"></div>
+                                </div>
+                            </div>
+
+                            <!-- Saving Account Format -->
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <h6 class="fw-bold text-danger mb-2">Saving Account Format</h6>
+                                            <select class="form-select" id="saving_selection">
+                                                <option value="Format">Format</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div id="format_section_saving" class="mt-3"></div>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
 
@@ -1209,7 +1293,9 @@
     function fetchSettings() {
         $.get("{{ route('settings.all') }}", function(res) {
             APP_SETTINGS = res.items;
+            COMPANY_DATA = res.company || {};
             applySettingsToUI();
+            if (typeof applyNumberFormatsToUI === 'function') applyNumberFormatsToUI();
         });
     }
 
@@ -1587,6 +1673,358 @@
     // Bind Commission Branch Change
     $(document).ready(function() {
         $("#commission_branch").on("change", loadCommissionData);
+    });
+
+    // Number Formats Logic
+    let COMPANY_DATA = {};
+
+    function applyNumberFormatsToUI() {
+        if (COMPANY_DATA.customer_num_type) {
+            $('#customer_format_selection').val(COMPANY_DATA.customer_num_type).trigger('change');
+        }
+        if (COMPANY_DATA.loan_num_type) {
+            $('#loan_format_selection').val(COMPANY_DATA.loan_num_type).trigger('change');
+        }
+        if (COMPANY_DATA.inv_loan_num_type) {
+            $('#inv_loan_format_selection').val(COMPANY_DATA.inv_loan_num_type).trigger('change');
+        }
+        if (COMPANY_DATA.account_saving_type) {
+            $('#saving_selection').val(COMPANY_DATA.account_saving_type).trigger('change');
+        }
+    }
+
+    function check_customer_format(value) {
+        const formatSection = $('#format_section_customer');
+        if (value === "Format") {
+            const sep = COMPANY_DATA.customer_seperate_from || '-';
+            const numStart = COMPANY_DATA.customer_num_start_from || '';
+            const fmt = COMPANY_DATA.customer_format || '';
+
+            formatSection.html(`
+                <div class="col-md-6">
+                    <label for="separate_from" class="form-label">Separate From</label>
+                    <select class="form-control" id="separate_from">
+                        <option value="-" ${sep === "-" ? "selected" : ""}>-</option>
+                        <option value="/" ${sep === "/" ? "selected" : ""}>/</option>
+                        <option value="." ${sep === "." ? "selected" : ""}>.</option>
+                    </select>
+                </div>
+                <br>
+                <div class="row mb-3">
+                    <div class="col">
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField('@Branch_No@','Branch_No')">Branch Number</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField('@Root@','Root')">Root Number</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField('@Center_No@','Center_No')">Center Number</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField('@Group_No@','Group_No')">Group Number</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField('@Auto_Id@','Auto_Id')">Auto Create Number</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField('@Day@','Day')">Day</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField('@Month@','Month_Number')">Month</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField('@Year@','Year')">Year</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField('@CountMonthly@','MonthlyCount')">Monthly Count</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField('@RootlyCount@','RootlyCount')">Root Wise Count</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField('@Center_Cus_Count@','Center_Cus_Count')">Center's Customer Count</button>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col">
+                        <input type="text" class="form-control" id="field_output_customer" value="${fmt}" hidden>
+                        <input type="text" class="form-control" id="field_output_customer_2" value="${fmt.replace(/@/g, '')}" readonly>
+                        <br>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="clear_feild('Customer')">Clear Format</button>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col">
+                        <label for="auto_number" class="form-label">Auto Generate Number Start From</label>
+                        <input type="text" class="form-control" id="auto_number" value="${numStart}">
+                    </div>
+                </div>
+            `);
+            formatSection.slideDown();
+        } else {
+            formatSection.slideUp(() => formatSection.html(''));
+        }
+    }
+
+    function check_loan_format(value) {
+        const formatSection = $('#format_section_loan');
+        if (value === "Format") {
+            const sep = COMPANY_DATA.loan_seperate_from || '-';
+            const fmt = COMPANY_DATA.loan_format || '';
+
+            formatSection.html(`
+                <div class="col-md-6">
+                    <label for="separate_from" class="form-label">Separate From</label>
+                    <select class="form-control" id="separate_from_loan">
+                        <option value="-" ${sep === "-" ? "selected" : ""}>-</option>
+                        <option value="/" ${sep === "/" ? "selected" : ""}>/</option>
+                        <option value="." ${sep === "." ? "selected" : ""}>.</option>
+                    </select>
+                </div>
+                <br>
+                <div class="row mb-3">
+                    <div class="col">
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Loan('@Branch_No@','Branch_No')">Branch Number</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Loan('@Root@','Root')">Root Name</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Loan('@Center_No@','Center_No')">Center Number</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Loan('@Center_Cus_Count@','Center_Cus_Count')">Center's Customer Count</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Loan('@Group_No@','Group_No')">Group Number</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Loan('@Product_Code@','Product_Code')">Product Code</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Loan('@Customer_No@','Customer_No')">Customer Number</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Loan('@Loan_Count@','Loan_Count')">Customer Loan Count</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Loan('@Auto_Id@','Auto_Id')">Auto Create Number</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Loan('@RootlyCount@','RootlyCount')">Root Wise Count</button>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col">
+                        <input type="text" class="form-control" id="field_output_loan" value="${fmt}" hidden>
+                        <input type="text" class="form-control" id="field_output_loan_2" value="${fmt.replace(/@/g, '')}" readonly>
+                        <br>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="clear_feild('Loan')">Clear Format</button>
+                    </div>
+                </div>
+            `);
+            formatSection.slideDown();
+        } else {
+            formatSection.slideUp(() => formatSection.html(''));
+        }
+    }
+
+    function check_inv_loan_format(value) {
+        const formatSection = $('#format_section_inv_loan');
+        if (value === "Format") {
+            const sep = COMPANY_DATA.inv_loan_seperate_from || '-';
+            const fmt = COMPANY_DATA.inv_loan_format || '';
+
+            formatSection.html(`
+                <div class="col-md-6">
+                    <label for="separate_from" class="form-label">Separate From</label>
+                    <select class="form-control" id="separate_from_inv_loan">
+                        <option value="-" ${sep === "-" ? "selected" : ""}>-</option>
+                        <option value="/" ${sep === "/" ? "selected" : ""}>/</option>
+                        <option value="." ${sep === "." ? "selected" : ""}>.</option>
+                    </select>
+                </div>
+                <br>
+                <div class="row mb-3">
+                    <div class="col">
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Inv_Loan('@Branch_No@','Branch_No')">Branch Number</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Inv_Loan('@Root@','Root')">Root Name</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Inv_Loan('@Product_Code@','Product_Code')">Product Code</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Inv_Loan('@Customer_No@','Customer_No')">Customer Number</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Inv_Loan('@Loan_Count@','Loan_Count')">Customer Loan Count</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Inv_Loan('@Auto_Id@','Auto_Id')">Auto Create Number</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Inv_Loan('@RootlyCount@','RootlyCount')">Root Wise Count</button>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col">
+                        <input type="text" class="form-control" id="field_output_inv_loan" value="${fmt}" hidden>
+                        <input type="text" class="form-control" id="field_output_inv_loan_2" value="${fmt.replace(/@/g, '')}" readonly>
+                        <br>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="clear_feild('Inv')">Clear Format</button>
+                    </div>
+                </div>
+            `);
+            formatSection.slideDown();
+        } else {
+            formatSection.slideUp(() => formatSection.html(''));
+        }
+    }
+
+    function check_saving_format(value) {
+        const formatSection = $('#format_section_saving');
+        if (value === "Format") {
+            const sep = COMPANY_DATA.saving_seperate_from || '-';
+            const fmt = COMPANY_DATA.saving_format || '';
+
+            formatSection.html(`
+                <div class="col-md-6">
+                    <label for="separate_from" class="form-label">Separate From</label>
+                    <select class="form-control" id="separate_from_savings">
+                        <option value="-" ${sep === "-" ? "selected" : ""}>-</option>
+                        <option value="/" ${sep === "/" ? "selected" : ""}>/</option>
+                        <option value="." ${sep === "." ? "selected" : ""}>.</option>
+                    </select>
+                </div>
+                <br>
+                <div class="row mb-3">
+                    <div class="col">
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Saving('@Branch_No@','Branch_No')">Branch Number</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Saving('@Root@','Root')">Root Name</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Saving('@Center_No@','Center_No')">Center Number</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Saving('@Group_No@','Group_No')">Group Number</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Saving('@Customer_No@','Customer_No')">Customer Number</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" onclick="addToField_Saving('@Auto_Id@','Auto_Id')">Auto Create Number</button>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col">
+                        <input type="text" class="form-control" id="field_output_saving" value="${fmt}" hidden>
+                        <input type="text" class="form-control" id="field_output_saving_2" value="${fmt.replace(/@/g, '')}" readonly>
+                        <br>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="clear_feild('Saving')">Clear Format</button>
+                    </div>
+                </div>
+            `);
+            formatSection.slideDown();
+        } else {
+            formatSection.slideUp(() => formatSection.html(''));
+        }
+    }
+
+    function addToField(value, new_value) {
+        const separateFrom = $("#separate_from").val();
+        const field = document.getElementById('field_output_customer');
+        const field_output_customer_2 = document.getElementById('field_output_customer_2');
+        const fieldValue_check = field.value;
+        const fieldValue_check_2 = field_output_customer_2.value;
+
+        if (!fieldValue_check.includes(value)) {
+            if (field.value) {
+                field.value += separateFrom + value;
+            } else {
+                field.value = value;
+            }
+        }
+        if (!fieldValue_check_2.includes(new_value)) {
+            if (field_output_customer_2.value) {
+                field_output_customer_2.value += separateFrom + new_value;
+            } else {
+                field_output_customer_2.value = new_value;
+            }
+        }
+    }
+
+    function addToField_Loan(value, new_value) {
+        const separateFrom = $("#separate_from_loan").val();
+        const field = document.getElementById('field_output_loan');
+        const field_output_loan_2 = document.getElementById('field_output_loan_2');
+        const fieldValue = field.value.split(separateFrom);
+        const fieldValue_2 = field_output_loan_2.value.split(separateFrom);
+
+        if (!fieldValue.includes(value)) {
+            field.value = field.value ? field.value + separateFrom + value : value;
+        }
+        if (!fieldValue_2.includes(new_value)) {
+            field_output_loan_2.value = field_output_loan_2.value ? field_output_loan_2.value + separateFrom + new_value : new_value;
+        }
+    }
+
+    function addToField_Inv_Loan(value, new_value) {
+        const separateFrom = $("#separate_from_inv_loan").val();
+        const field = document.getElementById('field_output_inv_loan');
+        const field_output_loan_2 = document.getElementById('field_output_inv_loan_2');
+        const fieldValue = field.value.split(separateFrom);
+        const fieldValue_2 = field_output_loan_2.value.split(separateFrom);
+
+        if (!fieldValue.includes(value)) {
+            field.value = field.value ? field.value + separateFrom + value : value;
+        }
+        if (!fieldValue_2.includes(new_value)) {
+            field_output_loan_2.value = field_output_loan_2.value ? field_output_loan_2.value + separateFrom + new_value : new_value;
+        }
+    }
+
+    function addToField_Saving(value, new_value) {
+        const separateFrom = $("#separate_from_savings").val();
+        const field = document.getElementById('field_output_saving');
+        const field_output_loan_2 = document.getElementById('field_output_saving_2');
+        const fieldValue = field.value.split(separateFrom);
+        const fieldValue_2 = field_output_loan_2.value.split(separateFrom);
+
+        if (!fieldValue.includes(value)) {
+            field.value = field.value ? field.value + separateFrom + value : value;
+        }
+        if (!fieldValue_2.includes(new_value)) {
+            field_output_loan_2.value = field_output_loan_2.value ? field_output_loan_2.value + separateFrom + new_value : new_value;
+        }
+    }
+
+    function clear_feild(value) {
+        if (value === "Customer") {
+            document.getElementById('field_output_customer').value = "";
+            document.getElementById('field_output_customer_2').value = "";
+        } else if (value === "Saving") {
+            document.getElementById('field_output_saving').value = "";
+            document.getElementById('field_output_saving_2').value = "";
+        } else if (value === "Inv") {
+            document.getElementById('field_output_inv_loan').value = "";
+            document.getElementById('field_output_inv_loan_2').value = "";
+        } else {
+            document.getElementById('field_output_loan').value = "";
+            document.getElementById('field_output_loan_2').value = "";
+        }
+    }
+
+    function saveNumberFormats() {
+        // Collect data manually since dynamic inputs might be outside initial DOM
+        const payload = {
+            customer_format_selection: $('#customer_format_selection').val(),
+            customer_format_scope: $('#customer_format_scope').val(),
+            separate_from: $('#separate_from').val(),
+            auto_number: $('#auto_number').val(),
+            field_output_customer: $('#field_output_customer').val(),
+
+            loan_format_selection: $('#loan_format_selection').val(),
+            separate_from_loan: $('#separate_from_loan').val(),
+            field_output_loan: $('#field_output_loan').val(),
+
+            inv_loan_format_selection: $('#inv_loan_format_selection').val(),
+            separate_from_inv_loan: $('#separate_from_inv_loan').val(),
+            field_output_inv_loan: $('#field_output_inv_loan').val(),
+
+            saving_selection: $('#saving_selection').val(),
+            separate_from_savings: $('#separate_from_savings').val(),
+            field_output_saving: $('#field_output_saving').val(),
+        };
+
+        Swal.fire({
+            title: "Are you sure?",
+            text: "Update number formats?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, Update",
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
+            $.ajax({
+                type: "POST",
+                url: "/settings/number-formats",
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content")
+                },
+                data: payload,
+                success: function(res) {
+                    Swal.fire("Saved", "Number formats updated successfully.", "success");
+                    // Refresh data
+                    fetchSettings();
+                },
+                error: function(xhr) {
+                    Swal.fire("Error", "Failed to update number formats.", "error");
+                }
+            });
+        });
+    }
+
+    // Attach event listeners for the format dropdowns
+    $(document).on('change', '#customer_format_selection', function() {
+        check_customer_format(this.value);
+    });
+    $(document).on('change', '#loan_format_selection', function() {
+        check_loan_format(this.value);
+    });
+    $(document).on('change', '#inv_loan_format_selection', function() {
+        check_inv_loan_format(this.value);
+    });
+    $(document).on('change', '#saving_selection', function() {
+        check_saving_format(this.value);
+    });
+
+    $(document).on('click', '#btnSaveNumberFormats', function(e) {
+        e.preventDefault();
+        saveNumberFormats();
     });
 </script>
 @endsection

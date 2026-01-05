@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
+use Illuminate\Container\Attributes\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 
 class CompanyController extends Controller
 {
@@ -51,23 +53,8 @@ class CompanyController extends Controller
             'branch' => isset($request->branch) ? $request->branch : '',
             'address' => isset($request->address) ? $request->address : '',
             'contact_no' => isset($request->con) ? $request->con : '',
-            'customer_num_type' => isset($request->customer_format_selection) ? $request->customer_format_selection : '',
-            'customer_seperate_from' => isset($request->separate_from) ? $request->separate_from : '',
-            'customer_num_start_from' => isset($request->auto_number) ? $request->auto_number : '',
-            'customer_format' => isset($request->field_output_customer) ? $request->field_output_customer : '',
-            'loan_num_type' => isset($request->loan_format_selection) ? $request->loan_format_selection : '',
-            'loan_seperate_from' => isset($request->separate_from_loan) ? $request->separate_from_loan : '',
-            'loan_format' => isset($request->field_output_loan) ? $request->field_output_loan : '',
             'points' => isset($request->activatePoints) ? $request->activatePoints : '',
             'points_percentage' => isset($request->pointsPercentage) ? $request->pointsPercentage : '',
-            'account_saving_type' => isset($request->saving_selection) ? $request->saving_selection : '',
-            'saving_seperate_from' => isset($request->separate_from_savings) ? $request->separate_from_savings : '',
-            'saving_format' => isset($request->field_output_saving) ? $request->field_output_saving : '',
-
-            'inv_loan_num_type' => isset($request->inv_loan_format_selection) ? $request->inv_loan_format_selection : '',
-            'inv_loan_seperate_from' => isset($request->separate_from_inv_loan) ? $request->separate_from_inv_loan : '',
-            'inv_loan_format' => isset($request->field_output_inv_loan) ? $request->field_output_inv_loan : '',
-            'customer_format_scope' => isset($request->customer_format_scope) ? $request->customer_format_scope : '',
         ];
 
 
@@ -161,5 +148,68 @@ class CompanyController extends Controller
         }
 
         return response()->json(['message' => 'Shortcuts updated successfully']);
+    }
+
+    public function updateNumberFormats(Request $request)
+    {
+        $updateData = [
+            'customer_num_type' => $request->customer_format_selection ?? '',
+            'customer_seperate_from' => $request->separate_from ?? '',
+            'customer_num_start_from' => $request->auto_number ?? '',
+            'customer_format' => $request->field_output_customer ?? '',
+            'customer_format_scope' => $request->customer_format_scope ?? '0',
+
+            'loan_num_type' => $request->loan_format_selection ?? '',
+            'loan_seperate_from' => $request->separate_from_loan ?? '',
+            'loan_format' => $request->field_output_loan ?? '',
+
+            'inv_loan_num_type' => $request->inv_loan_format_selection ?? '',
+            'inv_loan_seperate_from' => $request->separate_from_inv_loan ?? '',
+            'inv_loan_format' => $request->field_output_inv_loan ?? '',
+
+            'account_saving_type' => $request->saving_selection ?? '',
+            'saving_seperate_from' => $request->separate_from_savings ?? '',
+            'saving_format' => $request->field_output_saving ?? '',
+        ];
+
+        DB::table('company')->where('branch_id', '=', session('branch_id'))->update($updateData);
+
+        if ($request->customer_format_scope == "all") {
+            $cus = tableWithBranch('customer')->get();
+            foreach ($cus as $item) {
+                customer_number($item->idCustomer);
+            }
+        }
+
+        return response()->json(['message' => 'Number formats updated successfully']);
+    }
+
+
+    public function getBranchesProxy(Request $request)
+    {
+        try {
+
+            $serverUrl = rtrim(env('ACCOUNT_CENTER_SERVER_URL', 'https://accountcenterserver.asipbook.com'), '/');
+
+            $token = $request->cookie('access_token') ?? $request->bearerToken();
+            if ($token === null) {
+                $loginUrl = rtrim(env('ACCOUNT_CENTER_URL', 'https://accountcenter.asipbook.com'), '/');
+                return redirect($loginUrl);
+            }
+
+            $response = Http::timeout(60)->withHeaders([
+                'Authorization' => "Bearer $token"
+            ])->post("$serverUrl/api/auth/micro-finance-auth-verify");
+
+            return response()->json(
+                $response->json(),
+                $response->status()
+            );
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => 'Proxy error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -13,6 +13,7 @@
         "laravel/sanctum": "^4.1",
         "laravel/tinker": "^2.9",
         "phpoffice/phpspreadsheet": "^5.2",
+        "spatie/laravel-activitylog": "^4.10",
         "spatie/laravel-backup": "^8.8",
         "tymon/jwt-auth": "^2.2",
         "yajra/laravel-datatables-oracle": "^11.0"

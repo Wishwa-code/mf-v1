@@ -1139,6 +1139,15 @@
             'aliases' => array(),
             'dev_requirement' => true,
         ),
+        'spatie/laravel-activitylog' => array(
+            'pretty_version' => '4.10.2',
+            'version' => '4.10.2.0',
+            'reference' => 'bb879775d487438ed9a99e64f09086b608990c10',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../spatie/laravel-activitylog',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'spatie/laravel-backup' => array(
             'pretty_version' => '8.8.2',
             'version' => '8.8.2.0',

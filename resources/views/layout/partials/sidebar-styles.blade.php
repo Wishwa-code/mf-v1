@@ -28,7 +28,8 @@
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
         backdrop-filter: blur(20px) !important;
         -webkit-backdrop-filter: blur(20px) !important;
-        --sidebar-text: #313a46;;
+        --sidebar-text: #313a46;
+        ;
         --sidebar-hover-bg: rgba(255, 255, 255, 0.1);
         border-right: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 5px 0 25px rgba(0, 0, 0, 0.2);
@@ -76,7 +77,8 @@
 
     /* Side Nav Item */
     .side-nav-item {
-        margin: 4px 12px;
+        margin: 12px 12px;
+        /* Increased vertical spacing from 4px to 12px */
     }
 
     /* Side Nav Link */
@@ -160,6 +162,14 @@
         color: #ffffff !important;
         background: rgba(255, 255, 255, 0.1);
         font-weight: 500;
+    }
+
+    /* Light Mode Active Submenu Fix */
+    html[data-layout-mode="light"] .side-nav-second-level li.menuitem-active>a,
+    html[data-layout-mode="light"] .side-nav-third-level li.menuitem-active>a {
+        color: var(--sidebar-active-bg) !important;
+        background: rgba(106, 94, 135, 0.1) !important;
+        font-weight: 600;
     }
 
     /* Scrollbar */

@@ -10,4 +10,6 @@ class Customer extends Model
     use HasFactory;
     protected $table = "customer";
     public $timestamps = false;
+
+    
 }

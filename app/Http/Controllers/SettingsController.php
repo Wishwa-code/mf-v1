@@ -64,8 +64,12 @@ class SettingsController extends Controller
             // Merge & return
             $allSettings = $fixedSettings->merge($approvalSettings);
 
+            // Fetch company data for Number Formats
+            $company = DB::table('company')->where('branch_id', session('branch_id'))->first();
+
             return response()->json([
-                'items' => $allSettings
+                'items' => $allSettings,
+                'company' => $company
             ], 200);
         } catch (\Throwable $th) {
             Log::error('Error fetching app settings: ' . $th->getMessage());

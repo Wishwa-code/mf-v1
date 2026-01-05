@@ -12,7 +12,7 @@ class AccountCenterAutoLoginController extends Controller
     {
         $accountCenterUrl = rtrim(env('ACCOUNT_CENTER_URL', 'https://accountcenter.asipbook.com'), '/');
         $serverUrl = rtrim(env('ACCOUNT_CENTER_SERVER_URL', 'https://accountcenterserver.asipbook.com'), '/');
-        $appUrl = env('APP_URL', 'https://192.168.1.18');
+        $appUrl = env('APP_URL', 'https://192.168.1.18 ');
 
         $token = $this->getToken($request);
 
@@ -21,7 +21,7 @@ class AccountCenterAutoLoginController extends Controller
         }
 
         $userData = $this->fetchUserData($token, $serverUrl);
-
+                    
         if (empty($userData)) {
             return redirect("$accountCenterUrl/api/auth/check-auth");
         }
@@ -55,6 +55,7 @@ class AccountCenterAutoLoginController extends Controller
             }
         } catch (\Exception $e) {
             // Continue to fallback
+            dd($e);
         }
 
         try {

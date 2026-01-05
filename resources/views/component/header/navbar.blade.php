@@ -172,7 +172,7 @@ $allowedBranches = $branch;
                     @hasPrivilege('MY_ACCOUNT')
                     <a href="/company" class="dropdown-item">
                         <i class="ri-account-circle-line fs-18 align-middle me-1"></i>
-                        <span>My Account</span>
+                        <span>Company/User Info</span>
                     </a>
                     @endhasPrivilege
 
