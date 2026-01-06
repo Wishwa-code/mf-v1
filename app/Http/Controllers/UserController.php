@@ -14,6 +14,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Session\Store;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -95,7 +96,7 @@ class UserController extends Controller
                 'typeid' => 101,
                 'description' => 'User Creation: ' . $request->full_name . ' (' . $request->email . ')',
                 'data' => json_encode($requestData),
-                'userid' => session('user_data')["idUser"],
+                'userid' => user_data('idUser'),
                 'branch_id' => session('branch_id'),
                 'data_time' => now(),
                 'status' => 0
@@ -304,7 +305,7 @@ class UserController extends Controller
                 'typeid' => 102,
                 'description' => $actionType . ': ' . $getuser->Full_Name . ' (ID: ' . $id . ')',
                 'data' => json_encode($requestData),
-                'userid' => session('user_data')["idUser"],
+                'userid' => user_data('idUser'),
                 'branch_id' => session('branch_id'),
                 'data_time' => now(),
                 'status' => 0
@@ -347,7 +348,7 @@ class UserController extends Controller
     function syncRecoveryAccountsForBranch()
     {
         $branchId = session('branch_id');        // you already use session('branch_id') everywhere in your system
-        $userId   = session('user_data')["idUser"];           // who is doing this sync
+        $userId   = user_data('idUser');           // who is doing this sync
         $now      = Carbon::now();
 
         // 1. get all active customers in this branch
@@ -425,7 +426,7 @@ class UserController extends Controller
         // Head Office aggregated dashboard: show all branches overview
         if ((int)session('head_branch') == session('branch_id')) {
             // Fetch active branches from session (excluding head office which is filtered in login)
-            $branches = session('user_data')['branches'] ?? [];
+            $branches = user_data('branches') ?? [];
 
             $branchMetrics = [];
             foreach ($branches as $b) {
@@ -645,10 +646,10 @@ class UserController extends Controller
             ->first();
         $penaltyBalance = $penaltyBalance->penalty_balance ?? 0;
 
-        $userid = session('user_data')['idUser'];
+        $userid = user_data('idUser');
 
         $dashboard = 0;
-        $privileges = session('user_data')['privileges'] ?? [];
+        $privileges = user_data('privileges') ?? [];
         if (is_array($privileges)) {
             foreach ($privileges as $priv) {
                 if (isset($priv['Description']) && strtolower($priv['Description']) === 'dashboard') {
@@ -1101,6 +1102,15 @@ class UserController extends Controller
 
     public function logout()
     {
+        $user = auth()->user();
+        if ($user) {
+            activity()
+                ->performedOn($user)
+                ->causedBy($user)
+                ->log('logout');
+        }
+
+        Cache::forget('user_data:' . session('user_id'));
         Session::flush();
         Auth::logout();
         Session::forget('token');
@@ -1257,7 +1267,7 @@ class UserController extends Controller
                         ]);
 
 
-                    $user_id = session('user_data')['idUser'];
+                    $user_id = user_data('idUser');
                     $date = date('Y-m-d');
                     $time = date('H:i:s');
 
@@ -1661,7 +1671,7 @@ class UserController extends Controller
             'typeid' => 201,
             'description' => 'Designation Details Update: ' . $request->designation . ' (Max Create: ' . $request->maxCreateAmount . ', Max Approve: ' . $request->maxIssueAmount . ')',
             'data' => json_encode($requestData),
-            'userid' => session('user_data')["idUser"],
+            'userid' => user_data('idUser'),
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0
@@ -1707,7 +1717,7 @@ class UserController extends Controller
             'typeid' => 201,
             'description' => 'Designation Privileges Update: ' . $designation->name,
             'data' => json_encode($requestData),
-            'userid' => session('user_data')["idUser"],
+            'userid' => user_data('idUser'),
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0
@@ -2057,7 +2067,7 @@ class UserController extends Controller
             'typeid' => 102,
             'description' => 'User Details Update: ' . $request->full_name . ' (' . $request->email . ')',
             'data' => json_encode($requestData),
-            'userid' => session('user_data')["idUser"],
+            'userid' => user_data('idUser'),
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0

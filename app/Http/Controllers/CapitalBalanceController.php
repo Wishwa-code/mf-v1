@@ -392,7 +392,7 @@ class CapitalBalanceController extends Controller
 
             $key = $data['key'];
             $value = $data['value'];
-            $uid = session('user_data')["idUser"];
+            $uid = user_data('idUser');
 
             $setting = AppSettings::where('key', $key)->first();
             $oldValue = $setting?->value;

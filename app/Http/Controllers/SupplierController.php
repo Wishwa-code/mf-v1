@@ -95,7 +95,7 @@ class SupplierController extends Controller
             'attachment_3' => $this->storeAttachment($request, 'file3'),
             'attachment_4' => $this->storeAttachment($request, 'file4'),
             'status' => 1,
-            'created_by' => session('user_data')["idUser"],
+            'created_by' => user_data('idUser'),
             'created_by_name' => session('username'),
             'updated_by' => null,
             'updated_by_name' => null,
@@ -185,7 +185,7 @@ class SupplierController extends Controller
             'business_reg_no' => trim((string)$request->input('business_reg_no')) ?: null,
             'tax_vat_no' => trim((string)$request->input('tax_vat_no')) ?: null,
             'nic_passport' => trim((string)$request->input('nic_passport')) ?: null,
-            'updated_by' => session('user_data')["idUser"],
+            'updated_by' => user_data('idUser'),
             'updated_by_name' => session('username'),
         ];
 

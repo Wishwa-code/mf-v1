@@ -71,6 +71,10 @@ Route::post('/recover_password', '\App\Http\Controllers\UserController@recover_p
 Route::middleware(['auth.central'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('home');
 
+    Route::group(['prefix' => 'settings'], function () {
+        Route::get('/', [SettingsController::class, 'index'])->name('settings.index');
+        Route::resource('activity-logs', \App\Http\Controllers\ActivityLogController::class)->only(['index', 'show']);
+    });
     Route::get('/privileges', function () {
         return view('pages.Privilages');
     });

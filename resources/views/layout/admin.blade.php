@@ -213,6 +213,7 @@
         }
     </script>
     @yield('script')
+    @stack('scripts')
 
     <script>
         let timer;

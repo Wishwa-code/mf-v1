@@ -39,7 +39,7 @@ class CommissionController extends Controller
             ? (int) $request->branch_id
             : $sessionBranch;
 
-        $uid = session('user_data')["idUser"];
+        $uid = user_data('idUser');
 
         try {
             DB::beginTransaction();
@@ -127,7 +127,7 @@ class CommissionController extends Controller
         $branch_id = (int) $request->branch_id;
         $rates     = $request->rates ?? [];
 
-        $uid = session('user_data')["idUser"]
+        $uid = user_data('idUser')
             ?? session('user_id')
             ?? session('id')
             ?? session('idUser')
@@ -309,7 +309,7 @@ class CommissionController extends Controller
      */
     private function ensureCollectorCommissionAccounts(int $branchId): array
     {
-        $uid = session('user_data')["idUser"] ?? session('user_id') ?? session('id') ?? session('idUser') ?? 1; // fallback 1 if needed
+        $uid = user_data('idUser') ?? session('user_id') ?? session('id') ?? session('idUser') ?? 1; // fallback 1 if needed
 
 
         $collectors = DB::table('user')
@@ -389,7 +389,7 @@ class CommissionController extends Controller
 
     private function ensureDefaultCommissionRates(int $branchId): array
     {
-        $uid = session('user_data')["idUser"] ?? session('user_id') ?? session('id') ?? session('idUser') ?? 1;
+        $uid = user_data('idUser') ?? session('user_id') ?? session('id') ?? session('idUser') ?? 1;
 
         // active products
         $products = DB::table('loan_category')

@@ -1191,7 +1191,7 @@
     // collectorId from session
     const COLLECTOR_ID = {
         {
-            (int) session('user_data')["idUser"]
+            (int) user_data('idUser')
         }
     };
 

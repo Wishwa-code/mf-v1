@@ -495,7 +495,9 @@
                     <div class="row g-4">
                         <div class="col-md-6">
                             <label for="bank_name" class="form-label">Bank Name</label>
-                            <input type="text" id="bank_name" class="form-control" placeholder="Bank Name">
+                            <select id="bank_name" class="form-control">
+                                <option value="">Select Bank</option>
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label for="account_name" class="form-label">Account Name</label>
@@ -507,7 +509,9 @@
                         </div>
                         <div class="col-md-6">
                             <label for="branch" class="form-label">Branch code</label>
-                            <input type="text" id="branch" class="form-control" placeholder="Branch Code">
+                            <select id="branch" class="form-control">
+                                <option value="">Select Branch</option>
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label for="bank_code" class="form-label">Bank code</label>
@@ -728,29 +732,7 @@
 {{-- ===================== BANK SELECT2 (LIVE BANKS + BRANCHES) ===================== --}}
 <script>
     $(function initLiveBankSelectors() {
-        // Upgrade #bank_name to <select>
-        (function ensureBankSelect() {
-            var $old = $('#bank_name');
-            if ($old.length && !$old.is('select')) {
-                var $sel = $('<select/>', {
-                    id: 'bank_name',
-                    class: $old.attr('class') || 'form-control'
-                });
-                $old.replaceWith($sel);
-            }
-        })();
-
-        // Upgrade #branch to <select>
-        (function ensureBranchSelect() {
-            var $old = $('#branch');
-            if ($old.length && !$old.is('select')) {
-                var $sel = $('<select/>', {
-                    id: 'branch',
-                    class: $old.attr('class') || 'form-control'
-                });
-                $old.replaceWith($sel);
-            }
-        })();
+        // JS replacement removed as HTML now uses <select> tags directly.
 
         function normalizeBankItem(it) {
             let code = it.code || it.id || '';

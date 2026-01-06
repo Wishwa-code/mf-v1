@@ -724,7 +724,7 @@ class TodayPaymentController extends Controller
         $customer       = $request->customer;
         $status         = $request->status;
         $loan_number    = $request->loan_number_search;
-        $user_id        = (int)session('user_data')["idUser"];
+        $user_id        = (int)user_data('idUser');
         $perPage        = (int) ($request->get('per_page', 10));
         $includeTotals  = (bool) $request->get('include_totals', false); // ← only compute when true
 
@@ -1051,7 +1051,7 @@ class TodayPaymentController extends Controller
                 $now = Carbon::now();
                 $date = $now->toDateString();
                 $time = $now->toTimeString();
-                $user_id = session('user_data')["idUser"];
+                $user_id = user_data('idUser');
                 $branch_id = session('branch_id');
 
                 // Common data for extra_charger
@@ -1404,7 +1404,7 @@ class TodayPaymentController extends Controller
                     'description_id' => $loan_id,
                     'comment' => ' ',
                     'type' => 'Payment',
-                    'user' => session('user_data')["idUser"],
+                    'user' => user_data('idUser'),
                     'points' => $points_to_add,
                     'branch_id' => session('branch_id')
                 ]);
@@ -1989,7 +1989,7 @@ class TodayPaymentController extends Controller
                     'description_id' => $loan_id,
                     'comment' => ' ',
                     'type' => 'Payment',
-                    'user' => session('user_data')["idUser"],
+                    'user' => user_data('idUser'),
                     'points' => $points_to_add,
                     'branch_id' => session('branch_id')
                 ]);
@@ -2387,7 +2387,7 @@ class TodayPaymentController extends Controller
                     'description_id' => $loan_id,
                     'comment' => ' ',
                     'type' => 'Payment',
-                    'user' => session('user_data')["idUser"],
+                    'user' => user_data('idUser'),
                     'points' => $points_to_add,
                     'branch_id' => session('branch_id')
                 ]);

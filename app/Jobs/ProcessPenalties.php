@@ -89,7 +89,7 @@ class ProcessPenalties implements ShouldQueue
                         // Otherwise (recommended), write one aggregated entry that mentions the count.
 
                         // Aggregated customer_log
-                        $userId = session('user_data')["idUser"] ?? null; // scheduler may not have a session—fallback to system user id if you have one
+                        $userId = user_data('idUser') ?? null; // scheduler may not have a session—fallback to system user id if you have one
                         $now    = Carbon::now($tz);
                         $cust   = DB::table('customer')->where('idCustomer', $item->Customer_idCustomer)->first();
 

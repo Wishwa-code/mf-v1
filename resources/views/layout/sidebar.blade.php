@@ -4,7 +4,7 @@
     <!--- Sidemenu -->
     <ul class="side-nav">
 
-        <li class="side-nav-title" style="text-color: red">{{ session('user_data')['company']['Company_Name'] }}</li>
+        <li class="side-nav-title" style="text-color: red">{{ user_data()['company']['Company_Name'] ?? '' }}</li>
 
         @php $isHeadOffice = session('head_branch') == session('branch_id'); @endphp
 
@@ -175,7 +175,7 @@
                     @hasPrivilege('BUSSINESS_CATEGORIES')
                     <li>
                         <a href="{{ route('business-categories.index') }}">
-                            Business Categories
+                            $user_id = user_data('idUser');s
                         </a>
                     </li>
                     @endhasPrivilege
@@ -791,6 +791,13 @@
         @endhasPrivilege
         @endif
 
+
+        <li class="side-nav-item">
+            <a href="{{ route('activity-logs.index') }}" class="side-nav-link" data-tooltip="Activity Logs">
+                <i class="ri-history-line"></i>
+                <span> Activity Logs </span>
+            </a>
+        </li>
 
         <li class="side-nav-item">
             <a href="/logout" class="side-nav-link" data-tooltip="Logout">

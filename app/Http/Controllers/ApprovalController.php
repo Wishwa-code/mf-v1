@@ -530,7 +530,7 @@ class ApprovalController extends Controller
                     'description_id' => $customerId,
                     'comment'        => ' ',
                     'type'           => 'Customer Registration',
-                    'user'           => session('user_data')["idUser"],
+                    'user'           => user_data('idUser'),
                     'branch_id'      => $branchId,
                 ]);
 
@@ -587,7 +587,7 @@ class ApprovalController extends Controller
                     'description_id' => $customerId,
                     'comment'        => ' ',
                     'type'           => 'Customer Update',
-                    'user'           => session('user_data')["idUser"],
+                    'user'           => user_data('idUser'),
                     'branch_id'      => $approval->branch_id,
                 ]);
             }
@@ -626,7 +626,7 @@ class ApprovalController extends Controller
                         'description_id' => $customerId,
                         'comment'        => ' ',
                         'type'           => $actionType,
-                        'user'           => session('user_data')["idUser"],
+                        'user'           => user_data('idUser'),
                         'branch_id'      => $approval->branch_id,
                     ]);
                 }
@@ -703,7 +703,7 @@ class ApprovalController extends Controller
                     'description_id' => $loan_id,
                     'comment'        => ' ',
                     'type'           => 'Delete Loan',
-                    'user'           => session('user_data')["idUser"],
+                    'user'           => user_data('idUser'),
                 ];
 
                 insertWithBranch('customer_log', $logData);
@@ -761,7 +761,7 @@ class ApprovalController extends Controller
                             'debit_credit'  => 'debit',
                             'amount'        => $last_expenses->amount,
                             'other_bank_id' => $bank_id->Idbank,
-                            'user_id'       => session('user_data')["idUser"],
+                            'user_id'       => user_data('idUser'),
                             'branch_id'     => $approval->branch_id,
                         ]);
 
@@ -774,7 +774,7 @@ class ApprovalController extends Controller
                             'debit_credit'  => 'credit',
                             'amount'        => $last_expenses->amount,
                             'other_bank_id' => $last_expenses->bank_id,
-                            'user_id'       => session('user_data')["idUser"],
+                            'user_id'       => user_data('idUser'),
                             'branch_id'     => $approval->branch_id,
                         ]);
                     }
@@ -793,7 +793,7 @@ class ApprovalController extends Controller
                 ->where('id', $id)
                 ->update([
                     'status'             => 1,
-                    'approveduserid'     => session('user_data')["idUser"],
+                    'approveduserid'     => user_data('idUser'),
                     'approved_date_time' => now(),
                     'comment'            => $comment,
                 ]);
@@ -818,6 +818,18 @@ class ApprovalController extends Controller
                     'updated_at'  => now(),
                 ]);
             }
+
+            // Activity Log: Approval
+            activity()
+                ->causedBy(user_data('idUser'))
+                ->withProperties([
+                    'causer_name' => user_data('Full_Name') ?? 'Unknown',
+                    'approval_id' => $approval->id,
+                    'type' => $approval->type ?? ('Type ' . $approval->typeid),
+                    'description' => $approval->description,
+                    'comment' => $comment
+                ])
+                ->log('approval_accepted');
 
             DB::commit();
 
@@ -862,7 +874,7 @@ class ApprovalController extends Controller
                 ->where('id', $id)
                 ->update([
                     'status'             => 2,
-                    'approveduserid'     => session('user_data')["idUser"],
+                    'approveduserid'     => user_data('idUser'),
                     'approved_date_time' => now(),
                     'comment'            => $reason,
                 ]);
@@ -886,6 +898,18 @@ class ApprovalController extends Controller
                     'updated_at'  => now(),
                 ]);
             }
+
+            // Activity Log: Rejection
+            activity()
+                ->causedBy(user_data('idUser'))
+                ->withProperties([
+                    'causer_name' => user_data('Full_Name') ?? 'Unknown',
+                    'approval_id' => $approval->id,
+                    'type' => $approval->type ?? ('Type ' . $approval->typeid),
+                    'description' => $approval->description,
+                    'reason' => $reason
+                ])
+                ->log('approval_rejected');
 
             return response()->json([
                 'success' => true,
@@ -917,7 +941,7 @@ class ApprovalController extends Controller
                 ->where('id', $id)
                 ->update([
                     'status'             => -1,
-                    'approveduserid'     => session('user_data')["idUser"],
+                    'approveduserid'     => user_data('idUser'),
                     'approved_date_time' => now(),
                     'comment'            => $comment,
                 ]);

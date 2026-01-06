@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\DB;
 
 // All branches
-$branch = session('user_data')['branches'] ?? [];
+$branch = user_data('branches') ?? [];
 
 // Allowed branches 
 $allowedBranches = $branch;
@@ -49,7 +49,7 @@ $allowedBranches = $branch;
                             @foreach ($branch as $item)
                             @php $item = (object) $item; @endphp
                             @if (session('branch_id') == $item->idBranch)
-                            {{ $item->Name }} Branch
+                            {{ $item->Name }} 
                             @endif
                             @endforeach
                         </span>
@@ -63,7 +63,7 @@ $allowedBranches = $branch;
                                 data-branch-id="{{ $item->idBranch }}"
                                 data-branch-name="{{ $item->Name }} Branch">
                                 <i class="ri-building-2-line me-2"></i>
-                                {{ $item->Name }} Branch
+                                {{ $item->Name }} ]
                                 @if (session('branch_id') == $item->idBranch)
                                 <i class="ri-check-line ms-auto text-success"></i>
                                 @endif
@@ -100,7 +100,7 @@ $allowedBranches = $branch;
                                 data-branch-id="{{ $item->idBranch }}"
                                 data-branch-name="{{ $item->Name }} Branch">
                                 <i class="ri-building-2-line me-2"></i>
-                                {{ $item->Name }} Branch
+                                {{ $item->Name }} 
                                 @if (session('branch_id') == $item->idBranch)
                                 <i class="ri-check-line ms-auto text-success"></i>
                                 @endif
@@ -142,7 +142,7 @@ $allowedBranches = $branch;
             </li>
             <?php
             // Use company data from session
-            $companyData = session('user_data')['company'] ?? null;
+            $companyData = user_data('company') ?? null;
             $companyItem = $companyData ? (object) $companyData : null;
             ?>
             <li class="dropdown">
@@ -157,7 +157,7 @@ $allowedBranches = $branch;
 
                     </span>
                     <span class="d-lg-block d-none">
-                        <h5 class="my-0 fw-normal">{{ session('user_data')['full_name'] }} <i
+                        <h5 class="my-0 fw-normal">{{ user_data('full_name') }} <i
                                 class="ri-arrow-down-s-line d-none d-sm-inline-block align-middle"></i></h5>
                     </span>
                 </a>
@@ -240,7 +240,7 @@ $allowedBranches = $branch;
                     </a>
 
                     <?php
-                    $user_id = session('user_data')["idUser"];
+                    $user_id = user_data('idUser');
                     $cashier = DB::table('user')->where('id', $user_id)->where('cashier', '=', '1')->first();
                     ?>
                     @if ($cashier)

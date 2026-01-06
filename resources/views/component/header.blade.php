@@ -8,7 +8,7 @@
 <div class="leftside-menu">
 
     @php
-    $company = session('user_data')['company'] ?? null;
+    $company = user_data('company') ?? null;
     $logo = $company['Logo'] ?? null;
     @endphp
 

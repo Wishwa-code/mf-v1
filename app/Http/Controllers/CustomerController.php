@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use App\Http\Controllers\SettingsController;
+use App\Http\Requests\StoreCustomerRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Artisan;
@@ -91,7 +92,7 @@ class CustomerController extends Controller
             'typeid' => 305,
             'description' => 'Upload Document: ' . $description . ' (Customer: ' . $customerName . ')',
             'data' => json_encode($requestData),
-            'userid' => session('user_data')["idUser"],
+            'userid' => user_data('idUser'),
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0
@@ -116,7 +117,7 @@ class CustomerController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(\App\Http\Requests\StoreCustomerRequest $request)
+    public function store(StoreCustomerRequest $request)
     {
         // Validation is handled by StoreCustomerRequest automatically
 
@@ -200,11 +201,17 @@ class CustomerController extends Controller
             'typeid' => 301,
             'description' => 'Customer Creation: ' . $customer->First_Name . ' ' . $customer->Last_Name . ' (NIC: ' . $customer->Nic . ')',
             'data' => json_encode($requestData),
-            'userid' => session('user_data')["idUser"],
+            'userid' => user_data('idUser'),
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0
         ]);
+
+        // Activity Log: Customer Creation Requested
+        activity()
+            ->causedBy(user_data('idUser')) // Explicitly set causer since we have the ID
+            ->withProperties(['customer_name' => $customer->First_Name . ' ' . $customer->Last_Name, 'nic' => $customer->Nic])
+            ->log('customer_creation_requested');
 
         return response()->json(['message' => 'Customer creation request sent for approval!', 'id' => '0'], 200);
 
@@ -791,7 +798,7 @@ class CustomerController extends Controller
             'typeid' => 305,
             'description' => 'Delete Document: ' . $document->Description . ' (Customer: ' . $customerName . ')',
             'data' => json_encode($requestData),
-            'userid' => session('user_data')["idUser"],
+            'userid' => user_data('idUser'),
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0
@@ -886,7 +893,7 @@ class CustomerController extends Controller
             'typeid' => 302,
             'description' => 'Customer Update: ' . $request->f_name . ' ' . $request->last_name . ' (NIC: ' . $request->nic . ')',
             'data' => json_encode($requestData),
-            'userid' => session('user_data')["idUser"],
+            'userid' => user_data('idUser'),
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0
@@ -1018,7 +1025,7 @@ class CustomerController extends Controller
             'typeid' => 304,
             'description' => $type . ': ' . $customer->First_Name . ' ' . $customer->Last_Name . ' (NIC: ' . $customer->Nic . ')',
             'data' => json_encode($requestData),
-            'userid' => session('user_data')["idUser"],
+            'userid' => user_data('idUser'),
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0

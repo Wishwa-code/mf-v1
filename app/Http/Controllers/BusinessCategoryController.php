@@ -48,7 +48,7 @@ class BusinessCategoryController extends Controller
     {
         try {
             $data = $request->validated();
-            $data['created_by'] = session('user_data')["idUser"] ?? 1; // Default to 1 if no auth for now
+            $data['created_by'] = user_data('idUser') ?? 1; // Default to 1 if no auth for now
 
             BusinessCategory::create($data);
 
@@ -73,7 +73,7 @@ class BusinessCategoryController extends Controller
     {
         try {
             $data = $request->validated();
-            $data['updated_by'] = session('user_data')["idUser"] ?? 1;
+            $data['updated_by'] = user_data('idUser') ?? 1;
 
             $businessCategory->update($data);
 

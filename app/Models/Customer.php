@@ -9,10 +9,12 @@ use App\Models\Branch;
 use App\Models\Route;
 use App\Models\Center;
 use App\Models\Group;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Customer extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $table = "customer";
 
@@ -93,5 +95,13 @@ class Customer extends Model
     public function group()
     {
         return $this->belongsTo(Group::class, 'Customer_Group_idCustomer_Group', 'idGroup');
+    }
+
+    public function getActivitylogOptions(): \Spatie\Activitylog\LogOptions
+    {
+        return \Spatie\Activitylog\LogOptions::defaults()
+            ->logAll()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 }

@@ -19,7 +19,7 @@ class DashboardController extends Controller
         // Head Office aggregated dashboard: show all branches overview
         if ((int)session('head_branch') == session('branch_id')) {
             // Fetch active branches from session (excluding head office which is filtered in login)
-            $branches = session('user_data')['branches'] ?? [];
+            $branches = user_data('branches') ?? [];
 
             $branchMetrics = [];
             foreach ($branches as $b) {
@@ -275,10 +275,10 @@ class DashboardController extends Controller
             ->first();
         $penaltyBalance = $penaltyBalance->penalty_balance ?? 0;
 
-        $userid = session('user_data')['idUser'];
+        $userid = user_data('idUser');
 
         $dashboard = 0;
-        $privileges = session('user_data')['privileges'] ?? [];
+        $privileges = user_data('privileges') ?? [];
         if (is_array($privileges)) {
             foreach ($privileges as $priv) {
                 if (isset($priv['Description']) && strtolower($priv['Description']) === 'dashboard') {

@@ -573,7 +573,7 @@ class PendingLoanController extends Controller
             'typeid' => 402,
             'description' => $description,
             'data' => json_encode($requestData),
-            'userid' => session('user_data')["idUser"],
+            'userid' => user_data('idUser'),
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0
@@ -742,7 +742,7 @@ class PendingLoanController extends Controller
                     'typeid' => 401,
                     'description' => $description,
                     'data' => json_encode($requestData),
-                    'userid' => session('user_data')["idUser"],
+                    'userid' => user_data('idUser'),
                     'branch_id' => session('branch_id'),
                     'data_time' => now(),
                     'status' => 0
@@ -1368,7 +1368,7 @@ class PendingLoanController extends Controller
 
         $loanId   = (int) $request->loan_id;
         $branchId = (int) session('branch_id');
-        $userId   = (int)session('user_data')["idUser"];
+        $userId   = (int)user_data('idUser');
         $mode     = $request->mode;
 
         if ($mode === 'password') {
@@ -1431,7 +1431,7 @@ class PendingLoanController extends Controller
             'request_id' => 'required|integer'
         ]);
 
-        $approverId = (int)session('user_data')["idUser"];
+        $approverId = (int)user_data('idUser');
         $branchId   = (int) session('branch_id');
 
         $req = DB::table('loan_delete_requests')->where('id', $request->request_id)->first();
@@ -1828,7 +1828,7 @@ class PendingLoanController extends Controller
 
         DB::table('loan_delete_requests')->where('id', $req->id)->update([
             'status'      => 'REJECTED',
-            'approved_by' => (int)session('user_data')["idUser"],
+            'approved_by' => (int)user_data('idUser'),
             'approved_at' => now(),
         ]);
 

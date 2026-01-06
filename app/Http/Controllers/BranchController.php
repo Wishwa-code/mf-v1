@@ -403,7 +403,7 @@ class BranchController extends Controller
         $branchName = null;
 
         // Check in session allowed branches
-        $allowedBranches = session('user_data')['branches'] ?? [];
+        $allowedBranches = user_data('branches') ?? [];
         foreach ($allowedBranches as $branch) {
             // Handle array access (expected from session storage)
             // dd($branch['idBranch'] );

@@ -89,7 +89,7 @@ class SettingsController extends Controller
 
             $key = $data['key'];
             $value = $data['value'];
-            $uid = session('user_data')["idUser"];
+            $uid = user_data('idUser');
 
             $setting = AppSettings::where('key', $key)->first();
             $oldValue = $setting?->value;
@@ -140,7 +140,7 @@ class SettingsController extends Controller
     public function shortcuts(Request $request)
     {
         $checkboxValues = $request->input('checkboxValues', []);
-        $user_id = session('user_data')["idUser"];
+        $user_id = user_data('idUser');
 
         DB::table('shortcut')
             ->where('branch_id', session('branch_id'))
@@ -157,7 +157,7 @@ class SettingsController extends Controller
 
     public function show()
     {
-        $userData = tableWithBranch('shortcut')->where('user_id', session('user_data')['idUser'])->get();
+        $userData = tableWithBranch('shortcut')->where('user_id', user_data('idUser'))->get();
         return response()->json(['items' => $userData], 200);
     }
 }

@@ -449,7 +449,7 @@ class ChartOfAccountController extends Controller
                 ->update([
                     'status'      => 2,
                     'reversed_at' => now(),
-                    'reversed_by' => session('user_data')["idUser"] ?? null,
+                    'reversed_by' => user_data('idUser') ?? null,
                     'updated_at'  => now(),
                 ]);
 

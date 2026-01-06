@@ -519,7 +519,7 @@
     </div><!-- /.modal -->
 </div>
 <?php
-$user_id = session('user_data')["idUser"];
+$user_id = user_data('idUser');
 $cashier = DB::table('user')
     ->where('id', $user_id)
     ->where('cashier', '=', '1')

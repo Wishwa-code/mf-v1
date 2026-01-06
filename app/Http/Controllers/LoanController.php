@@ -67,7 +67,7 @@ class LoanController extends Controller
     {
         DB::beginTransaction();
         try {
-            $user_id = (int)session('user_data')["idUser"];
+            $user_id = (int)user_data('idUser');
 
             $loan = new Loan();
             $loan->created_at = Carbon::now();
@@ -1665,7 +1665,7 @@ class LoanController extends Controller
             'typeid' => 403,
             'description' => 'Loan Installment Modification: Loan #' . $request->loan_id . ' (Customer: ' . $customerName . ', ' . count($request->installments) . ' installment(s))',
             'data' => json_encode($requestData),
-            'userid' => session('user_data')["idUser"],
+            'userid' => user_data('idUser'),
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0
@@ -1715,7 +1715,7 @@ class LoanController extends Controller
 
         $loan_id         = (int) $request->loan_id;
         $reschedule_type = (string) $request->reschedule_type;
-        $user_id         = (int)session('user_data')["idUser"];
+        $user_id         = (int)user_data('idUser');
         $today           = Carbon::now()->toDateString();
 
         // minimal validation of required inputs you actually use below

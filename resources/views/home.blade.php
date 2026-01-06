@@ -275,7 +275,7 @@
                     </div>
                     <div class="d-none d-md-block">
                         <span class="badge bg-white text-primary px-3 py-2 rounded-pill fs-6 shadow-sm">
-                            <i class="ri-user-star-line me-1"></i> {{ session('user_data')['name'] ?? 'User' }}
+                            <i class="ri-user-star-line me-1"></i> {{ user_data('name') ?? 'User' }}
                         </span>
                     </div>
                 </div>

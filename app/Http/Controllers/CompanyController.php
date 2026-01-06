@@ -99,7 +99,7 @@ class CompanyController extends Controller
      */
     public function show()
     {
-        $userData = tableWithBranch('shortcut')->where('user_id', session('user_data')['idUser'])->get();
+        $userData = tableWithBranch('shortcut')->where('user_id', user_data('idUser'))->get();
         return response()->json(['items' => $userData], 200);
     }
 
@@ -135,7 +135,7 @@ class CompanyController extends Controller
     public function shortcuts(Request $request)
     {
         $checkboxValues = $request->input('checkboxValues', []);
-        $user_id = session('user_data')["idUser"];
+        $user_id = user_data('idUser');
 
         DB::table('shortcut')
             ->where('branch_id', session('branch_id'))
@@ -191,10 +191,14 @@ class CompanyController extends Controller
 
             $serverUrl = rtrim(env('ACCOUNT_CENTER_SERVER_URL', 'https://accountcenterserver.asipbook.com'), '/');
 
-            $token = $request->cookie('access_token') ?? $request->bearerToken();
+            $token = $request->cookie('access_token') ?? $request->bearerToken() ?? session('auth_token');
+
+            // dd($token);
+
             if ($token === null) {
                 $loginUrl = rtrim(env('ACCOUNT_CENTER_URL', 'https://accountcenter.asipbook.com'), '/');
                 return redirect($loginUrl);
+                return response()->json(['error' => 'Unauthorized', 'message' => 'Token not found'], 401);
             }
 
             $response = Http::timeout(60)->withHeaders([

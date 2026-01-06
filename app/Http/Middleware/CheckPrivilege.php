@@ -17,7 +17,7 @@ class CheckPrivilege
      */
     public function handle(Request $request, Closure $next, $privilege)
     {
-        $userPrivileges = collect(session('privileges', []))
+        $userPrivileges = collect(user_data('privileges') ?? [])
             ->pluck('Description')
             ->map(function ($d) {
                 return strtoupper($d);

@@ -197,7 +197,7 @@ class PaymentLoanController extends Controller
 
 
         $permissions = DB::table('user_privileges_has_user')
-            ->where('user_id', session('user_data')["idUser"])
+            ->where('user_id', user_data('idUser'))
             ->pluck('value', 'permission_key'); // [permission_key => value]
 
         $current_loan = $permissions['current_loan_delete'] ?? 0;
@@ -374,7 +374,7 @@ class PaymentLoanController extends Controller
      */
     public function store(Request $request)
     {
-        $user_id = (int)session('user_data')["idUser"];
+        $user_id = (int)user_data('idUser');
         $loan_id = $request->loan_id;
         $payment_amount = $request->payment_amount;
 
@@ -662,7 +662,7 @@ class PaymentLoanController extends Controller
     public function settleLoan(Request $request)
     {
         $loanId = $request->input('loan_id');
-        $user_id = (int)session('user_data')["idUser"];
+        $user_id = (int)user_data('idUser');
         $net_balance = $request->input('net_balance');
         $net_capital = $request->input('net_capital');
         $net_interest = $request->input('net_interest');

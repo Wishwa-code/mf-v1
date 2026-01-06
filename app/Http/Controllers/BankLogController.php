@@ -12,11 +12,11 @@ class BankLogController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index($bank_id,$type,$description,$note,$system,$amount,$contra_account, $payment_id = 0,$reconsilation_status = "0",$date_time = null)
+    public function index($bank_id, $type, $description, $note, $system, $amount, $contra_account, $payment_id = 0, $reconsilation_status = "0", $date_time = null)
     {
-        $user_id = (int)session('user_data')['user'];
+        $user_id = (int)user_data('user');
         $isHeadOffice = session('head_branch') == session('branch_id');
-// Create a new BankLog entry
+        // Create a new BankLog entry
         $BankLog = new BankLog();
         $BankLog->Bank_Account_Id = $bank_id;
         $BankLog->Date_Time = $date_time ?? now();
@@ -37,7 +37,7 @@ class BankLogController extends Controller
             $currentBalance = 0.00; // Default balance if no records exist
         }
 
-        $acc_type=$bank->acc_type_group;
+        $acc_type = $bank->acc_type_group;
         if ($type == "Account Creation") {
             $BankLog->Credit = '0.00';
             $BankLog->Debit = '0.00';
@@ -48,17 +48,17 @@ class BankLogController extends Controller
                 $BankLog->Credit = '0.00';
                 $BankLog->Debit = $amount;
 
-                if ($acc_type=="Liabilities"){
-                    $new_current_balance= $currentBalance - $amount;
-                }else if ($acc_type=="Equity"){
-                    $new_current_balance= $currentBalance - $amount;
-                }else if ($acc_type=="Revenue"){
-                    $new_current_balance= $currentBalance - $amount;
-                }else{
-                    $new_current_balance= $currentBalance + $amount;
+                if ($acc_type == "Liabilities") {
+                    $new_current_balance = $currentBalance - $amount;
+                } else if ($acc_type == "Equity") {
+                    $new_current_balance = $currentBalance - $amount;
+                } else if ($acc_type == "Revenue") {
+                    $new_current_balance = $currentBalance - $amount;
+                } else {
+                    $new_current_balance = $currentBalance + $amount;
                 }
 
-                $BankLog->Balance=$new_current_balance;
+                $BankLog->Balance = $new_current_balance;
 
                 // Update the account balance
                 if ($isHeadOffice) {
@@ -74,17 +74,17 @@ class BankLogController extends Controller
                 $BankLog->Credit = $amount;
                 $BankLog->Debit = '0.00';
 
-                if ($acc_type=="Liabilities"){
-                    $new_current_balance= $currentBalance + $amount;
-                }else if ($acc_type=="Equity"){
-                    $new_current_balance= $currentBalance + $amount;
-                }else if ($acc_type=="Revenue"){
-                    $new_current_balance= $currentBalance + $amount;
-                }else{
-                    $new_current_balance= $currentBalance - $amount;
+                if ($acc_type == "Liabilities") {
+                    $new_current_balance = $currentBalance + $amount;
+                } else if ($acc_type == "Equity") {
+                    $new_current_balance = $currentBalance + $amount;
+                } else if ($acc_type == "Revenue") {
+                    $new_current_balance = $currentBalance + $amount;
+                } else {
+                    $new_current_balance = $currentBalance - $amount;
                 }
 
-                $BankLog->Balance=$new_current_balance;
+                $BankLog->Balance = $new_current_balance;
 
                 // Update the account balance
                 if ($isHeadOffice) {
@@ -112,9 +112,9 @@ class BankLogController extends Controller
         }
 
 
-// Now your prefix generation logic...
+        // Now your prefix generation logic...
 
-        if ($prefix!='-') {
+        if ($prefix != '-') {
             if ($isHeadOffice) {
                 $lastTrackingNo = DB::table('company_bank_has_log')
                     ->where('log_tracking_no', 'like', $prefix . '%')
@@ -155,16 +155,12 @@ class BankLogController extends Controller
         ];
 
         insertWithBranch('company_bank_has_log', $bankLogData);
-
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
-    {
-
-    }
+    public function create() {}
 
     /**
      * Store a newly created resource in storage.

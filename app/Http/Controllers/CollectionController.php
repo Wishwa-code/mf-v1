@@ -108,7 +108,7 @@ class CollectionController extends Controller
     {
         $comment = $request->input('comment');
         $checkedItems = $request->input('checkedItems');
-        $confirmUserId = session('user_data')["idUser"]; // Assumingsession('user_data')["idUser"] gets the current logged-in user's ID
+        $confirmUserId = user_data('idUser'); // Assuminguser_data('idUser') gets the current logged-in user's ID
 
         try {
             foreach ($checkedItems as $item) {

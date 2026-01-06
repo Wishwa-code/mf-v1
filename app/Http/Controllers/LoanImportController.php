@@ -164,7 +164,7 @@ class LoanImportController extends Controller
     public function uploadExcelLoan(\Illuminate\Http\Request $request)
     {
         $row      = $request->row;
-        $user_id  = (int)session('user_data')["idUser"];
+        $user_id  = (int)user_data('idUser');
         $branchId = (int) session('branch_id');
 
         // ---------- BASIC CHECKS ----------
@@ -739,7 +739,7 @@ class LoanImportController extends Controller
     //    public function uploadExcelLoan(\Illuminate\Http\Request $request)
     //    {
     //        $row      = $request->row;
-    //        $user_id  = (int)session('user_data')["idUser"];
+    //        $user_id  = (int)user_data('idUser');
     //        $branchId = (int) session('branch_id');
     //
     //        // ---------- BASIC VALIDATION ----------

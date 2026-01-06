@@ -41,7 +41,7 @@ class CashierController extends Controller
     {
         try {
             DB::beginTransaction();
-            $user_id = session('user_data')["idUser"];
+            $user_id = user_data('idUser');
             $branch_id = session('branch_id');
 
             $lastDayEnd = DB::table('day_end_summary')
@@ -230,7 +230,7 @@ class CashierController extends Controller
     {
         $today = \Carbon\Carbon::today();
         $branchId = session('branch_id');
-        $userId = session('user_data')["idUser"];
+        $userId = user_data('idUser');
 
         $plot = tableWithBranch('plot')->whereDate('Date_Time', $today)->first();
         $startingCash = $plot ? floatval($plot->total_amount) : 0;
@@ -325,7 +325,7 @@ class CashierController extends Controller
     {
         $today = \Carbon\Carbon::today();
         $branchId = session('branch_id');
-        $userId = session('user_data')["idUser"];
+        $userId = user_data('idUser');
 
         // Check for existing saved day end
         $dayEnd = DB::table('day_end_summary')

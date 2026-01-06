@@ -67,7 +67,7 @@ class BankController extends Controller
             ->get();
 
 
-        $user = DB::table('user')->where('id', session('user_data')["idUser"])->first();
+        $user = DB::table('user')->where('id', user_data('idUser'))->first();
         $collector = $user ? $user->collector : 0;
 
         return view('pages.CollectorAccount', compact('banks', 'company_banks', 'collector'));
@@ -315,7 +315,7 @@ class BankController extends Controller
                     'type'             => 'Cash and Bank',
                     'cashflow'         => 'Non Applicable',
                     'acc_type_group'   => 'Assets',
-                    'User'             => session('user_data')["idUser"]
+                    'User'             => user_data('idUser')
                 ]);
             } else {
                 $interBranchAccountId = $interBranchAccount->Idbank;
@@ -363,7 +363,7 @@ class BankController extends Controller
                     'type'             => 'Cash and Bank',
                     'cashflow'         => 'Non Applicable',
                     'acc_type_group'   => 'Assets',
-                    'User'             => session('user_data')["idUser"]
+                    'User'             => user_data('idUser')
                 ]);
             } else {
                 $headOfficeTransferAccountId = $headOfficeTransferAccount->Idbank;
@@ -1405,7 +1405,7 @@ class BankController extends Controller
 
     public function updateStatus(Request $request)
     {
-        $user_id = (int)session('user_data')["idUser"];
+        $user_id = (int)user_data('idUser');
         // Validate the incoming request data
         $validatedData = $request->validate([
             'log_id' => 'required|integer',

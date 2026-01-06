@@ -14,7 +14,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Manually load helper if composer autoload didn't pick it up
+        $helperPath = app_path('Helpers/SessionHelper.php');
+        if (file_exists($helperPath)) {
+            require_once $helperPath;
+        }
     }
 
     /**
@@ -41,12 +45,25 @@ class AppServiceProvider extends ServiceProvider
 
             // Register Blade Directive for Privileges
             \Illuminate\Support\Facades\Blade::if('hasPrivilege', function ($expression) {
-                $privileges = collect(session('privileges', []))
+                $privileges = collect(user_data('privileges') ?? [])
                     ->pluck('Description')
                     ->map(fn($d) => strtoupper($d))
                     ->toArray();
                 return in_array(strtoupper($expression), $privileges);
             });
+
+            // Activity Log: Snapshot User Name
+            \Spatie\Activitylog\Models\Activity::saving(function (\Spatie\Activitylog\Models\Activity $activity) {
+                $user = auth()->user();
+                // If there's an authenticated user and no "causer_name" property yet
+                if ($user) {
+                    $activity->properties = $activity->properties->merge([
+                        'causer_name' => $user->Full_Name ?? 'Unknown User',
+                        'ip' => request()->ip()
+                    ]);
+                }
+            });
+            
         } catch (\Exception $e) {
             // Log and skip during deploy if DB is not ready
             logger()->warning("Skipping settings load: " . $e->getMessage());

@@ -54,7 +54,7 @@ class KYCController extends Controller
             'documents.*' => 'nullable|file|max:5120' // each file max 5MB
         ]);
         $branch_id = session('branch_id');
-        $user_id = session('user_data')["idUser"];
+        $user_id = user_data('idUser');
         DB::beginTransaction();
         try {
             $insuranceId = DB::table('insurance')->insertGetId([
@@ -600,7 +600,7 @@ class KYCController extends Controller
     {
         $userDesignation = session('designation');
         $branch_id = session('branch_id');
-        $user_id = session('user_data')["idUser"];
+        $user_id = user_data('idUser');
 
         // Get all allowed designation_ids for this level
         $designationIds = tableWithBranch('insurance_category_level_has_designations')
@@ -646,7 +646,7 @@ class KYCController extends Controller
     public function rejectInsurance(Request $request)
     {
         $insuranceId = $request->insurance_id;
-        $userId = session('user_data')["idUser"];
+        $userId = user_data('idUser');
         $branchId = session('branch_id');
         $note = $request->note ?? null;
 
@@ -703,8 +703,8 @@ class KYCController extends Controller
     {
         $bankId = $request->bank_id;
         $insuranceId = $request->insurance_id;
-        $userId = session('user_data')["idUser"]; // or session('user_data')["idUser"]
-        $branch_id = session('branch_id'); // or session('user_data')["idUser"]
+        $userId = user_data('idUser'); // or user_data('idUser')
+        $branch_id = session('branch_id'); // or user_data('idUser')
         try {
             DB::beginTransaction();
 

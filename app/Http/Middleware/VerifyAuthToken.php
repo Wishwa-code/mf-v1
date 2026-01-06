@@ -20,10 +20,10 @@ class VerifyAuthToken
         $token = $request->cookie('access_token') ?? $request->bearerToken();
 
         // Check if user info is in session OR valid token exists
-        if (session()->has('auth_user')) {
-            $user = session('auth_user');
+        if (session()->has('user_id')) {
+            $userId = session('user_id');
             // Store user in request globally
-            $request->attributes->set('auth_user', $user);
+            $request->attributes->set('user_id', $userId);
         } elseif ($token) {
             // Token exists, we can allow (or potentially validate it here if needed, but for now just presence check as per request)
             // Ideally we might want to fetch user data if not in session, but existing logic relies on session.

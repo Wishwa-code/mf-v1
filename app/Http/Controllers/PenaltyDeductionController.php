@@ -210,7 +210,7 @@ class PenaltyDeductionController extends Controller
         $loanId   = (int) $request->input('loan_id');
         $amount   = round((float) $request->input('amount'), 2);
         $branchId = (int) session('branch_id');
-        $userId   = (int) (session('user_data')["idUser"] ?? 0);
+        $userId   = (int) (user_data('idUser') ?? 0);
 
         try {
             DB::beginTransaction();
