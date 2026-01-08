@@ -43,6 +43,9 @@ class AccountCenterAutoLoginController extends Controller
 
         $this->setSessionData($userData);
 
+        // Fetch and cache system-wide data
+        $this->fetchAndCacheSystemData($token, $serverUrl);
+
         session(['auth_token' => $token]);
         // Optionally set cookie for further requests
         cookie()->queue('access_token', $token, 20); // 20 minutes
@@ -112,7 +115,7 @@ class AccountCenterAutoLoginController extends Controller
         $userId = $userData['idUser'] ?? null;
         if ($userId) {
             session(['user_id' => $userId]); // Ensure we have a simple ID in session
-            Cache::put('user_data:' . $userId, $userData, now()->addMinutes(20));
+            Cache::put('user_data:' . $userId, $userData, now()->addMinutes(120));
         }
         session(['head_branch' => $userData['microfinanceHeadBranchId'] ?? null]);
 
@@ -143,9 +146,38 @@ class AccountCenterAutoLoginController extends Controller
             }
         }
 
+        dd($userData);
+        if (isset($userData['company']['Name'])) {
+            session(['company_name' => $userData['company']['Name']]);
+        }
+
         // Privileges moved to cache
         // if (isset($userData['privileges'])) {
         //    session(['privileges' => $userData['privileges']]);
         // }
+    }
+
+    private function fetchAndCacheSystemData($token, $serverUrl)
+    {
+        try {
+            $response = Http::timeout(60)->withHeaders([
+                'Authorization' => "Bearer $token"
+            ])->get("$serverUrl/api/microfinance/users-data-for-micro-finance");
+
+            if ($response->ok()) {
+                $data = $response->json();
+
+                // dd(isset($data['branchDetails']));
+                if (isset($data['users'])) {
+                    Cache::put('all_users', $data['users'], now()->addMinutes(120));
+                }
+                if (isset($data['branchDetails'])) {
+                    Cache::put('all_branches', $data['branchDetails'], now()->addMinutes(120));
+                }
+            }
+        } catch (\Exception $e) {
+            // Silently fail or log if needed
+            // \Log::error('Failed to fetch system data: ' . $e->getMessage());
+        }
     }
 }

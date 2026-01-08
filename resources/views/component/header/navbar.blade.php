@@ -63,7 +63,7 @@ $allowedBranches = $branch;
                                 data-branch-id="{{ $item->idBranch }}"
                                 data-branch-name="{{ $item->Name }} Branch">
                                 <i class="ri-building-2-line me-2"></i>
-                                {{ $item->Name }} ]
+                                {{ $item->Name }} 
                                 @if (session('branch_id') == $item->idBranch)
                                 <i class="ri-check-line ms-auto text-success"></i>
                                 @endif

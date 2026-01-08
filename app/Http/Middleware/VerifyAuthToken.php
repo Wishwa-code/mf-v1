@@ -19,8 +19,9 @@ class VerifyAuthToken
     {
         $token = $request->cookie('access_token') ?? $request->bearerToken();
 
+        // dd(session(), $token);
         // Check if user info is in session OR valid token exists
-        if (session()->has('user_id')) {
+        if (session()->has('user_id') && $token) {
             $userId = session('user_id');
             // Store user in request globally
             $request->attributes->set('user_id', $userId);

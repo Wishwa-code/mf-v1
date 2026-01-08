@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ session('company_name') }}</title>
+    <title>{{session('company_name') ?? session('user') }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="{{ asset('assets/images/favicon.ico') }}">
     <script src="{{ asset('assets/js/config.js') }}"></script>

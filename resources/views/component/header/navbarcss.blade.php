@@ -16,15 +16,7 @@
         align-items: center;
     }
 
-    /* Condensed State Navbar Margin */
-    html[data-sidenav-size="condensed"] .navbar-custom {
-        margin-left: 70px !important;
-    }
 
-    /* Condensed State Navbar Margin */
-    html[data-sidenav-size="condensed"] .navbar-custom {
-        margin-left: 70px !important;
-    }
 
     /* Small screen adjustments */
     @media (max-width: 768px) {

@@ -3,7 +3,7 @@
     :root {
         --sidebar-width: 350px;
         /* Increased from 320px */
-        --sidebar-bg: rgba(255, 255, 255, 1);
+        --sidebar-bg: #313a46;
         /* Default Fallback */
         --sidebar-active-bg: #6a5e87;
         /* Solid Purple */
@@ -25,10 +25,10 @@
     html[data-layout-mode="dark"] .leftside-menu,
     html[data-layout-mode="detached"] .leftside-menu {
         /* Glass Effect with Gradient */
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+        background: var(--sidebar-bg) !important;
         backdrop-filter: blur(20px) !important;
         -webkit-backdrop-filter: blur(20px) !important;
-        --sidebar-text: #313a46;
+        --sidebar-text: #ced4da;
         ;
         --sidebar-hover-bg: rgba(255, 255, 255, 0.1);
         border-right: 1px solid rgba(255, 255, 255, 0.1);
@@ -48,7 +48,7 @@
         /* Ensure it stays above content/navbar overlap if any */
         position: fixed;
         /* Ensure it's fixed */
-        top: 0;
+        top: 0 !important;
         bottom: 0;
         left: 0;
     }
@@ -193,8 +193,12 @@
     }
 
     /* Condensed Sidebar Styles - Modern Icon-Only Mode */
+    html[data-sidenav-size="condensed"] {
+        --sidebar-width: 70px;
+    }
+
     html[data-sidenav-size="condensed"] .leftside-menu {
-        width: 70px !important;
+        width: var(--sidebar-width) !important;
         box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
         transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         backdrop-filter: blur(20px) !important;
@@ -202,7 +206,7 @@
 
     /* Condensed Mode - Dark Theme Override */
     html[data-layout-mode="dark"][data-sidenav-size="condensed"] .leftside-menu {
-        background: linear-gradient(180deg, #1e2530 0%, #141a23 100%) !important;
+        background: var(--sidebar-bg) !important;
         box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
     }
 
@@ -213,7 +217,7 @@
     }
 
     html[data-sidenav-size="condensed"] .content-page {
-        margin-left: 70px !important;
+        margin-left: var(--sidebar-width) !important;
         transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -341,9 +345,14 @@
         left: 75px;
     }
 
-    /* Navbar adjustment for condensed mode */
-    html[data-sidenav-size="condensed"] .navbar-custom {
-        left: 70px !important;
+    /* Navbar adjustment - Global (Disable Sticky) */
+    .navbar-custom {
+        position: relative !important;
+        margin-left: var(--sidebar-width) !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: auto !important;
+        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     /* Logo Alignment */
@@ -362,7 +371,8 @@
             z-index: 1040;
         }
 
-        .content-page {
+        .content-page,
+        .navbar-custom {
             margin-left: 0 !important;
         }
 

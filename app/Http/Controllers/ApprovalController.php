@@ -5,7 +5,12 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use App\Models\User;
+use App\Models\Customer;
+use App\Models\ApprovalRequest;
+use Yajra\DataTables\Facades\DataTables;
 
 class ApprovalController extends Controller
 {
@@ -14,11 +19,12 @@ class ApprovalController extends Controller
         // Get branch access info
         $branch_access   = session('branch_access', 0);
         $user_branch_id  = session('branch_id');
+        $head_office_id  = session('head_branch');
         $selectedBranch  = $request->get('branch_id', '');
         $selectedType    = $request->get('type', '');
 
         // Get branches for filter dropdown
-        $branches = DB::table('branch')->where('status', 1)->get();
+        $branches = $this->getBranches();
 
         // Types list
         $types = [
@@ -55,40 +61,96 @@ class ApprovalController extends Controller
             ]
         ];
 
-        // Build query for pending approvals with branch and user information
-        $query = DB::table('approval_request as ar')
-            ->leftJoin('branch as b', 'ar.branch_id', '=', 'b.branch_id')
-            ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
-            ->select(
-                'ar.*',
-                'b.Name as branch_name',
-                'u.Full_Name as user_full_name'
-            )
-            ->where('ar.status', 0); // Pending
+        if ($request->ajax()) {
+            // Build query for pending approvals - NO JOINS
+            $query = ApprovalRequest::from('approval_request as ar')
+                ->select('ar.*')
+                ->where('ar.status', 0);
 
-        // Branch filtering
-        if ($user_branch_id != -1) {
-            // Non-head office: only own branch
-            $query->where('ar.branch_id', $user_branch_id);
-        } elseif (!empty($selectedBranch)) {
-            // Head office: filter by selected branch
-            $query->where('ar.branch_id', $selectedBranch);
+            if ($branch_access == 0) {
+                // Normal Branch user sees only their branch
+                $query->where('ar.branch_id', $user_branch_id);
+            } else {
+                // Head Office (or admin with access)
+                if ($request->has('branch_id') && $request->branch_id != '') {
+                    $query->where('ar.branch_id', $request->branch_id);
+                }
+            }
+
+            if ($request->has('type') && $request->type != '') {
+                $query->where('ar.typeid', $request->type);
+            }
+
+            $pendingApprovals = $query->orderBy('ar.data_time', 'desc')->get();
+
+            // Manual mapping of Branch and User names
+            $branches = $this->getBranches();
+            $users    = $this->getUsers();
+
+            $branchesCollection = collect($branches);
+            $usersCollection    = collect($users);
+
+            $pendingApprovals->transform(function ($item) use ($branchesCollection, $usersCollection, $types) {
+                // Map Branch Name
+                $branch = $branchesCollection->first(function ($b) use ($item) {
+                    return ($b->idBranch ?? $b->branch_id ?? null) == $item->branch_id;
+                });
+                $item->branch_name = $branch->Name ?? 'N/A';
+
+                // Map User Name
+                $user = $usersCollection->first(function ($u) use ($item) {
+                    return ($u->idUser ?? $u->id ?? null) == $item->userid;
+                });
+                $item->user_full_name = $user->full_name ?? $user->Full_Name ?? 'N/A';
+
+                // Map Type Name
+                $typeName = 'N/A';
+                foreach ($types as $category => $subTypes) {
+                    if (isset($subTypes[$item->typeid])) {
+                        $typeName = $subTypes[$item->typeid];
+                        break;
+                    }
+                }
+                $item->type_name = $typeName;
+
+                return $item;
+            });
+
+            return DataTables::of($pendingApprovals)
+                ->addColumn('action', function ($row) {
+                    // Action buttons (View Details)
+                    $btns = '<div class="d-flex gap-1 justify-content-center">';
+                    $btns .= '<button class="btn btn-sm btn-primary" onclick="viewDetails(' . $row->id . ', \'' . $row->type_name . '\', ' . $row->typeid . ')"><i class="ri-eye-line me-1"></i> View</button>';
+
+                    if (session('branch_id') == session('head_branch')) {
+                        $btns .= '<button class="btn btn-sm btn-success text-white" onclick="approveRequest(' . $row->id . ')"><i class="ri-checkbox-circle-line me-1"></i> Approve</button>';
+                        $btns .= '<button class="btn btn-sm btn-danger text-white" onclick="rejectRequest(' . $row->id . ')"><i class="ri-close-circle-line me-1"></i> Reject</button>';
+                        $btns .= '<button class="btn btn-sm btn-warning text-white" onclick="callbackRequest(' . $row->id . ')"><i class="ri-question-line me-1"></i> Callback</button>';
+                    }
+
+                    $btns .= '</div>';
+                    return $btns;
+                })
+                ->rawColumns(['action'])
+                ->make(true);
         }
 
-        // Type filtering
-        if (!empty($selectedType)) {
-            $query->where('ar.typeid', $selectedType);
-        }
+        $branches = $this->getBranches();
 
-        $pendingApprovals = $query->orderBy('ar.data_time', 'desc')->get();
+        // Calculate count for the badge
+        $pendingCountQuery = ApprovalRequest::where('status', 0);
+        if ($branch_access == 0) {
+            $pendingCountQuery->where('branch_id', $user_branch_id);
+        }
+        $pendingCount = $pendingCountQuery->count();
 
         return view('pages.PendingApproval', compact(
-            'pendingApprovals',
             'branches',
             'branch_access',
             'selectedBranch',
             'selectedType',
-            'types'
+            'types',
+            'pendingCount'
         ));
     }
 
@@ -101,7 +163,7 @@ class ApprovalController extends Controller
         $dateFrom        = $request->get('date_from', '');
         $dateTo          = $request->get('date_to', '');
 
-        $branches = DB::table('branch')->where('status', 1)->get();
+        $branches = $this->getBranches();
 
         $types = [
             'User Management' => [
@@ -137,46 +199,92 @@ class ApprovalController extends Controller
             ]
         ];
 
-        $query = DB::table('approval_request as ar')
-            ->leftJoin('branch as b', 'ar.branch_id', '=', 'b.branch_id')
-            ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
-            ->leftJoin('user as au', 'ar.approveduserid', '=', 'au.id')
-            ->select(
-                'ar.*',
-                'b.Name as branch_name',
-                'u.Full_Name as user_full_name',
-                'au.Full_Name as approved_by_full_name'
-            )
-            ->where('ar.status', 1); // Approved
+        if ($request->ajax()) {
+            // Build query - NO JOINS
+            $query = ApprovalRequest::from('approval_request as ar')
+                ->select('ar.*')
+                ->where('ar.status', 1);
 
-        if ($user_branch_id != -1) {
-            $query->where('ar.branch_id', $user_branch_id);
-        } elseif (!empty($selectedBranch)) {
-            $query->where('ar.branch_id', $selectedBranch);
+            if ($branch_access == 0) {
+                $query->where('ar.branch_id', $user_branch_id);
+            } else {
+                if ($request->has('branch_id') && $request->branch_id != '') {
+                    $query->where('ar.branch_id', $request->branch_id);
+                }
+            }
+
+            if ($request->has('type') && $request->type != '') {
+                $query->where('ar.typeid', $request->type);
+            }
+            // Date filters
+            if ($request->has('date_from') && $request->date_from != '') {
+                $query->whereDate('ar.data_time', '>=', $request->date_from);
+            }
+            if ($request->has('date_to') && $request->date_to != '') {
+                $query->whereDate('ar.data_time', '<=', $request->date_to);
+            }
+
+            $approvedHistory = $query->orderBy('ar.approved_date_time', 'desc')->get();
+
+            // Manual Mapping
+            $users    = $this->getUsers();
+            $branchesCollection = collect($branches);
+            $usersCollection    = collect($users);
+
+            $approvedHistory->transform(function ($item) use ($branchesCollection, $usersCollection, $types) {
+                $branch = $branchesCollection->first(function ($b) use ($item) {
+                    return ($b->idBranch ?? $b->branch_id ?? null) == $item->branch_id;
+                });
+                $item->branch_name = $branch->Name ?? 'N/A';
+
+                $user = $usersCollection->first(function ($u) use ($item) {
+                    return ($u->idUser ?? $u->id ?? null) == $item->userid;
+                });
+                $item->user_full_name = $user->full_name ?? $user->Full_Name ?? 'N/A';
+
+                $approvedBy = $usersCollection->first(function ($u) use ($item) {
+                    return ($u->idUser ?? $u->id ?? null) == $item->approveduserid;
+                });
+                $item->approved_by_full_name = $approvedBy->full_name ?? $approvedBy->Full_Name ?? 'N/A';
+
+                // Map Type Name
+                $typeName = 'N/A';
+                foreach ($types as $category => $subTypes) {
+                    if (isset($subTypes[$item->typeid])) {
+                        $typeName = $subTypes[$item->typeid];
+                        break;
+                    }
+                }
+                $item->type_name = $typeName;
+
+                return $item;
+            });
+
+            return DataTables::of($approvedHistory)
+                ->addColumn('action', function ($row) {
+                    return '<button class="btn btn-sm btn-primary" onclick="viewDetails(' . $row->id . ', \'' . $row->type_name . '\', ' . $row->typeid . ')"><i class="ri-eye-line me-1"></i> View Details</button>';
+                })
+                ->rawColumns(['action'])
+                ->make(true);
         }
 
-        if (!empty($selectedType)) {
-            $query->where('ar.typeid', $selectedType);
+        // Calculate count for the badge
+        $approvedCountQuery = ApprovalRequest::where('status', 1);
+        if ($branch_access == 0) {
+            $approvedCountQuery->where('branch_id', $user_branch_id);
         }
+        $approvedCount = $approvedCountQuery->count();
 
-        if (!empty($dateFrom)) {
-            $query->whereDate('ar.approved_date_time', '>=', $dateFrom);
-        }
-        if (!empty($dateTo)) {
-            $query->whereDate('ar.approved_date_time', '<=', $dateTo);
-        }
-
-        $approvedHistory = $query->orderBy('ar.approved_date_time', 'desc')->get();
-
+        dd($branches);
         return view('pages.ApprovedHistory', compact(
-            'approvedHistory',
             'branches',
             'branch_access',
             'selectedBranch',
             'selectedType',
             'dateFrom',
             'dateTo',
-            'types'
+            'types',
+            'approvedCount'
         ));
     }
 
@@ -184,12 +292,13 @@ class ApprovalController extends Controller
     {
         $branch_access   = session('branch_access', 0);
         $user_branch_id  = session('branch_id');
+        $head_office_id = session('head_branch');
         $selectedBranch  = $request->get('branch_id', '');
         $selectedType    = $request->get('type', '');
         $dateFrom        = $request->get('date_from', '');
         $dateTo          = $request->get('date_to', '');
 
-        $branches = DB::table('branch')->where('status', 1)->get();
+        $branches = $this->getBranches();
 
         $types = [
             'User Management' => [
@@ -225,46 +334,92 @@ class ApprovalController extends Controller
             ]
         ];
 
-        $query = DB::table('approval_request as ar')
-            ->leftJoin('branch as b', 'ar.branch_id', '=', 'b.branch_id')
-            ->leftJoin('user as u', 'ar.userid', '=', 'u.id')
-            ->leftJoin('user as au', 'ar.approveduserid', '=', 'au.id')
-            ->select(
-                'ar.*',
-                'b.Name as branch_name',
-                'u.Full_Name as user_full_name',
-                'au.Full_Name as rejected_by_full_name'
-            )
-            ->where('ar.status', 2); // Rejected
+        if ($request->ajax()) {
+            // Build query - NO JOINS
+            $query = ApprovalRequest::from('approval_request as ar')
+                ->select('ar.*')
+                ->where('ar.status', 2);
 
-        if ($user_branch_id != -1) {
-            $query->where('ar.branch_id', $user_branch_id);
-        } elseif (!empty($selectedBranch)) {
-            $query->where('ar.branch_id', $selectedBranch);
+            if ($branch_access == 0) {
+                $query->where('ar.branch_id', $user_branch_id);
+            } else {
+                if ($request->has('branch_id') && $request->branch_id != '') {
+                    $query->where('ar.branch_id', $request->branch_id);
+                }
+            }
+
+            if ($request->has('type') && $request->type != '') {
+                $query->where('ar.typeid', $request->type);
+            }
+
+            if ($request->has('date_from') && $request->date_from != '') {
+                $query->whereDate('ar.data_time', '>=', $request->date_from);
+            }
+            if ($request->has('date_to') && $request->date_to != '') {
+                $query->whereDate('ar.data_time', '<=', $request->date_to);
+            }
+
+            $rejectedApprovals = $query->orderBy('ar.approved_date_time', 'desc')->get();
+
+            // Manual Mapping
+            $users    = $this->getUsers();
+
+            $branchesCollection = collect($branches);
+            $usersCollection    = collect($users);
+
+            $rejectedApprovals->transform(function ($item) use ($branchesCollection, $usersCollection, $types) {
+                $branch = $branchesCollection->first(function ($b) use ($item) {
+                    return ($b->idBranch ?? $b->branch_id ?? null) == $item->branch_id;
+                });
+                $item->branch_name = $branch->Name ?? 'N/A';
+
+                $user = $usersCollection->first(function ($u) use ($item) {
+                    return ($u->idUser ?? $u->id ?? null) == $item->userid;
+                });
+                $item->user_full_name = $user->full_name ?? $user->Full_Name ?? 'N/A';
+
+                $rejectedBy = $usersCollection->first(function ($u) use ($item) {
+                    return ($u->idUser ?? $u->id ?? null) == $item->approveduserid;
+                });
+                $item->rejected_by_full_name = $rejectedBy->full_name ?? $rejectedBy->Full_Name ?? 'N/A';
+
+                // Map Type Name
+                $typeName = 'N/A';
+                foreach ($types as $category => $subTypes) {
+                    if (isset($subTypes[$item->typeid])) {
+                        $typeName = $subTypes[$item->typeid];
+                        break;
+                    }
+                }
+                $item->type_name = $typeName;
+
+                return $item;
+            });
+
+            return DataTables::of($rejectedApprovals)
+                ->addColumn('action', function ($row) {
+                    return '<button class="btn btn-sm btn-primary" onclick="viewDetails(' . $row->id . ', \'' . $row->type_name . '\', ' . $row->typeid . ')"><i class="ri-eye-line me-1"></i> View Details</button>';
+                })
+                ->rawColumns(['action'])
+                ->make(true);
         }
 
-        if (!empty($selectedType)) {
-            $query->where('ar.typeid', $selectedType);
+        // Calculate count for the badge
+        $rejectedCountQuery = ApprovalRequest::where('status', 2);
+        if ($branch_access == 0) {
+            $rejectedCountQuery->where('branch_id', $user_branch_id);
         }
-
-        if (!empty($dateFrom)) {
-            $query->whereDate('ar.approved_date_time', '>=', $dateFrom);
-        }
-        if (!empty($dateTo)) {
-            $query->whereDate('ar.approved_date_time', '<=', $dateTo);
-        }
-
-        $rejectedApprovals = $query->orderBy('ar.approved_date_time', 'desc')->get();
+        $rejectedCount = $rejectedCountQuery->count();
 
         return view('pages.RejectedApproval', compact(
-            'rejectedApprovals',
             'branches',
             'branch_access',
             'selectedBranch',
             'selectedType',
             'dateFrom',
             'dateTo',
-            'types'
+            'types',
+            'rejectedCount'
         ));
     }
 
@@ -277,8 +432,7 @@ class ApprovalController extends Controller
             DB::beginTransaction();
 
             // Lock the approval row for safety
-            $approval = DB::table('approval_request')
-                ->where('id', $id)
+            $approval = ApprovalRequest::where('id', $id)
                 ->lockForUpdate()
                 ->first();
 
@@ -383,8 +537,7 @@ class ApprovalController extends Controller
 
                     $userId = $updateData['user_id'];
 
-                    DB::table('user')
-                        ->where('id', $userId)
+                    User::where('id', $userId)
                         ->update([
                             'Epf_no'          => $updateData['Epf_no'],
                             'Designation'     => $updateData['Designation'],
@@ -435,16 +588,16 @@ class ApprovalController extends Controller
                     );
 
                     if ($key === "payment_delete") {
-                        DB::table('user')->where('id', $userId)->update(['payment_delete' => $value]);
+                        User::where('id', $userId)->update(['payment_delete' => $value]);
                     }
                     if ($key === "branch_access") {
-                        DB::table('user')->where('id', $userId)->update(['branch_access' => $value]);
+                        User::where('id', $userId)->update(['branch_access' => $value]);
                     }
                     if ($key === "collector_access") {
-                        DB::table('user')->where('id', $userId)->update(['collector' => $value]);
+                        User::where('id', $userId)->update(['collector' => $value]);
                     }
                     if ($key === "cashier_access") {
-                        DB::table('user')->where('id', $userId)->update(['cashier' => $value]);
+                        User::where('id', $userId)->update(['cashier' => $value]);
                     }
                 }
             }
@@ -489,8 +642,7 @@ class ApprovalController extends Controller
                 $branchId = $approval->branch_id;
 
                 // Prevent duplicates at approval time
-                $exists = DB::table('customer')
-                    ->where('branch_id', $branchId)
+                $exists = Customer::where('branch_id', $branchId)
                     ->where(function ($q) use ($customerData) {
                         if (!empty($customerData['Nic'])) {
                             $q->orWhere('Nic', $customerData['Nic']);
@@ -545,7 +697,7 @@ class ApprovalController extends Controller
                     ->first();
 
                 if ($sms_template) {
-                    $customer_table = DB::table('customer')->where('idCustomer', $customerId)->first();
+                    $customer_table = Customer::where('idCustomer', $customerId)->first();
                     if ($customer_table) {
                         $placeholders = [
                             '@Member_No@'   => $customer_table->cus_number,
@@ -571,8 +723,7 @@ class ApprovalController extends Controller
                 $customerId  = $requestData['customer_id'];
                 $newData     = $requestData['new_data'];
 
-                DB::table('customer')
-                    ->where('idCustomer', $customerId)
+                Customer::where('idCustomer', $customerId)
                     ->where('branch_id', $approval->branch_id)
                     ->update($newData);
 
@@ -603,16 +754,14 @@ class ApprovalController extends Controller
                 $actionType      = $requestData['action_type'];
                 $actionDesc      = $requestData['action_description'];
 
-                DB::table('customer')
-                    ->where('idCustomer', $customerId)
+                Customer::where('idCustomer', $customerId)
                     ->where('branch_id', $approval->branch_id)
                     ->update([
                         'Status'  => $newStatus,
                         'Comment' => $note,
                     ]);
 
-                $customer = DB::table('customer')
-                    ->where('idCustomer', $customerId)
+                $customer = Customer::where('idCustomer', $customerId)
                     ->where('branch_id', $approval->branch_id)
                     ->first();
 
@@ -789,8 +938,7 @@ class ApprovalController extends Controller
             // -----------------------------------------------------------------
             // FINAL: UPDATE APPROVAL REQUEST AS APPROVED
             // -----------------------------------------------------------------
-            DB::table('approval_request')
-                ->where('id', $id)
+            ApprovalRequest::where('id', $id)
                 ->update([
                     'status'             => 1,
                     'approveduserid'     => user_data('idUser'),
@@ -853,7 +1001,7 @@ class ApprovalController extends Controller
         $reason = $request->input('reason');
 
         try {
-            $approval = DB::table('approval_request')->where('id', $id)->first();
+            $approval = ApprovalRequest::where('id', $id)->first();
 
             if (!$approval) {
                 return response()->json(['success' => false, 'message' => 'Approval request not found.']);
@@ -870,8 +1018,7 @@ class ApprovalController extends Controller
                     ->update(['Status' => '-2']);
             }
 
-            DB::table('approval_request')
-                ->where('id', $id)
+            ApprovalRequest::where('id', $id)
                 ->update([
                     'status'             => 2,
                     'approveduserid'     => user_data('idUser'),
@@ -931,14 +1078,13 @@ class ApprovalController extends Controller
         $comment = $request->input('comment');
 
         try {
-            $approval = DB::table('approval_request')->where('id', $id)->first();
+            $approval = ApprovalRequest::where('id', $id)->first();
 
             if (!$approval) {
                 return response()->json(['success' => false, 'message' => 'Approval request not found.']);
             }
 
-            DB::table('approval_request')
-                ->where('id', $id)
+            ApprovalRequest::where('id', $id)
                 ->update([
                     'status'             => -1,
                     'approveduserid'     => user_data('idUser'),
@@ -982,7 +1128,7 @@ class ApprovalController extends Controller
     public function getLoanDetails($approvalId)
     {
         try {
-            $approval = DB::table('approval_request')->where('id', $approvalId)->first();
+            $approval = ApprovalRequest::where('id', $approvalId)->first();
 
             if (!$approval || $approval->typeid != 401) {
                 return response()->json(['success' => false, 'message' => 'Loan approval request not found.']);
@@ -1666,7 +1812,7 @@ class ApprovalController extends Controller
                             </tr>
                             <tr>
                                 <th>Risk Level</th>
-                                <td><span class="badge bg-warning">' . htmlspecialchars($customerData['Customer_Risk_Level'] ?? 'N/A') . '</span></td>
+                                <td><span class="badge bg-warning text-dark">' . htmlspecialchars($customerData['Customer_Risk_Level'] ?? 'N/A') . '</span></td>
                             </tr>
                         </tbody>
                     </table>
@@ -2402,5 +2548,69 @@ class ApprovalController extends Controller
             'success' => true,
             'items'   => $items,
         ]);
+    }
+    private function getBranches()
+    {
+        // 1. Try Cache
+        $branches = Cache::get('all_branches');
+
+        dd($branches);
+        if ($branches) {
+            // Ensure object format
+            return is_array($branches) ? json_decode(json_encode($branches)) : $branches;
+        }
+
+        // 2. Try API
+        try {
+            $token = session('auth_token');
+            if ($token) {
+                $response = Http::withToken($token)
+                    ->get(env('ACCOUNT_CENTER_SERVER_URL') . '/api/microfinance/users-data-for-micro-finance');
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    if (isset($data['branches'])) {
+                        // Cache and return
+                        Cache::put('all_branches', $data['branches'], now()->addMinutes(120));
+                        return json_decode(json_encode($data['branches']));
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // Log error or ignore
+        }
+
+        return [];
+    }
+
+    private function getUsers()
+    {
+        // 1. Try Cache
+        $users = Cache::get('all_users');
+
+        if ($users) {
+            return is_array($users) ? json_decode(json_encode($users)) : $users;
+        }
+
+        // 2. Try API
+        try {
+            $token = session('auth_token');
+            if ($token) {
+                $response = Http::withToken($token)
+                    ->get(env('ACCOUNT_CENTER_SERVER_URL') . '/api/microfinance/users-data-for-micro-finance');
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    if (isset($data['users'])) {
+                        Cache::put('all_users', $data['users'], now()->addMinutes(120));
+                        return json_decode(json_encode($data['users']));
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // Log error
+        }
+
+        return [];
     }
 }

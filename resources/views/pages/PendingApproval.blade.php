@@ -190,17 +190,18 @@
 <div class="container-fluid">
     <div class="row mt-4">
         <div class="col-12">
-
+ {{dd($branches)}}
             {{-- Filter Section --}}
             <div class="card mb-4 filter-section border-0">
                 <form method="GET" action="{{ route('approval.pending') }}">
                     <div class="row g-3 align-items-end">
-                        @if(session('branch_id') == -1)
+                        @if(session('branch_id') == session('head_branch'))
                         <div class="col-md-4">
                             <label for="branch_id" class="form-label">Branch</label>
                             <select class="form-select" id="branch_id" name="branch_id">
                                 <option value="">All Branches</option>
                                 @foreach($branches as $branch)
+                               
                                 <option value="{{ $branch->branch_id }}"
                                     {{ $selectedBranch == $branch->branch_id ? 'selected' : '' }}>
                                     {{ $branch->Name }}
@@ -210,8 +211,8 @@
                         </div>
                         @endif
 
-                        <div class="{{ session('branch_id') == -1 ? 'col-md-4' : 'col-md-8' }}">
-                            @if(session('branch_id') != -1)
+                        <div class="{{ session('branch_id') == session('head_branch') ? 'col-md-4' : 'col-md-8' }}">
+                            @if(session('branch_id') != session('head_branch'))
                             <input type="hidden" name="branch_id" value="{{ session('branch_id') }}">
                             @endif
                             <label for="type" class="form-label">Request Type</label>
@@ -253,99 +254,33 @@
                         <p class="text-muted small mb-0">Manage and review pending requests requiring your attention.</p>
                     </div>
                     <span class="badge bg-warning text-dark fs-6 d-flex align-items-center gap-2">
-                        <i class="ri-time-line"></i> {{ count($pendingApprovals) }} Pending
+                        <i class="ri-time-line"></i> {{ $pendingCount }} Pending
                     </span>
                 </div>
 
                 <div class="card-body">
-                    @if(count($pendingApprovals) > 0)
                     <div class="table-responsive">
-                        <table id="pendingApprovalTable" class="table table-hover align-middle" style="width: 100%">
+                        <table id="pendingApprovalTable" class="table table-hover align-middle" style="width: 100%" data-is-head-office="{{ session('branch_id') == session('head_branch') ? 'true' : 'false' }}">
                             <thead>
                                 <tr>
-                                    <th class="text-center" style="width: 20px;"></th>
+
                                     <th>Branch</th>
                                     <th>Type</th>
                                     <th>Date Submitted</th>
                                     <th>Requested By</th>
-                                    <th class="text-center">View</th>
-                                    @if(session('branch_id') == -1)
+                                    <th>Description</th>
+                                    @if(session('branch_id') == session('head_branch'))
                                     <th class="text-center" style="min-width: 140px;">Actions</th>
+                                    @else
+                                    <th class="text-center">View</th>
                                     @endif
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($pendingApprovals as $approval)
-                                <tr data-description="{{ htmlspecialchars($approval->description ?? '', ENT_QUOTES, 'UTF-8') }}">
-                                    <td class="details-control text-center">
-                                        <i class="ri-add-circle-line fs-5"></i>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-primary">
-                                            {{ $approval->branch_name ?? 'N/A' }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-info text-dark">
-                                            {{ $approval->type ?? $approval->typeid }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex flex-column">
-                                            <span class="fw-bold text-dark">{{ date('d M Y', strtotime($approval->data_time)) }}</span>
-                                            <small class="text-muted">{{ date('h:i A', strtotime($approval->data_time)) }}</small>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-xs me-2">
-                                                <span class="avatar-title rounded-circle bg-soft-primary text-primary">
-                                                    {{ substr($approval->user_full_name ?? 'U', 0, 1) }}
-                                                </span>
-                                            </div>
-                                            <span class="fw-medium text-dark">
-                                                {{ $approval->user_full_name ?? 'N/A' }}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center">
-                                        <button class="btn-action btn-view"
-                                            onclick="viewDetails({{ $approval->id }}, '{{ $approval->type }}', {{ $approval->typeid }})"
-                                            data-bs-toggle="tooltip" title="View Details">
-                                            <i class="ri-eye-line"></i>
-                                        </button>
-                                    </td>
-                                    @if(session('branch_id') == -1)
-                                    <td class="text-center">
-                                        <button class="btn-action btn-approve"
-                                            onclick="approveRequest({{ $approval->id }})"
-                                            data-bs-toggle="tooltip" title="Approve">
-                                            <i class="ri-check-line"></i>
-                                        </button>
-                                        <button class="btn-action btn-reject"
-                                            onclick="rejectRequest({{ $approval->id }})"
-                                            data-bs-toggle="tooltip" title="Reject">
-                                            <i class="ri-close-line"></i>
-                                        </button>
-                                        <button class="btn-action btn-callback"
-                                            onclick="callbackRequest({{ $approval->id }})"
-                                            data-bs-toggle="tooltip" title="Callback">
-                                            <i class="ri-phone-line"></i>
-                                        </button>
-                                    </td>
-                                    @endif
-                                </tr>
-                                @endforeach
+                                {{-- populated by yajra --}}
                             </tbody>
                         </table>
                     </div>
-                    @else
-                    <div class="text-center py-5">
-                        <img src="https://cdn-icons-png.flaticon.com/512/7486/7486777.png" alt="No Data" style="max-width: 150px; opacity: 0.6;" class="mb-4">
-                        <h5 class="text-muted mb-2">No Pending Approvals</h5>
-                        <p class="text-muted">Great job! All requests have been processed.</p>
-                    </div>
-                    @endif
                 </div>
             </div>
         </div>
@@ -422,38 +357,88 @@
     let currentAction = null;
 
     $(document).ready(function() {
-        // Initialize Tooltips
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
-        })
+        // Initialize Tooltips inside the table (event delegation handled by DT draw callback or specific init)
+        $('body').tooltip({
+            selector: '[data-bs-toggle="tooltip"]'
+        });
 
-        const isHeadOffice = {
+        const isHeadOffice = $('#pendingApprovalTable').data('is-head-office');
+
+        // Define columns
+        let columns = [{
+                data: 'branch_name',
+                name: 'branch_name',
+                render: function(data) {
+                    return `<span class="badge bg-primary">${data}</span>`;
+                }
+            },
             {
-                session('branch_id') == -1 ? 'true' : 'false'
+                data: 'type_name',
+                name: 'type_name',
+                render: function(data, type, row) {
+                    return `<span class="badge bg-info text-dark">${data || row.typeid}</span>`;
+                }
+            },
+            {
+                data: 'data_time',
+                name: 'data_time',
+                render: function(data) {
+                    if (!data) return '';
+                    const date = new Date(data);
+                    // Format: DD MMM YYYY
+                    const day = date.toLocaleString('default', {
+                        day: '2-digit'
+                    });
+                    const month = date.toLocaleString('default', {
+                        month: 'short'
+                    });
+                    const year = date.getFullYear();
+                    const time = date.toLocaleString('default', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    return `<div class="d-flex flex-column"><span class="fw-bold text-dark">${day} ${month} ${year}</span><small class="text-muted">${time}</small></div>`;
+                }
+            },
+            {
+                data: 'user_full_name',
+                name: 'user_full_name',
+                render: function(data) {
+                    const initial = data ? data.charAt(0) : 'U';
+                    return `<div class="d-flex align-items-center"><div class="avatar-xs me-2"><span class="avatar-title rounded-circle bg-soft-primary text-primary">${initial}</span></div><span class="fw-medium text-dark">${data || 'N/A'}</span></div>`;
+                }
+            },
+            {
+                data: 'description',
+                name: 'description',
+                visible: true,
+                render: function(data, type, row) {
+                    return `<span class="text-wrap">${data || 'N/A'}</span>`;
+                }
+            },
+            {
+                data: 'action',
+                name: 'action',
+                orderable: false,
+                searchable: false,
+                className: 'text-center'
             }
-        };
-        const nonSortable = isHeadOffice ? [0, 5, 6] : [0, 5];
+        ];
 
         const table = $('#pendingApprovalTable').DataTable({
-            pageLength: 25,
-            responsive: true,
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: "{{ route('approval.pending') }}",
+                data: function(d) {
+                    d.branch_id = $('#branch_id').val();
+                    d.type = $('#type').val();
+                }
+            },
+            columns: columns,
             order: [
                 [3, 'desc']
-            ], // Sort by Date & Time
-            columnDefs: [{
-                    orderable: false,
-                    targets: nonSortable
-                },
-                {
-                    className: "text-center",
-                    targets: [0, 5]
-                },
-                {
-                    className: isHeadOffice ? "text-center" : "",
-                    targets: isHeadOffice ? [6] : []
-                }
-            ],
+            ], // Sort by Date Submitted
             language: {
                 search: "_INPUT_",
                 searchPlaceholder: "Search requests...",
@@ -465,40 +450,15 @@
             dom: '<"d-flex justify-content-between align-items-center mb-3"f>t<"d-flex justify-content-between align-items-center mt-3"ip>'
         });
 
-        // Clean up default DataTables styling
+        // Clean up Filter Input
         $('.dataTables_filter input').addClass('form-control').css('width', '250px');
 
-        // Expand/collapse description
-        $('#pendingApprovalTable tbody').on('click', 'td.details-control', function() {
-            const tr = $(this).closest('tr');
-            const row = table.row(tr);
-            const icon = $(this).find('i');
-
-            if (row.child.isShown()) {
-                row.child.hide();
-                tr.removeClass('shown');
-                icon.removeClass('ri-subtract-line').addClass('ri-add-circle-line');
-            } else {
-                const description = (tr.data('description') || '').toString();
-                const safeText = description === '' ? '<em class="text-muted">No description available</em>' : description;
-
-                const content = `
-                        <div class="child-row-content">
-                            <div class="d-flex align-items-start">
-                                <i class="ri-file-text-line text-primary mt-1 me-2"></i>
-                                <div>
-                                    <h6 class="fw-bold mb-1 col-primary">Description / Reason</h6>
-                                    <p class="mb-0 text-muted">${safeText}</p>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-
-                row.child(content).show();
-                tr.addClass('shown');
-                icon.removeClass('ri-add-circle-line').addClass('ri-subtract-line');
-            }
+        // Filter Change Events
+        $('#branch_id, #type').on('change', function() {
+            table.draw();
         });
+
+
     });
 
     // ------------------------------------------------------------------

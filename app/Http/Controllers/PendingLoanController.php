@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use App\Http\Controllers\TodayPaymentController;
+use Yajra\DataTables\Facades\DataTables;
 
 
 class PendingLoanController extends Controller
@@ -135,9 +136,62 @@ class PendingLoanController extends Controller
             $loanQuery->where('customer.route_id', '=', $route);
         }
 
-        $loan = $loanQuery->get();
+        // Calculate total amount for the filtered query
+        // We clone the query to avoid interfering with DataTables processing if needed, 
+        // though DataTables handles its own cloning usually. 
+        // Note: usage of 'with' requires calculating it.
+        $totalAmount = $loanQuery->clone()->sum('customer_loan.Amount');
 
-        return response()->json(['item' => $loan, 'message' => 'filtered'], 200);
+        return DataTables::of($loanQuery)
+            ->with([
+                'total_amount' => $totalAmount
+            ])
+            ->addColumn('customer_name', function ($row) {
+                // Name formatting: Initials + Last Name
+                $firstNameParts = explode(' ', trim($row->First_Name));
+                $initials = '';
+                foreach ($firstNameParts as $part) {
+                    $initials .= strtoupper(substr($part, 0, 1)) . '.';
+                }
+                $lastNameParts = explode(' ', trim($row->Last_Name));
+                $formattedLastName = end($lastNameParts);
+                return $initials . ' ' . $formattedLastName;
+            })
+            ->editColumn('Amount', function ($row) {
+                return number_format($row->Amount, 2);
+            })
+            ->editColumn('pending_approvals', function ($row) {
+                return '<span style="color: red">' . $row->pending_approvals . '</span>';
+            })
+            ->editColumn('Status', function ($row) use ($status) {
+                if ($status === "-1") {
+                    return '<span class="px-2" style="background-color: #FFD700;border-radius: 10px; color: white;">Pending</span>';
+                } elseif ($status === "-3") {
+                    return '<span class="px-2" style="background-color: #FFA500;border-radius: 10px; color: white;">Pending on Head Office</span>';
+                } else {
+                    return '<span class="px-2" style="background-color: #ff0000;border-radius: 10px; color: white;">Deleted</span>';
+                }
+            })
+            ->addColumn('action', function ($row) use ($status) {
+                $buttons = '';
+
+                if ($status === "-2") {
+                    $buttons .= '<button type="button" class="btn btn-primary" disabled><i class="ri ri-send-plane-line"></i></button>';
+                    $buttons .= '<button type="button" class="btn btn-danger" disabled><i class="bi bi-trash"></i></button>';
+                    $buttons .= '<a href="/loanview/' . $row->idCustomer_Loan . '" target="_blank" class="btn btn-warning"><i class="bi bi-eye"></i></a>';
+                } elseif ($status === "-3") {
+                    $buttons .= '-';
+                } else {
+                    $buttons .= '<a href="/loanview/' . $row->idCustomer_Loan . '/438217" class="btn btn-primary"><i class="ri ri-send-plane-line"></i></a>';
+                    $buttons .= '<button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#view-modal" onclick="delete_request(' . $row->idCustomer_Loan . ')"><i class="bi bi-trash"></i></button>';
+                    $buttons .= '<a href="#" target="_blank" data-bs-toggle="modal" onclick="agreement(' . $row->idCustomer_Loan . ')" data-bs-target="#agreement" class="btn btn-dark"><i class="bi bi-receipt"></i></a>';
+                    $buttons .= '<a href="#' . $row->idCustomer_Loan . '" data-bs-toggle="modal" data-bs-target="#loan_edit" onclick="change_installment(' . $row->idCustomer_Loan . ')"  class="btn btn-info"><i class="bi bi-pen"></i></a>';
+                    $buttons .= '<button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#standard-modal_2" onclick="set_cus(' . $row->idCustomer_Loan . ')"><i class="bi bi-camera fs-4"></i></button>';
+                }
+                return $buttons;
+            })
+            ->rawColumns(['pending_approvals', 'Status', 'action'])
+            ->make(true);
     }
 
 
