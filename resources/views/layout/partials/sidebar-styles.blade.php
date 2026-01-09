@@ -23,15 +23,15 @@
 
     /* Dark Mode */
     html[data-layout-mode="dark"] .leftside-menu,
+    html[data-bs-theme="dark"] .leftside-menu,
     html[data-layout-mode="detached"] .leftside-menu {
         /* Glass Effect with Gradient */
-        background: var(--sidebar-bg) !important;
+        background: rgba(30, 30, 40, 0.6) !important;
         backdrop-filter: blur(20px) !important;
         -webkit-backdrop-filter: blur(20px) !important;
-        --sidebar-text: #ced4da;
-        ;
-        --sidebar-hover-bg: rgba(255, 255, 255, 0.1);
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        --sidebar-text: #e0e0e0;
+        --sidebar-hover-bg: rgba(255, 255, 255, 0.08);
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
         box-shadow: 5px 0 25px rgba(0, 0, 0, 0.2);
     }
 
@@ -205,8 +205,9 @@
     }
 
     /* Condensed Mode - Dark Theme Override */
-    html[data-layout-mode="dark"][data-sidenav-size="condensed"] .leftside-menu {
-        background: var(--sidebar-bg) !important;
+    html[data-layout-mode="dark"][data-sidenav-size="condensed"] .leftside-menu,
+    html[data-bs-theme="dark"][data-sidenav-size="condensed"] .leftside-menu {
+        background: rgba(30, 30, 40, 0.6) !important;
         box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
     }
 
@@ -268,11 +269,13 @@
     }
 
     /* Icon Colors - Dark Mode */
-    html[data-layout-mode="dark"][data-sidenav-size="condensed"] .side-nav-link i {
+    html[data-layout-mode="dark"][data-sidenav-size="condensed"] .side-nav-link i,
+    html[data-bs-theme="dark"][data-sidenav-size="condensed"] .side-nav-link i {
         color: rgba(255, 255, 255, 0.8);
     }
 
-    html[data-layout-mode="dark"][data-sidenav-size="condensed"] .side-nav-link:hover i {
+    html[data-layout-mode="dark"][data-sidenav-size="condensed"] .side-nav-link:hover i,
+    html[data-bs-theme="dark"][data-sidenav-size="condensed"] .side-nav-link:hover i {
         color: #fff;
     }
 
@@ -290,7 +293,8 @@
     }
 
     /* Hover BG - Dark Mode */
-    html[data-layout-mode="dark"][data-sidenav-size="condensed"] .side-nav-link:hover {
+    html[data-layout-mode="dark"][data-sidenav-size="condensed"] .side-nav-link:hover,
+    html[data-bs-theme="dark"][data-sidenav-size="condensed"] .side-nav-link:hover {
         background: rgba(106, 94, 135, 0.6) !important;
     }
 
@@ -391,5 +395,18 @@
         display: none !important;
         visibility: hidden !important;
         pointer-events: none !important;
+    }
+
+    /* SimpleBar Fix */
+    .simplebar-content-wrapper {
+        background: transparent !important;
+    }
+
+    /* Mobile Sidebar Dark Mode Fix */
+    html[data-bs-theme="dark"] body.sidebar-enable .leftside-menu,
+    html[data-layout-mode="dark"] body.sidebar-enable .leftside-menu {
+        background: rgba(30, 30, 40, 0.9) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
     }
 </style>

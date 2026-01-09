@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="{{ session('theme', 'light') }}" data-layout-mode="{{ session('theme', 'light') }}" data-menu-color="{{ session('theme', 'light') }}" data-topbar-color="{{ session('theme', 'light') }}" data-layout-position="fixed" data-sidenav-size="default" class="menuitem-active">
 
 <head>
     <meta charset="utf-8" />
@@ -8,13 +8,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="{{ asset('assets/images/favicon.ico') }}">
     <script src="{{ asset('assets/js/config.js') }}"></script>
-    <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet" type="text/css" id="app-style" />
-    <link href="{{ asset('assets/css/icons.min.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('assets/css/app.min.css') }}?v={{ time() }}" rel="stylesheet" type="text/css" id="app-style" />
+    <link href="{{ asset('assets/css/icons.min.css') }}?v={{ time() }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('assets/vendor/select2/css/select2.min.css') }}" rel="stylesheet" type="text/css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     {{-- DataTables CSS --}}
     <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap5.min.css" rel="stylesheet">
+
     <style>
         .required-asterisk {
             color: red;
@@ -24,7 +25,7 @@
             body {
                 font-family: Arial, sans-serif;
                 font-size: 11px;
-                color: #000;
+                /* color: #000; */
             }
 
             table {
@@ -63,14 +64,13 @@
     </style>
 
     @include('component.header.navbarcss')
+    @include('layout.partials.sidebar-styles')
     @yield('head')
 </head>
 
 <body>
     <div class="wrapper">
         @include('component.header')
-
-
 
         <div class="content-page">
 
@@ -106,6 +106,7 @@
         </div>
 
     </div>
+    
     <script src="{{asset('assets/js/vendor.min.js')}}"></script>
     <script src="{{asset('assets/js/app.min.js')}}"></script>
     <script src="{{asset('../JS/validate.js?n=2')}}"></script>
@@ -297,7 +298,7 @@
 
     {{-- HEAD OFFICE NOTIFICATIONS – new pending approvals --}}
     <script>
-        @if(session('branch_id') == -1)
+        @if(session('branch_id') == session('head_office'))
         let lastApprovalId = 0;
         let approvalPollInterval = null;
 
@@ -414,7 +415,7 @@
     {{-- BRANCH NOTIFICATIONS – when HO approves/rejects/callback --}}
     {{-- BRANCH NOTIFICATIONS – when HO approves / rejects / callback --}}
     <script>
-        @if(session('branch_id') != -1)
+        @if(session('branch_id') != session('head_office'))
         let branchNotifInterval = null;
 
         function pollBranchNotifications() {
@@ -507,57 +508,6 @@
         });
         @endif
     </script>
-
-
-
-    <!-- Global Theme Switcher Script -->
-    <script>
-        $(document).ready(function() {
-            // Initialize Theme from LocalStorage
-            const savedTheme = localStorage.getItem('theme') || 'dark'; // Default to dark
-            $('html').attr('data-layout-mode', savedTheme);
-            $('html').attr('data-bs-theme', savedTheme); // Also set BS theme
-
-            // Toggle Button Click
-            // Unbind previous events to prevent double toggling if script is included twice
-            $(document).off('click', '#light-dark-mode').on('click', '#light-dark-mode', function(e) {
-                e.preventDefault();
-                const currentMode = $('html').attr('data-layout-mode');
-                const newMode = (currentMode === 'light') ? 'dark' : 'light';
-
-                $('html').attr('data-layout-mode', newMode);
-                $('html').attr('data-bs-theme', newMode); // Also set BS theme
-                localStorage.setItem('theme', newMode);
-            });
-
-            // Sidebar Toggle Logic
-            // Sidebar Toggle Logic
-            $(document).off('click', '.button-toggle-menu').on('click', '.button-toggle-menu', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                const windowWidth = $(window).width();
-
-                if (windowWidth < 768) {
-                    // Mobile: Toggle sidebar-enable class on body
-                    $('body').toggleClass('sidebar-enable');
-                } else {
-                    // Desktop: Toggle between default and condensed
-                    const html = $('html');
-                    const currentSize = html.attr('data-sidenav-size') || 'default';
-                    const newSize = (currentSize === 'condensed') ? 'default' : 'condensed';
-
-                    html.attr('data-sidenav-size', newSize);
-
-                    // Trigger resize event to smooth out charts/tables
-                    setTimeout(function() {
-                        window.dispatchEvent(new Event('resize'));
-                    }, 300);
-                }
-            });
-        });
-    </script>
 </body>
 
 </html>
-```

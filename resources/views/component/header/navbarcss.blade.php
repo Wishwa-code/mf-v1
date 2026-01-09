@@ -48,10 +48,13 @@
     }
 
     /* Dark Mode Navbar Override */
-    html[data-layout-mode="dark"] .navbar-custom {
-        background: rgba(15, 12, 41, 0.7) !important;
+    html[data-layout-mode="dark"] .navbar-custom,
+    html[data-bs-theme="dark"] .navbar-custom {
+        background: rgba(30, 30, 40, 0.6) !important;
         /* Dark Glass */
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     /* Mobile: Reset margin */
@@ -500,13 +503,71 @@
     html[data-layout-mode="dark"] .card,
     html[data-layout-mode="dark"] .card-modern,
     html[data-layout-mode="dark"] .modal-content,
-    html[data-layout-mode="dark"] .offcanvas {
+    html[data-layout-mode="dark"] .offcanvas,
+    html[data-layout-mode="dark"] .footer,
+    html[data-bs-theme="dark"] .footer {
         background: rgba(30, 30, 40, 0.6) !important;
         /* Semi-transparent Dark */
         border: 1px solid rgba(255, 255, 255, 0.08) !important;
         box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
         color: #e0e0e0 !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
     }
+
+    /* Dark Mode Tables */
+    html[data-layout-mode="dark"] .table,
+    html[data-bs-theme="dark"] .table {
+        color: #e0e0e0 !important;
+        border-color: rgba(255, 255, 255, 0.05) !important;
+    }
+
+    html[data-layout-mode="dark"] .table th,
+    html[data-layout-mode="dark"] .table td,
+    html[data-bs-theme="dark"] .table th,
+    html[data-bs-theme="dark"] .table td {
+        border-color: rgba(255, 255, 255, 0.05) !important;
+        background: transparent !important;
+    }
+
+    /* Dark Mode Inputs */
+    html[data-layout-mode="dark"] .form-control,
+    html[data-layout-mode="dark"] .form-select,
+    html[data-bs-theme="dark"] .form-control,
+    html[data-bs-theme="dark"] .form-select {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: #fff !important;
+    }
+
+    html[data-layout-mode="dark"] .form-control:focus,
+    html[data-layout-mode="dark"] .form-select:focus,
+    html[data-bs-theme="dark"] .form-control:focus,
+    html[data-bs-theme="dark"] .form-select:focus {
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        border-color: #6366f1 !important;
+        box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.25) !important;
+    }
+
+    /* Dark Mode Dropdowns */
+    html[data-layout-mode="dark"] .dropdown-menu,
+    html[data-bs-theme="dark"] .dropdown-menu {
+        background: rgba(30, 30, 40, 0.8) !important;
+        backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+
+    html[data-layout-mode="dark"] .dropdown-item,
+    html[data-bs-theme="dark"] .dropdown-item {
+        color: #e0e0e0 !important;
+    }
+
+    html[data-layout-mode="dark"] .dropdown-item:hover,
+    html[data-bs-theme="dark"] .dropdown-item:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+        color: #fff !important;
+    }
+
 
     /* Text Adjustments for Glass */
     html[data-bs-theme="dark"] .text-muted,
@@ -527,5 +588,44 @@
     html[data-layout-mode="dark"] h5,
     html[data-layout-mode="dark"] h6 {
         color: #f0f0f0 !important;
+    }
+
+    /* Glass Panels in Dark Mode */
+    html[data-bs-theme="dark"] .glass-panel,
+    html[data-layout-mode="dark"] .glass-panel {
+        background: rgba(30, 30, 40, 0.6) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+    }
+
+    /* Text Visiblity Fixes */
+    html[data-bs-theme="dark"] .text-dark,
+    html[data-layout-mode="dark"] .text-dark {
+        color: #f0f0f0 !important;
+    }
+
+    html[data-bs-theme="dark"] .stat-value,
+    html[data-layout-mode="dark"] .stat-value {
+        color: #f0f0f0 !important;
+    }
+
+    html[data-bs-theme="dark"] .stat-label,
+    html[data-layout-mode="dark"] .stat-label {
+        color: rgba(224, 224, 224, 0.7) !important;
+    }
+
+    html[data-bs-theme="dark"] .shortcut-btn,
+    html[data-layout-mode="dark"] .shortcut-btn {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        color: #e0e0e0 !important;
+    }
+
+    html[data-bs-theme="dark"] .shortcut-btn:hover,
+    html[data-layout-mode="dark"] .shortcut-btn:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+        color: #fff !important;
     }
 </style>

@@ -1238,7 +1238,6 @@ class UserController extends Controller
                 $days++;
             }
 
-            // dd($item);
 
             $paneltyCount = (int) ($item->Panelty_count ?? 0);
             $missing      = max(0, $days - $paneltyCount);
@@ -1275,7 +1274,6 @@ class UserController extends Controller
                         ->where('idCustomer', '=', $item->Customer_idCustomer)
                         ->first();
 
-                    // dd($item->Customer_idCustomer,$item);
                     $panelty_amount = number_format($panelty_amount, 2, '.', '');
 
                     DB::table('customer_log')->insert([
@@ -1324,8 +1322,10 @@ class UserController extends Controller
                     $System_default_6 = tableWithBranch('company_bank_accounts')
                         ->where('Bank_Type', '=', 'System_default_6')
                         ->first();
-                    $bankLogController->index($System_default_5->Idbank, "Penalty", "Penalty", "-", "debit", $panelty_amount, $System_default_6->Idbank);
-                    $bankLogController->index($System_default_6->Idbank, "Penalty", "Penalty", "-", "credit", $panelty_amount, $System_default_5->Idbank);
+
+                        dd($System_default_5,$System_default_6);
+                    $bankLogController->index($System_default_5?->Idbank ?? 1, "Penalty", "Penalty", "-", "debit", $panelty_amount, $System_default_6->Idbank);
+                    $bankLogController->index($System_default_6?->Idbank ?? 1, "Penalty", "Penalty", "-", "credit", $panelty_amount, $System_default_5->Idbank);
                 }
             }
         }

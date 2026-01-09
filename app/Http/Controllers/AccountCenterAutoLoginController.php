@@ -24,11 +24,11 @@ class AccountCenterAutoLoginController extends Controller
 
         $userData = $this->fetchUserData($token, $serverUrl);
 
+
         if (empty($userData)) {
             return redirect("$accountCenterUrl/api/auth/check-auth");
         }
 
-        // dd($userData['userData']);
         // Activity Log: System Login
         if (isset($userData['user'])) {
             activity()
@@ -50,6 +50,8 @@ class AccountCenterAutoLoginController extends Controller
         // Optionally set cookie for further requests
         cookie()->queue('access_token', $token, 20); // 20 minutes
 
+        session(['company_name' => $userData['userData']['company']['Company_Name']]);
+
         return redirect($appUrl);
     }
 
@@ -68,17 +70,11 @@ class AccountCenterAutoLoginController extends Controller
 
             if ($response->ok() && $response->reason() == 'OK') {
                 $data = $response->json();
-                if (!empty($data)) {
-                    if (isset($data['success']) && $data['success']) {
-                        $user = User::where("email", $data['user']['email'])->first();
-                        // Logging moved to autoLogin method
-                    }
-                    return $data;
-                }
+                return $data;
             }
         } catch (\Exception $e) {
             // Continue to fallback
-            dd($e);
+            return redirect( rtrim(env('ACCOUNT_CENTER_URL', 'https://accountcenter.asipbook.com'), '/'));
         }
 
         try {
@@ -110,13 +106,13 @@ class AccountCenterAutoLoginController extends Controller
         }));
 
         $userData['branches'] = $filteredBranches;
-        // $userData['branches'] = $filteredBranches;
-        // session(['user_data' => $userData]); -- REFACTORED TO CACHE
+
         $userId = $userData['idUser'] ?? null;
         if ($userId) {
-            session(['user_id' => $userId]); // Ensure we have a simple ID in session
+            session(['user_id' => $userId]); 
             Cache::put('user_data:' . $userId, $userData, now()->addMinutes(120));
         }
+
         session(['head_branch' => $userData['microfinanceHeadBranchId'] ?? null]);
 
         $hasBranchAccess = 0;
@@ -146,7 +142,7 @@ class AccountCenterAutoLoginController extends Controller
             }
         }
 
-        dd($userData);
+        // dd($userData);
         if (isset($userData['company']['Name'])) {
             session(['company_name' => $userData['company']['Name']]);
         }
