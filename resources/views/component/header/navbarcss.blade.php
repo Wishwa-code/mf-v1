@@ -169,7 +169,7 @@
 
     .modern-date-time .day-text {
         font-family: 'Poppins', sans-serif;
-        font-size: 1.5rem;
+        font-size: 1.2rem;
         font-weight: 800;
         color: #334155;
         text-transform: uppercase;

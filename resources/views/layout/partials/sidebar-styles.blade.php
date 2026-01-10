@@ -58,7 +58,7 @@
     }
 
     /* Floating Sidebar on Large Screens */
-    @media (min-width: 769px) {
+    @media (min-width: 992px) {
         .leftside-menu {
             top: 0 !important;
             left: 0 !important;
@@ -66,21 +66,52 @@
             margin: 1rem 0 1rem 1rem !important;
             border-radius: 1rem !important;
             bottom: auto !important;
+            width: var(--sidebar-width) !important;
+            box-shadow: 0 0 0 0 transparent !important;
+            /* formatting fix */
         }
 
         /* Adjust content page margin to account for floating sidebar margin + width */
         .content-page {
             margin-left: calc(var(--sidebar-width) + 2rem) !important;
+            padding-top: 6rem;
+            /* Ensure content starts below floating navbar (approx 80px + margin) */
         }
 
         /* Adjust navbar positioning to align with content */
         .navbar-custom {
             left: calc(var(--sidebar-width) + 2rem) !important;
             width: calc(100% - var(--sidebar-width) - 3rem) !important;
-            /* Account for right margin */
             margin: 1rem 1rem 0 0 !important;
             border-radius: 1rem !important;
             top: 0 !important;
+        }
+    }
+
+    /* Mobile / Tablet Resets */
+    @media (max-width: 991.98px) {
+        .leftside-menu {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            bottom: 0 !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            height: 100vh !important;
+            transform: translateX(-100%);
+        }
+
+        .content-page,
+        .navbar-custom {
+            margin-left: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            border-radius: 0 !important;
+        }
+
+        .navbar-custom {
+            top: 0 !important;
+            margin: 0 !important;
         }
     }
 
