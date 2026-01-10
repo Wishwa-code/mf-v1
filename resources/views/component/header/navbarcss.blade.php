@@ -39,10 +39,10 @@
         background: rgba(255, 255, 255, 0.7) !important;
         backdrop-filter: blur(12px) !important;
         -webkit-backdrop-filter: blur(12px) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+        border-bottom: none !important;
         box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
         /* Layout Fix: Push navbar to right of sidebar */
-        margin-left: var(--sidebar-width) !important;
+        /* margin-left handled by fixed positioning in sidebar-styles */
         transition: margin-left 0.3s ease, background 0.3s ease;
     }
 
@@ -672,15 +672,14 @@
         color: #6ea8fe;
     }
 
-    /* ===== Optional: Fixed footer (enable if needed) ===== */
-
-    .footer {
+    /* ===== Optional: Fixed footer (DISABLED for Floating Layout) ===== */
+    /* .footer {
         position: fixed;
         bottom: 0;
         left: 0;
         z-index: 1001;
         margin-left: var(--sidebar-width) !important;
-    }
+    } */
 
     /* Ensure consistent Z-Layering on Desktop to prevent "inside" look */
     @media (min-width: 1025px) {

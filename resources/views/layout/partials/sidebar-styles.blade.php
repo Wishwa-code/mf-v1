@@ -47,10 +47,41 @@
         z-index: 1005 !important;
         /* Ensure it stays above content/navbar overlap if any */
         position: fixed;
-        /* Ensure it's fixed */
-        top: 0 !important;
+        /* Floating Sidebar Styles */
+        top: 0;
         bottom: 0;
         left: 0;
+        height: 100vh;
+        /* Default for mobile, overridden for desktop below */
+        margin: 0;
+        border-radius: 0;
+    }
+
+    /* Floating Sidebar on Large Screens */
+    @media (min-width: 769px) {
+        .leftside-menu {
+            top: 0 !important;
+            left: 0 !important;
+            height: calc(100vh - 2rem) !important;
+            margin: 1rem 0 1rem 1rem !important;
+            border-radius: 1rem !important;
+            bottom: auto !important;
+        }
+
+        /* Adjust content page margin to account for floating sidebar margin + width */
+        .content-page {
+            margin-left: calc(var(--sidebar-width) + 2rem) !important;
+        }
+
+        /* Adjust navbar positioning to align with content */
+        .navbar-custom {
+            left: calc(var(--sidebar-width) + 2rem) !important;
+            width: calc(100% - var(--sidebar-width) - 3rem) !important;
+            /* Account for right margin */
+            margin: 1rem 1rem 0 0 !important;
+            border-radius: 1rem !important;
+            top: 0 !important;
+        }
     }
 
     /* Adjust Content Page Margin */
@@ -350,13 +381,17 @@
     }
 
     /* Navbar adjustment - Global (Disable Sticky) */
+    /* Navbar adjustment - Global (Sticky / Fixed) */
     .navbar-custom {
-        position: relative !important;
-        margin-left: var(--sidebar-width) !important;
-        left: 0 !important;
+        position: fixed !important;
         top: 0 !important;
+        right: 0 !important;
+        left: var(--sidebar-width) !important;
         width: auto !important;
-        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-left: 0 !important;
+        /* Reset any margin since we use left positioning */
+        z-index: 1001;
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     /* Logo Alignment */
@@ -375,9 +410,13 @@
             z-index: 1040;
         }
 
-        .content-page,
+        .content-page {
+            margin-left: 0 !important;
+        }
+
         .navbar-custom {
             margin-left: 0 !important;
+            left: 0 !important;
         }
 
         /* When sidebar is enabled via body class */

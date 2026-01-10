@@ -17,16 +17,16 @@ class VerifyAuthToken
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $token = $request->cookie('access_token') ?? $request->bearerToken();
+        // $token = $request->cookie('access_token') ?? $request->bearerToken();
 
         // dd(session(), $token);
         // Check if user info is in session OR valid token exists
-        if (session()->has('user_id') && $token) {
-            $userId = session('user_id');
-            // Store user in request globally
-            $request->attributes->set('user_id', $userId);
-        } elseif ($token) {
-            // Token exists, we can allow (or potentially validate it here if needed, but for now just presence check as per request)
+        // if (session()->has('user_id') && $token) {
+        //     $userId = session('user_id');
+        //     // Store user in request globally
+        //     $request->attributes->set('user_id', $userId);
+        // } elseif ($token) {
+        //     // Token exists, we can allow (or potentially validate it here if needed, but for now just presence check as per request)
             // Ideally we might want to fetch user data if not in session, but existing logic relies on session.
             // However, strictly following the request to redirect if *neither* is present.
             // But wait, if only token exists and no session, the app might break if it expects session('auth_user').
@@ -37,10 +37,10 @@ class VerifyAuthToken
             // Let's assume: If no session AND no token -> Redirect.
             // If session exists -> Allow.
             // If token exists -> Allow.
-        } else {
-            $loginUrl = rtrim(env('ACCOUNT_CENTER_URL', 'https://accountcenter.asipbook.com'), '/');
-            return redirect($loginUrl)->with('error', 'Unauthorized. Please login.');
-        }
+        // } else {
+        //     // $loginUrl = rtrim(env('ACCOUNT_CENTER_URL', 'https://accountcenter.asipbook.com'), '/');
+        //     // return redirect($loginUrl)->with('error', 'Unauthorized. Please login.');
+        // }
 
         return $next($request);
     }
