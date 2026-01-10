@@ -57,34 +57,42 @@
         border-radius: 0;
     }
 
-    /* Floating Sidebar on Large Screens */
+    /* Full Width Layout - Navbar on Top, Sidebar Below */
     @media (min-width: 992px) {
+
+        /* Sidebar sits BELOW the navbar */
         .leftside-menu {
+            position: fixed !important;
+            top: 70px !important;
+            /* Height of Navbar */
+            left: 0 !important;
+            height: calc(100vh - 70px) !important;
+            width: var(--sidebar-width) !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            bottom: auto !important;
+            z-index: 1004 !important;
+        }
+
+        /* Navbar spans full width at the very top */
+        .navbar-custom {
+            position: fixed !important;
             top: 0 !important;
             left: 0 !important;
-            height: calc(100vh - 2rem) !important;
-            margin: 1rem 0 1rem 1rem !important;
-            border-radius: 1rem !important;
-            bottom: auto !important;
-            width: var(--sidebar-width) !important;
-            box-shadow: 0 0 0 0 transparent !important;
-            /* formatting fix */
+            width: 100% !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            z-index: 1005 !important;
+            /* Above sidebar */
+            padding-left: 0 !important;
+            /* Inner padding handles Logo */
         }
 
-        /* Adjust content page margin to account for floating sidebar margin + width */
+        /* Content sits right of sidebar, below navbar */
         .content-page {
-            margin-left: calc(var(--sidebar-width) + 2rem) !important;
-            padding-top: 6rem;
-            /* Ensure content starts below floating navbar (approx 80px + margin) */
-        }
-
-        /* Adjust navbar positioning to align with content */
-        .navbar-custom {
-            left: calc(var(--sidebar-width) + 2rem) !important;
-            width: calc(100% - var(--sidebar-width) - 3rem) !important;
-            margin: 1rem 1rem 0 0 !important;
-            border-radius: 1rem !important;
-            top: 0 !important;
+            margin-left: var(--sidebar-width) !important;
+            padding-top: 70px;
+            /* Push down by Navbar Height */
         }
     }
 

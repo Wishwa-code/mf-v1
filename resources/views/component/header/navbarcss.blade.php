@@ -39,7 +39,7 @@
         background: rgba(255, 255, 255, 0.7) !important;
         backdrop-filter: blur(12px) !important;
         -webkit-backdrop-filter: blur(12px) !important;
-        border-bottom: none !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.6) !important;
         box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
         /* Layout Fix: Push navbar to right of sidebar */
         /* margin-left handled by fixed positioning in sidebar-styles */
