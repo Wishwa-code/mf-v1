@@ -30,7 +30,7 @@ class AccountCenterAutoLoginController extends Controller
         }
 
         // Activity Log: System Login
-        if (isset($userData['user'])) {
+        if (isset($userData['userData'])) {
             activity()
                 ->withProperties([
                     'causer_name' => $userData['userData']['full_name'] ?? 'Unknown User',

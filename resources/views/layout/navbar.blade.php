@@ -1,17 +1,3 @@
-<?php
-// ...existing code...
-use Illuminate\Support\Facades\DB;
-
-// All branches
-$branch = user_data('branches') ?? [];
-
-// Allowed branches 
-$allowedBranches = $branch;
-
-?>
-
-
-
 <div class="navbar-custom">
     <div class="topbar container-fluid d-flex flex-wrap justify-content-between align-items-center">
 
@@ -38,8 +24,9 @@ $allowedBranches = $branch;
             <span class="day-text" id="modern-day">{{ date('l') }}</span>
             <span class="date-text" id="modern-date">{{ date('d F Y') }}</span>
         </div>
+
         <div class="d-flex align-items-center justify-content-center gap-3">
-            @if (session('branch_access') === 1)
+            @if (session('branch_access') === 0)
             <div class="modern-branch-switcher">
                 <div class="dropdown">
                     <button type="button" class="btn modern-dropdown-toggle" data-bs-toggle="dropdown"
@@ -49,7 +36,7 @@ $allowedBranches = $branch;
                             @foreach ($branch as $item)
                             @php $item = (object) $item; @endphp
                             @if (session('branch_id') == $item->idBranch)
-                            {{ $item->Name }} 
+                            {{ $item->Name }}
                             @endif
                             @endforeach
                         </span>
@@ -63,7 +50,7 @@ $allowedBranches = $branch;
                                 data-branch-id="{{ $item->idBranch }}"
                                 data-branch-name="{{ $item->Name }} Branch">
                                 <i class="ri-building-2-line me-2"></i>
-                                {{ $item->Name }} 
+                                {{ $item->Name }}
                                 @if (session('branch_id') == $item->idBranch)
                                 <i class="ri-check-line ms-auto text-success"></i>
                                 @endif
@@ -100,7 +87,7 @@ $allowedBranches = $branch;
                                 data-branch-id="{{ $item->idBranch }}"
                                 data-branch-name="{{ $item->Name }} Branch">
                                 <i class="ri-building-2-line me-2"></i>
-                                {{ $item->Name }} 
+                                {{ $item->Name }}
                                 @if (session('branch_id') == $item->idBranch)
                                 <i class="ri-check-line ms-auto text-success"></i>
                                 @endif
@@ -122,6 +109,7 @@ $allowedBranches = $branch;
                 </a>
             </div>
         </div>
+
         <ul class="topbar-menu d-flex align-items-center gap-2">
 
             <li class="nav-item">
@@ -140,11 +128,7 @@ $allowedBranches = $branch;
                     <i class="ri-moon-line fs-22"></i>
                 </div>
             </li>
-            <?php
-            // Use company data from session
-            $companyData = user_data('company') ?? null;
-            $companyItem = $companyData ? (object) $companyData : null;
-            ?>
+
             <li class="dropdown">
                 <a class="nav-link dropdown-toggle arrow-none nav-user" data-bs-toggle="dropdown" href="#"
                     role="button" aria-haspopup="false" aria-expanded="false">
@@ -186,10 +170,6 @@ $allowedBranches = $branch;
                     @endif
 
                     @hasPrivilege('SMS_FORMAT')
-
-                    <?php
-                    $companyMask = $companyItem ? $companyItem->SMS_Mask : null;
-                    ?>
 
                     @if ($companyMask != null)
                     <a href="/sms" class="dropdown-item">
@@ -239,11 +219,6 @@ $allowedBranches = $branch;
                         <span>Logout</span>
                     </a>
 
-                    <?php
-                    $user_id = user_data('idUser');
-                    $cashier = DB::table('user')->where('id', $user_id)->where('cashier', '=', '1')->first();
-                    ?>
-                    @if ($cashier)
                     <hr>
                     <div class=" dropdown-header noti-title">
                         <h6 class="text-overflow m-0">Cashier Section</h6>
@@ -263,7 +238,6 @@ $allowedBranches = $branch;
                         Close
                     </a>
                     @endhasPrivilege
-                    @endif
 
                 </div>
 
@@ -271,35 +245,5 @@ $allowedBranches = $branch;
         </ul>
 
     </div>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            function updateTime() {
-                var now = new Date();
 
-                // Day Name (e.g. Saturday)
-                var dayOptions = {
-                    weekday: 'long'
-                };
-                var dayName = now.toLocaleDateString('en-US', dayOptions);
-
-                // Date (e.g. 27 December 2025)
-                var dateOptions = {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                };
-                var formattedDate = now.toLocaleDateString('en-US', dateOptions);
-
-                if (document.getElementById('modern-day')) {
-                    document.getElementById('modern-day').innerText = dayName;
-                }
-                if (document.getElementById('modern-date')) {
-                    document.getElementById('modern-date').innerText = formattedDate;
-                }
-            }
-
-            updateTime();
-            setInterval(updateTime, 60000);
-        });
-    </script>
 </div>

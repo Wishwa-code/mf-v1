@@ -65,22 +65,42 @@
 
     @include('component.header.navbarcss')
     @include('layout.partials.sidebar-styles')
+    @include('component.header.styles')
+
     @yield('head')
 </head>
 
+<?php
+$company = user_data('company') ?? null;
+$logo = $company['Logo'] ?? null;
+
+// All branches
+$branch = user_data('branches') ?? [];
+
+// Allowed branches 
+$allowedBranches = $branch;
+
+// Use company data from session
+$companyData = user_data('company') ?? null;
+$companyItem = $companyData ? (object) $companyData : null;
+//Sms Mask
+$companyMask = $companyItem ? $companyItem->SMS_Mask : null;
+
+?>
+
 <body>
     <div class="wrapper">
-        @include('component.header')
+        @include('layout.navbar')
 
         <div class="content-page">
-
             <div class="content">
                 <div class="container-fluid">
                     @yield('content')
                 </div>
             </div>
         </div>
-        @include('component.footer')
+
+
         <!-- Global Camera Modal -->
         <div id="globalCameraModal" class="modal fade" tabindex="-1">
             <div class="modal-dialog modal-dialog-centered">
@@ -105,8 +125,10 @@
             </div>
         </div>
 
+        @include('component.header.modals.cashier-start')
+        @include('component.header.modals.day-end')
     </div>
-    
+
     <script src="{{asset('assets/js/vendor.min.js')}}"></script>
     <script src="{{asset('assets/js/app.min.js')}}"></script>
     <script src="{{asset('../JS/validate.js?n=2')}}"></script>
@@ -213,8 +235,6 @@
             }
         }
     </script>
-    @yield('script')
-    @stack('scripts')
 
     <script>
         let timer;
@@ -508,6 +528,50 @@
         });
         @endif
     </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            function updateTime() {
+                var now = new Date();
+
+                // Day Name (e.g. Saturday)
+                var dayOptions = {
+                    weekday: 'long'
+                };
+                var dayName = now.toLocaleDateString('en-US', dayOptions);
+
+                // Date (e.g. 27 December 2025)
+                var dateOptions = {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                };
+                var formattedDate = now.toLocaleDateString('en-US', dateOptions);
+
+                if (document.getElementById('modern-day')) {
+                    document.getElementById('modern-day').innerText = dayName;
+                }
+                if (document.getElementById('modern-date')) {
+                    document.getElementById('modern-date').innerText = formattedDate;
+                }
+            }
+
+            updateTime();
+            setInterval(updateTime, 60000);
+        });
+    </script>
+    @include('component.header.scripts')
+
+    <footer class="footer">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12 text-center">
+                <script>document.write(new Date().getFullYear())</script> © <a href="https://www.asipiya.lk/" target="_blank">Asipiya Soft Solutions</a><b></b>
+            </div>
+        </div>
+    </div>
+</footer>
+
 </body>
 
 </html>
