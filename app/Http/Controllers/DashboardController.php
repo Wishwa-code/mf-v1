@@ -165,9 +165,7 @@ class DashboardController extends Controller
             ->sum('installments.Total_Balance');
 
 
-        $todaycollection = tableWithBranch('customer_payments')
-            ->whereDate('Date', '=', date('Y-m-d'))
-            ->get();
+
 
         $todaycollected = tableWithBranch('customer_payments')
             ->whereDate('Date', '=', date('Y-m-d'))
@@ -224,17 +222,7 @@ class DashboardController extends Controller
         $shortcut = tableWithBranch('shortcut')->get();
 
 
-        $loanQuery = tableWithBranch('installments', 'installments')
-            ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
-            ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
-            ->join('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
-            ->join('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
-            ->join('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category')
-            ->select('customer.*', 'customer_group.Name as group_name', 'installments.*', 'customer_loan.*', 'loan_category.Name as loan_name')
-            ->whereDate('Installment_Date', '=', date('Y-m-d'))
-            ->where('installments.Status', '=', '0')
-            ->where('customer_loan.Status', '=', '0')
-            ->get();
+
 
 
         $loanQuery_2 = tableWithBranch('installments', 'installments')
@@ -336,17 +324,8 @@ class DashboardController extends Controller
         ];
 
 
-
         $profit = 907195;
         $profitTarget = 1000000; // 1 million
-
-
-
-
-
-        //
-        //          $sms=new Sms();
-        //          $sms->index("0743513689","test");
 
 
         return view('home', compact(
@@ -373,7 +352,6 @@ class DashboardController extends Controller
             'customer_loan_pending_Count',
             'customer_loan_current_Count',
             'todayinstallment',
-            'todaycollection',
             'todayNotPaid',
             'weeklyUnpaidCount',
             'weeklyUnpaidAmount',

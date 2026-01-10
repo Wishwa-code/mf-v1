@@ -439,7 +439,9 @@ class BranchController extends Controller
         $userController = new UserController();
 
         // Call the create_panelty function
-        $userController->create_panelty();
+        // SPEED OPTIMIZATION: This function is too heavy to run on every branch switch.
+        // It should be moved to a scheduled job (Cron) or a specific admin action.
+        // $userController->create_panelty();
 
         return response()->json(['success' => true, 'message' => 'Branch updated successfully']);
     }

@@ -709,105 +709,6 @@
     </div>
 </div>
 
-<!-- Total Outstanding Modal -->
-<div class="modal fade" id="totalOutstandingModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold"><i class="ri-money-dollar-circle-line me-2 text-primary"></i>Total Outstanding Portfolio</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body bg-light">
-                <div class="text-center py-5 d-none spinner">
-                    <div class="spinner-border text-primary" role="status"></div>
-                </div>
-                <div class="table-responsive bg-white p-3 shadow-sm rounded content">
-                    <table class="table table-hover w-100" id="total_outstanding_table">
-                        <thead>
-                            <tr>
-                                <th>Loan ID</th>
-                                <th>Cus ID</th>
-                                <th>Name</th>
-                                <th class="text-end">Capital</th>
-                                <th class="text-end">Full Amount</th>
-                                <th class="text-end text-primary">Total Outstanding</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Weekly Arrears Modal -->
-<div class="modal fade" id="weeklyArrearsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold"><i class="ri-calendar-close-line me-2 text-warning"></i>Weekly Arrears</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body bg-light">
-                <div class="text-center py-5 d-none spinner">
-                    <div class="spinner-border text-warning" role="status"></div>
-                </div>
-                <div class="table-responsive bg-white p-3 shadow-sm rounded content">
-                    <table class="table table-hover w-100" id="weekly_arrears_table">
-                        <thead>
-                            <tr>
-                                <th>Loan ID</th>
-                                <th>Center</th>
-                                <th>Cus ID</th>
-                                <th>Name</th>
-                                <th class="text-end">Capital</th>
-                                <th class="text-end">Full Amount</th>
-                                <th class="text-end text-warning">This Week Not Paid</th>
-                                <th class="text-end text-danger">Total Arrears</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Current Week Pending Modal -->
-<div class="modal fade" id="weekPendingModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold"><i class="ri-time-line me-2 text-info"></i>Current Week Pending</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body bg-light">
-                <div class="text-center py-5 d-none spinner">
-                    <div class="spinner-border text-info" role="status"></div>
-                </div>
-                <div class="table-responsive bg-white p-3 shadow-sm rounded content">
-                    <table class="table table-hover w-100" id="week_pending_table">
-                        <thead>
-                            <tr>
-                                <th>Loan ID</th>
-                                <th>Center</th>
-                                <th>Cus ID</th>
-                                <th>Name</th>
-                                <th class="text-end">Capital</th>
-                                <th class="text-end">Full Amount</th>
-                                <th class="text-end text-info">Week Pending</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Penalty Balance Modal -->
 <div class="modal fade" id="penaltyBalanceModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -1073,7 +974,7 @@
                 data: data,
                 columns: columns.map(c => ({
                     ...c,
-                    className: (c.className || '') + (['capital_amount', 'full_loan_amount', 'total_outstanding', 'this_week_not_paid', 'total_arrears', 'current_week_pending', 'penalty_balance'].includes(c.data) ? ' text-end' : '')
+                    className: (c.className || '') + (['capital_amount', 'full_loan_amount', 'total_outstanding', 'this_week_not_paid', 'total_arrears', 'current_week_pending', 'penalty_balance', 'Amount', 'Total_Loan_Amount'].includes(c.data) ? ' text-end' : '')
                 })),
                 dom: 'Bfrtip',
                 buttons: [{
@@ -1099,6 +1000,170 @@
             content.removeClass('d-none');
             $(tableId).find('tbody').html('<tr><td colspan="' + columns.length + '" class="text-center text-danger">Failed to load data.</td></tr>');
         });
+    }
+
+    function showTotalOutstandingModal() {
+        $('#totalOutstandingModal').modal('show');
+        loadTableData('#totalOutstandingModal', '/total-outstanding-data', '#outstanding_table_modal', [{
+                data: 'loan_id',
+                title: 'Loan ID'
+            },
+            {
+                data: 'customer_id',
+                title: 'Cus ID'
+            },
+            {
+                data: 'customer_name',
+                title: 'Name'
+            },
+            {
+                data: 'capital_amount',
+                title: 'Capital',
+                render: $.fn.dataTable.render.number(',', '.', 2)
+            },
+            {
+                data: 'full_loan_amount',
+                title: 'Full Amount',
+                render: $.fn.dataTable.render.number(',', '.', 2)
+            },
+            {
+                data: 'total_outstanding',
+                title: 'Total Outstanding',
+                render: $.fn.dataTable.render.number(',', '.', 2)
+            }
+        ]);
+    }
+
+    function showWeeklyNotPaidModal() {
+        $('#weeklyNotPaidModal').modal('show');
+        loadTableData('#weeklyNotPaidModal', '/weekly-not-paid-data', '#weekly_not_paid_table_modal', [{
+                data: 'loan_id',
+                title: 'Loan ID'
+            },
+            {
+                data: 'center_name',
+                title: 'Center'
+            },
+            {
+                data: 'customer_id',
+                title: 'Cus ID'
+            },
+            {
+                data: 'customer_name',
+                title: 'Name'
+            },
+            {
+                data: 'capital_amount',
+                title: 'Capital',
+                render: $.fn.dataTable.render.number(',', '.', 2)
+            },
+            {
+                data: 'full_loan_amount',
+                title: 'Full Amount',
+                render: $.fn.dataTable.render.number(',', '.', 2)
+            },
+            {
+                data: 'this_week_not_paid',
+                title: 'Unpaid',
+                render: $.fn.dataTable.render.number(',', '.', 2),
+                className: 'text-danger'
+            },
+            {
+                data: 'total_arrears',
+                title: 'Total Arrears',
+                render: $.fn.dataTable.render.number(',', '.', 2)
+            },
+            {
+                data: 'not_paid_installment_count',
+                title: 'Count',
+                className: 'text-center'
+            }
+        ]);
+    }
+
+    function showCurrentWeekPendingModal() {
+        $('#currentWeekPendingModal').modal('show');
+        loadTableData('#currentWeekPendingModal', '/current-week-pending-data', '#current_week_pending_table_modal', [{
+                data: 'loan_id',
+                title: 'Loan ID'
+            },
+            {
+                data: 'center_name',
+                title: 'Center'
+            },
+            {
+                data: 'customer_id',
+                title: 'Cus ID'
+            },
+            {
+                data: 'customer_name',
+                title: 'Name'
+            },
+            {
+                data: 'capital_amount',
+                title: 'Capital',
+                render: $.fn.dataTable.render.number(',', '.', 2)
+            },
+            {
+                data: 'full_loan_amount',
+                title: 'Full Amount',
+                render: $.fn.dataTable.render.number(',', '.', 2)
+            },
+            {
+                data: 'current_week_pending',
+                title: 'Pending',
+                render: $.fn.dataTable.render.number(',', '.', 2),
+                className: 'text-primary'
+            },
+            {
+                data: 'total_arrears',
+                title: 'Total Arrears',
+                render: $.fn.dataTable.render.number(',', '.', 2)
+            },
+            {
+                data: 'not_paid_installment_count',
+                title: 'Count',
+                className: 'text-center'
+            }
+        ]);
+    }
+
+    function showPenaltyBalanceModal() {
+        $('#penaltyBalanceModal').modal('show');
+        loadTableData('#penaltyBalanceModal', '/penalty-balance-data', '#penalty_balance_table_modal', [{
+                data: 'loan_id',
+                title: 'Loan ID'
+            },
+            {
+                data: 'customer_id',
+                title: 'Cus ID'
+            },
+            {
+                data: 'customer_name',
+                title: 'Name'
+            },
+            {
+                data: 'capital_amount',
+                title: 'Capital',
+                render: $.fn.dataTable.render.number(',', '.', 2)
+            },
+            {
+                data: 'full_loan_amount',
+                title: 'Full Amount',
+                render: $.fn.dataTable.render.number(',', '.', 2)
+            },
+            {
+                data: 'total_outstanding',
+                title: 'Outstanding',
+                render: $.fn.dataTable.render.number(',', '.', 2)
+            },
+            {
+                data: 'penalty_balance',
+                title: 'Penalty',
+                render: $.fn.dataTable.render.number(',', '.', 2),
+                className: 'text-danger'
+            }
+        ]);
     }
 
     // Modal Close Fix (Force Close on Click)

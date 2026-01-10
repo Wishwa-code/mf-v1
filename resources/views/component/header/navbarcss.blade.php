@@ -628,62 +628,72 @@
         color: #fff !important;
     }
 
-/* ===== Modern Footer ===== */
-.footer {
-    position: relative;
-    width: 100%;
-    padding: 12px 0;
-    font-size: 0.85rem;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
-    background: rgba(255, 255, 255, 0.75);
-    color: #333;
-    transition: all 0.3s ease;
-}
+    /* ===== Modern Footer ===== */
+    .footer {
+        position: relative;
+        width: 100%;
+        padding: 12px 0;
+        font-size: 0.85rem;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.75);
+        color: #333;
+        transition: all 0.3s ease;
+    }
 
-/* Footer text */
-.footer a {
-    color: #0d6efd;
-    font-weight: 500;
-    text-decoration: none;
-}
+    /* Footer text */
+    .footer a {
+        color: #0d6efd;
+        font-weight: 500;
+        text-decoration: none;
+    }
 
-.footer a:hover {
-    text-decoration: underline;
-}
+    .footer a:hover {
+        text-decoration: underline;
+    }
 
-/* Center alignment */
-.footer .col-12 {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 4px;
-}
+    /* Center alignment */
+    .footer .col-12 {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 4px;
+    }
 
-/* ===== Dark Mode Support ===== */
-[data-bs-theme="dark"] .footer {
-    background: rgba(20, 20, 20, 0.75);
-    color: #e4e4e4;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
+    /* ===== Dark Mode Support ===== */
+    [data-bs-theme="dark"] .footer {
+        background: rgba(20, 20, 20, 0.75);
+        color: #e4e4e4;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
 
-[data-bs-theme="dark"] .footer a {
-    color: #6ea8fe;
-}
+    [data-bs-theme="dark"] .footer a {
+        color: #6ea8fe;
+    }
 
-/* ===== Optional: Fixed footer (enable if needed) ===== */
+    /* ===== Optional: Fixed footer (enable if needed) ===== */
 
-.footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    /* z-index: 999; */
-    margin-left: var(--sidebar-width) !important;
-}
-body {
-    padding-bottom: 45px;
-}
+    .footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        z-index: 1001;
+        margin-left: var(--sidebar-width) !important;
+    }
 
+    /* Ensure consistent Z-Layering on Desktop to prevent "inside" look */
+    @media (min-width: 1025px) {
+        .leftside-menu {
+            z-index: 1001 !important;
+        }
 
+        .navbar-custom {
+            z-index: 1001 !important;
+        }
+    }
+
+    body {
+        padding-bottom: 45px;
+    }
 </style>
