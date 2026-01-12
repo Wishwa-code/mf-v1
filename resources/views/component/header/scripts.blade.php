@@ -20,19 +20,18 @@
 <script>
     // Fix for Mobile Menu Toggle not working on some devices/sizes
     $(document).ready(function() {
-        $('.button-toggle-menu').on('click', function(e) {
-            if (window.innerWidth < 992) {
-                e.preventDefault();
-                e.stopPropagation();
-                e.stopImmediatePropagation(); // Prevent other listeners (app.js)
-                $('body').toggleClass('sidebar-enable');
-            }
+        // Unbind any existing click handlers (from app.js etc) to prevent double-toggling
+        $('.button-toggle-menu').off('click').on('click', function(e) {
+            e.preventDefault();
+            // Toggle sidebar-enable on body
+            $('body').toggleClass('sidebar-enable');
         });
 
         // Close sidebar when close button is clicked
         $('.button-close-fullsidebar').on('click', function(e) {
             e.preventDefault();
             $('body').removeClass('sidebar-enable');
+            $('body').css('overflow', 'auto'); // Fix scroll lock
         });
     });
 
