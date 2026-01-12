@@ -20,14 +20,22 @@
 <script>
     // Fix for Mobile Menu Toggle not working on some devices/sizes
     $(document).ready(function() {
-        // Custom Mobile Toggle (Renamed class to avoid app.js conflict)
-        $('.button-toggle-menu-custom').on('click', function(e) {
+        // Universal Toggle Handler (Replaces app.min.js logic for this button)
+        $('.button-toggle-menu').off('click').on('click', function(e) {
             e.preventDefault();
-            // Only toggle on mobile (logic can technically run on desktop too if needed, but safe here)
-            $('body').toggleClass('sidebar-enable');
+
+            if (window.innerWidth < 992) {
+                // Mobile Logic
+                $('body').toggleClass('sidebar-enable');
+            } else {
+                // Desktop Logic: Toggle Condensed Mode
+                var currentSize = $('html').attr('data-sidenav-size');
+                var newSize = (currentSize === 'condensed') ? 'default' : 'condensed';
+                $('html').attr('data-sidenav-size', newSize);
+            }
         });
 
-        // Close sidebar when close button is clicked
+        // Close sidebar when close button is clicked (Mobile only)
         $('.button-close-fullsidebar').on('click', function(e) {
             e.preventDefault();
             $('body').removeClass('sidebar-enable');
