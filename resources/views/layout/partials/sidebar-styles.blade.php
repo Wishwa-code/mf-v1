@@ -489,29 +489,36 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            position: absolute;
+            position: fixed;
+            /* Changed from absolute to fixed to stay on top */
             top: 20px;
             right: 20px;
+            /* Adjust if needed, relative to viewport/sidebar edge */
             width: 36px;
             height: 36px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+            /* Darker default bg */
             border-radius: 50%;
             color: #fff;
             font-size: 1.2rem;
             text-decoration: none;
-            z-index: 1050;
+            z-index: 1060;
+            /* Higher than sidebar */
             transition: all 0.3s ease;
             backdrop-filter: blur(4px);
         }
 
-        /* Adjust for Light Mode if needed */
-        html[data-layout-mode="light"] .button-close-fullsidebar {
-            color: #333;
-            background: rgba(0, 0, 0, 0.05);
+        /* Explicit Light Mode Override */
+        html[data-layout-mode="light"] .button-close-fullsidebar,
+        html[data-bs-theme="light"] .button-close-fullsidebar {
+            background: rgba(0, 0, 0, 0.1);
+            /* Dark bg for contrast */
+            color: #333 !important;
+            /* Dark icon */
         }
 
         .button-close-fullsidebar:hover {
-            background: rgba(255, 50, 50, 0.8);
+            background: rgba(255, 50, 50, 0.8) !important;
             color: #fff !important;
             transform: rotate(90deg);
         }
