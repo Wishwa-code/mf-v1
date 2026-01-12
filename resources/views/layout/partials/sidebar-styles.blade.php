@@ -446,7 +446,7 @@
 
     /* Responsive Styles & Mobile Toggle */
     /* Responsive Styles & Mobile Toggle */
-    @media (max-width: 768px) {
+    @media (max-width: 991.98px) {
         .leftside-menu {
             transform: translateX(-100%);
             box-shadow: none;
