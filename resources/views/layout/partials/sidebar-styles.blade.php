@@ -479,6 +479,44 @@
         pointer-events: none !important;
     }
 
+    /* Mobile Close Button Style */
+    .button-close-fullsidebar {
+        display: none;
+    }
+
+    @media (max-width: 991.98px) {
+        .button-close-fullsidebar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            color: #fff;
+            font-size: 1.2rem;
+            text-decoration: none;
+            z-index: 1050;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(4px);
+        }
+
+        /* Adjust for Light Mode if needed */
+        html[data-layout-mode="light"] .button-close-fullsidebar {
+            color: #333;
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .button-close-fullsidebar:hover {
+            background: rgba(255, 50, 50, 0.8);
+            color: #fff !important;
+            transform: rotate(90deg);
+        }
+    }
+
     /* SimpleBar Fix */
     .simplebar-content-wrapper {
         background: transparent !important;

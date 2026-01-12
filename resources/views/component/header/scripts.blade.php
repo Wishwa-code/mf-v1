@@ -26,6 +26,12 @@
                 $('body').toggleClass('sidebar-enable');
             }
         });
+
+        // Close sidebar when close button is clicked
+        $('.button-close-fullsidebar').on('click', function(e) {
+            e.preventDefault();
+            $('body').removeClass('sidebar-enable');
+        });
     });
 
     // Make all settings globally available
