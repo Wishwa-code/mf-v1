@@ -23,6 +23,8 @@
         $('.button-toggle-menu').on('click', function(e) {
             if (window.innerWidth < 992) {
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation(); // Prevent other listeners (app.js)
                 $('body').toggleClass('sidebar-enable');
             }
         });
