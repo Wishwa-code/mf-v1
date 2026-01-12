@@ -70,22 +70,32 @@
             z-index: 1005 !important;
             transform: none !important;
             display: block !important;
-            background: var(--sidebar-bg) !important; 
+            background: var(--sidebar-bg) !important;
+            overflow-y: auto !important;
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        .leftside-menu::-webkit-scrollbar {
+            display: none;
+            /* Chrome/Safari */
         }
 
         .navbar-custom {
             position: fixed !important;
             top: 0 !important;
-            left: 350px !important; /* Hardcoded 350px to match sidebar */
+            left: 350px !important;
+            /* Hardcoded 350px to match sidebar */
             right: 0 !important;
             width: auto !important;
             margin-left: 0 !important;
-            z-index: 1001 !important; 
+            z-index: 1001 !important;
         }
 
         .content-page {
             margin-left: 350px !important;
-            padding-top: 70px; /* Space for Navbar */
+            padding-top: 70px;
+            /* Space for Navbar */
         }
     }
 

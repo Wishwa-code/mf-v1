@@ -637,8 +637,9 @@
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         border-top: 1px solid rgba(255, 255, 255, 0.15);
-        background: rgba(255, 255, 255, 0.75);
-        color: #333;
+        background: transparent !important;
+        /* Remove solid white background */
+        color: #6c757d;
         transition: all 0.3s ease;
     }
 
