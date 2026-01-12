@@ -29,8 +29,12 @@
             padding: 0.5rem;
         }
 
-        .button-toggle-menu {
+        .button-toggle-menu,
+        .button-toggle-menu-custom {
             margin-right: 0.5rem !important;
+            background: transparent;
+            border: none;
+            color: inherit;
         }
     }
 

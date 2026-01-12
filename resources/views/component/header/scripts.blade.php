@@ -20,10 +20,10 @@
 <script>
     // Fix for Mobile Menu Toggle not working on some devices/sizes
     $(document).ready(function() {
-        // Unbind any existing click handlers (from app.js etc) to prevent double-toggling
-        $('.button-toggle-menu').off('click').on('click', function(e) {
+        // Custom Mobile Toggle (Renamed class to avoid app.js conflict)
+        $('.button-toggle-menu-custom').on('click', function(e) {
             e.preventDefault();
-            // Toggle sidebar-enable on body
+            // Only toggle on mobile (logic can technically run on desktop too if needed, but safe here)
             $('body').toggleClass('sidebar-enable');
         });
 

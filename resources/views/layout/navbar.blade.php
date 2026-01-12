@@ -4,7 +4,8 @@
         <div class="d-flex align-items-center mb-2 mb-md-0">
 
             <!-- Sidebar Menu Toggle Button -->
-            <button class="button-toggle-menu me-2">
+            <!-- Renamed to custom class to prevent double-toggle by app.min.js -->
+            <button class="button-toggle-menu-custom me-2">
                 <i class="ri-menu-line"></i>
             </button>
 
