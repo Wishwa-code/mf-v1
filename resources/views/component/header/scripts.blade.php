@@ -43,6 +43,17 @@
             $('body').removeClass('sidebar-enable');
             $('body').css('overflow', 'auto'); // Fix scroll lock
         });
+
+        // Close sidebar when clicking outside (Mobile only)
+        $(document).on('click', function(e) {
+            if (window.innerWidth < 992 && $('body').hasClass('sidebar-enable')) {
+                // If click is NOT on the sidebar container AND NOT on the toggle button
+                if (!$(e.target).closest('.leftside-menu').length && !$(e.target).closest('.button-toggle-menu').length) {
+                    $('body').removeClass('sidebar-enable');
+                    $('body').css('overflow', 'auto'); // Fix scroll lock
+                }
+            }
+        });
     });
 
     // Make all settings globally available
