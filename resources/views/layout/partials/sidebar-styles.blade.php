@@ -58,43 +58,37 @@
     }
 
     /* Full Width Layout - Navbar on Top, Sidebar Below */
+    /* FIXED: Enforce standard Sidebar Left / Navbar Right layout on Desktop */
     @media (min-width: 992px) {
-
-        /* Sidebar sits BELOW the navbar */
         .leftside-menu {
-            position: fixed !important;
-            top: 70px !important;
-            /* Height of Navbar */
-            left: 0 !important;
-            height: calc(100vh - 70px) !important;
-            width: var(--sidebar-width) !important;
-            margin: 0 !important;
-            border-radius: 0 !important;
-            bottom: auto !important;
-            z-index: 1004 !important;
-        }
-
-        /* Navbar spans full width at the very top */
-        .navbar-custom {
             position: fixed !important;
             top: 0 !important;
             left: 0 !important;
-            width: 100% !important;
-            margin: 0 !important;
-            border-radius: 0 !important;
+            bottom: 0 !important;
+            width: 350px !important;
+            height: 100vh !important;
             z-index: 1005 !important;
-            /* Above sidebar */
-            padding-left: 0 !important;
-            /* Inner padding handles Logo */
+            transform: none !important;
+            display: block !important;
+            background: var(--sidebar-bg) !important; 
         }
 
-        /* Content sits right of sidebar, below navbar */
+        .navbar-custom {
+            position: fixed !important;
+            top: 0 !important;
+            left: 350px !important; /* Hardcoded 350px to match sidebar */
+            right: 0 !important;
+            width: auto !important;
+            margin-left: 0 !important;
+            z-index: 1001 !important; 
+        }
+
         .content-page {
-            margin-left: var(--sidebar-width) !important;
-            padding-top: 70px;
-            /* Push down by Navbar Height */
+            margin-left: 350px !important;
+            padding-top: 70px; /* Space for Navbar */
         }
     }
+
 
     /* Mobile / Tablet Resets */
     @media (max-width: 991.98px) {
