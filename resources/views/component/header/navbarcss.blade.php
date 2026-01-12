@@ -672,14 +672,29 @@
         color: #6ea8fe;
     }
 
-    /* ===== Optional: Fixed footer (DISABLED for Floating Layout) ===== */
-    /* .footer {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        z-index: 1001;
+    /* ===== Fixed Footer ===== */
+    .footer {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1001 !important;
         margin-left: var(--sidebar-width) !important;
-    } */
+        width: auto !important;
+        background: #fff !important;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    /* Adjust content padding to prevent footer overlap */
+    .content-page {
+        padding-bottom: 60px !important;
+    }
+
+    @media (max-width: 991.98px) {
+        .footer {
+            margin-left: 0 !important;
+        }
+    }
 
     /* Ensure consistent Z-Layering on Desktop to prevent "inside" look */
     @media (min-width: 1025px) {
