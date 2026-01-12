@@ -464,14 +464,9 @@
 
         /* When sidebar is enabled via body class */
         body.sidebar-enable .leftside-menu {
-            transform: translateX(0) !important;
-            visibility: visible !important;
-            display: block !important;
-            left: 0 !important;
+            transform: translateX(0);
             box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
             width: var(--sidebar-width) !important;
-            z-index: 10005 !important;
-            /* Ensure it is on top of everything */
             /* Full width on mobile */
         }
     }
