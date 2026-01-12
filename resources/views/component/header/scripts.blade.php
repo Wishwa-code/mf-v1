@@ -23,6 +23,8 @@
         // Universal Toggle Handler (Replaces app.min.js logic for this button)
         $('.button-toggle-menu').off('click').on('click', function(e) {
             e.preventDefault();
+            e.stopPropagation(); // Stop bubbling to document
+            e.stopImmediatePropagation(); // Stop other listeners on this element
 
             if (window.innerWidth < 992) {
                 // Mobile Logic

@@ -464,17 +464,17 @@
 
         /* When sidebar is enabled via body class */
         body.sidebar-enable .leftside-menu {
-            transform: translateX(0);
-            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
-            width: var(--sidebar-width) !important;
-            /* Full width on mobile */
-        }
-    }
+                                                                        transform: translateX(0);
+                                                                        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+                                                                        width: var(--sidebar-width) !important;
+                                                                        /* Full width on mobile */
+                                                                    }
+                                                                }
 
-    /* Remove Offcanvas Backdrop Overlay */
-    .offcanvas-backdrop.show {
-        opacity: 0 !important;
-        display: none !important;
+                                                                /* Remove Offcanvas Backdrop Overlay */
+                                                                .offcanvas-backdrop.show {
+                                                                    opacity: 0 !important;
+                                                                    display: none !important;
         visibility: hidden !important;
         pointer-events: none !important;
     }
