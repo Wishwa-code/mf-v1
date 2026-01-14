@@ -69,11 +69,28 @@
             height: 100vh !important;
             z-index: 1005 !important;
             transform: none !important;
-            display: block !important;
+            /* Flexbox Layout to prevent overlap */
+            display: flex !important;
+            flex-direction: column !important;
             background: var(--sidebar-bg) !important;
+            overflow: hidden !important;
+            /* Prevent sidebar itself from scrolling */
+        }
+
+        /* Container takes remaining height */
+        #leftside-menu-container {
+            flex-grow: 1;
+            height: auto !important;
+            /* Allow flex to dictate height */
             overflow-y: auto !important;
-            scrollbar-width: none;
-            /* Firefox */
+            /* Enable scrolling within this container */
+            padding-top: 0 !important;
+            /* Remove top padding as flex handles spacing */
+        }
+
+        .leftside-menu::-webkit-scrollbar {
+            /* Hide outer scrollbar if any */
+            display: none;
         }
 
         .leftside-menu::-webkit-scrollbar {
@@ -331,8 +348,7 @@
 
     html[data-sidenav-size="condensed"] .side-nav-link span:not(.menu-arrow),
     html[data-sidenav-size="condensed"] .menu-arrow,
-    html[data-sidenav-size="condensed"] .side-nav-title,
-    html[data-sidenav-size="condensed"] .logo-box {
+    html[data-sidenav-size="condensed"] .side-nav-title {
         display: none !important;
     }
 
@@ -464,17 +480,17 @@
 
         /* When sidebar is enabled via body class */
         body.sidebar-enable .leftside-menu {
-                                                                        transform: translateX(0);
-                                                                        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
-                                                                        width: var(--sidebar-width) !important;
-                                                                        /* Full width on mobile */
-                                                                    }
-                                                                }
+            transform: translateX(0);
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+            width: var(--sidebar-width) !important;
+            /* Full width on mobile */
+        }
+    }
 
-                                                                /* Remove Offcanvas Backdrop Overlay */
-                                                                .offcanvas-backdrop.show {
-                                                                    opacity: 0 !important;
-                                                                    display: none !important;
+    /* Remove Offcanvas Backdrop Overlay */
+    .offcanvas-backdrop.show {
+        opacity: 0 !important;
+        display: none !important;
         visibility: hidden !important;
         pointer-events: none !important;
     }

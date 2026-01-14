@@ -29,6 +29,8 @@ return new class extends Migration
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();
 
+            $table->string('verification_image')->after('address')->nullable();
+
             $table->foreign('created_by')
                 ->references('id')
                 ->on('user')
@@ -38,6 +40,21 @@ return new class extends Migration
                 ->references('id')
                 ->on('user')
                 ->nullOnDelete();
+
+            $table->integer('route_id')->nullable();
+
+            $table->foreign('route_id')
+                ->references('id_route')
+                ->on('route')
+                ->onDelete('set null');
+            $table->string('district')->nullable();
+            $table->string('city')->nullable();
+            $table->string('source')->default('recovery-officer');
+
+            $table->integer('recovery_officer_id')->nullable()->after('route_id');
+            // Assuming the users table is named 'user' based on the User model
+            $table->foreign('recovery_officer_id')->references('id')->on('user')->nullOnDelete();
+
             $table->timestamps();
 
             $table->boolean('is_visited')->default(false);

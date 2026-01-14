@@ -1,12 +1,3 @@
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-
-<script src="{{asset('assets/js/vendor.min.js')}}"></script>
-<script src="{{asset('assets/js/app.min.js')}}"></script>
-<script src="{{asset('../JS/validate.js?n=2')}}"></script>
-<script src="{{asset('assets/vendor/select2/js/select2.min.js')}}"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 {{-- DataTables JS --}}
 <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
@@ -17,45 +8,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+
 <script>
-    // Fix for Mobile Menu Toggle not working on some devices/sizes
-    $(document).ready(function() {
-        // Universal Toggle Handler (Replaces app.min.js logic for this button)
-        $('.button-toggle-menu').off('click').on('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation(); // Stop bubbling to document
-            e.stopImmediatePropagation(); // Stop other listeners on this element
-
-            if (window.innerWidth < 992) {
-                // Mobile Logic
-                $('body').toggleClass('sidebar-enable');
-            } else {
-                // Desktop Logic: Toggle Condensed Mode
-                var currentSize = $('html').attr('data-sidenav-size');
-                var newSize = (currentSize === 'condensed') ? 'default' : 'condensed';
-                $('html').attr('data-sidenav-size', newSize);
-            }
-        });
-
-        // Close sidebar when close button is clicked (Mobile only)
-        $('.button-close-fullsidebar').on('click', function(e) {
-            e.preventDefault();
-            $('body').removeClass('sidebar-enable');
-            $('body').css('overflow', 'auto'); // Fix scroll lock
-        });
-
-        // Close sidebar when clicking outside (Mobile only)
-        $(document).on('click', function(e) {
-            if (window.innerWidth < 992 && $('body').hasClass('sidebar-enable')) {
-                // If click is NOT on the sidebar container AND NOT on the toggle button
-                if (!$(e.target).closest('.leftside-menu').length && !$(e.target).closest('.button-toggle-menu').length) {
-                    $('body').removeClass('sidebar-enable');
-                    $('body').css('overflow', 'auto'); // Fix scroll lock
-                }
-            }
-        });
-    });
-
     // Make all settings globally available
     window.APP_SETTINGS = @json(config('app.settings', []));
 </script>
@@ -1063,5 +1017,56 @@
         printWindow.document.close();
         printWindow.focus();
         printWindow.print();
+    });
+</script>
+{{-- Theme Switcher Logic --}}
+<script>
+    (function() {
+        // Apply saved theme immediately to prevent flash
+        var savedMode = sessionStorage.getItem("data-layout-mode");
+        if (savedMode === "dark") {
+            document.documentElement.setAttribute("data-layout-mode", "dark");
+            document.documentElement.setAttribute("data-bs-theme", "dark");
+        }
+    })();
+
+    document.addEventListener("DOMContentLoaded", function() {
+        var themeToggleBtn = document.getElementById("light-dark-mode");
+        
+        if (themeToggleBtn) {
+            var themeIcon = themeToggleBtn.querySelector("i");
+            
+            // Function to update icon
+            function updateThemeIcon(mode) {
+                if (mode === "dark") {
+                    themeIcon.classList.remove("ri-moon-line");
+                    themeIcon.classList.add("ri-sun-line");
+                } else {
+                    themeIcon.classList.remove("ri-sun-line");
+                    themeIcon.classList.add("ri-moon-line");
+                }
+            }
+
+            // Check current status on load
+            var currentMode = document.documentElement.getAttribute("data-layout-mode");
+            updateThemeIcon(currentMode);
+
+            // Click Handler
+            themeToggleBtn.addEventListener("click", function() {
+                var current = document.documentElement.getAttribute("data-layout-mode");
+                var newMode = current === "dark" ? "light" : "dark";
+
+                // Update attributes
+                document.documentElement.setAttribute("data-layout-mode", newMode);
+                document.documentElement.setAttribute("data-bs-theme", newMode);
+
+                // Save to storage
+                sessionStorage.setItem("data-layout-mode", newMode);
+                sessionStorage.setItem("data-bs-theme", newMode);
+
+                // Update Icon
+                updateThemeIcon(newMode);
+            });
+        }
     });
 </script>

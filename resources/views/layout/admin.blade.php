@@ -8,10 +8,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="{{ asset('assets/images/favicon.ico') }}">
     <script src="{{ asset('assets/js/config.js') }}"></script>
-    <link href="{{ asset('assets/css/app.min.css') }}?v={{ time() }}" rel="stylesheet" type="text/css" id="app-style" />
-    <link href="{{ asset('assets/css/icons.min.css') }}?v={{ time() }}" rel="stylesheet" type="text/css" />
-    <link href="{{ asset('assets/vendor/select2/css/select2.min.css') }}" rel="stylesheet" type="text/css" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+    <link rel="shortcut icon" href="{{ asset('assets/images/favicon.ico') }}">
+    <script src="{{ asset('assets/js/config.js') }}"></script>
+
+    @vite(['resources/css/app.scss', 'resources/js/app.js'])
+
+    {{-- DataTables CSS --}}
+    <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap5.min.css" rel="stylesheet">
     {{-- DataTables CSS --}}
     <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap5.min.css" rel="stylesheet">
@@ -89,7 +93,7 @@ $companyMask = $companyItem ? $companyItem->SMS_Mask : null;
 ?>
 
 <body>
-    <div class="wrapper">
+    <div class="wrapper glass-bg">
         @include('layout.sidebar')
         @include('layout.navbar')
 
@@ -132,7 +136,7 @@ $companyMask = $companyItem ? $companyItem->SMS_Mask : null;
     </div>
 
     @include('component.header.scripts')
-    
+
     @yield('script')
     @stack('scripts')
 

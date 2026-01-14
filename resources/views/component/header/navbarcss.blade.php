@@ -9,6 +9,38 @@
         padding: 0 1rem;
     }
 
+    /* Sidebar Toggle Button */
+    .button-toggle-menu {
+        border: none;
+        background: transparent;
+        color: #313a46;
+        height: 70px;
+        width: 60px;
+        line-height: 70px;
+        font-size: 24px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        padding: 0;
+    }
+
+    .button-toggle-menu:hover {
+        color: #6a5e87;
+    }
+
+    /* Dark Mode Toggle Button */
+    html[data-layout-mode="dark"] .button-toggle-menu,
+    html[data-bs-theme="dark"] .button-toggle-menu {
+        color: #e0e0e0;
+    }
+
+    html[data-layout-mode="dark"] .button-toggle-menu:hover,
+    html[data-bs-theme="dark"] .button-toggle-menu:hover {
+        color: #fff;
+    }
+
     .topbar {
         width: 100%;
         display: flex;

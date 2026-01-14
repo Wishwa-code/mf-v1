@@ -174,7 +174,7 @@
     <div class="row justify-content-center">
         <div class="col-12">
             {{-- ===================== SECTION 1: BASIC CUSTOMER DETAILS ===================== --}}
-            <div class="card card-modern">
+            <div class="card glass-card">
                 <div class="card-body p-4">
                     <div class="section-header">
                         <div class="section-icon bg-light text-primary">
@@ -215,7 +215,7 @@
 
                         <div class="col-md-4">
                             <label for="root" class="form-label">Root</label>
-                            <select class="form-select" id="root" name="root">
+                            <select class="form-select choices-select" id="root" name="root">
                                 <option value="" selected disabled>Select Root</option>
                                 @foreach($route as $item)
                                 <option value="{{$item->id_route}}">{{$item->name}}-{{$item->root_code}}</option>
@@ -238,7 +238,7 @@
 
                         <div class="col-md-4">
                             <label for="civil_status" class="form-label">Civil Status</label>
-                            <select class="form-select" id="civil_status" name="civil_status">
+                            <select class="form-select choices-select" id="civil_status" name="civil_status">
                                 <option value="" selected disabled>Select Civil Status</option>
                                 <option>Married</option>
                                 <option>Single</option>
@@ -298,7 +298,7 @@
 
                         <div class="col-md-4">
                             <label for="dob" class="form-label">Date Of Birth</label>
-                            <input type="text" id="dob" name="dob" class="form-control" placeholder="YYYY-MM-DD">
+                            <input type="text" id="dob" name="dob" class="form-control datepicker" placeholder="YYYY-MM-DD">
                             <div class="invalid-feedback"></div>
                         </div>
 
@@ -637,8 +637,7 @@
 @endsection
 
 @section('script')
-<script src="assets/vendor/daterangepicker/moment.min.js"></script>
-<script src="assets/vendor/daterangepicker/daterangepicker.js"></script>
+
 {{-- <script src="assets/js/pages/dashboard.js"></script> --}}
 <script src="../JS/validate.js"></script>
 <script src="../JS/group.js"></script>
@@ -646,7 +645,7 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
 <!-- Select2 JavaScript -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
 
 {{-- ===================== PROVINCE & CITY (SL LOCATIONS) ===================== --}}
 <script>

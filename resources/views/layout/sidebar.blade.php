@@ -1,22 +1,20 @@
 <div class="leftside-menu">
 
     <!-- Brand Logo Light -->
-    <a href="/" class="logo logo-light">
-        @if ($logo)
-        <img src="{{ $logo }}" class="logo-img rounded-logo">
-        @else
-        <img src="https://accountcenter.asipbook.com/asipiya.svg" class="logo-img rounded-logo">
-        @endif
-    </a>
+    <!-- Brand Logo Area -->
+    <div class="logo-box">
+        <a href="/" class="logo-link">
+            <!-- Logo Image -->
+            @if ($logo)
+            <img src="{{ $logo }}" class="logo-img" alt="Logo">
+            @else
+            <img src="https://accountcenter.asipbook.com/asipiya.svg" class="logo-img" alt="Logo">
+            @endif
 
-    <!-- Brand Logo Dark -->
-    <a href="/" class="logo logo-dark">
-        @if ($logo)
-        <img src="{{ $logo }}" class="logo-img rounded-logo">
-        @else
-        <img src="https://accountcenter.asipbook.com/asipiya.svg" class="logo-img rounded-logo">
-        @endif
-    </a>
+            <!-- Logo Text (Company Name) -->
+            <span class="logo-text">{{ user_data()['company']['Company_Name'] ?? 'Asipiya' }}</span>
+        </a>
+    </div>
 
     <!-- Mobile Close Button -->
     <a href="javascript:void(0);" class="button-close-fullsidebar">
