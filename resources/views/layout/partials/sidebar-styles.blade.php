@@ -35,26 +35,32 @@
         box-shadow: 5px 0 25px rgba(0, 0, 0, 0.2);
     }
 
+    /* Embossed Sidebar Style */
     .leftside-menu {
         width: var(--sidebar-width) !important;
         background: var(--sidebar-bg);
-        /* Fallback for light mode uses var */
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
-        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.1);
-        border-right: 1px solid var(--sidebar-border);
+        /* Stronger shadow for raised effect */
+        box-shadow: 6px 0 20px rgba(0, 0, 0, 0.15), inset -1px 0 0 rgba(255, 255, 255, 0.1);
+        border-right: none;
+        /* Shadow replaces border */
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 1005 !important;
-        /* Ensure it stays above content/navbar overlap if any */
         position: fixed;
-        /* Floating Sidebar Styles */
         top: 0;
         bottom: 0;
         left: 0;
         height: 100vh;
-        /* Default for mobile, overridden for desktop below */
         margin: 0;
         border-radius: 0;
+    }
+
+    /* Light Mode Shadow Override */
+    html[data-layout-mode="light"] .leftside-menu {
+        /* Neumorphic shadow for light mode */
+        box-shadow: 8px 0 24px rgba(136, 165, 191, 0.25), -6px 0 10px rgba(255, 255, 255, 0.8);
+        border-right: none;
     }
 
     /* Full Width Layout - Navbar on Top, Sidebar Below */
@@ -186,8 +192,11 @@
         overflow: hidden;
     }
 
+    /* Embossed/Pressed Effect for Menu Items */
     .side-nav-link:hover {
         background: var(--sidebar-hover-bg);
+        /* Inset shadow for pressed feel */
+        box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.1), inset -2px -2px 5px rgba(255, 255, 255, 0.05);
         color: var(--sidebar-text) !important;
         transform: translateX(4px);
     }
@@ -199,7 +208,28 @@
     .side-nav-link.active {
         background: var(--sidebar-active-bg) !important;
         color: var(--sidebar-text-active) !important;
-        box-shadow: 0 4px 12px rgba(106, 94, 135, 0.4);
+        /* Deep press effect */
+        box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.2), inset -1px -1px 4px rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    /* Light Mode Pressed Effect */
+    html[data-layout-mode="light"] .side-nav-link:hover {
+        background: #f0f2f5;
+        box-shadow: inset 3px 3px 6px #d1d9e6, inset -3px -3px 6px #ffffff;
+    }
+
+    html[data-layout-mode="light"] .side-nav-item.menuitem-active>.side-nav-link,
+    html[data-layout-mode="light"] .side-nav-link.active {
+        background: #f0f2f5 !important;
+        color: #6a5e87 !important;
+        /* Keep purple text */
+        box-shadow: inset 4px 4px 8px #d1d9e6, inset -4px -4px 8px #ffffff;
+    }
+
+    html[data-layout-mode="light"] .side-nav-item.menuitem-active>.side-nav-link i,
+    html[data-layout-mode="light"] .side-nav-link.active i {
+        color: #6a5e87 !important;
     }
 
     /* Ensure text color adapts */
@@ -246,6 +276,8 @@
         color: var(--sidebar-text) !important;
         background: var(--sidebar-hover-bg);
         padding-left: 18px !important;
+        /* Subtle inset for submenus */
+        box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.1);
     }
 
     .side-nav-second-level li.menuitem-active>a,
@@ -253,13 +285,15 @@
         color: #ffffff !important;
         background: rgba(255, 255, 255, 0.1);
         font-weight: 500;
+        box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.2);
     }
 
     /* Light Mode Active Submenu Fix */
     html[data-layout-mode="light"] .side-nav-second-level li.menuitem-active>a,
     html[data-layout-mode="light"] .side-nav-third-level li.menuitem-active>a {
         color: var(--sidebar-active-bg) !important;
-        background: rgba(106, 94, 135, 0.1) !important;
+        background: #f0f2f5 !important;
+        box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff;
         font-weight: 600;
     }
 
