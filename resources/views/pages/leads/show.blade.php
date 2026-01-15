@@ -416,19 +416,24 @@
         {{-- Right column – map summary --}}
         <div class="col-lg-5">
             <div class="card border-0 shadow-lg rounded-4 overflow-hidden sticky-lg-top-custom">
+                @php
+                $mapLat = $lead->latitude ?? $lead->visited_latitude;
+                $mapLng = $lead->longitude ?? $lead->visited_longitude;
+                $hasLocation = $mapLat && $mapLng;
+                @endphp
                 <div class="card-header bg-white border-0 py-3 px-3 px-md-4 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 fw-bold text-primary">Location</h5>
-                    @if($lead->latitude && $lead->longitude)
+                    @if($hasLocation)
                     <a href="{{ route('leads.map', $lead->id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
                         <i class="bi bi-arrows-fullscreen me-1"></i> Expand Map
                     </a>
                     @endif
                 </div>
                 <div class="card-body p-0 position-relative">
-                    @if($lead->latitude && $lead->longitude)
+                    @if($hasLocation)
                     {{-- Static image or simple map container --}}
-                    <gmp-map center="{{ $lead->latitude }},{{ $lead->longitude }}" zoom="15" map-id="DEMO_MAP_ID" style="height: 300px; width: 100%; border-radius: 1rem;">
-                        <gmp-advanced-marker position="{{ $lead->latitude }},{{ $lead->longitude }}"></gmp-advanced-marker>
+                    <gmp-map center="{{ $mapLat }},{{ $mapLng }}" zoom="15" map-id="DEMO_MAP_ID" style="height: 300px; width: 100%; border-radius: 1rem;">
+                        <gmp-advanced-marker position="{{ $mapLat }},{{ $mapLng }}"></gmp-advanced-marker>
                     </gmp-map>
 
                     {{-- Overlay button --}}
@@ -444,7 +449,7 @@
                     </div>
                     @endif
                 </div>
-                @if($lead->latitude && $lead->longitude)
+                @if($hasLocation)
                 <div class="card-footer bg-white border-top-0 p-3 pt-0">
                     <div class="d-flex align-items-center small text-muted">
                         <i class="bi bi-info-circle me-1"></i>

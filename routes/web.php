@@ -47,11 +47,9 @@ Route::get('/login', function () {
     return redirect('https://accountcenter.asipbook.com/');
 })->name('login');
 
-
-
+Route::post('/login/store', '\App\Http\Controllers\UserController@store')->name('user.store');
 Route::get('/user', '\App\Http\Controllers\UserController@index')->name('pages.user');
 Route::get('/user/update/{id}', '\App\Http\Controllers\UserController@edit')->name('pages.edit');
-Route::post('/login/store', '\App\Http\Controllers\UserController@store')->name('user.store');
 Route::post('/signup', '\App\Http\Controllers\UserController@create')->name('user.signup');
 Route::get('/logout', '\App\Http\Controllers\UserController@logout')->name('user.logout');
 
