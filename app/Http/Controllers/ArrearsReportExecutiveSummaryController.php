@@ -7,44 +7,51 @@ use Illuminate\Support\Facades\DB;
 
 class ArrearsReportExecutiveSummaryController extends Controller
 {
-    public function index(Request $request){
-        $branch = tableWithBranch('branch')->where('status','=','1')->get();
-        $officer = tableWithBranch('user')->where('Status','=','1')->get();
-        $branch_access=session('branch_access');
-        
+    public function index(Request $request)
+    {
+        $branch = tableWithBranch('branch')->where('status', '=', '1')->get();
+        $officer = tableWithBranch('user')->where('Status', '=', '1')->get();
+        $branch_access = session('branch_access');
+
         // Get report data
         $data = $this->getReportData($request);
-        
-        return view('pages.ArrearsReportExecutiveSummary',compact('branch','branch_access','officer','data'));
+
+        return view('pages.ArrearsReportExecutiveSummary', compact('branch', 'branch_access', 'officer', 'data'));
     }
 
     private function getReportData(Request $request)
     {
         // Filters
-        $collectorId = $request->filled('loan_officer') ? $request->input('loan_officer') : null;
+        $collectorId = $request->filled('loan_officer')
+            ? $request->input('loan_officer')
+            : null;
 
-        // Dates (defaults to current month start to today)
+        // Date inputs
         $startInput = $request->input('from');
         $endInput   = $request->input('to');
-        
-        if ($startInput && $endInput) {
-            $start = \Carbon\Carbon::parse($startInput)->startOfDay();
-            $end = \Carbon\Carbon::parse($endInput)->endOfDay();
+
+        if (!empty($startInput) && !empty($endInput)) {
+            $today = \Carbon\Carbon::parse($startInput)->startOfDay();
+            $end   = \Carbon\Carbon::parse($endInput)->endOfDay();
         } else {
-            $start = \Carbon\Carbon::now()->startOfMonth()->startOfDay();
-            $end = \Carbon\Carbon::now()->endOfDay();
+            $today = \Carbon\Carbon::now()->startOfMonth()->startOfDay();
+            $end   = \Carbon\Carbon::now()->endOfDay();
         }
 
-        $today = $end->toDateString();
+        // Use END date as "today" for reports (arrears logic)
+        // $today = $end->toDateString();
+
+        // Column name (kept configurable)
         $customerIdCol = 'Customer_idCustomer';
+
 
         // Total arrears per collector
         $totalArrears = DB::query()->fromSub(function ($q) use ($today, $end) {
             $q->from('installments as i')
                 ->join('customer_loan as cl', 'cl.idCustomer_Loan', '=', 'i.Customer_Loan_idCustomer_Loan')
-                ->where('i.Installment_Date', '<', $today)
+                ->whereBetween('i.Installment_Date', [$today, $end])
                 ->where('i.Total_Balance', '>', 0)
-                ->where('cl.Date_Time', '<=', $end)
+                ->where('i.Status', '=', '0')
                 ->when(session()->has('branch_id'), function ($qq) {
                     $qq->where('cl.branch_id', session('branch_id'));
                 })
@@ -79,23 +86,47 @@ class ArrearsReportExecutiveSummaryController extends Controller
                 ->groupBy('cl.collector_id');
         }, 'cs');
 
-        // Arrears breakdown by week brackets
+
+        $totalDueAmount = DB::query()->fromSub(function ($q) use ($today, $end) {
+            $q->from('installments as i')
+                ->join('customer_loan as cl', 'cl.idCustomer_Loan', '=', 'i.Customer_Loan_idCustomer_Loan')
+                ->whereBetween('i.Installment_Date', [$today, $end])
+                ->where('i.Total_Balance', '>', 0)
+                ->when(session()->has('branch_id'), function ($qq) {
+                    $qq->where('cl.branch_id', session('branch_id'));
+                })
+                ->selectRaw('SUM(i.Total_Amount) as total_due_amount,cl.collector_id')
+                ->groupBy('cl.collector_id');
+        }, 'tda');
+
+        $totalCollectedAmount = DB::query()->fromSub(function ($q) use ($today, $end) {
+            $q->from('installments as i')
+                ->join('customer_loan as cl', 'cl.idCustomer_Loan', '=', 'i.Customer_Loan_idCustomer_Loan')
+                ->whereBetween('i.Installment_Date', [$today, $end])
+                ->where('i.Total_Balance', '>', 0)
+                ->when(session()->has('branch_id'), function ($qq) {
+                    $qq->where('cl.branch_id', session('branch_id'));
+                })
+                ->selectRaw('SUM(i.Paid_Amount) as total_collected_amount,cl.collector_id')
+                ->groupBy('cl.collector_id');
+        }, 'tca');
+
+        // // Arrears breakdown by week brackets
         $arrearsBreakdown = DB::query()->fromSub(function ($q) use ($today, $end) {
             $q->from('installments as i')
                 ->join('customer_loan as cl', 'cl.idCustomer_Loan', '=', 'i.Customer_Loan_idCustomer_Loan')
-                ->where('i.Installment_Date', '<', $today)
+                ->whereBetween('i.Installment_Date', [$today, $end])
                 ->where('i.Total_Balance', '>', 0)
-                ->where('cl.Date_Time', '<=', $end)
                 ->when(session()->has('branch_id'), function ($qq) {
                     $qq->where('cl.branch_id', session('branch_id'));
                 })
                 ->selectRaw("
                     cl.collector_id,
                     CASE 
-                        WHEN DATEDIFF(?, i.Installment_Date) <= 7 THEN '01_week'
-                        WHEN DATEDIFF(?, i.Installment_Date) BETWEEN 8 AND 21 THEN '1to3_weeks'
-                        WHEN DATEDIFF(?, i.Installment_Date) BETWEEN 22 AND 56 THEN '4to8_weeks'
-                        WHEN DATEDIFF(?, i.Installment_Date) BETWEEN 57 AND 84 THEN '9to12_weeks'
+                        WHEN DATEDIFF(i.Installment_Date, ?) <= 7 THEN '01_week'
+                        WHEN DATEDIFF(i.Installment_Date, ?) BETWEEN 8 AND 21 THEN '1to3_weeks'
+                        WHEN DATEDIFF(i.Installment_Date, ?) BETWEEN 22 AND 56 THEN '4to8_weeks'
+                        WHEN DATEDIFF(i.Installment_Date, ?) BETWEEN 57 AND 84 THEN '9to12_weeks'
                         ELSE '13plus_weeks'
                     END as week_bracket,
                     COUNT(DISTINCT cl.idCustomer_Loan) as loan_count,
@@ -116,8 +147,7 @@ class ArrearsReportExecutiveSummaryController extends Controller
                 ->groupBy('ins.Customer_Loan_idCustomer_Loan');
         }, 'm')
             ->join('customer_loan as cl', 'cl.idCustomer_Loan', '=', 'm.Loan_ID')
-            ->where('m.maturity_date', '<=', $today)
-            ->where('cl.Date_Time', '<=', $end)
+            ->whereBetween('m.maturity_date', [$today, $end])
             ->when(session()->has('branch_id'), function ($qq) {
                 $qq->where('cl.branch_id', session('branch_id'));
             })
@@ -130,6 +160,8 @@ class ArrearsReportExecutiveSummaryController extends Controller
             ->leftJoinSub($currentStock, 'cs', fn($j) => $j->on('cs.collector_id', '=', 'u.id'))
             ->leftJoinSub($arrearsBreakdown, 'ab', fn($j) => $j->on('ab.collector_id', '=', 'u.id'))
             ->leftJoinSub($ocClients, 'oc', fn($j) => $j->on('oc.collector_id', '=', 'u.id'))
+            ->leftJoinSub($totalDueAmount, 'tda', fn($j) => $j->on('tda.collector_id', '=', 'u.id'))
+            ->leftJoinSub($totalCollectedAmount, 'tca', fn($j) => $j->on('tca.collector_id', '=', 'u.id'))
             ->where('u.Status', '=', '1')
             ->when($collectorId, fn($q) => $q->where('u.id', $collectorId))
             ->when(session()->has('branch_id'), function ($q) {
@@ -146,17 +178,21 @@ class ArrearsReportExecutiveSummaryController extends Controller
                 COALESCE(MAX(cs.current_stock), 0) as current_stock,
                 COALESCE(MAX(ab.week_data), "") as week_data,
                 COALESCE(MAX(oc.oc_clients_count), 0) as oc_clients_count,
-                COALESCE(MAX(oc.oc_loan_count), 0) as oc_loan_count
+                COALESCE(MAX(oc.oc_loan_count), 0) as oc_loan_count,
+                COALESCE(MAX(tda.total_due_amount), 0) as total_due_amount,
+                COALESCE(MAX(tca.total_collected_amount), 0) as total_collected_amount
             ')
             ->groupBy('u.id', 'u.Full_Name')
             ->orderBy('u.Full_Name')
             ->get();
 
         // Shape response
-        $data = collect($collectorRows)->map(function($r) {
+        $data = collect($collectorRows)->map(function ($r) {
+            $totalDueAmount = (float) ($r->total_due_amount ?? 0);
+            $totalCollectedAmount = (float) ($r->total_collected_amount ?? 0);
             $totalArrears = (float) ($r->total_arrears ?? 0);
             $currentStock = (float) ($r->current_stock ?? 0);
-            $debtorRatio = $currentStock > 0 ? ($totalArrears / $currentStock) * 100 : 0;
+            $debtorRatio = $totalCollectedAmount != 0 ? ($totalCollectedAmount / $totalDueAmount) * 100 : 0;
 
             // Parse week_data
             $weekBreakdown = [
@@ -183,6 +219,8 @@ class ArrearsReportExecutiveSummaryController extends Controller
             }
 
             return [
+                'Total_Due_Amount' => $totalDueAmount,
+                'Collected_Total_Amount' => $totalCollectedAmount,
                 'Loan_Officer' => $r->collector_name ?? '—',
                 'Arrears' => round($totalArrears, 2),
                 'Debtor_Ratio' => round($debtorRatio, 2),
@@ -197,6 +235,9 @@ class ArrearsReportExecutiveSummaryController extends Controller
                 'Total_Arrear_Customer' => (int)($r->arrears_customer_count ?? 0),
                 'Total_Capital_Arrears' => round((float)($r->capital_arrears ?? 0), 2),
                 'Total_Interest_Arrears' => round((float)($r->interest_arrears ?? 0), 2),
+                'Installment_Count' => (int)($r->installment_count ?? 0),
+                'IC_Loan_Count' => (int)($r->ic_loan_count ?? 0),
+                'IC_Total_Balance' => round((float)($r->ic_total_balance ?? 0), 2),
             ];
         });
 
