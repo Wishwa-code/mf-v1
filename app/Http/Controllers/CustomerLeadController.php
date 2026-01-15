@@ -400,8 +400,9 @@ class CustomerLeadController extends Controller
                 $logProperties['attributes'] = $dirty;
                 $logProperties['old'] = $original;
             }
+            
+            $lead->update($data); // Use save instead of update to persist the filled data
 
-            $lead->save(); // Use save instead of update to persist the filled data
 
             // Handle Image Updates
             $imageUpdates = [];
@@ -491,11 +492,18 @@ class CustomerLeadController extends Controller
     public function approve(Request $request, CustomerLead $lead)
     {
         // Require location before approval
+        // Require location before approval
         if (empty($lead->latitude) || empty($lead->longitude)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Lead location is missing. Capture latitude and longitude before approval.',
-            ], 422);
+            // If location is missing but visited location exists, use it
+            if (!empty($lead->visited_latitude) && !empty($lead->visited_longitude)) {
+                $lead->latitude = $lead->visited_latitude;
+                $lead->longitude = $lead->visited_longitude; // Will be saved below with status update
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Lead location is missing. Capture latitude and longitude before approval.',
+                ], 422);
+            }
         }
 
         $lead->status = 'pending-approved';
