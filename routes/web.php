@@ -66,7 +66,7 @@ Route::post('/recover_password', '\App\Http\Controllers\UserController@recover_p
 
 
 
-Route::middleware(['auth.central'])->group(function () {
+// Route::middleware(['auth.central'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('home');
 
     Route::group(['prefix' => 'settings'], function () {
@@ -1052,7 +1052,7 @@ Route::middleware(['auth.central'])->group(function () {
     Route::get('/reports/commission', [\App\Http\Controllers\CommissionReportController::class, 'index'])->name('reports.commission');
     Route::get('/reports/commission/load', [\App\Http\Controllers\CommissionReportController::class, 'load'])->name('reports.commission.load');
     Route::get('/reports/commission/print', [\App\Http\Controllers\CommissionReportController::class, 'print'])->name('reports.commission.print');
-});
+// });
 
 Route::get('/dailycollectionratio', [\App\Http\Controllers\ReportController::class, 'dailyCollectionRatioToday'])
     ->name('report.dailycollectionratio');

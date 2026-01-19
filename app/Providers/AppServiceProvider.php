@@ -52,6 +52,14 @@ class AppServiceProvider extends ServiceProvider
                 return in_array(strtoupper($expression), $privileges);
             });
 
+            // Share branches with navbar for Admin users (branch_access == 1)
+            view()->composer('layout.navbar', function ($view) {
+                if (session('branch_access') === 1 && !isset($view->branch)) {
+                    $branches = DB::table('branch')->get();
+                    $view->with('branch', $branches);
+                }
+            });
+
             // Activity Log: Snapshot User Name
             \Spatie\Activitylog\Models\Activity::saving(function (\Spatie\Activitylog\Models\Activity $activity) {
                 $user = auth()->user();
@@ -63,7 +71,6 @@ class AppServiceProvider extends ServiceProvider
                     ]);
                 }
             });
-            
         } catch (\Exception $e) {
             // Log and skip during deploy if DB is not ready
             logger()->warning("Skipping settings load: " . $e->getMessage());

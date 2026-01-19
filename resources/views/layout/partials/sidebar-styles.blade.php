@@ -134,6 +134,9 @@
             border-radius: 0 !important;
             height: 100vh !important;
             transform: translateX(-100%);
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
         }
 
         .content-page,
@@ -518,6 +521,7 @@
             box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
             width: var(--sidebar-width) !important;
             /* Full width on mobile */
+            opacity: 1 !important;
         }
     }
 

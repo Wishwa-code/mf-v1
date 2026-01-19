@@ -1019,6 +1019,9 @@
         printWindow.print();
     });
 </script>
+
+@include('component.header.mobile-menu-scripts')
+
 {{-- Theme Switcher Logic --}}
 <script>
     (function() {
@@ -1032,10 +1035,10 @@
 
     document.addEventListener("DOMContentLoaded", function() {
         var themeToggleBtn = document.getElementById("light-dark-mode");
-        
+
         if (themeToggleBtn) {
             var themeIcon = themeToggleBtn.querySelector("i");
-            
+
             // Function to update icon
             function updateThemeIcon(mode) {
                 if (mode === "dark") {

@@ -26,23 +26,26 @@
         </div>
 
         <div class="d-flex align-items-center justify-content-center gap-3">
-            @if (session('branch_access') === 0)
+            @if (session('branch_access') === 1)
             <div class="modern-branch-switcher">
                 <div class="dropdown">
                     <button type="button" class="btn modern-dropdown-toggle" data-bs-toggle="dropdown"
                         aria-expanded="false">
                         <i class="ri-building-2-line me-2"></i>
                         <span class="branch-text text-truncate d-inline-block" style="max-width: 200px; vertical-align: middle;">
-                            @foreach ($branch as $item)
-                            @php $item = (object) $item; @endphp
-                            @if (session('branch_id') == $item->idBranch)
-                            {{ $item->Name }}
+                            @if(isset($branch) && count($branch) > 0)
+                            @php
+                            $currentBranch = collect($branch)->firstWhere('idBranch', session('branch_id'));
+                            @endphp
+                            {{ $currentBranch->Name ?? 'Select Branch' }}
+                            @else
+                            {{ session('branch_name') . ' Branch' }}
                             @endif
-                            @endforeach
                         </span>
                         <i class="ri-arrow-down-s-line ms-2 dropdown-arrow"></i>
                     </button>
                     <ul class="dropdown-menu modern-dropdown-menu" style="max-height: 300px; overflow-y: auto;">
+                        @if(isset($branch))
                         @foreach ($branch as $item)
                         @php $item = (object) $item; @endphp
                         <li>
@@ -57,49 +60,13 @@
                             </a>
                         </li>
                         @endforeach
-
+                        @endif
                     </ul>
 
-                </div>
-            </div>
-            @else
-            @if (isset($allowedBranches))
-            <div class="modern-branch-switcher">
-                <div class="dropdown">
-                    <button type="button" class="btn modern-dropdown-toggle" data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                        <i class="ri-building-2-line me-2"></i>
-                        <span class="branch-text text-truncate d-inline-block" style="max-width: 200px; vertical-align: middle;">
-                            @php
-                            $col = collect($allowedBranches)->map(function($item){ return (object)$item; });
-                            $current = $col->firstWhere('idBranch', session('branch_id'));
-                            $currentName = optional($current)->Name;
-                            @endphp
-                            {{ ($currentName)}}
-                        </span>
-                        <i class="ri-arrow-down-s-line ms-2 dropdown-arrow"></i>
-                    </button>
-                    <ul class="dropdown-menu modern-dropdown-menu" style="max-height: 300px; overflow-y: auto;">
-                        @foreach ($allowedBranches as $item)
-                        @php $item = (object) $item; @endphp
-                        <li>
-                            <a class="dropdown-item modern-dropdown-item branch-option" href="#"
-                                data-branch-id="{{ $item->idBranch }}"
-                                data-branch-name="{{ $item->Name }} Branch">
-                                <i class="ri-building-2-line me-2"></i>
-                                {{ $item->Name }}
-                                @if (session('branch_id') == $item->idBranch)
-                                <i class="ri-check-line ms-auto text-success"></i>
-                                @endif
-                            </a>
-                        </li>
-                        @endforeach
-                    </ul>
                 </div>
             </div>
             @else
             <h2 id="date" class="d-none d-md-block">{{ session('branch_name') . ' Branch' }}</h2>
-            @endif
             @endif
 
             <!-- Animated Account Button (No Dropdown) -->
