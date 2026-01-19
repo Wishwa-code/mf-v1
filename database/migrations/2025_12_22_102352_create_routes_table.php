@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('route', function (Blueprint $table) {
+        Schema::create('routes', function (Blueprint $table) {
             $table->id('id_route'); 
-            $table->text('name');
+            $table->text('route_name');
             $table->string('root_code', 45);
 
             $table->unsignedBigInteger('id_officer');

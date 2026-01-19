@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Customer;
+use App\Models\Group;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -11,9 +13,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('branch', function (Blueprint $table) {
-            $table->id('branch_id');
-            $table->string('name');
+        Schema::create('group_has_customers', function (Blueprint $table) {
+            $table->id();
+            $table->foreignIdFor(Group::class)->constrained();
+            $table->foreignIdFor(Customer::class)->constrained();
             $table->timestamps();
         });
     }
@@ -23,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('branch');
+        Schema::dropIfExists('group_has_customers');
     }
 };
