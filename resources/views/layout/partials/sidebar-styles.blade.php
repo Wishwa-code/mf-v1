@@ -6,13 +6,14 @@
         --sidebar-bg: #313a46;
         /* Default Fallback */
         --sidebar-active-bg: #6a5e87;
-        /* Solid Purple */
+        /* Solid Purple for Active Item */
         --sidebar-hover-bg: rgba(106, 94, 135, 0.6);
         --sidebar-text: #ced4da;
         --sidebar-text-active: #ffffff;
         --sidebar-border: rgba(255, 255, 255, 0.1);
     }
 
+    /* Light Mode */
     /* Light Mode */
     html[data-layout-mode="light"] .leftside-menu {
         --sidebar-bg: #ffffff;
@@ -229,15 +230,14 @@
 
     html[data-layout-mode="light"] .side-nav-item.menuitem-active>.side-nav-link,
     html[data-layout-mode="light"] .side-nav-link.active {
-        background: #f0f2f5 !important;
-        color: #6a5e87 !important;
-        /* Keep purple text */
-        box-shadow: inset 4px 4px 8px #d1d9e6, inset -4px -4px 8px #ffffff;
+        background: var(--sidebar-active-bg) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 10px rgba(106, 94, 135, 0.3) !important;
     }
 
     html[data-layout-mode="light"] .side-nav-item.menuitem-active>.side-nav-link i,
     html[data-layout-mode="light"] .side-nav-link.active i {
-        color: #6a5e87 !important;
+        color: #ffffff !important;
     }
 
     /* Ensure text color adapts */
@@ -300,8 +300,8 @@
     html[data-layout-mode="light"] .side-nav-second-level li.menuitem-active>a,
     html[data-layout-mode="light"] .side-nav-third-level li.menuitem-active>a {
         color: var(--sidebar-active-bg) !important;
-        background: #f0f2f5 !important;
-        box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff;
+        background: rgba(106, 94, 135, 0.1) !important;
+        box-shadow: none;
         font-weight: 600;
     }
 
@@ -345,9 +345,10 @@
     }
 
     /* Condensed Mode - Light Theme Override */
+    /* Condensed Mode - Light Theme Override */
     html[data-layout-mode="light"][data-sidenav-size="condensed"] .leftside-menu {
         background: #ffffff !important;
-        border-right: 1px solid rgba(0, 0, 0, 0.05);
+        border-right: 1px solid rgba(0, 0, 0, 0.1);
     }
 
     html[data-sidenav-size="condensed"] .content-page {
