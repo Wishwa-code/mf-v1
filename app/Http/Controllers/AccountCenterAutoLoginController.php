@@ -113,9 +113,10 @@ class AccountCenterAutoLoginController extends Controller
             Cache::put('user_data:' . $userId, $userData, now()->addMinutes(120));
         }
 
-        session(['head_branch' => $userData['microfinanceHeadBranchId'] ?? null]);
+        session(['head_branch' => $userData['headBranchId'] ?? null]);
 
         $hasBranchAccess = 0;
+
         if (isset($userData['privileges']) && is_array($userData['privileges'])) {
             foreach ($userData['privileges'] as $priv) {
                 if (isset($priv['Description']) && $priv['Description'] === 'BRANCH_ACCESS') {
@@ -125,6 +126,7 @@ class AccountCenterAutoLoginController extends Controller
             }
         }
         session(['branch_access' => $hasBranchAccess]);
+
         if (!empty($filteredBranches)) {
             $selectedBranch = $filteredBranches[0];
             $headBranchId = $userData['microfinanceHeadBranchId'] ?? null;
@@ -142,15 +144,9 @@ class AccountCenterAutoLoginController extends Controller
             }
         }
 
-        // dd($userData);
         if (isset($userData['company']['Name'])) {
             session(['company_name' => $userData['company']['Name']]);
         }
-
-        // Privileges moved to cache
-        // if (isset($userData['privileges'])) {
-        //    session(['privileges' => $userData['privileges']]);
-        // }
     }
 
     private function fetchAndCacheSystemData($token, $serverUrl)

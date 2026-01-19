@@ -33,11 +33,11 @@
                         aria-expanded="false">
                         <i class="ri-building-2-line me-2"></i>
                         <span class="branch-text text-truncate d-inline-block" style="max-width: 200px; vertical-align: middle;">
-                            @if(isset($branch) && count($branch) > 0)
+                        @if(isset($branch) && count($branch) > 0)
                             @php
                             $currentBranch = collect($branch)->firstWhere('idBranch', session('branch_id'));
                             @endphp
-                            {{ $currentBranch->Name ?? 'Select Branch' }}
+                            {{ $currentBranch['Name'] ?? 'Select Branch' }}
                             @else
                             {{ session('branch_name') . ' Branch' }}
                             @endif

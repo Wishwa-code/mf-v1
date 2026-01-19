@@ -7,7 +7,7 @@
         /* Default Fallback */
         --sidebar-active-bg: #6a5e87;
         /* Solid Purple */
-        --sidebar-hover-bg: rgba(255, 255, 255, 0.1);
+        --sidebar-hover-bg: rgba(106, 94, 135, 0.6);
         --sidebar-text: #ced4da;
         --sidebar-text-active: #ffffff;
         --sidebar-border: rgba(255, 255, 255, 0.1);
@@ -17,7 +17,7 @@
     html[data-layout-mode="light"] .leftside-menu {
         --sidebar-bg: #ffffff;
         --sidebar-text: #313a46;
-        --sidebar-hover-bg: rgba(0, 0, 0, 0.05);
+        --sidebar-hover-bg: rgba(106, 94, 135, 0.6);
         border-right: 1px solid rgba(0, 0, 0, 0.1);
     }
 
@@ -30,7 +30,7 @@
         backdrop-filter: blur(20px) !important;
         -webkit-backdrop-filter: blur(20px) !important;
         --sidebar-text: #e0e0e0;
-        --sidebar-hover-bg: rgba(255, 255, 255, 0.08);
+        --sidebar-hover-bg: rgba(106, 94, 135, 0.6);
         border-right: 1px solid rgba(255, 255, 255, 0.08);
         box-shadow: 5px 0 25px rgba(0, 0, 0, 0.2);
     }
@@ -200,7 +200,7 @@
         background: var(--sidebar-hover-bg);
         /* Inset shadow for pressed feel */
         box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.1), inset -2px -2px 5px rgba(255, 255, 255, 0.05);
-        color: var(--sidebar-text) !important;
+        color: #ffffff !important;
         transform: translateX(4px);
     }
 
@@ -218,8 +218,13 @@
 
     /* Light Mode Pressed Effect */
     html[data-layout-mode="light"] .side-nav-link:hover {
-        background: #f0f2f5;
-        box-shadow: inset 3px 3px 6px #d1d9e6, inset -3px -3px 6px #ffffff;
+        background: var(--sidebar-hover-bg) !important;
+        color: #ffffff !important;
+        box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.1), inset -2px -2px 5px rgba(255, 255, 255, 0.05);
+    }
+
+    html[data-layout-mode="light"] .side-nav-link:hover i {
+        color: #ffffff !important;
     }
 
     html[data-layout-mode="light"] .side-nav-item.menuitem-active>.side-nav-link,
@@ -412,7 +417,7 @@
     }
 
     html[data-layout-mode="light"][data-sidenav-size="condensed"] .side-nav-link:hover i {
-        color: #313a46;
+        color: #ffffff !important;
     }
 
     html[data-sidenav-size="condensed"] .side-nav-link:hover {
@@ -427,7 +432,7 @@
 
     /* Hover BG - Light Mode */
     html[data-layout-mode="light"][data-sidenav-size="condensed"] .side-nav-link:hover {
-        background: rgba(0, 0, 0, 0.05) !important;
+        background: var(--sidebar-hover-bg) !important;
     }
 
     /* Active state in condensed mode */

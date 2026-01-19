@@ -45,11 +45,7 @@ class AppServiceProvider extends ServiceProvider
 
             // Register Blade Directive for Privileges
             \Illuminate\Support\Facades\Blade::if('hasPrivilege', function ($expression) {
-                $privileges = collect(user_data('privileges') ?? [])
-                    ->pluck('Description')
-                    ->map(fn($d) => strtoupper($d))
-                    ->toArray();
-                return in_array(strtoupper($expression), $privileges);
+                return has_privilege($expression);
             });
 
             // Share branches with navbar for Admin users (branch_access == 1)

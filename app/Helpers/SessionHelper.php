@@ -40,4 +40,20 @@ if (!function_exists('user_data')) {
 
         return $userData;
     }
+
+    /**
+     * Check if current user has a specific privilege
+     *
+     * @param string $privilege
+     * @return bool
+     */
+    function has_privilege($privilege)
+    {
+        $privileges = collect(user_data('privileges') ?? [])
+            ->pluck('Description')
+            ->map(fn($d) => strtoupper($d))
+            ->toArray();
+
+        return in_array(strtoupper($privilege), $privileges);
+    }
 }

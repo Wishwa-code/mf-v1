@@ -17,14 +17,7 @@ class CheckPrivilege
      */
     public function handle(Request $request, Closure $next, $privilege)
     {
-        $userPrivileges = collect(user_data('privileges') ?? [])
-            ->pluck('Description')
-            ->map(function ($d) {
-                return strtoupper($d);
-            })
-            ->toArray();
-
-        if (!in_array(strtoupper($privilege), $userPrivileges)) {
+        if (!has_privilege($privilege)) {
             abort(403, 'Unauthorized action.');
         }
 
