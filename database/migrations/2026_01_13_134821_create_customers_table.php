@@ -33,7 +33,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('route_id')->references('id')->on('route');
+            $table->foreign('route_id')->references('id_route')->on('routes');
         });
     }
 

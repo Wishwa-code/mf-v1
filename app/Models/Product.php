@@ -10,31 +10,27 @@ class Product extends Model
     use SoftDeletes;
 
     protected $table = 'products';
-    
+
     protected $fillable = [
         'product_name',
         'product_code',
         'interest_method',
         'loan_period_type',
-        'minimum_loan_period',
-        'maximum_loan_period',
-        'minimum_loan_amount',
-        'maximum_loan_amount',
-        'interest_apply_type',
-        'minimum_interest',
-        'maximum_interest',
-        'guarantee_count',
+        'interest_period_type',
         'collection_period_type',
-        'minimum_collection_period',
-        'maximum_collection_period',
         'collection_date_type',
-        'penalty_method',
-        'penalty_apply_type',
-        'penalty_percentage',
-        'penalty_start_after_days',
-        'status'
+        'guarantee_count',
+        'saving_amount_type',
+        'saving_collection_type',
+        'saving_account_monthly_interest',
+        'saving_interest_cal_type',
+        'saving_account_status',
+        'recovery_account_status',
+        'status',
+        'created_by',
+        'updated_by',
+        'deleted_by'
     ];
-
     public function additional_charges()
     {
         return $this->hasMany(ProductAdditionalCharges::class);
@@ -43,5 +39,10 @@ class Product extends Model
     public function required_documents()
     {
         return $this->hasMany(ProductRequiredDocuments::class);
+    }
+
+    public function product_has_items()
+    {
+        return $this->hasMany(ProductHasItem::class);
     }
 }

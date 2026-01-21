@@ -148,7 +148,83 @@
             </li>
             @endhasPrivilege
 
-            {{-- @hasPrivilege('CUSTOMER') --}}
+            @hasPrivilege('PRODUCT')
+            <li class="side-nav-item mt-2">
+                <a data-bs-toggle="collapse" href="#sidebarPages" aria-expanded="false"
+                    aria-controls="sidebarPages" class="side-nav-link" data-tooltip="Product">
+                    <i class="ri-pages-line"></i>
+                    <span> Product </span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ Request::is('product*', 'viewproduct*') ? 'show' : '' }}" id="sidebarPages">
+                    <ul class="side-nav-second-level">
+                        @hasPrivilege('ADD_PRODUCT')
+                        <li class="mt-2">
+                            <a href="/product" class="{{ Request::is('product*') ? 'active' : '' }}">Add Product</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('VIEW_PRODUCT')
+                        <li class="mt-2">
+                            <a href="/viewproduct" class="{{ Request::is('viewproduct*') ? 'active' : '' }}">View Product</a>
+                        </li>
+                        @endhasPrivilege
+                    </ul>
+                </div>
+            </li>
+            @endhasPrivilege
+
+            @hasPrivilege('LOAN')
+            <li class="side-nav-item mt-2">
+                <a data-bs-toggle="collapse" href="#sidebarPages" aria-expanded="false"
+                    aria-controls="sidebarPages" class="side-nav-link" data-tooltip="Loan">
+                    <i class="ri-pages-line"></i>
+                    <span> Loan </span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ Request::is('loan*', 'changeCollector*', 'pendingloan*', 'loan_disbursement*', 'payment_step_1*', 'penalty-deduction*', 'showsettleloan*') ? 'show' : '' }}" id="sidebarPages">
+                    <ul class="side-nav-second-level">
+                     
+                        @hasPrivilege('CREATE_LOAN')
+                        <li class="mt-2">
+                            <a href="/loan" class="{{ Request::is('loan*') && !Request::is('loan_disbursement*') && !Request::is('loan_settlement*') && !Request::is('loan_reschedule*') ? 'active' : '' }}">Create Loans</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('CHANGE_COLLECTOR')
+                        <li class="mt-2">
+                            <a href="/changeCollector" class="{{ Request::is('changeCollector*') ? 'active' : '' }}">Change Collector In Loan</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('PENDING_LOAN')
+                        <li class="mt-2">
+                            <a href="/pendingloan" class="{{ Request::is('pendingloan*') ? 'active' : '' }}">Pending Loans</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('LOAN_DISBURSEMENT')
+                        <li class="mt-2">
+                            <a href="/loan_disbursement" class="{{ Request::is('loan_disbursement*') ? 'active' : '' }}">Loans Disbursement</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('CURRENT_LOANS')
+                        <li class="mt-2">
+                            <a href="/payment_step_1" class="{{ Request::is('payment_step_1*') ? 'active' : '' }}">Current Loans</a>
+                        </li>
+
+                        <li class="mt-2">
+                            <a href="/penalty-deduction" class="{{ Request::is('penalty-deduction*') ? 'active' : '' }}">Panelty Deduction</a>
+                        </li>
+                        @endhasPrivilege
+
+
+                        @hasPrivilege('SETTLED_LOANS')
+                        <li class="mt-2">
+                            <a href="/showsettleloan" class="{{ Request::is('showsettleloan*') ? 'active' : '' }}">Settled Loans</a>
+                        </li>
+                        @endhasPrivilege
+                    </ul>
+                </div>
+            </li>
+            @endhasPrivilege
+
             {{-- CUSTOMER LEADS SECTION --}}
             @hasPrivilege('CUSTOMER_LEADS')
             <li class="side-nav-item mt-2">
@@ -338,67 +414,6 @@
                     </ul>
                 </div>
 
-            </li>
-            @endhasPrivilege
-
-            @hasPrivilege('PRODUCT')
-            <li class="side-nav-item mt-2">
-                <a data-bs-toggle="collapse" href="#sidebarPages" aria-expanded="false"
-                    aria-controls="sidebarPages" class="side-nav-link" data-tooltip="Product / Loan">
-                    <i class="ri-pages-line"></i>
-                    <span> Product / Loan </span>
-                    <span class="menu-arrow"></span>
-                </a>
-                <div class="collapse {{ Request::is('product*', 'viewproduct*', 'loan*', 'changeCollector*', 'pendingloan*', 'loan_disbursement*', 'payment_step_1*', 'penalty-deduction*', 'showsettleloan*') ? 'show' : '' }}" id="sidebarPages">
-                    <ul class="side-nav-second-level">
-                        @hasPrivilege('ADD_PRODUCT')
-                        <li class="mt-2">
-                            <a href="/product" class="{{ Request::is('product*') ? 'active' : '' }}">Add Product</a>
-                        </li>
-                        @endhasPrivilege
-                        @hasPrivilege('VIEW_PRODUCT')
-                        <li class="mt-2">
-                            <a href="/viewproduct" class="{{ Request::is('viewproduct*') ? 'active' : '' }}">View Product</a>
-                        </li>
-                        @endhasPrivilege
-                        @hasPrivilege('CREATE_LOAN')
-                        <li class="mt-2">
-                            <a href="/loan" class="{{ Request::is('loan*') && !Request::is('loan_disbursement*') && !Request::is('loan_settlement*') && !Request::is('loan_reschedule*') ? 'active' : '' }}">Create Loans</a>
-                        </li>
-                        @endhasPrivilege
-                        @hasPrivilege('CHANGE_COLLECTOR')
-                        <li class="mt-2">
-                            <a href="/changeCollector" class="{{ Request::is('changeCollector*') ? 'active' : '' }}">Change Collector In Loan</a>
-                        </li>
-                        @endhasPrivilege
-                        @hasPrivilege('PENDING_LOAN')
-                        <li class="mt-2">
-                            <a href="/pendingloan" class="{{ Request::is('pendingloan*') ? 'active' : '' }}">Pending Loans</a>
-                        </li>
-                        @endhasPrivilege
-                        @hasPrivilege('LOAN_DISBURSEMENT')
-                        <li class="mt-2">
-                            <a href="/loan_disbursement" class="{{ Request::is('loan_disbursement*') ? 'active' : '' }}">Loans Disbursement</a>
-                        </li>
-                        @endhasPrivilege
-                        @hasPrivilege('CURRENT_LOANS')
-                        <li class="mt-2">
-                            <a href="/payment_step_1" class="{{ Request::is('payment_step_1*') ? 'active' : '' }}">Current Loans</a>
-                        </li>
-
-                        <li class="mt-2">
-                            <a href="/penalty-deduction" class="{{ Request::is('penalty-deduction*') ? 'active' : '' }}">Panelty Deduction</a>
-                        </li>
-                        @endhasPrivilege
-
-
-                        @hasPrivilege('SETTLED_LOANS')
-                        <li class="mt-2">
-                            <a href="/showsettleloan" class="{{ Request::is('showsettleloan*') ? 'active' : '' }}">Settled Loans</a>
-                        </li>
-                        @endhasPrivilege
-                    </ul>
-                </div>
             </li>
             @endhasPrivilege
 

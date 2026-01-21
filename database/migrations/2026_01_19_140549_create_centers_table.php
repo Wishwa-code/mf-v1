@@ -24,13 +24,17 @@ return new class extends Migration
             $table->enum('status', ['active', 'inactive'])->default('active');
 
             $table->foreignIdFor(Customer::class)->constrained();
-            $table->foreignIdFor(Route::class)->constrained();
+            $table->unsignedBigInteger('route_id')->nullable();
+
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
 
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('route_id')->references('id_route')->on('routes');
+
         });
     }
 
