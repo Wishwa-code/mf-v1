@@ -8,7 +8,7 @@
             @if ($logo)
             <img src="{{ $logo }}" class="logo-img" alt="Logo">
             @else
-            <img src="https://accountcenter.asipbook.com/asipiya.svg" class="logo-img" alt="Logo">
+            <img src="https://accountcenter.asipiya.com/asipiya.svg" class="logo-img" alt="Logo">
             @endif
 
             <!-- Logo Text (Company Name) -->
@@ -183,7 +183,7 @@
                 </a>
                 <div class="collapse {{ Request::is('loan*', 'changeCollector*', 'pendingloan*', 'loan_disbursement*', 'payment_step_1*', 'penalty-deduction*', 'showsettleloan*') ? 'show' : '' }}" id="sidebarPages">
                     <ul class="side-nav-second-level">
-                     
+
                         @hasPrivilege('CREATE_LOAN')
                         <li class="mt-2">
                             <a href="/loan" class="{{ Request::is('loan*') && !Request::is('loan_disbursement*') && !Request::is('loan_settlement*') && !Request::is('loan_reschedule*') ? 'active' : '' }}">Create Loans</a>

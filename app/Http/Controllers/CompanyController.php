@@ -189,7 +189,7 @@ class CompanyController extends Controller
     {
         try {
 
-            $serverUrl = rtrim(env('ACCOUNT_CENTER_SERVER_URL', 'https://accountcenterserver.asipbook.com'), '/');
+            $serverUrl = rtrim(env('ACCOUNT_CENTER_BACKEND_URL', 'https://accountcenterserver.asipbook.com'), '/');
 
             $token = $request->cookie('access_token') ?? $request->bearerToken() ?? session('auth_token');
 

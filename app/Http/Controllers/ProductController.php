@@ -65,6 +65,30 @@ class ProductController extends Controller
                 }
             }
 
+            // Save Financial Configuration Items
+            if ($request->has('items') && is_array($request->items)) {
+                foreach ($request->items as $item) {
+                    $product->product_has_items()->create([
+                        'product_item_name' => $item['product_item_name'] ?? $product->product_item_name,
+                        'minimum_loan_amount' => $item['minimum_loan_amount'] ?? null,
+                        'maximum_loan_amount' => $item['maximum_loan_amount'] ?? null,
+                        'minimum_interest' => $item['minimum_interest'] ?? null,
+                        'maximum_interest' => $item['maximum_interest'] ?? null,
+                        'minimum_loan_period' => $item['minimum_loan_period'] ?? null,
+                        'maximum_loan_period' => $item['maximum_loan_period'] ?? null,
+                        'minimum_collection_period' => $item['minimum_collection_period'] ?? null,
+                        'maximum_collection_period' => $item['maximum_collection_period'] ?? null,
+                        'required_guarantee_count' => $item['required_guarantee_count'] ?? null,
+                        // Penalty configs per item
+                        'penalty_method' => $item['penalty_method'] ?? null,
+                        'penalty_percentage' => $item['penalty_percentage'] ?? null,
+                        'penalty_apply_type' => $item['penalty_apply_type'] ?? null,
+                        'penalty_start_after_days' => $item['penalty_start_after_days'] ?? null,
+                        // Savings per item if needed, but we kept global. Table supports it though.
+                    ]);
+                }
+            }
+
             // Save Required Documents
             if ($request->has('documents') && is_array($request->documents)) {
                 foreach ($request->documents as $doc) {
@@ -154,7 +178,28 @@ class ProductController extends Controller
 
             $product->save();
 
-            // Additional Charges: Delete and Re-create
+            // Sync Financial Configuration Items
+            $product->product_has_items()->delete();
+            if ($request->has('items') && is_array($request->items)) {
+                foreach ($request->items as $item) {
+                    $product->product_has_items()->create([
+                        'product_item_name' => $item['product_item_name'] ?? $product->product_item_name,
+                        'minimum_loan_amount' => $item['minimum_loan_amount'] ?? null,
+                        'maximum_loan_amount' => $item['maximum_loan_amount'] ?? null,
+                        'minimum_interest' => $item['minimum_interest'] ?? null,
+                        'maximum_interest' => $item['maximum_interest'] ?? null,
+                        'minimum_loan_period' => $item['minimum_loan_period'] ?? null,
+                        'maximum_loan_period' => $item['maximum_loan_period'] ?? null,
+                        'minimum_collection_period' => $item['minimum_collection_period'] ?? null,
+                        'maximum_collection_period' => $item['maximum_collection_period'] ?? null,
+                        'required_guarantee_count' => $item['required_guarantee_count'] ?? null,
+                        'penalty_method' => $item['penalty_method'] ?? null,
+                        'penalty_percentage' => $item['penalty_percentage'] ?? null,
+                        'penalty_apply_type' => $item['penalty_apply_type'] ?? null,
+                        'penalty_start_after_days' => $item['penalty_start_after_days'] ?? null,
+                    ]);
+                }
+            }
             $product->additional_charges()->delete();
             if ($request->has('charges') && is_array($request->charges)) {
                 foreach ($request->charges as $charge) {
@@ -280,7 +325,7 @@ class ProductController extends Controller
 
     public function getProductData($id)
     {
-        $product = Product::with(['additional_charges', 'required_documents'])->findOrFail($id);
+        $product = Product::with(['additional_charges', 'required_documents', 'product_has_items'])->findOrFail($id);
 
         return response()->json([
             'product' => $product

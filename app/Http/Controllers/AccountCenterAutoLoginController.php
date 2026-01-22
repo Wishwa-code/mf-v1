@@ -12,8 +12,8 @@ class AccountCenterAutoLoginController extends Controller
 {
     public function autoLogin(Request $request)
     {
-        $accountCenterUrl = rtrim(env('ACCOUNT_CENTER_URL', 'https://accountcenter.asipbook.com'), '/');
-        $serverUrl = rtrim(env('ACCOUNT_CENTER_SERVER_URL', 'https://accountcenterserver.asipbook.com'), '/');
+        $accountCenterUrl = rtrim(env('ACCOUNT_CENTER_URL', 'https://accountcenter.asipiya.com'), '/');
+        $serverUrl = rtrim(env('ACCOUNT_CENTER_BACKEND_URL', 'https://accountcenterbackend.asipiya.com'), '/');
         $appUrl = env('APP_URL', 'https://192.168.1.18 ');
 
         $token = $this->getToken($request);
@@ -74,7 +74,7 @@ class AccountCenterAutoLoginController extends Controller
             }
         } catch (\Exception $e) {
             // Continue to fallback
-            return redirect( rtrim(env('ACCOUNT_CENTER_URL', 'https://accountcenter.asipbook.com'), '/'));
+            return redirect(rtrim(env('ACCOUNT_CENTER_URL', 'https://accountcenter.asipiya.com'), '/'));
         }
 
         try {
@@ -109,7 +109,7 @@ class AccountCenterAutoLoginController extends Controller
 
         $userId = $userData['idUser'] ?? null;
         if ($userId) {
-            session(['user_id' => $userId]); 
+            session(['user_id' => $userId]);
             Cache::put('user_data:' . $userId, $userData, now()->addMinutes(120));
         }
 

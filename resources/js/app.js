@@ -11,6 +11,15 @@ import Choices from "choices.js";
 import Swal from "sweetalert2";
 window.Swal = Swal;
 
+// Common Colors
+window.CommonColors = {
+  primary: "#144BB8",
+  edit: "#14B82E",
+  delete: "#B86314",
+  other1: "#8114B8",
+  other2: "#B8A814"
+};
+
 // Initialize global plugins
 document.addEventListener("DOMContentLoaded", function () {
   // Initialize Flatpickr

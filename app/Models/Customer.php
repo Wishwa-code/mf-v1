@@ -65,7 +65,7 @@ class Customer extends Model
         return Cache::remember('branch_' . $this->branch_id, 3600, function () {
             try {
                 $response = Http::timeout(5)
-                    ->get(rtrim(env('ACCOUNT_CENTER_SERVER_URL', 'https://accountcenterserver.asipbook.com'), '/') . '/api/branches/' . $this->branch_id);
+                    ->get(rtrim(env('ACCOUNT_CENTER_BACKEND_URL', 'https://accountcenterserver.asipbook.com'), '/') . '/api/branches/' . $this->branch_id);
 
                 if ($response->successful()) {
                     return (object) $response->json();

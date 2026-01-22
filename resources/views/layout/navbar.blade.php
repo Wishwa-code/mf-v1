@@ -33,7 +33,7 @@
                         aria-expanded="false">
                         <i class="ri-building-2-line me-2"></i>
                         <span class="branch-text text-truncate d-inline-block" style="max-width: 200px; vertical-align: middle;">
-                        @if(isset($branch) && count($branch) > 0)
+                            @if(isset($branch) && count($branch) > 0)
                             @php
                             $currentBranch = collect($branch)->firstWhere('idBranch', session('branch_id'));
                             @endphp
@@ -71,7 +71,7 @@
 
             <!-- Animated Account Button (No Dropdown) -->
             <div class="position-relative" style="width: 35px; height: 35px;">
-                <a href="https://accountcenter.asipbook.com/" class="account-btn-animated position-absolute top-0 start-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Account Center">
+                <a href="https://accountcenter.asipiya.com/" class="account-btn-animated position-absolute top-0 start-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Account Center">
                     <i class="ri-bank-fill svgIcon"></i>
                 </a>
             </div>

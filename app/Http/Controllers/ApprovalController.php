@@ -2565,7 +2565,7 @@ class ApprovalController extends Controller
             $token = session('auth_token');
             if ($token) {
                 $response = Http::withToken($token)
-                    ->get(env('ACCOUNT_CENTER_SERVER_URL') . '/api/microfinance/users-data-for-micro-finance');
+                    ->get(env('ACCOUNT_CENTER_BACKEND_URL') . '/api/microfinance/users-data-for-micro-finance');
 
                 if ($response->successful()) {
                     $data = $response->json();
@@ -2597,7 +2597,7 @@ class ApprovalController extends Controller
             $token = session('auth_token');
             if ($token) {
                 $response = Http::withToken($token)
-                    ->get(env('ACCOUNT_CENTER_SERVER_URL') . '/api/microfinance/users-data-for-micro-finance');
+                    ->get(env('ACCOUNT_CENTER_BACKEND_URL') . '/api/microfinance/users-data-for-micro-finance');
 
                 if ($response->successful()) {
                     $data = $response->json();

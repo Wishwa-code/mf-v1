@@ -25,31 +25,49 @@ class ProductRequest extends FormRequest
             'product_name' => 'required|string|max:255',
             'product_code' => 'required|string|max:50|unique:products,product_code,' . $this->route('product')?->id,
             'interest_method' => 'required|string',
-            'minimum_loan_amount' => 'required|numeric|min:0',
-            'maximum_loan_amount' => 'required|numeric|gte:minimum_loan_amount',
-            'minimum_interest' => 'required|numeric|min:0',
-            'maximum_interest' => 'required|numeric|min:0', // Logic for gte:minimum_interest can be complex if ranges overlap, keep simple for now
-            'interest_period' => 'required|string', // Mapped to collection_period_type or interest_apply_type? Need to verify mapping.
-            // Based on view: interest_period maps to "Loan Interest Period"
 
-            'default_loan_period' => 'required|integer|min:1', // "Default Loan Period" -> period_count in view?
-            'loan_period_type' => 'required|in:Days,Weeks,Months', // "Type" next to Default Loan Period
-
-            'guarantee_count' => 'required|integer|min:0',
-
-            // Loan Duration and Repayments
-            'loan_duration' => 'required|integer|min:1',
-            'loan_duration_type' => 'required|in:Days,Weeks,Months',
-
-            'repayment_type' => 'required|string', // collection_type
+            // Global Settings
+            'loan_period_type' => 'required|in:Days,Weeks,Months',
+            'interest_period_type' => 'required|string',
+            'collection_period_type' => 'required|string',
             'collection_date_type' => 'required|string',
+            'repayment_type' => 'required|string',
+            'guarantee_count' => 'nullable|integer|min:0',
 
-            // Penalty
-            'penalty_method' => 'required|string',
-            'penalty_percentage' => 'required|numeric|min:0',
-            'penalty_period' => 'required|string',
-            'penalty_start_after' => 'required|integer|min:0',
-            'penalty_duration_type' => 'required|string', // duration_period_panelty
+            // Items (Financial Configuration)
+            'items' => 'required|array|min:1',
+            'items.*.product_item_name' => 'nullable|string',
+            'items.*.minimum_loan_amount' => 'required|numeric|min:0',
+            'items.*.maximum_loan_amount' => 'required|numeric|gte:items.*.minimum_loan_amount',
+            'items.*.minimum_interest' => 'required|numeric|min:0',
+            'items.*.maximum_interest' => 'required|numeric|min:0',
+            'items.*.minimum_loan_period' => 'required|integer|min:1',
+            'items.*.maximum_loan_period' => 'required|numeric|gte:items.*.minimum_loan_period',
+
+            // Optional / Conditional in Items
+            'items.*.minimum_collection_period' => 'nullable|integer|min:1',
+            'items.*.maximum_collection_period' => 'nullable|integer|gte:items.*.minimum_collection_period',
+            'items.*.required_guarantee_count' => 'nullable|integer|min:0',
+
+            'items.*.penalty_method' => 'nullable|string',
+            'items.*.penalty_percentage' => 'nullable|numeric|min:0',
+            'items.*.penalty_start_after_days' => 'nullable|integer|min:0',
+            'items.*.penalty_apply_type' => 'nullable|string',
+
+            // Legacy/Top-level optional (to avoid breaking if accessed, but validation relaxed)
+            'minimum_loan_amount' => 'nullable',
+            'maximum_loan_amount' => 'nullable',
+            'minimum_interest' => 'nullable',
+            'maximum_interest' => 'nullable',
+            'default_loan_period' => 'nullable',
+            'interest_period' => 'nullable',
+            'loan_duration' => 'nullable',
+            'loan_duration_type' => 'nullable',
+            'penalty_method' => 'nullable',
+            'penalty_percentage' => 'nullable',
+            'penalty_period' => 'nullable',
+            'penalty_start_after' => 'nullable',
+            'penalty_duration_type' => 'nullable',
 
             // Savings (Optional based on enable_saving)
             'enable_saving' => 'required|in:Yes,No',
