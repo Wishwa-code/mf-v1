@@ -162,7 +162,31 @@
                                     <option value="draft">Draft</option>
                                 </select>
                             </div>
-
+                            <div class="col-md-3">
+                                <label class="form-label">Loan Period Type</label>
+                                <select name="loan_period_type" class="form-select select2">
+                                    <option value="Months">Months</option>
+                                    <option value="Weeks">Weeks</option>
+                                    <option value="Days">Days</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Interest Period Type</label>
+                                <select name="interest_period_type" class="form-select select2">
+                                    <option value="Per Month">Per Month</option>
+                                    <option value="Per Week">Per Week</option>
+                                    <option value="Per Day">Per Day</option>
+                                    <option value="Per Year">Per Year</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Collection Period Type</label>
+                                <select name="collection_period_type" class="form-select select2">
+                                    <option value="Months">Months</option>
+                                    <option value="Weeks">Weeks</option>
+                                    <option value="Days">Days</option>
+                                </select>
+                            </div>
                             <div class="col-md-3">
                                 <label class="form-label">Collection Date Strategy</label>
                                 <select name="collection_date_type" class="form-select select2">
@@ -209,12 +233,7 @@
                                     <div class="input-group">
                                         <input type="number" step="0.01" id="newItemMinInt" class="form-control" placeholder="Min" min="0">
                                         <input type="number" step="0.01" id="newItemMaxInt" class="form-control" placeholder="Max" min="0">
-                                        <select name="interest_period_type" class="form-select" style="max-width: 130px;">
-                                            <option value="Per Month">Per Month</option>
-                                            <option value="Per Week">Per Week</option>
-                                            <option value="Per Day">Per Day</option>
-                                            <option value="Per Year">Per Year</option>
-                                        </select>
+                                        <span class="input-group-text" id="display_interest_period_type">Per Month</span>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -224,11 +243,7 @@
                                     <div class="input-group">
                                         <input type="number" id="newItemMinPeriod" class="form-control" placeholder="Min" min="0">
                                         <input type="number" id="newItemMaxPeriod" class="form-control" placeholder="Max" min="0">
-                                        <select name="loan_period_type" class="form-select" style="max-width: 110px;">
-                                            <option value="Months">Months</option>
-                                            <option value="Weeks">Weeks</option>
-                                            <option value="Days">Days</option>
-                                        </select>
+                                        <span class="input-group-text" id="display_loan_period_type">Months</span>
                                         <div class="input-group-text ">
                                             <div class="form-check form-switch mb-0 min-h-0">
                                                 <input class="form-check-input" type="checkbox" id="newItemDiffColl">
@@ -242,11 +257,7 @@
                                     <div class="input-group">
                                         <input type="number" id="newItemMinColl" class="form-control" placeholder="Min" min="0">
                                         <input type="number" id="newItemMaxColl" class="form-control" placeholder="Max" min="0">
-                                        <select name="collection_period_type" class="form-select" style="max-width: 110px;">
-                                            <option value="Months">Months</option>
-                                            <option value="Weeks">Weeks</option>
-                                            <option value="Days">Days</option>
-                                        </select>
+                                        <span class="input-group-text" id="display_collection_period_type">Months</span>
                                     </div>
                                 </div>
 
@@ -471,61 +482,84 @@
             }
         });
 
+    // -----------------------------------------
+    // Sync Period Types
+    // -----------------------------------------
+    function syncPeriodType(sourceName, targetId) {
+        let val = $('select[name="' + sourceName + '"] option:selected').text();
+        $('#' + targetId).text(val);
+    }
+
+    $('select[name="loan_period_type"]').change(function() {
+        syncPeriodType('loan_period_type', 'display_loan_period_type');
+    });
+    $('select[name="interest_period_type"]').change(function() {
+        syncPeriodType('interest_period_type', 'display_interest_period_type');
+    });
+    $('select[name="collection_period_type"]').change(function() {
+        syncPeriodType('collection_period_type', 'display_collection_period_type');
+    });
+
+    // Initial Sync
+    syncPeriodType('loan_period_type', 'display_loan_period_type');
+    syncPeriodType('interest_period_type', 'display_interest_period_type');
+    syncPeriodType('collection_period_type', 'display_collection_period_type');
 
 
-        // -----------------------------------------
-        // Validation Logic for Percentage Inputs
-        // -----------------------------------------
-        function handlePercentageLogic(selectId, inputId, labelId, standardLabel) {
-            $(selectId).change(function() {
-                let val = $(this).val();
-                let isPercentage = (val === 'percentage' || val === 'Percentage');
 
-                if (isPercentage) {
-                    $(labelId).text('Percentage (%)');
-                    $(inputId).val('').attr('max', 100);
-                } else {
-                    $(labelId).text(standardLabel);
-                    $(inputId).removeAttr('max');
+    // -----------------------------------------
+    // Validation Logic for Percentage Inputs
+    // -----------------------------------------
+    function handlePercentageLogic(selectId, inputId, labelId, standardLabel) {
+        $(selectId).change(function() {
+            let val = $(this).val();
+            let isPercentage = (val === 'percentage' || val === 'Percentage');
+
+            if (isPercentage) {
+                $(labelId).text('Percentage (%)');
+                $(inputId).val('').attr('max', 100);
+            } else {
+                $(labelId).text(standardLabel);
+                $(inputId).removeAttr('max');
+            }
+        });
+
+        $(inputId).on('input', function() {
+            let valType = $(selectId).val();
+            let isPercentage = (valType === 'percentage' || valType === 'Percentage');
+
+            if (isPercentage) {
+                let val = parseFloat($(this).val());
+                if (val > 100) {
+                    $(this).val(100);
                 }
-            });
+            }
+        });
+    }
 
-            $(inputId).on('input', function() {
-                let valType = $(selectId).val();
-                let isPercentage = (valType === 'percentage' || valType === 'Percentage');
+    // Apply to Savings
+    handlePercentageLogic('#saving_account_amount_type', '#saving_amount', '#savingAmountLabel', 'Amount');
 
-                if (isPercentage) {
-                    let val = parseFloat($(this).val());
-                    if (val > 100) {
-                        $(this).val(100);
-                    }
-                }
-            });
+    // Apply to Charges
+    handlePercentageLogic('#newChargeType', '#newChargeVal', '#chargeAmountLabel', 'Amount');
+
+    // -----------------------------------------
+    // Dynamic Items Logic
+    // -----------------------------------------
+    let itemIndex = 0;
+
+    // Function to Add Item Row
+    window.addItemRow = function(data) {
+        console.log("Adding row", data); // Debug
+        $('.empty-state-table').hide();
+
+        // Penalty Text Display
+        let penaltyTxt = '-';
+        if (data.penalty_percentage && data.penalty_percentage > 0) {
+            penaltyTxt = `${data.penalty_percentage}% (${data.penalty_method == 'one_time' ? 'One Time' : 'Recur'}) after ${data.penalty_start_after_days} ${data.penalty_apply_type}`;
         }
 
-        // Apply to Savings
-        handlePercentageLogic('#saving_account_amount_type', '#saving_amount', '#savingAmountLabel', 'Amount');
-
-        // Apply to Charges
-        handlePercentageLogic('#newChargeType', '#newChargeVal', '#chargeAmountLabel', 'Amount');
-
-        // -----------------------------------------
-        // Dynamic Items Logic
-        // -----------------------------------------
-        let itemIndex = 0;
-
-        // Function to Add Item Row
-        window.addItemRow = function(data) {
-            console.log("Adding row", data); // Debug
-            $('.empty-state-table').hide();
-
-            // Penalty Text Display
-            let penaltyTxt = '-';
-            if (data.penalty_percentage && data.penalty_percentage > 0) {
-                penaltyTxt = `${data.penalty_percentage}% (${data.penalty_method == 'one_time' ? 'One Time' : 'Recur'}) after ${data.penalty_start_after_days} ${data.penalty_apply_type}`;
-            }
-
-            let html = `
+        let html = `
                 <tr>
                     <td><span class="fw-bold">${data.product_item_name || 'Tier ' + (itemIndex+1)}</span>
                         <input type="hidden" name="items[${itemIndex}][product_item_name]" value="${data.product_item_name || ''}">
@@ -560,70 +594,70 @@
                 </tr>
             `;
 
-            $('#itemsTable tbody').append(html);
-            itemIndex++;
+        $('#itemsTable tbody').append(html);
+        itemIndex++;
+    }
+
+    $('#addNewItemBtn').click(function() {
+        let name = $('#newItemName').val();
+        let minL = $('#newItemMinLoan').val();
+        let maxL = $('#newItemMaxLoan').val();
+
+        if (!minL || !maxL) {
+            // Use standard alert if Swal not available, but user had swal before. Assuming Swal exists or use alert.
+            alert('Please enter a valid loan range');
+            return;
         }
 
-        $('#addNewItemBtn').click(function() {
-            let name = $('#newItemName').val();
-            let minL = $('#newItemMinLoan').val();
-            let maxL = $('#newItemMaxLoan').val();
+        // Guarantor Validation
+        let globalGuarantors = parseInt($('input[name="guarantee_count"]').val()) || 0;
+        let reqGuarantors = parseInt($('#newItemGuarantors').val()) || 0;
 
-            if (!minL || !maxL) {
-                // Use standard alert if Swal not available, but user had swal before. Assuming Swal exists or use alert.
-                alert('Please enter a valid loan range');
-                return;
-            }
+        if (reqGuarantors > globalGuarantors) {
+            alert(`Required Guarantors (${reqGuarantors}) cannot be greater than Global Guarantors (${globalGuarantors})`);
+            return;
+        }
 
-            // Guarantor Validation
-            let globalGuarantors = parseInt($('input[name="guarantee_count"]').val()) || 0;
-            let reqGuarantors = parseInt($('#newItemGuarantors').val()) || 0;
+        let data = {
+            product_item_name: name,
+            minimum_loan_amount: minL,
+            maximum_loan_amount: maxL,
+            minimum_interest: $('#newItemMinInt').val(),
+            maximum_interest: $('#newItemMaxInt').val(),
+            minimum_loan_period: $('#newItemMinPeriod').val(),
+            maximum_loan_period: $('#newItemMaxPeriod').val(),
+            minimum_collection_period: $('#newItemDiffColl').is(':checked') ? $('#newItemMinColl').val() : '',
+            maximum_collection_period: $('#newItemDiffColl').is(':checked') ? $('#newItemMaxColl').val() : '',
+            required_guarantee_count: $('#newItemGuarantors').val(),
+            penalty_method: $('#newItemPenaltyMethod').val(),
+            penalty_percentage: $('#newItemPenaltyRate').val(),
+            penalty_start_after_days: $('#newItemPenaltyStart').val(),
+            penalty_apply_type: $('#newItemPenaltyType').val()
+        };
 
-            if (reqGuarantors > globalGuarantors) {
-                alert(`Required Guarantors (${reqGuarantors}) cannot be greater than Global Guarantors (${globalGuarantors})`);
-                return;
-            }
+        addItemRow(data);
 
-            let data = {
-                product_item_name: name,
-                minimum_loan_amount: minL,
-                maximum_loan_amount: maxL,
-                minimum_interest: $('#newItemMinInt').val(),
-                maximum_interest: $('#newItemMaxInt').val(),
-                minimum_loan_period: $('#newItemMinPeriod').val(),
-                maximum_loan_period: $('#newItemMaxPeriod').val(),
-                minimum_collection_period: $('#newItemDiffColl').is(':checked') ? $('#newItemMinColl').val() : '',
-                maximum_collection_period: $('#newItemDiffColl').is(':checked') ? $('#newItemMaxColl').val() : '',
-                required_guarantee_count: $('#newItemGuarantors').val(),
-                penalty_method: $('#newItemPenaltyMethod').val(),
-                penalty_percentage: $('#newItemPenaltyRate').val(),
-                penalty_start_after_days: $('#newItemPenaltyStart').val(),
-                penalty_apply_type: $('#newItemPenaltyType').val()
-            };
+        // Reset input fields
+        $('.config-box input').val('');
+        $('#newItemDiffColl').prop('checked', false).trigger('change');
+        $('#newItemPenaltyMethod').val('every_installment');
+        $('#newItemPenaltyType').val('Days');
+    });
 
-            addItemRow(data);
-
-            // Reset input fields
-            $('.config-box input').val('');
-            $('#newItemDiffColl').prop('checked', false).trigger('change');
-            $('#newItemPenaltyMethod').val('every_installment');
-            $('#newItemPenaltyType').val('Days');
-        });
-
-        $(document).on('click', '.remove-row', function() {
-            // Check if it's an item row or other
-            $(this).closest('tr').remove();
-            if ($('#itemsTable tbody tr').length === 0) $('.empty-state-table').show();
-        });
+    $(document).on('click', '.remove-row', function() {
+        // Check if it's an item row or other
+        $(this).closest('tr').remove();
+        if ($('#itemsTable tbody tr').length === 0) $('.empty-state-table').show();
+    });
 
 
-        // -----------------------------------------
-        // Additional Charges Logic
-        // -----------------------------------------
-        let chargeIndex = 0;
+    // -----------------------------------------
+    // Additional Charges Logic
+    // -----------------------------------------
+    let chargeIndex = 0;
 
-        window.addChargeRow = function(charge) {
-            let html = `
+    window.addChargeRow = function(charge) {
+        let html = `
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <div>
                         <div class="fw-bold">${charge.description}</div>
@@ -637,43 +671,43 @@
                     <button type="button" class="btn btn-sm text-danger remove-charge"><i class="bi bi-x-circle"></i></button>
                 </li>
             `;
-            $('#chargesList').append(html);
-            chargeIndex++;
+        $('#chargesList').append(html);
+        chargeIndex++;
+    }
+
+    $('#addChargeBtn').click(function() {
+        let desc = $('#newChargeDesc').val();
+        let val = $('#newChargeVal').val();
+        if (!desc || !val) {
+            alert("Please provide description and amount");
+            return;
         }
 
-        $('#addChargeBtn').click(function() {
-            let desc = $('#newChargeDesc').val();
-            let val = $('#newChargeVal').val();
-            if (!desc || !val) {
-                alert("Please provide description and amount");
-                return;
-            }
+        let charge = {
+            description: desc,
+            value: val,
+            value_type: $('#newChargeType').val(),
+            deduction_type: $('#newChargeDeduction').val()
+        };
+        addChargeRow(charge);
 
-            let charge = {
-                description: desc,
-                value: val,
-                value_type: $('#newChargeType').val(),
-                deduction_type: $('#newChargeDeduction').val()
-            };
-            addChargeRow(charge);
+        $('#newChargeDesc').val('');
+        $('#newChargeVal').val('');
+    });
 
-            $('#newChargeDesc').val('');
-            $('#newChargeVal').val('');
-        });
-
-        $(document).on('click', '.remove-charge', function() {
-            $(this).closest('li').remove();
-        });
+    $(document).on('click', '.remove-charge', function() {
+        $(this).closest('li').remove();
+    });
 
 
-        // -----------------------------------------
-        // Documents Logic
-        // -----------------------------------------
-        let docIndex = 0;
+    // -----------------------------------------
+    // Documents Logic
+    // -----------------------------------------
+    let docIndex = 0;
 
-        window.addDocRow = function(docData) {
-            $('.empty-state-docs').hide();
-            let html = `
+    window.addDocRow = function(docData) {
+        $('.empty-state-docs').hide();
+        let html = `
                 <tr>
                     <td>
                         <span class="small fw-bold">${docData.name}</span>
@@ -689,90 +723,90 @@
                     </td>
                 </tr>
             `;
-            $('#docsTable tbody').append(html);
-            docIndex++;
-        }
+        $('#docsTable tbody').append(html);
+        docIndex++;
+    }
 
-        $('#addDocBtn').click(function() {
-            let docName = $('#newDocName').val();
-            if (!docName) return;
+    $('#addDocBtn').click(function() {
+        let docName = $('#newDocName').val();
+        if (!docName) return;
 
-            addDocRow({
-                name: docName,
-                _status: true
-            });
-            $('#newDocName').val('');
+        addDocRow({
+            name: docName,
+            _status: true
         });
+        $('#newDocName').val('');
+    });
 
-        $(document).on('click', '.remove-doc-row', function() {
-            $(this).closest('tr').remove();
-            if ($('#docsTable tbody tr').length === 0) $('.empty-state-docs').show();
-        });
+    $(document).on('click', '.remove-doc-row', function() {
+        $(this).closest('tr').remove();
+        if ($('#docsTable tbody tr').length === 0) $('.empty-state-docs').show();
+    });
 
 
-        // -----------------------------------------
-        // AJAX Edit Mode Population
-        // -----------------------------------------
-        let productId = $('#product_id').val();
-        if (productId) {
-            $.ajax({
-                url: `/product/get-details/${productId}`,
-                type: 'GET',
-                success: function(response) {
-                    let product = response.product;
+    // -----------------------------------------
+    // AJAX Edit Mode Population
+    // -----------------------------------------
+    let productId = $('#product_id').val();
+    if (productId) {
+        $.ajax({
+            url: `/product/get-details/${productId}`,
+            type: 'GET',
+            success: function(response) {
+                let product = response.product;
 
-                    // Core Fields
-                    $('input[name="product_name"]').val(product.product_name);
-                    $('input[name="product_item_name"]').val(product.product_item_name);
-                    $('input[name="product_code"]').val(product.product_code);
-                    $('select[name="interest_method"]').val(product.interest_method).trigger('change');
-                    $('select[name="loan_period_type"]').val(product.loan_period_type).trigger('change');
-                    $('select[name="interest_period_type"]').val(product.interest_period_type).trigger('change');
-                    $('select[name="collection_period_type"]').val(product.collection_period_type).trigger('change');
-                    $('select[name="collection_date_type"]').val(product.collection_date_type).trigger('change');
-                    $('input[name="guarantee_count"]').val(product.guarantee_count);
+                // Core Fields
+                $('input[name="product_name"]').val(product.product_name);
+                $('input[name="product_item_name"]').val(product.product_item_name);
+                $('input[name="product_code"]').val(product.product_code);
+                $('select[name="interest_method"]').val(product.interest_method).trigger('change');
+                $('select[name="loan_period_type"]').val(product.loan_period_type).trigger('change');
+                $('select[name="interest_period_type"]').val(product.interest_period_type).trigger('change');
+                $('select[name="collection_period_type"]').val(product.collection_period_type).trigger('change');
+                $('select[name="collection_date_type"]').val(product.collection_date_type).trigger('change');
+                $('input[name="guarantee_count"]').val(product.guarantee_count);
 
-                    // Recover & Savings
-                    if (product.recovery_account_status === 'Yes') {
-                        $('#recovery_account_status').prop('checked', true).trigger('change');
-                    } else {
-                        $('#recovery_account_status').prop('checked', false).trigger('change');
-                    }
-                    if (product.enable_saving === 'Yes') {
-                        $('#enable_saving').prop('checked', true).trigger('change');
-                        $('select[name="saving_amount_type"]').val(product.saving_amount_type).trigger('change');
-                        $('input[name="saving_amount"]').val(product.saving_amount);
-                        $('select[name="saving_payment_type"]').val(product.saving_payment).trigger('change');
-                    }
-
-                    // Items
-                    if (product.product_has_items && product.product_has_items.length > 0) {
-                        $('#itemsTable tbody').empty();
-                        product.product_has_items.forEach(item => {
-                            addItemRow(item);
-                        });
-                    }
-
-                    // Charges
-                    if (product.additional_charges && product.additional_charges.length > 0) {
-                        product.additional_charges.forEach(charge => {
-                            addChargeRow(charge);
-                        });
-                    }
-
-                    // Documents
-                    if (product._documents && product._documents.length > 0) {
-                        $('#docsTable tbody').empty();
-                        product._documents.forEach(doc => {
-                            addDocRow(doc);
-                        });
-                    }
-                },
-                error: function(e) {
-                    console.error("Error loading product", e);
+                // Recover & Savings
+                if (product.recovery_account_status === 'Yes') {
+                    $('#recovery_account_status').prop('checked', true).trigger('change');
+                } else {
+                    $('#recovery_account_status').prop('checked', false).trigger('change');
                 }
-            });
-        }
+                if (product.enable_saving === 'Yes') {
+                    $('#enable_saving').prop('checked', true).trigger('change');
+                    $('select[name="saving_amount_type"]').val(product.saving_amount_type).trigger('change');
+                    $('input[name="saving_amount"]').val(product.saving_amount);
+                    $('select[name="saving_payment_type"]').val(product.saving_payment).trigger('change');
+                }
+
+                // Items
+                if (product.product_has_items && product.product_has_items.length > 0) {
+                    $('#itemsTable tbody').empty();
+                    product.product_has_items.forEach(item => {
+                        addItemRow(item);
+                    });
+                }
+
+                // Charges
+                if (product.additional_charges && product.additional_charges.length > 0) {
+                    product.additional_charges.forEach(charge => {
+                        addChargeRow(charge);
+                    });
+                }
+
+                // Documents
+                if (product._documents && product._documents.length > 0) {
+                    $('#docsTable tbody').empty();
+                    product._documents.forEach(doc => {
+                        addDocRow(doc);
+                    });
+                }
+            },
+            error: function(e) {
+                console.error("Error loading product", e);
+            }
+        });
+    }
     });
 </script>
 <script src="{{ asset('JS/common.js') }}"></script>
