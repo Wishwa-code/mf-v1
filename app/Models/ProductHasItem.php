@@ -29,7 +29,8 @@ class ProductHasItem extends Model
         'saving_payment',
         'saving_account_monthly_interest',
         'saving_interest_cal_type',
-        'required_guarantee_count'
+        'required_guarantee_count',
+        'saving_interest_rate'
     ];
 
     public function product()

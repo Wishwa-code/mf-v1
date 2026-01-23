@@ -13,10 +13,74 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::all();
-        return view('pages.ViewProduct', compact('products'));
+        if ($request->ajax()) {
+            try {
+                $data = Product::with(['product_has_items', 'additional_charges'])->latest();
+
+                return \Yajra\DataTables\Facades\DataTables::of($data)
+                    ->addIndexColumn()
+                    ->editColumn('product_name', function ($row) {
+                        return '<span class="fw-bold">' . $row->product_name . '</span>';
+                    })
+                    ->editColumn('interest_method', function ($row) {
+                        return ucwords(str_replace('_', ' ', $row->interest_method));
+                    })
+                    ->editColumn('loan_period_type', function ($row) {
+                        return ucwords(str_replace('_', ' ', $row->loan_period_type));
+                    })
+                    ->addColumn('items_list', function ($row) {
+                        if ($row->product_has_items->isEmpty()) return '<span class="text-muted">No Items</span>';
+                        $items = $row->product_has_items->take(2)->map(function ($item) {
+                            return '<span class="fw-bold">' . $item->product_item_name . '</span>';
+                        })->implode(', ');
+
+                        $count = $row->product_has_items->count();
+                        if ($count > 2) $items .= '... (+' . ($count - 2) . ')';
+                        return '<small>' . $items . '</small>';
+                    })
+                    ->addColumn('charges_list', function ($row) {
+                        if ($row->additional_charges->isEmpty()) return '<span class="text-muted">No Charges</span>';
+                        $charges = $row->additional_charges->take(2)->map(function ($c) {
+                            $type = $c->value_type === 'Percentage' ? '(%)' : '(Fixed)';
+                            return '<span class="fw-bold">' . $c->description . '</span>: <span class="fw-bold">' . number_format($c->value, 2) . '</span> <span class="text-muted small" style="font-size: 1.00em;">' . $type . '</span>';
+                        })->implode('<br>');
+
+                        $count = $row->additional_charges->count();
+                        if ($count > 2) $charges .= '<br><small class="text-primary">+' . ($count - 2) . ' more</small>';
+                        return '<small>' . $charges . '</small>';
+                    })
+                    ->addColumn('action', function ($row) {
+                        $viewBtn = '<a href="javascript:void(0)" class="btn btn-info btn-sm rounded-pill me-1 js-view-product" data-id="' . $row->id . '" data-bs-toggle="tooltip" title="View Details"><i class="bi bi-eye"></i> View</a>';
+                        $editBtn = '<a href="' . route('product.edit', $row->id) . '" class="btn btn-success btn-sm rounded-pill me-1" data-bs-toggle="tooltip" title="Edit Product"><i class="bi bi-pencil-square"></i> Edit</a>';
+                        $deleteBtn = '<a href="' . route('product.destroy', $row->id) . '" class="btn btn-danger btn-sm rounded-pill js-delete-trigger" data-url="' . route('product.destroy', $row->id) . '" data-bs-toggle="tooltip" title="Delete Product"><i class="bi bi-trash"></i></a>';
+                        return '<div class="d-flex justify-content-end">' . $viewBtn . $editBtn . $deleteBtn . '</div>';
+                    })
+                    ->addColumn('status', function ($row) {
+                        $checked = $row->status == 'active' ? 'checked' : '';
+                        return '<div class="form-check form-switch d-flex justify-content-center" data-bs-toggle="tooltip" title="Change Status">
+                                    <input class="form-check-input status-toggle" type="checkbox" data-id="' . $row->id . '" ' . $checked . '>
+                                </div>';
+                    })
+                    ->rawColumns(['product_name', 'items_list', 'charges_list', 'action', 'status'])
+                    ->make(true);
+            } catch (Exception $e) {
+                return response()->json(['error' => $e->getMessage()], 500);
+            }
+        }
+        return view('pages.ViewProduct');
+    }
+
+    public function updateStatus(Request $request)
+    {
+        $product = Product::find($request->id);
+        if ($product) {
+            $product->status = $request->status;
+            $product->save();
+            return response()->json(['success' => 'Status saved successfully.']);
+        }
+        return response()->json(['error' => 'Product not found.'], 404);
     }
 
     /**
@@ -37,19 +101,7 @@ class ProductController extends Controller
 
             $validated = $request->validated();
 
-            // Map frontend fields to database columns
-            $productData = array_merge($validated, [
-                'interest_apply_type' => $validated['interest_period'],
-                'minimum_loan_period' => $validated['default_loan_period'],
-                'maximum_collection_period' => $validated['loan_duration'],
-                'collection_period_type' => $validated['loan_duration_type'],
-                'penalty_apply_type' => $validated['penalty_period'],
-                'penalty_start_after_days' => $validated['penalty_start_after'],
-                'saving_payment' => $validated['saving_payment_type'] ?? null,
-                'status' => 'Active',
-            ]);
-
-            $product = Product::create($productData);
+            $product = Product::create($validated);
 
             // Save Additional Charges
             if ($request->has('charges') && is_array($request->charges)) {
@@ -76,8 +128,8 @@ class ProductController extends Controller
                         'maximum_interest' => $item['maximum_interest'] ?? null,
                         'minimum_loan_period' => $item['minimum_loan_period'] ?? null,
                         'maximum_loan_period' => $item['maximum_loan_period'] ?? null,
-                        'minimum_collection_period' => $item['minimum_collection_period'] ?? null,
-                        'maximum_collection_period' => $item['maximum_collection_period'] ?? null,
+                        'minimum_collection_period' => $item['minimum_collection_period'] ?? $item['minimum_loan_period'],
+                        'maximum_collection_period' => $item['maximum_collection_period'] ?? $item['maximum_loan_period'],
                         'required_guarantee_count' => $item['required_guarantee_count'] ?? null,
                         // Penalty configs per item
                         'penalty_method' => $item['penalty_method'] ?? null,
@@ -85,6 +137,8 @@ class ProductController extends Controller
                         'penalty_apply_type' => $item['penalty_apply_type'] ?? null,
                         'penalty_start_after_days' => $item['penalty_start_after_days'] ?? null,
                         // Savings per item if needed, but we kept global. Table supports it though.
+                        'saving_amount' => $item['saving_amount'] ?? null,
+                        'saving_interest_rate' => $item['saving_interest_rate'] ?? null,
                     ]);
                 }
             }
@@ -138,8 +192,7 @@ class ProductController extends Controller
     public function edit($id)
     {
         $product = Product::with(['additional_charges', 'required_documents'])->find($id);
-        $designation = DB::table('designation')->get();
-        return view('pages.CreateProduct', compact('product', 'designation'));
+        return view('pages.CreateProduct', compact('product'));
     }
 
     /**
@@ -323,7 +376,7 @@ class ProductController extends Controller
         }
     }
 
-    public function getProductData($id)
+    public function getProductDetails($id)
     {
         $product = Product::with(['additional_charges', 'required_documents', 'product_has_items'])->findOrFail($id);
 

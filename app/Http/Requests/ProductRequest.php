@@ -31,8 +31,8 @@ class ProductRequest extends FormRequest
             'interest_period_type' => 'required|string',
             'collection_period_type' => 'required|string',
             'collection_date_type' => 'required|string',
-            'repayment_type' => 'required|string',
             'guarantee_count' => 'nullable|integer|min:0',
+            'recovery_account_status' => 'nullable|in:active,inactive',
 
             // Items (Financial Configuration)
             'items' => 'required|array|min:1',
@@ -54,7 +54,19 @@ class ProductRequest extends FormRequest
             'items.*.penalty_start_after_days' => 'nullable|integer|min:0',
             'items.*.penalty_apply_type' => 'nullable|string',
 
-            // Legacy/Top-level optional (to avoid breaking if accessed, but validation relaxed)
+            // Additional Charges
+            'charges' => 'nullable|array',
+            'charges.*.description' => 'required|string',
+            'charges.*.value_type' => 'required|string',
+            'charges.*.value' => 'required|numeric|min:0',
+            'charges.*.deduction_type' => 'required|string',
+
+            // Documents
+            'documents' => 'nullable|array',
+            'documents.*.name' => 'required|string',
+            'documents.*' => 'nullable', // Basic check for array structure
+
+            // Legacy/Top-level optional
             'minimum_loan_amount' => 'nullable',
             'maximum_loan_amount' => 'nullable',
             'minimum_interest' => 'nullable',
@@ -70,10 +82,11 @@ class ProductRequest extends FormRequest
             'penalty_duration_type' => 'nullable',
 
             // Savings (Optional based on enable_saving)
-            'enable_saving' => 'required|in:Yes,No',
-            'saving_amount_type' => 'nullable|required_if:enable_saving,Yes|string',
-            'saving_amount' => 'nullable|required_if:enable_saving,Yes|numeric|min:0',
-            'saving_payment_type' => 'nullable|required_if:enable_saving,Yes|string',
+            'saving_account_status' => 'required|in:active,inactive',
+            'saving_amount_type' => 'nullable|required_if:saving_account_status,active|string',
+            'saving_amount' => 'nullable|numeric|min:0',
+            'saving_payment_type' => 'nullable|required_if:saving_account_status,active|string',
+            'saving_interest_cal_type' => 'nullable|required_if:saving_account_status,active|string',
         ];
     }
 }

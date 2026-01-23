@@ -234,7 +234,8 @@ Route::middleware(['auth.central'])->group(function () {
     Route::get('/product/edit/{id}', [\App\Http\Controllers\ProductController::class, 'edit'])->name('product.edit'); // New edit route
     Route::post('/product/update/{id}', [\App\Http\Controllers\ProductController::class, 'update'])->name('product.update'); // New update route
     Route::get('/product/delete/{id}', [\App\Http\Controllers\ProductController::class, 'destroy'])->name('product.destroy'); // Was loancategory.destroy
-    Route::get('/product/get-details/{id}', [\App\Http\Controllers\ProductController::class, 'getProductData'])->name('product.getDetails'); // AJAX Route
+    Route::get('/product/get-details/{id}', [\App\Http\Controllers\ProductController::class, 'getProductDetails'])->name('product.getDetails'); // AJAX Route
+    Route::post('/product/status-update', [\App\Http\Controllers\ProductController::class, 'updateStatus'])->name('product.status_update');
 
     // Aliases for compatibility if needed (optional)
     Route::get('/loancategory/{id}', [\App\Http\Controllers\ProductController::class, 'edit'])->name('loancategory.edit');

@@ -14,6 +14,9 @@
 /* Responsive Overrides */
 @import "responsive.scss";
 
+/* Global DataTable Styles */
+@import "datatable.scss";
+
 /* Common Colors */
 :root {
   --btn-primary-common: #144bb8;

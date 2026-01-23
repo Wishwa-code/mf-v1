@@ -31,6 +31,7 @@ return new class extends Migration
             $table->double('penalty_percentage', 5, 2)->nullable();
             $table->integer('penalty_start_after_days')->nullable();
             $table->double('saving_amount', 15, 2)->nullable();
+            $table->double('saving_interest_rate', 3, 2)->nullable();
             $table->timestamps();
         });
     }

@@ -100,13 +100,7 @@ function handleAjaxFormSubmission(
               }
             }
           });
-        } else {
-          Swal.fire({
-            icon: "error",
-            title: "Error!",
-            text: "Something went wrong. Please try again.",
-          });
-        }
+        } 
 
         if (errorCallback) {
           errorCallback(xhr);

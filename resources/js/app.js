@@ -1,7 +1,9 @@
 import "./bootstrap";
 
 import jQuery from "jquery";
-window.$ = window.jQuery = jQuery;
+if (!window.jQuery) {
+  window.$ = window.jQuery = jQuery;
+}
 
 import select2 from "select2";
 select2();
@@ -17,10 +19,12 @@ window.CommonColors = {
   edit: "#14B82E",
   delete: "#B86314",
   other1: "#8114B8",
-  other2: "#B8A814"
+  other2: "#B8A814",
 };
 
 // Initialize global plugins
+import "./global-submit";
+
 document.addEventListener("DOMContentLoaded", function () {
   // Initialize Flatpickr
   flatpickr(".datepicker", {
