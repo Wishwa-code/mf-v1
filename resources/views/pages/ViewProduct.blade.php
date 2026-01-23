@@ -58,108 +58,126 @@
 <div class="modal fade" id="viewProductModal" tabindex="-1" aria-labelledby="viewProductModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header border-bottom-0 bg-white pb-0">
-                <div>
-                    <h4 class="modal-title fw-bold text-dark mb-1" id="viewProductModalLabel">Product Details</h4>
-                    <p class="text-muted small">Comprehensive overview of the selected product</p>
+            <div class="modal-header border-bottom-0 bg-white pb-3 pt-4 px-4">
+                <div class="w-100">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h4 class="modal-title fw-bold text-dark mb-1" id="viewProductModalLabel">Product Details</h4>
+                            <p class="text-muted small mb-0">Comprehensive overview of the selected product</p>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4 bg-light-subtle">
-                <!-- General Info -->
-                <div class="card border-0 shadow-sm mb-4 rounded-4">
-                    <div class="card-body p-4">
-                        <h6 class="text-uppercase text-muted fw-bold mb-4 small border-bottom pb-2 d-inline-block">General Information</h6>
-                        <div class="row g-4">
-                            <div class="col-md-3">
-                                <label class="small text-muted fw-semibold">Product Name</label>
-                                <div id="view-product-name" class="fw-bold fs-5 text-dark mt-1">-</div>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="small text-muted fw-semibold">Product Code</label>
-                                <div id="view-product-code" class="text-dark fs-6 mt-1">-</div>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="small text-muted fw-semibold">Status</label>
-                                <div id="view-status" class="mt-1">-</div>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="small text-muted fw-semibold">Interest Method</label>
-                                <div id="view-interest-method" class="text-dark fs-6 mt-1">-</div>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="small text-muted fw-semibold">Min Loan Amount</label>
-                                <div id="view-min-loan" class="text-dark fs-6 mt-1 font-monospace">-</div>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="small text-muted fw-semibold">Max Loan Amount</label>
-                                <div id="view-max-loan" class="text-dark fs-6 mt-1 font-monospace">-</div>
+
+            <div class="modal-body p-0 bg-light-subtle">
+                <!-- Product Header Info -->
+                <div class="bg-white px-4 pb-4 border-bottom">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-shape icon-lg bg-primary-subtle text-primary rounded-4 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="bi bi-box-seam fs-3"></i>
+                        </div>
+                        <div>
+                            <h3 id="view-product-name" class="fw-bold text-dark mb-1">-</h3>
+                            <div class="d-flex align-items-center gap-3 text-muted small">
+                                <span class="d-flex align-items-center gap-1"><i class="bi bi-upc-scan"></i> <span id="view-product-code">-</span></span>
+                                <span id="view-status">-</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="row g-4">
-                    <!-- Sub Products / Items -->
-                    <div class="col-lg-12">
-                        <div class="card border-0 shadow-sm h-100 rounded-4">
-                            <div class="card-body p-4">
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="icon-shape bg-primary-subtle text-primary rounded-circle me-2 p-2"><i class="bi bi-layers-fill"></i></div>
-                                    <h6 class="fw-bold text-dark mb-0">Sub Products (Items)</h6>
-                                </div>
-                                <div class="table-responsive rounded-3 border">
-                                    <table id="view-items-table" class="table table-hover align-middle mb-0 text-nowrap">
-                                        <thead class="bg-light">
-                                            <tr>
-                                                <th class="small text-uppercase fw-semibold ps-3">Item Name</th>
-                                                <th class="small text-uppercase fw-semibold">Interest Range</th>
-                                                <th class="small text-uppercase fw-semibold">Period</th>
-                                                <th class="small text-uppercase fw-semibold">Penalty</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="view-items-body" class="small bg-white">
-                                            <tr>
-                                                <td colspan="3" class="text-center text-muted py-4">No items found.</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                <div class="p-4">
+                    <!-- General Info -->
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-body p-4">
+                            <h6 class="text-uppercase text-muted fw-bold mb-4 small border-bottom pb-2">General Policies</h6>
+                            <div class="row g-4">
+                                <div class="col-md-3">
+                                    <label class="small text-muted fw-semibold d-block mb-1">Interest Method</label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-graph-up-arrow text-primary"></i>
+                                        <span id="view-interest-method" class="text-dark fw-bold">-</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Charges & Docs -->
-                    <div class="col-lg-4">
-                        <div class="card border-0 shadow-sm mb-4 rounded-4">
-                            <div class="card-body p-4">
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="icon-shape bg-warning-subtle text-warning rounded-circle me-2 p-2"><i class="bi bi-currency-dollar"></i></div>
-                                    <h6 class="fw-bold text-dark mb-0">Additional Charges</h6>
-                                </div>
-                                <ul class="list-group list-group-flush small" id="view-charges-list">
-                                    <li class="list-group-item text-muted text-center py-3 border-0">No charges found.</li>
-                                </ul>
+                    <!-- Additional Charges -->
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="icon-shape bg-warning-subtle text-warning rounded-circle me-2 p-2"><i class="bi bi-currency-dollar"></i></div>
+                                <h6 class="fw-bold text-dark mb-0">Additional Charges</h6>
                             </div>
-                        </div>
-
-                        <div class="card border-0 shadow-sm rounded-4">
-                            <div class="card-body p-4">
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="icon-shape bg-success-subtle text-success rounded-circle me-2 p-2"><i class="bi bi-file-earmark-text"></i></div>
-                                    <h6 class="fw-bold text-dark mb-0">Documents</h6>
-                                </div>
-                                <ul class="list-group list-group-flush small" id="view-docs-list">
-                                    <li class="list-group-item text-muted text-center py-3 border-0">No documents required.</li>
-                                </ul>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th class="small text-uppercase fw-semibold ps-3">Description</th>
+                                            <th class="small text-uppercase fw-semibold">Amount / Rate</th>
+                                            <th class="small text-uppercase fw-semibold">Type</th>
+                                            <th class="small text-uppercase fw-semibold pe-3 text-end">Deduction</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="view-charges-list">
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-3">No charges found.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Documents -->
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="icon-shape bg-success-subtle text-success rounded-circle me-2 p-2"><i class="bi bi-file-earmark-text"></i></div>
+                                <h6 class="fw-bold text-dark mb-0">Required Documents</h6>
+                            </div>
+                            <ul class="list-group list-group-flush small" id="view-docs-list">
+                                <li class="list-group-item text-muted text-center py-2 border-0">No documents required.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Configuration / Sub Products -->
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="icon-shape bg-primary-subtle text-primary rounded-circle me-2 p-2"><i class="bi bi-layers-fill"></i></div>
+                                <h6 class="fw-bold text-dark mb-0">Sub Products (Configuration)</h6>
+                            </div>
+                            <div class="table-responsive rounded-3 border">
+                                <table id="view-items-table" class="table table-hover align-middle mb-0 text-nowrap table-striped">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th class="small text-uppercase fw-semibold ps-4 py-3">Label</th>
+                                            <th class="small text-uppercase fw-semibold py-3">Loan Amount</th>
+                                            <th class="small text-uppercase fw-semibold py-3">Period</th>
+                                            <th class="small text-uppercase fw-semibold py-3">Interest</th>
+                                            <th class="small text-uppercase fw-semibold py-3">Penalty</th>
+                                            <th class="small text-uppercase fw-semibold pe-4 py-3">Savings</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="view-items-body" class="small bg-white">
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted py-5">No items found.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
             </div>
-            <div class="modal-footer border-0 bg-light">
-                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+            <div class="modal-footer border-0 bg-white pt-3 pb-4">
+                <button type="button" class="btn btn-light rounded-pill px-4 border" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -315,10 +333,12 @@
                         // Create table header first
                         $('#view-items-table thead').html(`
                             <tr class="text-secondary text-uppercase small fw-bolder" style="font-size: 0.75rem; letter-spacing: 0.05em; background-color: #f8f9fa;">
-                                <th class="py-3 ps-4">Item Details</th>
-                                <th class="py-3">Loan Terms</th>
-                                <th class="py-3">Collection & Guarantees</th>
-                                <th class="py-3 pe-4">Penalty Rules</th>
+                                <th class="py-3 ps-4">Label</th>
+                                <th class="py-3">Loan Amount</th>
+                                <th class="py-3">Period</th>
+                                <th class="py-3">Interest</th>
+                                <th class="py-3">Penalty</th>
+                                <th class="py-3 pe-4">Savings</th>
                             </tr>
                         `);
 
@@ -333,64 +353,53 @@
                             let minInt = parseFloat(item.minimum_interest || 0);
                             let maxInt = parseFloat(item.maximum_interest || 0);
 
+                            // Penalty Logic (Simplified for View)
+                            let penaltyTxt = '-';
+                            if (item.penalty_percentage && item.penalty_percentage > 0) {
+                                let methodDesc = item.penalty_method === 'every_installment' ? 'APPLY PENALTY FOR EVERY INSTALLMENT' : 'APPLY PENALTY FOR LOAN AFTER MATURITY';
+                                penaltyTxt = `${item.penalty_percentage}% (${methodDesc}) after ${item.penalty_start_after_days} ${item.penalty_apply_type}`;
+                            }
+
+                            // Savings Logic
+                            let savingTxt = '-';
+                            if (item.saving_amount) {
+                                let amt = parseFloat(item.saving_amount).toFixed(2);
+                                let rate = item.saving_interest_rate ? item.saving_interest_rate + '%' : '-';
+                                savingTxt = `<span class="d-block small fw-bold text-dark">${amt}</span>
+                                             <small class="text-muted d-block" style="font-size: 0.7rem;">${rate} Int.</small>`;
+                            }
+
+
                             itemsHtml += `
                                 <tr class="border-bottm">
                                     <td class="align-middle ps-4 py-3">
-                                        <div class="d-flex align-items-center">
-                                            <div class="icon-shape icon-sm bg-primary-subtle text-primary rounded-3 me-3">
-                                                <i class="bi bi-box-seam"></i>
-                                            </div>
-                                            <div>
-                                                <span class="d-block text-dark fw-bold h6 mb-0">${item.product_item_name}</span>
-                                            </div>
+                                        <span class="d-block text-dark fw-bold h6 mb-0 text-uppercase">${item.product_item_name}</span>
+                                    </td>
+                                    <td class="align-middle py-3">
+                                        <span class="text-dark">${minLoan} - ${maxLoan}</span>
+                                    </td>
+                                    <td class="align-middle py-3">
+                                        <div class="d-flex flex-column">
+                                            <span>${item.minimum_loan_period} - ${item.maximum_loan_period} ${formatText(p.loan_period_type)}</span>
+                                            ${item.minimum_collection_period ? `<small class='text-muted'>Coll: ${item.minimum_collection_period}-${item.maximum_collection_period}</small>` : ''}
                                         </div>
                                     </td>
                                     <td class="align-middle py-3">
-                                        <div class="d-flex flex-column gap-1">
-                                            <small class="text-muted d-flex align-items-center">
-                                                <i class="bi bi-cash me-2 text-success"></i>
-                                                <span class="fw-bold text-dark">${minLoan} - ${maxLoan}</span>
-                                            </small>
-                                            <small class="text-muted d-flex align-items-center">
-                                                <i class="bi bi-calendar-range me-2 text-info"></i>
-                                                <span>${item.minimum_loan_period} - ${item.maximum_loan_period} ${formatText(p.loan_period_type)}</span>
-                                            </small>
-                                            <small class="text-muted d-flex align-items-center">
-                                                <i class="bi bi-percent me-2 text-warning"></i>
-                                                <span>${minInt}% - ${maxInt}% Int.</span>
-                                            </small>
-                                        </div>
+                                        <span>${minInt} - ${maxInt}% ${formatText(p.interest_period_type)}</span>
                                     </td>
                                     <td class="align-middle py-3">
-                                        <div class="d-flex flex-column gap-1">
-                                            <small class="text-muted d-flex align-items-center">
-                                                <i class="bi bi-hourglass-split me-2 text-secondary"></i>
-                                                <span>Coll: ${item.minimum_collection_period || 0} - ${item.maximum_collection_period || 0}</span>
-                                            </small>
-                                            <small class="text-muted d-flex align-items-center">
-                                                <i class="bi bi-people me-2 text-secondary"></i>
-                                                <span>${item.required_guarantee_count || 0} Guarantors</span>
-                                            </small>
-                                        </div>
+                                         <span class="small text-uppercase" style="font-size: 0.75rem;">${penaltyTxt}</span>
+                                         <div class="small text-muted mt-1">${item.required_guarantee_count || 0} Guarantors</div>
                                     </td>
                                     <td class="align-middle pe-4 py-3">
-                                        <div class="d-flex flex-column gap-1">
-                                            <small class="text-muted d-flex align-items-center">
-                                                <i class="bi bi-exclamation-triangle me-2 text-danger"></i>
-                                                <span>${formatText(item.penalty_method || 'N/A')} (${item.penalty_percentage || 0}%)</span>
-                                            </small>
-                                            <div class="d-flex gap-2">
-                                                <span class="badge bg-light text-secondary border">Start: ${item.penalty_start_after_days || 0} Days</span>
-                                                <span class="badge bg-light text-secondary border">${formatText(item.penalty_apply_type || '-')}</span>
-                                            </div>
-                                        </div>
+                                        ${savingTxt}
                                     </td>
                                 </tr>
                             `;
                         });
                     } else {
                         $('#view-items-table thead').html(''); // Clear header if no items
-                        itemsHtml = '<tr><td colspan="4" class="text-center text-muted py-5"><i class="bi bi-box-seam display-6 d-block mb-3 opacity-25"></i>No items configured.</td></tr>';
+                        itemsHtml = '<tr><td colspan="6" class="text-center text-muted py-5"><i class="bi bi-box-seam display-6 d-block mb-3 opacity-25"></i>No items configured.</td></tr>';
                     }
                     $('#view-items-body').html(itemsHtml);
 
@@ -401,31 +410,29 @@
                             let valueDisplay = parseFloat(op.value).toLocaleString('en-US', {
                                 minimumFractionDigits: 2
                             });
-                            let typeBadge = '';
-
-                            // Determine type display
-                            if (op.value_type === 'percentage') {
-                                typeBadge = '<span class="badge bg-light text-dark border ms-2">Rate: ' + valueDisplay + '%</span>';
-                                // For percentage, we might just show the percentage value nicely
-                                valueDisplay = valueDisplay + '%';
-                            } else {
-                                typeBadge = '<span class="badge bg-light text-dark border ms-2">Fixed</span>';
-                            }
+                            let typeDisplay = op.value_type === 'percentage' ? 'Percentage (%)' : 'Fixed Amount';
+                            let deductionDisplay = formatText(op.deduction_type || '-');
+                            if (op.value_type === 'percentage') valueDisplay += '%';
 
                             chargesHtml += `
-                                <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-0 border-bottom">
-                                    <div>
-                                        <span class="fw-bolder text-dark h6 mb-0">${op.description}</span>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="fw-bolder text-primary h6 mb-0">${parseFloat(op.value).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                                        <span class="text-uppercase small fw-bold text-muted ms-2" style="font-size: 0.75rem;">${op.value_type === 'percentage' ? '(%)' : '(Fixed)'}</span>
-                                    </div>
-                                </li>
+                                <tr>
+                                    <td class="ps-3 py-3">
+                                        <span class="fw-bold text-dark">${op.description}</span>
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="fw-bold text-primary">${valueDisplay}</span>
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="badge bg-light text-dark border">${typeDisplay}</span>
+                                    </td>
+                                    <td class="pe-3 py-3 text-end">
+                                        <span class="text-muted small">${deductionDisplay}</span>
+                                    </td>
+                                </tr>
                             `;
                         });
                     } else {
-                        chargesHtml = '<li class="list-group-item text-muted text-center py-3">No charges found.</li>';
+                        chargesHtml = '<tr><td colspan="4" class="text-center text-muted py-3">No charges found.</td></tr>';
                     }
                     $('#view-charges-list').html(chargesHtml);
 

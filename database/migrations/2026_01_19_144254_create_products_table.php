@@ -23,7 +23,6 @@ return new class extends Migration
             $table->integer('guarantee_count')->nullable();
             $table->string('saving_amount_type', 45)->nullable();
             $table->string('saving_collection_type', 45)->nullable();
-            $table->float('saving_account_monthly_interest', 15, 4)->nullable();
             $table->string('saving_interest_cal_type', 45)->nullable();
             $table->enum('saving_account_status', ['active', 'inactive'])->default('active');
             $table->enum('recovery_account_status', ['active', 'inactive'])->default('active');

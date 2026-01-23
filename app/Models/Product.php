@@ -22,7 +22,6 @@ class Product extends Model
         'guarantee_count',
         'saving_amount_type',
         'saving_collection_type',
-        'saving_account_monthly_interest',
         'saving_interest_cal_type',
         'saving_account_status',
         'recovery_account_status',

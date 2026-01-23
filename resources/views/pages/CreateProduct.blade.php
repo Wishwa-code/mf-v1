@@ -919,11 +919,11 @@
                     } else {
                         $('#recovery_account_status').prop('checked', false).trigger('change');
                     }
-                    if (product.enable_saving === 'Yes') {
-                        $('#enable_saving').prop('checked', true).trigger('change');
+                    if (product.saving_account_status === 'active') {
+                        $('#saving_account_status').prop('checked', true).trigger('change');
                         $('select[name="saving_amount_type"]').val(product.saving_amount_type).trigger('change');
                         $('input[name="saving_amount"]').val(product.saving_amount);
-                        $('select[name="saving_payment_type"]').val(product.saving_payment).trigger('change');
+                        $('select[name="saving_payment_type"]').val(product.saving_collection_type).trigger('change');
                         $('select[name="saving_interest_cal_type"]').val(product.saving_interest_cal_type).trigger('change');
                     }
 

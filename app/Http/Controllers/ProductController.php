@@ -100,6 +100,10 @@ class ProductController extends Controller
             DB::beginTransaction();
 
             $validated = $request->validated();
+            $userData = session('user_data');
+            $validated['created_by'] = isset($userData['userData']['idUser']) ? $userData['userData']['idUser'] : null;
+
+            $validated['saving_collection_type'] = $request->saving_payment_type;
 
             $product = Product::create($validated);
 
@@ -157,6 +161,19 @@ class ProductController extends Controller
 
             DB::commit();
 
+            // Log Activity
+            $userData = session('user_data');
+            activity()
+                ->performedOn($product)
+                ->withProperties([
+                    'causer_name' => $userData['userData']['full_name'] ?? 'Unknown User',
+                    'email' => $userData['userData']['Email'] ?? '',
+                    'user_id' => $userData['userData']['idUser'] ?? null,
+                    'ip' => request()->ip(),
+                    'attributes' => $product->toArray()
+                ])
+                ->log('Product Created: ' . $product->product_name);
+
             if ($request->ajax()) {
                 return response()->json([
                     'status' => 'success',
@@ -204,32 +221,15 @@ class ProductController extends Controller
             DB::beginTransaction();
 
             $product = Product::findOrFail($id);
-            $product->product_name = $request->product_name;
-            $product->product_code = $request->product_code;
-            $product->interest_method = $request->interest_method;
-            $product->minimum_loan_amount = $request->minimum_loan_amount;
-            $product->maximum_loan_amount = $request->maximum_loan_amount;
-            $product->minimum_interest = $request->minimum_interest;
-            $product->maximum_interest = $request->maximum_interest;
-            $product->interest_apply_type = $request->interest_period;
-            $product->minimum_loan_period = $request->default_loan_period;
-            $product->loan_period_type = $request->loan_period_type;
-            $product->guarantee_count = $request->guarantee_count;
-            $product->maximum_collection_period = $request->loan_duration;
-            $product->collection_period_type = $request->loan_duration_type;
-            $product->repayment_type = $request->repayment_type;
-            $product->collection_date_type = $request->collection_date_type;
-            $product->penalty_method = $request->penalty_method;
-            $product->penalty_percentage = $request->penalty_percentage;
-            $product->penalty_apply_type = $request->penalty_period;
-            $product->penalty_start_after_days = $request->penalty_start_after;
+            $validated = $request->validated();
+            $userData = session('user_data');
+            $validated['updated_by'] = isset($userData['userData']['idUser']) ? $userData['userData']['idUser'] : null;
 
-            $product->enable_saving = $request->enable_saving;
-            $product->saving_amount_type = $request->saving_amount_type;
-            $product->saving_amount = $request->saving_amount;
-            $product->saving_payment = $request->saving_payment_type;
+            $validated['saving_collection_type'] = $request->saving_payment_type;
 
-            $product->save();
+            // saving_account_status is directly in $validated keys
+
+            $product->update($validated);
 
             // Sync Financial Configuration Items
             $product->product_has_items()->delete();
@@ -253,7 +253,9 @@ class ProductController extends Controller
                     ]);
                 }
             }
+
             $product->additional_charges()->delete();
+            
             if ($request->has('charges') && is_array($request->charges)) {
                 foreach ($request->charges as $charge) {
                     if (isset($charge['description'], $charge['value_type'], $charge['value'])) {
@@ -268,7 +270,6 @@ class ProductController extends Controller
             }
 
             // Required Documents: Delete and Re-create
-            // Required Documents: Delete and Re-create
             $product->required_documents()->delete();
             if ($request->has('documents') && is_array($request->documents)) {
                 foreach ($request->documents as $doc) {
@@ -281,55 +282,20 @@ class ProductController extends Controller
                 }
             }
 
-            // Approval Levels: Delete and Re-create
-            // Find existing levels for this product
-            $existingLevels = DB::table('level')->where('product_id', $id)->pluck('id');
-
-            // Delete child data first
-            if ($existingLevels->isNotEmpty()) {
-                DB::table('level_has_designation')->whereIn('level_id', $existingLevels)->delete();
-                DB::table('approval_checklist')->whereIn('level_id', $existingLevels)->delete();
-                DB::table('level')->whereIn('id', $existingLevels)->delete();
-            }
-
-            if ($request->has('level_data') && is_array($request->level_data)) {
-                foreach ($request->level_data as $lData) {
-                    if (isset($lData['level'])) {
-                        $levelId = DB::table('level')->insertGetId([
-                            'product_id' => $product->id,
-                            'type' => $lData['level'],
-                            'description' => $lData['description'] ?? '',
-                            'branch_id' => session('branch_id')
-                        ]);
-
-                        // Save Designations
-                        if (isset($lData['designations']) && is_array($lData['designations'])) {
-                            foreach ($lData['designations'] as $desigId) {
-                                DB::table('level_has_designation')->insert([
-                                    'level_id' => $levelId,
-                                    'designation_id' => $desigId,
-                                    'branch_id' => session('branch_id')
-                                ]);
-                            }
-                        }
-
-                        // Save Checklist
-                        if (isset($lData['checklist']) && is_array($lData['checklist'])) {
-                            foreach ($lData['checklist'] as $checkItem) {
-                                if (!empty($checkItem)) {
-                                    DB::table('approval_checklist')->insert([
-                                        'level_id' => $levelId,
-                                        'description' => $checkItem,
-                                        'branch_id' => session('branch_id')
-                                    ]);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
             DB::commit();
+
+            // Log Activity
+            $userData = session('user_data');
+            activity()
+                ->performedOn($product)
+                ->withProperties([
+                    'causer_name' => $userData['userData']['full_name'] ?? 'Unknown User',
+                    'email' => $userData['userData']['Email'] ?? '',
+                    'user_id' => $userData['userData']['idUser'] ?? null,
+                    'ip' => request()->ip(),
+                    'attributes' => $product->toArray()
+                ])
+                ->log('Product Updated: ' . $product->product_name);
 
             if ($request->ajax()) {
                 return response()->json([
@@ -360,15 +326,23 @@ class ProductController extends Controller
         try {
             $product = Product::findOrFail($id);
             $productName = $product->product_name; // Store for log
+            $userData = session('user_data');
+            $product->deleted_by = isset($userData['userData']['idUser']) ? $userData['userData']['idUser'] : null;
+            $product->save();
+
             $product->delete(); // Soft delete if trait used
 
             // Log Activity
-            if (auth()->check()) {
-                activity()
-                    ->performedOn($product)
-                    ->causedBy(auth()->user())
-                    ->log('Product Deleted: ' . $productName);
-            }
+            activity()
+                ->performedOn($product)
+                ->withProperties([
+                    'causer_name' => $userData['userData']['full_name'] ?? 'Unknown User',
+                    'email' => $userData['userData']['Email'] ?? '',
+                    'user_id' => $userData['userData']['idUser'] ?? null,
+                    'ip' => request()->ip(),
+                    'attributes' => $product->toArray()
+                ])
+                ->log('Product Deleted: ' . $productName);
 
             return redirect()->route('product.index')->with('success', 'Product Deleted Successfully');
         } catch (Exception $e) {

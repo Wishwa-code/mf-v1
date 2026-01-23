@@ -35,12 +35,14 @@
             {{-- Head Office restricted menu: Dashboard, View Customer, KYC, View Center --}}
 
             @hasPrivilege('DASHBOARD')
+            @hasPrivilege('DASHBOARD')
             <li class="side-nav-item mt-2">
                 <a href="/" class="side-nav-link {{ Request::is('/') ? 'active' : '' }}" data-tooltip="Dashboard">
                     <i class="ri-dashboard-3-line"></i>
                     <span> Dashboard </span>
                 </a>
             </li>
+            @endhasPrivilege
             @endhasPrivilege
 
             @hasPrivilege('CUSTOMER')
@@ -68,7 +70,7 @@
             <li class="side-nav-item mt-2">
                 <a data-bs-toggle="collapse" href="#center" aria-expanded="false" aria-controls="center"
                     class="side-nav-link" data-tooltip="Loan Center">
-                    <i class="bi bi-building"></i>
+                    <i class="ri-building-4-line"></i>
                     <span> Loan Center </span>
                     <span class="menu-arrow"></span>
                 </a>
@@ -152,7 +154,7 @@
             <li class="side-nav-item mt-2">
                 <a data-bs-toggle="collapse" href="#sidebarPages" aria-expanded="false"
                     aria-controls="sidebarPages" class="side-nav-link" data-tooltip="Product">
-                    <i class="ri-pages-line"></i>
+                    <i class="ri-box-3-line"></i>
                     <span> Product </span>
                     <span class="menu-arrow"></span>
                 </a>
@@ -177,7 +179,7 @@
             <li class="side-nav-item mt-2">
                 <a data-bs-toggle="collapse" href="#sidebarPages" aria-expanded="false"
                     aria-controls="sidebarPages" class="side-nav-link" data-tooltip="Loan">
-                    <i class="ri-pages-line"></i>
+                    <i class="ri-money-dollar-circle-line"></i>
                     <span> Loan </span>
                     <span class="menu-arrow"></span>
                 </a>
@@ -230,7 +232,7 @@
             <li class="side-nav-item mt-2">
                 <a data-bs-toggle="collapse" href="#lead" aria-expanded="false"
                     aria-controls="sidebarPagesAuth" class="side-nav-link " data-tooltip="Lead">
-                    <i class="ri-article-fill"></i>
+                    <i class="ri-article-line"></i>
                     <span> Lead </span>
                     <span class="menu-arrow"></span>
                 </a>
@@ -350,7 +352,7 @@
             <li class="side-nav-item mt-2">
                 <a data-bs-toggle="collapse" href="#center" aria-expanded="false" aria-controls="center"
                     class="side-nav-link" data-tooltip="Loan Center">
-                    <i class="bi bi-building"></i>
+                    <i class="ri-building-4-line"></i>
                     <span> Loan Center </span>
                     <span class="menu-arrow"></span>
                 </a>
@@ -395,7 +397,7 @@
             <li class="side-nav-item mt-2">
                 <a data-bs-toggle="collapse" href="#Guarantee" aria-expanded="false"
                     aria-controls="sidebarPagesAuth" class="side-nav-link" data-tooltip="Guarantee">
-                    <i class="ri-user-2-fill"></i>
+                    <i class="ri-shield-user-line"></i>
                     <span> Guarantee </span>
                     <span class="menu-arrow"></span>
                 </a>
@@ -421,7 +423,7 @@
             <li class="side-nav-item mt-2">
                 <a data-bs-toggle="collapse" href="#payment" aria-expanded="false" aria-controls="center"
                     class="side-nav-link" data-tooltip="Payment Details">
-                    <i class="bi bi-currency-dollar"></i>
+                    <i class="ri-wallet-3-line"></i>
                     <span> Payment Details </span>
                     <span class="menu-arrow"></span>
                 </a>
@@ -493,7 +495,7 @@
             @hasPrivilege('LOAN_CALCULATOR')
             <li class="side-nav-item mt-2">
                 <a href="/calculator" class="side-nav-link {{ Request::is('calculator*') ? 'active' : '' }}" data-tooltip="Loan Calculator">
-                    <i class="ri-dashboard-3-line"></i>
+                    <i class="ri-calculator-line"></i>
                     <span> Loan Calculator </span>
                 </a>
             </li>
@@ -502,7 +504,7 @@
             @hasPrivilege('CALENDAR')
             <li class="side-nav-item mt-2">
                 <a href="/calender" class="side-nav-link {{ Request::is('calender*') ? 'active' : '' }}" data-tooltip="Calender">
-                    <i class="ri-dashboard-3-line"></i>
+                    <i class="ri-calendar-line"></i>
                     <span> Calender </span>
                 </a>
             </li>
@@ -537,7 +539,7 @@
             <li class="side-nav-item mt-2">
                 <a data-bs-toggle="collapse" href="#reports_section" aria-expanded="false"
                     class="side-nav-link" data-tooltip="Reports">
-                    <i class="ri-file-paper-2-fill"></i>
+                    <i class="ri-pie-chart-2-line"></i>
                     <span> Reports </span>
                     <span class="menu-arrow"></span>
                 </a>

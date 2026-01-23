@@ -1,220 +1,75 @@
 <style>
     /* Modern Sidebar Styles */
     :root {
-        --sidebar-width: 350px;
-        /* Increased from 320px */
+        --sidebar-width: 260px;
         --sidebar-bg: #313a46;
-        /* Default Fallback */
-        --sidebar-active-bg: #6a5e87;
-        /* Solid Purple for Active Item */
-        --sidebar-hover-bg: rgba(106, 94, 135, 0.6);
+        /* Using the requested primary gradient for active background */
+        --sidebar-active-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --sidebar-hover-bg: rgba(106, 94, 135, 0.2);
         --sidebar-text: #ced4da;
         --sidebar-text-active: #ffffff;
         --sidebar-border: rgba(255, 255, 255, 0.1);
+        --sidebar-font: 'Inter', sans-serif;
+    }
+
+    /* Apply Font */
+    .leftside-menu,
+    .side-nav-link {
+        font-family: var(--sidebar-font) !important;
     }
 
     /* Light Mode */
-    /* Light Mode */
     html[data-layout-mode="light"] .leftside-menu {
         --sidebar-bg: #ffffff;
-        --sidebar-text: #313a46;
-        --sidebar-hover-bg: rgba(106, 94, 135, 0.6);
-        border-right: 1px solid rgba(0, 0, 0, 0.1);
+        --sidebar-text: #5d6778;
+        --sidebar-hover-bg: rgba(106, 94, 135, 0.1);
+        border-right: 1px solid rgba(0, 0, 0, 0.05);
     }
 
     /* Dark Mode */
     html[data-layout-mode="dark"] .leftside-menu,
     html[data-bs-theme="dark"] .leftside-menu,
     html[data-layout-mode="detached"] .leftside-menu {
-        /* Glass Effect with Gradient */
-        background: rgba(30, 30, 40, 0.6) !important;
+        background: rgba(30, 30, 40, 0.8) !important;
         backdrop-filter: blur(20px) !important;
         -webkit-backdrop-filter: blur(20px) !important;
-        --sidebar-text: #e0e0e0;
-        --sidebar-hover-bg: rgba(106, 94, 135, 0.6);
-        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        --sidebar-text: #aab8c5;
+        --sidebar-hover-bg: rgba(255, 255, 255, 0.05);
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
         box-shadow: 5px 0 25px rgba(0, 0, 0, 0.2);
     }
 
-    /* Embossed Sidebar Style */
-    .leftside-menu {
-        width: var(--sidebar-width) !important;
-        background: var(--sidebar-bg);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        /* Stronger shadow for raised effect */
-        box-shadow: 6px 0 20px rgba(0, 0, 0, 0.15), inset -1px 0 0 rgba(255, 255, 255, 0.1);
-        border-right: none;
-        /* Shadow replaces border */
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 1005 !important;
-        position: fixed;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        height: 100vh;
-        margin: 0;
-        border-radius: 0;
-    }
-
-    /* Light Mode Shadow Override */
-    html[data-layout-mode="light"] .leftside-menu {
-        /* Neumorphic shadow for light mode */
-        box-shadow: 8px 0 24px rgba(136, 165, 191, 0.25), -6px 0 10px rgba(255, 255, 255, 0.8);
-        border-right: none;
-    }
-
-    /* Full Width Layout - Navbar on Top, Sidebar Below */
-    /* FIXED: Enforce standard Sidebar Left / Navbar Right layout on Desktop */
-    @media (min-width: 992px) {
-        .leftside-menu {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            bottom: 0 !important;
-            width: 350px !important;
-            height: 100vh !important;
-            z-index: 1005 !important;
-            transform: none !important;
-            /* Flexbox Layout to prevent overlap */
-            display: flex !important;
-            flex-direction: column !important;
-            background: var(--sidebar-bg) !important;
-            overflow: hidden !important;
-            /* Prevent sidebar itself from scrolling */
-        }
-
-        /* Container takes remaining height */
-        #leftside-menu-container {
-            flex-grow: 1;
-            height: auto !important;
-            /* Allow flex to dictate height */
-            overflow-y: auto !important;
-            /* Enable scrolling within this container */
-            padding-top: 0 !important;
-            /* Remove top padding as flex handles spacing */
-        }
-
-        .leftside-menu::-webkit-scrollbar {
-            /* Hide outer scrollbar if any */
-            display: none;
-        }
-
-        .leftside-menu::-webkit-scrollbar {
-            display: none;
-            /* Chrome/Safari */
-        }
-
-        .navbar-custom {
-            position: fixed !important;
-            top: 0 !important;
-            left: 350px !important;
-            /* Hardcoded 350px to match sidebar */
-            right: 0 !important;
-            width: auto !important;
-            margin-left: 0 !important;
-            z-index: 1001 !important;
-        }
-
-        .content-page {
-            margin-left: 350px !important;
-            padding-top: 70px;
-            /* Space for Navbar */
-        }
-    }
-
-
-    /* Mobile / Tablet Resets */
-    @media (max-width: 991.98px) {
-        .leftside-menu {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            bottom: 0 !important;
-            margin: 0 !important;
-            border-radius: 0 !important;
-            height: 100vh !important;
-            transform: translateX(-100%);
-            display: flex !important;
-            flex-direction: column !important;
-            overflow: hidden !important;
-        }
-
-        .content-page,
-        .navbar-custom {
-            margin-left: 0 !important;
-            left: 0 !important;
-            width: 100% !important;
-            border-radius: 0 !important;
-        }
-
-        .navbar-custom {
-            top: 0 !important;
-            margin: 0 !important;
-        }
-    }
-
-    /* Adjust Content Page Margin */
-    .content-page {
-        margin-left: var(--sidebar-width) !important;
-        transition: margin-left 0.3s ease;
-    }
-
-    #leftside-menu-container {
-        padding-top: 1rem;
-    }
-
-    /* Side Nav Title */
-    .side-nav-title {
-        padding: 12px 24px;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: var(--sidebar-text) !important;
-        opacity: 0.7;
-        font-weight: 600;
-        margin-top: 10px;
-    }
-
-    /* Side Nav Item */
-    .side-nav-item {
-        margin: 12px 12px;
-        /* Increased vertical spacing from 4px to 12px */
-    }
-
-    /* Side Nav Link */
-    .side-nav-link {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start !important;
-        padding: 12px 16px !important;
-        color: var(--sidebar-text) !important;
-        font-size: 0.92rem !important;
-        border-radius: 10px;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
-    }
-
-    /* Embossed/Pressed Effect for Menu Items */
-    .side-nav-link:hover {
-        background: var(--sidebar-hover-bg);
-        /* Inset shadow for pressed feel */
-        box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.1), inset -2px -2px 5px rgba(255, 255, 255, 0.05);
-        color: #ffffff !important;
-        transform: translateX(4px);
-    }
-
-    /* Active Item */
+    /* Modern Glassy/Gradient Active State */
     .side-nav-item.menuitem-active>.side-nav-link,
     .side-nav-link[aria-expanded="true"],
     .side-nav-link:active,
     .side-nav-link.active {
         background: var(--sidebar-active-bg) !important;
         color: var(--sidebar-text-active) !important;
-        /* Deep press effect */
-        box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.2), inset -1px -1px 4px rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        /* Glow effect from primary color */
+        border: none;
+    }
+
+    /* Hover State */
+    .side-nav-link:hover {
+        background: var(--sidebar-hover-bg);
+        color: var(--sidebar-text-active) !important;
+        transform: translateX(4px);
+    }
+
+    /* Icon Styles */
+    .side-nav-link i {
+        font-size: 1.2rem;
+        margin-right: 12px;
+        opacity: 0.8;
+        transition: all 0.3s ease;
+    }
+
+    .side-nav-item.menuitem-active>.side-nav-link i,
+    .side-nav-link.active i {
+        color: #fff !important;
+        opacity: 1;
     }
 
     /* Light Mode Pressed Effect */
@@ -503,7 +358,29 @@
         display: block;
     }
 
-    /* Responsive Styles & Mobile Toggle */
+    /* Content Page Global Adjustment */
+    .content-page {
+        margin-left: var(--sidebar-width) !important;
+        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        padding-top: 70px;
+        min-height: 100vh;
+    }
+
+    /* Desktop Layout Enforcement */
+    @media (min-width: 992px) {
+        .leftside-menu {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            bottom: 0 !important;
+            width: var(--sidebar-width) !important;
+            height: 100vh !important;
+            z-index: 1005 !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+    }
+
     /* Responsive Styles & Mobile Toggle */
     @media (max-width: 991.98px) {
         .leftside-menu {
