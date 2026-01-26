@@ -38,7 +38,7 @@
             @hasPrivilege('DASHBOARD')
             @hasPrivilege('DASHBOARD')
             <li class="side-nav-item mt-2">
-                <a href="/" class="side-nav-link {{ Request::is('/') ? 'active' : '' }}" data-tooltip="Dashboard">
+                <a href="/" class="side-nav-link {{ Request::is('/') ? 'active' : '' }}"  data-bs-title="Dashboard" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right" data-bs-toggle="tooltip">
                     <i class="ri-dashboard-3-line"></i>
                     <span> Dashboard </span>
                 </a>
@@ -48,8 +48,7 @@
 
             @hasPrivilege('CUSTOMER')
             <li class="side-nav-item mt-2">
-                <a data-bs-toggle="collapse" href="#customer" aria-expanded="false" aria-controls="customer"
-                    class="side-nav-link" data-tooltip="Customer">
+                <a data-bs-toggle="collapse" href="#customer" aria-expanded="false" aria-controls="customer" class="side-nav-link"  data-bs-title="Customer" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
                     <i class="ri-group-2-line"></i>
                     <span> Customer </span>
                     <span class="menu-arrow"></span>
@@ -69,8 +68,7 @@
 
             @hasPrivilege('LOAN_CENTER')
             <li class="side-nav-item mt-2">
-                <a data-bs-toggle="collapse" href="#center" aria-expanded="false" aria-controls="center"
-                    class="side-nav-link" data-tooltip="Loan Center">
+                <a data-bs-toggle="collapse" href="#center" aria-expanded="false" aria-controls="center" class="side-nav-link"  data-bs-title="Loan Center" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
                     <i class="ri-building-4-line"></i>
                     <span> Loan Center </span>
                     <span class="menu-arrow"></span>
@@ -84,8 +82,7 @@
             @endhasPrivilege
 
             <li class="side-nav-item mt-2">
-                <a data-bs-toggle="collapse" href="#approval" aria-expanded="false" aria-controls="approval"
-                    class="side-nav-link" data-tooltip="Approval Requests">
+                <a data-bs-toggle="collapse" href="#approval" aria-expanded="false" aria-controls="approval" class="side-nav-link"  data-bs-title="Approvals" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
                     <i class="ri-check-double-line"></i>
                     <span> Approvals </span>
                     <span class="menu-arrow"></span>
@@ -100,8 +97,7 @@
             </li>
 
             <li class="side-nav-item mt-2">
-                <a data-bs-toggle="collapse" href="#payment_voucher" aria-expanded="false"
-                    aria-controls="payment_voucher" class="side-nav-link" data-tooltip="Payment Voucher Module">
+                <a data-bs-toggle="collapse" href="#payment_voucher" aria-expanded="false" aria-controls="payment_voucher" class="side-nav-link"  data-bs-title="Payment Voucher Module" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
                     <i class="ri-file-list-3-line"></i>
                     <span> Payment Voucher Module </span>
                     <span class="menu-arrow"></span>
@@ -123,8 +119,7 @@
 
             @hasPrivilege('EXPENSES')
             <li class="side-nav-item mt-2">
-                <a data-bs-toggle="collapse" href="#expences" aria-expanded="false" aria-controls="expences"
-                    class="side-nav-link" data-tooltip="Expenses">
+                <a data-bs-toggle="collapse" href="#expences" aria-expanded="false" aria-controls="expences" class="side-nav-link"  data-bs-title="Expenses" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
                     <i class="ri-briefcase-line"></i>
                     <span> Expenses </span>
                     <span class="menu-arrow"></span>
@@ -144,7 +139,7 @@
 
             @hasPrivilege('DASHBOARD')
             <li class="side-nav-item mt-2">
-                <a href="/" class="side-nav-link {{ Request::is('/') ? 'active' : '' }}" data-tooltip="Dashboard">
+                <a href="/" class="side-nav-link {{ Request::is('/') ? 'active' : '' }}"  data-bs-title="Dashboard" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right" data-bs-toggle="tooltip">
                     <i class="ri-dashboard-3-line"></i>
                     <span> Dashboard </span>
                 </a>
@@ -153,8 +148,7 @@
 
             @hasPrivilege('PRODUCT')
             <li class="side-nav-item mt-2">
-                <a data-bs-toggle="collapse" href="#sidebarPages" aria-expanded="false"
-                    aria-controls="sidebarPages" class="side-nav-link" data-tooltip="Product">
+                <a data-bs-toggle="collapse" href="#sidebarPages" aria-expanded="false" aria-controls="sidebarPages" class="side-nav-link"  data-bs-title="Product" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
                     <i class="ri-box-3-line"></i>
                     <span> Product </span>
                     <span class="menu-arrow"></span>
@@ -178,8 +172,7 @@
 
             @hasPrivilege('LOAN')
             <li class="side-nav-item mt-2">
-                <a data-bs-toggle="collapse" href="#sidebarPages" aria-expanded="false"
-                    aria-controls="sidebarPages" class="side-nav-link" data-tooltip="Loan">
+                <a data-bs-toggle="collapse" href="#sidebarPages" aria-expanded="false" aria-controls="sidebarPages" class="side-nav-link"  data-bs-title="Loan" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
                     <i class="ri-money-dollar-circle-line"></i>
                     <span> Loan </span>
                     <span class="menu-arrow"></span>
@@ -231,8 +224,7 @@
             {{-- CUSTOMER LEADS SECTION --}}
             @hasPrivilege('CUSTOMER_LEADS')
             <li class="side-nav-item mt-2">
-                <a data-bs-toggle="collapse" href="#lead" aria-expanded="false"
-                    aria-controls="sidebarPagesAuth" class="side-nav-link " data-tooltip="Lead">
+                <a data-bs-toggle="collapse" href="#lead" aria-expanded="false" aria-controls="sidebarPagesAuth" class="side-nav-link "  data-bs-title="Lead" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
                     <i class="ri-article-line"></i>
                     <span> Lead </span>
                     <span class="menu-arrow"></span>
@@ -296,8 +288,7 @@
 
             @hasPrivilege('CUSTOMER')
             <li class="side-nav-item mt-2">
-                <a data-bs-toggle="collapse" href="#customer" aria-expanded="false"
-                    aria-controls="sidebarPagesAuth" class="side-nav-link" data-tooltip="Customer">
+                <a data-bs-toggle="collapse" href="#customer" aria-expanded="false" aria-controls="sidebarPagesAuth" class="side-nav-link"  data-bs-title="Customer" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
                     <i class="ri-group-2-line"></i>
                     <span> Customer </span>
                     <span class="menu-arrow"></span>
@@ -351,8 +342,7 @@
 
             @hasPrivilege('LOAN_CENTER')
             <li class="side-nav-item mt-2">
-                <a data-bs-toggle="collapse" href="#center" aria-expanded="false" aria-controls="center"
-                    class="side-nav-link" data-tooltip="Loan Center">
+                <a data-bs-toggle="collapse" href="#center" aria-expanded="false" aria-controls="center" class="side-nav-link"  data-bs-title="Loan Center" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
                     <i class="ri-building-4-line"></i>
                     <span> Loan Center </span>
                     <span class="menu-arrow"></span>
@@ -396,8 +386,7 @@
 
             @hasPrivilege('GUARANTEE')
             <li class="side-nav-item mt-2">
-                <a data-bs-toggle="collapse" href="#Guarantee" aria-expanded="false"
-                    aria-controls="sidebarPagesAuth" class="side-nav-link" data-tooltip="Guarantee">
+                <a data-bs-toggle="collapse" href="#Guarantee" aria-expanded="false" aria-controls="sidebarPagesAuth" class="side-nav-link"  data-bs-title="Guarantee" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
                     <i class="ri-shield-user-line"></i>
                     <span> Guarantee </span>
                     <span class="menu-arrow"></span>
@@ -422,8 +411,7 @@
 
             @hasPrivilege('PAYMENT_DETAILS')
             <li class="side-nav-item mt-2">
-                <a data-bs-toggle="collapse" href="#payment" aria-expanded="false" aria-controls="center"
-                    class="side-nav-link" data-tooltip="Payment Details">
+                <a data-bs-toggle="collapse" href="#payment" aria-expanded="false" aria-controls="center" class="side-nav-link"  data-bs-title="Payment Details" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
                     <i class="ri-wallet-3-line"></i>
                     <span> Payment Details </span>
                     <span class="menu-arrow"></span>
@@ -466,8 +454,7 @@
             @endhasPrivilege
 
             <li class="side-nav-item mt-2">
-                <a data-bs-toggle="collapse" href="#payment_voucher" aria-expanded="false"
-                    aria-controls="payment_voucher" class="side-nav-link" data-tooltip="Payment Voucher">
+                <a data-bs-toggle="collapse" href="#payment_voucher" aria-expanded="false" aria-controls="payment_voucher" class="side-nav-link"  data-bs-title="Payment Voucher" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
                     <i class="ri-file-list-3-line"></i>
                     <span> Payment Voucher </span>
                     <span class="menu-arrow"></span>
@@ -495,7 +482,7 @@
 
             @hasPrivilege('LOAN_CALCULATOR')
             <li class="side-nav-item mt-2">
-                <a href="/calculator" class="side-nav-link {{ Request::is('calculator*') ? 'active' : '' }}" data-tooltip="Loan Calculator">
+                <a href="/calculator" class="side-nav-link {{ Request::is('calculator*') ? 'active' : '' }}"  data-bs-title="Loan Calculator" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right" data-bs-toggle="tooltip">
                     <i class="ri-calculator-line"></i>
                     <span> Loan Calculator </span>
                 </a>
@@ -504,7 +491,7 @@
 
             @hasPrivilege('CALENDAR')
             <li class="side-nav-item mt-2">
-                <a href="/calender" class="side-nav-link {{ Request::is('calender*') ? 'active' : '' }}" data-tooltip="Calender">
+                <a href="/calender" class="side-nav-link {{ Request::is('calender*') ? 'active' : '' }}"  data-bs-title="Calender" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right" data-bs-toggle="tooltip">
                     <i class="ri-calendar-line"></i>
                     <span> Calender </span>
                 </a>
@@ -513,8 +500,7 @@
 
             @hasPrivilege('EXPENSES')
             <li class="side-nav-item mt-2">
-                <a data-bs-toggle="collapse" href="#expences" aria-expanded="false" aria-controls="expences"
-                    class="side-nav-link" data-tooltip="Expenses">
+                <a data-bs-toggle="collapse" href="#expences" aria-expanded="false" aria-controls="expences" class="side-nav-link"  data-bs-title="Expenses" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
                     <i class="ri-briefcase-line"></i>
                     <span> Expenses </span>
                     <span class="menu-arrow"></span>
@@ -538,8 +524,7 @@
 
             @hasPrivilege('REPORTS')
             <li class="side-nav-item mt-2">
-                <a data-bs-toggle="collapse" href="#reports_section" aria-expanded="false"
-                    class="side-nav-link" data-tooltip="Reports">
+                <a data-bs-toggle="collapse" href="#reports_section" aria-expanded="false" class="side-nav-link"  data-bs-title="Reports" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
                     <i class="ri-pie-chart-2-line"></i>
                     <span> Reports </span>
                     <span class="menu-arrow"></span>
@@ -547,8 +532,7 @@
                 <div class="collapse {{ Request::is('portfolio_performance*', 'loan-report*', 'PaymentFullDetailsReport*', 'prediction_report*', 'AllLoanDetailReport*', 'loansummaryreport*', 'par*', 'par_weekly*', 'loanStatus*', 'depletion*', 'investment*', 'arrears*', 'report/penalty-deduction*', 'reports/commission*', 'CashFlow*', 'CashFlowMonthly*', 'ProfitLoss*', 'BalanceSheet*', 'trialBalanceAccounting*', 'daily_repayment_sheet*', 'center_collection*', 'center_collection_summary*', 'root_wise_collection*') ? 'show' : '' }}" id="reports_section">
                     <ul class="side-nav-second-level">
                         <li class="side-nav-item mt-2">
-                            <a data-bs-toggle="collapse" href="#main_report" aria-expanded="false"
-                                class="side-nav-link">
+                            <a data-bs-toggle="collapse" href="#main_report" aria-expanded="false" class="side-nav-link" data-bs-title="Main Reports" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
                                 <span> Main Reports </span>
                                 <span class="menu-arrow"></span>
                             </a>
@@ -617,8 +601,7 @@
                         </li>
 
                         <li class="side-nav-item mt-2">
-                            <a data-bs-toggle="collapse" href="#acc_report" aria-expanded="false"
-                                class="side-nav-link">
+                            <a data-bs-toggle="collapse" href="#acc_report" aria-expanded="false" class="side-nav-link" data-bs-title="Account Reports" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
                                 <span> Account Reports </span>
                                 <span class="menu-arrow"></span>
                             </a>
@@ -644,8 +627,7 @@
                         </li>
 
                         <li class="side-nav-item mt-2">
-                            <a data-bs-toggle="collapse" href="#collection_report" aria-expanded="false"
-                                class="side-nav-link">
+                            <a data-bs-toggle="collapse" href="#collection_report" aria-expanded="false" class="side-nav-link" data-bs-title="Collection Reports" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
                                 <span> Collection Reports </span>
                                 <span class="menu-arrow"></span>
                             </a>
@@ -683,14 +665,14 @@
     <div class="sidebar-footer border-top w-100 p-2">
         <ul class="side-nav w-100">
             <li class="side-nav-item">
-                <a href="https://accountcenter.asipiya.com/" target="_blank" class="side-nav-link" data-tooltip="Account Center">
+                <a href="https://accountcenter.asipiya.com/" target="_blank" class="side-nav-link"  data-bs-title="Account Center" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right" data-bs-toggle="tooltip">
                     <i class="ri-bank-fill icon-pulse"></i>
                     <span> Account Center </span>
                 </a>
             </li>
 
             <li class="side-nav-item mt-1">
-                <a href="/logout" class="side-nav-link text-danger" data-tooltip="Logout">
+                <a href="/logout" class="side-nav-link text-danger"  data-bs-title="Logout" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right" data-bs-toggle="tooltip">
                     <i class="ri-logout-box-line icon-shake text-danger"></i>
                     <span> Logout </span>
                 </a>

@@ -50,7 +50,9 @@
     /* General Sidebar Styling */
     /* General Sidebar Styling - Floating & Reduced Height */
     .leftside-menu {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1), margin 0.2s linear;
+        will-change: width, margin;
+        /* Hardware acceleration hint */
         cursor: pointer;
         width: var(--sidebar-width) !important;
         min-width: unset;
@@ -223,32 +225,44 @@
         display: block;
     }
 
-    .side-nav-second-level li a:hover {
-        color: #fff !important;
-        background: rgba(255, 255, 255, 0.08);
-        /* Subtle highlight */
-        padding-left: 35px !important;
-    }
-
-    html[data-layout-mode="light"] .side-nav-second-level li a:hover {
-        color: #0f172a !important;
-        background: rgba(0, 0, 0, 0.05);
-    }
-
+    /* Fixed Active State for Submenus (targeting the link itself) */
+    .side-nav-second-level li a.active,
     .side-nav-second-level li.menuitem-active>a {
         color: #ffffff !important;
         background: rgba(255, 255, 255, 0.1);
         font-weight: 500;
     }
 
+    html[data-layout-mode="light"] .side-nav-second-level li a.active,
     html[data-layout-mode="light"] .side-nav-second-level li.menuitem-active>a {
         color: #4f46e5 !important;
-        /* Primary color text */
         background: rgba(79, 70, 229, 0.1) !important;
     }
 
+    /* Shadcn Tooltip Custom Class (Bootstrap) */
+    .tooltip-inner {
+        background: #020817 !important;
+        color: #f8fafc !important;
+        border: 1px solid #1e293b;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        font-size: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
 
-    /* Condensed Mode - The main implementation */
+    .tooltip-arrow::before {
+        border-right-color: #020817 !important;
+        /* Adjust if needed */
+    }
+
+    /* Remove legacy pure CSS tooltip to use Bootstrap instead */
+    /*
+    html[data-sidenav-size="condensed"] .side-nav-link::after {
+       ...
+    }
+    */
     html[data-sidenav-size="condensed"] {
         --sidebar-width: 80px;
         /* Slightly wider for better touch target */
@@ -303,42 +317,47 @@
     }
 
     /* Tooltip on Hover */
-    /* Tooltip on Hover - Modern Floating Pill */
+    /* Tooltip on Hover - Shadcn Style */
     html[data-sidenav-size="condensed"] .side-nav-link::after {
         content: attr(data-tooltip);
         position: absolute;
         left: 70px;
-        /* Slight offset for float effect */
+        /* Slight offset */
         top: 50%;
-        transform: translateY(-50%) translateX(-10px);
-        /* Start slightly left */
+        transform: translateY(-50%) scale(0.95);
+        /* Start slightly smaller for zoom effect */
 
-        background: #1e293b;
-        /* Dark Slate */
-        color: #fff;
-        padding: 8px 16px;
-        border-radius: 8px;
-        /* Rounded pill */
+        /* Shadcn Token Match */
+        background: #020817;
+        /* Zinc 950 / Slate 950 */
+        color: #f8fafc;
+        /* Slate 50 */
+        border: 1px solid #1e293b;
+        /* Slate 800 border */
+
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-family: 'Inter', sans-serif;
         font-weight: 500;
-        font-size: 0.85rem;
+        font-size: 12px;
+        line-height: 1;
         white-space: nowrap;
 
         opacity: 0;
         visibility: hidden;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.15);
-        /* Drop prominent shadow */
-        z-index: 9999;
         pointer-events: none;
+        z-index: 9999;
 
-        /* Arrow tip (optional, can simulate with border or clipart) - keeping simple pill for now */
+        /* Smooth Zoom In Animation */
+        transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
     html[data-sidenav-size="condensed"] .side-nav-link:hover::after {
         opacity: 1;
         visibility: visible;
-        transform: translateY(-50%) translateX(0);
-        /* Slide in */
+        transform: translateY(-50%) scale(1);
+        /* Zoom in to normal size */
     }
 
     /* Icon Hover Effect in Condensed Mode */

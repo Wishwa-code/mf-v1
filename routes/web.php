@@ -153,6 +153,7 @@ Route::middleware(['auth.central'])->group(function () {
     });
 
     //Customer routes
+    Route::post('/customers/preview-number', [CustomerController::class, 'previewCustomerNumber'])->name('customers.preview_number');
     Route::resource('customers', CustomerController::class);
 
     Route::get('/leads/routes/{id}/officers', [\App\Http\Controllers\OnlineLeadController::class, 'getRecoveryOfficersByRoute'])->name('leads.getRouteOfficers');

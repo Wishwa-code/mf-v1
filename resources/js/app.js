@@ -25,7 +25,19 @@ window.CommonColors = {
 // Initialize global plugins
 import "./global-submit";
 
+// Import Bootstrap Bundle (includes Popper)
+import * as bootstrap from "bootstrap/dist/js/bootstrap.bundle.min.js";
+window.bootstrap = bootstrap;
+
 document.addEventListener("DOMContentLoaded", function () {
+  // Initialize Bootstrap Tooltips
+  const tooltipTriggerList = document.querySelectorAll(
+    '[data-bs-toggle="tooltip"], [data-bs-custom-class="shadcn-tooltip"]',
+  );
+  const tooltipList = [...tooltipTriggerList].map(
+    (tooltipTriggerEl) => new bootstrap.Tooltip(tooltipTriggerEl),
+  );
+
   // Initialize Flatpickr
   flatpickr(".datepicker", {
     dateFormat: "Y-m-d",
@@ -42,9 +54,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Sidebar Toggle Logic
   initSidebarToggle();
-
-  // Dynamic Sidebar Width Logic
-  initDynamicSidebarWidth();
 });
 
 // function initDynamicSidebarWidth() {

@@ -64,12 +64,12 @@
                 </div>
 
                 <!-- Theme Toggle -->
-                <div class="btn btn-light rounded-circle d-flex align-items-center justify-content-center text-secondary shadow-sm border-0 transition-all hover-scale" style="width: 42px; height: 42px; cursor: pointer;" id="light-dark-mode" title="Toggle Theme">
+                <div class="btn btn-light rounded-circle d-flex align-items-center justify-content-center text-secondary shadow-sm border-0 transition-all hover-scale" style="width: 42px; height: 42px; cursor: pointer;" id="light-dark-mode" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Toggle Theme" data-bs-custom-class="shadcn-tooltip">
                     <i class="ri-moon-line fs-5"></i>
                 </div>
 
                 <!-- Approvals / Notifications -->
-                <a href="{{ route('approval.pending') }}" class="btn btn-light rounded-circle d-flex align-items-center justify-content-center text-secondary position-relative shadow-sm border-0 transition-all hover-scale" style="width: 42px; height: 42px;" title="Notifications">
+                <a href="{{ route('approval.pending') }}" class="btn btn-light rounded-circle d-flex align-items-center justify-content-center text-secondary position-relative shadow-sm border-0 transition-all hover-scale" style="width: 42px; height: 42px;" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Notifications" data-bs-custom-class="shadcn-tooltip">
                     <i class="ri-notification-3-line fs-5"></i>
                     @if (session('head_branch') == session('branch_id'))
                     <span id="approvalBadge" class="position-absolute badge rounded-circle bg-danger border border-2 border-white p-1" style="display:none; width: 12px; height: 12px; top: 10px; right: 8px;"></span>
@@ -78,7 +78,7 @@
 
                 <!-- User Profile Dropdown -->
                 <div class="dropdown ms-2">
-                    <button class="btn btn-link text-decoration-none d-flex align-items-center gap-2 p-0 focus-none" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button class="btn btn-link text-decoration-none d-flex align-items-center gap-2 p-0 focus-none" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Profile" data-bs-custom-class="shadcn-tooltip">
                         @php
                         $logoPath = $companyItem && $companyItem->Logo ? 'storage/' . $companyItem->Logo : '';
                         $logoUrl = ($logoPath && file_exists(public_path($logoPath))) ? asset($logoPath) : asset('assets/images/users/avatar-1.jpg');
