@@ -188,20 +188,25 @@
                             <label for="cus_number" class="form-label">
                                 Customer Number <span class="required-asterisk">*</span>
                             </label>
-                            @if($company?->customer_num_type == "Customize")
+                            @php
+                            $cus_type = $settings['customer_num_type'] ?? '';
+                            $cus_fmt = $settings['customer_format'] ?? '';
+                            @endphp
+
+                            @if($cus_type == "Customize")
                             <input type="text" id="cus_number" name="cus_number" class="form-control" onkeyup="create_id_2(this.value)" placeholder="Enter Number">
                             <div class="invalid-feedback"></div>
                             <label id="formatted_num_use" hidden></label>
-                            @elseif($company?->customer_num_type == "Format")
+                            @elseif($cus_type == "Format")
                             @php
                             $newnum = str_replace(
                             ['@Center_No@', '@Group_No@','@Customize_No@','@Auto_ID@','@Branch_No@','@Root@','@Center_Cus_Count@'],
                             ['C000', 'G000','Customize No',$formatted_customer_id,'@Branch_No@','@Root@','CenterCustomerCount'],
-                            $company?->customer_format
+                            $cus_fmt
                             );
                             @endphp
 
-                            @if(strpos($company?->customer_format, '@Customize_No@') !== false)
+                            @if(strpos($cus_fmt, '@Customize_No@') !== false)
                             <input type="number" id="cus_number" name="cus_number" class="form-control" onkeyup="create_id(this.value)">
                             <label id="formatted_num" style="color: red">{{ $newnum }}</label>
                             <label id="formatted_num_use" hidden>{{$newnum}}</label>
@@ -639,9 +644,12 @@
 @section('script')
 
 {{-- <script src="assets/js/pages/dashboard.js"></script> --}}
-<script src="../JS/validate.js"></script>
-<script src="../JS/group.js"></script>
-<script src="../JS/customer.js"></script>
+<script src="/JS/validate.js"></script>
+<script src="/JS/group.js"></script>
+<script src="/JS/customer.js"></script>
+@if(isset($customer))
+<input type="hidden" id="customer_id" value="{{ $customer->id }}">
+@endif
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
 <!-- Select2 JavaScript -->

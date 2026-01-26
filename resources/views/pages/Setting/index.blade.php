@@ -1290,10 +1290,13 @@
     });
 
     // Fetch All Settings
+    // Fetch All Settings
     function fetchSettings() {
         $.get("{{ route('settings.all') }}", function(res) {
-            APP_SETTINGS = res.items;
-            COMPANY_DATA = res.company || {};
+            APP_SETTINGS = res.items || {};
+            // Compatibility: Alias APP_SETTINGS as COMPANY_DATA for Number Formats
+            COMPANY_DATA = APP_SETTINGS;
+
             applySettingsToUI();
             if (typeof applyNumberFormatsToUI === 'function') applyNumberFormatsToUI();
         });

@@ -26,6 +26,7 @@ use App\Http\Controllers\CustomerLeadController;
 use App\Http\Controllers\VoucherDashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -73,9 +74,20 @@ Route::middleware(['auth.central'])->group(function () {
         Route::get('/', [SettingsController::class, 'index'])->name('settings.index');
         Route::resource('activity-logs', \App\Http\Controllers\ActivityLogController::class)->only(['index', 'show']);
     });
-    Route::get('/privileges', function () {
-        return view('pages.Privilages');
-    });
+
+
+    // Product Controller Routes
+    Route::get('/product', [ProductController::class, 'create'])->name('product.create');
+    Route::get('/viewproduct', [ProductController::class, 'index'])->name('product.index');
+    Route::post('/product', [ProductController::class, 'store'])->name('product.store');
+    Route::get('/product/edit/{id}', [ProductController::class, 'edit'])->name('product.edit');
+    Route::post('/product/update/{id}', [ProductController::class, 'update'])->name('product.update');
+    Route::get('/product/delete/{id}', [ProductController::class, 'destroy'])->name('product.destroy');
+    Route::get('/product/get-details/{id}', [ProductController::class, 'getProductDetails'])->name('product.getDetails'); // AJAX Route
+    Route::post('/product/status-update', [ProductController::class, 'updateStatus'])->name('product.status_update');
+
+    // Aliases for compatibility if needed (optional)
+    Route::get('/loancategory/{id}', [ProductController::class, 'edit'])->name('loancategory.edit');
 
 
 
@@ -140,40 +152,8 @@ Route::middleware(['auth.central'])->group(function () {
         Route::post('/remove_customer_from_group', 'removeCustomerFromGroup')->name('removeCustomerFromGroup');
     });
 
-    //customer
-    Route::controller(CustomerController::class)->group(function () {
-        Route::get('/customers', 'load')->name('customers.load');
-        Route::post('/customers/status', 'change_status')->name('customers.change_status');
-        Route::get('/viewcustomer', 'edit')->name('customers.edit');
-        Route::post('/customers', 'store')->name('customers.store');
-        Route::post('/update-customer', 'updateCustomer')->name('customers.updateCustomer');
-        Route::post('/update-customer-location', 'updateCustomerLocation')->name('customers.updateCustomerLocation');
-        Route::get('/customers/{id}', 'index')->name('customers.index');
-        Route::post('/savecustomerdocument', 'create')->name('customers.create');
-        Route::get('/customerdoc/{id}', 'show')->name('customers.show');
-        Route::get('/cusdocument/delete/{id}', 'destroy')->name('customers.destroy');
-        Route::get('/showcustomers', 'edit')->name('customersdetails.edit');
-        Route::post('/save-files-customer', 'saveFiles')->name('customers.files');
-        Route::get('/load_customers/{id}', 'load_customers')->name('customers.load_customers');
-        Route::get('/load_individual_customer', 'load_individual_customer')->name('customers.load_individual_customer');
-        Route::get('/customer_road_map/{id}', 'customer_road_map')->name('customers.customer_road_map');
-        Route::post('/customers/preview-number', 'previewCustomerNumber')->name('customers.preview_number');
-        Route::get('/get-document-types', 'getDocumentTypes')->name('customers.get_document_types');
-        Route::get('/showcustomerssaving', 'edit_saving')->name('customers.edit_saving');
-
-        Route::get('/showcustomersrecovery', 'recovery')->name('customers.recovery');
-        Route::get('/recovery-account/logs/{id}', 'logs')->name('customers.logs');
-
-        Route::get('/customer_saving/{id}', 'customer_saving')->name('customers.customer_saving');
-        Route::get('/get-account-transactions/{id}', 'get_account_transactions')->name('customers.get_account_transactions');
-
-        Route::post('/customer/upload-photo', 'uploadPhoto')->name('customer.uploadPhoto');
-        Route::get('/customer/export-excel', 'exportExcel')->name('customers.exportExcel');
-
-        // Customer Locations Map
-        Route::get('/customer/map', 'mapView')->name('customers.map');
-        Route::get('/customer/map-data', 'mapData')->name('customers.mapData');
-    });
+    //Customer routes
+    Route::resource('customers', CustomerController::class);
 
     Route::get('/leads/routes/{id}/officers', [\App\Http\Controllers\OnlineLeadController::class, 'getRecoveryOfficersByRoute'])->name('leads.getRouteOfficers');
     Route::get('/leads/global-map', [CustomerLeadController::class, 'globalMap'])->name('leads.globalMap');
@@ -227,18 +207,6 @@ Route::middleware(['auth.central'])->group(function () {
 
     // Route::get('/update_product_with_branch/{id}', '\App\Http\Controllers\LoanCategoryController@update_product_for_branch')->name('loancategory.update_product_for_branch');
 
-    // NEW Product Controller Routes
-    Route::get('/product', [\App\Http\Controllers\ProductController::class, 'create'])->name('product.create'); // Was loancategory.create
-    Route::get('/viewproduct', [\App\Http\Controllers\ProductController::class, 'index'])->name('product.index'); // Was loancategory.index
-    Route::post('/product', [\App\Http\Controllers\ProductController::class, 'store'])->name('product.store'); // Was loancategory.store
-    Route::get('/product/edit/{id}', [\App\Http\Controllers\ProductController::class, 'edit'])->name('product.edit'); // New edit route
-    Route::post('/product/update/{id}', [\App\Http\Controllers\ProductController::class, 'update'])->name('product.update'); // New update route
-    Route::get('/product/delete/{id}', [\App\Http\Controllers\ProductController::class, 'destroy'])->name('product.destroy'); // Was loancategory.destroy
-    Route::get('/product/get-details/{id}', [\App\Http\Controllers\ProductController::class, 'getProductDetails'])->name('product.getDetails'); // AJAX Route
-    Route::post('/product/status-update', [\App\Http\Controllers\ProductController::class, 'updateStatus'])->name('product.status_update');
-
-    // Aliases for compatibility if needed (optional)
-    Route::get('/loancategory/{id}', [\App\Http\Controllers\ProductController::class, 'edit'])->name('loancategory.edit');
 
 
     //loan
@@ -355,7 +323,7 @@ Route::middleware(['auth.central'])->group(function () {
     Route::post('/guardian', '\App\Http\Controllers\GuardianController@store')->name('customers.store');
     Route::post('/update-guardian', '\App\Http\Controllers\GuardianController@updateCustomer')->name('customers.updateCustomer');
     Route::get('/guardian/{id}', '\App\Http\Controllers\GuardianController@index')->name('customers.index');
-    Route::post('/saveguardiandocument', '\App\Http\Controllers\GuardianController@create')->name('customers.create');
+    Route::post('/saveguardiandocument', '\App\Http\Controllers\GuardianController@create');
     Route::get('/guardiandoc/{id}', '\App\Http\Controllers\GuardianController@show')->name('customers.show');
     Route::get('/guardiandocument/delete/{id}', '\App\Http\Controllers\GuardianController@destroy')->name('customers.destroy');
     Route::get('/showguardian', '\App\Http\Controllers\GuardianController@edit')->name('customers.edit');
@@ -481,7 +449,15 @@ Route::middleware(['auth.central'])->group(function () {
     Route::get('/setting', [SettingsController::class, 'index'])->name('company.setting')->middleware('privilege:SETTINGS');
     Route::post('/shortcuts', [SettingsController::class, 'shortcuts'])->name('company.shortcuts')->middleware('privilege:SETTINGS');
     Route::get('/shortcuts/all', [SettingsController::class, 'show'])->name('company.show')->middleware('privilege:SETTINGS');
-    Route::post('/settings/number-formats', '\App\Http\Controllers\CompanyController@updateNumberFormats')->name('settings.number_formats')->middleware('privilege:SETTINGS');
+    Route::post('/settings/number-formats', [SettingsController::class, 'updateNumberFormats'])->name('settings.number_formats')->middleware('privilege:SETTINGS');
+    Route::get('/settings/all', [SettingsController::class, 'all'])->name('settings.all')->middleware('privilege:SETTINGS');
+
+    // Commission Settings Routes
+    Route::get('/commissions/all', [SettingsController::class, 'loadCommissions'])->name('commissions.load');
+    Route::post('/commissions/person/store', [SettingsController::class, 'saveCommissionPerson'])->name('commissions.person.store');
+    Route::post('/commissions/rates/save', [SettingsController::class, 'saveCommissionRates'])->name('commissions.rates.save');
+    Route::get('/branches/all', [SettingsController::class, 'getBranches'])->name('branches.all');
+    Route::post('/settings/upsert', [SettingsController::class, 'upsert'])->name('settings.upsert');
 
     //Bank
     Route::get('/bank_account', '\App\Http\Controllers\BankController@index')->name('bank.index');

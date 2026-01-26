@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="{{ session('theme', 'light') }}" data-layout-mode="{{ session('theme', 'light') }}" data-menu-color="{{ session('theme', 'light') }}" data-topbar-color="{{ session('theme', 'light') }}" data-layout-position="fixed" data-sidenav-size="default" class="menuitem-active">
+<html lang="en" data-bs-theme="{{ session('theme', 'light') }}" data-layout-mode="{{ session('theme', 'light') }}" data-menu-color="{{ session('theme', 'light') }}" data-topbar-color="{{ session('theme', 'light') }}" data-layout-position="fixed" data-sidenav-size="condensed" class="menuitem-active">
 
 <head>
     <meta charset="utf-8" />
@@ -10,6 +10,34 @@
     <script src="{{ asset('assets/js/config.js') }}"></script>
     <link rel="shortcut icon" href="{{ asset('assets/images/favicon.ico') }}">
     <script src="{{ asset('assets/js/config.js') }}"></script>
+
+    <!-- Tailwind CSS (for Navbar) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind Plus Elements -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
+
+    <script>
+        tailwind.config = {
+            prefix: 'tw-', // Prefix to avoid conflict with Bootstrap? Or leave empty?
+            // User code doesn't use prefix. Bootstrap uses classes like .btn, .d-flex. 
+            // Tailwind uses .flex, .block. 
+            // There might be conflicts (e.g. .hidden). 
+            // Let's use prefix 'tw-' effectively to avoid breaking Bootstrap layout, 
+            // BUT the user provided code WITHOUT prefix.
+            // Requirement: "use this fr navbar". 
+            // I will try without prefix first, but scoped? 
+            // Tailwind CDN takes over global. This is risky.
+            // Let's use 'tw-' prefix and I will regex replace the user's code to add tw-.
+            // ACTUALLY, "High Fidelity" usually implies full control. 
+            // But this is a hybrid app.
+            // Safest: Use prefix 'tw-' and apply it to user's code.
+            prefix: 'tw-',
+            corePlugins: {
+                preflight: false, // Disable reset to save Bootstrap
+            }
+        }
+    </script>
+
 
     @vite(['resources/css/app.scss', 'resources/js/app.js'])
 
@@ -93,8 +121,8 @@ $companyMask = $companyItem ? $companyItem->SMS_Mask : null;
 ?>
 
 <body>
+    @include('layout.sidebar')
     <div class="wrapper glass-bg">
-        @include('layout.sidebar')
         @include('layout.navbar')
 
         <div class="content-page">

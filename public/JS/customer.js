@@ -136,7 +136,7 @@ const validateSubmitCustomer = (event) => {
     Swal.fire(
       "Validation Error",
       "Please fill in all required fields marked with *",
-      "warning"
+      "warning",
     );
     return;
   }
@@ -198,7 +198,7 @@ const saveCustomer = (e) => {
       formData.append("root", $("#root").val());
       formData.append(
         "business_registration",
-        $("#business_registration").val()
+        $("#business_registration").val(),
       );
 
       formData.append("curr_address_01", $("#curr_address_01").val());
@@ -237,10 +237,21 @@ const saveCustomer = (e) => {
       formData.append("gua_address_02", $("#gua_address_02").val());
       formData.append("gua_address_03", $("#gua_address_03").val());
 
+      // Determine if it's an update or create
+      var customerId = $("#customer_id").val();
+      var url = "/customers";
+      var method = "POST";
+
+      if (customerId) {
+        url = "/customers/" + customerId;
+        method = "POST"; // Laravel uses POST with _method field for PUT with FormData
+        formData.append("_method", "PUT");
+      }
+
       // AJAX call with progress tracking
       $.ajax({
-        type: "POST",
-        url: "/customers",
+        type: method,
+        url: url,
         headers: {
           "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
@@ -254,12 +265,12 @@ const saveCustomer = (e) => {
             function (evt) {
               if (evt.lengthComputable) {
                 var percentComplete = Math.round(
-                  (evt.loaded / evt.total) * 100
+                  (evt.loaded / evt.total) * 100,
                 );
                 $("#progress-bar").css("width", percentComplete + "%");
               }
             },
-            false
+            false,
           );
           return xhr;
         },
@@ -321,13 +332,13 @@ const saveCustomer = (e) => {
             Swal.fire(
               "Error!",
               "Please correct the validation errors.",
-              "error"
+              "error",
             );
           } else {
             Swal.fire(
               "Error!",
               "Failed to save data! (" + xhr.statusText + ")",
-              "error"
+              "error",
             );
           }
         },
@@ -402,7 +413,7 @@ function save_bank(id, callback) {
     formData.append("tableAccountNames[]", row.find("td").eq(1).text().trim());
     formData.append(
       "tableAccountNumbers[]",
-      row.find("td").eq(2).text().trim()
+      row.find("td").eq(2).text().trim(),
     );
     formData.append("tableBranches[]", row.find("td").eq(3).text().trim());
     formData.append("tableBankCodes[]", row.find("td").eq(4).text().trim());
@@ -427,7 +438,7 @@ function save_bank(id, callback) {
             $("#progress-bar").css("width", percentComplete + "%");
           }
         },
-        false
+        false,
       );
       return xhr;
     },
@@ -503,7 +514,7 @@ function save_doc(id, callback) {
             $("#progress-bar").css("width", percentComplete + "%");
           }
         },
-        false
+        false,
       );
       return xhr;
     },
