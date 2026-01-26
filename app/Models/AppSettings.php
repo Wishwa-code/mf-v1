@@ -8,12 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class AppSettings extends Model
 {
     use HasFactory;
-    
+
     protected $table = 'app_settings';
 
-    protected $fillable =[
+    protected $fillable = [
         'key',
         'value',
+        'branch_id',
         'created_by',
         'updated_by'
     ];

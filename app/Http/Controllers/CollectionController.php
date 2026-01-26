@@ -51,7 +51,7 @@ class CollectionController extends Controller
             }
         }
 
-        return view('pages.TodayCollection', compact('userPayments','dates','date_2'));
+        return view('pages.TodayCollection', compact('userPayments', 'dates', 'date_2'));
     }
 
     /**
@@ -98,7 +98,7 @@ class CollectionController extends Controller
             }
         }
 
-        return view('pages.TodayCollection', compact('userPayments','dates','date_2'));
+        return view('pages.TodayCollection', compact('userPayments', 'dates', 'date_2'));
     }
 
     /**
@@ -108,13 +108,13 @@ class CollectionController extends Controller
     {
         $comment = $request->input('comment');
         $checkedItems = $request->input('checkedItems');
-        $confirmUserId = session('userid'); // Assuming session('userid') gets the current logged-in user's ID
+        $confirmUserId = user_data('idUser'); // Assuminguser_data('idUser') gets the current logged-in user's ID
 
         try {
             foreach ($checkedItems as $item) {
 
-                if ($request->isChecked==0){
-                    $comment=$item['comment'];
+                if ($request->isChecked == 0) {
+                    $comment = $item['comment'];
                 }
                 // Assuming each item in checkedItems has an idCustomer_Payments field
                 updateWithBranch('customer_payments', 'idCustomer_Payments', $item['idCustomer_Payments'], [
@@ -122,7 +122,6 @@ class CollectionController extends Controller
                     'confirm_date_time' => now()->format('Y-m-d H:i:s'), // Using Laravel's now() helper to get current date and time
                     'comment' => $comment,
                 ]);
-
             }
 
             return response()->json(['message' => 'Customer payments updated successfully'], 200);
@@ -140,7 +139,7 @@ class CollectionController extends Controller
         $userid = $request->userid;
         $type = $request->type;
 
-        if ($type==="1"){
+        if ($type === "1") {
             $collection = tableWithBranch('customer_payments', 'customer_payments')
                 ->join('user as u1', 'customer_payments.User_idUser', '=', 'u1.id')
                 ->join('user as u2', 'customer_payments.confirm_user', '=', 'u2.id')
@@ -154,8 +153,8 @@ class CollectionController extends Controller
                 ->get();
 
 
-            return response()->json(['item' => $collection, 'date' => $date, 'userid' => $userid,$type], 200);
-        }else if($type==="0"){
+            return response()->json(['item' => $collection, 'date' => $date, 'userid' => $userid, $type], 200);
+        } else if ($type === "0") {
             $collection = tableWithBranch('customer_payments', 'customer_payments')
                 ->join('user as u1', 'customer_payments.User_idUser', '=', 'u1.id')
                 ->join('user as u2', 'customer_payments.confirm_user', '=', 'u2.id')
@@ -168,8 +167,8 @@ class CollectionController extends Controller
                 ->get();
 
 
-            return response()->json(['item' => $collection, 'date' => $date, 'userid' => $userid,$type], 200);
-        }else if($type==="2"){
+            return response()->json(['item' => $collection, 'date' => $date, 'userid' => $userid, $type], 200);
+        } else if ($type === "2") {
             $collection = tableWithBranch('customer_payments', 'customer_payments')
                 ->join('user as u1', 'customer_payments.User_idUser', '=', 'u1.id')
                 ->join('customer_loan', 'customer_payments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
@@ -181,8 +180,8 @@ class CollectionController extends Controller
                 ->get();
 
 
-            return response()->json(['item' => $collection, 'date' => $date, 'userid' => $userid,$type], 200);
-        }else{
+            return response()->json(['item' => $collection, 'date' => $date, 'userid' => $userid, $type], 200);
+        } else {
             $collection = tableWithBranch('customer_payments', 'customer_payments')
                 ->join('user as u1', 'customer_payments.User_idUser', '=', 'u1.id')
                 ->join('user as u2', 'customer_payments.confirm_user', '=', 'u2.id')
@@ -195,10 +194,8 @@ class CollectionController extends Controller
                 ->get();
 
 
-            return response()->json(['item' => $collection, 'date' => $date, 'userid' => $userid,$type], 200);
+            return response()->json(['item' => $collection, 'date' => $date, 'userid' => $userid, $type], 200);
         }
-
-
     }
 
 
@@ -208,7 +205,7 @@ class CollectionController extends Controller
         $userid = $request->userid;
         $type = $request->type;
 
-        if ($type==="1"){
+        if ($type === "1") {
             $collection = tableWithBranch('customer_payments', 'customer_payments')
                 ->join('user', 'customer_payments.User_idUser', '=', 'user.id')
                 ->join('customer_loan', 'customer_payments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
@@ -222,7 +219,7 @@ class CollectionController extends Controller
 
 
             return response()->json(['item' => $collection, 'date' => $date, 'userid' => $userid], 200);
-        }else if($type==="0"){
+        } else if ($type === "0") {
             $collection = tableWithBranch('customer_payments', 'customer_payments')
                 ->join('user', 'customer_payments.User_idUser', '=', 'user.id')
                 ->join('customer_loan', 'customer_payments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
@@ -236,7 +233,7 @@ class CollectionController extends Controller
 
 
             return response()->json(['item' => $collection, 'date' => $date, 'userid' => $userid], 200);
-        }else{
+        } else {
             $collection = tableWithBranch('customer_payments', 'customer_payments')
                 ->join('user as u1', 'customer_payments.User_idUser', '=', 'u1.id')
                 ->join('customer_loan', 'customer_payments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
@@ -250,8 +247,6 @@ class CollectionController extends Controller
 
             return response()->json(['item' => $collection, 'date' => $date, 'userid' => $userid], 200);
         }
-
-
     }
 
     /**
@@ -278,11 +273,12 @@ class CollectionController extends Controller
         //
     }
 
-    public function pending_payment(){
+    public function pending_payment()
+    {
         $dates = date('Y-m-d');
         $date_2 = date('Y-m-d');
 
-        $collection = tableWithBranch('customer_payments','customer_payments')
+        $collection = tableWithBranch('customer_payments', 'customer_payments')
             ->join('user', 'customer_payments.User_idUser', '=', 'user.id')
             ->where('customer_payments.confirm_user', '=', '-')
             ->whereBetween('customer_payments.Date', [$dates, $date_2])
@@ -305,17 +301,18 @@ class CollectionController extends Controller
             $userPayments[$item->User_idUser]['total_amount'] += $item->Amount;
         }
 
-        return view('pages.PendingCollection', compact('userPayments','dates','date_2'));
+        return view('pages.PendingCollection', compact('userPayments', 'dates', 'date_2'));
     }
 
 
-    public function create_pending_payment(Request $request){
+    public function create_pending_payment(Request $request)
+    {
 
         $dates = $request->date;
         $date_2 = $request->date_2;
 
 
-        $collection = tableWithBranch('customer_payments','customer_payments')
+        $collection = tableWithBranch('customer_payments', 'customer_payments')
             ->join('user', 'customer_payments.User_idUser', '=', 'user.id')
             ->where('customer_payments.confirm_user', '=', '-')
             ->whereBetween('customer_payments.Date', [$dates, $date_2])
@@ -350,16 +347,17 @@ class CollectionController extends Controller
         }
 
 
-        return view('pages.PendingCollection', compact('userPayments','dates','date_2'));
+        return view('pages.PendingCollection', compact('userPayments', 'dates', 'date_2'));
     }
 
 
 
-    public function approved_payment(){
+    public function approved_payment()
+    {
         $dates = date('Y-m-d');
         $date_2 = date('Y-m-d');
 
-        $collection = tableWithBranch('customer_payments','customer_payments')
+        $collection = tableWithBranch('customer_payments', 'customer_payments')
             ->join('user as u1', 'customer_payments.User_idUser', '=', 'u1.id')
             ->join('user as u2', 'customer_payments.confirm_user', '=', 'u2.id')
             ->where('customer_payments.confirm_user', '!=', '-')
@@ -386,17 +384,18 @@ class CollectionController extends Controller
             $userPayments[$item->User_idUser]['total_amount'] += $item->Amount;
         }
 
-        return view('pages.ApprovedCollection', compact('userPayments','dates','date_2'));
+        return view('pages.ApprovedCollection', compact('userPayments', 'dates', 'date_2'));
     }
 
 
-    public function create_approved_payment(Request $request){
+    public function create_approved_payment(Request $request)
+    {
 
         $dates = $request->date;
         $date_2 = $request->date_2;
 
 
-        $collection = tableWithBranch('customer_payments','customer_payments')
+        $collection = tableWithBranch('customer_payments', 'customer_payments')
             ->join('user', 'customer_payments.User_idUser', '=', 'user.id')
             ->where('customer_payments.confirm_user', '!=', '-')
             ->whereBetween('customer_payments.Date', [$dates, $date_2])
@@ -431,7 +430,7 @@ class CollectionController extends Controller
         }
 
 
-        return view('pages.ApprovedCollection', compact('userPayments','dates','date_2'));
+        return view('pages.ApprovedCollection', compact('userPayments', 'dates', 'date_2'));
     }
 
     public function repaymentreportindex()
@@ -441,10 +440,8 @@ class CollectionController extends Controller
         $center = tableWithBranch('center')->get();
         $company = tableWithBranch('company')->first();
         $user = tableWithBranch('user')->get();
-        $lending_officer = tableWithBranch('user')->where('lending_officer','=','1')->get();
-        return view('pages.CollectionReport', compact('group', 'center', 'customers','company','user','lending_officer'));
-
-
+        $lending_officer = tableWithBranch('user')->where('lending_officer', '=', '1')->get();
+        return view('pages.CollectionReport', compact('group', 'center', 'customers', 'company', 'user', 'lending_officer'));
     }
 
     /**
@@ -461,7 +458,7 @@ class CollectionController extends Controller
         $lending_officer = $request->lending_officer;
 
         try {
-            $loanQuery = tableWithBranch('customer_payments','customer_payments')
+            $loanQuery = tableWithBranch('customer_payments', 'customer_payments')
                 ->join('customer_loan', 'customer_payments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
                 ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
 
@@ -527,7 +524,7 @@ class CollectionController extends Controller
     {
         $dates = date('Y-m-d');
         $date_2 = date('Y-m-d');
-        $collection = tableWithBranch('customer_payments','customer_payments')
+        $collection = tableWithBranch('customer_payments', 'customer_payments')
             ->join('user', 'customer_payments.User_idUser', '=', 'user.id')
             ->join('customer_loan', 'customer_payments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
@@ -564,7 +561,7 @@ class CollectionController extends Controller
 
 
 
-        return view('pages.CustomerWiseCollectionReport', compact('userPayments','dates','date_2'));
+        return view('pages.CustomerWiseCollectionReport', compact('userPayments', 'dates', 'date_2'));
     }
 
     /**
@@ -576,12 +573,12 @@ class CollectionController extends Controller
         $date_2 = $request->date_2;
 
 
-        $collection = tableWithBranch('customer_payments','customer_payments')
+        $collection = tableWithBranch('customer_payments', 'customer_payments')
             ->join('user', 'customer_payments.User_idUser', '=', 'user.id')
             ->join('customer_loan', 'customer_payments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->whereBetween('customer_payments.Date', [$dates, $date_2])
-            ->select('customer_payments.*', 'user.Full_Name','customer_loan.*','customer.*')
+            ->select('customer_payments.*', 'user.Full_Name', 'customer_loan.*', 'customer.*')
             ->get();
 
         $paymentsGroupedByDate = [];
@@ -611,14 +608,14 @@ class CollectionController extends Controller
             }
         }
 
-        return view('pages.CustomerWiseCollectionReport', compact('userPayments','dates','date_2'));
+        return view('pages.CustomerWiseCollectionReport', compact('userPayments', 'dates', 'date_2'));
     }
 
     public function cashbookreport()
     {
         $dates = date('Y-m-d');
         $date_2 = date('Y-m-d');
-        $collection = tableWithBranch('customer_payments','customer_payments')
+        $collection = tableWithBranch('customer_payments', 'customer_payments')
             ->join('user', 'customer_payments.User_idUser', '=', 'user.id')
             ->join('customer_loan', 'customer_payments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
@@ -653,7 +650,7 @@ class CollectionController extends Controller
             }
         }
 
-        return view('pages.CashBookReport', compact('userPayments','dates','date_2'));
+        return view('pages.CashBookReport', compact('userPayments', 'dates', 'date_2'));
     }
 
     /**
@@ -665,12 +662,12 @@ class CollectionController extends Controller
         $date_2 = $request->date_2;
 
 
-        $collection = tableWithBranch('customer_payments','customer_payments')
+        $collection = tableWithBranch('customer_payments', 'customer_payments')
             ->join('user', 'customer_payments.User_idUser', '=', 'user.id')
             ->join('customer_loan', 'customer_payments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
             ->whereBetween('customer_payments.Date', [$dates, $date_2])
-            ->select('customer_payments.*', 'user.Full_Name','customer_loan.*','customer.*')
+            ->select('customer_payments.*', 'user.Full_Name', 'customer_loan.*', 'customer.*')
             ->get();
 
         $paymentsGroupedByDate = [];
@@ -700,7 +697,7 @@ class CollectionController extends Controller
             }
         }
 
-        return view('pages.CashBookReport', compact('userPayments','dates','date_2'));
+        return view('pages.CashBookReport', compact('userPayments', 'dates', 'date_2'));
     }
 
 
@@ -708,12 +705,16 @@ class CollectionController extends Controller
     {
         $center = tableWithBranch('center')->get();
         // Get loans with necessary data
-        $loans = tableWithBranch('customer_loan','customer_loan')
+        $loans = tableWithBranch('customer_loan', 'customer_loan')
             ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
-            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
+            ->leftJoin(
+                DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
                  FROM group_has_customer
                  LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
-                'customer_loan.Customer_idCustomer', '=', 'subquery.cus_id')
+                'customer_loan.Customer_idCustomer',
+                '=',
+                'subquery.cus_id'
+            )
             ->leftJoin('group_has_customer', 'customer_loan.Customer_idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
@@ -747,10 +748,10 @@ class CollectionController extends Controller
         $nintycount = 0;
         $allcount = 0;
 
-        $thirtycapital=0;
-        $sixtycapital=0;
-        $ninetycapital=0;
-        $allcapital=0;
+        $thirtycapital = 0;
+        $sixtycapital = 0;
+        $ninetycapital = 0;
+        $allcapital = 0;
 
 
 
@@ -784,27 +785,26 @@ class CollectionController extends Controller
             // Increment counts for loans with outstanding balances in each category
             if ($loan->thirtydays_outstanding > 0) {
                 $thirtycount++;
-                $thirtycapital+= $loan->Amount;
+                $thirtycapital += $loan->Amount;
             }
             if ($loan->sixtydays_outstanding > 0) {
                 $sixtycount++;
-                $sixtycapital+= $loan->Amount;
+                $sixtycapital += $loan->Amount;
             }
             if ($loan->ninetydays_outstanding > 0) {
                 $nintycount++;
-                $ninetycapital+= $loan->Amount;
+                $ninetycapital += $loan->Amount;
             }
 
             if ($loan->alldays_outstanding > 0) {
                 $allcount++;
-                $allcapital+= $loan->Amount;
+                $allcapital += $loan->Amount;
             }
-
         }
-        $thirtypercentage=0;
-        $sixtypercentage=0;
-        $ninetypercentage=0;
-        $allpercentage=0;
+        $thirtypercentage = 0;
+        $sixtypercentage = 0;
+        $ninetypercentage = 0;
+        $allpercentage = 0;
 
 
         // Increment counts for loans with outstanding balances in each category
@@ -825,23 +825,27 @@ class CollectionController extends Controller
 
 
 
-        return view('pages.PAR', compact('center','thirtypercentage','sixtypercentage','ninetypercentage','allpercentage','thirtycapital','sixtycapital','ninetycapital','allcapital','loans', 'par', 'totalOutstanding', 'totalNinetyDaysOutstanding', 'totalSixtyDaysOutstanding', 'totalThirtyDaysOutstanding', 'totalAllDaysOutstanding', 'thirtycount', 'sixtycount', 'nintycount','allcount'));
+        return view('pages.PAR', compact('center', 'thirtypercentage', 'sixtypercentage', 'ninetypercentage', 'allpercentage', 'thirtycapital', 'sixtycapital', 'ninetycapital', 'allcapital', 'loans', 'par', 'totalOutstanding', 'totalNinetyDaysOutstanding', 'totalSixtyDaysOutstanding', 'totalThirtyDaysOutstanding', 'totalAllDaysOutstanding', 'thirtycount', 'sixtycount', 'nintycount', 'allcount'));
     }
 
 
     public function partview(Request $request)
     {
-        $center_details=$request->center_details;
+        $center_details = $request->center_details;
 
 
         $center = tableWithBranch('center')->get();
         // Get loans with necessary data
-        $loanQuery = tableWithBranch('customer_loan','customer_loan')
+        $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
             ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
-            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
+            ->leftJoin(
+                DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
                  FROM group_has_customer
                  LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
-                'customer_loan.Customer_idCustomer', '=', 'subquery.cus_id')
+                'customer_loan.Customer_idCustomer',
+                '=',
+                'subquery.cus_id'
+            )
             ->leftJoin('group_has_customer', 'customer_loan.Customer_idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
@@ -858,7 +862,7 @@ class CollectionController extends Controller
             $loanQuery->where('center.idCenter', '=', $center_details);
         }
 
-        $loans=$loanQuery->get();
+        $loans = $loanQuery->get();
 
         // Define the date ranges
         $today = now()->toDateString();
@@ -879,10 +883,10 @@ class CollectionController extends Controller
         $nintycount = 0;
         $allcount = 0;
 
-        $thirtycapital=0;
-        $sixtycapital=0;
-        $ninetycapital=0;
-        $allcapital=0;
+        $thirtycapital = 0;
+        $sixtycapital = 0;
+        $ninetycapital = 0;
+        $allcapital = 0;
 
 
 
@@ -916,27 +920,26 @@ class CollectionController extends Controller
             // Increment counts for loans with outstanding balances in each category
             if ($loan->thirtydays_outstanding > 0) {
                 $thirtycount++;
-                $thirtycapital+= $loan->Amount;
+                $thirtycapital += $loan->Amount;
             }
             if ($loan->sixtydays_outstanding > 0) {
                 $sixtycount++;
-                $sixtycapital+= $loan->Amount;
+                $sixtycapital += $loan->Amount;
             }
             if ($loan->ninetydays_outstanding > 0) {
                 $nintycount++;
-                $ninetycapital+= $loan->Amount;
+                $ninetycapital += $loan->Amount;
             }
 
             if ($loan->alldays_outstanding > 0) {
                 $allcount++;
-                $allcapital+= $loan->Amount;
+                $allcapital += $loan->Amount;
             }
-
         }
-        $thirtypercentage=0;
-        $sixtypercentage=0;
-        $ninetypercentage=0;
-        $allpercentage=0;
+        $thirtypercentage = 0;
+        $sixtypercentage = 0;
+        $ninetypercentage = 0;
+        $allpercentage = 0;
 
 
         // Increment counts for loans with outstanding balances in each category
@@ -957,7 +960,7 @@ class CollectionController extends Controller
 
 
 
-        return view('pages.PAR', compact('center','thirtypercentage','sixtypercentage','ninetypercentage','allpercentage','thirtycapital','sixtycapital','ninetycapital','allcapital','loans', 'par', 'totalOutstanding', 'totalNinetyDaysOutstanding', 'totalSixtyDaysOutstanding', 'totalThirtyDaysOutstanding', 'totalAllDaysOutstanding', 'thirtycount', 'sixtycount', 'nintycount','allcount'));
+        return view('pages.PAR', compact('center', 'thirtypercentage', 'sixtypercentage', 'ninetypercentage', 'allpercentage', 'thirtycapital', 'sixtycapital', 'ninetycapital', 'allcapital', 'loans', 'par', 'totalOutstanding', 'totalNinetyDaysOutstanding', 'totalSixtyDaysOutstanding', 'totalThirtyDaysOutstanding', 'totalAllDaysOutstanding', 'thirtycount', 'sixtycount', 'nintycount', 'allcount'));
     }
 
 
@@ -970,12 +973,16 @@ class CollectionController extends Controller
         $center = tableWithBranch('center')->get();
 
         // Get loans with necessary data
-        $loans = tableWithBranch('customer_loan','customer_loan')
+        $loans = tableWithBranch('customer_loan', 'customer_loan')
             ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
-            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
+            ->leftJoin(
+                DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
                  FROM group_has_customer
                  LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
-                'customer_loan.Customer_idCustomer', '=', 'subquery.cus_id')
+                'customer_loan.Customer_idCustomer',
+                '=',
+                'subquery.cus_id'
+            )
             ->leftJoin('group_has_customer', 'customer_loan.Customer_idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
@@ -988,7 +995,7 @@ class CollectionController extends Controller
                 'customer_loan.Status'
             )
             ->where('customer_loan.Status', '=', '0')
-            ->groupBy('customer_loan.idCustomer_Loan','center.No', 'customer_loan.Loan_No', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount', 'customer_loan.Status')
+            ->groupBy('customer_loan.idCustomer_Loan', 'center.No', 'customer_loan.Loan_No', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount', 'customer_loan.Status')
             ->get();
 
         // Define the date ranges
@@ -1010,10 +1017,10 @@ class CollectionController extends Controller
         $nintycount = 0;
         $allcount = 0;
 
-        $thirtycapital=0;
-        $sixtycapital=0;
-        $ninetycapital=0;
-        $allcapital=0;
+        $thirtycapital = 0;
+        $sixtycapital = 0;
+        $ninetycapital = 0;
+        $allcapital = 0;
 
 
 
@@ -1047,27 +1054,26 @@ class CollectionController extends Controller
             // Increment counts for loans with outstanding balances in each category
             if ($loan->thirtydays_outstanding > 0) {
                 $thirtycount++;
-                $thirtycapital+= $loan->Amount;
+                $thirtycapital += $loan->Amount;
             }
             if ($loan->sixtydays_outstanding > 0) {
                 $sixtycount++;
-                $sixtycapital+= $loan->Amount;
+                $sixtycapital += $loan->Amount;
             }
             if ($loan->ninetydays_outstanding > 0) {
                 $nintycount++;
-                $ninetycapital+= $loan->Amount;
+                $ninetycapital += $loan->Amount;
             }
 
             if ($loan->alldays_outstanding > 0) {
                 $allcount++;
-                $allcapital+= $loan->Amount;
+                $allcapital += $loan->Amount;
             }
-
         }
-        $thirtypercentage=0;
-        $sixtypercentage=0;
-        $ninetypercentage=0;
-        $allpercentage=0;
+        $thirtypercentage = 0;
+        $sixtypercentage = 0;
+        $ninetypercentage = 0;
+        $allpercentage = 0;
 
 
         // Increment counts for loans with outstanding balances in each category
@@ -1088,23 +1094,27 @@ class CollectionController extends Controller
 
 
 
-        return view('pages.PAR_Weekly', compact('center','thirtypercentage','sixtypercentage','ninetypercentage','allpercentage','thirtycapital','sixtycapital','ninetycapital','allcapital','loans', 'par', 'totalOutstanding', 'totalNinetyDaysOutstanding', 'totalSixtyDaysOutstanding', 'totalThirtyDaysOutstanding', 'totalAllDaysOutstanding', 'thirtycount', 'sixtycount', 'nintycount','allcount'));
+        return view('pages.PAR_Weekly', compact('center', 'thirtypercentage', 'sixtypercentage', 'ninetypercentage', 'allpercentage', 'thirtycapital', 'sixtycapital', 'ninetycapital', 'allcapital', 'loans', 'par', 'totalOutstanding', 'totalNinetyDaysOutstanding', 'totalSixtyDaysOutstanding', 'totalThirtyDaysOutstanding', 'totalAllDaysOutstanding', 'thirtycount', 'sixtycount', 'nintycount', 'allcount'));
     }
 
 
     public function partweeklyview(Request $request)
     {
 
-        $center_details=$request->center_details;
+        $center_details = $request->center_details;
 
         $center = tableWithBranch('center')->get();
         // Get loans with necessary data
-        $loanQuery = tableWithBranch('customer_loan','customer_loan')
+        $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
             ->join('installments', 'customer_loan.idCustomer_Loan', '=', 'installments.Customer_Loan_idCustomer_Loan')
-            ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
+            ->leftJoin(
+                DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Group_No, "-") as group_name
                  FROM group_has_customer
                  LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
-                'customer_loan.Customer_idCustomer', '=', 'subquery.cus_id')
+                'customer_loan.Customer_idCustomer',
+                '=',
+                'subquery.cus_id'
+            )
             ->leftJoin('group_has_customer', 'customer_loan.Customer_idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
@@ -1117,13 +1127,13 @@ class CollectionController extends Controller
                 'customer_loan.Status'
             )
             ->where('customer_loan.Status', '=', '0')
-            ->groupBy('customer_loan.idCustomer_Loan','center.No', 'customer_loan.Loan_No', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount', 'customer_loan.Status');
+            ->groupBy('customer_loan.idCustomer_Loan', 'center.No', 'customer_loan.Loan_No', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount', 'customer_loan.Status');
 
         if ($center_details != '0') {
             $loanQuery->where('center.idCenter', '=', $center_details);
         }
 
-        $loans=$loanQuery->get();
+        $loans = $loanQuery->get();
 
 
         // Define the date ranges
@@ -1145,10 +1155,10 @@ class CollectionController extends Controller
         $nintycount = 0;
         $allcount = 0;
 
-        $thirtycapital=0;
-        $sixtycapital=0;
-        $ninetycapital=0;
-        $allcapital=0;
+        $thirtycapital = 0;
+        $sixtycapital = 0;
+        $ninetycapital = 0;
+        $allcapital = 0;
 
 
 
@@ -1182,27 +1192,26 @@ class CollectionController extends Controller
             // Increment counts for loans with outstanding balances in each category
             if ($loan->thirtydays_outstanding > 0) {
                 $thirtycount++;
-                $thirtycapital+= $loan->Amount;
+                $thirtycapital += $loan->Amount;
             }
             if ($loan->sixtydays_outstanding > 0) {
                 $sixtycount++;
-                $sixtycapital+= $loan->Amount;
+                $sixtycapital += $loan->Amount;
             }
             if ($loan->ninetydays_outstanding > 0) {
                 $nintycount++;
-                $ninetycapital+= $loan->Amount;
+                $ninetycapital += $loan->Amount;
             }
 
             if ($loan->alldays_outstanding > 0) {
                 $allcount++;
-                $allcapital+= $loan->Amount;
+                $allcapital += $loan->Amount;
             }
-
         }
-        $thirtypercentage=0;
-        $sixtypercentage=0;
-        $ninetypercentage=0;
-        $allpercentage=0;
+        $thirtypercentage = 0;
+        $sixtypercentage = 0;
+        $ninetypercentage = 0;
+        $allpercentage = 0;
 
 
         // Increment counts for loans with outstanding balances in each category
@@ -1223,8 +1232,6 @@ class CollectionController extends Controller
 
 
 
-        return view('pages.PAR_Weekly', compact('center_details','center','thirtypercentage','sixtypercentage','ninetypercentage','allpercentage','thirtycapital','sixtycapital','ninetycapital','allcapital','loans', 'par', 'totalOutstanding', 'totalNinetyDaysOutstanding', 'totalSixtyDaysOutstanding', 'totalThirtyDaysOutstanding', 'totalAllDaysOutstanding', 'thirtycount', 'sixtycount', 'nintycount','allcount'));
+        return view('pages.PAR_Weekly', compact('center_details', 'center', 'thirtypercentage', 'sixtypercentage', 'ninetypercentage', 'allpercentage', 'thirtycapital', 'sixtycapital', 'ninetycapital', 'allcapital', 'loans', 'par', 'totalOutstanding', 'totalNinetyDaysOutstanding', 'totalSixtyDaysOutstanding', 'totalThirtyDaysOutstanding', 'totalAllDaysOutstanding', 'thirtycount', 'sixtycount', 'nintycount', 'allcount'));
     }
-
-
 }

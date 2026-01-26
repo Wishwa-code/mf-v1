@@ -54,6 +54,7 @@ return array(
     'Spatie\\DbDumper\\' => array($vendorDir . '/spatie/db-dumper/src'),
     'Spatie\\Backup\\' => array($vendorDir . '/spatie/laravel-backup/src'),
     'Spatie\\Backtrace\\' => array($vendorDir . '/spatie/backtrace/src'),
+    'Spatie\\Activitylog\\' => array($vendorDir . '/spatie/laravel-activitylog/src'),
     'Sabberworm\\CSS\\' => array($vendorDir . '/sabberworm/php-css-parser/src'),
     'Ramsey\\Uuid\\' => array($vendorDir . '/ramsey/uuid/src'),
     'Ramsey\\Collection\\' => array($vendorDir . '/ramsey/collection/src'),

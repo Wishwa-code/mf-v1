@@ -14,7 +14,7 @@ class BankController extends Controller
     protected $bankLogController;
     protected $customerLogController;
 
-    public function __construct(CustomerLogController $customerLogController,BankLogController $bankLogController)
+    public function __construct(CustomerLogController $customerLogController, BankLogController $bankLogController)
     {
         $this->bankLogController = $bankLogController;
         $this->customerLogController = $customerLogController;
@@ -27,20 +27,20 @@ class BankController extends Controller
      */
     public function index()
     {
-        $banks = tableWithBranch('company_bank_accounts','company_bank_accounts')
+        $banks = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
             ->join('user', 'company_bank_accounts.User', '=', 'user.id')
-            ->where('company_bank_accounts.Bank_Type','=','Bank')
+            ->where('company_bank_accounts.Bank_Type', '=', 'Bank')
             ->get();
         $company_banks = tableWithBranch('company_bank_accounts')
-            ->where('company_bank_accounts.Bank_Type','=','Collector')
+            ->where('company_bank_accounts.Bank_Type', '=', 'Collector')
             ->get();
 
-        return view('pages.BankAccount',compact('banks','company_banks'));
+        return view('pages.BankAccount', compact('banks', 'company_banks'));
     }
 
     public function collector_index()
     {
-        $banks = tableWithBranch('company_bank_accounts','company_bank_accounts')
+        $banks = tableWithBranch('company_bank_accounts', 'company_bank_accounts')
             ->join('user', 'company_bank_accounts.User', '=', 'user.id')
             ->where('company_bank_accounts.Bank_Type', 'Collector')
             ->where(function ($q) {
@@ -58,7 +58,7 @@ class BankController extends Controller
                             ->where('user.cashier', '1');
                     });
             })
-            ->where('c2.branch_id','=',session('branch_id'))
+            ->where('c2.branch_id', '=', session('branch_id'))
             ->select([
                 'c2.*',
                 DB::raw("CASE WHEN c2.Bank_Type='Collector' AND user.cashier='1' THEN 'Bank' ELSE c2.Bank_Type END AS display_bank_type"),
@@ -67,10 +67,10 @@ class BankController extends Controller
             ->get();
 
 
-        $user = DB::table('user')->where('id', session('userid'))->first();
+        $user = DB::table('user')->where('id', user_data('idUser'))->first();
         $collector = $user ? $user->collector : 0;
 
-        return view('pages.CollectorAccount',compact('banks','company_banks','collector'));
+        return view('pages.CollectorAccount', compact('banks', 'company_banks', 'collector'));
     }
 
     /**
@@ -78,7 +78,7 @@ class BankController extends Controller
      */
     public function create(string $id, Request $request)
     {
-        $query = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        $query = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
             ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
             ->leftJoin('user', 'company_bank_has_log.User', '=', 'user.id')
             ->where('Bank_Account_Id', $id)
@@ -133,17 +133,13 @@ class BankController extends Controller
 
         if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('Account_No', '=', $request->account_number)->exists()) {
             return response()->json(["id" => "0"], 200);
-        }else if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('code', '=', $request->bank_code)->exists()) {
+        } else if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('code', '=', $request->bank_code)->exists()) {
             return response()->json(["id" => "0"], 200);
         } else {
             $insertedId = insertWithBranch('company_bank_accounts', $Bank);
-            $this->bankLogController->index($insertedId,"Account Creation","-","-","credit",$request->opening_balance,'-');
+            $this->bankLogController->index($insertedId, "Account Creation", "-", "-", "credit", $request->opening_balance, '-');
             return response()->json(["id" => "1"], 200);
         }
-
-
-
-
     }
 
     /**
@@ -153,7 +149,7 @@ class BankController extends Controller
     {
 
         $user_id = (int)session('userid');
-        $isHeadOffice = (int)session('branch_id') === -1;
+        $isHeadOffice = session('head_branch') == session('branch_id');
 
         $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
 
@@ -171,7 +167,7 @@ class BankController extends Controller
                 if ($isHeadOffice) {
                     // Head office can see ALL branches
                     $banks_2 = DB::table('company_bank_accounts')
-                        ->where(function($query) {
+                        ->where(function ($query) {
                             $query->where('Bank_Type', '=', 'Bank')
                                 ->orWhere('Bank_Type', '=', 'Collector');
                         })
@@ -179,19 +175,18 @@ class BankController extends Controller
                         ->get();
                 } else {
                     $banks_2 = tableWithBranch('company_bank_accounts')
-                        ->where(function($query) {
+                        ->where(function ($query) {
                             $query->where('Bank_Type', '=', 'Bank')
                                 ->orWhere('Bank_Type', '=', 'Collector');
                         })
                         ->where('Account_No', '!=', $user_id)
                         ->get();
                 }
-
             } else {
                 // Normal access - include everything in both
                 // FROM account: always current branch only
                 $banks = tableWithBranch('company_bank_accounts')
-                    ->where(function($query) {
+                    ->where(function ($query) {
                         $query->where('Bank_Type', '=', 'Bank')
                             ->orWhere('Bank_Type', '=', 'Collector');
                     })
@@ -200,7 +195,7 @@ class BankController extends Controller
                 // TO account: head office sees all branches, others see same as FROM
                 if ($isHeadOffice) {
                     $banks_2 = DB::table('company_bank_accounts')
-                        ->where(function($query) {
+                        ->where(function ($query) {
                             $query->where('Bank_Type', '=', 'Bank')
                                 ->orWhere('Bank_Type', '=', 'Collector');
                         })
@@ -218,12 +213,12 @@ class BankController extends Controller
         }
 
         // Fetch bank logs with a join to company_bank_accounts, scoped by branch
-        $banklog = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        $banklog = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
             ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.Bank_Account_Id')
             ->where('company_bank_has_log.Type', '=', 'InterBank Transfer')
             ->get();
 
-        return view('pages.Accounting.InnerBankTransfers',compact('banks','banklog','banks_2','branches','isHeadOffice'));
+        return view('pages.Accounting.InnerBankTransfers', compact('banks', 'banklog', 'banks_2', 'branches', 'isHeadOffice'));
     }
 
     /**
@@ -236,7 +231,7 @@ class BankController extends Controller
         $reason     = $request->reason;
         $toBank     = $request->toBank;
 
-        $isHeadOffice = (int)session('branch_id') === -1;
+        $isHeadOffice = session('head_branch') == session('branch_id');
 
         // For head office, don't filter by branch
         if ($isHeadOffice) {
@@ -320,7 +315,7 @@ class BankController extends Controller
                     'type'             => 'Cash and Bank',
                     'cashflow'         => 'Non Applicable',
                     'acc_type_group'   => 'Assets',
-                    'User'             => session('userid')
+                    'User'             => user_data('idUser')
                 ]);
             } else {
                 $interBranchAccountId = $interBranchAccount->Idbank;
@@ -368,7 +363,7 @@ class BankController extends Controller
                     'type'             => 'Cash and Bank',
                     'cashflow'         => 'Non Applicable',
                     'acc_type_group'   => 'Assets',
-                    'User'             => session('userid')
+                    'User'             => user_data('idUser')
                 ]);
             } else {
                 $headOfficeTransferAccountId = $headOfficeTransferAccount->Idbank;
@@ -395,7 +390,6 @@ class BankController extends Controller
                 $fromAmount,
                 $toBank
             );
-
         } else {
             // Normal transfer within same branch or not inter-branch
             $this->bankLogController->index(
@@ -459,8 +453,9 @@ class BankController extends Controller
 
 
 
-    public function chq(Request $request){
-        $query = tableWithBranch('Cheque_payment','Cheque_payment')
+    public function chq(Request $request)
+    {
+        $query = tableWithBranch('Cheque_payment', 'Cheque_payment')
             ->join('company_bank_accounts', 'Cheque_payment.bank_account_company', '=', 'company_bank_accounts.Idbank')
             ->join('customer_loan', 'Cheque_payment.loan_id', '=', 'customer_loan.idCustomer_Loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
@@ -472,7 +467,7 @@ class BankController extends Controller
         if ($request->has('date')) {
             $query->whereDate('Cheque_payment.date', $request->date);
         }
-        
+
         // date range
         if ($request->has('start_date') && !empty($request->start_date)) {
             $query->whereDate('Cheque_payment.date', '>=', $request->start_date);
@@ -486,13 +481,13 @@ class BankController extends Controller
             $query->where('loan_category.idLoan_Category', $request->product_id);
         }
         if ($request->has('loan_number') && !empty($request->loan_number)) {
-            $query->where('customer_loan.Loan_No', 'LIKE', '%'.$request->loan_number.'%');
+            $query->where('customer_loan.Loan_No', 'LIKE', '%' . $request->loan_number . '%');
         }
         if ($request->has('customer_id') && !empty($request->customer_id)) {
             $query->where('customer.idCustomer', $request->customer_id);
         }
         if ($request->has('chq_number') && !empty($request->chq_number)) {
-            $query->where('Cheque_payment.chq_number', 'LIKE', '%'.$request->chq_number.'%');
+            $query->where('Cheque_payment.chq_number', 'LIKE', '%' . $request->chq_number . '%');
         }
 
         if ($request->has('center_id') && !empty($request->center_id)) {
@@ -505,18 +500,18 @@ class BankController extends Controller
         }
 
         $chq = $query->select(
-                'Cheque_payment.*',
-                'company_bank_accounts.Bank_Name',
-                'company_bank_accounts.Account_Name',
-                'company_bank_accounts.Account_No',
-                'customer_loan.Loan_No',
-                'customer.cus_number',
-                'customer.First_Name',
-                'customer.Last_Name',
-                'loan_category.Name as product_name',
-                'center.No as center_no',
-                'center.Name as center_name'
-            )
+            'Cheque_payment.*',
+            'company_bank_accounts.Bank_Name',
+            'company_bank_accounts.Account_Name',
+            'company_bank_accounts.Account_No',
+            'customer_loan.Loan_No',
+            'customer.cus_number',
+            'customer.First_Name',
+            'customer.Last_Name',
+            'loan_category.Name as product_name',
+            'center.No as center_no',
+            'center.Name as center_name'
+        )
             ->orderBy('Cheque_payment.date', 'desc')->get();
 
         // options for dropdowns
@@ -524,10 +519,11 @@ class BankController extends Controller
         $customers = tableWithBranch('customer')->select('idCustomer', 'First_Name', 'Last_Name', 'cus_number')->get();
         $centers = tableWithBranch('center')->select('idCenter', 'No', 'Name')->get();
 
-        return view('pages.ChqDetails', compact('chq','loan_categories','customers','centers'));
+        return view('pages.ChqDetails', compact('chq', 'loan_categories', 'customers', 'centers'));
     }
 
-    public function chq_process(string $id){
+    public function chq_process(string $id)
+    {
 
         $chq = tableWithBranch('cheque_details')
             ->where('Id', '=', $id)
@@ -537,11 +533,11 @@ class BankController extends Controller
             updateWithBranch('cheque_details', 'Id', $id, ['Status' => '1']);
             return response()->json(['id' => '1'], 200);
         }
-
     }
 
 
-    public function return_chq(string $id){
+    public function return_chq(string $id)
+    {
 
         $chq = tableWithBranch('Cheque_payment')
             ->where('idChq', '=', $id)
@@ -549,8 +545,8 @@ class BankController extends Controller
         $user_id = (int)session('userid');
         if ($chq) {
             updateWithBranch('Cheque_payment', 'idChq', $id, ['chq_status' => '-1']);
-            $chq_comment='Cheque Returned ! Cheque No : '.$chq->chq_number.' Cheque Date : '.$chq->chq_date.' Cheque Type : '.$chq->chq_type.' Amount : '.$chq->payment_amount;
-            $comment_id=insertWithBranch('loan_comment',[
+            $chq_comment = 'Cheque Returned ! Cheque No : ' . $chq->chq_number . ' Cheque Date : ' . $chq->chq_date . ' Cheque Type : ' . $chq->chq_type . ' Amount : ' . $chq->payment_amount;
+            $comment_id = insertWithBranch('loan_comment', [
                 'comment' => $chq_comment,
                 'loan_id' => $chq->loan_id,
                 'user_id' => $user_id,
@@ -566,18 +562,18 @@ class BankController extends Controller
 
             $request = new Request([
                 'customer_id' => $loan->Customer_idCustomer,
-                'description' => 'Payment Rejected ('.$customer->First_Name.' '.$customer->Last_Name.')',
+                'description' => 'Payment Rejected (' . $customer->First_Name . ' ' . $customer->Last_Name . ')',
                 'description_id' => $comment_id,
-                'comment' =>$chq_comment,
+                'comment' => $chq_comment,
                 'type' => 'Loan Comment',
             ]);
             $this->customerLogController->store($request);
             return response()->json(['id' => '1'], 200);
         }
-
     }
 
-    public function cancel_chq(string $id){
+    public function cancel_chq(string $id)
+    {
 
         $chq = tableWithBranch('Cheque_payment')
             ->where('idChq', '=', $id)
@@ -585,8 +581,8 @@ class BankController extends Controller
         $user_id = (int)session('userid');
         if ($chq) {
             updateWithBranch('Cheque_payment', 'idChq', $id, ['chq_status' => '-2']);
-            $chq_comment='Cheque Cancelled ! Cheque No : '.$chq->chq_number.' Cheque Date : '.$chq->chq_date.' Cheque Type : '.$chq->chq_type.' Amount : '.$chq->payment_amount;
-            $comment_id=insertWithBranch('loan_comment',[
+            $chq_comment = 'Cheque Cancelled ! Cheque No : ' . $chq->chq_number . ' Cheque Date : ' . $chq->chq_date . ' Cheque Type : ' . $chq->chq_type . ' Amount : ' . $chq->payment_amount;
+            $comment_id = insertWithBranch('loan_comment', [
                 'comment' => $chq_comment,
                 'loan_id' => $chq->loan_id,
                 'user_id' => $user_id,
@@ -602,91 +598,92 @@ class BankController extends Controller
 
             $request = new Request([
                 'customer_id' => $loan->Customer_idCustomer,
-                'description' => 'Payment Cancelled ('.$customer->First_Name.' '.$customer->Last_Name.')',
+                'description' => 'Payment Cancelled (' . $customer->First_Name . ' ' . $customer->Last_Name . ')',
                 'description_id' => $comment_id,
-                'comment' =>$chq_comment,
+                'comment' => $chq_comment,
                 'type' => 'Loan Comment',
             ]);
             $this->customerLogController->store($request);
             return response()->json(['id' => '1'], 200);
         }
-
     }
 
-    public function profitView(){
+    public function profitView()
+    {
         $date_from = date('Y-m-d'); // Current date
         $date_to = date('Y-m-d'); // Current date
-        $interest=0.00;
-        $panelty=0.00;
-        $interest_bank=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_2')->first();
-        $penelty_bank=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_5')->first();
-        $chargers_bank=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_9')->first();
-        $other_chargers=0.00;
-        $loan_expenses=0.00;
-        $total_income=0.00;
-        $total_expenses=0.00;
-        $system_expenses=[];
-        $system_revenue=[];
-        return view('pages.Accounting.ProfitLoss',compact('date_from','system_expenses','date_to','interest','panelty','other_chargers','loan_expenses','total_income','total_expenses','system_revenue','interest_bank','penelty_bank','chargers_bank'));
+        $interest = 0.00;
+        $panelty = 0.00;
+        $interest_bank = tableWithBranch('company_bank_accounts')->where('Bank_Type', '=', 'System_default_2')->first();
+        $penelty_bank = tableWithBranch('company_bank_accounts')->where('Bank_Type', '=', 'System_default_5')->first();
+        $chargers_bank = tableWithBranch('company_bank_accounts')->where('Bank_Type', '=', 'System_default_9')->first();
+        $other_chargers = 0.00;
+        $loan_expenses = 0.00;
+        $total_income = 0.00;
+        $total_expenses = 0.00;
+        $system_expenses = [];
+        $system_revenue = [];
+        return view('pages.Accounting.ProfitLoss', compact('date_from', 'system_expenses', 'date_to', 'interest', 'panelty', 'other_chargers', 'loan_expenses', 'total_income', 'total_expenses', 'system_revenue', 'interest_bank', 'penelty_bank', 'chargers_bank'));
     }
 
 
-    public function profit(Request $request){
-        $date_from=$request->date_from;
-        $date_to=$request->date_to;
-        $loan_expenses=0.00;
-        $total_expenses=0.00;
+    public function profit(Request $request)
+    {
+        $date_from = $request->date_from;
+        $date_to = $request->date_to;
+        $loan_expenses = 0.00;
+        $total_expenses = 0.00;
 
         $date_to_2 = Carbon::parse($date_to)->endOfDay();
         $date_from_2 = Carbon::parse($date_from)->startOfDay(); // To ensure you're starting from the beginning of the day
 
         // Calculate various values
-        $interest_bank=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_2')->first();
+        $interest_bank = tableWithBranch('company_bank_accounts')->where('Bank_Type', '=', 'System_default_2')->first();
 
-        $interest_Credit = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        $interest_Credit = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('company_bank_has_log.Bank_Account_Id','=',$interest_bank->Idbank)
+            ->where('company_bank_has_log.Bank_Account_Id', '=', $interest_bank->Idbank)
             ->sum('Credit');
 
-        $interest_Debit = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        $interest_Debit = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('company_bank_has_log.Bank_Account_Id','=',$interest_bank->Idbank)
+            ->where('company_bank_has_log.Bank_Account_Id', '=', $interest_bank->Idbank)
             ->sum('Debit');
 
-        $interest=$interest_Credit-$interest_Debit;
+        $interest = $interest_Credit - $interest_Debit;
 
 
-        $penelty_bank=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_5')->first();
+        $penelty_bank = tableWithBranch('company_bank_accounts')->where('Bank_Type', '=', 'System_default_5')->first();
 
-        $panelty_Credit = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        $panelty_Credit = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('company_bank_has_log.Bank_Account_Id','=',$penelty_bank->Idbank)
-            ->where('company_bank_has_log.Type','!=','Penalty')
+            ->where('company_bank_has_log.Bank_Account_Id', '=', $penelty_bank->Idbank)
+            ->where('company_bank_has_log.Type', '!=', 'Penalty')
             ->sum('Credit');
 
-        $panelty_Debit = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        $panelty_Debit = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('company_bank_has_log.Bank_Account_Id','=',$penelty_bank->Idbank)
-            ->where('company_bank_has_log.Type','!=','Penalty')
+            ->where('company_bank_has_log.Bank_Account_Id', '=', $penelty_bank->Idbank)
+            ->where('company_bank_has_log.Type', '!=', 'Penalty')
             ->sum('Debit');
 
-        $panelty=$panelty_Credit-$panelty_Debit;
+        $panelty = $panelty_Credit - $panelty_Debit;
 
 
         // Calculate various values
-        $chargers_bank=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_9')->first();
+        $chargers_bank = tableWithBranch('company_bank_accounts')->where('Bank_Type', '=', 'System_default_9')->first();
 
-        $chargers_Credit = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        $chargers_Credit = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('company_bank_has_log.Bank_Account_Id','=',$chargers_bank->Idbank)
+            ->where('company_bank_has_log.Bank_Account_Id', '=', $chargers_bank->Idbank)
             ->sum('Credit');
 
-        $chargers_Debit = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        $chargers_Debit = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('company_bank_has_log.Bank_Account_Id','=',$chargers_bank->Idbank)
+            ->where('company_bank_has_log.Bank_Account_Id', '=', $chargers_bank->Idbank)
             ->sum('Debit');
 
-        $other_chargers = $chargers_Credit-$chargers_Debit;
+        $other_chargers = $chargers_Credit - $chargers_Debit;
 
 
         $total_income = tableWithBranch('expences')
@@ -706,7 +703,7 @@ class BankController extends Controller
                 DB::raw("SUM(COALESCE(company_bank_has_log.Debit, 0)) as total_debit"),
                 DB::raw("(SUM(COALESCE(company_bank_has_log.Debit, 0)) - SUM(COALESCE(company_bank_has_log.Credit, 0))) as balance_difference")
             )
-            ->groupBy('company_bank_accounts.Bank_Name','company_bank_accounts.idbank')
+            ->groupBy('company_bank_accounts.Bank_Name', 'company_bank_accounts.idbank')
             ->havingRaw("balance_difference != 0") // Exclude zero balance difference
             ->orderByDesc('balance_difference') // Order by highest difference
             ->get();
@@ -724,19 +721,20 @@ class BankController extends Controller
                 DB::raw("SUM(COALESCE(company_bank_has_log.Debit, 0)) as total_debit"),
                 DB::raw("(SUM(COALESCE(company_bank_has_log.Credit, 0)) - SUM(COALESCE(company_bank_has_log.Debit, 0))) as balance_difference")
             )
-            ->groupBy('company_bank_accounts.Bank_Name','company_bank_accounts.idbank')
+            ->groupBy('company_bank_accounts.Bank_Name', 'company_bank_accounts.idbank')
             ->havingRaw("balance_difference != 0") // Exclude zero balance difference
             ->orderByDesc('balance_difference') // Order by highest difference
             ->get();
 
 
 
-        return view('pages.Accounting.ProfitLoss',compact('date_from','system_expenses','date_to','interest','panelty','other_chargers','loan_expenses','total_income','total_expenses','system_revenue','interest_bank','penelty_bank','chargers_bank'));
+        return view('pages.Accounting.ProfitLoss', compact('date_from', 'system_expenses', 'date_to', 'interest', 'panelty', 'other_chargers', 'loan_expenses', 'total_income', 'total_expenses', 'system_revenue', 'interest_bank', 'penelty_bank', 'chargers_bank'));
     }
 
-    public function profitLog(Request $request){
-        $date_from=$request->date_from;
-        $date_to=$request->date_to;
+    public function profitLog(Request $request)
+    {
+        $date_from = $request->date_from;
+        $date_to = $request->date_to;
 
         $date_to = Carbon::parse($date_to)->endOfDay();
         $date_from = Carbon::parse($date_from)->startOfDay(); // To ensure you're starting from the beginning of the day
@@ -758,21 +756,21 @@ class BankController extends Controller
 
 
         return response()->json($interest);
-
     }
 
 
-    public function BankReconciliationView(){
+    public function BankReconciliationView()
+    {
         $date_from = Carbon::now()->format('Y-m-d'); // Current date
         $date_to = Carbon::now()->format('Y-m-d'); // Current date
-        $bank_details="all";
+        $bank_details = "all";
         $bank = tableWithBranch('company_bank_accounts')->get();
 
         $bank_log = tableWithBranch('company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from, $date_to])
             ->get();
 
-// Get the opening balance (the last balance before the date_from)
+        // Get the opening balance (the last balance before the date_from)
         $opening_balance_record = tableWithBranch('company_bank_has_log')
             ->where('Date_Time', '<', $date_from)
             ->orderBy('Date_Time', 'desc')
@@ -780,7 +778,7 @@ class BankController extends Controller
 
         $opening_balance = $opening_balance_record ? $opening_balance_record->Balance : 0; // Use 0 if no record exists
 
-// Get the closing balance (the balance of the last transaction on or before date_to)
+        // Get the closing balance (the balance of the last transaction on or before date_to)
         $closing_balance_record = tableWithBranch('company_bank_has_log')
             ->where('Date_Time', '<=', $date_to)
             ->orderBy('Date_Time', 'desc')
@@ -789,21 +787,22 @@ class BankController extends Controller
 
         $closing_balance = $closing_balance_record ? $closing_balance_record->Balance : 0; // Use 0 if no record exists
 
-        return view('pages.Accounting.BankReconsilation', compact('bank_details','date_from', 'date_to', 'bank', 'bank_log', 'opening_balance', 'closing_balance'));
+        return view('pages.Accounting.BankReconsilation', compact('bank_details', 'date_from', 'date_to', 'bank', 'bank_log', 'opening_balance', 'closing_balance'));
     }
 
-    public function BankReconciliation(Request $request){
+    public function BankReconciliation(Request $request)
+    {
         $date_from = $request->date_from;
         $date_to = $request->date_to;
-        $bank_details=$request->bank;
-        $bank=tableWithBranch('company_bank_accounts')->get();
+        $bank_details = $request->bank;
+        $bank = tableWithBranch('company_bank_accounts')->get();
 
-        if ($bank_details=="all"){
+        if ($bank_details == "all") {
             $bank_log = tableWithBranch('company_bank_has_log')
                 ->whereBetween('Date_Time', [$date_from, $date_to])
                 ->get();
 
-// Get the opening balance (the last balance before the date_from)
+            // Get the opening balance (the last balance before the date_from)
             $opening_balance_record = tableWithBranch('company_bank_has_log')
                 ->where('Date_Time', '<', $date_from)
                 ->orderBy('Date_Time', 'desc')
@@ -811,7 +810,7 @@ class BankController extends Controller
 
             $opening_balance = $opening_balance_record ? $opening_balance_record->Balance : 0; // Use 0 if no record exists
 
-// Get the closing balance (the balance of the last transaction on or before date_to)
+            // Get the closing balance (the balance of the last transaction on or before date_to)
             $closing_balance_record = tableWithBranch('company_bank_has_log')
                 ->where('Date_Time', '<=', $date_to)
                 ->orderBy('Date_Time', 'desc')
@@ -819,14 +818,14 @@ class BankController extends Controller
 
 
             $closing_balance = $closing_balance_record ? $closing_balance_record->Balance : 0; // Use 0 if no record exists
-        }else{
+        } else {
 
             $bank_log = tableWithBranch('company_bank_has_log')
                 ->whereBetween('Date_Time', [$date_from, $date_to])
                 ->where('Bank_Account_Id', '=', $bank_details)
                 ->get();
 
-// Get the opening balance (the last balance before the date_from)
+            // Get the opening balance (the last balance before the date_from)
             $opening_balance_record = tableWithBranch('company_bank_has_log')
                 ->where('Date_Time', '<', $date_from)
                 ->where('Bank_Account_Id', '=', $bank_details)
@@ -835,7 +834,7 @@ class BankController extends Controller
 
             $opening_balance = $opening_balance_record ? $opening_balance_record->Balance : 0; // Use 0 if no record exists
 
-// Get the closing balance (the balance of the last transaction on or before date_to)
+            // Get the closing balance (the balance of the last transaction on or before date_to)
             $closing_balance_record = tableWithBranch('company_bank_has_log')
                 ->where('Date_Time', '<=', $date_to)
                 ->where('Bank_Account_Id', '=', $bank_details)
@@ -847,21 +846,22 @@ class BankController extends Controller
         }
 
 
-        return view('pages.Accounting.BankReconsilation', compact('bank_details','date_from', 'date_to', 'bank', 'bank_log', 'opening_balance', 'closing_balance'));
+        return view('pages.Accounting.BankReconsilation', compact('bank_details', 'date_from', 'date_to', 'bank', 'bank_log', 'opening_balance', 'closing_balance'));
     }
 
-    public function loanStatusView() {
+    public function loanStatusView()
+    {
 
         $customer = tableWithBranch('customer')
             ->get();
-        $lending_officer = tableWithBranch('user')->where('lending_officer','=','1')->get();
-        $recovery_officer = tableWithBranch('user')->where('collector','=','1')->get();
+        $lending_officer = tableWithBranch('user')->where('lending_officer', '=', '1')->get();
+        $recovery_officer = tableWithBranch('user')->where('collector', '=', '1')->get();
 
         // Fetch active loans
         $loans = tableWithBranch('customer_loan')
             ->where('Status', '=', '0')
             ->get();
-        $route = tableWithBranch('route','route')
+        $route = tableWithBranch('route', 'route')
             ->join('user', 'route.id_officer', '=', 'user.id')
             ->get();
         $center = tableWithBranch('center')->get();
@@ -899,19 +899,19 @@ class BankController extends Controller
                     ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('Amount');
 
-// Calculate interest amount
+                // Calculate interest amount
                 $current_loan_interest_amount += tableWithBranch('customer_loan')
                     ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('Interest_Amount');
 
-// Calculate penalty amount
-                $current_loan_panelty_amount += tableWithBranch('installments','installments')
+                // Calculate penalty amount
+                $current_loan_panelty_amount += tableWithBranch('installments', 'installments')
                     ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
                     ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('installments.Panalty_Amount');
 
-// Calculate payments
-                $loan_payments = tableWithBranch('Loan_Log','Loan_Log')
+                // Calculate payments
+                $loan_payments = tableWithBranch('Loan_Log', 'Loan_Log')
                     ->join('customer_loan', 'Loan_Log.Loan_ID', '=', 'customer_loan.idCustomer_Loan')
                     ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->selectRaw('SUM(Loan_Log.Capital_Payment) as Capital_Payment')
@@ -923,25 +923,25 @@ class BankController extends Controller
                 $Capital_Payment += $loan_payments->Capital_Payment ?? 0;
                 $Interest_Payment += $loan_payments->Interest_Payment ?? 0;
                 $Panelty_Payment += $loan_payments->Panelty_Payment ?? 0;
-            }else{
+            } else {
                 // Calculate capital amount
                 $past_capital_amount += tableWithBranch('customer_loan')
                     ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('Amount');
 
-// Calculate interest amount
+                // Calculate interest amount
                 $past_loan_interest_amount += tableWithBranch('customer_loan')
                     ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('Interest_Amount');
 
-// Calculate penalty amount
-                $past_panelty_amount += tableWithBranch('installments','installments')
+                // Calculate penalty amount
+                $past_panelty_amount += tableWithBranch('installments', 'installments')
                     ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
                     ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('installments.Panalty_Amount');
 
-// Calculate payments
-                $past_loan_payments = tableWithBranch('Loan_Log','Loan_Log')
+                // Calculate payments
+                $past_loan_payments = tableWithBranch('Loan_Log', 'Loan_Log')
                     ->join('customer_loan', 'Loan_Log.Loan_ID', '=', 'customer_loan.idCustomer_Loan')
                     ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->selectRaw('SUM(Loan_Log.Capital_Payment) as Capital_Payment')
@@ -1006,19 +1006,19 @@ class BankController extends Controller
                     ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('Amount');
 
-// Calculate interest amount for fully paid loans
+                // Calculate interest amount for fully paid loans
                 $fully_paid_interest_amount += tableWithBranch('customer_loan')
                     ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('Interest_Amount');
 
-// Calculate penalty amount
-                $fully_paid_panelty_amount += tableWithBranch('installments','installments')
+                // Calculate penalty amount
+                $fully_paid_panelty_amount += tableWithBranch('installments', 'installments')
                     ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
                     ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('installments.Panalty_Amount');
 
-// Calculate payments
-                $loan_payments = tableWithBranch('Loan_Log','Loan_Log')
+                // Calculate payments
+                $loan_payments = tableWithBranch('Loan_Log', 'Loan_Log')
                     ->join('customer_loan', 'Loan_Log.Loan_ID', '=', 'customer_loan.idCustomer_Loan')
                     ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->selectRaw('SUM(Loan_Log.Capital_Payment) as Capital_Payment')
@@ -1037,9 +1037,9 @@ class BankController extends Controller
         $fully_paid_total = $fully_paid_capital_amount + $fully_paid_interest_amount + $fully_paid_panelty_amount;
         $fully_paid_total_payment = $fully_paid_Capital_Payment + $fully_paid_Interest_Payment + $fully_paid_Panelty_Payment;
 
-        $selectedCustomer=0;
-        $selectedLendingOfficer=0;
-        $selectedRecoveryOfficer=0;
+        $selectedCustomer = 0;
+        $selectedLendingOfficer = 0;
+        $selectedRecoveryOfficer = 0;
 
         $selectedRoute = 0;
         $selectedCenter = 0;
@@ -1048,7 +1048,12 @@ class BankController extends Controller
 
         // Return data to view
         return view('pages.Accounting.loanStatus', compact(
-            'route','center','group','selectedRoute','selectedCenter','selectedGroup',
+            'route',
+            'center',
+            'group',
+            'selectedRoute',
+            'selectedCenter',
+            'selectedGroup',
 
             'selectedCustomer',
             'selectedLendingOfficer',
@@ -1092,26 +1097,27 @@ class BankController extends Controller
 
 
 
-    public function loanStatusView_2(Request $request) {
+    public function loanStatusView_2(Request $request)
+    {
 
         $customer = tableWithBranch('customer')
             ->get();
-        $lending_officer = tableWithBranch('user')->where('lending_officer','=','1')->get();
-        $recovery_officer = tableWithBranch('user')->where('collector','=','1')->get();
-        $route = tableWithBranch('route','route')
+        $lending_officer = tableWithBranch('user')->where('lending_officer', '=', '1')->get();
+        $recovery_officer = tableWithBranch('user')->where('collector', '=', '1')->get();
+        $route = tableWithBranch('route', 'route')
             ->join('user', 'route.id_officer', '=', 'user.id')
             ->get();
         $center = tableWithBranch('center')->get();
         $group = tableWithBranch('customer_group')->get();
         // Fetch active loans
-        $loanQuery = tableWithBranch('customer_loan','customer_loan')
+        $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
             ->where('customer_loan.Status', '=', '0')
             ->leftJoin('group_has_customer', 'customer_loan.Customer_idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
             ->leftJoin('route', 'center.route_id', '=', 'route.id_route');
 
-// Add conditions for filtering
+        // Add conditions for filtering
         if ($request->customer != '0') {
             $loanQuery->where('customer_loan.Customer_idCustomer', '=', $request->customer);
         }
@@ -1170,19 +1176,19 @@ class BankController extends Controller
                     ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('Amount');
 
-// Calculate interest amount
+                // Calculate interest amount
                 $current_loan_interest_amount += tableWithBranch('customer_loan')
                     ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('Interest_Amount');
 
-// Calculate penalty amount
-                $current_loan_panelty_amount += tableWithBranch('installments','installments')
+                // Calculate penalty amount
+                $current_loan_panelty_amount += tableWithBranch('installments', 'installments')
                     ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
                     ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('installments.Panalty_Amount');
 
-// Calculate payments
-                $loan_payments = tableWithBranch('Loan_Log','Loan_Log')
+                // Calculate payments
+                $loan_payments = tableWithBranch('Loan_Log', 'Loan_Log')
                     ->join('customer_loan', 'Loan_Log.Loan_ID', '=', 'customer_loan.idCustomer_Loan')
                     ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->selectRaw('SUM(Loan_Log.Capital_Payment) as Capital_Payment')
@@ -1194,25 +1200,25 @@ class BankController extends Controller
                 $Capital_Payment += $loan_payments->Capital_Payment ?? 0;
                 $Interest_Payment += $loan_payments->Interest_Payment ?? 0;
                 $Panelty_Payment += $loan_payments->Panelty_Payment ?? 0;
-            }else{
+            } else {
                 // Calculate capital amount
                 $past_capital_amount += tableWithBranch('customer_loan')
                     ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('Amount');
 
-// Calculate interest amount
+                // Calculate interest amount
                 $past_loan_interest_amount += tableWithBranch('customer_loan')
                     ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('Interest_Amount');
 
-// Calculate penalty amount
-                $past_panelty_amount += tableWithBranch('installments','installments')
+                // Calculate penalty amount
+                $past_panelty_amount += tableWithBranch('installments', 'installments')
                     ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
                     ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('installments.Panalty_Amount');
 
-// Calculate payments
-                $past_loan_payments = tableWithBranch('Loan_Log','Loan_Log')
+                // Calculate payments
+                $past_loan_payments = tableWithBranch('Loan_Log', 'Loan_Log')
                     ->join('customer_loan', 'Loan_Log.Loan_ID', '=', 'customer_loan.idCustomer_Loan')
                     ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->selectRaw('SUM(Loan_Log.Capital_Payment) as Capital_Payment')
@@ -1247,7 +1253,7 @@ class BankController extends Controller
 
 
         // Fetch active loans
-        $loanQuery = tableWithBranch('customer_loan','customer_loan')
+        $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
             ->where('Status', '=', '1')
             ->leftJoin('group_has_customer', 'customer_loan.Customer_idCustomer', '=', 'group_has_customer.cus_id')
             ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
@@ -1256,7 +1262,7 @@ class BankController extends Controller
 
 
 
-// Add conditions for filtering
+        // Add conditions for filtering
         if ($request->customer != '0') {
             $loanQuery->where('customer_loan.Customer_idCustomer', '=', $request->customer);
         }
@@ -1309,19 +1315,19 @@ class BankController extends Controller
                     ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('Amount');
 
-// Calculate interest amount for fully paid loans
+                // Calculate interest amount for fully paid loans
                 $fully_paid_interest_amount += tableWithBranch('customer_loan')
                     ->where('idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('Interest_Amount');
 
-// Calculate penalty amount
-                $fully_paid_panelty_amount += tableWithBranch('installments','installments')
+                // Calculate penalty amount
+                $fully_paid_panelty_amount += tableWithBranch('installments', 'installments')
                     ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
                     ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->sum('installments.Panalty_Amount');
 
-// Calculate payments
-                $loan_payments = tableWithBranch('Loan_Log','Loan_Log')
+                // Calculate payments
+                $loan_payments = tableWithBranch('Loan_Log', 'Loan_Log')
                     ->join('customer_loan', 'Loan_Log.Loan_ID', '=', 'customer_loan.idCustomer_Loan')
                     ->where('customer_loan.idCustomer_Loan', '=', $loan->idCustomer_Loan)
                     ->selectRaw('SUM(Loan_Log.Capital_Payment) as Capital_Payment')
@@ -1352,10 +1358,15 @@ class BankController extends Controller
         // Return data to view
         return view('pages.Accounting.loanStatus', compact(
 
-            'route','center','group','selectedRoute','selectedCenter','selectedGroup',
+            'route',
+            'center',
+            'group',
+            'selectedRoute',
+            'selectedCenter',
+            'selectedGroup',
             'selectedCustomer',
-    'selectedLendingOfficer',
-    'selectedRecoveryOfficer',
+            'selectedLendingOfficer',
+            'selectedRecoveryOfficer',
 
             'customer',
             'lending_officer',
@@ -1394,7 +1405,7 @@ class BankController extends Controller
 
     public function updateStatus(Request $request)
     {
-        $user_id=(int) session('userid');
+        $user_id = (int)user_data('idUser');
         // Validate the incoming request data
         $validatedData = $request->validate([
             'log_id' => 'required|integer',
@@ -1426,16 +1437,16 @@ class BankController extends Controller
         $selectedBankId = $request->selectedBankId;
         $amount = $request->amount;
 
-        $bank=tableWithBranch('company_bank_accounts')->where('Idbank','=',$selectedBankId)->first();
-        $description="Bank Name :".$bank->Bank_Name."- Account Name :".$bank->Account_Name."- Account Num :".$bank->Account_No;
+        $bank = tableWithBranch('company_bank_accounts')->where('Idbank', '=', $selectedBankId)->first();
+        $description = "Bank Name :" . $bank->Bank_Name . "- Account Name :" . $bank->Account_Name . "- Account Num :" . $bank->Account_No;
 
-        $this->bankLogController->index($bankId, "Return To Company", $description, "-", "credit", $amount,$selectedBankId);
+        $this->bankLogController->index($bankId, "Return To Company", $description, "-", "credit", $amount, $selectedBankId);
 
 
-        $bank_2=tableWithBranch('company_bank_accounts')->where('Idbank','=',$bankId)->first();
-        $description_2="Account Name :".$bank_2->Account_Name."- Account Num :".$bank_2->Account_No;
+        $bank_2 = tableWithBranch('company_bank_accounts')->where('Idbank', '=', $bankId)->first();
+        $description_2 = "Account Name :" . $bank_2->Account_Name . "- Account Num :" . $bank_2->Account_No;
 
-        $this->bankLogController->index($selectedBankId, "Return From Collector", $description_2, "-", "debit", $amount,$bankId);
+        $this->bankLogController->index($selectedBankId, "Return From Collector", $description_2, "-", "debit", $amount, $bankId);
         return response()->json(['success' => true, 'message' => 'Status updated successfully']);
     }
 
@@ -1446,16 +1457,16 @@ class BankController extends Controller
         $selectedBankId = $request->selectedBankId;
         $amount = $request->amount;
 
-        $bank=tableWithBranch('company_bank_accounts')->where('Idbank','=',$selectedBankId)->first();
-        $description="Bank Name :".$bank->Bank_Name."- Account Name :".$bank->Account_Name."- Account Num :".$bank->Account_No;
+        $bank = tableWithBranch('company_bank_accounts')->where('Idbank', '=', $selectedBankId)->first();
+        $description = "Bank Name :" . $bank->Bank_Name . "- Account Name :" . $bank->Account_Name . "- Account Num :" . $bank->Account_No;
 
-        $this->bankLogController->index($bankId, "Return To Collector", $description, "-", "debit", $amount,$selectedBankId);
+        $this->bankLogController->index($bankId, "Return To Collector", $description, "-", "debit", $amount, $selectedBankId);
 
 
-        $bank_2=tableWithBranch('company_bank_accounts')->where('Idbank','=',$bankId)->first();
-        $description_2="Account Name :".$bank_2->Account_Name."- Account Num :".$bank_2->Account_No;
+        $bank_2 = tableWithBranch('company_bank_accounts')->where('Idbank', '=', $bankId)->first();
+        $description_2 = "Account Name :" . $bank_2->Account_Name . "- Account Num :" . $bank_2->Account_No;
 
-        $this->bankLogController->index($selectedBankId, "Return From Company", $description_2, "-", "credit", $amount,$bankId);
+        $this->bankLogController->index($selectedBankId, "Return From Company", $description_2, "-", "credit", $amount, $bankId);
         return response()->json(['success' => true, 'message' => 'Status updated successfully']);
     }
 
@@ -1463,14 +1474,14 @@ class BankController extends Controller
     {
         $bankId = $request->bankId;
         $amount = $request->amount;
-        $note = $request->note??'-';
-        $bank=tableWithBranch('company_bank_accounts')->where('Account_No','=',"Cash")->first();
-        $this->bankLogController->index($bankId, "Cash Top up", "-", "-", "credit", $amount,$bank->Idbank);
+        $note = $request->note ?? '-';
+        $bank = tableWithBranch('company_bank_accounts')->where('Account_No', '=', "Cash")->first();
+        $this->bankLogController->index($bankId, "Cash Top up", "-", "-", "credit", $amount, $bank->Idbank);
 
 
-        $bank_2=tableWithBranch('company_bank_accounts')->where('Idbank','=',$bankId)->first();
-        $description_2="Account Name :".$bank_2->Account_Name."- Account Num :".$bank_2->Account_No;
-        $this->bankLogController->index($bank->Idbank, "Cash Deposit", $description_2, $note, "debit", $amount,$bankId);
+        $bank_2 = tableWithBranch('company_bank_accounts')->where('Idbank', '=', $bankId)->first();
+        $description_2 = "Account Name :" . $bank_2->Account_Name . "- Account Num :" . $bank_2->Account_No;
+        $this->bankLogController->index($bank->Idbank, "Cash Deposit", $description_2, $note, "debit", $amount, $bankId);
 
         return response()->json(['success' => true, 'message' => 'Status updated successfully']);
     }
@@ -1479,14 +1490,14 @@ class BankController extends Controller
     public function searchReconciliation(Request $request)
     {
 
-        $query = tableWithBranch('reconciliation','reconciliation')
+        $query = tableWithBranch('reconciliation', 'reconciliation')
             ->join('company_bank_accounts', 'reconciliation.account_id', '=', 'company_bank_accounts.Idbank')
             ->whereBetween('date', [$request->date_from, $request->date_to])
             ->select('reconciliation.*',  'company_bank_accounts.Bank_Name', 'company_bank_accounts.Account_Name', 'company_bank_accounts.Account_No')
             ->orderBy('date', 'desc');
 
-        if ($request->account_id!=0){
-            $query=$query->where('account_id', $request->account_id);
+        if ($request->account_id != 0) {
+            $query = $query->where('account_id', $request->account_id);
         }
 
 
@@ -1519,7 +1530,7 @@ class BankController extends Controller
         try {
             DB::beginTransaction();
 
-            $note=$request->note??'-';
+            $note = $request->note ?? '-';
             $user_id = (int)session('userid');
             $reconciliation = [
                 'account_id' => $request->account_id,
@@ -1545,15 +1556,13 @@ class BankController extends Controller
                         'debit' => $transaction['debit'],
                         'account_id' => $transaction['account_id'],
                     ];
-                    insertWithBranch('reconciliation_has_data',$reconciliation_has_data);
+                    insertWithBranch('reconciliation_has_data', $reconciliation_has_data);
                 }
-
             }
 
             DB::commit();
 
             return response()->json(['status' => 'success', 'id' => $reconciliationId]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
@@ -1561,12 +1570,12 @@ class BankController extends Controller
     }
 
 
-    public function reconciliation($id,$status)
+    public function reconciliation($id, $status)
     {
-        $reconciliation = tableWithBranch('reconciliation','reconciliation')
+        $reconciliation = tableWithBranch('reconciliation', 'reconciliation')
             ->join('company_bank_accounts', 'reconciliation.account_id', '=', 'company_bank_accounts.Idbank')
             ->where('id_reconciliation', '=', $id)
-            ->select('reconciliation.*','company_bank_accounts.Idbank', 'company_bank_accounts.Bank_Name', 'company_bank_accounts.Account_Name', 'company_bank_accounts.Account_No', 'company_bank_accounts.code')
+            ->select('reconciliation.*', 'company_bank_accounts.Idbank', 'company_bank_accounts.Bank_Name', 'company_bank_accounts.Account_Name', 'company_bank_accounts.Account_No', 'company_bank_accounts.code')
             ->first();
 
         if (!$reconciliation) {
@@ -1601,7 +1610,7 @@ class BankController extends Controller
 
         $bank = tableWithBranch('company_bank_accounts')->get();
 
-        $reconciliation_log=tableWithBranch('reconciliation_has_data','reconciliation_has_data')
+        $reconciliation_log = tableWithBranch('reconciliation_has_data', 'reconciliation_has_data')
             ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'reconciliation_has_data.account_id')
             ->where('reconciliation_has_data.id_reconciliation', '=', $id)
             ->select('reconciliation_has_data.*', 'company_bank_accounts.Bank_Name', 'company_bank_accounts.Account_Name', 'company_bank_accounts.Account_No')
@@ -1620,10 +1629,10 @@ class BankController extends Controller
                 ->first(); // Get only the first row
         }
 
-// ✅ Normalize the balance value from the correct column
+        // ✅ Normalize the balance value from the correct column
         $balance = $lastReconciliation ? ($lastReconciliation->balance ?? $lastReconciliation->Balance ?? 0) : 0;
 
-        return view('pages.Accounting.BankReconsilationInside', compact('reconciliation','balance','reconciliation_log','bank', 'bank_log','id','status'));
+        return view('pages.Accounting.BankReconsilationInside', compact('reconciliation', 'balance', 'reconciliation_log', 'bank', 'bank_log', 'id', 'status'));
     }
 
 
@@ -1634,22 +1643,22 @@ class BankController extends Controller
             DB::beginTransaction();
 
             // Delete transactions first (Foreign Key Dependency)
-            deleteWithBranch('reconciliation_has_data','id_reconciliation', $request->id);
+            deleteWithBranch('reconciliation_has_data', 'id_reconciliation', $request->id);
 
             // Delete reconciliation record
-            deleteWithBranch('reconciliation','id_reconciliation', $request->id);
+            deleteWithBranch('reconciliation', 'id_reconciliation', $request->id);
 
             DB::commit();
 
             return response()->json(['status' => 'success']);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
 
-    public function reconciliation_store(Request $request){
+    public function reconciliation_store(Request $request)
+    {
         DB::beginTransaction(); // ✅ Begin transaction
 
         try {
@@ -1674,7 +1683,7 @@ class BankController extends Controller
                 foreach ($request->creditTransactions as $transaction) {
                     $bank_id = $transaction['id'];
                     $check = $transaction['creditTransactionsCheck'];
-                    if ($check=="1"){
+                    if ($check == "1") {
                         updateWithBranch('company_bank_has_log', 'id', $bank_id, [
                             'reconsilation_status' => $reco_id,
                         ]);
@@ -1691,9 +1700,6 @@ class BankController extends Controller
                         'check_status' => $check,
                     ];
                     insertWithBranch('reconciliation_logs', $reconciliation_log_credit);
-
-
-
                 }
             }
 
@@ -1702,7 +1708,7 @@ class BankController extends Controller
                 foreach ($request->debitTransactions as $transaction) {
                     $bank_id = $transaction['id'];
                     $check = $transaction['debitTransactionsCheck'];
-                    if ($check=="1"){
+                    if ($check == "1") {
                         updateWithBranch('company_bank_has_log', 'id', $bank_id, [
                             'reconsilation_status' => $reco_id,
                         ]);
@@ -1741,17 +1747,17 @@ class BankController extends Controller
                     ];
                     insertWithBranch('reconciliation_has_data', $reconciliation_has_data);
 
-                    $bank=tableWithBranch('company_bank_accounts')->where('Idbank','=',$bank_id)->first();
-                    $description=$entry['description'];
+                    $bank = tableWithBranch('company_bank_accounts')->where('Idbank', '=', $bank_id)->first();
+                    $description = $entry['description'];
 
-                    if ($entry['credit']>0){
-                        $this->bankLogController->index($bank->Idbank, "Bank Reconciliation", $description, "-", "credit", $entry['credit'],$main_bank_id,0,$reco_id);
-                        $this->bankLogController->index($main_bank_id, "Bank Reconciliation", $description, "-", "debit", $entry['credit'],$bank->Idbank,0,$reco_id);
+                    if ($entry['credit'] > 0) {
+                        $this->bankLogController->index($bank->Idbank, "Bank Reconciliation", $description, "-", "credit", $entry['credit'], $main_bank_id, 0, $reco_id);
+                        $this->bankLogController->index($main_bank_id, "Bank Reconciliation", $description, "-", "debit", $entry['credit'], $bank->Idbank, 0, $reco_id);
                     }
 
-                    if ($entry['debit']>0){
-                        $this->bankLogController->index($bank->Idbank, "Bank Reconciliation", $description, "-", "debit", $entry['credit'],$main_bank_id,0,$reco_id);
-                        $this->bankLogController->index($main_bank_id, "Bank Reconciliation", $description, "-", "credit", $entry['credit'],$bank->Idbank,0,$reco_id);
+                    if ($entry['debit'] > 0) {
+                        $this->bankLogController->index($bank->Idbank, "Bank Reconciliation", $description, "-", "debit", $entry['credit'], $main_bank_id, 0, $reco_id);
+                        $this->bankLogController->index($main_bank_id, "Bank Reconciliation", $description, "-", "credit", $entry['credit'], $bank->Idbank, 0, $reco_id);
                     }
                 }
             }
@@ -1759,168 +1765,168 @@ class BankController extends Controller
 
             DB::commit(); // ✅ Commit transaction if all operations succeed
             return response()->json(['status' => 'success']);
-
         } catch (\Exception $e) {
             DB::rollback(); // ❌ Rollback if any operation fails
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
 
-    public function ReconciliationDetails($id){
-        $reconciliation=tableWithBranch('reconciliation','reconciliation')
+    public function ReconciliationDetails($id)
+    {
+        $reconciliation = tableWithBranch('reconciliation', 'reconciliation')
             ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'reconciliation.account_id')
             ->join('user', 'user.id', '=', 'reconciliation.user_id')
-            ->where('id_reconciliation','=',$id)->first();
+            ->where('id_reconciliation', '=', $id)->first();
 
 
 
-        $Checks_and_Payments_count=tableWithBranch('reconciliation_logs')
-            ->where('id_reconciliation','=',$id)
-            ->where('check_status','=','1')
-            ->where('credit','>',0)
+        $Checks_and_Payments_count = tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation', '=', $id)
+            ->where('check_status', '=', '1')
+            ->where('credit', '>', 0)
             ->count();
-        $Checks_and_Payments_sum=tableWithBranch('reconciliation_logs')
-            ->where('id_reconciliation','=',$id)
-            ->where('check_status','=','1')
+        $Checks_and_Payments_sum = tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation', '=', $id)
+            ->where('check_status', '=', '1')
             ->sum('credit');
 
-        $Deposits_and_Credits_count=tableWithBranch('reconciliation_logs')
-            ->where('id_reconciliation','=',$id)
-            ->where('check_status','=','1')
-            ->where('debit','>',0)
+        $Deposits_and_Credits_count = tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation', '=', $id)
+            ->where('check_status', '=', '1')
+            ->where('debit', '>', 0)
             ->count();
-        $Deposits_and_Credits_sum=tableWithBranch('reconciliation_logs')
-            ->where('id_reconciliation','=',$id)
-            ->where('check_status','=','1')
+        $Deposits_and_Credits_sum = tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation', '=', $id)
+            ->where('check_status', '=', '1')
             ->sum('debit');
 
-        $Checks_and_Payments=tableWithBranch('reconciliation_logs')
-            ->where('id_reconciliation','=',$id)
-            ->where('check_status','=','1')
+        $Checks_and_Payments = tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation', '=', $id)
+            ->where('check_status', '=', '1')
             ->get();
 
 
 
-        $Checks_and_Payments_count_uncleared=tableWithBranch('reconciliation_logs')
-            ->where('id_reconciliation','=',$id)
-            ->where('check_status','=','0')
-            ->where('credit','>',0)
+        $Checks_and_Payments_count_uncleared = tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation', '=', $id)
+            ->where('check_status', '=', '0')
+            ->where('credit', '>', 0)
             ->count();
-        $Checks_and_Payments_sum_uncleared=tableWithBranch('reconciliation_logs')
-            ->where('id_reconciliation','=',$id)
-            ->where('check_status','=','0')
+        $Checks_and_Payments_sum_uncleared = tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation', '=', $id)
+            ->where('check_status', '=', '0')
             ->sum('credit');
 
-        $Deposits_and_Credits_count_uncleared=tableWithBranch('reconciliation_logs')
-            ->where('id_reconciliation','=',$id)
-            ->where('check_status','=','0')
-            ->where('debit','>',0)
+        $Deposits_and_Credits_count_uncleared = tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation', '=', $id)
+            ->where('check_status', '=', '0')
+            ->where('debit', '>', 0)
             ->count();
-        $Deposits_and_Credits_sum_uncleared=tableWithBranch('reconciliation_logs')
-            ->where('id_reconciliation','=',$id)
-            ->where('check_status','=','0')
+        $Deposits_and_Credits_sum_uncleared = tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation', '=', $id)
+            ->where('check_status', '=', '0')
             ->sum('debit');
 
-        $Checks_and_Payments_uncleared=tableWithBranch('reconciliation_logs')
-            ->where('id_reconciliation','=',$id)
-            ->where('check_status','=','0')
+        $Checks_and_Payments_uncleared = tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation', '=', $id)
+            ->where('check_status', '=', '0')
             ->get();
 
 
-        $Checks_and_Payments_count_new=tableWithBranch('reconciliation_has_data')
-            ->where('id_reconciliation','=',$id)
-            ->where('credit','>',0)
+        $Checks_and_Payments_count_new = tableWithBranch('reconciliation_has_data')
+            ->where('id_reconciliation', '=', $id)
+            ->where('credit', '>', 0)
             ->count();
-        $Checks_and_Payments_sum_new=tableWithBranch('reconciliation_has_data')
-            ->where('id_reconciliation','=',$id)
+        $Checks_and_Payments_sum_new = tableWithBranch('reconciliation_has_data')
+            ->where('id_reconciliation', '=', $id)
             ->sum('credit');
 
-        $Deposits_and_Credits_count_new=tableWithBranch('reconciliation_has_data')
-            ->where('id_reconciliation','=',$id)
-            ->where('debit','>',0)
+        $Deposits_and_Credits_count_new = tableWithBranch('reconciliation_has_data')
+            ->where('id_reconciliation', '=', $id)
+            ->where('debit', '>', 0)
             ->count();
-        $Deposits_and_Credits_sum_new=tableWithBranch('reconciliation_has_data')
-            ->where('id_reconciliation','=',$id)
+        $Deposits_and_Credits_sum_new = tableWithBranch('reconciliation_has_data')
+            ->where('id_reconciliation', '=', $id)
             ->sum('debit');
 
-        $Checks_and_Payments_new=tableWithBranch('reconciliation_has_data')
-            ->where('id_reconciliation','=',$id)
+        $Checks_and_Payments_new = tableWithBranch('reconciliation_has_data')
+            ->where('id_reconciliation', '=', $id)
             ->get();
 
 
-        return view('pages.Accounting.ReconciliationsDetails',compact('Checks_and_Payments_new','Checks_and_Payments_uncleared','Checks_and_Payments','Deposits_and_Credits_sum_new','Deposits_and_Credits_count_new','Checks_and_Payments_sum_new','Checks_and_Payments_count_new','Deposits_and_Credits_sum_uncleared','Deposits_and_Credits_count_uncleared','Checks_and_Payments_sum_uncleared','Checks_and_Payments_count_uncleared','Deposits_and_Credits_sum','Deposits_and_Credits_count','reconciliation','Checks_and_Payments_count','Checks_and_Payments_sum'));
+        return view('pages.Accounting.ReconciliationsDetails', compact('Checks_and_Payments_new', 'Checks_and_Payments_uncleared', 'Checks_and_Payments', 'Deposits_and_Credits_sum_new', 'Deposits_and_Credits_count_new', 'Checks_and_Payments_sum_new', 'Checks_and_Payments_count_new', 'Deposits_and_Credits_sum_uncleared', 'Deposits_and_Credits_count_uncleared', 'Checks_and_Payments_sum_uncleared', 'Checks_and_Payments_count_uncleared', 'Deposits_and_Credits_sum', 'Deposits_and_Credits_count', 'reconciliation', 'Checks_and_Payments_count', 'Checks_and_Payments_sum'));
     }
 
-    public function ReconciliationSummary($id){
-        $reconciliation=tableWithBranch('reconciliation','reconciliation')
+    public function ReconciliationSummary($id)
+    {
+        $reconciliation = tableWithBranch('reconciliation', 'reconciliation')
             ->join('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'reconciliation.account_id')
             ->join('user', 'user.id', '=', 'reconciliation.user_id')
-            ->where('id_reconciliation','=',$id)->first();
+            ->where('id_reconciliation', '=', $id)->first();
 
-        $Checks_and_Payments_count=tableWithBranch('reconciliation_logs')
-            ->where('id_reconciliation','=',$id)
-            ->where('check_status','=','1')
-            ->where('credit','>',0)
+        $Checks_and_Payments_count = tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation', '=', $id)
+            ->where('check_status', '=', '1')
+            ->where('credit', '>', 0)
             ->count();
-        $Checks_and_Payments_sum=tableWithBranch('reconciliation_logs')
-            ->where('id_reconciliation','=',$id)
-            ->where('check_status','=','1')
+        $Checks_and_Payments_sum = tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation', '=', $id)
+            ->where('check_status', '=', '1')
             ->sum('credit');
 
-        $Deposits_and_Credits_count=tableWithBranch('reconciliation_logs')
-            ->where('id_reconciliation','=',$id)
-            ->where('check_status','=','1')
-            ->where('debit','>',0)
+        $Deposits_and_Credits_count = tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation', '=', $id)
+            ->where('check_status', '=', '1')
+            ->where('debit', '>', 0)
             ->count();
-        $Deposits_and_Credits_sum=tableWithBranch('reconciliation_logs')
-            ->where('id_reconciliation','=',$id)
-            ->where('check_status','=','1')
+        $Deposits_and_Credits_sum = tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation', '=', $id)
+            ->where('check_status', '=', '1')
             ->sum('debit');
 
 
 
 
-        $Checks_and_Payments_count_uncleared=tableWithBranch('reconciliation_logs')
-            ->where('id_reconciliation','=',$id)
-            ->where('check_status','=','0')
-            ->where('credit','>',0)
+        $Checks_and_Payments_count_uncleared = tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation', '=', $id)
+            ->where('check_status', '=', '0')
+            ->where('credit', '>', 0)
             ->count();
-        $Checks_and_Payments_sum_uncleared=tableWithBranch('reconciliation_logs')
-            ->where('id_reconciliation','=',$id)
-            ->where('check_status','=','0')
+        $Checks_and_Payments_sum_uncleared = tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation', '=', $id)
+            ->where('check_status', '=', '0')
             ->sum('credit');
 
-        $Deposits_and_Credits_count_uncleared=tableWithBranch('reconciliation_logs')
-            ->where('id_reconciliation','=',$id)
-            ->where('check_status','=','0')
-            ->where('debit','>',0)
+        $Deposits_and_Credits_count_uncleared = tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation', '=', $id)
+            ->where('check_status', '=', '0')
+            ->where('debit', '>', 0)
             ->count();
-        $Deposits_and_Credits_sum_uncleared=tableWithBranch('reconciliation_logs')
-            ->where('id_reconciliation','=',$id)
-            ->where('check_status','=','0')
+        $Deposits_and_Credits_sum_uncleared = tableWithBranch('reconciliation_logs')
+            ->where('id_reconciliation', '=', $id)
+            ->where('check_status', '=', '0')
             ->sum('debit');
 
 
 
-        $Checks_and_Payments_count_new=tableWithBranch('reconciliation_has_data')
-            ->where('id_reconciliation','=',$id)
-            ->where('credit','>',0)
+        $Checks_and_Payments_count_new = tableWithBranch('reconciliation_has_data')
+            ->where('id_reconciliation', '=', $id)
+            ->where('credit', '>', 0)
             ->count();
-        $Checks_and_Payments_sum_new=tableWithBranch('reconciliation_has_data')
-            ->where('id_reconciliation','=',$id)
+        $Checks_and_Payments_sum_new = tableWithBranch('reconciliation_has_data')
+            ->where('id_reconciliation', '=', $id)
             ->sum('credit');
 
-        $Deposits_and_Credits_count_new=tableWithBranch('reconciliation_has_data')
-            ->where('id_reconciliation','=',$id)
-            ->where('debit','>',0)
+        $Deposits_and_Credits_count_new = tableWithBranch('reconciliation_has_data')
+            ->where('id_reconciliation', '=', $id)
+            ->where('debit', '>', 0)
             ->count();
-        $Deposits_and_Credits_sum_new=tableWithBranch('reconciliation_has_data')
-            ->where('id_reconciliation','=',$id)
+        $Deposits_and_Credits_sum_new = tableWithBranch('reconciliation_has_data')
+            ->where('id_reconciliation', '=', $id)
             ->sum('debit');
 
 
 
-        return view('pages.Accounting.ReconciliationsSummary',compact('Deposits_and_Credits_sum_new','Deposits_and_Credits_count_new','Checks_and_Payments_sum_new','Checks_and_Payments_count_new','Deposits_and_Credits_sum_uncleared','Deposits_and_Credits_count_uncleared','Checks_and_Payments_sum_uncleared','Checks_and_Payments_count_uncleared','Deposits_and_Credits_sum','Deposits_and_Credits_count','reconciliation','Checks_and_Payments_count','Checks_and_Payments_sum'));
+        return view('pages.Accounting.ReconciliationsSummary', compact('Deposits_and_Credits_sum_new', 'Deposits_and_Credits_count_new', 'Checks_and_Payments_sum_new', 'Checks_and_Payments_count_new', 'Deposits_and_Credits_sum_uncleared', 'Deposits_and_Credits_count_uncleared', 'Checks_and_Payments_sum_uncleared', 'Checks_and_Payments_count_uncleared', 'Deposits_and_Credits_sum', 'Deposits_and_Credits_count', 'reconciliation', 'Checks_and_Payments_count', 'Checks_and_Payments_sum'));
     }
-
 }

@@ -1,0 +1,82 @@
+/* Import existing styles */
+@import "app.min.css";
+@import "icons.min.css";
+
+/* Import Glassmorphism */
+@import "glass.css";
+@import "header.css";
+
+/* Other Third-party styles */
+@import "flatpickr/dist/flatpickr.css";
+@import "choices.js/public/assets/styles/choices.min.css";
+@import "select2/dist/css/select2.min.css";
+
+/* Responsive Overrides */
+@import "responsive.scss";
+
+/* Global DataTable Styles */
+@import "datatable.scss";
+
+/* Common Colors */
+:root {
+  --btn-primary-common: #144bb8;
+  --btn-edit-common: #14b82e;
+  --btn-delete-common: #b86314;
+  --btn-other-common-1: #8114b8;
+  --btn-other-common-2: #b8a814;
+}
+
+.btn-primary-common {
+  background-color: var(--btn-primary-common);
+  border-color: var(--btn-primary-common);
+  color: #fff;
+  &:hover {
+    background-color: darken(#144bb8, 10%);
+    border-color: darken(#144bb8, 10%);
+    color: #fff;
+  }
+}
+
+.btn-edit-common {
+  background-color: var(--btn-edit-common);
+  border-color: var(--btn-edit-common);
+  color: #fff;
+  &:hover {
+    background-color: darken(#14b82e, 10%);
+    border-color: darken(#14b82e, 10%);
+    color: #fff;
+  }
+}
+
+.btn-delete-common {
+  background-color: var(--btn-delete-common);
+  border-color: var(--btn-delete-common);
+  color: #fff;
+  &:hover {
+    background-color: darken(#b86314, 10%);
+    border-color: darken(#b86314, 10%);
+    color: #fff;
+  }
+}
+
+.btn-other-1-common {
+  background-color: var(--btn-other-common-1);
+  border-color: var(--btn-other-common-1);
+  color: #fff;
+  &:hover {
+    background-color: darken(#8114b8, 10%);
+    border-color: darken(#8114b8, 10%);
+    color: #fff;
+  }
+}
+
+.btn-other-2-common {
+  background-color: var(--btn-other-common-2);
+  border-color: var(--btn-other-common-2);
+  color: #fff;
+  &:hover {
+    background-color: darken(#b8a814, 10%);
+    border-color: darken(#b8a814, 10%);
+    color: #fff;
+  }
+}

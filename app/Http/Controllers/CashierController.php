@@ -41,7 +41,7 @@ class CashierController extends Controller
     {
         try {
             DB::beginTransaction();
-            $user_id = session('userid');
+            $user_id = user_data('idUser');
             $branch_id = session('branch_id');
 
             $lastDayEnd = DB::table('day_end_summary')
@@ -83,30 +83,30 @@ class CashierController extends Controller
                     ]);
 
 
-                $user=tableWithBranch('user')->where('id','=',$user_id)->first();
-                if ($user){
-                    $cashier=$user->cashier;
-                    if ($cashier=="1"){
-                        $balance_amount=$total-$newTotal;
-                        $bank=tableWithBranch('company_bank_accounts')->where('Account_No','=',session('userid'))->first();
-                        if ($bank){
-                            $cash=tableWithBranch('company_bank_accounts')->where('Account_No','=',"Cash")->first();
+                $user = tableWithBranch('user')->where('id', '=', $user_id)->first();
+                if ($user) {
+                    $cashier = $user->cashier;
+                    if ($cashier == "1") {
+                        $balance_amount = $total - $newTotal;
+                        $bank = tableWithBranch('company_bank_accounts')->where('Account_No', '=', session('userid'))->first();
+                        if ($bank) {
+                            $cash = tableWithBranch('company_bank_accounts')->where('Account_No', '=', "Cash")->first();
                             if ($balance_amount < 0) {
-                                $this->bankLogController->index($bank->Idbank,"Deposit","Update Morning Plot","Update Morning Plot","credit",$newTotal,$cash->Idbank);
-                                $this->bankLogController->index($cash->Idbank,"Withdraw","Update Morning Plot","Update Morning Plot","debit",$newTotal,$cash->Idbank);
+                                $this->bankLogController->index($bank->Idbank, "Deposit", "Update Morning Plot", "Update Morning Plot", "credit", $newTotal, $cash->Idbank);
+                                $this->bankLogController->index($cash->Idbank, "Withdraw", "Update Morning Plot", "Update Morning Plot", "debit", $newTotal, $cash->Idbank);
                             } else {
-                                $this->bankLogController->index($bank->Idbank,"Deposit","Update Morning Plot","Update Morning Plot","debit",$newTotal,$cash->Idbank);
-                                $this->bankLogController->index($cash->Idbank,"Withdraw","Update Morning Plot","Update Morning Plot","credit",$newTotal,$cash->Idbank);
+                                $this->bankLogController->index($bank->Idbank, "Deposit", "Update Morning Plot", "Update Morning Plot", "debit", $newTotal, $cash->Idbank);
+                                $this->bankLogController->index($cash->Idbank, "Withdraw", "Update Morning Plot", "Update Morning Plot", "credit", $newTotal, $cash->Idbank);
                             }
-                        }else{
+                        } else {
                             DB::rollBack();
                             return response()->json(['status' => 'error', 'message' => "Bank log not updated"], 500);
                         }
-                    }else{
+                    } else {
                         DB::rollBack();
                         return response()->json(['status' => 'error', 'message' => "This account has no access to cashier"], 500);
                     }
-                }else{
+                } else {
                     DB::rollBack();
                     return response()->json(['status' => 'error', 'message' => "This account has no access to cashier"], 500);
                 }
@@ -130,28 +130,27 @@ class CashierController extends Controller
                     'last_updated_user' => $user_id,
                     'branch_id' => $branch_id
                 ]);
-                $user=tableWithBranch('user')->where('id','=',$user_id)->first();
-                if ($user){
-                    $cashier=$user->cashier;
-                    if ($cashier=="1"){
-                        $bank=tableWithBranch('company_bank_accounts')->where('Account_No','=',session('userid'))->first();
-                        if ($bank){
-                            $cash=tableWithBranch('company_bank_accounts')->where('Account_No','=',"Cash")->first();
-                            $this->bankLogController->index($bank->Idbank,"Deposit","Morning Plot","Morning Plot","debit",$newTotal,$cash->Idbank);
-                            $this->bankLogController->index($cash->Idbank,"Withdraw","Morning Plot","Morning Plot","credit",$newTotal,$bank->Idbank);
-                        }else{
+                $user = tableWithBranch('user')->where('id', '=', $user_id)->first();
+                if ($user) {
+                    $cashier = $user->cashier;
+                    if ($cashier == "1") {
+                        $bank = tableWithBranch('company_bank_accounts')->where('Account_No', '=', session('userid'))->first();
+                        if ($bank) {
+                            $cash = tableWithBranch('company_bank_accounts')->where('Account_No', '=', "Cash")->first();
+                            $this->bankLogController->index($bank->Idbank, "Deposit", "Morning Plot", "Morning Plot", "debit", $newTotal, $cash->Idbank);
+                            $this->bankLogController->index($cash->Idbank, "Withdraw", "Morning Plot", "Morning Plot", "credit", $newTotal, $bank->Idbank);
+                        } else {
                             DB::rollBack();
                             return response()->json(['status' => 'error', 'message' => "Bank log not updated"], 500);
                         }
-                    }else{
+                    } else {
                         DB::rollBack();
                         return response()->json(['status' => 'error', 'message' => "This account has no access to cashier"], 500);
                     }
-                }else{
+                } else {
                     DB::rollBack();
                     return response()->json(['status' => 'error', 'message' => "This account has no access to cashier"], 500);
                 }
-
             }
 
 
@@ -221,9 +220,9 @@ class CashierController extends Controller
                 ->where('plot_id', $plot->id_plot)
                 ->get();
 
-            return response()->json(['status' => 'success', 'entries' => $entries,'isFinalized' => true]);
+            return response()->json(['status' => 'success', 'entries' => $entries, 'isFinalized' => true]);
         } else {
-            return response()->json(['status' => 'success', 'entries' => [],'isFinalized' => false]);
+            return response()->json(['status' => 'success', 'entries' => [], 'isFinalized' => false]);
         }
     }
 
@@ -231,7 +230,7 @@ class CashierController extends Controller
     {
         $today = \Carbon\Carbon::today();
         $branchId = session('branch_id');
-        $userId = session('userid');
+        $userId = user_data('idUser');
 
         $plot = tableWithBranch('plot')->whereDate('Date_Time', $today)->first();
         $startingCash = $plot ? floatval($plot->total_amount) : 0;
@@ -273,7 +272,6 @@ class CashierController extends Controller
             'totalIncome' => $totalCashIn,
             'totalExpenses' => $totalCashOut,
         ]);
-
     }
 
 
@@ -296,9 +294,9 @@ class CashierController extends Controller
             ]);
             $selectedBankId = $request->input('selected_bank_id');
 
-            $bank=DB::table('company_bank_accounts')->where('Account_No','=',session('userid'))->first();
-            $this->bankLogController->index($bank->Idbank,"Withdraw","Day End",'Day End',"debit",$request->cash_drawer_total,$selectedBankId);
-            $this->bankLogController->index($selectedBankId,"Deposit","Day End",'Day End',"credit",$request->cash_drawer_total,$bank->Idbank);
+            $bank = DB::table('company_bank_accounts')->where('Account_No', '=', session('userid'))->first();
+            $this->bankLogController->index($bank->Idbank, "Withdraw", "Day End", 'Day End', "debit", $request->cash_drawer_total, $selectedBankId);
+            $this->bankLogController->index($selectedBankId, "Deposit", "Day End", 'Day End', "credit", $request->cash_drawer_total, $bank->Idbank);
 
             // Save cash drawer entries
             $cashDrawerEntries = $request->cash_drawer_entries;
@@ -327,7 +325,7 @@ class CashierController extends Controller
     {
         $today = \Carbon\Carbon::today();
         $branchId = session('branch_id');
-        $userId = session('userid');
+        $userId = user_data('idUser');
 
         // Check for existing saved day end
         $dayEnd = DB::table('day_end_summary')
@@ -396,7 +394,4 @@ class CashierController extends Controller
 
         return response()->json($banks);
     }
-
-
-
 }

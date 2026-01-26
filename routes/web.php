@@ -1,15 +1,14 @@
 <?php
 
-use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\AccountCenterAutoLoginController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AssetManagementController;
 use App\Http\Controllers\BankController;
-use App\Http\Controllers\CapitalBalanceController;
 use App\Http\Controllers\CashFlowController;
 use App\Http\Controllers\CashierController;
 use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\KYCController;
 use App\Http\Controllers\LiveLankaPayController;
+use App\Http\Controllers\GroupController;
 use App\Http\Controllers\LoanCategoryController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\PDFController;
@@ -26,28 +25,32 @@ use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\CustomerLeadController;
 use App\Http\Controllers\VoucherDashboardController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+
+
+Route::get('/auto-login', [AccountCenterAutoLoginController::class, 'autoLogin'])->name('auto-login');
+
+
 
 Route::get('/storage_link', function () {
     Artisan::call('storage:link');
 });
 
-
-
 // API for branch hierarchy dropdown
 Route::get('/api/branch-hierarchy/{branchId}', '\App\Http\Controllers\CenterController@getBranchHierarchy');
 
-
-
-//user
 Route::get('/login', function () {
-    return view('login');
+    return redirect('https://accountcenter.asipiya.com/');
 })->name('login');
+
+Route::post('/login/store', '\App\Http\Controllers\UserController@store')->name('user.store');
 Route::get('/user', '\App\Http\Controllers\UserController@index')->name('pages.user');
 Route::get('/user/update/{id}', '\App\Http\Controllers\UserController@edit')->name('pages.edit');
-Route::post('/login/store', '\App\Http\Controllers\UserController@store')->name('user.store');
 Route::post('/signup', '\App\Http\Controllers\UserController@create')->name('user.signup');
 Route::get('/logout', '\App\Http\Controllers\UserController@logout')->name('user.logout');
 
@@ -64,11 +67,45 @@ Route::post('/recover_password', '\App\Http\Controllers\UserController@recover_p
 
 
 
-Route::middleware(['central.auth'])->group(function () {
-    Route::get('/', '\App\Http\Controllers\UserController@showdashboard')->name('home');
-    Route::get('/privileges', function () {
-        return view('pages.Privilages');
+Route::middleware(['auth.central'])->group(function () {
+    Route::get('/', [DashboardController::class, 'index'])->name('home');
+
+    Route::group(['prefix' => 'settings'], function () {
+        Route::get('/', [SettingsController::class, 'index'])->name('settings.index');
+        Route::resource('activity-logs', \App\Http\Controllers\ActivityLogController::class)->only(['index', 'show']);
     });
+
+
+    // Product Controller Routes
+    Route::get('/product', [ProductController::class, 'create'])->name('product.create');
+    Route::get('/viewproduct', [ProductController::class, 'index'])->name('product.index');
+    Route::post('/product', [ProductController::class, 'store'])->name('product.store');
+    Route::get('/product/edit/{id}', [ProductController::class, 'edit'])->name('product.edit');
+    Route::post('/product/update/{id}', [ProductController::class, 'update'])->name('product.update');
+    Route::get('/product/delete/{id}', [ProductController::class, 'destroy'])->name('product.destroy');
+    Route::get('/product/get-details/{id}', [ProductController::class, 'getProductDetails'])->name('product.getDetails'); // AJAX Route
+    Route::post('/product/status-update', [ProductController::class, 'updateStatus'])->name('product.status_update');
+
+    // Aliases for compatibility if needed (optional)
+    Route::get('/loancategory/{id}', [ProductController::class, 'edit'])->name('loancategory.edit');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     Route::post('/privileges', [UserController::class, 'privileges'])->name('privileges.save');
     Route::get('/privileges/load/{id}', [UserController::class, 'showprivileges'])->name('privileges.load');
 
@@ -89,58 +126,35 @@ Route::middleware(['central.auth'])->group(function () {
     Route::post('/update-designation', '\App\Http\Controllers\UserController@updatedesignation')->name('privileges.updatedesignation');
     Route::post('/designation/delete', '\App\Http\Controllers\UserController@deleteDesignation')->name('designation.delete');
 
+    //company
+    Route::get('/company', '\App\Http\Controllers\CompanyController@index')->name('company.index')->middleware('privilege:MY_ACCOUNT');
+    Route::post('/company-profile', '\App\Http\Controllers\CompanyController@store')->name('company.store');
+    Route::get('/company/branches-proxy', '\App\Http\Controllers\CompanyController@getBranchesProxy')->name('company.branches_proxy');
+
+
+
+
+
+
+
 
     //Group
+    Route::controller(GroupController::class)->group(function () {
+        Route::get('/customergroupassign', 'assign_group')->name('customergroupassign');
+        Route::get('/customergroup', 'load_group')->name('customergroup.load_group');
+        Route::get('/viewgroups', 'index')->name('customergroup');
+        Route::post('/customergroup', 'store')->name('customergroup.store');
+        Route::post('/group/update', 'update')->name('center.update');
+        Route::get('/group/delete/{id}', 'destroy')->name('center.destroy');
+        Route::post('/assigngrouomember', 'assigngrouomember')->name('getcustomergroup.assigngrouomember');
+        Route::get('/load_group/{id}', 'load_group_details')->name('load_group_details');
+        Route::post('/get_customer_details', 'getCustomerDetails')->name('getCustomerDetails');
+        Route::post('/remove_customer_from_group', 'removeCustomerFromGroup')->name('removeCustomerFromGroup');
+    });
 
-    Route::get('/customergroupassign', '\App\Http\Controllers\GroupController@assign_group')->name('customergroupassign');
-    Route::get('/customergroup', '\App\Http\Controllers\GroupController@load_group')->name('customergroup.load_group');
-    Route::get('/viewgroups', '\App\Http\Controllers\GroupController@index')->name('customergroup');
-    Route::post('/customergroup', '\App\Http\Controllers\GroupController@store')->name('customergroup.store');
-    Route::post('/group/update', '\App\Http\Controllers\GroupController@update')->name('center.update');
-    Route::get('/group/delete/{id}', '\App\Http\Controllers\GroupController@destroy')->name('center.destroy');
-    Route::post('/assigngrouomember', '\App\Http\Controllers\GroupController@assigngrouomember')->name('getcustomergroup.assigngrouomember');
-    Route::get('/load_group/{id}', '\App\Http\Controllers\GroupController@load_group_details')->name('load_group_details');
-    Route::post('/get_customer_details', '\App\Http\Controllers\GroupController@getCustomerDetails')->name('getCustomerDetails');
-    Route::post('/remove_customer_from_group', '\App\Http\Controllers\GroupController@removeCustomerFromGroup')->name('removeCustomerFromGroup');
-
-    //customer
-    Route::get('/customers', '\App\Http\Controllers\CustomerController@load')->name('customers.load');
-    Route::post('/customers/status', '\App\Http\Controllers\CustomerController@change_status')->name('customers.change_status');
-    Route::get('/viewcustomer', '\App\Http\Controllers\CustomerController@edit')->name('customers.edit');
-    Route::post('/customers', '\App\Http\Controllers\CustomerController@store')->name('customers.store');
-    Route::post('/update-customer', '\App\Http\Controllers\CustomerController@updateCustomer')->name('customers.updateCustomer');
-    Route::post('/update-customer-location', '\App\Http\Controllers\CustomerController@updateCustomerLocation')->name('customers.updateCustomerLocation');
-    Route::get('/customers/{id}', '\App\Http\Controllers\CustomerController@index')->name('customers.index');
-    Route::post('/savecustomerdocument', '\App\Http\Controllers\CustomerController@create')->name('customers.create');
-    Route::get('/customerdoc/{id}', '\App\Http\Controllers\CustomerController@show')->name('customers.show');
-    Route::get('/cusdocument/delete/{id}', '\App\Http\Controllers\CustomerController@destroy')->name('customers.destroy');
-    Route::get('/showcustomers', '\App\Http\Controllers\CustomerController@edit')->name('customersdetails.edit');
-    Route::post('/save-files-customer', 'App\Http\Controllers\CustomerController@saveFiles')->name('customers.files');
-    Route::get('/load_customers/{id}', '\App\Http\Controllers\CustomerController@load_customers')->name('customers.load_customers');
-    Route::get('/load_individual_customer', '\App\Http\Controllers\CustomerController@load_individual_customer')->name('customers.load_individual_customer');
-    Route::get('/customer_road_map/{id}', '\App\Http\Controllers\CustomerController@customer_road_map')->name('customers.customer_road_map');
-    Route::get('/showcustomerssaving', '\App\Http\Controllers\CustomerController@edit_saving')->name('customers.edit_saving');
-
-    Route::get('/showcustomersrecovery', '\App\Http\Controllers\CustomerController@recovery')->name('customers.recovery');
-    Route::get('/recovery-account/logs/{id}', '\App\Http\Controllers\CustomerController@logs')->name('customers.logs');
-
-    Route::get('/customer_saving/{id}', '\App\Http\Controllers\CustomerController@customer_saving')->name('customers.customer_saving');
-    Route::get('/get-account-transactions/{id}', '\App\Http\Controllers\CustomerController@get_account_transactions')->name('customers.get_account_transactions');
-
-
-
-
-    Route::post('/customer/upload-photo', '\App\Http\Controllers\CustomerController@uploadPhoto')->name('customer.uploadPhoto');
-    Route::get('/customer/export-excel', [CustomerController::class, 'exportExcel'])
-        ->name('customers.exportExcel');
-
-
-    // Customer Locations Map
-    Route::get('/customer/map', [\App\Http\Controllers\CustomerController::class, 'mapView'])
-        ->name('customers.map');
-
-    Route::get('/customer/map-data', [\App\Http\Controllers\CustomerController::class, 'mapData'])
-        ->name('customers.mapData');
+    //Customer routes
+    Route::post('/customers/preview-number', [CustomerController::class, 'previewCustomerNumber'])->name('customers.preview_number');
+    Route::resource('customers', CustomerController::class);
 
     Route::get('/leads/routes/{id}/officers', [\App\Http\Controllers\OnlineLeadController::class, 'getRecoveryOfficersByRoute'])->name('leads.getRouteOfficers');
     Route::get('/leads/global-map', [CustomerLeadController::class, 'globalMap'])->name('leads.globalMap');
@@ -178,21 +192,22 @@ Route::middleware(['central.auth'])->group(function () {
 
 
     //loan product
-    Route::get('/product', '\App\Http\Controllers\LoanCategoryController@create')->name('loancategory.create');
-    Route::get('/viewproduct', '\App\Http\Controllers\LoanCategoryController@index')->name('loancategory.index');
-    Route::post('/loancategory', '\App\Http\Controllers\LoanCategoryController@store')->name('loancategory.store');
-    Route::get('/savecustomerdocument/remove/{id}', '\App\Http\Controllers\LoanCategoryController@destroy')->name('loancategory.destroy');
-    Route::get('/loancatedoc/{id}', '\App\Http\Controllers\LoanCategoryController@show')->name('loancategory.show');
-    Route::get('/othercharge/remove/{id}', '\App\Http\Controllers\LoanCategoryController@remove_other_charges')->name('loancategory.remove_other_charges');
-    Route::get('/remove_doc/remove/{id}', '\App\Http\Controllers\LoanCategoryController@remove_doc')->name('loancategory.remove_doc');
-    Route::get('/loancategory/{id}', '\App\Http\Controllers\LoanCategoryController@edit')->name('loancategory.edit');
-    Route::get('/open-file/{filename}', '\App\Http\Controllers\LoanCategoryController@openFile')->name('open.file');
-    Route::get('/load_product_details/{id}', '\App\Http\Controllers\LoanCategoryController@load_product_details')->name('open.load_product_details');
+    // Route::get('/product', '\App\Http\Controllers\LoanCategoryController@create')->name('loancategory.create');
+    // Route::get('/viewproduct', '\App\Http\Controllers\LoanCategoryController@index')->name('loancategory.index');
+    // Route::post('/loancategory', '\App\Http\Controllers\LoanCategoryController@store')->name('loancategory.store');
+    // Route::get('/savecustomerdocument/remove/{id}', '\App\Http\Controllers\LoanCategoryController@destroy')->name('loancategory.destroy');
+    // Route::get('/loancatedoc/{id}', '\App\Http\Controllers\LoanCategoryController@show')->name('loancategory.show');
+    // Route::get('/othercharge/remove/{id}', '\App\Http\Controllers\LoanCategoryController@remove_other_charges')->name('loancategory.remove_other_charges');
+    // Route::get('/remove_doc/remove/{id}', '\App\Http\Controllers\LoanCategoryController@remove_doc')->name('loancategory.remove_doc');
+    // Route::get('/loancategory/{id}', '\App\Http\Controllers\LoanCategoryController@edit')->name('loancategory.edit');
+    // Route::get('/open-file/{filename}', '\App\Http\Controllers\LoanCategoryController@openFile')->name('open.file');
+    // Route::get('/load_product_details/{id}', '\App\Http\Controllers\LoanCategoryController@load_product_details')->name('open.load_product_details');
 
-    Route::get('/loan-products/{id}/edit', '\App\Http\Controllers\LoanCategoryController@editProduct')->name('loan-products.edit');
-    Route::put('/loan-products/{id}', '\App\Http\Controllers\LoanCategoryController@update')->name('loan-products.update');
+    // Route::get('/loan-products/{id}/edit', '\App\Http\Controllers\LoanCategoryController@editProduct')->name('loan-products.edit');
+    // Route::put('/loan-products/{id}', '\App\Http\Controllers\LoanCategoryController@update')->name('loan-products.update');
 
-    Route::get('/update_product_with_branch/{id}', '\App\Http\Controllers\LoanCategoryController@update_product_for_branch')->name('loancategory.update_product_for_branch');
+    // Route::get('/update_product_with_branch/{id}', '\App\Http\Controllers\LoanCategoryController@update_product_for_branch')->name('loancategory.update_product_for_branch');
+
 
 
     //loan
@@ -229,6 +244,9 @@ Route::middleware(['central.auth'])->group(function () {
 
     //Penalty Balance
     Route::get('/penalty-balance-data', '\App\Http\Controllers\UserController@penaltyBalanceData')->name('penalty-balance.data');
+
+    //Current Week Pending
+    Route::get('/current-week-pending-data', '\App\Http\Controllers\UserController@currentWeekPendingData')->name('current-week-pending.data');
 
 
     //payment
@@ -306,7 +324,7 @@ Route::middleware(['central.auth'])->group(function () {
     Route::post('/guardian', '\App\Http\Controllers\GuardianController@store')->name('customers.store');
     Route::post('/update-guardian', '\App\Http\Controllers\GuardianController@updateCustomer')->name('customers.updateCustomer');
     Route::get('/guardian/{id}', '\App\Http\Controllers\GuardianController@index')->name('customers.index');
-    Route::post('/saveguardiandocument', '\App\Http\Controllers\GuardianController@create')->name('customers.create');
+    Route::post('/saveguardiandocument', '\App\Http\Controllers\GuardianController@create');
     Route::get('/guardiandoc/{id}', '\App\Http\Controllers\GuardianController@show')->name('customers.show');
     Route::get('/guardiandocument/delete/{id}', '\App\Http\Controllers\GuardianController@destroy')->name('customers.destroy');
     Route::get('/showguardian', '\App\Http\Controllers\GuardianController@edit')->name('customers.edit');
@@ -414,7 +432,7 @@ Route::middleware(['central.auth'])->group(function () {
 
     //SMS
     //Route::post('/send-sms','\App\Http\Controllers\SmsController@index')->name('sms.index');
-    Route::get('/sms', '\App\Http\Controllers\SmsController@create')->name('sms.create');
+    Route::get('/sms', '\App\Http\Controllers\SmsController@create')->name('sms.create')->middleware('privilege:SMS_FORMAT');
     Route::post('/save_sms', '\App\Http\Controllers\SmsController@store')->name('sms.store');
     Route::post('/load_sms', '\App\Http\Controllers\SmsController@show')->name('sms.show');
     Route::post('/updatesmsstatus', '\App\Http\Controllers\SmsController@edit')->name('sms.edit');
@@ -427,15 +445,20 @@ Route::middleware(['central.auth'])->group(function () {
 
 
 
-    //company
-    Route::get('/company', '\App\Http\Controllers\CompanyController@index')->name('company.index');
-    Route::post('/company-profile', '\App\Http\Controllers\CompanyController@store')->name('company.store');
-
 
     //settings
-    Route::get('/setting', '\App\Http\Controllers\CompanyController@setting')->name('company.setting');
-    Route::post('/shortcuts', '\App\Http\Controllers\CompanyController@shortcuts')->name('company.shortcuts');
-    Route::get('/shortcuts/all', '\App\Http\Controllers\CompanyController@show')->name('company.show');
+    Route::get('/setting', [SettingsController::class, 'index'])->name('company.setting')->middleware('privilege:SETTINGS');
+    Route::post('/shortcuts', [SettingsController::class, 'shortcuts'])->name('company.shortcuts')->middleware('privilege:SETTINGS');
+    Route::get('/shortcuts/all', [SettingsController::class, 'show'])->name('company.show')->middleware('privilege:SETTINGS');
+    Route::post('/settings/number-formats', [SettingsController::class, 'updateNumberFormats'])->name('settings.number_formats')->middleware('privilege:SETTINGS');
+    Route::get('/settings/all', [SettingsController::class, 'all'])->name('settings.all')->middleware('privilege:SETTINGS');
+
+    // Commission Settings Routes
+    Route::get('/commissions/all', [SettingsController::class, 'loadCommissions'])->name('commissions.load');
+    Route::post('/commissions/person/store', [SettingsController::class, 'saveCommissionPerson'])->name('commissions.person.store');
+    Route::post('/commissions/rates/save', [SettingsController::class, 'saveCommissionRates'])->name('commissions.rates.save');
+    Route::get('/branches/all', [SettingsController::class, 'getBranches'])->name('branches.all');
+    Route::post('/settings/upsert', [SettingsController::class, 'upsert'])->name('settings.upsert');
 
     //Bank
     Route::get('/bank_account', '\App\Http\Controllers\BankController@index')->name('bank.index');
@@ -458,7 +481,7 @@ Route::middleware(['central.auth'])->group(function () {
     //agreement
     Route::get('/agreement', function () {
         return view('pages.Agreement');
-    });
+    })->middleware('privilege:DOCUMENT_FORMAT');
     Route::get('/agreement_view/{type}/{id}', '\App\Http\Controllers\AgreementController@agreement_view')->name('sms.agreement_view');
     Route::post('/save_agreement', '\App\Http\Controllers\AgreementController@store')->name('sms.store');
     Route::post('/load_agreement', '\App\Http\Controllers\AgreementController@show')->name('sms.show');
@@ -701,7 +724,7 @@ Route::middleware(['central.auth'])->group(function () {
 
 
 
-    Route::get('/holidays', '\App\Http\Controllers\UserController@holidays')->name('holidays.index');
+    Route::get('/holidays', '\App\Http\Controllers\UserController@holidays')->name('holidays.index')->middleware('privilege:COMPANY_HOLIDAYS');
     Route::post('/poya-days/save', '\App\Http\Controllers\UserController@poya_days_save')->name('poya_days_save.index');
     Route::post('/holidays', '\App\Http\Controllers\UserController@holidays_save')->name('holidays.store');
     Route::delete('/holidays/delete/{id}', '\App\Http\Controllers\UserController@deleteHoliday')->name('holidays.delete');
@@ -714,7 +737,7 @@ Route::middleware(['central.auth'])->group(function () {
 
 
     //branches
-    Route::get('/branch', '\App\Http\Controllers\BranchController@index')->name('branch');
+    Route::get('/branch', '\App\Http\Controllers\BranchController@index')->name('branch')->middleware('privilege:BRANCHES');
     Route::post('/save-branch', '\App\Http\Controllers\BranchController@create')->name('save.branch');
     Route::post('/update-branch', '\App\Http\Controllers\BranchController@updateBranch')->name('update.branch');
 
@@ -752,10 +775,10 @@ Route::middleware(['central.auth'])->group(function () {
 
 
     //Cashier
-    Route::post('/save-cashier-data', [CashierController::class, 'store'])->name('cashier.save');
+    Route::post('/save-cashier-data', [CashierController::class, 'store'])->name('cashier.save')->middleware('privilege:CASHIER_START');
     Route::get('/get-today-cashier-data', [CashierController::class, 'getTodayData'])->name('cashier.getTodayData');
     Route::get('/cashier/day-end-data', [CashierController::class, 'getDayEndData'])->name('cashier.dayEndData');
-    Route::post('/cashier/save-day-end', [CashierController::class, 'saveDayEnd'])->name('cashier.saveDayEnd');
+    Route::post('/cashier/save-day-end', [CashierController::class, 'saveDayEnd'])->name('cashier.saveDayEnd')->middleware('privilege:CASHIER_CLOSE');
     Route::get('/cashier/get-saved-day-end', [CashierController::class, 'getSavedDayEndData'])->name('cashier.getSavedDayEndData');
     Route::get('/cashier/bank-list', [CashierController::class, 'getBankList']);
 
@@ -847,13 +870,10 @@ Route::middleware(['central.auth'])->group(function () {
     Route::post('/get-customer-bank-details', [LoanController::class, 'getCustomerBankDetails']);
 
 
-    Route::get('/settings/all', '\App\Http\Controllers\CapitalBalanceController@all')->name('');
-    Route::post('/settings/upsert', '\App\Http\Controllers\CapitalBalanceController@upsert')->name('upsert');
+    Route::get('/settings/all', [\App\Http\Controllers\SettingsController::class, 'all'])->name('settings.all');
+    Route::post('/settings/upsert', [\App\Http\Controllers\SettingsController::class, 'upsert'])->name('settings.upsert');
 
-    Route::get('/commissions/all', [CapitalBalanceController::class, 'commission_all']);
-    Route::post('/commissions/rates/save', [CapitalBalanceController::class, 'commission_save_rates']);
-    Route::post('/commissions/person/store', [CapitalBalanceController::class, 'commission_store_person']);
-    Route::get('/branches/all', [CapitalBalanceController::class, 'branches_all']);
+
 
 
     //depletion
@@ -1028,6 +1048,17 @@ Route::middleware(['central.auth'])->group(function () {
         ->name('leads.approve');
 
     Route::resource('leads', CustomerLeadController::class)->names('leads');
+
+
+    Route::get('/commissions/all', [\App\Http\Controllers\CommissionController::class, 'commission_all']);
+    Route::post('/commissions/rates/save', [\App\Http\Controllers\CommissionController::class, 'commission_save_rates']);
+    Route::post('/commissions/person/store', [\App\Http\Controllers\CommissionController::class, 'commission_store_person']);
+    Route::get('/branches/all', [\App\Http\Controllers\CommissionController::class, 'branches_all']);
+
+
+    Route::get('/reports/commission', [\App\Http\Controllers\CommissionReportController::class, 'index'])->name('reports.commission');
+    Route::get('/reports/commission/load', [\App\Http\Controllers\CommissionReportController::class, 'load'])->name('reports.commission.load');
+    Route::get('/reports/commission/print', [\App\Http\Controllers\CommissionReportController::class, 'print'])->name('reports.commission.print');
 });
 
 Route::get('/dailycollectionratio', [\App\Http\Controllers\ReportController::class, 'dailyCollectionRatioToday'])

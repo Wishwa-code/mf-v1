@@ -121,7 +121,6 @@ function numberToWords($number) {
 function tableWithBranch($table, $useBranchIdFromTable = null)
 {
 
-
     if (!Schema::hasColumn('customer_loan', 'panelty_method')) {
         DB::statement(
             "ALTER TABLE `customer_loan`
@@ -624,15 +623,18 @@ function customer_number($cus_id)
     // Always derive the target branch from the CUSTOMER, not the session
     $branchId = (int)($customer->branch_id ?? session('branch_id'));
 
-    // Fetch the company row for the customer's branch
-    $company = DB::table('company')->where('branch_id', $branchId)->first();
-    if (!$company) { return; }
+    // Fetch Settings from AppSettings instead of company table
+    $settings = \App\Models\AppSettings::where('branch_id', $branchId)->pluck('value', 'key');
 
-    $type = $company->customer_num_type;
+    // Check if configuration exists (previously checked $company)
+    // We check for 'customer_num_type' which is the main switch
+    $type = $settings['customer_num_type'] ?? null;
 
     if ($type === "Format") {
 
-        $Branch_No = (string)($company->branch ?? 'B00');
+        // Branch Number logic: previously $company->branch. 
+        // We'll try to find 'branch_code' in settings, else default to 'B'.pad($branchId)
+        $Branch_No = $settings['branch_code'] ?? ('B' . str_pad($branchId, 2, '0', STR_PAD_LEFT));
 
         // Get the specific "Customer Registration" log for this customer in its own branch
         $customer_log = DB::table('customer_log')
@@ -642,7 +644,10 @@ function customer_number($cus_id)
             ->first();
 
         // Defaults
-        $Auto_Id       = str_pad((int)($company->customer_num_start_from ?? 0), 3, '0', STR_PAD_LEFT);
+        // 'customer_num_start_from' comes from AppSettings
+        $startFrom     = (int)($settings['customer_num_start_from'] ?? 0);
+        $Auto_Id       = str_pad($startFrom, 3, '0', STR_PAD_LEFT);
+        
         $Day           = date('d');
         $Month         = date('m');
         $Year          = date('Y');
@@ -665,7 +670,6 @@ function customer_number($cus_id)
                     ->where('branch_id', $branchId)
                     ->value('seq');
 
-                $startFrom           = (int)($company->customer_num_start_from ?? 0);
                 $next_customer_id    = $startFrom + (int)($last_logs_count ?? 0);
                 $Auto_Id             = str_pad($next_customer_id, 3, '0', STR_PAD_LEFT);
 
@@ -809,7 +813,7 @@ function customer_number($cus_id)
         // We'll treat @Center_Cus_Count@ as the "conflict breaker".
         // Build a helper closure so we can rebuild full number any time we bump the count.
         $makeCustomerNumber = function($centerCountStr) use (
-            $company,
+            $settings,
             $Branch_No,
             $root_code,
             $Center_No,
@@ -836,7 +840,8 @@ function customer_number($cus_id)
                 '@Center_Cus_Count@' => $centerCountStr,
             ];
 
-            $txt = $company->customer_format;
+            // 'customer_format' comes from AppSettings
+            $txt = $settings['customer_format'] ?? '';
             foreach ($placeholders_local as $ph => $val) {
                 $txt = str_replace($ph, (string)$val, $txt);
             }
@@ -897,15 +902,22 @@ function customer_number($cus_id)
 
         // Log the change
         try {
-            $CustomerLogController = new CustomerLogController();
-            $request = new Request([
-                'customer_id'    => $cus_id,
-                'description'    => "Customer Number Changed From ".$old_cus_number." To ".$new_cus_number,
-                'description_id' => $cus_id,
-                'comment'        => 'Change Customer Number',
-                'type'           => 'Customer Update',
-            ]);
-            $CustomerLogController->store($request);
+            // Using logic from original, but maybe should replace with Model if strict MVC required
+            // However helper functions are outside MVC structure usually.
+            // We'll keep the Controller instantiation or just direct DB insert if controller not found?
+            // The original code instantiated CustomerLogController. 
+            // We will stick to the original pattern to minimize breakage unless asked.
+            if (class_exists('App\Http\Controllers\CustomerLogController')) {
+                $CustomerLogController = new \App\Http\Controllers\CustomerLogController();
+                $request = new \Illuminate\Http\Request([
+                    'customer_id'    => $cus_id,
+                    'description'    => "Customer Number Changed From ".$old_cus_number." To ".$new_cus_number,
+                    'description_id' => $cus_id,
+                    'comment'        => 'Change Customer Number',
+                    'type'           => 'Customer Update',
+                ]);
+                $CustomerLogController->store($request);
+            }
         } catch (\Throwable $e) {
             \Log::warning('customer_number: log store failed', [
                 'cus_id' => $cus_id,

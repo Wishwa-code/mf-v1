@@ -57,7 +57,8 @@ class Kernel extends HttpKernel
         'verified'        => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'branch.from.user' => \App\Http\Middleware\ApplyBranchFromUser::class,
         //        'tenant' => \App\Http\Middleware\SetTenantConnection::class,
-        'central.auth'    => \App\Http\Middleware\VerifyAuthToken::class,
+        'auth.central' => \App\Http\Middleware\VerifyAuthToken::class,
+        'privilege'       => \App\Http\Middleware\CheckPrivilege::class,
     ];
 
     protected function schedule(\Illuminate\Console\Scheduling\Schedule $schedule)

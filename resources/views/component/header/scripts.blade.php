@@ -1,38 +1,228 @@
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+{{-- DataTables JS --}}
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
 
 <script>
-    // Handle branch switching for both super and non-super users
-    $(document).on('click', '.branch-option', function (e) {
-        e.preventDefault();
-        const branchId = $(this).data('branch-id');
-        const branchName = $(this).data('branch-name');
+    // Make all settings globally available
+    window.APP_SETTINGS = @json(config('app.settings', []));
+</script>
 
-        $.ajax({
-            url: '/update-branch',
-            method: 'POST',
-            data: {
-                branch_id: branchId,
-                _token: $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function () {
-                // Update UI and reload to apply scoping
-                $('.branch-text').text(branchName);
-                window.location.reload();
-            },
-            error: function (xhr) {
-                const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Unauthorized or error updating branch';
-                Swal.fire('Error', msg, 'error');
+
+<script>
+    let globalTargetInput = null;
+    let globalStream = null;
+
+    function openGlobalCamera(targetInputSelector) {
+        globalTargetInput = document.querySelector(targetInputSelector);
+        const video = document.getElementById('globalVideo');
+        $('#globalCameraModal').modal('show');
+
+        const facingMode = document.getElementById('cameraFacing').value || 'user';
+
+        const constraints = {
+            video: {
+                facingMode: {
+                    ideal: facingMode
+                }
             }
+        };
+
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(stream => {
+                globalStream = stream;
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                Swal.fire('Error', 'Unable to access selected camera: ' + err.message, 'error');
+            });
+    }
+
+
+
+    function captureGlobalImage() {
+        const video = document.getElementById('globalVideo');
+        const canvas = document.getElementById('globalCanvas');
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = canvas.toDataURL("image/png");
+
+        // Stop camera
+        if (globalStream) {
+            globalStream.getTracks().forEach(track => track.stop());
+        }
+
+        $('#globalCameraModal').modal('hide');
+
+        // Convert base64 to File and attach to target file input
+        fetch(imageData)
+            .then(res => res.blob())
+            .then(blob => {
+                const file = new File([blob], `capture_${Date.now()}.png`, {
+                    type: "image/png"
+                });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                globalTargetInput.files = dataTransfer.files;
+            });
+    }
+
+    document.getElementById('cameraFacing').addEventListener('change', () => {
+        if (globalStream) {
+            globalStream.getTracks().forEach(track => track.stop());
+        }
+        openGlobalCamera(globalTargetInput ? `#${globalTargetInput.id}` : null);
+    });
+
+
+    function closeGlobalCamera() {
+        if (globalStream) {
+            globalStream.getTracks().forEach(track => track.stop());
+        }
+    }
+</script>
+
+<script>
+    function validateContactNumber(event) {
+        var charCode = event.which || event.keyCode;
+        // Check if the pressed key is a digit (0-9) or a special key like backspace or delete
+        if (charCode < 48 || charCode > 57) {
+            event.preventDefault();
+        }
+    }
+</script>
+
+<script>
+    let timer;
+    let timeoutMinutes = 60; // 1 hour
+
+    const resetTimer = () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            let countdown = 10; // 10 seconds countdown
+            const interval = setInterval(() => {
+                if (countdown === 0) {
+                    clearInterval(interval);
+                    window.location.href = "{{ route('user.logout') }}";
+                } else {
+                    Swal.update({
+                        html: `You will be logged out in <b>${countdown}</b> seconds due to inactivity.`,
+                    });
+                }
+                countdown--;
+            }, 1000);
+
+            Swal.fire({
+                title: 'Inactivity Detected',
+                html: `You will be logged out in <b>10</b> seconds due to inactivity.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Stay Logged In',
+                cancelButtonText: 'Logout Now',
+                reverseButtons: true,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    clearInterval(interval);
+                    resetTimer();
+                } else {
+                    clearInterval(interval);
+                    window.location.href = "{{ route('user.logout') }}";
+                }
+            });
+        }, timeoutMinutes * 60 * 1000);
+    };
+
+    window.onload = resetTimer;
+    document.onmousemove = resetTimer;
+    document.onkeypress = resetTimer;
+</script>
+
+<script>
+    $(document).ready(function() {
+        $(document).on('click', '.branch-option', function(e) {
+            e.preventDefault();
+
+            const branchId = $(this).data('branch-id');
+            const branchName = $(this).data('branch-name');
+
+            $('.branch-text').text(branchName);
+
+            $.ajax({
+                url: "{{ route('update.branch') }}",
+                type: "POST",
+                data: {
+                    branch_id: branchId,
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function(response) {
+                    if (response.success) {
+                        window.location.href = '/';
+                    } else {
+                        Swal?.fire?.('Oops', response.message || 'Failed to update branch.', 'error');
+                    }
+                },
+                error: function() {
+                    Swal?.fire?.('Error!', 'Failed to update branch.', 'error');
+                }
+            });
         });
     });
 </script>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        function updateTime() {
+            var now = new Date();
+
+            // Day Name (e.g. Saturday)
+            var dayOptions = {
+                weekday: 'long'
+            };
+            var dayName = now.toLocaleDateString('en-US', dayOptions);
+
+            // Date (e.g. 27 December 2025)
+            var dateOptions = {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            };
+            var formattedDate = now.toLocaleDateString('en-US', dateOptions);
+
+            if (document.getElementById('modern-day')) {
+                document.getElementById('modern-day').innerText = dayName;
+            }
+            if (document.getElementById('modern-date')) {
+                document.getElementById('modern-date').innerText = formattedDate;
+            }
+        }
+
+        updateTime();
+        setInterval(updateTime, 60000);
+    });
+</script>
+
+
 
 <script>
     // Function to update the Grand Total
     function updateGrandTotal() {
         let grandTotal = 0;
-        $("#modalTableBody tr").each(function () {
+        $("#modalTableBody tr").each(function() {
             let total = parseFloat($(this).find(".total-amount").text()) || 0;
             grandTotal += total;
         });
@@ -40,7 +230,7 @@
     }
 
     // Add to Table Button Click
-    $("#addToTable").click(function () {
+    $("#addToTable").click(function() {
         let amount = parseFloat($("#amount").val());
         let quantity = parseInt($("#quantity").val());
 
@@ -97,20 +287,20 @@
     });
 
     // Handle Remove Entry button
-    $(document).on('click', '.remove-entry', function () {
+    $(document).on('click', '.remove-entry', function() {
         $(this).closest('tr').remove();
         updateGrandTotal();
     });
-    $(document).ready(function () {
-        $("#cashierStartModal").on('show.bs.modal', function () {
+    $(document).ready(function() {
+        $("#cashierStartModal").on('show.bs.modal', function() {
             loadSavedPlotEntries();
         });
 
-        $("#dayEndModal").on('show.bs.modal', function () {
+        $("#dayEndModal").on('show.bs.modal', function() {
             $.ajax({
                 url: '/cashier/day-end-data',
                 method: 'GET',
-                success: function (response) {
+                success: function(response) {
                     $("#plotAmount").val(response.startingCash.toFixed(2));
 
 
@@ -153,7 +343,7 @@
 
                     updateCashDrawerTotals(); // Reset drawer totals if needed
                 },
-                error: function () {
+                error: function() {
                     Swal.fire({
                         icon: 'error',
                         title: 'Error loading data',
@@ -162,11 +352,11 @@
                 }
             });
         });
-        $("#dayEndModal").on('show.bs.modal', function () {
+        $("#dayEndModal").on('show.bs.modal', function() {
             $.ajax({
                 url: '/cashier/get-saved-day-end',
                 method: 'GET',
-                success: function (res) {
+                success: function(res) {
 
                     // Set summary fields
                     $("#plotAmount").val(parseFloat(res.startingCash).toFixed(2));
@@ -231,7 +421,7 @@
                         $("#addCashToTable").prop("disabled", false);
                     }
                 },
-                error: function () {
+                error: function() {
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
@@ -245,18 +435,18 @@
 
 
 
-    $("#saveEntries").click(function () {
+    $("#saveEntries").click(function() {
         let entries = [];
 
-        $("#modalTableBody tr").each(function () {
+        $("#modalTableBody tr").each(function() {
             let amount = parseFloat($(this).find(".amount").text());
             let quantity = parseInt($(this).find(".quantity").text());
             let total = parseFloat($(this).find(".total-amount").text());
 
             entries.push({
-                amount: amount,         // backend expects this as the denomination
-                quantity: quantity,     // qty
-                totalAmount: total      // calculated amount = denomination * quantity
+                amount: amount, // backend expects this as the denomination
+                quantity: quantity, // qty
+                totalAmount: total // calculated amount = denomination * quantity
             });
         });
 
@@ -286,7 +476,7 @@
                         grandTotal: parseFloat($("#grandTotal").text()),
                         _token: "{{ csrf_token() }}"
                     },
-                    success: function (response) {
+                    success: function(response) {
                         Swal.fire({
                             icon: 'success',
                             title: 'Success',
@@ -294,7 +484,7 @@
                         });
                         loadSavedPlotEntries();
                     },
-                    error: function (xhr) {
+                    error: function(xhr) {
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
@@ -305,11 +495,12 @@
             }
         });
     });
+
     function loadSavedPlotEntries() {
         $.ajax({
             url: '/get-today-cashier-data',
             method: 'GET',
-            success: function (response) {
+            success: function(response) {
                 let tableBody = $("#modalTableBody");
                 tableBody.empty();
 
@@ -346,7 +537,7 @@
                     $("#amount, #quantity").prop("disabled", false);
                 }
             },
-            error: function () {
+            error: function() {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -357,12 +548,12 @@
     }
 
 
-    $("#printDayStartReport").click(function () {
+    $("#printDayStartReport").click(function() {
         let tableClone = $("#modalTableBody").closest("table").clone();
 
         // Remove the last column (Action) in both header and body
         tableClone.find("thead tr th:last-child").remove();
-        tableClone.find("tbody tr").each(function () {
+        tableClone.find("tbody tr").each(function() {
             $(this).find("td:last-child").remove();
         });
 
@@ -394,7 +585,7 @@
 
 
 
-    $("#addCashToTable").click(function () {
+    $("#addCashToTable").click(function() {
         let amount = parseFloat($("#cashAmount").val());
         let quantity = parseInt($("#cashQuantity").val());
 
@@ -439,7 +630,7 @@
 
     function updateCashDrawerTotals() {
         let total = 0;
-        $("#cashDrawerTableBody tr").each(function () {
+        $("#cashDrawerTableBody tr").each(function() {
             let rowTotal = parseFloat($(this).find(".cash-total").text()) || 0;
             total += rowTotal;
         });
@@ -451,12 +642,12 @@
     }
 
 
-    $(document).on('click', '.remove-cash-row', function () {
+    $(document).on('click', '.remove-cash-row', function() {
         $(this).closest('tr').remove();
         updateCashDrawerTotals();
     });
 
-    $("#saveDayEnd").click(function () {
+    $("#saveDayEnd").click(function() {
         let startingCash = parseFloat($("#plotAmount").val());
         let totalIncome = parseFloat($("#totalIncome").text());
         let totalExpense = parseFloat($("#totalExpenses").text());
@@ -478,7 +669,7 @@
 
         let drawerEntries = [];
 
-        $("#cashDrawerTableBody tr").each(function () {
+        $("#cashDrawerTableBody tr").each(function() {
             drawerEntries.push({
                 denomination: parseFloat($(this).find(".cash-amt").text()),
                 quantity: parseInt($(this).find(".cash-qty").text()),
@@ -490,7 +681,7 @@
         $.ajax({
             url: '/cashier/bank-list',
             method: 'GET',
-            success: function (banks) {
+            success: function(banks) {
                 let selectOptions = banks.map(bank =>
                     `<option value="${bank.Idbank}">${bank.Bank_Name} - ${bank.Account_Name}</option>`
                 ).join('');
@@ -531,7 +722,7 @@
                                 cash_drawer_entries: drawerEntries,
                                 _token: "{{ csrf_token() }}"
                             },
-                            success: function (res) {
+                            success: function(res) {
                                 Swal.fire({
                                     icon: 'success',
                                     title: 'Saved',
@@ -539,7 +730,7 @@
                                 });
                                 $("#saveDayEnd").prop('disabled', true);
                             },
-                            error: function (xhr) {
+                            error: function(xhr) {
                                 Swal.fire({
                                     icon: 'error',
                                     title: 'Error',
@@ -550,7 +741,7 @@
                     }
                 });
             },
-            error: function () {
+            error: function() {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -562,7 +753,7 @@
     });
 
 
-    $("#printDayEndReport").click(function () {
+    $("#printDayEndReport").click(function() {
         const printWindow = window.open('', '', 'height=700,width=900');
         const incomeRows = $("#cashInTableBody").html();
         const expenseRows = $("#cashOutTableBody").html();
@@ -617,13 +808,58 @@
         printWindow.focus();
         printWindow.print();
     });
-
-
-
 </script>
 
+@include('component.header.mobile-menu-scripts')
 
+{{-- Theme Switcher Logic --}}
+<script>
+    (function() {
+        // Apply saved theme immediately to prevent flash
+        var savedMode = sessionStorage.getItem("data-layout-mode");
+        if (savedMode === "dark") {
+            document.documentElement.setAttribute("data-layout-mode", "dark");
+            document.documentElement.setAttribute("data-bs-theme", "dark");
+        }
+    })();
 
+    document.addEventListener("DOMContentLoaded", function() {
+        var themeToggleBtn = document.getElementById("light-dark-mode");
 
+        if (themeToggleBtn) {
+            var themeIcon = themeToggleBtn.querySelector("i");
 
+            // Function to update icon
+            function updateThemeIcon(mode) {
+                if (mode === "dark") {
+                    themeIcon.classList.remove("ri-moon-line");
+                    themeIcon.classList.add("ri-sun-line");
+                } else {
+                    themeIcon.classList.remove("ri-sun-line");
+                    themeIcon.classList.add("ri-moon-line");
+                }
+            }
 
+            // Check current status on load
+            var currentMode = document.documentElement.getAttribute("data-layout-mode");
+            updateThemeIcon(currentMode);
+
+            // Click Handler
+            themeToggleBtn.addEventListener("click", function() {
+                var current = document.documentElement.getAttribute("data-layout-mode");
+                var newMode = current === "dark" ? "light" : "dark";
+
+                // Update attributes
+                document.documentElement.setAttribute("data-layout-mode", newMode);
+                document.documentElement.setAttribute("data-bs-theme", newMode);
+
+                // Save to storage
+                sessionStorage.setItem("data-layout-mode", newMode);
+                sessionStorage.setItem("data-bs-theme", newMode);
+
+                // Update Icon
+                updateThemeIcon(newMode);
+            });
+        }
+    });
+</script>

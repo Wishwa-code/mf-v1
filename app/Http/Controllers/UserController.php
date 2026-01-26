@@ -10,9 +10,11 @@ use App\Models\Sms;
 use App\Models\User;
 use Carbon\Carbon;
 use DateTime;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Session\Store;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -94,7 +96,7 @@ class UserController extends Controller
                 'typeid' => 101,
                 'description' => 'User Creation: ' . $request->full_name . ' (' . $request->email . ')',
                 'data' => json_encode($requestData),
-                'userid' => session('userid'),
+                'userid' => user_data('idUser'),
                 'branch_id' => session('branch_id'),
                 'data_time' => now(),
                 'status' => 0
@@ -303,7 +305,7 @@ class UserController extends Controller
                 'typeid' => 102,
                 'description' => $actionType . ': ' . $getuser->Full_Name . ' (ID: ' . $id . ')',
                 'data' => json_encode($requestData),
-                'userid' => session('userid'),
+                'userid' => user_data('idUser'),
                 'branch_id' => session('branch_id'),
                 'data_time' => now(),
                 'status' => 0
@@ -346,7 +348,7 @@ class UserController extends Controller
     function syncRecoveryAccountsForBranch()
     {
         $branchId = session('branch_id');        // you already use session('branch_id') everywhere in your system
-        $userId   = session('userid');           // who is doing this sync
+        $userId   = user_data('idUser');           // who is doing this sync
         $now      = Carbon::now();
 
         // 1. get all active customers in this branch
@@ -421,46 +423,20 @@ class UserController extends Controller
     public function showdashboard(Store $session)
     {
 
-        //            $this->syncRecoveryAccountsForBranch();
-        //        // YOUR LOOPS (unchanged, as you asked)
-        //
-        //        $loans = tableWithBranch('customer_loan')->get();
-        //
-        //        foreach ($loans as $loan) {
-        //            $ins_count_loan = (int)$loan->Installment_Count;
-        //
-        //            $installment_count = tableWithBranch('installments')
-        //                ->where('Customer_Loan_idCustomer_Loan', $loan->idCustomer_Loan)
-        //                ->count();
-        //
-        //            // your logic
-        //            $ins_count_loan++;
-        //
-        //            if ($ins_count_loan != $installment_count) {
-        //                $this->fixLoanInstallmentsOnce((int)$loan->idCustomer_Loan);
-        //                $this->fixLoanInstallmentsOnce_2((int)$loan->idCustomer_Loan);
-        //            }
-        //        }
-        //        dd([
-        //            'default' => DB::getDefaultConnection(),
-        //            'db_name' => DB::select('SELECT DATABASE() as db')[0]->db,
-        //        ]);
-
-
-        if (!Auth::check()) {
-            return redirect()->route('login')->with("error", "Session expired! Please Login");
-        }
-
         // Head Office aggregated dashboard: show all branches overview
-        if ((int)session('branch_id') === -1) {
-            // Fetch active branches excluding head office itself
-            $branches = DB::table('branch')->where('status', 1)->where('branch_id', '!=', -1)->get();
+        if ((int)session('head_branch') == session('branch_id')) {
+            // Fetch active branches from session (excluding head office which is filtered in login)
+            $branches = user_data('branches') ?? [];
 
             $branchMetrics = [];
             foreach ($branches as $b) {
-                $branchId = $b->branch_id;
+                // Ensure array access for session data
+                $branchId = $b['idBranch'];
+                $branchName = $b['Name'];
+
                 // Helper closure forcing branch scope manually
                 $scoped = function ($table) use ($branchId) {
+                    // dd($table,  $branchId);
                     return DB::table($table)->where($table . '.branch_id', $branchId);
                 };
 
@@ -493,7 +469,7 @@ class UserController extends Controller
 
                 $branchMetrics[] = [
                     'id' => $branchId,
-                    'name' => $b->Name,
+                    'name' => $branchName,
                     'customers' => $customers,
                     'pending_loans_count' => $pendingCount,
                     'pending_loans_amount' => (float)$pendingAmount,
@@ -670,14 +646,18 @@ class UserController extends Controller
             ->first();
         $penaltyBalance = $penaltyBalance->penalty_balance ?? 0;
 
-        $userid = session('userid');
+        $userid = user_data('idUser');
 
-        $getuser = DB::table('user_privileges_has_user')->where('user_id', $userid)->where('permission_key', '=', 'dashboard')->first();
         $dashboard = 0;
-        if ($getuser) {
-            $dashboard = $getuser->value;
+        $privileges = user_data('privileges') ?? [];
+        if (is_array($privileges)) {
+            foreach ($privileges as $priv) {
+                if (isset($priv['Description']) && strtolower($priv['Description']) === 'dashboard') {
+                    $dashboard = strtolower($priv['Description']);
+                    break;
+                }
+            }
         }
-
         $currentYear = date('Y');
 
         $monthlyRevenue = tableWithBranch('customer_payments')
@@ -883,10 +863,20 @@ class UserController extends Controller
         $currentWeekPendingData = tableWithBranch('installments', 'installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
             ->select(
                 'customer_loan.idCustomer_Loan as loan_id',
                 'customer.idCustomer as customer_id',
                 DB::raw('CONCAT(customer.First_Name, " ", customer.Last_Name) as customer_name'),
+
+                // ✅ IMPORTANT: DO NOT SELECT center.No / center.Name directly
+                DB::raw('MAX(center.idCenter) as center_id'),
+                DB::raw('IFNULL(MAX(CONCAT(center.No, " - ", center.Name)), "-") as center_name'),
+
+
+
                 'customer_loan.Amount as capital_amount',
                 'customer_loan.Total_Loan_Amount as full_loan_amount',
                 // Current week pending amount (installments between Sunday and Saturday of current week)
@@ -1112,6 +1102,15 @@ class UserController extends Controller
 
     public function logout()
     {
+        $user = auth()->user();
+        if ($user) {
+            activity()
+                ->performedOn($user)
+                ->causedBy($user)
+                ->log('logout');
+        }
+
+        Cache::forget('user_data:' . session('user_id'));
         Session::flush();
         Auth::logout();
         Session::forget('token');
@@ -1178,8 +1177,18 @@ class UserController extends Controller
         $weeklyNotPaidData = tableWithBranch('installments', 'installments')
             ->join('customer_loan', 'installments.Customer_Loan_idCustomer_Loan', '=', 'customer_loan.idCustomer_Loan')
             ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
+            // ✅ Center joins
+            ->leftJoin('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
+            ->leftJoin('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
+            ->leftJoin('center', 'customer_group.center_id', '=', 'center.idCenter')
             ->select(
                 'customer_loan.idCustomer_Loan as loan_id',
+
+                // ✅ IMPORTANT: DO NOT SELECT center.No / center.Name directly
+                DB::raw('MAX(center.idCenter) as center_id'),
+                DB::raw('IFNULL(MAX(CONCAT(center.No, " - ", center.Name)), "-") as center_name'),
+
+
                 'customer.idCustomer as customer_id',
                 DB::raw('CONCAT(customer.First_Name, " ", customer.Last_Name) as customer_name'),
                 'customer_loan.Amount as capital_amount',
@@ -1195,16 +1204,13 @@ class UserController extends Controller
             ->where('installments.Status', '=', '0')
             ->where('installments.Total_Balance', '>', 0)
             ->whereBetween('installments.Installment_Date', [$weekStart, $weekToday])
-            ->groupBy('customer_loan.idCustomer_Loan', 'customer.idCustomer', 'customer.First_Name', 'customer.Last_Name', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount')
+            ->groupBy('center.idCenter', 'customer_loan.idCustomer_Loan', 'customer.idCustomer', 'customer.First_Name', 'customer.Last_Name', 'customer_loan.Amount', 'customer_loan.Total_Loan_Amount')
             ->havingRaw('this_week_not_paid > 0')
             ->orderBy('this_week_not_paid', 'DESC')
             ->get();
 
         return response()->json(['data' => $weeklyNotPaidData]);
     }
-
-
-
 
     public function create_panelty()
     {
@@ -1260,14 +1266,13 @@ class UserController extends Controller
                         ]);
 
 
-                    $user_id = session('userid');
+                    $user_id = user_data('idUser');
                     $date = date('Y-m-d');
                     $time = date('H:i:s');
 
                     $customer_table = tableWithBranch('customer')
                         ->where('idCustomer', '=', $item->Customer_idCustomer)
                         ->first();
-
 
                     $panelty_amount = number_format($panelty_amount, 2, '.', '');
 
@@ -1317,8 +1322,9 @@ class UserController extends Controller
                     $System_default_6 = tableWithBranch('company_bank_accounts')
                         ->where('Bank_Type', '=', 'System_default_6')
                         ->first();
-                    $bankLogController->index($System_default_5->Idbank, "Penalty", "Penalty", "-", "debit", $panelty_amount, $System_default_6->Idbank);
-                    $bankLogController->index($System_default_6->Idbank, "Penalty", "Penalty", "-", "credit", $panelty_amount, $System_default_5->Idbank);
+
+                    $bankLogController->index($System_default_5?->Idbank ?? 1, "Penalty", "Penalty", "-", "debit", $panelty_amount, $System_default_6->Idbank);
+                    $bankLogController->index($System_default_6?->Idbank ?? 1, "Penalty", "Penalty", "-", "credit", $panelty_amount, $System_default_5->Idbank);
                 }
             }
         }
@@ -1370,7 +1376,7 @@ class UserController extends Controller
         //                    'Panelty_status' => '1'
         //                ]);
         //
-        //            $user_id= session('userid');
+        //            $user_id=session('user_data')["idUser"];
         //            $date=date('Y-m-d');
         //            $time=date('H:i:s');
         //
@@ -1664,7 +1670,7 @@ class UserController extends Controller
             'typeid' => 201,
             'description' => 'Designation Details Update: ' . $request->designation . ' (Max Create: ' . $request->maxCreateAmount . ', Max Approve: ' . $request->maxIssueAmount . ')',
             'data' => json_encode($requestData),
-            'userid' => session('userid'),
+            'userid' => user_data('idUser'),
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0
@@ -1710,7 +1716,7 @@ class UserController extends Controller
             'typeid' => 201,
             'description' => 'Designation Privileges Update: ' . $designation->name,
             'data' => json_encode($requestData),
-            'userid' => session('userid'),
+            'userid' => user_data('idUser'),
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0
@@ -2060,7 +2066,7 @@ class UserController extends Controller
             'typeid' => 102,
             'description' => 'User Details Update: ' . $request->full_name . ' (' . $request->email . ')',
             'data' => json_encode($requestData),
-            'userid' => session('userid'),
+            'userid' => user_data('idUser'),
             'branch_id' => session('branch_id'),
             'data_time' => now(),
             'status' => 0

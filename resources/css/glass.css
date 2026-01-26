@@ -1,0 +1,133 @@
+/* Glassmorphism Variables */
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  --glass-blur: 8px;
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+[data-bs-theme="dark"] {
+  --glass-bg: rgba(30, 32, 40, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+/* Glass Utility Classes */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.2);
+}
+
+/* Form Elements */
+.form-control,
+.form-select {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(4px);
+  transition: all 0.3s ease;
+}
+
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e9ecef;
+}
+
+.form-control:focus,
+.form-select:focus {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: #764ba2;
+  box-shadow: 0 0 0 0.25rem rgba(118, 75, 162, 0.25);
+}
+
+[data-bs-theme="dark"] .form-control:focus,
+[data-bs-theme="dark"] .form-select:focus {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+/* Sidebar & Navbar */
+.navbar-custom,
+.leftside-menu {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(var(--glass-blur));
+  border-right: 1px solid var(--glass-border);
+}
+
+.page-title-box .page-title {
+  color: #495057;
+  font-weight: 700;
+}
+
+[data-bs-theme="dark"] .page-title-box .page-title {
+  color: #ced4da;
+}
+
+/* Select2 Glass Customization */
+.select2-container--default .select2-selection--single {
+  height: 50px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.select2-container--default .select2-selection--single:focus-within {
+  border-color: #764ba2;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 0 0.25rem rgba(118, 75, 162, 0.25);
+}
+
+.select2-container--default
+  .select2-selection--single
+  .select2-selection__arrow {
+  height: 48px;
+  right: 10px;
+}
+
+.select2-container--default
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: normal;
+  padding-left: 1rem;
+  color: #495057;
+  font-weight: 500;
+}
+
+.select2-dropdown {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: var(--glass-shadow);
+  overflow: hidden;
+  z-index: 9999;
+}
+
+.select2-search__field {
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+}

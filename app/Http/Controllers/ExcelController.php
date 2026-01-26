@@ -1417,12 +1417,12 @@ class ExcelController extends Controller
             if ($payment) {
                 $payment_id = $payment->idCustomer_Payments;
 
-                $request = new Request([
+                $undoRequest = new Request([
                     'reason' => 'Mistake',
                 ]);
 
                 $paymentController = app(TodayPaymentController::class);
-                $paymentController->undoPayment($request, $payment_id); // <-- fix here
+                $paymentController->undoPayment($undoRequest, $payment_id);
 
                 return response()->json(['message' => 'Payment stored for loan: ' . $loan_number]);
             }
@@ -1441,10 +1441,10 @@ class ExcelController extends Controller
             return false;
         }
 
-        $excel_loan_amount =(float) $row[5] ?? 0;
-        $excel_interest_amount =(float) $row[8] ?? 0;
-        $excel_balance_amount =(float) $row[12] ?? 0;
-        $excel_panelty_amount =(float) $row[13] ?? 0;
+        $excel_loan_amount = (float) ($row[5] ?? 0);
+        $excel_interest_amount = (float) ($row[8] ?? 0);
+        $excel_balance_amount = (float) ($row[12] ?? 0);
+        $excel_panelty_amount = (float) ($row[13] ?? 0);
         $excel_Loan_No = $row[14] ?? 0;
         $payment_amount=($excel_loan_amount+$excel_interest_amount)-($excel_balance_amount-$excel_panelty_amount);
 
@@ -1500,12 +1500,13 @@ class ExcelController extends Controller
                 ->first();
 
             if ($installment){
+                $sanitizedPenalty = (float) $excel_panelty_amount;
                 tableWithBranch('installments')
                     ->where('idInstallments', $installment->idInstallments)
                     ->update([
                         'Panalty_Amount' => $excel_panelty_amount,
                         'Panalty_Balance' => $excel_panelty_amount,
-                        'Total_Balance' => DB::raw("Total_Balance + $excel_panelty_amount")
+                        'Total_Balance' => DB::raw("Total_Balance + " . $sanitizedPenalty)
                     ]);
 
                 $last_loan_log=tableWithBranch('Loan_Log')

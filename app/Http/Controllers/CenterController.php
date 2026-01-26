@@ -17,7 +17,7 @@ class CenterController extends Controller
      */
     public function index()
     {
-        $isHeadOffice = (int)session('branch_id') === -1;
+        $isHeadOffice = session('head_branch') == session('branch_id');
 
         if ($isHeadOffice) {
             $userData = DB::table('center as center')
@@ -33,7 +33,7 @@ class CenterController extends Controller
                 ->get();
             $route = DB::table('route')->get();
         } else {
-            $userData = tableWithBranch('center','center')
+            $userData = tableWithBranch('center', 'center')
                 ->leftjoin('route', 'center.route_id', '=', 'route.id_route')
                 ->leftJoin('branch', 'center.branch_id', '=', 'branch.branch_id')
                 ->select(
@@ -46,7 +46,7 @@ class CenterController extends Controller
             $route = tableWithBranch('route')->get();
         }
 
-        return view('pages.Center',compact('userData','route'));
+        return view('pages.Center', compact('userData', 'route'));
     }
 
     /**
@@ -54,7 +54,7 @@ class CenterController extends Controller
      */
     public function create(string $id)
     {
-        $isHeadOffice = (int)session('branch_id') === -1;
+        $isHeadOffice = session('head_branch') == session('branch_id');
 
         if ($isHeadOffice) {
             $customer = DB::table('customer')->where('Customer_Group_idCustomer_Group', '=', $id)->get();
@@ -66,7 +66,7 @@ class CenterController extends Controller
             $customercount = tableWithBranch('customer')->where('Customer_Group_idCustomer_Group', '=', $id)->count();
         }
 
-        return view('pages.ViewCenter', compact('customer','center','customercount'));
+        return view('pages.ViewCenter', compact('customer', 'center', 'customercount'));
     }
 
     /**
@@ -124,7 +124,7 @@ class CenterController extends Controller
     public function show()
     {
         $route = tableWithBranch('route')->get();
-        return view('pages.CreateCenter',compact('route'));
+        return view('pages.CreateCenter', compact('route'));
     }
 
     /**
@@ -157,7 +157,6 @@ class CenterController extends Controller
         } else {
             return response()->json(['message' => 'Failed to update data.'], 500);
         }
-
     }
 
     /**
@@ -184,15 +183,16 @@ class CenterController extends Controller
 
 
 
-    public function center_collection(Request $request){
+    public function center_collection(Request $request)
+    {
         $date_from = $request->input('date_from');
         $collector_id = $request->input('collector_id');
         $center_id = $request->input('center_id');
         $center = tableWithBranch('center')->get();
-        $collector = tableWithBranch('user')->where('collector','=','1')->get();
+        $collector = tableWithBranch('user')->where('collector', '=', '1')->get();
 
         // --- Expenses Query (Processing Fee) ---
-        $expensesQuery = tableWithBranch('expences','expences')
+        $expensesQuery = tableWithBranch('expences', 'expences')
             ->selectRaw("
             DISTINCT SUBSTRING_INDEX(SUBSTRING_INDEX(reason, 'loan number: (', -1), ')', 1) as loan_number,
             expences.amount,
@@ -242,7 +242,7 @@ class CenterController extends Controller
 
 
         // --- Payments Query (Loan Payments) ---
-        $paymentQuery = tableWithBranch('customer_payments','customer_payments')
+        $paymentQuery = tableWithBranch('customer_payments', 'customer_payments')
             ->selectRaw("
             DISTINCT customer_payments.Amount as amount,
             customer_loan_sub.Loan_No as loan_number,
@@ -303,13 +303,14 @@ class CenterController extends Controller
 
 
 
-    public function CenterWiseCollectionSummary(Request $request) {
+    public function CenterWiseCollectionSummary(Request $request)
+    {
         $date_from = $request->input('date_from');
         $collector_id = $request->input('collector_id');
         $collector = tableWithBranch('user')->get();
 
         // --- Expenses Query ---
-        $expensesQuery = tableWithBranch('expences','expences')
+        $expensesQuery = tableWithBranch('expences', 'expences')
             ->selectRaw("
             center.idCenter as center_id,
             center.No as center_No,
@@ -345,7 +346,7 @@ class CenterController extends Controller
 
 
         // --- Payments Query ---
-        $paymentQuery = tableWithBranch('customer_payments','customer_payments')
+        $paymentQuery = tableWithBranch('customer_payments', 'customer_payments')
             ->selectRaw("
             center.idCenter as center_id,
             center.No as center_No,
@@ -381,20 +382,20 @@ class CenterController extends Controller
         // --- Merge Queries (Ensuring All Payment Types Appear) ---
         $mergedData = collect();
 
-// Push Expenses Data
+        // Push Expenses Data
         foreach ($expenses as $expense) {
             $mergedData->push($expense);
         }
 
-// Push Payments Data
+        // Push Payments Data
         foreach ($payments as $payment) {
             $mergedData->push($payment);
         }
 
-// Ensure Data is Sorted by `center_No` after Merging
+        // Ensure Data is Sorted by `center_No` after Merging
         $sortedData = $mergedData->sortBy('center_No')->values();
 
-// Group by Center Name for Display, Keeping Order
+        // Group by Center Name for Display, Keeping Order
         $finalGroupedData = $sortedData->groupBy('center_name');
 
 
@@ -542,7 +543,6 @@ class CenterController extends Controller
             return response()->json([
                 'routes' => $hierarchyData
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Failed to fetch branch hierarchy',
@@ -564,7 +564,4 @@ class CenterController extends Controller
 
         return response()->json($groups);
     }
-
-
-
 }

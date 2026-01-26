@@ -1,904 +1,962 @@
 @extends('layout.admin')
 
 @section('head')
-    <!-- Select2 CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --secondary-gradient: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+        --danger-gradient: linear-gradient(135deg, #ff9966 0%, #ff5e62 100%);
+        --card-shadow: 0 10px 20px rgba(0, 0, 0, 0.05), 0 6px 6px rgba(0, 0, 0, 0.05);
+        --input-focus-shadow: 0 0 0 3px rgba(118, 75, 162, 0.2);
+    }
 
-    <style>
-        .style-tr > td {
-            padding: 2px 15px;
-        }
+    body {
+        background-color: #f8f9fa;
+        font-family: 'Inter', sans-serif;
+    }
 
-        .section-break {
-            margin-top: 20px;
-            margin-bottom: 20px;
-        }
+    .card-modern {
+        border: none;
+        border-radius: 20px;
+        box-shadow: var(--card-shadow);
+        background: #fff;
+        margin-bottom: 2rem;
+        transition: transform 0.3s ease;
+    }
 
-        .section-title {
-            background-color: #c9c9c9; /* Background color for the title */
-            color: #726262; /* Text color for the title */
-            padding: 5px; /* Padding for the title */
-            font-weight: bold;
-            font-size: 16px;
-            border-radius: 5px 5px 0 0; /* Rounded corners at the top */
-        }
+    .section-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f0f2f5;
+        color: #2d3748;
+        font-weight: 800;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
 
-        .section-title:after {
-            content: '';
-            display: block;
-            height: 0px; /* Height of the colored line */
-            background-color: #8f8f8f; /* Color of the line */
-            border-radius: 0 0 5px 5px; /* Rounded corners at the bottom */
-            margin-top: 5px;
-        }
+    .section-header i {
+        margin-right: 12px;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 1.5rem;
+    }
 
-        #levels-container {
-            display: flex;
-            flex-direction: column-reverse; /* Makes new levels appear on top */
-        }
+    .form-label {
+        font-weight: 700;
+        color: #4a5568;
+        margin-bottom: 0.4rem;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
 
-        .level-section {
-            margin-bottom: 20px; /* Optional: Space between levels */
-        }
+    .form-control,
+    .form-select {
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        background-color: #fdfdfd;
+    }
 
-        .highlight-card {
-            background-color: #f8f9fa;
-            border: 1px solid #1A2942;
-        }
+    .form-control:focus {
+        border-color: #764ba2;
+        box-shadow: var(--input-focus-shadow);
+    }
 
-        .highlight-card .card-header {
-            background-color: #1A2942;
-            color: #fff;
-        }
+    /* --- Enhanced Select2 UI --- */
+    .select2-container--default .select2-selection--single {
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+        height: 42px !important;
+        display: flex !important;
+        align-items: center !important;
+        background-color: #fdfdfd !important;
+    }
 
-        .highlight-card .card-body {
-            font-size: 1.2em; /* Increase font size */
-        }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: #4a5568 !important;
+        font-size: 0.9rem !important;
+    }
 
-        .table {
-            margin-bottom: 0;
-        }
+    .select2-container--default .select2-dropdown {
+        border: none !important;
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1) !important;
+        border-radius: 12px !important;
+        padding: 5px !important;
+    }
 
-        .table th, .table td {
-            text-align: center; /* Center the text */
-            vertical-align: middle; /* Center vertically */
-            word-wrap: break-word; /* Ensure content wraps within the cell */
-            white-space: normal;   /* Allow content to break within the cell */
-        }
+    .select2-results__option--highlighted[aria-selected] {
+        background: var(--primary-gradient) !important;
+        border-radius: 8px !important;
+    }
 
-        .table-bordered th, .table-bordered td {
-            border: 1px solid #dee2e6;
-        }
+    /* --- Custom Toggle Switch --- */
+    .form-switch .form-check-input {
+        width: 2.2em;
+        height: 1.1em;
+        cursor: pointer;
+    }
 
-        .level-card {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 1rem;
-        }
+    .form-switch .form-check-input:checked {
+        background-color: #764ba2;
+        border-color: #764ba2;
+    }
 
-        .card-body {
-            flex: 1 1 auto;
-            padding: 1rem;
-        }
-
-        .card-header {
-            padding: 0.75rem 1.25rem;
-            background-color: #001434;
-            color: #fff;
-        }
-
-        .custom-scrollbar {
-            max-height: 800px;
-            overflow-y: auto;
-        }
-
-        .table-responsive {
-            overflow: visible; /* Ensure table expands with content */
-        }
-
-        .table-responsive.custom-scrollbar {
-            overflow: hidden; /* Hide scroll bars */
-        }
-    </style>
+    .config-box {
+        background-color: #fcfcfd;
+        border: 1px solid #edf2f7;
+        border-radius: 15px;
+        padding: 20px;
+    }
+</style>
 @endsection
 
-
 @section('content')
-    <div>
+<div class="container-fluid mt-5 pt-4">
+    <form action="{{ isset($product) ? route('product.update', $product->id) : route('product.store') }}" method="POST" id="submitForm" class="js-confirm-submit" data-title="{{ isset($product) ? 'Update Product?' : 'Save Product?' }}" data-text="Are you sure you want to proceed?" data-icon="question" data-ajax="true">
+        @csrf
+        @if(isset($product))
+        <input type="hidden" id="product_id" value="{{ $product->id }}">
+        @endif
 
+        <div class="row align-items-center mb-4">
+            <div class="col-md-6">
+                <h4 class="mb-1 fw-bold text-dark">{{ isset($product) ? 'Edit Product' : 'Create Product' }}</h4>
+                <p class="text-muted mb-0 small">Define financial rules and collection cycles</p>
+            </div>
+            <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                <button type="submit" class="btn btn-primary-common px-5 rounded-pill shadow-sm fw-bold">
+                    <i class="bi bi-check-lg me-2"></i> {{ isset($product) ? 'Update Product' : 'Save Product' }}
+                </button>
+            </div>
+        </div>
 
+        <div class="row">
+            <!-- Left Column: General & Config -->
+            <div class="col-lg-8">
+                <!-- General Information -->
+                <div class="card card-modern">
+                    <div class="card-body p-4">
+                        <div class="section-header"><i class="bi bi-box-seam"></i> General Information</div>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Product Name <span class="text-danger">*</span></label>
+                                <input type="text" name="product_name" class="form-control" placeholder="e.g. Personal Loan">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Product Code <span class="text-danger">*</span></label>
+                                <input type="text" name="product_code" class="form-control" placeholder="PL-001">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Interest Method <span class="text-danger">*</span></label>
+                                <select name="interest_method" class="form-select select2">
+                                    <option value="flat_rate">Flat Rate</option>
+                                    <option value="reducing_balance">Reducing Balance</option>
+                                    <option value="draft">Draft</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Loan Period Type</label>
+                                <select name="loan_period_type" class="form-select select2">
+                                    <option value="Months">Months</option>
+                                    <option value="Weeks">Weeks</option>
+                                    <option value="Days">Days</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Interest Period Type</label>
+                                <select name="interest_period_type" class="form-select select2">
+                                    <option value="per_month">Per Month</option>
+                                    <option value="per">Per Week</option>
+                                    <option value="Per Day">Per Day</option>
+                                    <option value="Per Year">Per Year</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Collection Period Type</label>
+                                <select name="collection_period_type" class="form-select select2">
+                                    <option value="Months">Months</option>
+                                    <option value="Weeks">Weeks</option>
+                                    <option value="Days">Days</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Collection Date Strategy</label>
+                                <select name="collection_date_type" class="form-select select2">
+                                    <option value="same_as_installment">Same as Installment</option>
+                                    <option value="according_to_route">According to Route</option>
+                                </select>
+                            </div>
 
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between mb-3">
-                            <h4 class="page-title">Product Details</h4>
+                            <div class="col-md-3">
+                                <label class="form-label">Global Guarantors</label>
+                                <input type="number" name="guarantee_count" class="form-control" placeholder="0" min="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product Configuration Items -->
+                <div class="card card-modern">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="section-header border-0 m-0 p-0">
+                                <i class="bi bi-sliders"></i> Configuration Sub Products
+                            </div>
+                            <button type="button" class="btn btn-primary-common btn-sm rounded-pill px-3" id="addNewItemBtn">
+                                <i class="bi bi-plus-lg me-1"></i> Add to List
+                            </button>
                         </div>
 
-
-                        <div class="modal-body">
-
-                            <div class="container">
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="product_name" class="form-label">Product Name<span
-                                                    class="required-asterisk">*</span></label>
-                                            <input type="text" id="product_name" class="form-control">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="product_name" class="form-label">Product Code<span
-                                                        class="required-asterisk">*</span></label>
-                                            <input type="text" id="product_code" class="form-control">
-                                        </div>
+                        <div class="config-box mb-4">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Sub Product Label</label>
+                                    <input type="text" id="newItemName" class="form-control" placeholder="e.g. Gold Tier">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Loan Amount Range</label>
+                                    <div class="input-group">
+                                        <input type="number" id="newItemMinLoan" class="form-control" placeholder="Min" min="0">
+                                        <input type="number" id="newItemMaxLoan" class="form-control" placeholder="Max" min="0">
                                     </div>
                                 </div>
-
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="interest_method" class="form-label">Interest Method<span
-                                                    class="required-asterisk">*</span></label>
-                                            <select class="form-select" id="interest_method">
-                                                <option value="Flat Rate">Flat Rate</option>
-                                                <option value="Draft">Draft</option>
-                                                <option value="Reducing Balance">Reducing Balance</option>
-                                            </select>
-                                        </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Interest % Range</label>
+                                    <div class="input-group">
+                                        <input type="number" step="0.01" id="newItemMinInt" class="form-control" placeholder="Min" min="0">
+                                        <input type="number" step="0.01" id="newItemMaxInt" class="form-control" placeholder="Max" min="0">
+                                        <span class="input-group-text" id="display_interest_period_type">Per Month</span>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <label class="form-label">Minimum Loan Amount<span class="required-asterisk">*</span></label>
-                                                <input type="text" id="loan_amount_from" class="form-control">
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label">Maximum Loan Amount<span class="required-asterisk">*</span></label>
-                                                <input type="text" id="loan_amount_to" class="form-control">
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <label class="form-label">Loan Period</label>
+                                    </div>
+                                    <div class="input-group">
+                                        <input type="number" id="newItemMinPeriod" class="form-control" placeholder="Min" min="0">
+                                        <input type="number" id="newItemMaxPeriod" class="form-control" placeholder="Max" min="0">
+                                        <span class="input-group-text" id="display_loan_period_type">Months</span>
+                                        <div class="input-group-text ">
+                                            <div class="form-check form-switch mb-0 min-h-0">
+                                                <input class="form-check-input" type="checkbox" id="newItemDiffColl">
+                                                <label class="form-check-label small text-muted text-uppercase fw-bold" for="newItemDiffColl" style="font-size: 0.6rem;">Different Collection</label>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+                                <div class="col-md-4" id="newItemCollContainer" style="display: none;">
+                                    <label class="form-label">Collection Period</label>
+                                    <div class="input-group">
+                                        <input type="number" id="newItemMinColl" class="form-control" placeholder="Min" min="0">
+                                        <input type="number" id="newItemMaxColl" class="form-control" placeholder="Max" min="0">
+                                        <span class="input-group-text" id="display_collection_period_type">Months</span>
+                                    </div>
+                                </div>
 
-                                <div class="row mb-4">
-                                    <div class="col-md-2">
-                                        <label for="interest" class="form-label">Minimum Interest(%)<span
-                                                    class="required-asterisk">*</span></label>
-                                        <input type="text" id="interest_from" class="form-control">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label for="interest" class="form-label">Maximum Interest(%)<span
-                                                    class="required-asterisk">*</span></label>
-                                        <input type="text" id="interest_to" class="form-control">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="mb-3">
-                                            <label for="interest_period" class="form-label">Loan Interest Period<span
-                                                    class="required-asterisk">*</span></label>
-                                            <select class="form-select" id="interest_period">
-                                                <option value="Daily">Per Day</option>
-                                                <option value="Weekly">Per Week</option>
-                                                <option value="Per Month">Per Month</option>
-                                                <option value="Per Year">Per Year</option>
-                                                <option value="Per Loan">Per Loan</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="mb-3">
-                                            <label for="period_count" class="form-label">Default Loan Period<span
-                                                    class="required-asterisk">*</span></label>
-                                            <input type="number" id="period_count" class="form-control">
-                                        </div>
+                            </div>
 
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="mb-3">
-                                            <label for="period_count" class="form-label">Type</label>
-                                            <select class="form-select" id="default_loan_duration_period">
-                                                <option value="Days">Days</option>
-                                                <option value="Weeks">Weeks</option>
-                                                <option value="Months">Months</option>
-                                            </select>
-                                        </div>
-
-                                    </div>
-                                    <div class="row mb-3">
+                            <div class="mt-3">
+                                <div id="advancedItemFields" class="mt-3 pt-3 border-top">
+                                    <small class="text-bold text-uppercase fw-bold mt-2 mb-2 d-block">Guarantor and Penalty Configurations</small>
+                                    <div class="row g-3">
                                         <div class="col-md-3">
-                                            <div class="mb-3">
-                                                <label for="witnessCount" class="form-label">Guarantee Count<span
-                                                        class="required-asterisk">*</span></label>
-                                                <input type="number" id="witnessCount" class="form-control">
-                                            </div>
+                                            <label class="form-label">Required Guarantors</label>
+                                            <input type="number" id="newItemGuarantors" class="form-control" placeholder="Count" min="0">
                                         </div>
-                                    </div>
-
-                                </div>
-                                <div class="row mb-3 section-break">
-                                    <div class="col-12">
-                                        <div class="section-title">
-                                            Loan duration and Repayments
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row mb-3">
-                                    <div class="col-md-2">
-                                        <div class="mb-3">
-                                            <label for="loan_duration" class="form-label">Loan Duration<span
-                                                    class="required-asterisk">*</span></label>
-                                            <input type="number" id="loan_duration" class="form-control">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="mb-3">
-                                            <label for="loan_duration" class="form-label">Type<span
-                                                    class="required-asterisk">*</span></label>
-                                            <select class="form-select" id="duration_period" onchange="repayment_type(this.value)">
-                                                <option value="Days">Days</option>
-                                                <option value="Weeks">Weeks</option>
-                                                <option value="Months">Months</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-2">
-
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="collection_type" class="form-label">Repayment Type<span
-                                                    class="required-asterisk">*</span></label>
-                                            <select class="form-select" id="collection_type">
-                                                <option value="Daily">Daily</option>
-                                                <option value="Weekly">Weekly</option>
-                                                <option value="First Of The Month">First Of The Month</option>
-                                                <option value="End Of The Month">End Of The Month</option>
-                                                <option value="Twice A Month">Twice A Month</option>
-                                                <option value="On A Selected Date">On A Selected Date</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="collection_date_type" class="form-label">Collection Date Type<span
-                                                        class="required-asterisk">*</span></label>
-                                            <select class="form-select" id="collection_date_type">
-                                                <option value="same_as_installment" selected>Same As Installment Due</option>
-                                                <option value="according_to_route">According to Route</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-
-                                </div>
-                                <div class="row mb-3 section-break">
-                                    <div class="col-12">
-                                        <div class="section-title">
-                                            Penalty Details
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="penalty_period" class="form-label">Penalty Method<span
-                                                        class="required-asterisk">*</span></label>
-                                            <select class="form-select" id="penalty_method">
+                                        <div class="col-md-3">
+                                            <label class="form-label">Penalty Method</label>
+                                            <select id="newItemPenaltyMethod" class="form-select select2">
                                                 <option value="every_installment">Apply Penalty For Every Installment</option>
                                                 <option value="loan_after_maturity">Apply Penalty For Loan After Maturity</option>
                                             </select>
                                         </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="panelty_rate" class="form-label">Penalty Percentage (%)<span
-                                                        class="required-asterisk">*</span></label>
-                                            <input type="text" id="panelty_rate" class="form-control">
+                                        <div class="col-md-2">
+                                            <label class="form-label">Penalty %</label>
+                                            <input type="number" step="0.01" id="newItemPenaltyRate" class="form-control" placeholder="0.00" min="0">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Apply After</label>
+                                            <div class="input-group">
+                                                <input type="number" id="newItemPenaltyStart" class="form-control" placeholder="Days" min="0">
+                                                <select id="newItemPenaltyType" class="form-select" disabled>
+                                                    <option value="Days">Days</option>
+                                                    <option value="Weeks">Weeks</option>
+                                                    <option value="Months">Months</option>
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-
-                                <div class="row mb-3">
-
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="penalty_period" class="form-label">Penalty Period<span
-                                                    class="required-asterisk">*</span></label>
-                                            <select class="form-select" id="penalty_period">
-                                                <option value="Daily">Per Day</option>
-                                                <option value="Weekly">Per Week</option>
-                                                <option value="Per Month">Per Month</option>
-                                                <option value="Per Installment">Per Installment / Per Loan</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="mb-3">
-                                            <label for="panelty_rate_date" class="form-label">Penalty Start After<span
-                                                        class="required-asterisk">*</span></label>
-                                            <input type="number" id="panelty_rate_date" class="form-control">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="mb-3">
-                                            <label for="loan_duration" class="form-label">Type<span
-                                                        class="required-asterisk">*</span></label>
-                                            <select class="form-select" id="duration_period_panelty">
-                                                <option value="Days">Days</option>
-                                                {{--                                                <option value="Weeks">Weeks</option>--}}
-                                                {{--                                                <option value="Months">Months</option>--}}
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-
-
-
-                            </div>
-                            <div class="row mb-3 section-break">
-                                <div class="col-12">
-                                    <div class="section-title">
-                                        Other Chargers
-                                    </div>
-                                </div>
-                            </div>
-                            {{--                                <div class="card border-secondary border">--}}
-                            <div class="card-body">
-                                <div class="mb-3">
+                                <div class="border-top mt-3 mb-3">
+                                    <small class="text-bold text-uppercase fw-bold mt-3 mb-3 d-block">Saving Account Configurations</small>
                                     <div class="row">
-                                        <div class="col-lg-6">
-                                            <div class="mb-3">
-                                                <label for="otherChargesDescription"
-                                                       class="form-label">Description</label>
-                                                <input type="text" class="form-control" id="otherChargesDescription">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-6">
-                                            <div class="mb-3">
-                                                <label for="otherChargesAmount" class="form-label">Type</label>
-                                                <select class="form-control" id="charge_type"
-                                                        onchange="change_name_amount(this.value)">
-                                                    <option value="Amount">Amount</option>
-                                                    <option value="Percentage">Percentage</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-6">
-                                            <div class="mb-3">
-                                                <label for="otherChargesAmount" class="form-label" id="change_amount">Amount</label>
-                                                <input type="text" id="otherChargesAmount" class="form-control"
-                                                       oninput="validateAmount()">
-                                                <div id="amountError" style="color: red;"></div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-6">
-                                            <div class="mb-3">
-                                                <label for="deduction_type" class="form-label">Deduction Type</label>
-                                                <select class="form-control" id="deduction_type">
-                                                    <option value="On Loan Disbursement">On Loan Disbursement</option>
-                                                    <option value="As First Installment">As First Installment</option>
-                                                </select>
-                                            </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" id="savingAmountLabel">Amount</label>
+                                            <input type="number" step="0.01" name="saving_amount" id="saving_amount" class="form-control" placeholder="0.00" min="0">
                                         </div>
 
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Interest Rate (%)</label>
+                                            <input type="number" step="0.01" name="saving_interest_rate" id="newItemSavingInterest" class="form-control" placeholder="0.00" min="0">
+                                        </div>
                                     </div>
-                                    <button type="button" class="btn btn-primary" id="addChargesBtn">Add Charges
-                                    </button>
-                                </div>
-                                <div class="table-responsive-sm">
-                                    <table class="table table-centered mb-0" id="otherchargetable">
-                                        <thead>
-                                        <tr>
-                                            <th>Description</th>
-                                            <th>Type</th>
-                                            <th>Amount</th>
-                                            <th>Deduction Type</th> <!-- NEW -->
-                                            <th>Action</th>
-                                        </tr>
-                                        </thead>
-
-                                        <tbody>
-
-                                        </tbody>
-                                    </table>
                                 </div>
                             </div>
-                            {{--                                </div>--}}
+                        </div>
 
-                            <div class="row mb-3 section-break">
-                                <div class="col-12">
-                                    <div class="section-title">
-                                        Required Documents
-                                    </div>
-                                </div>
+                        <div class="table-responsive">
+                            <table class="table table-modern align-middle" id="itemsTable">
+                                <thead>
+                                    <tr>
+                                        <th class="small fw-bold text-muted text-uppercase">Label</th>
+                                        <th class="small fw-bold text-muted text-uppercase">Loan Amount</th>
+                                        <th class="small fw-bold text-muted text-uppercase">Period</th>
+                                        <th class="small fw-bold text-muted text-uppercase">Interest</th>
+                                        <th class="small fw-bold text-muted text-uppercase">Penalty</th>
+                                        <th class="small fw-bold text-muted text-uppercase">Savings</th>
+                                        <th class="text-end"></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="text-center py-4 empty-state-table">
+                                <p class="text-muted small">No configurations added yet.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Savings, Recovery, Charges, Docs -->
+            <div class="col-lg-4">
+
+                <!-- Recovery Account -->
+                <div class="card card-modern mb-3">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="section-header border-0 p-0 m-0"><i class="bi bi-wallet2"></i> Recovery Account</div>
+                            <div class="form-check form-switch">
+                                <input type="hidden" name="recovery_account_status" value="inactive">
+                                <input class="form-check-input" type="checkbox" id="recovery_account_status" name="recovery_account_status" value="active">
+                            </div>
+                        </div>
+                        <div id="recoveryAccountInfo" class="alert alert-light border small text-muted mt-0 mb-0" style="display: none;">
+                            <strong>Note:</strong> When the Recovery Account option is enabled for a product, the following process will apply: <br><br>
+                            After a loan is created using this product, any installment payments made by the customer will not be directly applied to the loan installments.
+                            Instead, the payment amount will be credited to the customer’s Recovery Account.<br><br>
+                            When the customer’s loan installment becomes due, the system will automatically deduct the due amount from the Recovery Account balance and apply it to the loan.
+                            This ensures that payments are first collected into the Recovery Account and then settled against loan dues on their respective due dates.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Savings -->
+                <div class="card card-modern mb-3">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="section-header border-0 p-0 m-0"><i class="bi bi-piggy-bank"></i> Savings</div>
+                            <div class="form-check form-switch">
+                                <input type="hidden" name="saving_account_status" value="inactive">
+                                <input class="form-check-input" type="checkbox" id="saving_account_status" name="saving_account_status" value="active">
+                            </div>
+                        </div>
+
+                        <!-- Savings Info Note -->
+                        <div id="savingsAccountInfo" class="alert alert-light border small text-muted mt-0 mb-3" style="display: none;">
+                            <strong>Note:</strong> Enabling this option activates mandatory savings collection. Detailed process information to be added here.
+                        </div>
+
+                        <div id="savingFields" style="display:none;">
+                            <div class="mb-3">
+                                <label class="form-label">Amount Type</label>
+                                <select class="form-select select2" name="saving_amount_type" id="saving_account_amount_type">
+                                    <option value="pre_defined">Fixed Amount</option>
+                                    <option value="percentage">Percentage of Loan</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Payment Type</label>
+                                <select class="form-select select2" id="saving_payment" name="saving_payment_type">
+                                    <option value="0">Deduct From Installment</option>
+                                    <option value="1">Collect Separately</option>
+                                </select>
                             </div>
                             <div class="mb-3">
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <div class="row">
-                                            <div class="col-lg-6">
-                                                <div class="mb-3">
-                                                    <label for="otherChargesDescription"
-                                                           class="form-label">Description</label>
-                                                    <input type="text" class="form-control" id="otherDocDescription">
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <button type="button" class="btn btn-primary" id="addDocBtn">Add Document
-                                        </button>
-                                    </div>
-                                    <div class="table-responsive-sm">
-                                        <table class="table table-centered mb-0" id="documenttable">
-                                            <thead>
-                                            <tr>
-                                                <th>Description</th>
-                                                <th>Action</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
+                                <label class="form-label">Interest Calculation Type</label>
+                                <select class="form-select select2" name="saving_interest_cal_type">
+                                    <option value="flat_daily">Flat Interest - Daily</option>
+                                    <option value="flat_weekly">Flat Interest - Weekly</option>
+                                    <option value="flat_monthly">Flat Interest - Monthly</option>
+                                    <option value="compound_daily">Compound Interest - Daily</option>
+                                    <option value="compound_weekly">Compound Interest - Weekly</option>
+                                    <option value="compound_monthly">Compound Interest - Monthly</option>
+                                </select>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <div class="row mb-3 section-break">
-                            <div class="col-12">
-                                <div class="section-title">
-                                    Savings Account
-                                </div>
+                <!-- Additional Charges -->
+                <div class="card card-modern mb-3">
+                    <div class="card-body p-4">
+                        <div class="section-header"><i class="bi bi-receipt"></i> Additional Charges</div>
+                        <div class="config-box mb-3 p-3">
+                            <div class="mb-2">
+                                <label class="form-label small">Description</label>
+                                <input type="text" id="newChargeDesc" class="form-control form-control-sm" placeholder="e.g. Late Payment Fee">
                             </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="interest_method" class="form-label">Enable Savings Account Process</label>
-                                    <select class="form-select" id="enable_saving">
-                                        <option value="Yes">Yes</option>
-                                        <option value="No" selected>No</option>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="form-label small" id="chargeAmountLabel">Amount</label>
+                                    <input type="number" step="0.01" id="newChargeVal" class="form-control form-control-sm" min="0" placeholder="0.00">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small">Type</label>
+                                    <select id="newChargeType" class="form-select select2 form-select-sm">
+                                        <option value="fixed">Fixed</option>
+                                        <option value="percentage">%</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="interest_method" class="form-label">Saving Account Amount Type</label>
-                                    <select class="form-select" id="saving_account_amount_type">
-                                        <option value="pre_defined" selected>Pre Defined Amount</option>
-                                        <option value="percentage">Percentage From Total Loan Amount</option>
-                                    </select>
-                                </div>
+                            <div class="mb-2">
+                                <label class="form-label small">Deduction</label>
+                                <select id="newChargeDeduction" class="form-select select2 form-select-sm">
+                                    <option value="on_loan_disbursement">On Loan Disbursement</option>
+                                    <option value="as_first_installment">As First Installment</option>
+                                    <option value="on_every_installment">On Every Installment</option>
+                                </select>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="loan_amount" class="form-label">Amount<span class="required-asterisk">*</span></label>
-                                    <input type="text" id="saving_amount" class="form-control" value="0.00">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="interest_method" class="form-label">Saving Payment Type</label>
-                                    <select class="form-select" id="saving_payment">
-                                        <option value="0" selected>Deduct Savings From Installment</option>
-                                        <option value="1">Collect Savings Separately</option>
-                                    </select>
-                                </div>
-                            </div>
+                            <button class="btn btn-primary-common btn-sm w-100" type="button" id="addChargeBtn">Add Charge</button>
                         </div>
 
+                        <ul class="list-group list-group-flush" id="chargesList">
+                            <!-- Charges will append here -->
+                        </ul>
+                    </div>
+                </div>
 
-                        <div class="row mb-3 section-break">
-                            <div class="col-12">
-                                <div class="section-title">
-                                    Loan Approval Levels
-                                </div>
+                <!-- Documents -->
+                <div class="card card-modern mb-3">
+                    <div class="card-body p-4">
+                        <div class="section-header"><i class="bi bi-file-earmark-text"></i> Required Documents</div>
+                        <div class="input-group mb-3">
+                            <input type="text" id="newDocName" class="form-control" placeholder="ID Card, Photo...">
+                            <button class="btn btn-primary-common" type="button" id="addDocBtn">Add</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm" id="docsTable">
+                                <tbody></tbody>
+                            </table>
+                            <div class="text-center text-muted p-2 empty-state-docs">
+                                <small>No documents added.</small>
                             </div>
                         </div>
-
-                        <div class="mb-12">
-                            <div class="row">
-                                <div class="col-lg-6">
-                                    <div class="mb-3">
-                                        <button type="button" class="btn btn-primary" id="addLevelBtn1">Add Level</button>
-                                        <button type="button" class="btn btn-danger" id="removeLevelBtn1">Remove Level</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="levels-container" class="row"></div>
+                    </div>
+                </div>
+            </div>
 
 
-                        <div class="modal-footer"   >
-                            <button type="button" class="btn btn-success " onclick="validateSubmitLoanCate(event)"><i
-                                    class="bi bi-save"></i>&nbsp;&nbsp;Save Product
-                            </button>
-                        </div>
-
-                    </div> <!-- end card-->
-                </div> <!-- end col -->
-    </div>
+        </div>
+    </form>
+</div>
 @endsection
 
 @section('script')
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="{{ asset('../JS/loan_category.js') }}"></script>
-
-
-
-    <script>
-        $(document).ready(function() {
-            let x = ["#loan_amount_from","#loan_amount_to","#interest_from","#interest_to"];
-            decimalFormat(x);
-
-
-            function toggleSavingFields() {
-                var enableSaving = $('#enable_saving').val();
-                if (enableSaving === 'No') {
-                    $('#saving_account_amount_type').closest('.col-md-6').hide();
-                    $('#saving_amount').closest('.col-md-6').hide();
-                    $('#saving_payment').closest('.col-md-6').hide();
-                } else {
-                    $('#saving_account_amount_type').closest('.col-md-6').show();
-                    $('#saving_amount').closest('.col-md-6').show();
-                    $('#saving_payment').closest('.col-md-6').show();
-                }
-            }
-
-            function updateAmountLabel() {
-                var amountType = $('#saving_account_amount_type').val();
-                var amountLabel = $('label[for="loan_amount"]');
-                if (amountType === 'percentage') {
-                    amountLabel.text('Percentage');
-                    $('#saving_amount').attr('placeholder', 'Enter percentage').attr('max', 100);
-                } else {
-                    amountLabel.text('Amount');
-                    $('#saving_amount').attr('placeholder', 'Enter amount').removeAttr('max');
-                }
-            }
-
-            // Initial checks when the page loads
-            toggleSavingFields();
-            updateAmountLabel();
-
-            // Listen for changes on the enable_saving select box
-            $('#enable_saving').change(function() {
-                toggleSavingFields();
-            });
-
-            // Listen for changes on the saving_account_amount_type select box
-            $('#saving_account_amount_type').change(function() {
-                updateAmountLabel();
-            });
-
-            // Validate the percentage field
-            $('#saving_amount').on('input', function() {
-                var amountType = $('#saving_account_amount_type').val();
-                if (amountType === 'percentage') {
-                    var value = $(this).val();
-                    if (value > 100) {
-                        $(this).val(100);
-                    } else if (value < 0) {
-                        $(this).val(0);
-                    }
-                }
-            });
-
-
-
-
-
-            let levelCount = 0;
-
-            $('#addLevelBtn1').click(function() {
-                levelCount++;
-
-                // Create a new level card with a checklist table on the right
-                let newLevel = `
-    <div class="col-lg-12 mb-4 level-card" data-level="${levelCount}">
-        <div class="card shadow">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0" style="width: 20%;"> Level ${levelCount < 10 ? '0' + levelCount : levelCount}</h5>
-                <div class="col-md-6" style="width: 80%;">
-                    <input type="text" class="form-control" id="description_${levelCount}" placeholder="Enter Level Description">
-                </div>
-            </div>
-            <div class="card-body" style="background-color: #f6ffee;">
-                <div class="row">
-                    <!-- Left: Designation Table -->
-                    <div class="col-lg-6">
-                        <div class="table-responsive custom-scrollbar">
-                            <div class="row mb-3">
-                                <div class="col-md-12 d-flex align-items-center">
-                                    <label for="desi_${levelCount}" class="form-label me-2">Designation</label>
-                                    <select class="form-control" id="desi_${levelCount}" name="desi">
-                                        @foreach($designation as $item)
-                <option value="{{$item->idDesignation}}">{{$item->name}}</option>
-                                        @endforeach
-                </select>
-                <button type="button" class="btn btn-primary ms-2 add-to-table" data-table="table_${levelCount}">Add</button>
-                                </div>
-                            </div>
-                            <table class="table table-bordered table-sm designation-table" id="table_${levelCount}" style="table-layout: fixed; width: 100%;">
-                                <thead class="bg-light">
-                                    <tr>
-                                        <th style="width: 70%;">Designation</th>
-                                        <th style="width: 30%;">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Dynamic rows will be added here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Right: Checklist Table -->
-                    <div class="col-lg-6">
-                        <div class="table-responsive custom-scrollbar">
-                            <div class="row mb-3">
-                                <div class="col-md-12 d-flex align-items-center">
-                                    <label for="checklist_${levelCount}" class="form-label me-2">Checklist Item</label>
-                                    <input type="text" class="form-control" id="checklist_input_${levelCount}" placeholder="Enter Checklist Item">
-                                    <button type="button" class="btn btn-primary ms-2 add-to-checklist" data-table="checklist_table_${levelCount}">Add</button>
-                                </div>
-                            </div>
-                            <table class="table table-bordered table-sm checklist-table" id="checklist_table_${levelCount}" style="table-layout: fixed; width: 100%;">
-                                <thead class="bg-light">
-                                    <tr>
-                                        <th style="width: 70%;">Checklist Item</th>
-                                        <th style="width: 30%;">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Dynamic rows will be added here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>`;
-
-                // Append the new level card to the container
-                $('#levels-container').append(newLevel);
-            });
-
-// Event handler for adding rows to the checklist table
-            $(document).on('click', '.add-to-checklist', function() {
-                let tableId = $(this).data('table');
-                let levelId = tableId.split('_')[2]; // Extract level ID from table ID
-                let inputId = `#checklist_input_${levelId}`;
-                let value = $(inputId).val();
-
-                if (value.trim() !== '') {
-                    let newRow = `
-        <tr>
-            <td>${value}</td>
-            <td>
-                <button type="button" class="btn btn-danger btn-sm remove-row">Remove</button>
-            </td>
-        </tr>`;
-                    $(`#${tableId} tbody`).append(newRow);
-                    $(inputId).val(''); // Clear input field
-                }
-            });
-
-            // Event handler for removing rows from tables
-            $(document).on('click', '.remove-row', function() {
-                $(this).closest('tr').remove();
-            });
-
-            $('#removeLevelBtn1').click(function() {
-                if (levelCount > 0) {
-                    $('.level-card').last().remove();
-                    levelCount--;
-                }
-            });
-
-            // Use event delegation to handle click event for dynamically added elements
-            $('#levels-container').on('click', '.add-to-table', function() {
-                let cardBody = $(this).closest('.card-body');
-                let select = cardBody.find('select');
-                let selectedText = select.find('option:selected').text();
-                let selectedValue = select.find('option:selected').val();
-                let tableBody = cardBody.find('.designation-table tbody');
-
-                // Check for duplicate entry
-                let isDuplicate = false;
-                tableBody.find('tr').each(function() {
-                    let rowValue = $(this).find('td:first').data('value');
-                    if (rowValue == selectedValue) {
-                        isDuplicate = true;
-                        return false; // Break the loop
-                    }
-                });
-
-                if (!isDuplicate) {
-                    tableBody.append(`
-                <tr>
-                    <td style="text-align: left" data-value="${selectedValue}">${selectedText}</td>
-                    <td style="text-align: left">
-                        <button type="button" class="btn btn-danger btn-sm remove-from-table">Remove</button>
-                    </td>
-                </tr>
-            `);
-                } else {
-                    alert('This designation is already added.');
-                }
-            });
-
-            // Use event delegation to handle click event for remove buttons
-            $('#levels-container').on('click', '.remove-from-table', function() {
-                $(this).closest('tr').remove();
-            });
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Initialize Searchable Selects
+        $('.select2').select2({
+            width: '100%'
         });
 
+        // Savings Toggle
+        $('#saving_account_status').change(function() {
+            var enableSaving = $(this).is(':checked');
+            $('#savingFields').toggle(enableSaving);
 
-        // Function to read levels data
-        function readLevelsData() {
-            let levelsData = [];
+            if (enableSaving) {
+                $('#savingsAccountInfo').slideDown();
+            } else {
+                $('#savingsAccountInfo').slideUp();
+            }
+        });
 
-            $('.level-card').each(function() {
-                // Retrieve the level number from the <h5> element
-                let levelHeaderText = $(this).find('.card-header h5').text().trim();
-                let level = levelHeaderText.replace('Level ', '').trim();
+        // Recovery Account Toggle
+        $('#recovery_account_status').change(function() {
+            var enableRecovery = $(this).is(':checked');
+            if (enableRecovery) {
+                $('#recoveryAccountInfo').slideDown();
+            } else {
+                $('#recoveryAccountInfo').slideUp();
+            }
+        });
 
-                let description = $(this).find(`input[id^="description_"]`).val(); // Using starts-with selector for robustness
-                let designations = [];
-                let checklist = [];
+        // Collection Period Toggle in Add Item
+        $('#newItemDiffColl').change(function() {
+            if ($(this).is(':checked')) {
+                $('#newItemCollContainer').fadeIn();
+            } else {
+                $('#newItemCollContainer').fadeOut();
+            }
+        });
 
-                // Gather designations
-                $(this).find('.designation-table tbody tr').each(function() {
-                    let designationId = $(this).find('td:first').data('value');
-                    let designationName = $(this).find('td:first').text();
-                    designations.push({ id: designationId, name: designationName });
-                });
+        // -----------------------------------------
+        // Field Restriction Logic
+        // -----------------------------------------
+        function toggleFieldRestrictions() {
+            let hasItems = $('#itemsTable tbody tr').length > 0;
 
-                // Gather checklist items
-                $(this).find('.checklist-table tbody tr').each(function() {
-                    let checklistItem = $(this).find('td:first').text().trim();
-                    checklist.push(checklistItem);
-                });
+            const fields = [
+                'loan_period_type',
+                'interest_period_type',
+                'collection_period_type',
+                'saving_amount_type'
+            ];
 
-                // Add level data to the array
-                levelsData.push({
-                    level: level,
-                    description: description,
-                    designations: designations,
-                    checklist: checklist
-                });
+            fields.forEach(name => {
+                let $el = $(`select[name="${name}"]`);
+                if ($el.length === 0) return;
+
+                // Check if we already have a hidden input for this field
+                let $hidden = $el.siblings(`input[type="hidden"][name="${name}"].restriction-hidden`);
+
+                if (hasItems) {
+                    // Start Restriction
+                    if (!$el.prop('disabled')) {
+                        $el.prop('disabled', true);
+                    }
+
+                    // Always ensure hidden input is current value and exists
+                    if ($hidden.length === 0) {
+                        $el.after(`<input type="hidden" class="restriction-hidden" name="${name}" value="${$el.val()}">`);
+                    } else {
+                        $hidden.val($el.val());
+                    }
+                } else {
+                    // Release Restriction
+                    $el.prop('disabled', false);
+                    $hidden.remove();
+                }
+            });
+        }
+
+        // -----------------------------------------
+        // Sync Period Types
+        // -----------------------------------------
+        function syncPeriodType(sourceName, targetId) {
+            let val = $('select[name="' + sourceName + '"] option:selected').text();
+            $('#' + targetId).text(val);
+        }
+
+        $('select[name="loan_period_type"]').change(function() {
+            syncPeriodType('loan_period_type', 'display_loan_period_type');
+        });
+        $('select[name="interest_period_type"]').change(function() {
+            syncPeriodType('interest_period_type', 'display_interest_period_type');
+        });
+        $('select[name="collection_period_type"]').change(function() {
+            syncPeriodType('collection_period_type', 'display_collection_period_type');
+        });
+
+        // Initial Sync
+        syncPeriodType('loan_period_type', 'display_loan_period_type');
+        syncPeriodType('interest_period_type', 'display_interest_period_type');
+        syncPeriodType('collection_period_type', 'display_collection_period_type');
+
+
+
+        // -----------------------------------------
+        // Validation Logic for Percentage Inputs
+        // -----------------------------------------
+        function handlePercentageLogic(selectId, inputId, labelId, standardLabel) {
+            $(selectId).change(function() {
+                let val = $(this).val();
+                let isPercentage = (val === 'percentage' || val === 'Percentage');
+
+                if (isPercentage) {
+                    $(labelId).text('Percentage (%)');
+                    $(inputId).val('').attr('max', 100);
+                } else {
+                    $(labelId).text(standardLabel);
+                    $(inputId).removeAttr('max');
+                }
             });
 
-            return levelsData;
+            $(inputId).on('input', function() {
+                let valType = $(selectId).val();
+                let isPercentage = (valType === 'percentage' || valType === 'Percentage');
+
+                if (isPercentage) {
+                    let val = parseFloat($(this).val());
+                    if (val > 100) {
+                        $(this).val(100);
+                    }
+                }
+            });
         }
 
+        // Apply to Savings
+        handlePercentageLogic('#saving_account_amount_type', '#saving_amount', '#savingAmountLabel', 'Amount');
 
+        // Apply to Charges
+        handlePercentageLogic('#newChargeType', '#newChargeVal', '#chargeAmountLabel', 'Amount');
 
-    </script>
-    <script>
-        function validateAmount() {
-            var selectedType = document.getElementById("charge_type").value;
-            var amountInput = document.getElementById("otherChargesAmount").value;
-            var amountError = document.getElementById("amountError");
+        // -----------------------------------------
+        // Dynamic Items Logic
+        // -----------------------------------------
+        let itemIndex = 0;
 
-            if (selectedType === "Percentage" && parseInt(amountInput) > 99) {
-                amountError.textContent = "Percentage amount cannot be greater than 99%";
-                document.getElementById("otherChargesAmount").classList.add("is-invalid");
-                $("#otherChargesAmount").val("99")
-            } else {
-                amountError.textContent = "";
-                document.getElementById("otherChargesAmount").classList.remove("is-invalid");
+        // Function to Add Item Row
+        window.addItemRow = function(data) {
+            console.log("Adding row", data); // Debug
+            $('.empty-state-table').hide();
+
+            // Formatted Texts (defaults if not provided)
+            let periodTxt = data._period_txt || $('#display_loan_period_type').text().toUpperCase();
+            let interestTxt = data._interest_txt || $('#display_interest_period_type').text().toUpperCase();
+            let penaltyMethodTxt = data._penalty_method_txt || $('#newItemPenaltyMethod option:selected').text().toUpperCase(); // fallback using selector might be risky on initial load vs edit, better pass it.
+
+            // Penalty Text Display
+            let penaltyTxt = '-';
+            if (data.penalty_percentage && data.penalty_percentage > 0) {
+                // "5% (APPLY PNEALTY (THIS IS OPTION OF PENALTY MWETHO).) after 5 Days"
+                let methodDesc = data._penalty_method_desc ? data._penalty_method_desc.toUpperCase() : (data.penalty_method === 'every_installment' ? 'APPLY PENALTY FOR EVERY INSTALLMENT' : 'APPLY PENALTY FOR LOAN AFTER MATURITY');
+
+                penaltyTxt = `${data.penalty_percentage}% (${methodDesc}) after ${data.penalty_start_after_days} ${data.penalty_apply_type}`;
             }
+
+            let html = `
+                <tr>
+                    <td><span class="fw-bold text-uppercase">${data.product_item_name || 'Tier ' + (itemIndex+1)}</span>
+                        <input type="hidden" name="items[${itemIndex}][product_item_name]" value="${data.product_item_name || ''}">
+                    </td>
+                    <td>${data.minimum_loan_amount} - ${data.maximum_loan_amount}
+                        <input type="hidden" name="items[${itemIndex}][minimum_loan_amount]" value="${data.minimum_loan_amount}">
+                        <input type="hidden" name="items[${itemIndex}][maximum_loan_amount]" value="${data.maximum_loan_amount}">
+                    </td>
+                    <td>${data.minimum_loan_period} - ${data.maximum_loan_period} - ${periodTxt}
+                         ${data.minimum_collection_period ? `<br><small class='text-muted'>Coll: ${data.minimum_collection_period}-${data.maximum_collection_period}</small>` : ''}
+                        
+                        <input type="hidden" name="items[${itemIndex}][minimum_loan_period]" value="${data.minimum_loan_period}">
+                        <input type="hidden" name="items[${itemIndex}][maximum_loan_period]" value="${data.maximum_loan_period}">
+                        <input type="hidden" name="items[${itemIndex}][minimum_collection_period]" value="${data.minimum_collection_period || ''}">
+                        <input type="hidden" name="items[${itemIndex}][maximum_collection_period]" value="${data.maximum_collection_period || ''}">
+                    </td>
+                    <td>${data.minimum_interest} - ${data.maximum_interest}% ${interestTxt}
+                         <input type="hidden" name="items[${itemIndex}][minimum_interest]" value="${data.minimum_interest}">
+                        <input type="hidden" name="items[${itemIndex}][maximum_interest]" value="${data.maximum_interest}">
+                    </td>
+                    <td>
+                         <small style="font-size:0.75rem; text-transform: uppercase;">${penaltyTxt}</small>
+                         <input type="hidden" name="items[${itemIndex}][penalty_method]" value="${data.penalty_method}">
+                         <input type="hidden" name="items[${itemIndex}][penalty_percentage]" value="${data.penalty_percentage}">
+                         <input type="hidden" name="items[${itemIndex}][penalty_start_after_days]" value="${data.penalty_start_after_days}">
+                         <input type="hidden" name="items[${itemIndex}][penalty_apply_type]" value="${data.penalty_apply_type}">
+                        <input type="hidden" name="items[${itemIndex}][required_guarantee_count]" value="${data.required_guarantee_count}">
+                    </td>
+                    <td>
+                        <span class="d-block small fw-bold text-dark">${data.saving_amount ? parseFloat(data.saving_amount).toFixed(2) : '-'}</span>
+                        <small class="text-muted d-block" style="font-size: 0.7rem;">
+                            ${data.saving_interest_rate ? data.saving_interest_rate + '%' : '-'} Int.
+                        </small>
+                        <input type="hidden" name="items[${itemIndex}][saving_amount]" value="${data.saving_amount}">
+                        <input type="hidden" name="items[${itemIndex}][saving_interest_rate]" value="${data.saving_interest_rate}">
+                    </td>
+                    <td class="text-end">
+                        <button type="button" class="btn btn-sm btn-link text-danger remove-row"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+
+            $('#itemsTable tbody').append(html);
+            itemIndex++;
+            toggleFieldRestrictions(); // Update restrictions
         }
 
-        // Function to change label based on dropdown selection
-        function change_name_amount(value) {
-            var change_amount_label = document.getElementById("change_amount");
-            if (value === "Percentage") {
-                change_amount_label.textContent = "Percentage";
-            } else {
-                change_amount_label.textContent = "Amount";
-            }
-        }
+        $('#addNewItemBtn').click(function() {
+            let name = $('#newItemName').val();
+            let minL = $('#newItemMinLoan').val();
+            let maxL = $('#newItemMaxLoan').val();
 
-        function change_name_amount(value) {
-            if (value === "Amount") {
-                $("#change_amount").text("Amount");
-            } else {
-                $("#change_amount").text("Percentage %");
 
-            }
-        }
-
-        document.getElementById('addChargesBtn').addEventListener('click', function () {
-            // Get values
-            var description   = document.getElementById('otherChargesDescription').value.trim();
-            var amount        = document.getElementById('otherChargesAmount').value.trim();
-            var charge_type   = document.getElementById('charge_type').value;
-            var deductionType = document.getElementById('deduction_type').value; // NEW
-
-            if (!description || !amount) {
-                Swal.fire("Error!", "Please enter details !", "error");
+            if (!minL || !maxL) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Validation Error',
+                    text: 'Please enter a valid loan range',
+                    confirmButtonColor: window.CommonColors?.primary || '#3085d6'
+                });
                 return;
             }
 
-            // Normalize amount format based on type
-            if (charge_type === "Amount") {
-                amount = parseFloat(amount).toFixed(2);
-            } else {
-                // Percentage: keep raw number (your validateAmount caps at 99)
-                amount = amount;
+            // Min/Max Validation Function
+            function validateMinMax(min, max, label) {
+                if (min !== '' && max !== '' && parseFloat(min) > parseFloat(max)) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Validation Error',
+                        html: `<b>${label}</b>: Minimum value cannot be greater than Maximum value.`,
+                        confirmButtonColor: window.CommonColors?.primary || '#3085d6'
+                    });
+                    return false;
+                }
+                return true;
             }
 
-            // Build row (note: Deduction Type column is added)
-            var newRow = `
-        <tr data-charge-type="${charge_type}" data-deduction-type="${deductionType}">
-            <td>${description}</td>
-            <td>${charge_type}</td>
-            <td>${amount}</td>
-            <td>${deductionType}</td>           <!-- NEW -->
-            <td>
-                <button type="button" class="btn btn-success delete-row" style="background-color: white; color: #ff0000; border: none">
-                    <i class="bi bi-trash fs-3"></i>
-                </button>
-            </td>
-        </tr>`;
+            // Perform Validations
+            if (!validateMinMax(minL, maxL, 'Loan Amount')) return;
 
-            document.querySelector('#otherchargetable tbody').insertAdjacentHTML('beforeend', newRow);
+            // Interest
+            if (!validateMinMax($('#newItemMinInt').val(), $('#newItemMaxInt').val(), 'Interest Rate')) return;
 
-            // Clear inputs
-            document.getElementById('otherChargesDescription').value = '';
-            document.getElementById('otherChargesAmount').value = '';
-
-            // Wire delete
-            document.querySelectorAll('.delete-row').forEach(function (button) {
-                button.addEventListener('click', function () {
-                    this.closest('tr').remove();
-                });
-            });
-        });
+            // Loan Period
+            let minP = $('#newItemMinPeriod').val();
+            let maxP = $('#newItemMaxPeriod').val();
+            if (!validateMinMax(minP, maxP, 'Loan Period')) return;
 
 
-
-        document.getElementById('addDocBtn').addEventListener('click', function () {
-            // Get values from input fields
-            var description = document.getElementById('otherDocDescription').value;
-
-            if (!description) {
-                Swal.fire("Error!", "Please enter details !", "error");
-            } else {
-
-                // Create a new table row
-                var newRow = '<tr>' +
-                    '<td>' + description + '</td>' +
-                    '<td><button type="button" class="btn btn-danger delete-row" style="background-color: white; color: #ff0000; border: none"><i class="bi bi-trash fs-3"></i></button></td>' +
-                    '</tr>';
-
-                // Append the new row to the table body
-                document.getElementById('documenttable').getElementsByTagName('tbody')[0].insertAdjacentHTML(
-                    'beforeend', newRow);
-
-                // Clear the input fields
-                document.getElementById('otherDocDescription').value = '';
+            // Collection Period (only if enabled)
+            if ($('#newItemDiffColl').is(':checked')) {
+                if (!validateMinMax($('#newItemMinColl').val(), $('#newItemMaxColl').val(), 'Collection Period')) return;
             }
 
 
-            // Add event listener to delete button of the new row
-            var deleteButtons = document.querySelectorAll('.delete-row');
-            deleteButtons.forEach(function (button) {
-                button.addEventListener('click', function () {
-                    var row = this.closest('tr');
-                    row.remove();
+            // Guarantor Validation
+            let globalGuarantors = parseInt($('input[name="guarantee_count"]').val()) || 0;
+            let reqGuarantors = parseInt($('#newItemGuarantors').val()) || 0;
+
+            if (reqGuarantors > globalGuarantors) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Validation Error',
+                    html: `Required Guarantors (<b>${reqGuarantors}</b>) cannot be greater than Global Guarantors (<b>${globalGuarantors}</b>)`,
+                    confirmButtonColor: window.CommonColors?.primary || '#3085d6'
                 });
-            });
+                return;
+            }
+
+            let data = {
+                product_item_name: name,
+                minimum_loan_amount: minL,
+                maximum_loan_amount: maxL,
+                minimum_interest: $('#newItemMinInt').val(),
+                maximum_interest: $('#newItemMaxInt').val(),
+                minimum_loan_period: $('#newItemMinPeriod').val(),
+                maximum_loan_period: $('#newItemMaxPeriod').val(),
+                minimum_collection_period: $('#newItemDiffColl').is(':checked') ? $('#newItemMinColl').val() : '',
+                maximum_collection_period: $('#newItemDiffColl').is(':checked') ? $('#newItemMaxColl').val() : '',
+                required_guarantee_count: $('#newItemGuarantors').val(),
+                penalty_method: $('#newItemPenaltyMethod').val(),
+                penalty_percentage: $('#newItemPenaltyRate').val(),
+                penalty_start_after_days: $('#newItemPenaltyStart').val(),
+
+                penalty_apply_type: $('#newItemPenaltyType').val(),
+                saving_amount: $('#saving_amount').val(),
+                saving_interest_rate: $('#newItemSavingInterest').val(),
+                // Extra Texts for Display
+                _period_txt: $('#display_loan_period_type').text().toUpperCase(),
+                _interest_txt: $('#display_interest_period_type').text().toUpperCase(),
+                _penalty_method_desc: $('#newItemPenaltyMethod option:selected').text()
+            };
+
+            addItemRow(data);
+
+            // Reset input fields
+            $('.config-box input').val('');
+            $('#newItemDiffColl').prop('checked', false).trigger('change');
+            $('#newItemPenaltyMethod').val('every_installment');
+            $('#newItemPenaltyType').val('Days');
         });
-    </script>
+
+        $(document).on('click', '.remove-row', function() {
+            // Check if it's an item row or other
+            $(this).closest('tr').remove();
+            if ($('#itemsTable tbody tr').length === 0) $('.empty-state-table').show();
+            toggleFieldRestrictions(); // Update restrictions
+        });
+
+
+        // -----------------------------------------
+        // Additional Charges Logic
+        // -----------------------------------------
+        let chargeIndex = 0;
+
+        window.addChargeRow = function(charge) {
+            let displayVal = charge.value;
+            if (charge.value_type === 'percentage') {
+                displayVal += '%';
+            } else {
+                displayVal += ' (' + charge.value_type + ')';
+            }
+
+            let html = `
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold">${charge.description}</div>
+                        <div class="small text-muted">${displayVal} - ${charge.deduction_type}</div>
+                        
+                        <input type="hidden" name="charges[${chargeIndex}][description]" value="${charge.description}">
+                        <input type="hidden" name="charges[${chargeIndex}][value_type]" value="${charge.value_type}">
+                        <input type="hidden" name="charges[${chargeIndex}][value]" value="${charge.value}">
+                        <input type="hidden" name="charges[${chargeIndex}][deduction_type]" value="${charge.deduction_type}">
+                    </div>
+                    <button type="button" class="btn btn-sm text-danger remove-charge"><i class="bi bi-x-circle"></i></button>
+                </li>
+            `;
+            $('#chargesList').append(html);
+            chargeIndex++;
+        }
+
+        $('#addChargeBtn').click(function() {
+            let desc = $('#newChargeDesc').val();
+            let val = $('#newChargeVal').val();
+            if (!desc || !val) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Information',
+                    text: "Please provide description and amount",
+                    confirmButtonColor: window.CommonColors?.primary || '#3085d6'
+                });
+                return;
+            }
+
+            let charge = {
+                description: desc,
+                value: val,
+                value_type: $('#newChargeType').val(),
+                deduction_type: $('#newChargeDeduction').val()
+            };
+            addChargeRow(charge);
+
+            $('#newChargeDesc').val('');
+            $('#newChargeVal').val('');
+        });
+
+        $(document).on('click', '.remove-charge', function() {
+            $(this).closest('li').remove();
+        });
+
+
+        // -----------------------------------------
+        // Documents Logic
+        // -----------------------------------------
+        let docIndex = 0;
+
+        window.addDocRow = function(docData) {
+            $('.empty-state-docs').hide();
+            let html = `
+                <tr>
+                    <td>
+                        <span class="small fw-bold">${docData.name}</span>
+                        <input type="hidden" name="documents[${docIndex}][name]" value="${docData.name}">
+                    </td>
+                    <td class="text-center" style="width: 50px;">
+                         <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="documents[${docIndex}][]" value="1" ${docData._status ? 'checked' : ''} title="Mandatory">
+                        </div>
+                    </td>
+                    <td style="width: 30px;">
+                        <button type="button" class="btn btn-sm text-danger remove-doc-row p-0"><i class="bi bi-x-circle"></i></button>
+                    </td>
+                </tr>
+            `;
+            $('#docsTable tbody').append(html);
+            docIndex++;
+        }
+
+        $('#addDocBtn').click(function() {
+            let docName = $('#newDocName').val();
+            if (!docName) return;
+
+            addDocRow({
+                name: docName,
+                _status: true
+            });
+            $('#newDocName').val('');
+        });
+
+        $(document).on('click', '.remove-doc-row', function() {
+            $(this).closest('tr').remove();
+            if ($('#docsTable tbody tr').length === 0) $('.empty-state-docs').show();
+        });
+
+
+        // -----------------------------------------
+        // AJAX Edit Mode Population
+        // -----------------------------------------
+        let productId = $('#product_id').val();
+        if (productId) {
+            $.ajax({
+                url: `/product/get-details/${productId}`,
+                type: 'GET',
+                success: function(response) {
+                    let product = response.product;
+
+                    // Core Fields
+                    $('input[name="product_name"]').val(product.product_name);
+                    $('input[name="product_item_name"]').val(product.product_item_name);
+                    $('input[name="product_code"]').val(product.product_code);
+                    $('select[name="interest_method"]').val(product.interest_method).trigger('change');
+                    $('select[name="loan_period_type"]').val(product.loan_period_type).trigger('change');
+                    $('select[name="interest_period_type"]').val(product.interest_period_type).trigger('change');
+                    $('select[name="collection_period_type"]').val(product.collection_period_type).trigger('change');
+                    $('select[name="collection_date_type"]').val(product.collection_date_type).trigger('change');
+                    $('input[name="guarantee_count"]').val(product.guarantee_count);
+
+                    // Recover & Savings
+                    if (product.recovery_account_status === 'Yes') {
+                        $('#recovery_account_status').prop('checked', true).trigger('change');
+                    } else {
+                        $('#recovery_account_status').prop('checked', false).trigger('change');
+                    }
+                    if (product.saving_account_status === 'active') {
+                        $('#saving_account_status').prop('checked', true).trigger('change');
+                        $('select[name="saving_amount_type"]').val(product.saving_amount_type).trigger('change');
+                        $('input[name="saving_amount"]').val(product.saving_amount);
+                        $('select[name="saving_payment_type"]').val(product.saving_collection_type).trigger('change');
+                        $('select[name="saving_interest_cal_type"]').val(product.saving_interest_cal_type).trigger('change');
+                    }
+
+                    // Items
+                    if (product.product_has_items && product.product_has_items.length > 0) {
+                        $('#itemsTable tbody').empty();
+                        product.product_has_items.forEach(item => {
+                            addItemRow(item);
+                        });
+                        toggleFieldRestrictions();
+                    }
+
+                    // Charges
+                    if (product.additional_charges && product.additional_charges.length > 0) {
+                        product.additional_charges.forEach(charge => {
+                            addChargeRow(charge);
+                        });
+                    }
+
+                    // Documents
+                    if (product._documents && product._documents.length > 0) {
+                        $('#docsTable tbody').empty();
+                        product._documents.forEach(doc => {
+                            addDocRow(doc);
+                        });
+                    }
+                },
+                error: function(e) {
+                    console.error("Error loading product", e);
+                }
+            });
+        }
+    });
+</script>
+<script src="{{ asset('JS/common.js') }}"></script>
 @endsection

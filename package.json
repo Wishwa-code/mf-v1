@@ -7,8 +7,22 @@
         "prod": "npm run build"
     },
     "devDependencies": {
+        "autoprefixer": "^10.4.16",
         "axios": "^1.6.4",
         "laravel-vite-plugin": "^1.0",
+        "postcss": "^8.4.32",
+        "sass": "^1.69.5",
         "vite": "^5.0"
+    },
+    "dependencies": {
+        "@popperjs/core": "^2.11.8",
+        "bootstrap": "^5.3.2",
+        "choices.js": "^10.2.0",
+        "datatables.net-bs5": "^1.13.8",
+        "datatables.net-buttons-bs5": "^2.4.2",
+        "flatpickr": "^4.6.13",
+        "jquery": "^3.7.1",
+        "select2": "^4.1.0-rc.0",
+        "sweetalert2": "^11.10.1"
     }
 }

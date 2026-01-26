@@ -143,12 +143,13 @@
                 if(!r.ok) throw new Error('Switch failed');
                 return r.json().catch(()=>({}));
             }).then(()=>{
-                window.location.href='/'
+              location.reload();
             }).catch(()=>{
                 alert('Failed to switch branch');
+                location.reload();                  
             });
         });
     });
-    document.getElementById('refreshBranches').addEventListener('click',()=>window.location.reload());
+    document.getElementById('refreshBranches').addEventListener('click',()=>location.reload());
 </script>
 @endsection

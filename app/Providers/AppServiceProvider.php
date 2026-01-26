@@ -14,7 +14,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Manually load helper if composer autoload didn't pick it up
+        $helperPath = app_path('Helpers/SessionHelper.php');
+        if (file_exists($helperPath)) {
+            require_once $helperPath;
+        }
     }
 
     /**
@@ -35,9 +39,34 @@ class AppServiceProvider extends ServiceProvider
                     DB::statement("ALTER TABLE customer_loan ADD COLUMN created_at DATETIME NULL AFTER Date_Time");
                     DB::statement("UPDATE customer_loan SET created_at = Date_Time WHERE Date_Time IS NOT NULL");
                 } catch (\Exception $e) {
-                    logger()->warning('Could not add customer_loan.created_at: '.$e->getMessage());
+                    logger()->warning('Could not add customer_loan.created_at: ' . $e->getMessage());
                 }
             }
+
+            // Register Blade Directive for Privileges
+            \Illuminate\Support\Facades\Blade::if('hasPrivilege', function ($expression) {
+                return has_privilege($expression);
+            });
+
+            // Share branches with navbar for Admin users (branch_access == 1)
+            view()->composer('layout.navbar', function ($view) {
+                if (session('branch_access') === 1 && !isset($view->branch)) {
+                    $branches = DB::table('branch')->get();
+                    $view->with('branch', $branches);
+                }
+            });
+
+            // Activity Log: Snapshot User Name
+            \Spatie\Activitylog\Models\Activity::saving(function (\Spatie\Activitylog\Models\Activity $activity) {
+                $user = auth()->user();
+                // If there's an authenticated user and no "causer_name" property yet
+                if ($user) {
+                    $activity->properties = $activity->properties->merge([
+                        'causer_name' => $user->Full_Name ?? 'Unknown User',
+                        'ip' => request()->ip()
+                    ]);
+                }
+            });
         } catch (\Exception $e) {
             // Log and skip during deploy if DB is not ready
             logger()->warning("Skipping settings load: " . $e->getMessage());

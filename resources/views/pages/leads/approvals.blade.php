@@ -36,6 +36,7 @@
 @section('script')
 <script>
     $(document).ready(function() {
+    
         $('#leads_approval_table').DataTable({
             ajax: {
                 url: "{{ route('leads.approvals.data') }}",

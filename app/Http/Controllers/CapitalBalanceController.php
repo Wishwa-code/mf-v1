@@ -82,8 +82,34 @@ class CapitalBalanceController extends Controller
                     $capital_amount = $loans->Amount;
                     $interest_amount = $loans->Interest_Amount;
 
-                    $ins_capital = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', '=', $loan_id)->sum('capital_amount');
-                    $ins_interest = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', '=', $loan_id)->sum('interest_amount');
+                    $firstInstallment = DB::table('installments')
+                        ->where('Customer_Loan_idCustomer_Loan', $loan_id)
+                        ->orderBy('idInstallments')   // ASC order
+                        ->first();
+
+                    $ins_capital = 0;
+                    $ins_interest = 0;
+
+                    if ($firstInstallment) {
+                        $firstId           = $firstInstallment->idInstallments;
+                        $Installment_Amount = $firstInstallment->Installment_Amount;
+                        $capital_amount = $firstInstallment->capital_amount;
+                        if ($Installment_Amount == $capital_amount) {
+                            $ins_capital = tableWithBranch('installments')
+                                ->where('Customer_Loan_idCustomer_Loan', $loan_id)
+                                ->where('idInstallments', '!=', $firstId)
+                                ->sum('capital_amount');
+
+                            $ins_interest = tableWithBranch('installments')
+                                ->where('Customer_Loan_idCustomer_Loan', $loan_id)
+                                ->where('idInstallments', '!=', $firstId)
+                                ->sum('interest_amount');
+                        } else {
+                            $ins_capital = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', '=', $loan_id)->sum('capital_amount');
+                            $ins_interest = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', '=', $loan_id)->sum('interest_amount');
+                        }
+                    }
+
                     $capital_additional_amount = 0;
                     $interest_additional_amount = 0;
 
@@ -366,7 +392,7 @@ class CapitalBalanceController extends Controller
 
             $key = $data['key'];
             $value = $data['value'];
-            $uid = auth()->id();
+            $uid = user_data('idUser');
 
             $setting = AppSettings::where('key', $key)->first();
             $oldValue = $setting?->value;
@@ -587,207 +613,4 @@ class CapitalBalanceController extends Controller
         //
         //        }
     }
-
-
-
-    public function commission_store_person(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'branch_id' => 'required|integer|min:1',
-            'full_name' => 'required|string|max:150',
-            'contact_number' => 'nullable|string|max:30',
-            'nic_number' => 'nullable|string|max:30',
-            'brief_description' => 'nullable|string|max:255',
-
-            'bank_name' => 'nullable|string|max:120',
-            'bank_branch' => 'nullable|string|max:120',
-            'bank_account_number' => 'nullable|string|max:50',
-            'bank_account_name' => 'nullable|string|max:120',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['message' => $validator->errors()->first()], 422);
-        }
-
-        $branch_access = session('branch_access');
-        $sessionBranch = (int) session('branch_id');
-        $isHO = ($sessionBranch === -1);
-
-        $selectedBranch = ($branch_access == 1 && $isHO)
-            ? (int) $request->branch_id
-            : $sessionBranch;
-
-        $uid = auth()->id();
-
-        $id = DB::table('commission_people')->insertGetId([
-            'branch_id' => $selectedBranch,
-            'type' => 'commission',
-            'user_id' => null,
-
-            'full_name' => $request->full_name,
-            'contact_number' => $request->contact_number,
-            'nic_number' => $request->nic_number,
-            'brief_description' => $request->brief_description,
-
-            'bank_name' => $request->bank_name,
-            'bank_branch' => $request->bank_branch,
-            'bank_account_number' => $request->bank_account_number,
-            'bank_account_name' => $request->bank_account_name,
-
-            'status' => 1,
-            'created_by' => $uid,
-            'updated_by' => $uid,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'person' => DB::table('commission_people')->where('id', $id)->first()
-        ]);
-    }
-
-
-
-    public function commission_save_rates(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'branch_id' => 'required|integer|min:1',
-            'rates' => 'required|array',
-            'rates.*.person_id' => 'required|integer',
-            'rates.*.product_id' => 'required|integer',
-            'rates.*.rate' => 'nullable|numeric|min:0|max:999999',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['message' => $validator->errors()->first()], 422);
-        }
-
-        $branch_access = session('branch_access');
-        $sessionBranch = (int) session('branch_id');
-        $isHO = ($sessionBranch === -1);
-
-        $selectedBranch = ($branch_access == 1 && $isHO)
-            ? (int) $request->branch_id
-            : $sessionBranch;
-
-        if ($selectedBranch <= 0) {
-            return response()->json(['message' => 'Invalid branch'], 422);
-        }
-
-        $uid = auth()->id();
-
-        DB::beginTransaction();
-        try {
-            foreach ($request->rates as $r) {
-                DB::table('commission_rates')->updateOrInsert(
-                    [
-                        'branch_id'             => $selectedBranch,
-                        'commission_person_id'  => (int)$r['person_id'],
-                        'product_id'            => (int)$r['product_id'],
-                    ],
-                    [
-                        'rate' => (float)($r['rate'] ?? 0),
-                        'updated_by' => $uid,
-                        'updated_at' => now(),
-                        'created_by' => $uid,
-                        'created_at' => now(),
-                    ]
-                );
-            }
-
-            DB::commit();
-            return response()->json(['success' => true], 200);
-        } catch (\Throwable $th) {
-            DB::rollBack();
-            return response()->json(['message' => $th->getMessage()], 500);
-        }
-    }
-
-
-    public function commission_all(Request $request)
-    {
-        $branch_access = session('branch_access');      // 1 = HO can select
-        $sessionBranch = (int) session('branch_id');    // branch user branch id
-        $isHO = ($sessionBranch === -1);
-
-        // selected branch from UI (HO only). Branch users force session branch.
-        $selectedBranch = ($branch_access == 1 && $isHO)
-            ? (int) ($request->branch_id ?? 0)
-            : $sessionBranch;
-
-        if ($selectedBranch <= 0) {
-            return response()->json(['message' => 'Branch is required'], 422);
-        }
-
-        // ✅ Products (your "products" = loan_category)
-        $products = tableWithBranch('loan_category')
-            ->select('idLoan_Category as id', 'Name as name')
-            ->where('status', 1)
-            ->orderBy('Name')
-            ->get();
-
-        // ✅ Collectors list (adjust condition if needed)
-        $collectors = tableWithBranch('user')
-            ->select('id as user_id', 'Full_Name as full_name')
-            ->where('Status', 1)
-            ->where('collector', '1') // adjust
-            ->orderBy('Full_Name')
-            ->get();
-
-        // ✅ Ensure commission_people rows exist (branch-wise)
-        $uid = auth()->id();
-        foreach ($collectors as $c) {
-            DB::table('commission_people')->updateOrInsert(
-                [
-                    'branch_id' => $selectedBranch,
-                    'user_id'   => $c->user_id,
-                ],
-                [
-                    'type'       => 'Collector',
-                    'full_name'  => $c->full_name,
-                    'status'     => 1,
-                    'updated_by' => $uid,
-                    'updated_at' => now(),
-                    'created_by' => $uid,
-                    'created_at' => now(),
-                ]
-            );
-        }
-
-        // ✅ People for this branch
-        $people = DB::table('commission_people')
-            ->where('branch_id', $selectedBranch)
-            ->where('status', 1)
-            ->orderByRaw("FIELD(type,'Collector','Other')")
-            ->orderBy('full_name')
-            ->get();
-
-        // ✅ Rates for this branch
-        $rates = DB::table('commission_rates')
-            ->where('branch_id', $selectedBranch)
-            ->select('commission_person_id', 'product_id', 'rate')
-            ->get();
-
-        return response()->json([
-            'branch_id' => $selectedBranch,
-            'products'  => $products,
-            'people'    => $people,
-            'rates'     => $rates,
-        ]);
-    }
-
-
-    public function branches_all()
-    {
-        $branches = DB::table('branch')
-            ->select('branch_id', 'Name')
-            ->where('status', 1)
-            ->orderBy('Name')
-            ->get();
-
-        return response()->json(['items' => $branches]);
-    }
-
-
 }

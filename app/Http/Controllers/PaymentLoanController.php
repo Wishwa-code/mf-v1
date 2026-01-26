@@ -15,7 +15,7 @@ class PaymentLoanController extends Controller
     protected $loanLogController;
 
     // Single constructor to inject both controllers
-    public function __construct(CapitalBalanceController $capitalBalanceController,LoanLogController $loanLogController)
+    public function __construct(CapitalBalanceController $capitalBalanceController, LoanLogController $loanLogController)
     {
         $this->capitalBalanceController = $capitalBalanceController;
         $this->loanLogController = $loanLogController;
@@ -37,13 +37,13 @@ class PaymentLoanController extends Controller
         $group = tableWithBranch('customer_group')->get();
         $loan_category = tableWithBranch('loan_category')->get();
         $customers = tableWithBranch('customer')->get();
-        $route = tableWithBranch('route','route')
+        $route = tableWithBranch('route', 'route')
             ->join('user', 'route.id_officer', '=', 'user.id')
             ->get();
         $center = tableWithBranch('center')->get();
-        $bank = tableWithBranch('company_bank_accounts')->where('Bank_Type','=','Bank')->get();
+        $bank = tableWithBranch('company_bank_accounts')->where('Bank_Type', '=', 'Bank')->get();
 
-        return view('pages.Payment', compact('route','center','group', 'loan_category', 'customers','bank'));
+        return view('pages.Payment', compact('route', 'center', 'group', 'loan_category', 'customers', 'bank'));
     }
 
 
@@ -134,7 +134,7 @@ class PaymentLoanController extends Controller
             $loanQuery->whereDate('customer_loan.Date_Time', '<=', $to_date);
         }
 
-        $loanQuery->orderBy('idCustomer_Loan','desc');
+        $loanQuery->orderBy('idCustomer_Loan', 'desc');
         $loans = $loanQuery->paginate(10);
 
 
@@ -193,11 +193,11 @@ class PaymentLoanController extends Controller
         $totalCapitalBalance = $totals->sum('customer_loan.capital_balance');
         $totalPendingAmount = $totals->sum('customer_loan.Balance_Amount');
         $totalLoanAmount = $totals->sum('customer_loan.Amount');
-        $designation=session('designation');
+        $designation = session('designation');
 
 
         $permissions = DB::table('user_privileges_has_user')
-            ->where('user_id', session('userid'))
+            ->where('user_id', user_data('idUser'))
             ->pluck('value', 'permission_key'); // [permission_key => value]
 
         $current_loan = $permissions['current_loan_delete'] ?? 0;
@@ -239,20 +239,24 @@ class PaymentLoanController extends Controller
 
     public function settlement_create(Request $request)
     {
-        $group=$request->group;
-        $category=$request->category;
-        $customer=$request->customer;
+        $group = $request->group;
+        $category = $request->category;
+        $customer = $request->customer;
 
         if ($group == '0' && $category == '0' && $customer == '0') {
-            $loan = tableWithBranch('customer_loan','customer_loan')
+            $loan = tableWithBranch('customer_loan', 'customer_loan')
                 ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
                 ->join('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category')
                 ->join('user as u1', 'customer_loan.User_idUser', '=', 'u1.id') // Join for User_idUser
                 ->join('user as u2', 'customer_loan.lending_officer_id', '=', 'u2.id') // Join for lending_officer_id
-                ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Name, "-") as group_name
+                ->leftJoin(
+                    DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Name, "-") as group_name
                          FROM group_has_customer
                          LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
-                    'customer.idCustomer', '=', 'subquery.cus_id')
+                    'customer.idCustomer',
+                    '=',
+                    'subquery.cus_id'
+                )
                 ->where('customer_loan.Status', '=', '0')
                 ->select(
                     'customer_loan.*',
@@ -265,14 +269,18 @@ class PaymentLoanController extends Controller
                 ->get();
 
 
-            return response()->json(['item' => $loan,'message' => 'all'], 200);
+            return response()->json(['item' => $loan, 'message' => 'all'], 200);
         } else {
-            $loanQuery = tableWithBranch('customer_loan','customer_loan')
+            $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
                 ->join('customer', 'customer_loan.Customer_idCustomer', '=', 'customer.idCustomer')
-                ->leftJoin(DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Name, "-") as group_name
+                ->leftJoin(
+                    DB::raw('(SELECT group_has_customer.cus_id, IFNULL(customer_group.Name, "-") as group_name
                          FROM group_has_customer
                          LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCustomer_Group) as subquery'),
-                    'customer.idCustomer', '=', 'subquery.cus_id')
+                    'customer.idCustomer',
+                    '=',
+                    'subquery.cus_id'
+                )
                 ->join('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category')
                 ->join('user as u1', 'customer_loan.User_idUser', '=', 'u1.id') // Join for User_idUser
                 ->join('user as u2', 'customer_loan.lending_officer_id', '=', 'u2.id') // Join for lending_officer_id
@@ -300,9 +308,7 @@ class PaymentLoanController extends Controller
 
             $loan = $loanQuery->get();
             return response()->json(['item' => $loan, 'message' => 'notall'], 200);
-
         }
-
     }
 
 
@@ -335,11 +341,11 @@ class PaymentLoanController extends Controller
 
 
 
-        $totalPaidPenalty=number_format($Penaltyamount,2,'.','')-number_format($Penaltybalance,2,'.','');
-        $totalPaidPenalty=round($totalPaidPenalty);
+        $totalPaidPenalty = number_format($Penaltyamount, 2, '.', '') - number_format($Penaltybalance, 2, '.', '');
+        $totalPaidPenalty = round($totalPaidPenalty);
 
-        if ($totalPaidPenalty<0){
-            $totalPaidPenalty=0.00;
+        if ($totalPaidPenalty < 0) {
+            $totalPaidPenalty = 0.00;
         }
 
         // Calculate the net balances
@@ -348,16 +354,16 @@ class PaymentLoanController extends Controller
 
         // Return the loan details as a JSON response
         return response()->json([
-            'Amount' => number_format($loan->Amount,2,'.',''),
+            'Amount' => number_format($loan->Amount, 2, '.', ''),
             'Interest_Amount' => $loan->Interest_Amount,
             'Total_Loan_Amount' => $loan->Total_Loan_Amount,
-            'Total_Paid_Amount' => number_format($totalPaidAmount,2,'.',''),
-            'Total_Paid_Penalty' => number_format($totalPaidPenalty,2,'.',''),
-            'capital_balance' => number_format($loan->capital_balance,2,'.',''),
-            'Interest_Balance' => number_format($netInterestBalance,2,'.',''),
-            'Panalty_Rate' => number_format($netPenaltyBalance,2,'.',''),
-            'Balance_Amount' => number_format($loan->Balance_Amount,2,'.',''),
-            'Tot_loan_balance' => number_format($loan->Balance_Amount,2,'.','')
+            'Total_Paid_Amount' => number_format($totalPaidAmount, 2, '.', ''),
+            'Total_Paid_Penalty' => number_format($totalPaidPenalty, 2, '.', ''),
+            'capital_balance' => number_format($loan->capital_balance, 2, '.', ''),
+            'Interest_Balance' => number_format($netInterestBalance, 2, '.', ''),
+            'Panalty_Rate' => number_format($netPenaltyBalance, 2, '.', ''),
+            'Balance_Amount' => number_format($loan->Balance_Amount, 2, '.', ''),
+            'Tot_loan_balance' => number_format($loan->Balance_Amount, 2, '.', '')
         ]);
     }
 
@@ -368,9 +374,9 @@ class PaymentLoanController extends Controller
      */
     public function store(Request $request)
     {
-        $user_id=(int) session('userid');
-        $loan_id=$request->loan_id;
-        $payment_amount=$request->payment_amount;
+        $user_id = (int)user_data('idUser');
+        $loan_id = $request->loan_id;
+        $payment_amount = $request->payment_amount;
 
         $installments = DB::table('installments')
             ->where('Customer_Loan_idCustomer_Loan', '=', $loan_id)
@@ -396,22 +402,21 @@ class PaymentLoanController extends Controller
 
         foreach ($installments as $item) {
 
-            if ($payment_amount===0){
+            if ($payment_amount === 0) {
+            } else {
+                $idInstallments = $item->idInstallments;
 
-            }else{
-                $idInstallments=$item->idInstallments;
-
-                $Panalty_Balance=$item->Panalty_Balance;
-                $Installment_Balance=$item->Installment_Balance;
-                $Total_Balance=$item->Total_Balance;
-
-
-                $Panalty_Total_log=$item->Panalty_Balance;
-                $Installment_Balance_log=$item->Installment_Balance;
-                $Total_Balance_log=$item->Total_Balance;
+                $Panalty_Balance = $item->Panalty_Balance;
+                $Installment_Balance = $item->Installment_Balance;
+                $Total_Balance = $item->Total_Balance;
 
 
-                if ($payment_amount>=$Total_Balance){
+                $Panalty_Total_log = $item->Panalty_Balance;
+                $Installment_Balance_log = $item->Installment_Balance;
+                $Total_Balance_log = $item->Total_Balance;
+
+
+                if ($payment_amount >= $Total_Balance) {
                     DB::table('installments')
                         ->where('idInstallments', $idInstallments)
                         ->where('branch_id', session('branch_id'))
@@ -439,17 +444,17 @@ class PaymentLoanController extends Controller
                         'branch_id' => session('branch_id')
                     ]);
 
-                    $payment_amount=$payment_amount-$Total_Balance;
-                }else{
+                    $payment_amount = $payment_amount - $Total_Balance;
+                } else {
 
-                    if ($Panalty_Balance>=$payment_amount){
+                    if ($Panalty_Balance >= $payment_amount) {
                         DB::table('installments')
                             ->where('idInstallments', $idInstallments)
                             ->where('branch_id', session('branch_id'))
                             ->update([
                                 'Paid_Amount' => DB::raw('Paid_Amount + ' . $payment_amount),
-                                'Total_Balance' => $Total_Balance-$payment_amount,
-                                'Panalty_Balance' => $Panalty_Balance-$payment_amount,
+                                'Total_Balance' => $Total_Balance - $payment_amount,
+                                'Panalty_Balance' => $Panalty_Balance - $payment_amount,
                             ]);
 
                         $installment_log = tableWithBranch('installment_log')
@@ -457,12 +462,12 @@ class PaymentLoanController extends Controller
                             ->get();
 
                         foreach ($installment_log as $log) {
-                            $Panalty_Total_log=$log->Panalty_Total;
-                            $Installment_Balance_log=$log->Installment_Balance;
-                            $Total_Balance_log=$log->Total_Balance;
+                            $Panalty_Total_log = $log->Panalty_Total;
+                            $Installment_Balance_log = $log->Installment_Balance;
+                            $Total_Balance_log = $log->Total_Balance;
                         }
-                        $Panalty_Total_last=$Panalty_Total_log-$payment_amount;
-                        $Total_Balance_last=$Total_Balance_log-$payment_amount;
+                        $Panalty_Total_last = $Panalty_Total_log - $payment_amount;
+                        $Total_Balance_last = $Total_Balance_log - $payment_amount;
                         DB::table('installment_log')->insert([
                             'Installments_idInstallments' => $idInstallments,
                             'Date' => date('Y-m-d'),
@@ -474,21 +479,21 @@ class PaymentLoanController extends Controller
                             'User_idUser' => $user_id,
                             'branch_id' => session('branch_id')
                         ]);
-                        $payment_amount=0;
+                        $payment_amount = 0;
                         break;
-                    }else{
-                        $payment_amount1=$payment_amount-$Panalty_Balance;
+                    } else {
+                        $payment_amount1 = $payment_amount - $Panalty_Balance;
 
-                            DB::table('installments')
-                                ->where('idInstallments', $idInstallments)
-                                ->where('branch_id', session('branch_id'))
-                                ->update([
+                        DB::table('installments')
+                            ->where('idInstallments', $idInstallments)
+                            ->where('branch_id', session('branch_id'))
+                            ->update([
 
-                                    'Paid_Amount' => DB::raw('Paid_Amount + ' . $payment_amount),
-                                    'Total_Balance' => $Total_Balance-$payment_amount,
-                                    'Panalty_Balance' => '0.00',
-                                    'Installment_Balance' => $Installment_Balance-$payment_amount1,
-                                ]);
+                                'Paid_Amount' => DB::raw('Paid_Amount + ' . $payment_amount),
+                                'Total_Balance' => $Total_Balance - $payment_amount,
+                                'Panalty_Balance' => '0.00',
+                                'Installment_Balance' => $Installment_Balance - $payment_amount1,
+                            ]);
 
                         $installment_log = tableWithBranch('installment_log')
                             ->where('Installments_idInstallments', '=', $idInstallments)
@@ -497,36 +502,31 @@ class PaymentLoanController extends Controller
 
                         foreach ($installment_log as $log) {
 
-                            $Installment_Balance_log=$log->Installment_Balance;
-                            $Total_Balance_log=$log->Total_Balance;
+                            $Installment_Balance_log = $log->Installment_Balance;
+                            $Total_Balance_log = $log->Total_Balance;
                         }
 
-                        $Total_Balance_last=$Total_Balance_log-$payment_amount;
+                        $Total_Balance_last = $Total_Balance_log - $payment_amount;
                         DB::table('installment_log')->insert([
                             'Installments_idInstallments' => $idInstallments,
                             'Date' => date('Y-m-d'),
                             'Description' => 'Payment',
                             'Amount' => $payment_amount,
                             'Panalty_Total' => '0.00',
-                            'Installment_Balance' => $Installment_Balance_log-$payment_amount1,
+                            'Installment_Balance' => $Installment_Balance_log - $payment_amount1,
                             'Total_Balance' => $Total_Balance_last,
                             'User_idUser' => $user_id,
                             'branch_id' => session('branch_id')
                         ]);
 
-                        $payment_amount=0;
+                        $payment_amount = 0;
 
                         break;
                     }
-
-
                 }
             }
         }
         return response()->json(['item' => 'sucess'], 200);
-
-
-
     }
 
     /**
@@ -534,10 +534,10 @@ class PaymentLoanController extends Controller
      */
     public function show(string $id)
     {
-        $loan = tableWithBranch('customer_loan','customer_loan')
+        $loan = tableWithBranch('customer_loan', 'customer_loan')
             ->join('loan_category', 'customer_loan.Loan_Category_idLoan_Category', '=', 'loan_category.idLoan_Category')
             ->where('idCustomer_Loan', '=', $id)->first();
-        $customers = tableWithBranch('customer','customer')
+        $customers = tableWithBranch('customer', 'customer')
             ->join('group_has_customer', 'customer.idCustomer', '=', 'group_has_customer.cus_id')
             ->join('customer_group', 'group_has_customer.group_id', '=', 'customer_group.idCustomer_Group')
             ->select('customer.*', 'customer_group.Name as group_name')
@@ -545,23 +545,23 @@ class PaymentLoanController extends Controller
         $installments = tableWithBranch('installments')
             ->where('Customer_Loan_idCustomer_Loan', '=', $id)
             ->get();
-        return view('pages.Payment_2', compact('loan','customers','installments'));
+        return view('pages.Payment_2', compact('loan', 'customers', 'installments'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id,string $loan)
+    public function edit(string $id, string $loan)
     {
         $customers = tableWithBranch('customer')
             ->where('idCustomer', '=', $id)->first();
 
-        $getloan=tableWithBranch('customer_loan')->where('idCustomer_Loan', '=', $loan)->first();
+        $getloan = tableWithBranch('customer_loan')->where('idCustomer_Loan', '=', $loan)->first();
 
-        $category=tableWithBranch('loan_category')->where('idLoan_Category', '=', $getloan->Loan_Category_idLoan_Category)->get();
-        $installments=tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', '=', $loan)->get();
-        $witnesses=tableWithBranch('witness')->where('Customer_Loan_idCustomer_Loan', '=', $loan)->get();
-        return view('pages.Show_Loan', compact('category','customers','id','getloan','installments','witnesses'));
+        $category = tableWithBranch('loan_category')->where('idLoan_Category', '=', $getloan->Loan_Category_idLoan_Category)->get();
+        $installments = tableWithBranch('installments')->where('Customer_Loan_idCustomer_Loan', '=', $loan)->get();
+        $witnesses = tableWithBranch('witness')->where('Customer_Loan_idCustomer_Loan', '=', $loan)->get();
+        return view('pages.Show_Loan', compact('category', 'customers', 'id', 'getloan', 'installments', 'witnesses'));
     }
 
     /**
@@ -581,12 +581,13 @@ class PaymentLoanController extends Controller
     }
 
 
-    public function ins_log(string $id){
+    public function ins_log(string $id)
+    {
 
         $installment_log = tableWithBranch('installment_log')
             ->where('Installments_idInstallments', '=', $id)
             ->get();
-        return response()->json(['item' => $installment_log,'message' => 'all'], 200);
+        return response()->json(['item' => $installment_log, 'message' => 'all'], 200);
     }
 
 
@@ -598,15 +599,16 @@ class PaymentLoanController extends Controller
         $center = tableWithBranch('center')->get();
         $loan_category = tableWithBranch('loan_category')->get();
         $customers = tableWithBranch('customer')->get();
-        return view('pages.DeductReport', compact('group', 'loan_category', 'customers','center'));
+        return view('pages.DeductReport', compact('group', 'loan_category', 'customers', 'center'));
     }
 
 
-    public function deduct_report_view(Request $request) {
+    public function deduct_report_view(Request $request)
+    {
         $group = $request->group;
         $center_details = $request->center_details;
 
-        $loanQuery = tableWithBranch('customer_loan','customer_loan')
+        $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
             ->select(
                 'customer_loan.idCustomer_Loan',
                 'customer_loan.Loan_No',
@@ -650,16 +652,17 @@ class PaymentLoanController extends Controller
     }
 
 
-    public function payment_print(){
-        $company= tableWithBranch('company')->first();
-        return view('pages.Paymentinvoice',compact('company'));
+    public function payment_print()
+    {
+        $company = tableWithBranch('company')->first();
+        return view('pages.Paymentinvoice', compact('company'));
     }
 
 
     public function settleLoan(Request $request)
     {
         $loanId = $request->input('loan_id');
-        $user_id=(int) session('userid');
+        $user_id = (int)user_data('idUser');
         $net_balance = $request->input('net_balance');
         $net_capital = $request->input('net_capital');
         $net_interest = $request->input('net_interest');
@@ -672,15 +675,15 @@ class PaymentLoanController extends Controller
         $net_penalty_balance = $request->input('net_penalty_balance');
         $net_capital_balance = $request->input('net_capital_balance');
 
-        $reduce_interest_amount=$net_interest_balance_read_only-$net_interest_balance;
-        $reduce_penalty_amount=$net_penalty_balance_readonly-$net_penalty_balance;
+        $reduce_interest_amount = $net_interest_balance_read_only - $net_interest_balance;
+        $reduce_penalty_amount = $net_penalty_balance_readonly - $net_penalty_balance;
 
 
-// Insert a new record in the customer_payments table
-        $savedId=DB::table('customer_payments')->insertGetId([
+        // Insert a new record in the customer_payments table
+        $savedId = DB::table('customer_payments')->insertGetId([
             'Date' => date('Y-m-d'),
-            'Description' => 'Loan Settlement'."(Reduced interest amount:".$reduce_interest_amount."/Reduced Penalty amount :".$reduce_penalty_amount.")",
-            'comment' => 'Loan Settlement'."(Paid Capital:".$net_capital_balance."/Paid Interest :".$net_interest_balance."/Paid Penalty :".$net_penalty_balance.")",
+            'Description' => 'Loan Settlement' . "(Reduced interest amount:" . $reduce_interest_amount . "/Reduced Penalty amount :" . $reduce_penalty_amount . ")",
+            'comment' => 'Loan Settlement' . "(Paid Capital:" . $net_capital_balance . "/Paid Interest :" . $net_interest_balance . "/Paid Penalty :" . $net_penalty_balance . ")",
             'Amount' => $net_balance,
             'Customer_Loan_idCustomer_Loan' => $loanId,
             'User_idUser' => $user_id,
@@ -708,13 +711,22 @@ class PaymentLoanController extends Controller
         ]);
 
         $this->loanLogController->index(
-            $loanId, 'Loan Settlement', $savedId,
-            'Loan Settlement', $net_balance,
-            $net_panelty, $net_interest,
-            $net_capital, '0.00', '0.00',
-            '0.00', '0.00', '0.00', '0.00'
+            $loanId,
+            'Loan Settlement',
+            $savedId,
+            'Loan Settlement',
+            $net_balance,
+            $net_panelty,
+            $net_interest,
+            $net_capital,
+            '0.00',
+            '0.00',
+            '0.00',
+            '0.00',
+            '0.00',
+            '0.00'
         );
-        $this->capitalBalanceController->index($loanId,1);
+        $this->capitalBalanceController->index($loanId, 1);
         return response()->json(['items' => $loanId, 'message' => 'success'], 200);
     }
 
@@ -729,5 +741,4 @@ class PaymentLoanController extends Controller
         $customers = DB::table('customer')->get();
         return view('pages.Reshedule', compact('group', 'loan_category', 'customers'));
     }
-
 }

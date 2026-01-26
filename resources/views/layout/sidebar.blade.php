@@ -1,970 +1,682 @@
-@include('layout.partials.sidebar-styles')
-<!-- Sidebar -left -->
-<div class="h-100" id="leftside-menu-container" data-simplebar>
-    <!--- Sidemenu -->
-    <ul class="side-nav">
-        <?php
+<div class="leftside-menu">
 
-        use Illuminate\Support\Facades\DB;
+    <!-- Brand Logo Light -->
+    <!-- Brand Logo Area -->
+    <!-- Brand Logo Light -->
+    <div class="logo-box mb-4 d-flex justify-content-center">
+        <a href="/" class="logo-link d-flex align-items-center gap-3 text-decoration-none px-3">
+            <!-- Logo Image -->
+            @if ($logo)
+            <img src="{{ $logo }}" class="logo-img shadow-sm rounded-circle" alt="Logo" style="height: 42px; width: 42px;">
+            @else
+            <img src="https://accountcenter.asipiya.com/asipiya.svg" class="logo-img" alt="Logo" style="height: 42px; width: 42px;">
+            @endif
 
-        $query = "SELECT * FROM company where branch_id='" . session('branch_id') . "'";
-        $check = DB::select($query);
-        ?>
-
-        @foreach ($check as $item)
-        <li class="side-nav-title" style="color: red">{{ $item->company_name }}</li>
-        @endforeach
-
-
-        @if ($privilege)
-        @php $isHeadOffice = session('branch_id') == -1; @endphp
-
-        @if ($isHeadOffice)
-        {{-- Head Office restricted menu: Dashboard, View Customer, KYC, View Center --}}
-        @if (optional($privilege)->dashboard == 1)
-        <li class="side-nav-item">
-            <a href="/" class="side-nav-link">
-                <i class="ri-dashboard-3-line"></i>
-                <span> Dashboard </span>
-            </a>
-        </li>
-        @endif
-
-
-        <!-- <li class="side-nav-item">
-            <a href="{{ route('business-categories.index') }}" class="side-nav-link">
-                <i class="ri-layout-grid-fill"></i>
-                <span> Business Categories </span>
-            </a>
-        </li> -->
-
-        @if (optional($privilege)->customer == 1 && (optional($privilege)->view_customer == 1 || optional($privilege)->kyc == 1))
-        <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#customer" aria-expanded="false" aria-controls="customer"
-                class="side-nav-link">
-                <i class="ri-group-2-line"></i>
-                <span> Customer </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="customer">
-                <ul class="side-nav-second-level">
-                    @if (optional($privilege)->view_customer == 1)
-                    <li><a href="/showcustomers">View Customer</a></li>
-                    @endif
-                    @if (optional($privilege)->kyc == 1)
-                    <li><a href="/kyc">KYC</a></li>
-                    @endif
-                </ul>
+            <!-- Company Name -->
+            <div class="d-flex flex-column justify-content-center logo-text-section">
+                <span class="fw-bolder text-dark tracking-tight lh-1 text-truncate" style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; max-width: 180px;">
+                    {{ user_data()['company']['Company_Name'] ?? 'Asipiya' }}
+                </span>
+                <span class="text-muted small fw-medium" style="font-size: 0.75rem;">Microfinance Solution</span>
             </div>
-        </li>
-        @endif
+        </a>
+    </div>
 
-        @if (optional($privilege)->loan_center == 1 && optional($privilege)->view_center == 1)
-        <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#center" aria-expanded="false" aria-controls="center"
-                class="side-nav-link">
-                <i class="bi bi-building"></i>
-                <span> Loan Center </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="center">
-                <ul class="side-nav-second-level">
-                    <li><a href="/viewcenter">View Center</a></li>
-                </ul>
-            </div>
-        </li>
-        @endif
+    <!-- Sidebar -left -->
 
-        @if (optional($privilege)->account_center == 1)
-        <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#account" aria-expanded="false" aria-controls="center"
-                class="side-nav-link">
-                <i class="bi bi-universal-access"></i>
-                <span> Account Center </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="account">
-                <ul class="side-nav-second-level">
-                    @if (optional($privilege)->bank_cash_account == 1)
-                    <li>
-                        <a href="/bank_account">Bank/Cash Account</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->internal_bank_transfer == 1)
-                    <li>
-                        <a href="/InnerBankTransfer">Internal Account Transfer</a>
-                    </li>
-                    @endif
-                </ul>
-            </div>
-        </li>
-        @endif
+    <div class="h-100" id="leftside-menu-container" data-simplebar>
 
-        @if (optional($privilege)->account_department == 1)
-        <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#accountmanagement" aria-expanded="false"
-                aria-controls="center" class="side-nav-link">
-                <i class="bi bi-bank"></i>
-                <span> Account Department </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="accountmanagement">
-                <ul class="side-nav-second-level">
-                    @if (optional($privilege)->manual_journal == 1)
-                    <li>
-                        <a href="/ManualJournal">Manual Journal</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->chart_of_account == 1)
-                    <li>
-                        <a href="/ChartOfAccount">Chart Of Account</a>
-                    </li>
-                    @endif
-                </ul>
-            </div>
-        </li>
-        @endif
-
-        <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#payment_voucher" aria-expanded="false"
-                aria-controls="payment_voucher" class="side-nav-link">
-                <i class="ri-file-list-3-line"></i>
-                <span> Payment Voucher Module </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="payment_voucher">
-                <ul class="side-nav-second-level">
-                    <li>
-                        <a href="/VoucherDashboard">Voucher Dashboard</a>
-                    </li>
-                    <li>
-                        <a href="/PendingVouchers">Pending Vouchers</a>
-                    </li>
-                    <li>
-                        <a href="/SupplierRegistration">Supplier Registration</a>
-                    </li>
-                </ul>
-            </div>
-        </li>
-
-        @if (optional($privilege)->expenses == 1)
-        <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#expences" aria-expanded="false" aria-controls="expences"
-                class="side-nav-link">
-                <i class="ri-briefcase-line"></i>
-                <span> Expenses </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="expences">
-                <ul class="side-nav-second-level">
-                    @if (optional($privilege)->add_expenses == 1)
-                    <li>
-                        <a href="/expenses">Add Expenses</a>
-                    </li>
-                    @endif
-                </ul>
-            </div>
-        </li>
-        @endif
-        @else
-        @if (optional($privilege)->dashboard == 1)
-        <li class="side-nav-item">
-            <a href="/" class="side-nav-link">
-                <i class="ri-dashboard-3-line"></i>
-                <span> Dashboard </span>
-            </a>
-        </li>
-        @endif
-
-        {{-- @if (optional($privilege)->customer == 1) --}}
-        {{-- CUSTOMER LEADS SECTION --}}
-        @if (optional($privilege)->customer_leads == 1)
-        <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#lead" aria-expanded="false"
-                aria-controls="sidebarPagesAuth" class="side-nav-link">
-                <i class="ri-article-fill"></i>
-                <span> Lead </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="lead">
-                <ul class="side-nav-second-level">
-                    @if (optional($privilege)->bussiness_categories == 1)
-                    <li>
-                        <a href="{{ route('business-categories.index') }}">
-                            Business Categories
-                        </a>
-                    </li>
-                    @endif
-
-                    @if (optional($privilege)->create_lead == 1)
-                    <li>
-                        <a href="{{ route('leads.index') }}">Lead Create</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->create_online_lead == 1)
-                    <li>
-                        <a href="{{ route('online-leads.create') }}">Create Online Lead</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->lead_approvals == 1)
-                    <li>
-                        <a href="{{ route('leads.approvals') }}">Lead Approvals</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->verify_lead == 1)
-                    <li>
-                        <a href="{{ route('leads.verifyAction') }}">Lead Verification</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->lead_agreement == 1)
-                    <li>
-                        <a href="{{ route('leads.agreement') }}">Agreement Sign</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->view_lead_map == 1)
-                    <li>
-                        <a href="{{ route('leads.globalMap') }}">All Leads Map</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->lead_activity_logs == 1)
-                    <li>
-                        <a href="{{ route('leads.activityLogs') }}">Activity Logs</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->view_leads == 1)
-                    <li>
-                        <a href="{{ route('leads.verifiedList') }}">Lead List</a>
-                    </li>
-                    @endif
-
-                </ul>
-            </div>
-        </li>
-        @endif
+        <!--- Sidemenu -->
+        <ul class="side-nav">
 
 
-        @if (optional($privilege)->customer == 1)
-        <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#customer" aria-expanded="false"
-                aria-controls="sidebarPagesAuth" class="side-nav-link">
-                <i class="ri-group-2-line"></i>
-                <span> Customer </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="customer">
-                <ul class="side-nav-second-level">
-                    @if (optional($privilege)->add_customer == 1)
-                    <li>
-                        <a href="/customers">Add Customer</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->view_customer == 1)
-                    <li>
-                        <a href="/showcustomers">View Customer</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->view_blacklist_customer == 1)
-                    <li>
-                        <a href="/showblacklistcustomers">View Blacklist Customer</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->customer_saving_acc == 1)
-                    <li>
-                        <a href="/showcustomerssaving">Customer Saving Acc.</a>
-                    </li>
-                    <li>
-                        <a href="/showcustomersrecovery">Customer Recovery Acc.</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->kyc == 1)
-                    <li>
-                        <a href="/kyc">KYC</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->insurance == 1)
-                    <li>
-                        <a href="/insurance">Insurance</a>
-                    </li>
-                    @endif
+            @php $isHeadOffice = session('head_branch') == session('branch_id'); @endphp
 
-                    <li>
-                        <a href="{{ route('customers.map') }}">
-                            <span> Customer Map </span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
+            @if ($isHeadOffice)
+            {{-- Head Office restricted menu: Dashboard, View Customer, KYC, View Center --}}
 
-        </li>
-        @endif
+            @hasPrivilege('DASHBOARD')
+            @hasPrivilege('DASHBOARD')
+            <li class="side-nav-item mt-2">
+                <a href="/" class="side-nav-link {{ Request::is('/') ? 'active' : '' }}"  data-bs-title="Dashboard" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right" data-bs-toggle="tooltip">
+                    <i class="ri-dashboard-3-line"></i>
+                    <span> Dashboard </span>
+                </a>
+            </li>
+            @endhasPrivilege
+            @endhasPrivilege
 
-        @if (optional($privilege)->loan_center == 1)
-        <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#center" aria-expanded="false" aria-controls="center"
-                class="side-nav-link">
-                <i class="bi bi-building"></i>
-                <span> Loan Center </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="center">
-                <ul class="side-nav-second-level">
-                    @if (optional($privilege)->create_route == 1)
-                    <li>
-                        <a href="/viewroutes">Create Route</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->create_center == 1)
-                    <li>
-                        <a href="/center">Create Center</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->view_center == 1)
-                    <li>
-                        <a href="/viewcenter">View Center</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->create_group == 1)
-                    <li>
-                        <a href="/customergroup">Create Group</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->view_group == 1)
-                    <li>
-                        <a href="/viewgroups">View Group</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->add_customer_to_group == 1)
-                    <li>
-                        <a href="/customergroupassign">Add Customers To Group</a>
-                    </li>
-                    @endif
-                </ul>
-            </div>
-        </li>
-        @endif
+            @hasPrivilege('CUSTOMER')
+            <li class="side-nav-item mt-2">
+                <a data-bs-toggle="collapse" href="#customer" aria-expanded="false" aria-controls="customer" class="side-nav-link"  data-bs-title="Customer" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
+                    <i class="ri-group-2-line"></i>
+                    <span> Customer </span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ Request::is('showcustomers*', 'kyc*') ? 'show' : '' }}" id="customer">
+                    <ul class="side-nav-second-level">
+                        @hasPrivilege('VIEW_CUSTOMER')
+                        <li class="mt-2"><a href="/showcustomers" class="{{ Request::is('showcustomers*') ? 'active' : '' }}">View Customer</a></li>
+                        @endhasPrivilege
+                        @hasPrivilege('KYC')
+                        <li class="mt-2"><a href="/kyc" class="{{ Request::is('kyc*') ? 'active' : '' }}">KYC</a></li>
+                        @endhasPrivilege
+                    </ul>
+                </div>
+            </li>
+            @endhasPrivilege
 
-        @if (optional($privilege)->guarantee == 1)
-        <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#Guarantee" aria-expanded="false"
-                aria-controls="sidebarPagesAuth" class="side-nav-link">
-                <i class="ri-user-2-fill"></i>
-                <span> Guarantee </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="Guarantee">
-                <ul class="side-nav-second-level">
-                    @if (optional($privilege)->add_guarantee == 1)
-                    <li>
-                        <a href="/guardian">Add Guarantee</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->view_guarantee == 1)
-                    <li>
-                        <a href="/showguardian">View Guarantee</a>
-                    </li>
-                    @endif
-                </ul>
-            </div>
+            @hasPrivilege('LOAN_CENTER')
+            <li class="side-nav-item mt-2">
+                <a data-bs-toggle="collapse" href="#center" aria-expanded="false" aria-controls="center" class="side-nav-link"  data-bs-title="Loan Center" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
+                    <i class="ri-building-4-line"></i>
+                    <span> Loan Center </span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ Request::is('viewcenter*') ? 'show' : '' }}" id="center">
+                    <ul class="side-nav-second-level">
+                        <li class="mt-2"><a href="/viewcenter" class="{{ Request::is('viewcenter*') ? 'active' : '' }}">View Center</a></li>
+                    </ul>
+                </div>
+            </li>
+            @endhasPrivilege
 
-        </li>
-        @endif
+            <li class="side-nav-item mt-2">
+                <a data-bs-toggle="collapse" href="#approval" aria-expanded="false" aria-controls="approval" class="side-nav-link"  data-bs-title="Approvals" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
+                    <i class="ri-check-double-line"></i>
+                    <span> Approvals </span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ Request::is('pending_approval*', 'approved_history*', 'rejected_approval*') ? 'show' : '' }}" id="approval">
+                    <ul class="side-nav-second-level">
+                        <li class="mt-2"><a href="/pending_approval" class="{{ Request::is('pending_approval*') ? 'active' : '' }}">Pending Approvals</a></li>
+                        <li class="mt-2"><a href="/approved_history" class="{{ Request::is('approved_history*') ? 'active' : '' }}">Approval History</a></li>
+                        <li class="mt-2"><a href="/rejected_approval" class="{{ Request::is('rejected_approval*') ? 'active' : '' }}">Rejected History</a></li>
+                    </ul>
+                </div>
+            </li>
 
-        @if (optional($privilege)->product == 1)
-        <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#sidebarPages" aria-expanded="false"
-                aria-controls="sidebarPages" class="side-nav-link">
-                <i class="ri-pages-line"></i>
-                <span> Product / Loan </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="sidebarPages">
-                <ul class="side-nav-second-level">
-                    @if (optional($privilege)->add_product == 1)
-                    <li>
-                        <a href="/product">Add Product</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->view_product == 1)
-                    <li>
-                        <a href="/viewproduct">View Product</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->create_loan == 1)
-                    <li>
-                        <a href="/loan">Create Loans</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->change_collector == 1)
-                    <li>
-                        <a href="/changeCollector">Change Collector In Loan</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->pending_loan == 1)
-                    <li>
-                        <a href="/pendingloan">Pending Loans</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->loan_disbursement == 1)
-                    <li>
-                        <a href="/loan_disbursement">Loans Disbursement</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->current_loans == 1)
-                    <li>
-                        <a href="/payment_step_1">Current Loans</a>
-                    </li>
+            <li class="side-nav-item mt-2">
+                <a data-bs-toggle="collapse" href="#payment_voucher" aria-expanded="false" aria-controls="payment_voucher" class="side-nav-link"  data-bs-title="Payment Voucher Module" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
+                    <i class="ri-file-list-3-line"></i>
+                    <span> Payment Voucher Module </span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ Request::is('VoucherDashboard*', 'PendingVouchers*', 'SupplierRegistration*') ? 'show' : '' }}" id="payment_voucher">
+                    <ul class="side-nav-second-level">
+                        <li class="mt-2">
+                            <a href="/VoucherDashboard" class="{{ Request::is('VoucherDashboard*') ? 'active' : '' }}">Voucher Dashboard</a>
+                        </li>
+                        <li class="mt-2">
+                            <a href="/PendingVouchers" class="{{ Request::is('PendingVouchers*') ? 'active' : '' }}">Pending Vouchers</a>
+                        </li>
+                        <li class="mt-2">
+                            <a href="/SupplierRegistration" class="{{ Request::is('SupplierRegistration*') ? 'active' : '' }}">Supplier Registration</a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
 
-                    <li>
-                        <a href="/penalty-deduction">Panelty Deduction</a>
-                    </li>
-                    @endif
+            @hasPrivilege('EXPENSES')
+            <li class="side-nav-item mt-2">
+                <a data-bs-toggle="collapse" href="#expences" aria-expanded="false" aria-controls="expences" class="side-nav-link"  data-bs-title="Expenses" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
+                    <i class="ri-briefcase-line"></i>
+                    <span> Expenses </span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ Request::is('expenses*') ? 'show' : '' }}" id="expences">
+                    <ul class="side-nav-second-level">
+                        @hasPrivilege('ADD_EXPENSES')
+                        <li class="mt-2">
+                            <a href="/expenses" class="{{ Request::is('expenses*') ? 'active' : '' }}">Add Expenses</a>
+                        </li>
+                        @endhasPrivilege
+                    </ul>
+                </div>
+            </li>
+            @endhasPrivilege
+            @else
 
+            @hasPrivilege('DASHBOARD')
+            <li class="side-nav-item mt-2">
+                <a href="/" class="side-nav-link {{ Request::is('/') ? 'active' : '' }}"  data-bs-title="Dashboard" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right" data-bs-toggle="tooltip">
+                    <i class="ri-dashboard-3-line"></i>
+                    <span> Dashboard </span>
+                </a>
+            </li>
+            @endhasPrivilege
 
-                    @if (optional($privilege)->settled_loans == 1)
-                    <li>
-                        <a href="/showsettleloan">Settled Loans</a>
-                    </li>
-                    @endif
-                </ul>
-            </div>
-        </li>
-        @endif
+            @hasPrivilege('PRODUCT')
+            <li class="side-nav-item mt-2">
+                <a data-bs-toggle="collapse" href="#sidebarPages" aria-expanded="false" aria-controls="sidebarPages" class="side-nav-link"  data-bs-title="Product" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
+                    <i class="ri-box-3-line"></i>
+                    <span> Product </span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ Request::is('product*', 'viewproduct*') ? 'show' : '' }}" id="sidebarPages">
+                    <ul class="side-nav-second-level">
+                        @hasPrivilege('ADD_PRODUCT')
+                        <li class="mt-2">
+                            <a href="/product" class="{{ Request::is('product*') ? 'active' : '' }}">Add Product</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('VIEW_PRODUCT')
+                        <li class="mt-2">
+                            <a href="/viewproduct" class="{{ Request::is('viewproduct*') ? 'active' : '' }}">View Product</a>
+                        </li>
+                        @endhasPrivilege
+                    </ul>
+                </div>
+            </li>
+            @endhasPrivilege
+
+            @hasPrivilege('LOAN')
+            <li class="side-nav-item mt-2">
+                <a data-bs-toggle="collapse" href="#sidebarPages" aria-expanded="false" aria-controls="sidebarPages" class="side-nav-link"  data-bs-title="Loan" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
+                    <i class="ri-money-dollar-circle-line"></i>
+                    <span> Loan </span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ Request::is('loan*', 'changeCollector*', 'pendingloan*', 'loan_disbursement*', 'payment_step_1*', 'penalty-deduction*', 'showsettleloan*') ? 'show' : '' }}" id="sidebarPages">
+                    <ul class="side-nav-second-level">
+
+                        @hasPrivilege('CREATE_LOAN')
+                        <li class="mt-2">
+                            <a href="/loan" class="{{ Request::is('loan*') && !Request::is('loan_disbursement*') && !Request::is('loan_settlement*') && !Request::is('loan_reschedule*') ? 'active' : '' }}">Create Loans</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('CHANGE_COLLECTOR')
+                        <li class="mt-2">
+                            <a href="/changeCollector" class="{{ Request::is('changeCollector*') ? 'active' : '' }}">Change Collector In Loan</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('PENDING_LOAN')
+                        <li class="mt-2">
+                            <a href="/pendingloan" class="{{ Request::is('pendingloan*') ? 'active' : '' }}">Pending Loans</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('LOAN_DISBURSEMENT')
+                        <li class="mt-2">
+                            <a href="/loan_disbursement" class="{{ Request::is('loan_disbursement*') ? 'active' : '' }}">Loans Disbursement</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('CURRENT_LOANS')
+                        <li class="mt-2">
+                            <a href="/payment_step_1" class="{{ Request::is('payment_step_1*') ? 'active' : '' }}">Current Loans</a>
+                        </li>
+
+                        <li class="mt-2">
+                            <a href="/penalty-deduction" class="{{ Request::is('penalty-deduction*') ? 'active' : '' }}">Panelty Deduction</a>
+                        </li>
+                        @endhasPrivilege
 
 
+                        @hasPrivilege('SETTLED_LOANS')
+                        <li class="mt-2">
+                            <a href="/showsettleloan" class="{{ Request::is('showsettleloan*') ? 'active' : '' }}">Settled Loans</a>
+                        </li>
+                        @endhasPrivilege
+                    </ul>
+                </div>
+            </li>
+            @endhasPrivilege
 
-        @if (optional($privilege)->payment_details == 1)
-        <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#payment" aria-expanded="false" aria-controls="center"
-                class="side-nav-link">
-                <i class="bi bi-currency-dollar"></i>
-                <span> Payment Details </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="payment">
-                <ul class="side-nav-second-level">
-                    @if (optional($privilege)->add_repayment == 1)
-                    <li>
-                        <a href="/payment">Add Repayment</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->bulk_repayment == 1)
-                    <li>
-                        <a href="/bulk_repayment">Bulk Repayment</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->loan_settlement == 1)
-                    <li>
-                        <a href="/loan_settlement">Loan Settlement</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->loan_reschedule == 1)
-                    <li>
-                        <a href="/loan_reschedule">Loan Reschedule</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->view_payment == 1)
-                    <li>
-                        <a href="/viewpayment">View Repayment</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->collector_wise_collection == 1)
-                    <li>
-                        <a href="/collection">Collector Wise Collection</a>
-                    </li>
-                    @endif
-                </ul>
-            </div>
-        </li>
-        @endif
+            {{-- CUSTOMER LEADS SECTION --}}
+            @hasPrivilege('CUSTOMER_LEADS')
+            <li class="side-nav-item mt-2">
+                <a data-bs-toggle="collapse" href="#lead" aria-expanded="false" aria-controls="sidebarPagesAuth" class="side-nav-link "  data-bs-title="Lead" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
+                    <i class="ri-article-line"></i>
+                    <span> Lead </span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ Request::routeIs('business-categories*', 'leads*', 'online-leads*') ? 'show' : '' }}" id="lead">
+                    <ul class="side-nav-second-level">
+                        @hasPrivilege('BUSSINESS_CATEGORIES')
+                        <li class="mt-2">
+                            <a href="{{ route('business-categories.index') }}" class="{{ Request::routeIs('business-categories.index') ? 'active' : '' }}">
+                                Business Categories
+                            </a>
+                        </li>
+                        @endhasPrivilege
 
-        @if (optional($privilege)->account_center == 1)
+                        @hasPrivilege('CREATE_LEAD')
+                        <li class="mt-2">
+                            <a href="{{ route('leads.index') }}" class="{{ Request::routeIs('leads.index') ? 'active' : '' }}">Lead Create</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('CREATE_ONLINE_LEAD')
+                        <li class="mt-2">
+                            <a href="{{ route('online-leads.create') }}" class="{{ Request::routeIs('online-leads.create') ? 'active' : '' }}">Create Online Lead</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('LEAD_APPROVALS')
+                        <li class="mt-2">
+                            <a href="{{ route('leads.approvals') }}" class="{{ Request::routeIs('leads.approvals') ? 'active' : '' }}">Lead Approvals</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('VERIFY_LEAD')
+                        <li class="mt-2">
+                            <a href="{{ route('leads.verifyAction') }}" class="{{ Request::routeIs('leads.verifyAction') ? 'active' : '' }}">Lead Verification</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('LEAD_AGREEMENT')
+                        <li class="mt-2">
+                            <a href="{{ route('leads.agreement') }}" class="{{ Request::routeIs('leads.agreement') ? 'active' : '' }}">Agreement Sign</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('VIEW_LEAD_MAP')
+                        <li class="mt-2">
+                            <a href="{{ route('leads.globalMap') }}" class="{{ Request::routeIs('leads.globalMap') ? 'active' : '' }}">All Leads Map</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('LEAD_ACTIVITY_LOGS')
+                        <li class="mt-2">
+                            <a href="{{ route('leads.activityLogs') }}" class="{{ Request::routeIs('leads.activityLogs') ? 'active' : '' }}">Activity Logs</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('VIEW_LEADS')
+                        <li class="mt-2">
+                            <a href="{{ route('leads.verifiedList') }}" class="{{ Request::routeIs('leads.verifiedList') ? 'active' : '' }}">Lead List</a>
+                        </li>
+                        @endhasPrivilege
 
-        <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#account" aria-expanded="false" aria-controls="center"
-                class="side-nav-link">
-                <i class="bi bi-universal-access"></i>
-                <span> Account Center </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="account">
-                <ul class="side-nav-second-level">
-                    @if (optional($privilege)->bank_cash_account == 1)
-                    <li>
-                        <a href="/bank_account">Bank/Cash Account</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->internal_bank_transfer == 1)
-                    <li>
-                        <a href="/InnerBankTransfer">Internal Account Transfer</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->collector_account == 1)
-                    <li>
-                        <a href="/collector_index">Collector Account</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->cheque_details == 1)
-                    <li>
-                        <a href="/chq">Cheque Details</a>
-                    </li>
-                    @endif
-                </ul>
-            </div>
-        </li>
-        @endif
-
-        @if (optional($privilege)->account_department == 1)
-        <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#accountmanagement" aria-expanded="false"
-                aria-controls="center" class="side-nav-link">
-                <i class="bi bi-bank"></i>
-                <span> Account Department </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="accountmanagement">
-                <ul class="side-nav-second-level">
-                    @if (optional($privilege)->add_asset == 1)
-                    <li>
-                        <a href="/AddAssetManagement">Add Asset Management</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->asset_management == 1)
-                    <li>
-                        <a href="/AssetManagement">Asset Management</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->bank_reconciliation == 1)
-                    <li>
-                        <a href="/BankReconciliation">Bank Reconciliation</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->manual_journal == 1)
-                    <li>
-                        <a href="/ManualJournal">Manual Journal</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->chart_of_account == 1)
-                    <li>
-                        <a href="/ChartOfAccount">Chart Of Account</a>
-                    </li>
-                    @endif
-                </ul>
-            </div>
-        </li>
-        @endif
-
-        <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#payment_voucher" aria-expanded="false"
-                aria-controls="payment_voucher" class="side-nav-link">
-                <i class="ri-file-list-3-line"></i>
-                <span> Payment Voucher </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="payment_voucher">
-                <ul class="side-nav-second-level">
-                    <li>
-                        <a href="/VoucherDashboard">Voucher Dashboard</a>
-                    </li>
-                    <li>
-                        <a href="/PaymentVoucher">Create Voucher</a>
-                    </li>
-                    <li>
-                        <a href="/PendingVouchers">Pending Vouchers</a>
-                    </li>
-                    <li>
-                        <a href="/ApprovedPayments">Voucher Payments</a>
-                    </li>
-                    <li>
-                        <a href="/SupplierRegistration">Supplier Registration</a>
-                    </li>
-                </ul>
-            </div>
-        </li>
-
-        @if (optional($privilege)->loan_calculator == 1)
-        <li class="side-nav-item">
-            <a href="/calculator" class="side-nav-link">
-                <i class="ri-dashboard-3-line"></i>
-                <span> Loan Calculator </span>
-            </a>
-        </li>
-        @endif
-
-        @if (optional($privilege)->calendar == 1)
-        <li class="side-nav-item">
-            <a href="/calender" class="side-nav-link">
-                <i class="ri-dashboard-3-line"></i>
-                <span> Calender </span>
-            </a>
-        </li>
-        @endif
-
-        @if (optional($privilege)->expenses == 1)
-
-        <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#expences" aria-expanded="false" aria-controls="expences"
-                class="side-nav-link">
-                <i class="ri-briefcase-line"></i>
-                <span> Expenses </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="expences">
-                <ul class="side-nav-second-level">
-                    @if (optional($privilege)->add_expenses == 1)
-                    <li>
-                        <a href="/expenses">Add Expenses</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->view_expenses == 1)
-                    <li>
-                        <a href="/view_expenses">View Expenses</a>
-                    </li>
-                    @endif
-                </ul>
-            </div>
-        </li>
-        @endif
-
-        @if (optional($privilege)->user == 1)
-
-        <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#user" aria-expanded="false" aria-controls="user"
-                class="side-nav-link collapsed">
-                <i class="ri-user-3-fill"></i>
-                <span> User </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="user" style="">
-                <ul class="side-nav-second-level">
-                    @if (optional($privilege)->create_user == 1)
-                    <li>
-                        <a href="/user" class="active">Manage User</a>
-                    </li>
-                    @endif
-                    @if (optional($privilege)->user_privileges == 1)
-                    <li>
-                        <a href="/privileges">User Privileges</a>
-                    </li>
-                    @endif
-                    <li>
-                        <a href="/designation-privileges">Designation Privileges</a>
-                    </li>
-                </ul>
-            </div>
-        </li>
-        @endif
-
-        @if (optional($privilege)->reports == 1)
-        <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#reports_section" aria-expanded="false"
-                class="side-nav-link">
-                <i class="ri-file-paper-2-fill"></i>
-                <span> Reports </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="reports_section">
-                <ul class="side-nav-second-level">
-                    <li class="side-nav-item">
-                        <a data-bs-toggle="collapse" href="#main_report" aria-expanded="false"
-                            class="side-nav-link">
-                            <span> Main Reports </span>
-                            <span class="menu-arrow"></span>
-                        </a>
-                        <div class="collapse" id="main_report">
-                            <ul class="side-nav-third-level">
-                                @if (optional($privilege)->main_reports_dashboard == 1)
-                                <li>
-                                    <a href="/portfolio_performance">Portfolio & Performance -
-                                        Dashboard</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->loan_disbursement_performance == 1)
-                                <li>
-                                    <a href="/loan-report">Loan Disbursement Performance -
-                                        Dashboard</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->payment_detail_report == 1)
-                                <li>
-                                    <a href="/PaymentFullDetailsReport">Payment Details Report</a>
-                                </li>
-                                <li>
-                                    <a href="/prediction_report">Payment Prediction</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->full_loan_detail == 1)
-                                <li><a href="/AllLoanDetailReport">Full Loan Detail Report</a></li>
-                                @endif
-                                @if (optional($privilege)->loan_summary == 1)
-                                <li><a href="/loansummaryreport">Loan Summary Report</a></li>
-                                @endif
-                                @if (optional($privilege)->par_monthly == 1)
-                                <li><a href="/par">PAR (Monthly)</a></li>
-                                @endif
-                                @if (optional($privilege)->par_weekly == 1)
-                                <li><a href="/par_weekly">PAR (Weekly)</a></li>
-                                @endif
-                                @if (optional($privilege)->loan_status == 1)
-                                <li>
-                                    <a href="/loanStatus">Loan Status</a>
-                                </li>
-                                @endif
-
-                                <li>
-                                    <a href="/depletion">Depletion Report Executive Summary</a>
-                                </li>
-                                <li>
-                                    <a href="/investment">Investment Report Executive Summary</a>
-                                </li>
-
-                                <li>
-                                    <a href="/arrears">Arrears Report Executive Summary</a>
-                                </li>
-
-                                <li>
-                                    <a href="/report/penalty-deduction">Penalty Deduction Report</a>
-                                </li>
+                    </ul>
+                </div>
+            </li>
+            @endhasPrivilege
 
 
-                            </ul>
-                        </div>
-                    </li>
+            @hasPrivilege('CUSTOMER')
+            <li class="side-nav-item mt-2">
+                <a data-bs-toggle="collapse" href="#customer" aria-expanded="false" aria-controls="sidebarPagesAuth" class="side-nav-link"  data-bs-title="Customer" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
+                    <i class="ri-group-2-line"></i>
+                    <span> Customer </span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ Request::is('customers*', 'showcustomers*', 'showblacklistcustomers*', 'showcustomerssaving*', 'showcustomersrecovery*', 'kyc*', 'insurance*') || Request::routeIs('customers.map') ? 'show' : '' }}" id="customer">
+                    <ul class="side-nav-second-level">
+                        @hasPrivilege('ADD_CUSTOMER')
+                        <li class="mt-2">
+                            <a href="{{ route('customers.create') }}" class="{{ Request::is('customers*') && !Request::routeIs('customers.map') ? 'active' : '' }}">Add Customer</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('VIEW_CUSTOMER')
+                        <li class="mt-2">
+                            <a href="showcustomers" class="{{ Request::is('showcustomers*') ? 'active' : '' }}">View Customer</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('VIEW_BLACKLIST_CUSTOMER')
+                        <li class="mt-2">
+                            <a href="/showblacklistcustomers" class="{{ Request::is('showblacklistcustomers*') ? 'active' : '' }}">View Blacklist Customer</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('CUSTOMER_SAVING_ACC')
+                        <li class="mt-2">
+                            <a href="/showcustomerssaving" class="{{ Request::is('showcustomerssaving*') ? 'active' : '' }}">Customer Saving Acc.</a>
+                        </li>
+                        <li class="mt-2">
+                            <a href="/showcustomersrecovery" class="{{ Request::is('showcustomersrecovery*') ? 'active' : '' }}">Customer Recovery Acc.</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('KYC')
+                        <li class="mt-2">
+                            <a href="/kyc" class="{{ Request::is('kyc*') ? 'active' : '' }}">KYC</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('INSURANCE')
+                        <li class="mt-2">
+                            <a href="/insurance" class="{{ Request::is('insurance*') ? 'active' : '' }}">Insurance</a>
+                        </li>
+                        @endhasPrivilege
 
-                    <li class="side-nav-item">
-                        <a data-bs-toggle="collapse" href="#acc_report" aria-expanded="false"
-                            class="side-nav-link">
-                            <span> Accounting Reports </span>
-                            <span class="menu-arrow"></span>
-                        </a>
-                        <div class="collapse" id="acc_report">
-                            <ul class="side-nav-third-level">
-                                @if (optional($privilege)->cashflow_accumulated == 1)
-                                <li>
-                                    <a href="/CashFlow">CashFlow Accumulated</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->cashflow_monthly == 1)
-                                <li>
-                                    <a href="/CashFlowMonthly">CashFlow Monthly</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->profit_loss == 1)
-                                <li>
-                                    <a href="/ProfitLoss">Profit & Loss (P&L)</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->balance_sheet == 1)
-                                <li>
-                                    <a href="/BalanceSheet">Balance Sheet</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->trial_balance == 1)
-                                <li>
-                                    <a href="/trialBalanceAccounting">Trial Balance</a>
-                                </li>
-                                @endif
-                            </ul>
-                        </div>
-                    </li>
+                        <li class="mt-2">
+                            <a href="" class="{{ Request::routeIs('customers.map') ? 'active' : '' }}">
+                                <span> Customer Map </span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
 
-                    <li class="side-nav-item">
-                        <a data-bs-toggle="collapse" href="#payment_report" aria-expanded="false"
-                            class="side-nav-link">
-                            <span> Payment Reports </span>
-                            <span class="menu-arrow"></span>
-                        </a>
-                        <div class="collapse" id="payment_report">
-                            <ul class="side-nav-third-level">
-                                @if (optional($privilege)->daily_collection_sheet == 1)
-                                <li>
-                                    <a href="/daily">Daily Collection Sheet</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->center_collection_detail == 1)
-                                <li>
-                                    <a href="/center_collection">Center Wise collection Detail</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->center_collection_summary == 1)
-                                <li>
-                                    <a href="/center_collection_summary">Center Wise collection
-                                        Summary</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->route_collections == 1)
-                                <li>
-                                    <a href="/root_wise_collection">Route Wise Daily Collection</a>
-                                </li>
-                                @endif
-                            </ul>
-                        </div>
-                    </li>
-                    <li class="side-nav-item">
-                        <a data-bs-toggle="collapse" href="#repayment_report" aria-expanded="false"
-                            class="side-nav-link">
-                            <span> Re Payment Reports </span>
-                            <span class="menu-arrow"></span>
-                        </a>
-                        <div class="collapse" id="repayment_report">
-                            <ul class="side-nav-third-level">
-                                @if (optional($privilege)->repayment_sheet_01 == 1)
-                                <li>
-                                    <a href="/daily_repayment_sheet">Repayment Sheet 01</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->repayment_sheet_02 == 1)
-                                <li>
-                                    <a href="/RightWayDailyRepayment">Repayment Sheet 02</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->repayment_sheet_03 == 1)
-                                <li>
-                                    <a href="/daily_repayment_sheet_hm">Repayment Sheet 03</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->repayment_sheet_04 == 1)
-                                <li>
-                                    <a href="/daily_repayment_sheet_lasantha">Repayment Sheet 04</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->repayment_sheet_05 == 1)
-                                <li>
-                                    <a href="/daily_repayment_sheet_finwin">Repayment Sheet 05</a>
-                                </li>
-                                @endif
+            </li>
+            @endhasPrivilege
 
-                                @if (optional($privilege)->repayment_sheet_06 == 1)
-                                <li>
-                                    <a href="/GreenLankaTrustRepayment">Repayment Sheet 06</a>
-                                </li>
-                                @endif
+            @hasPrivilege('LOAN_CENTER')
+            <li class="side-nav-item mt-2">
+                <a data-bs-toggle="collapse" href="#center" aria-expanded="false" aria-controls="center" class="side-nav-link"  data-bs-title="Loan Center" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
+                    <i class="ri-building-4-line"></i>
+                    <span> Loan Center </span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ Request::is('viewroutes*', 'center*', 'viewcenter*', 'customergroup*', 'viewgroups*', 'customergroupassign*') ? 'show' : '' }}" id="center">
+                    <ul class="side-nav-second-level">
+                        @hasPrivilege('CREATE_ROUTE')
+                        <li class="mt-2">
+                            <a href="/viewroutes" class="{{ Request::is('viewroutes*') ? 'active' : '' }}">Create Route</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('CREATE_CENTER')
+                        <li class="mt-2">
+                            <a href="/center" class="{{ Request::is('center*') ? 'active' : '' }}">Create Center</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('VIEW_CENTER')
+                        <li class="mt-2">
+                            <a href="/viewcenter" class="{{ Request::is('viewcenter*') ? 'active' : '' }}">View Center</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('CREATE_GROUP')
+                        <li class="mt-2">
+                            <a href="/customergroup" class="{{ Request::is('customergroup*') && !Request::is('customergroupassign*') ? 'active' : '' }}">Create Group</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('VIEW_GROUP')
+                        <li class="mt-2">
+                            <a href="/viewgroups" class="{{ Request::is('viewgroups*') ? 'active' : '' }}">View Group</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('ADD_CUSTOMER_TO_GROUP')
+                        <li class="mt-2">
+                            <a href="/customergroupassign" class="{{ Request::is('customergroupassign*') ? 'active' : '' }}">Add Customers To Group</a>
+                        </li>
+                        @endhasPrivilege
+                    </ul>
+                </div>
+            </li>
+            @endhasPrivilege
 
-                                @if (optional($privilege)->repayment_sheet_07 == 1)
-                                <li>
-                                    <a href="/DandDRepayment">Repayment Sheet 07</a>
-                                </li>
-                                @endif
+            @hasPrivilege('GUARANTEE')
+            <li class="side-nav-item mt-2">
+                <a data-bs-toggle="collapse" href="#Guarantee" aria-expanded="false" aria-controls="sidebarPagesAuth" class="side-nav-link"  data-bs-title="Guarantee" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
+                    <i class="ri-shield-user-line"></i>
+                    <span> Guarantee </span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ Request::is('guardian*', 'showguardian*') ? 'show' : '' }}" id="Guarantee">
+                    <ul class="side-nav-second-level">
+                        @hasPrivilege('ADD_GUARANTEE')
+                        <li class="mt-2">
+                            <a href="/guardian" class="{{ Request::is('guardian*') ? 'active' : '' }}">Add Guarantee</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('VIEW_GUARANTEE')
+                        <li class="mt-2">
+                            <a href="/showguardian" class="{{ Request::is('showguardian*') ? 'active' : '' }}">View Guarantee</a>
+                        </li>
+                        @endhasPrivilege
+                    </ul>
+                </div>
 
-                                @if (optional($privilege)->repayment_sheet_08 == 1)
-                                <li>
-                                    <a href="/dailyreport">Repayment Sheet 08</a>
-                                </li>
-                                @endif
+            </li>
+            @endhasPrivilege
 
-                                {{-- TEMPORARY: Show Repayment Sheet 09 without permission check for testing --}}
-                                {{-- @if (optional($privilege)->repayment_sheet_09 == 1) --}}
-                                <li>
-                                    <a href="/repaymntseet9">Repayment Sheet 09</a>
-                                </li>
-                                {{-- @endif --}}
+            @hasPrivilege('PAYMENT_DETAILS')
+            <li class="side-nav-item mt-2">
+                <a data-bs-toggle="collapse" href="#payment" aria-expanded="false" aria-controls="center" class="side-nav-link"  data-bs-title="Payment Details" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
+                    <i class="ri-wallet-3-line"></i>
+                    <span> Payment Details </span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ Request::is('payment*', 'bulk_repayment*', 'loan_settlement*', 'loan_reschedule*', 'viewpayment*', 'collection*') && !Request::is('payment_step_1*') ? 'show' : '' }}" id="payment">
+                    <ul class="side-nav-second-level">
+                        @hasPrivilege('ADD_REPAYMENT')
+                        <li class="mt-2">
+                            <a href="/payment" class="{{ Request::is('payment*') && !Request::is('payment_step_1*') ? 'active' : '' }}">Add Repayment</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('BULK_REPAYMENT')
+                        <li class="mt-2">
+                            <a href="/bulk_repayment" class="{{ Request::is('bulk_repayment*') ? 'active' : '' }}">Bulk Repayment</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('LOAN_SETTLEMENT')
+                        <li class="mt-2">
+                            <a href="/loan_settlement" class="{{ Request::is('loan_settlement*') ? 'active' : '' }}">Loan Settlement</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('LOAN_RESCHEDULE')
+                        <li class="mt-2">
+                            <a href="/loan_reschedule" class="{{ Request::is('loan_reschedule*') ? 'active' : '' }}">Loan Reschedule</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('VIEW_PAYMENT')
+                        <li class="mt-2">
+                            <a href="/viewpayment" class="{{ Request::is('viewpayment*') ? 'active' : '' }}">View Repayment</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('COLLECTOR_WISE_COLLECTION')
+                        <li class="mt-2">
+                            <a href="/collection" class="{{ Request::is('collection*') ? 'active' : '' }}">Collector Wise Collection</a>
+                        </li>
+                        @endhasPrivilege
+                    </ul>
+                </div>
+            </li>
+            @endhasPrivilege
 
-                                {{-- Repayment Sheet 10 --}}
-                                {{-- @if (optional($privilege)->repayment_sheet_10 == 1) --}}
-                                <li>
-                                    <a href="/RepaymentSheet10">Repayment Sheet 10</a>
-                                </li>
-                                {{-- @endif --}}
-                            </ul>
-                        </div>
-                    </li>
-                    <li class="side-nav-item">
-                        <a data-bs-toggle="collapse" href="#sub_report" aria-expanded="false"
-                            class="side-nav-link">
-                            <span> Sub Reports </span>
-                            <span class="menu-arrow"></span>
-                        </a>
-                        <div class="collapse" id="sub_report">
-                            <ul class="side-nav-third-level">
-                                @if (optional($privilege)->other_charges_report == 1)
-                                <li><a href="/LoanChargers">Loan Chargers Report</a></li>
-                                @endif
-                                @if (optional($privilege)->center_dashboard == 1)
-                                <li><a href="/dandlreport">Center Collection Dashboard</a></li>
-                                @endif
-                                @if (optional($privilege)->repayment_summary == 1)
-                                <li><a href="/monthlyprofit">Loan Repayment Summary Report</a></li>
-                                @endif
-                                @if (optional($privilege)->savings_report == 1)
-                                <li><a href="/savings_report">Savings Report</a></li>
-                                @endif
-                                @if (optional($privilege)->arrears_report == 1)
-                                <li><a href="/latePayment">Loan In Areas</a></li>
-                                @endif
-                                @if (optional($privilege)->arrears_overview == 1)
-                                <li><a href="/late_payment_report">Arrease Details</a></li>
-                                @endif
-                                @if (optional($privilege)->datewise_cashflow == 1)
-                                <li><a href="/ViewDateWiseCashFlow">Date Wise Cash Flow Details</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->loan_detail_report == 1)
-                                <li><a href="/loanreport">Loan Details</a></li>
-                                @endif
-                                @if (optional($privilege)->collector_report == 1)
-                                <li><a href="/repaymentreport">Collector Wise Repayment Collection</a>
-                                </li>
-                                @endif
-                                @if (optional($privilege)->sms_history == 1)
-                                <li><a href="/sms_history">SMS History Report</a></li>
-                                @endif
-                            </ul>
-                        </div>
-                    </li>
+            <li class="side-nav-item mt-2">
+                <a data-bs-toggle="collapse" href="#payment_voucher" aria-expanded="false" aria-controls="payment_voucher" class="side-nav-link"  data-bs-title="Payment Voucher" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
+                    <i class="ri-file-list-3-line"></i>
+                    <span> Payment Voucher </span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ Request::is('VoucherDashboard*', 'PaymentVoucher*', 'PendingVouchers*', 'ApprovedPayments*', 'SupplierRegistration*') ? 'show' : '' }}" id="payment_voucher">
+                    <ul class="side-nav-second-level">
+                        <li class="mt-2">
+                            <a href="/VoucherDashboard" class="{{ Request::is('VoucherDashboard*') ? 'active' : '' }}">Voucher Dashboard</a>
+                        </li>
+                        <li class="mt-2">
+                            <a href="/PaymentVoucher" class="{{ Request::is('PaymentVoucher*') ? 'active' : '' }}">Create Voucher</a>
+                        </li>
+                        <li class="mt-2">
+                            <a href="/PendingVouchers" class="{{ Request::is('PendingVouchers*') ? 'active' : '' }}">Pending Vouchers</a>
+                        </li>
+                        <li class="mt-2">
+                            <a href="/ApprovedPayments" class="{{ Request::is('ApprovedPayments*') ? 'active' : '' }}">Voucher Payments</a>
+                        </li>
+                        <li class="mt-2">
+                            <a href="/SupplierRegistration" class="{{ Request::is('SupplierRegistration*') ? 'active' : '' }}">Supplier Registration</a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
 
-                    <li class="side-nav-item">
-                        <a data-bs-toggle="collapse" href="#people_report" aria-expanded="false"
-                            class="side-nav-link">
-                            <span> People Reports </span>
-                            <span class="menu-arrow"></span>
-                        </a>
-                        <div class="collapse" id="people_report">
-                            <ul class="side-nav-third-level">
-                                @if (optional($privilege)->customer_detail_report == 1)
-                                <li><a href="/customerreport_details">All Customer Details</a></li>
-                                @endif
-                                @if (optional($privilege)->officer_customer_detail == 1)
-                                <li><a href="/customerreport_details_recover_officer">Recover Officer
-                                        Wise Customers</a></li>
-                                @endif
-                                @if (optional($privilege)->guardian_detail_report == 1)
-                                <li><a href="/borrowerreport">Guardian Details</a></li>
-                                @endif
-                            </ul>
+            @hasPrivilege('LOAN_CALCULATOR')
+            <li class="side-nav-item mt-2">
+                <a href="/calculator" class="side-nav-link {{ Request::is('calculator*') ? 'active' : '' }}"  data-bs-title="Loan Calculator" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right" data-bs-toggle="tooltip">
+                    <i class="ri-calculator-line"></i>
+                    <span> Loan Calculator </span>
+                </a>
+            </li>
+            @endhasPrivilege
+
+            @hasPrivilege('CALENDAR')
+            <li class="side-nav-item mt-2">
+                <a href="/calender" class="side-nav-link {{ Request::is('calender*') ? 'active' : '' }}"  data-bs-title="Calender" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right" data-bs-toggle="tooltip">
+                    <i class="ri-calendar-line"></i>
+                    <span> Calender </span>
+                </a>
+            </li>
+            @endhasPrivilege
+
+            @hasPrivilege('EXPENSES')
+            <li class="side-nav-item mt-2">
+                <a data-bs-toggle="collapse" href="#expences" aria-expanded="false" aria-controls="expences" class="side-nav-link"  data-bs-title="Expenses" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
+                    <i class="ri-briefcase-line"></i>
+                    <span> Expenses </span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ Request::is('expenses*', 'view_expenses*') ? 'show' : '' }}" id="expences">
+                    <ul class="side-nav-second-level">
+                        @hasPrivilege('ADD_EXPENSES')
+                        <li class="mt-2">
+                            <a href="/expenses" class="{{ Request::is('expenses*') ? 'active' : '' }}">Add Expenses</a>
+                        </li>
+                        @endhasPrivilege
+                        @hasPrivilege('VIEW_EXPENSES')
+                        <li class="mt-2">
+                            <a href="/view_expenses" class="{{ Request::is('view_expenses*') ? 'active' : '' }}">View Expenses</a>
+                        </li>
+                        @endhasPrivilege
+                    </ul>
+                </div>
+            </li>
+            @endhasPrivilege
+
+            @hasPrivilege('REPORTS')
+            <li class="side-nav-item mt-2">
+                <a data-bs-toggle="collapse" href="#reports_section" aria-expanded="false" class="side-nav-link"  data-bs-title="Reports" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
+                    <i class="ri-pie-chart-2-line"></i>
+                    <span> Reports </span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ Request::is('portfolio_performance*', 'loan-report*', 'PaymentFullDetailsReport*', 'prediction_report*', 'AllLoanDetailReport*', 'loansummaryreport*', 'par*', 'par_weekly*', 'loanStatus*', 'depletion*', 'investment*', 'arrears*', 'report/penalty-deduction*', 'reports/commission*', 'CashFlow*', 'CashFlowMonthly*', 'ProfitLoss*', 'BalanceSheet*', 'trialBalanceAccounting*', 'daily_repayment_sheet*', 'center_collection*', 'center_collection_summary*', 'root_wise_collection*') ? 'show' : '' }}" id="reports_section">
+                    <ul class="side-nav-second-level">
+                        <li class="side-nav-item mt-2">
+                            <a data-bs-toggle="collapse" href="#main_report" aria-expanded="false" class="side-nav-link" data-bs-title="Main Reports" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
+                                <span> Main Reports </span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse {{ Request::is('portfolio_performance*', 'loan-report*', 'PaymentFullDetailsReport*', 'prediction_report*', 'AllLoanDetailReport*', 'loansummaryreport*', 'par*', 'par_weekly*', 'loanStatus*', 'depletion*', 'investment*', 'arrears*', 'report/penalty-deduction*', 'reports/commission*') ? 'show' : '' }}" id="main_report">
+                                <ul class="side-nav-third-level">
+                                    @hasPrivilege('MAIN_REPORTS_DASHBOARD')
+                                    <li class="mt-2">
+                                        <a href="/portfolio_performance" class="{{ Request::is('portfolio_performance*') ? 'active' : '' }}">Portfolio & Performance -
+                                            Dashboard</a>
+                                    </li>
+                                    @endhasPrivilege
+                                    @hasPrivilege('LOAN_DISBURSEMENT_PERFORMANCE')
+                                    <li class="mt-2">
+                                        <a href="/loan-report" class="{{ Request::is('loan-report*') ? 'active' : '' }}">Loan Disbursement Performance -
+                                            Dashboard</a>
+                                    </li>
+                                    @endhasPrivilege
+                                    @hasPrivilege('PAYMENT_DETAIL_REPORT')
+                                    <li class="mt-2">
+                                        <a href="/PaymentFullDetailsReport" class="{{ Request::is('PaymentFullDetailsReport*') ? 'active' : '' }}">Payment Details Report</a>
+                                    </li>
+                                    <li class="mt-2">
+                                        <a href="/prediction_report" class="{{ Request::is('prediction_report*') ? 'active' : '' }}">Payment Prediction</a>
+                                    </li>
+                                    @endhasPrivilege
+                                    @hasPrivilege('FULL_LOAN_DETAIL')
+                                    <li class="mt-2"><a href="/AllLoanDetailReport" class="{{ Request::is('AllLoanDetailReport*') ? 'active' : '' }}">Full Loan Detail Report</a></li>
+                                    @endhasPrivilege
+                                    @hasPrivilege('LOAN_SUMMARY')
+                                    <li class="mt-2"><a href="/loansummaryreport" class="{{ Request::is('loansummaryreport*') ? 'active' : '' }}">Loan Summary Report</a></li>
+                                    @endhasPrivilege
+                                    @hasPrivilege('PAR_MONTHLY')
+                                    <li class="mt-2"><a href="/par" class="{{ Request::is('par*') && !Request::is('par_weekly*') ? 'active' : '' }}">PAR (Monthly)</a></li>
+                                    @endhasPrivilege
+                                    @hasPrivilege('PAR_WEEKLY')
+                                    <li class="mt-2"><a href="/par_weekly" class="{{ Request::is('par_weekly*') ? 'active' : '' }}">PAR (Weekly)</a></li>
+                                    @endhasPrivilege
+                                    @hasPrivilege('LOAN_STATUS')
+                                    <li class="mt-2">
+                                        <a href="/loanStatus" class="{{ Request::is('loanStatus*') ? 'active' : '' }}">Loan Status</a>
+                                    </li>
+                                    @endhasPrivilege
+
+                                    <li class="mt-2">
+                                        <a href="/depletion" class="{{ Request::is('depletion*') ? 'active' : '' }}">Depletion Report Executive Summary</a>
+                                    </li>
+                                    <li class="mt-2">
+                                        <a href="/investment" class="{{ Request::is('investment*') ? 'active' : '' }}">Investment Report Executive Summary</a>
+                                    </li>
+
+                                    <li class="mt-2">
+                                        <a href="/arrears" class="{{ Request::is('arrears*') ? 'active' : '' }}">Arrears Report Executive Summary</a>
+                                    </li>
+
+                                    <li class="mt-2">
+                                        <a href="/report/penalty-deduction" class="{{ Request::is('report/penalty-deduction*') ? 'active' : '' }}">Penalty Deduction Report</a>
+                                    </li>
+
+                                    <li class="mt-2">
+                                        <a href="/reports/commission" class="{{ Request::is('reports/commission*') ? 'active' : '' }}">Commission Report</a>
+                                    </li>
 
 
-                        </div>
-                    </li>
+                                </ul>
+                            </div>
+                        </li>
+
+                        <li class="side-nav-item mt-2">
+                            <a data-bs-toggle="collapse" href="#acc_report" aria-expanded="false" class="side-nav-link" data-bs-title="Account Reports" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
+                                <span> Account Reports </span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse {{ Request::is('CashFlow*', 'CashFlowMonthly*', 'ProfitLoss*', 'BalanceSheet*', 'trialBalanceAccounting*') ? 'show' : '' }}" id="acc_report">
+                                <ul class="side-nav-third-level">
+                                    @hasPrivilege('CASHFLOW_ACCUMULATED')
+                                    <li class="mt-2"><a href="/CashFlow" class="{{ Request::is('CashFlow*') && !Request::is('CashFlowMonthly*') ? 'active' : '' }}">CashFlow Accumulated</a></li>
+                                    @endhasPrivilege
+                                    @hasPrivilege('CASHFLOW_MONTHLY')
+                                    <li class="mt-2"><a href="/CashFlowMonthly" class="{{ Request::is('CashFlowMonthly*') ? 'active' : '' }}">CashFlow Monthly</a></li>
+                                    @endhasPrivilege
+                                    @hasPrivilege('PROFIT_LOSS')
+                                    <li class="mt-2"><a href="/ProfitLoss" class="{{ Request::is('ProfitLoss*') ? 'active' : '' }}">Profit & Loss</a></li>
+                                    @endhasPrivilege
+                                    @hasPrivilege('BALANCE_SHEET')
+                                    <li class="mt-2"><a href="/BalanceSheet" class="{{ Request::is('BalanceSheet*') ? 'active' : '' }}">Balance Sheet</a></li>
+                                    @endhasPrivilege
+                                    @hasPrivilege('TRIAL_BALANCE')
+                                    <li class="mt-2"><a href="/trialBalanceAccounting" class="{{ Request::is('trialBalanceAccounting*') ? 'active' : '' }}">Trial Balance</a></li>
+                                    @endhasPrivilege
+                                </ul>
+                            </div>
+                        </li>
+
+                        <li class="side-nav-item mt-2">
+                            <a data-bs-toggle="collapse" href="#collection_report" aria-expanded="false" class="side-nav-link" data-bs-title="Collection Reports" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right">
+                                <span> Collection Reports </span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse {{ Request::is('daily_repayment_sheet*', 'center_collection*', 'center_collection_summary*', 'root_wise_collection*') ? 'show' : '' }}" id="collection_report">
+                                <ul class="side-nav-third-level">
+                                    @hasPrivilege('DAILY_COLLECTION_SHEET')
+                                    <li class="mt-2"><a href="/daily_repayment_sheet" class="{{ Request::is('daily_repayment_sheet*') && !Request::is('daily_repayment_sheet_lasantha*') ? 'active' : '' }}">Daily Collection Sheet</a></li>
+                                    <li class="mt-2"><a href="/daily_repayment_sheet_lasantha" class="{{ Request::is('daily_repayment_sheet_lasantha*') ? 'active' : '' }}">Daily Collection Sheet L</a></li>
+                                    @endhasPrivilege
+                                    @hasPrivilege('CENTER_COLLECTION_DETAIL')
+                                    <li class="mt-2"><a href="/center_collection" class="{{ Request::is('center_collection*') && !Request::is('center_collection_summary*') ? 'active' : '' }}">Center Collection Detail</a></li>
+                                    @endhasPrivilege
+                                    @hasPrivilege('CENTER_COLLECTION_SUMMARY')
+                                    <li class="mt-2"><a href="/center_collection_summary" class="{{ Request::is('center_collection_summary*') ? 'active' : '' }}">Center Collection
+                                            Summary</a></li>
+                                    @endhasPrivilege
+                                    @hasPrivilege('ROUTE_COLLECTIONS')
+                                    <li class="mt-2"><a href="/root_wise_collection" class="{{ Request::is('root_wise_collection*') ? 'active' : '' }}">Route Collections</a></li>
+                                    @endhasPrivilege
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+            @endhasPrivilege
+            @endif
 
 
-                </ul>
-            </div>
-        </li>
-        @endif
+        </ul>
+        <div class="clearfix"></div>
+    </div>
 
-        @endif {{-- end isHeadOffice condition --}}
+    <!-- Sidebar Footer (Pinned to Bottom) -->
+    <div class="sidebar-footer border-top w-100 p-2">
+        <ul class="side-nav w-100">
+            <li class="side-nav-item">
+                <a href="https://accountcenter.asipiya.com/" target="_blank" class="side-nav-link"  data-bs-title="Account Center" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right" data-bs-toggle="tooltip">
+                    <i class="ri-bank-fill icon-pulse"></i>
+                    <span> Account Center </span>
+                </a>
+            </li>
 
-        {{-- Approval menu - Available to all users --}}
-        <li class="side-nav-item">
-            <a data-bs-toggle="collapse" href="#approval" aria-expanded="false" aria-controls="approval"
-                class="side-nav-link">
-                <i class="ri-checkbox-circle-line"></i>
-                <span> Approval </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="approval">
-                <ul class="side-nav-second-level">
-                    <li><a href="/pending_approval">Pending Approval</a></li>
-                    <li><a href="/approved_history">Approved History</a></li>
-                    <li><a href="/rejected_approval">Rejected Approval</a></li>
-                    <li>
-                        <a href="loan_delete_requests">Delete Loans Approval</a>
-                    </li>
-                </ul>
-            </div>
-        </li>
-
-        @endif
-    </ul>
-
-    <div class="clearfix"></div>
+            <li class="side-nav-item mt-1">
+                <a href="/logout" class="side-nav-link text-danger"  data-bs-title="Logout" data-bs-custom-class="shadcn-tooltip" data-bs-placement="right" data-bs-toggle="tooltip">
+                    <i class="ri-logout-box-line icon-shake text-danger"></i>
+                    <span> Logout </span>
+                </a>
+            </li>
+        </ul>
+    </div>
 </div>

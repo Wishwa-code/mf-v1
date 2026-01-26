@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, LogsActivity;
 
     protected $table      = 'user';
 
@@ -38,7 +40,21 @@ class User extends Authenticatable
     ];
 
 
-    public function user_has_privileges(){
-        return $this->hasMany(UserHasPrivileges::class,'user_id','id');
+    public function user_has_privileges()
+    {
+        return $this->hasMany(UserHasPrivileges::class, 'user_id', 'id');
+    }
+
+    public function shortcuts()
+    {
+        return $this->hasMany(Shortcut::class, 'user_id', 'id');
+    }
+
+    public function getActivitylogOptions(): \Spatie\Activitylog\LogOptions
+    {
+        return \Spatie\Activitylog\LogOptions::defaults()
+            ->logAll()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 }

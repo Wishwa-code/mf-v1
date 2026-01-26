@@ -50,7 +50,7 @@ class ChartOfAccountController extends Controller
             $query->whereNotNull('c.primary_account')->where('c.primary_account', '!=', 0);
         }
 
-        $query->where('c.branch_id','=',session('branch_id'));
+        $query->where('c.branch_id', '=', session('branch_id'));
         $data = $query->get();
 
         return response()->json($data);
@@ -66,7 +66,7 @@ class ChartOfAccountController extends Controller
         $company_banks = tableWithBranch('company_bank_accounts')
             ->get();
 
-        return view('pages.Accounting.ChartOfAccount',compact('company_banks'));
+        return view('pages.Accounting.ChartOfAccount', compact('company_banks'));
     }
 
     /**
@@ -85,10 +85,10 @@ class ChartOfAccountController extends Controller
         ]);
 
 
-        $isSubAccount=$request->isSubAccount;
-        $primaryAccountSelect="0";
-        if ($isSubAccount=="1"){
-            $primaryAccountSelect=$request->primaryAccountSelect;
+        $isSubAccount = $request->isSubAccount;
+        $primaryAccountSelect = "0";
+        if ($isSubAccount == "1") {
+            $primaryAccountSelect = $request->primaryAccountSelect;
         }
 
         $tracking_no = $request->log_no;
@@ -115,7 +115,7 @@ class ChartOfAccountController extends Controller
         if (DB::table('company_bank_accounts')->where('branch_id', session('branch_id'))->where('code', '=', $request->input('code'))->exists()) {
             return response()->json(["id" => "0"], 200);
         } else {
-            insertWithBranch('chart_of_account',[
+            insertWithBranch('chart_of_account', [
                 'code' => $request->input('code'),
                 'acc_name' => $request->input('acc_name'),
                 'acc_type_group' => $request->input('acc_type_group'),
@@ -128,7 +128,7 @@ class ChartOfAccountController extends Controller
                 'updated_at' => Carbon::now()
             ]);
             $insertedId = insertWithBranch('company_bank_accounts', $Bank);
-            $this->bankLogController->index($insertedId,"Account Creation","-","-","credit",$request->input('opening_balance'),'-');
+            $this->bankLogController->index($insertedId, "Account Creation", "-", "-", "credit", $request->input('opening_balance'), '-');
             return response()->json(['status' => 'success']);
         }
     }
@@ -196,11 +196,11 @@ class ChartOfAccountController extends Controller
 
                 $journalId = $request->id_manual_journal;
 
-                deleteWithBranch('manual_journal_has_amount','id_manual_journal', $journalId);
+                deleteWithBranch('manual_journal_has_amount', 'id_manual_journal', $journalId);
             } else {
 
                 // Insert new manual journal
-                $journalId = insertWithBranch('manual_journal',[
+                $journalId = insertWithBranch('manual_journal', [
                     'narration' => $request->narration,
                     'date' => $request->date,
                     'type' => $request->type,
@@ -213,7 +213,7 @@ class ChartOfAccountController extends Controller
             }
             Log::info($request->date);
             foreach ($request->rows as $row) {
-                insertWithBranch('manual_journal_has_amount',[
+                insertWithBranch('manual_journal_has_amount', [
                     'id_manual_journal' => $journalId,
                     'description' => $row['description'],
                     'account' => $row['account'],
@@ -226,20 +226,19 @@ class ChartOfAccountController extends Controller
                 $accountParts = explode('-', $row['account']);
                 $firstNumber = $accountParts[0];  // Get the first part before '-'
 
-                $bank_id=tableWithBranch('company_bank_accounts')
-                    ->where('Idbank','=',$firstNumber)
+                $bank_id = tableWithBranch('company_bank_accounts')
+                    ->where('Idbank', '=', $firstNumber)
                     ->first();
                 $dateTime = $request->date . ' ' . now()->format('H:i:s');
-                if ($row['debit_amount']>0){
-                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","debit",$row['debit_amount'],'-','0','0',$dateTime);
+                if ($row['debit_amount'] > 0) {
+                    $this->bankLogController->index($bank_id->Idbank, "Manual Journal", $row['description'], "-", "debit", $row['debit_amount'], '-', '0', '0', $dateTime);
                 }
 
-                if ($row['credit_amount']>0){
-                    $this->bankLogController->index($bank_id->Idbank,"Manual Journal",$row['description'],"-","credit",$row['credit_amount'],'-','0','0',$dateTime);
+                if ($row['credit_amount'] > 0) {
+                    $this->bankLogController->index($bank_id->Idbank, "Manual Journal", $row['description'], "-", "credit", $row['credit_amount'], '-', '0', '0', $dateTime);
                 }
                 $service = new BankBalanceService();
                 $service->updateRunningBalance($bank_id->Idbank);
-
             }
 
             return response()->json(['status' => 'success', 'message' => 'Manual Journal saved successfully.']);
@@ -272,7 +271,7 @@ class ChartOfAccountController extends Controller
 
 
             // Insert into the manual_journal table
-            $manualJournalId = insertWithBranch('manual_journal',[
+            $manualJournalId = insertWithBranch('manual_journal', [
                 'narration' => $request->narration,
                 'date' => $request->date,
                 'type' => $request->type,
@@ -285,7 +284,7 @@ class ChartOfAccountController extends Controller
 
             // Insert rows into manual_journal_has_amount table
             foreach ($request->rows as $row) {
-                insertWithBranch('manual_journal_has_amount',[
+                insertWithBranch('manual_journal_has_amount', [
                     'id_manual_journal' => $manualJournalId,
                     'description' => $row['description'],
                     'account' => $row['account'],
@@ -360,26 +359,26 @@ class ChartOfAccountController extends Controller
 
         return DB::transaction(function () use ($id) {
             // 1) Lock header
-            $header = tableWithBranch('manual_journal','manual_journal')
+            $header = tableWithBranch('manual_journal', 'manual_journal')
                 ->where('id_manual_journal', $id)
                 ->lockForUpdate()
                 ->first();
 
             if (!$header) {
-                return response()->json(['status'=>'error','message'=>'Journal not found.'],404);
+                return response()->json(['status' => 'error', 'message' => 'Journal not found.'], 404);
             }
             if ((int)$header->status === 2) {
-                return response()->json(['status'=>'error','message'=>'This journal is already reversed.'],400);
+                return response()->json(['status' => 'error', 'message' => 'This journal is already reversed.'], 400);
             }
 
             // 2) Get lines (we’ll use them mainly to read account strings and debit/credit)
-            $lines = tableWithBranch('manual_journal_has_amount','manual_journal_has_amount')
+            $lines = tableWithBranch('manual_journal_has_amount', 'manual_journal_has_amount')
                 ->where('id_manual_journal', $id)
                 ->orderBy('id_manual_journal_has_amount')
                 ->get();
 
             if ($lines->isEmpty()) {
-                return response()->json(['status'=>'error','message'=>'No lines found to reverse.'],400);
+                return response()->json(['status' => 'error', 'message' => 'No lines found to reverse.'], 400);
             }
 
             // 3) Reverse bank transactions:
@@ -405,7 +404,7 @@ class ChartOfAccountController extends Controller
                 }
 
                 // Opposite transactions
-                $dateTime = ($header->date ?? now()->toDateString()).' '.now()->format('H:i:s');
+                $dateTime = ($header->date ?? now()->toDateString()) . ' ' . now()->format('H:i:s');
                 $desc = $row->description;
 
                 // If original posted a debit, we now credit the same amount
@@ -445,16 +444,16 @@ class ChartOfAccountController extends Controller
                 $service->updateRunningBalance($bank->Idbank);
             }
 
-            tableWithBranch('manual_journal','manual_journal')
+            tableWithBranch('manual_journal', 'manual_journal')
                 ->where('id_manual_journal', $id)
                 ->update([
                     'status'      => 2,
                     'reversed_at' => now(),
-                    'reversed_by' => auth()->id() ?? null,
+                    'reversed_by' => user_data('idUser') ?? null,
                     'updated_at'  => now(),
                 ]);
 
-            return response()->json(['status'=>'success','message'=>'Journal reversed successfully.']);
+            return response()->json(['status' => 'success', 'message' => 'Journal reversed successfully.']);
         });
     }
 
@@ -466,7 +465,7 @@ class ChartOfAccountController extends Controller
         $id = $request->input('id_manual_journal');
         $status = $request->input('status');
 
-        updateWithBranch('manual_journal','id_manual_journal',$id,[
+        updateWithBranch('manual_journal', 'id_manual_journal', $id, [
             'status' => $status
         ]);
 
@@ -498,9 +497,9 @@ class ChartOfAccountController extends Controller
 
     public function fetchLedger($account, Request $request)
     {
-        $query = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        $query = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
             ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
-            ->where('Bank_Account_Id', '=',$account) // Match records starting with accountCode
+            ->where('Bank_Account_Id', '=', $account) // Match records starting with accountCode
             ->orderBy('id');
 
         // Optional filters: date range takes precedence, then today filter; default is no filter
@@ -518,7 +517,7 @@ class ChartOfAccountController extends Controller
         }
 
         $data = $query->get();
-        
+
         // Replace NULL values with '-'
         $data->transform(function ($item) {
             $item->account_name = $item->account_name ?? '-';
@@ -602,7 +601,7 @@ class ChartOfAccountController extends Controller
 
         // Sort the array to prioritize "System Generated" first, then "Chart Of Account", then others
         usort($additionalData, function ($a, $b) {
-            $order = ['Bank Account','Collector Account','System Generated', 'Chart Of Account', 'Expenses', 'Income'];
+            $order = ['Bank Account', 'Collector Account', 'System Generated', 'Chart Of Account', 'Expenses', 'Income'];
 
             // First, prioritize by type (System Generated, Chart Of Account)
             $aTypeRank = array_search($a['type'], $order) !== false ? array_search($a['type'], $order) : 2;
@@ -622,17 +621,18 @@ class ChartOfAccountController extends Controller
     }
 
 
-    public function getLog(Request $request){
+    public function getLog(Request $request)
+    {
         $dateFrom = Carbon::parse($request->input('date_from'))->toDateString() . ' 00:00:00';
         $dateTo = Carbon::parse($request->input('date_to'))->toDateString() . ' 23:59:59';
         $account_id = $request->account_id;
 
 
-        if (isset($request->account_id)){
+        if (isset($request->account_id)) {
             // Fetch matching records from the `manual_journal_has_amount` table
-            $data = tableWithBranch('company_bank_has_log','company_bank_has_log')
+            $data = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
                 ->leftJoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
-                ->where('Bank_Account_Id', '=',$account_id) // Match records starting with accountCode
+                ->where('Bank_Account_Id', '=', $account_id) // Match records starting with accountCode
                 ->whereBetween('Date_Time', [$dateFrom, $dateTo])  // Filter by date range
                 ->orderBy('id')
                 ->get();
@@ -658,27 +658,26 @@ class ChartOfAccountController extends Controller
             ->orderBy('id')
             ->get();
 
-// Replace NULL values with '-'
+        // Replace NULL values with '-'
         $data->transform(function ($item) {
             $item->account_name = $item->account_name ?? '-';
             return $item;
         });
         // Return data as JSON
         return response()->json($data);
-
-
     }
 
 
-    public function getBalanceSheetLog(Request $request){
+    public function getBalanceSheetLog(Request $request)
+    {
         $date_to = $request->date_to ?? now()->toDateString(); // Default to today
         $account_id = $request->account_id;
 
         // Base query
-        $query = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        $query = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
             ->leftjoin('company_bank_accounts', 'company_bank_accounts.Idbank', '=', 'company_bank_has_log.contra_account')
             ->where('Bank_Account_Id', '=', $account_id)
-            ->whereDate('Date_Time','<=', $date_to)
+            ->whereDate('Date_Time', '<=', $date_to)
             ->orderBy('id');
 
         // If client explicitly asks for pagination, return Laravel paginator under 'item'
@@ -687,8 +686,12 @@ class ChartOfAccountController extends Controller
         if ($wantsPagination) {
             $perPage = (int) $request->input('per_page', 25);
             // reasonable bounds
-            if ($perPage < 1) { $perPage = 1; }
-            if ($perPage > 200) { $perPage = 200; }
+            if ($perPage < 1) {
+                $perPage = 1;
+            }
+            if ($perPage > 200) {
+                $perPage = 200;
+            }
 
             $paginator = $query->paginate($perPage);
             return response()->json([
@@ -703,8 +706,6 @@ class ChartOfAccountController extends Controller
             return $item;
         });
         return response()->json($data);
-
-
     }
 
 
@@ -849,7 +850,6 @@ class ChartOfAccountController extends Controller
                 'primary_account' => 0
             ];
             $total_liabilities += $final_result_float;
-
         } elseif ($final_result_float < 0) {
             $assets[] = [
                 'idbank'          => 'Net Loss',
@@ -929,52 +929,52 @@ class ChartOfAccountController extends Controller
         $date_from_2 = Carbon::parse($date_from)->startOfDay();
 
         // Calculate various values
-        $bank=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_2')->first();
+        $bank = tableWithBranch('company_bank_accounts')->where('Bank_Type', '=', 'System_default_2')->first();
 
-        $interest_Credit = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        $interest_Credit = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('company_bank_has_log.Bank_Account_Id','=',$bank->Idbank)
+            ->where('company_bank_has_log.Bank_Account_Id', '=', $bank->Idbank)
             ->sum('Credit');
 
-        $interest_Debit = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        $interest_Debit = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('company_bank_has_log.Bank_Account_Id','=',$bank->Idbank)
+            ->where('company_bank_has_log.Bank_Account_Id', '=', $bank->Idbank)
             ->sum('Debit');
 
-        $interest=$interest_Credit-$interest_Debit;
+        $interest = $interest_Credit - $interest_Debit;
 
 
-        $penelty_system=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_5')->first();
+        $penelty_system = tableWithBranch('company_bank_accounts')->where('Bank_Type', '=', 'System_default_5')->first();
 
-        $panelty_Credit = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        $panelty_Credit = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('company_bank_has_log.Bank_Account_Id','=',$penelty_system->Idbank)
-            ->where('company_bank_has_log.Type','!=','Penalty')
+            ->where('company_bank_has_log.Bank_Account_Id', '=', $penelty_system->Idbank)
+            ->where('company_bank_has_log.Type', '!=', 'Penalty')
             ->sum('Credit');
 
-        $panelty_Debit = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        $panelty_Debit = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('company_bank_has_log.Bank_Account_Id','=',$penelty_system->Idbank)
-            ->where('company_bank_has_log.Type','!=','Penalty')
+            ->where('company_bank_has_log.Bank_Account_Id', '=', $penelty_system->Idbank)
+            ->where('company_bank_has_log.Type', '!=', 'Penalty')
             ->sum('Debit');
 
-        $panelty=$panelty_Credit-$panelty_Debit;
+        $panelty = $panelty_Credit - $panelty_Debit;
 
 
         // Calculate various values
-        $chargers=tableWithBranch('company_bank_accounts')->where('Bank_Type','=','System_default_9')->first();
+        $chargers = tableWithBranch('company_bank_accounts')->where('Bank_Type', '=', 'System_default_9')->first();
 
-        $chargers_Credit = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        $chargers_Credit = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('company_bank_has_log.Bank_Account_Id','=',$chargers->Idbank)
+            ->where('company_bank_has_log.Bank_Account_Id', '=', $chargers->Idbank)
             ->sum('Credit');
 
-        $chargers_Debit = tableWithBranch('company_bank_has_log','company_bank_has_log')
+        $chargers_Debit = tableWithBranch('company_bank_has_log', 'company_bank_has_log')
             ->whereBetween('Date_Time', [$date_from_2, $date_to_2])
-            ->where('company_bank_has_log.Bank_Account_Id','=',$chargers->Idbank)
+            ->where('company_bank_has_log.Bank_Account_Id', '=', $chargers->Idbank)
             ->sum('Debit');
 
-        $other_chargers = $chargers_Credit-$chargers_Debit;
+        $other_chargers = $chargers_Credit - $chargers_Debit;
 
         $total_income = tableWithBranch('expences')
             ->whereBetween('date', [$date_from_2, $date_to_2])
@@ -1030,16 +1030,4 @@ class ChartOfAccountController extends Controller
             'total_difference_revenue' => $total_difference_revenue, // Add total_difference to the result
         ];
     }
-
-
-
-
-
-
-
-
-
-
-
-
 }

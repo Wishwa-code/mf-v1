@@ -24,6 +24,7 @@ class AutoLogout
             if (!$lastActivity) {
                 session(['last_activity_time' => $now]);
             } elseif ($now->diffInMinutes($lastActivity) >= 60) {
+                \Illuminate\Support\Facades\Cache::forget('user_data:' . session('user_id'));
                 Auth::logout();
                 session()->flush();
                 return redirect()->route('login')->with('message', 'You have been logged out due to inactivity.');

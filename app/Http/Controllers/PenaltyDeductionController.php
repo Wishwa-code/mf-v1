@@ -210,7 +210,7 @@ class PenaltyDeductionController extends Controller
         $loanId   = (int) $request->input('loan_id');
         $amount   = round((float) $request->input('amount'), 2);
         $branchId = (int) session('branch_id');
-        $userId   = (int) (auth()->id() ?? 0);
+        $userId   = (int) (user_data('idUser') ?? 0);
 
         try {
             DB::beginTransaction();
@@ -245,7 +245,7 @@ class PenaltyDeductionController extends Controller
 
             // Oldest-first apportionment across installments with positive Panalty_Balance
             $rows = DB::table('installments')
-                ->select('idInstallments','Panalty_Balance','Total_Balance')
+                ->select('idInstallments', 'Panalty_Balance', 'Total_Balance')
                 ->where('Customer_Loan_idCustomer_Loan', $loanId)
                 ->where('branch_id', $branchId)
                 ->where('Panalty_Balance', '>', 0)
@@ -282,7 +282,7 @@ class PenaltyDeductionController extends Controller
                     'Balance_Amount' => DB::raw('GREATEST(Balance_Amount - ' . $applied . ', 0)')
                 ]);
 
-// ---- Fetch Latest Loan_Log BEFORE update (opening balances) ----
+            // ---- Fetch Latest Loan_Log BEFORE update (opening balances) ----
             $last_log = DB::table('Loan_Log')
                 ->where('Loan_ID', $loanId)
                 ->orderBy('Loan_Log_ID', 'desc')
@@ -293,9 +293,9 @@ class PenaltyDeductionController extends Controller
             $Capital_Balance_Log_before  = $last_log->Capital_Balance ?? 0;
             $Saving_Balance_Log_before   = $last_log->Saving_Account_Balance ?? 0;
             $Total_Pending_Balance_Log_before = $last_log->Total_Pending_Balance ?? 0;
-            $Panelty_Balance_Log_before=$Panelty_Balance_Log_before-$applied;
-            $Total_Pending_Balance_Log_before=$Total_Pending_Balance_Log_before-$applied;
-// ---- Fetch NEW current balances AFTER deduction ----
+            $Panelty_Balance_Log_before = $Panelty_Balance_Log_before - $applied;
+            $Total_Pending_Balance_Log_before = $Total_Pending_Balance_Log_before - $applied;
+            // ---- Fetch NEW current balances AFTER deduction ----
             $newPenaltyBalance = (float) DB::table('installments')
                 ->where('Customer_Loan_idCustomer_Loan', $loanId)
                 ->where('branch_id', $branchId)
@@ -318,7 +318,7 @@ class PenaltyDeductionController extends Controller
 
             $newTotalPendingBalance = $newPenaltyBalance + $newInterestBalance + $newCapitalBalance + $newSavingBalance;
 
-// ---- Call Loan Log Controller (Penalty Deduction Entry) ----
+            // ---- Call Loan Log Controller (Penalty Deduction Entry) ----
             $this->loanLogController->index(
                 $loanId,                    // Loan_ID
                 'Penalty Deduction',        // Type
@@ -353,5 +353,4 @@ class PenaltyDeductionController extends Controller
             return response()->json(['ok' => false, 'msg' => 'Unexpected error occurred.'], 500);
         }
     }
-
 }

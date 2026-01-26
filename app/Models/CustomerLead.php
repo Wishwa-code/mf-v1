@@ -67,7 +67,7 @@ class CustomerLead extends Model
     public function logActivity($action, $description, $properties = [])
     {
         $this->activities()->create([
-            'user_id' => session('userid') ?? auth()->id(), // Fallback to auth() if session not set
+            'user_id' => user_data('idUser') ?? user_data('idUser'), // Fallback to auth() if session not set
             'action' => $action,
             'description' => $description,
             'properties' => $properties,

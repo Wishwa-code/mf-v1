@@ -13,21 +13,15 @@ return new class extends Migration
     {
         Schema::create('app_settings', function (Blueprint $table) {
             $table->id();
-            $table->string('key')->unique();
+            $table->string('key');
             $table->text('value')->nullable();
+            $table->integer('branch_id')->index();
+
+            $table->unique(['key', 'branch_id']);
 
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();
-
-            $table->foreign('created_by')
-                ->references('id')
-                ->on('user')
-                ->nullOnDelete();
-
-            $table->foreign('updated_by')
-                ->references('id')
-                ->on('user')
-                ->nullOnDelete();
+            $table->timestamps();
         });
     }
 

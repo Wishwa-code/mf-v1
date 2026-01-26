@@ -1,0 +1,57 @@
+// Responsive Layout Adjustments
+// -----------------------------------------------------------------------------
+
+@media (max-width: 991.98px) {
+  // 1. Sidebar behavior on mobile
+  // By default, hide the sidebar off-screen
+  .leftside-menu {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+    z-index: 1040;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    box-shadow:
+      0 0 24px 0 rgba(0, 0, 0, 0.06),
+      0 1px 0 0 rgba(0, 0, 0, 0.02);
+  }
+
+  // When the body has the class 'sidebar-enable', slide it in
+  body.sidebar-enable .leftside-menu {
+    transform: translateX(0);
+  }
+
+  // 2. Content Page Adjustments
+  // On mobile, the content shouldn't have a left margin reserved for the sidebar
+  .content-page {
+    margin-left: 0 !important;
+    padding: 0 15px 65px; // Adjust padding if necessary
+  }
+
+  // 3. Navbar/Header Adjustments
+  .navbar-custom {
+    left: 0 !important; // Ensure header spans full width
+    padding: 0 10px;
+  }
+
+  // 4. Logo Box in Sidebar
+  // Ensure it looks okay in the drawer
+  .leftside-menu .logo-box {
+    justify-content: center;
+  }
+
+  // 5. Overlay for clicking outside (Optional visual aid)
+  // If you want a dark overlay when sidebar is open:
+  body.sidebar-enable::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1039; // Just below the sidebar
+    pointer-events: none; // Let JS handle clicks if possible, or use this to block interactions
+  }
+}
