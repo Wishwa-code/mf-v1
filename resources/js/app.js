@@ -42,16 +42,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Sidebar Toggle Logic
   initSidebarToggle();
+
+  // Dynamic Sidebar Width Logic
+  initDynamicSidebarWidth();
 });
+
+// function initDynamicSidebarWidth() {
+//   // logic removed to allow CSS to handle transitions smoothly
+// }
 
 function initSidebarToggle() {
   const html = document.documentElement;
   const body = document.body;
   const toggleBtn = document.querySelector(".button-toggle-menu");
+  const sidebar = document.querySelector(".leftside-menu");
 
+  // Toggle Button Click
   if (toggleBtn) {
     toggleBtn.addEventListener("click", function (e) {
       e.preventDefault();
+      e.stopPropagation(); // Prevent bubbling to sidebar click listener
 
       if (window.innerWidth < 992) {
         // Mobile
@@ -61,6 +71,22 @@ function initSidebarToggle() {
         const currentSize = html.getAttribute("data-sidenav-size");
         const newSize = currentSize === "condensed" ? "default" : "condensed";
         html.setAttribute("data-sidenav-size", newSize);
+        // Force width update (handled by observer/listeners, but good to be explicit safely)
+      }
+    });
+  }
+
+  // Sidebar Click - Expand when clicked (only in condensed mode & desktop)
+  if (sidebar) {
+    sidebar.addEventListener("click", function (e) {
+      if (window.innerWidth >= 992) {
+        const currentSize = html.getAttribute("data-sidenav-size");
+        // Check if we are in condensed mode and the click is NOT on a link (to avoid re-expanding when navigating, though expanding is safer)
+        // Actually, user wants "click need to expand".
+        // It's better to just check if condensed.
+        if (currentSize === "condensed") {
+          html.setAttribute("data-sidenav-size", "default");
+        }
       }
     });
   }

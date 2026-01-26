@@ -1,216 +1,161 @@
-<div class="navbar-custom">
-    <div class="topbar container-fluid d-flex flex-wrap justify-content-between align-items-center">
+<nav class="navbar navbar-expand-lg navbar-light fixed-top" style="height: 80px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,0,0,0.05);">
+    <div class="container-fluid px-4 h-100">
+        <div class="d-flex align-items-center justify-content-between h-100 w-100 position-relative">
 
-        <div class="d-flex align-items-center mb-2 mb-md-0">
+            <!-- Left: Sidebar Toggle -->
+            <div class="d-flex align-items-center" style="z-index: 10;">
+                <button type="button" class="button-toggle-menu btn btn-light text-secondary me-4 p-2 rounded-circle border-0 shadow-sm d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                    <i class="ri-menu-line fs-5"></i>
+                </button>
 
-            <!-- Sidebar Menu Toggle Button -->
-            <button class="button-toggle-menu me-2">
-                <i class="ri-menu-line"></i>
-            </button>
-
-            <!-- Horizontal Menu Toggle Button -->
-            <button class="navbar-toggle" data-bs-toggle="collapse" data-bs-target="#topnav-menu-content">
-                <div class="lines">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                <!-- Optional: Date/Time (Desktop) -->
+                <div class="d-none d-lg-flex flex-column align-items-start ms-2">
+                    <span class="fs-5 fw-bold text-dark tracking-tight" style="font-family: 'Inter', sans-serif;">{{ date('l') }}</span>
+                    <span class="small fw-medium text-muted text-uppercase" style="letter-spacing: 0.5px;">{{ date('d F Y') }}</span>
                 </div>
-            </button>
+            </div>
 
-        </div>
-
-        <!-- Modern Date/Time Display -->
-        <div class="modern-date-time d-none d-lg-flex flex-column align-items-end justify-content-center me-3">
-            <span class="day-text" id="modern-day">{{ date('l') }}</span>
-            <span class="date-text" id="modern-date">{{ date('d F Y') }}</span>
-        </div>
-
-        <div class="d-flex align-items-center justify-content-center gap-3">
-            @if (session('branch_access') === 1)
-            <div class="modern-branch-switcher">
+            <!-- Center: Branch Switcher (Absolute Center) -->
+            <div class="position-absolute start-50 top-50 translate-middle d-none d-md-block">
+                @if (session('branch_access') === 1)
                 <div class="dropdown">
-                    <button type="button" class="btn modern-dropdown-toggle" data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                        <i class="ri-building-2-line me-2"></i>
-                        <span class="branch-text text-truncate d-inline-block" style="max-width: 200px; vertical-align: middle;">
-                            @if(isset($branch) && count($branch) > 0)
-                            @php
-                            $currentBranch = collect($branch)->firstWhere('idBranch', session('branch_id'));
-                            @endphp
-                            {{ $currentBranch['Name'] ?? 'Select Branch' }}
-                            @else
-                            {{ session('branch_name') . ' Branch' }}
-                            @endif
-                        </span>
-                        <i class="ri-arrow-down-s-line ms-2 dropdown-arrow"></i>
+                    <button type="button" class="btn border-0 d-flex align-items-center gap-2 text-white fw-semibold shadow-sm rounded-pill px-4 py-2 hover-scale" data-bs-toggle="dropdown" aria-expanded="false" style="background: linear-gradient(135deg, #4f46e5 0%, #ec4899 100%);">
+                        <div class="d-flex align-items-center justify-content-center bg-white bg-opacity-25 rounded-circle me-1" style="width: 24px; height: 24px;">
+                            <i class="ri-building-2-fill fs-6 text-white"></i>
+                        </div>
+                        @if(isset($branch) && count($branch) > 0)
+                        @php $currentBranch = collect($branch)->firstWhere('idBranch', session('branch_id')); @endphp
+                        <span class="text-truncate" style="max-width: 200px;">{{ $currentBranch['Name'] ?? 'Select Branch' }}</span>
+                        @else
+                        <span class="text-truncate" style="max-width: 200px;">{{ session('branch_name') . ' Branch' }}</span>
+                        @endif
+                        <i class="ri-arrow-down-s-line ms-2 text-white opacity-75"></i>
                     </button>
-                    <ul class="dropdown-menu modern-dropdown-menu" style="max-height: 300px; overflow-y: auto;">
+                    <!-- Bootstrap Dropdown Menu -->
+                    <ul class="dropdown-menu dropdown-menu-center shadow-lg border-0 mt-3 p-2 rounded-4" style="max-height: 400px; overflow-y: auto; min-width: 280px; transform: translateX(-15%);">
+                        <div class="px-3 py-2 text-muted small fw-bold text-uppercase ls-1">Select Branch</div>
                         @if(isset($branch))
                         @foreach ($branch as $item)
                         @php $item = (object) $item; @endphp
                         <li>
-                            <a class="dropdown-item modern-dropdown-item branch-option" href="#"
-                                data-branch-id="{{ $item->idBranch }}"
-                                data-branch-name="{{ $item->Name }} Branch">
-                                <i class="ri-building-2-line me-2"></i>
+                            <a class="dropdown-item d-flex align-items-center px-3 py-2 rounded-3 text-secondary branch-option mb-1 {{ session('branch_id') == $item->idBranch ? 'bg-indigo-50 text-primary fw-bold' : '' }}" href="#" data-branch-id="{{ $item->idBranch }}" data-branch-name="{{ $item->Name }} Branch">
                                 {{ $item->Name }}
-                                @if (session('branch_id') == $item->idBranch)
-                                <i class="ri-check-line ms-auto text-success"></i>
-                                @endif
+                                @if (session('branch_id') == $item->idBranch) <i class="ri-check-line ms-auto text-primary"></i> @endif
                             </a>
                         </li>
                         @endforeach
                         @endif
                     </ul>
-
                 </div>
+                @else
+                <div class="d-flex align-items-center gap-2 bg-white text-primary px-4 py-2 rounded-pill border border-primary-subtle fw-bold small shadow-sm">
+                    <i class="ri-building-2-line"></i>
+                    {{ session('branch_name') . ' Branch' }}
+                </div>
+                @endif
             </div>
-            @else
-            <h2 id="date" class="d-none d-md-block">{{ session('branch_name') . ' Branch' }}</h2>
-            @endif
 
-            <!-- Animated Account Button (No Dropdown) -->
-            <div class="position-relative" style="width: 35px; height: 35px;">
-                <a href="https://accountcenter.asipiya.com/" class="account-btn-animated position-absolute top-0 start-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Account Center">
-                    <i class="ri-bank-fill svgIcon"></i>
-                </a>
-            </div>
-        </div>
+            <!-- Right: Actions & Profile -->
+            <div class="d-flex align-items-center gap-3" style="z-index: 10;">
 
-        <ul class="topbar-menu d-flex align-items-center gap-2">
+                <!-- Mobile Branch Toggle (Visible only on mobile) -->
+                <div class="d-md-none">
+                    <!-- Simplified mobile branch indicator/icon could go here if needed -->
+                </div>
 
-            <li class="nav-item">
-                <a class="modern-action-btn" href="{{ route('approval.pending') }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Approvals">
-                    <i class="ri-notification-3-line"></i>
-                    {{-- Badge only for Head Office --}}
+                <!-- Theme Toggle -->
+                <div class="btn btn-light rounded-circle d-flex align-items-center justify-content-center text-secondary shadow-sm border-0 transition-all hover-scale" style="width: 42px; height: 42px; cursor: pointer;" id="light-dark-mode" title="Toggle Theme">
+                    <i class="ri-moon-line fs-5"></i>
+                </div>
+
+                <!-- Approvals / Notifications -->
+                <a href="{{ route('approval.pending') }}" class="btn btn-light rounded-circle d-flex align-items-center justify-content-center text-secondary position-relative shadow-sm border-0 transition-all hover-scale" style="width: 42px; height: 42px;" title="Notifications">
+                    <i class="ri-notification-3-line fs-5"></i>
                     @if (session('head_branch') == session('branch_id'))
-                    <span id="approvalBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                        style="display:none; font-size: 0.6rem; padding: 0.25em 0.4em;">0</span>
+                    <span id="approvalBadge" class="position-absolute badge rounded-circle bg-danger border border-2 border-white p-1" style="display:none; width: 12px; height: 12px; top: 10px; right: 8px;"></span>
                     @endif
                 </a>
-            </li>
 
-            <li class="d-none d-sm-inline-block">
-                <div class="modern-action-btn" id="light-dark-mode" role="button" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Toggle Theme">
-                    <i class="ri-moon-line fs-22"></i>
-                </div>
-            </li>
-
-            <li class="dropdown">
-                <a class="nav-link dropdown-toggle arrow-none nav-user" data-bs-toggle="dropdown" href="#"
-                    role="button" aria-haspopup="false" aria-expanded="false">
-                    <span class="account-user-avatar">
+                <!-- User Profile Dropdown -->
+                <div class="dropdown ms-2">
+                    <button class="btn btn-link text-decoration-none d-flex align-items-center gap-2 p-0 focus-none" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         @php
                         $logoPath = $companyItem && $companyItem->Logo ? 'storage/' . $companyItem->Logo : '';
                         $logoUrl = ($logoPath && file_exists(public_path($logoPath))) ? asset($logoPath) : asset('assets/images/users/avatar-1.jpg');
                         @endphp
-                        <img src="{{ $logoUrl }}" alt="user-image" width="32" class="rounded-circle">
+                        <img class="rounded-circle border border-2 border-white shadow-sm object-fit-cover" src="{{ $logoUrl }}" alt="" style="width: 40px; height: 40px;">
+                        <div class="d-none d-lg-block text-start">
+                            <p class="small fw-bold text-dark mb-0 text-truncate" style="max-width: 100px;">{{ user_data('full_name') }}</p>
+                            <p class="text-muted mb-0" style="font-size: 10px;">Admin</p>
+                        </div>
+                        <i class="ri-arrow-down-s-line text-muted small"></i>
+                    </button>
 
-                    </span>
-                    <span class="d-lg-block d-none">
-                        <h5 class="my-0 fw-normal">{{ user_data('full_name') }} <i
-                                class="ri-arrow-down-s-line d-none d-sm-inline-block align-middle"></i></h5>
-                    </span>
-                </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-3 p-2 rounded-4" style="width: 240px;">
 
-                <div class="dropdown-menu dropdown-menu-end dropdown-menu-animated profile-dropdown">
+                        <div class="px-3 py-3 bg-light rounded-3 mb-2">
+                            <p class="small fw-medium text-uppercase text-muted mb-1" style="font-size: 10px;">Signed in as</p>
+                            <p class="small fw-bold text-dark mb-0 text-truncate">{{ user_data('full_name') }}</p>
+                        </div>
 
-                    <!-- item-->
-                    <div class=" dropdown-header noti-title">
-                        <h6 class="text-overflow m-0">Welcome !</h6>
-                    </div>
+                        @hasPrivilege('MY_ACCOUNT')
+                        <li>
+                            <a href="/company" class="dropdown-item d-flex align-items-center px-3 py-2 text-secondary rounded-3 mb-1">
+                                <i class="ri-building-line me-2"></i> Company Info
+                            </a>
+                        </li>
+                        @endhasPrivilege
 
-                    @hasPrivilege('MY_ACCOUNT')
-                    <a href="/company" class="dropdown-item">
-                        <i class="ri-account-circle-line fs-18 align-middle me-1"></i>
-                        <span>Company/User Info</span>
-                    </a>
-                    @endhasPrivilege
+                        @if (session('head_branch') == session('branch_id'))
 
-                    @if (session('head_branch') == session('branch_id'))
-                    @hasPrivilege('SETTINGS')
-                    <a href="/setting" class="dropdown-item">
-                        <i class="ri-settings-4-line fs-18 align-middle me-1"></i>
-                        <span>Settings</span>
-                    </a>
-                    @endhasPrivilege
-                    @endif
+                        @hasPrivilege('SETTINGS')
+                        <li>
+                            <a href="/setting" class="dropdown-item d-flex align-items-center px-3 py-2 text-secondary rounded-3 mb-1">
+                                <i class="ri-settings-4-line me-2"></i> Settings
+                            </a>
+                        </li>
+                        @endhasPrivilege
 
-                    @hasPrivilege('SMS_FORMAT')
+                        <!-- Additional Head Office Items -->
+                        <li>
+                            <a href="/users" class="dropdown-item d-flex align-items-center px-3 py-2 text-secondary rounded-3 mb-1">
+                                <i class="ri-user-settings-line me-2"></i> Users
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/roles" class="dropdown-item d-flex align-items-center px-3 py-2 text-secondary rounded-3 mb-1">
+                                <i class="ri-shield-user-line me-2"></i> Roles & Permissions
+                            </a>
+                        </li>
+                        @endif
 
-                    @if ($companyMask != null)
-                    <a href="/sms" class="dropdown-item">
-                        <i class="ri-mail-line fs-18 align-middle me-1"></i>
-                        <span>SMS Format</span>
-                    </a>
-                    @else
-                    <a href="#" class="dropdown-item">
-                        <i class="ri-mail-line fs-18 align-middle me-1"></i>
-                        <span>SMS Format</span>
-                    </a>
-                    @endif
+                        @hasPrivilege('SMS_FORMAT')
+                        <li>
+                            <a href="{{ $companyMask != null ? '/sms' : '#' }}" class="dropdown-item d-flex align-items-center px-3 py-2 text-secondary rounded-3 mb-1">
+                                <i class="ri-message-2-line me-2"></i> SMS Format
+                            </a>
+                        </li>
+                        @endhasPrivilege
 
-                    @endhasPrivilege
+                        <!-- Support & Logout -->
+                        <li>
+                            <hr class="dropdown-divider my-2">
+                        </li>
 
-                    @hasPrivilege('DOCUMENT_FORMAT')
-                    <a href="/agreement" class="dropdown-item">
-                        <i class="ri-file-paper-2-fill fs-18 align-middle me-1"></i>
-                        <span>Document Format</span>
-                    </a>
-                    @endhasPrivilege
+                        <li>
+                            <a href="#" class="dropdown-item d-flex align-items-center px-3 py-2 text-secondary rounded-3 mb-1">
+                                <i class="ri-customer-service-2-line me-2"></i> Support
+                            </a>
+                        </li>
 
-                    @hasPrivilege('COMPANY_HOLIDAYS')
-                    <a href="/holidays" class="dropdown-item">
-                        <i class="ri-moon-clear-line fs-18 align-middle me-1"></i>
-                        <span>Company Holidays</span>
-                    </a>
-                    @endhasPrivilege
-
-                    @if (session('head_branch') == session('branch_id'))
-                    @hasPrivilege('BRANCHES')
-                    <a href="/branch" class="dropdown-item">
-                        <i class="ri-building-2-fill fs-18 align-middle me-1"></i>
-                        <span>Branches</span>
-                    </a>
-                    @endhasPrivilege
-                    @endif
-
-                    <!-- item-->
-                    <a href="#" class="dropdown-item">
-                        <i class="ri-customer-service-2-line fs-18 align-middle me-1"></i>
-                        <span>Support</span>
-                    </a>
-                    <!-- item-->
-                    <a href="/logout" class="dropdown-item">
-                        <i class="ri-logout-box-line fs-18 align-middle me-1"></i>
-                        <span>Logout</span>
-                    </a>
-
-                    <hr>
-                    <div class=" dropdown-header noti-title">
-                        <h6 class="text-overflow m-0">Cashier Section</h6>
-                    </div>
-                    @hasPrivilege('CASHIER_START')
-                    <a class="dropdown-item d-flex align-items-center" href="#"
-                        data-bs-toggle="modal" data-bs-target="#cashierStartModal">
-                        <i class="ri-money-dollar-box-line font-size-17 align-middle me-1"></i> Cashier
-                        Start
-                    </a>
-                    @endhasPrivilege
-
-                    @hasPrivilege('CASHIER_CLOSE')
-                    <a class="dropdown-item" href="#" data-bs-toggle="modal"
-                        data-bs-target="#dayEndModal">
-                        <i class="mdi mdi-lock-open-outline font-size-17 align-middle me-1"></i> Cashier
-                        Close
-                    </a>
-                    @endhasPrivilege
-
+                        <li>
+                            <a href="/logout" class="dropdown-item d-flex align-items-center px-3 py-2 text-danger rounded-3 hover-bg-red-50">
+                                <i class="ri-logout-box-line me-2"></i> Sign out
+                            </a>
+                        </li>
+                    </ul>
                 </div>
-
-            </li>
-        </ul>
-
+            </div>
+        </div>
     </div>
-
-</div>
+</nav>

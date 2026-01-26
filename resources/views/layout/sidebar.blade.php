@@ -2,24 +2,26 @@
 
     <!-- Brand Logo Light -->
     <!-- Brand Logo Area -->
-    <div class="logo-box">
-        <a href="/" class="logo-link">
+    <!-- Brand Logo Light -->
+    <div class="logo-box mb-4 d-flex justify-content-center">
+        <a href="/" class="logo-link d-flex align-items-center gap-3 text-decoration-none px-3">
             <!-- Logo Image -->
             @if ($logo)
-            <img src="{{ $logo }}" class="logo-img" alt="Logo">
+            <img src="{{ $logo }}" class="logo-img shadow-sm rounded-circle" alt="Logo" style="height: 42px; width: 42px;">
             @else
-            <img src="https://accountcenter.asipiya.com/asipiya.svg" class="logo-img" alt="Logo">
+            <img src="https://accountcenter.asipiya.com/asipiya.svg" class="logo-img" alt="Logo" style="height: 42px; width: 42px;">
             @endif
 
-            <!-- Logo Text (Company Name) -->
-            <span class="logo-text">{{ user_data()['company']['Company_Name'] ?? 'Asipiya' }}</span>
+            <!-- Company Name -->
+            <div class="d-flex flex-column justify-content-center logo-text-section">
+                <span class="fw-bolder text-dark tracking-tight lh-1 text-truncate" style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; max-width: 180px;">
+                    {{ user_data()['company']['Company_Name'] ?? 'Asipiya' }}
+                </span>
+                <span class="text-muted small fw-medium" style="font-size: 0.75rem;">Microfinance Solution</span>
+            </div>
         </a>
     </div>
 
-    <!-- Mobile Close Button -->
-    <a href="javascript:void(0);" class="button-close-fullsidebar">
-        <i class="ri-close-fill align-middle"></i>
-    </a>
     <!-- Sidebar -left -->
 
     <div class="h-100" id="leftside-menu-container" data-simplebar>
@@ -27,7 +29,6 @@
         <!--- Sidemenu -->
         <ul class="side-nav">
 
-            <li class="side-nav-title" style="color: red">{{ user_data()['company']['Company_Name'] ?? '' }}</li>
 
             @php $isHeadOffice = session('head_branch') == session('branch_id'); @endphp
 
@@ -305,12 +306,12 @@
                     <ul class="side-nav-second-level">
                         @hasPrivilege('ADD_CUSTOMER')
                         <li class="mt-2">
-                            <a href="/customers" class="{{ Request::is('customers*') && !Request::routeIs('customers.map') ? 'active' : '' }}">Add Customer</a>
+                            <a href="{{ route('customers.create') }}" class="{{ Request::is('customers*') && !Request::routeIs('customers.map') ? 'active' : '' }}">Add Customer</a>
                         </li>
                         @endhasPrivilege
                         @hasPrivilege('VIEW_CUSTOMER')
                         <li class="mt-2">
-                            <a href="/showcustomers" class="{{ Request::is('showcustomers*') ? 'active' : '' }}">View Customer</a>
+                            <a href="showcustomers" class="{{ Request::is('showcustomers*') ? 'active' : '' }}">View Customer</a>
                         </li>
                         @endhasPrivilege
                         @hasPrivilege('VIEW_BLACKLIST_CUSTOMER')
@@ -338,7 +339,7 @@
                         @endhasPrivilege
 
                         <li class="mt-2">
-                            <a href="{{ route('customers.map') }}" class="{{ Request::routeIs('customers.map') ? 'active' : '' }}">
+                            <a href="" class="{{ Request::routeIs('customers.map') ? 'active' : '' }}">
                                 <span> Customer Map </span>
                             </a>
                         </li>
@@ -674,22 +675,26 @@
             @endif
 
 
-            <li class="side-nav-item mt-2">
-                <a href="{{ route('activity-logs.index') }}" class="side-nav-link {{ Request::routeIs('activity-logs.index') ? 'active' : '' }}" data-tooltip="Activity Logs">
-                    <i class="ri-history-line"></i>
-                    <span> Activity Logs </span>
+        </ul>
+        <div class="clearfix"></div>
+    </div>
+
+    <!-- Sidebar Footer (Pinned to Bottom) -->
+    <div class="sidebar-footer border-top w-100 p-2">
+        <ul class="side-nav w-100">
+            <li class="side-nav-item">
+                <a href="https://accountcenter.asipiya.com/" target="_blank" class="side-nav-link" data-tooltip="Account Center">
+                    <i class="ri-bank-fill icon-pulse"></i>
+                    <span> Account Center </span>
                 </a>
             </li>
 
-            <li class="side-nav-item">
-                <a href="/logout" class="side-nav-link" data-tooltip="Logout">
-                    <i class="ri-logout-box-line"></i>
+            <li class="side-nav-item mt-1">
+                <a href="/logout" class="side-nav-link text-danger" data-tooltip="Logout">
+                    <i class="ri-logout-box-line icon-shake text-danger"></i>
                     <span> Logout </span>
                 </a>
             </li>
         </ul>
-
-        <!--- End Sidemenu -->
-        <div class="clearfix"></div>
     </div>
 </div>
