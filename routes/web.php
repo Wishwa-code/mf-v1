@@ -67,7 +67,7 @@ Route::post('/recover_password', '\App\Http\Controllers\UserController@recover_p
 
 
 
-Route::middleware(['auth.central'])->group(function () {
+Route::middleware([])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('home');
 
     Route::group(['prefix' => 'settings'], function () {
