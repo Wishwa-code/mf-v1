@@ -34,9 +34,11 @@ document.addEventListener("DOMContentLoaded", function () {
   const tooltipTriggerList = document.querySelectorAll(
     '[data-bs-toggle="tooltip"], [data-bs-custom-class="shadcn-tooltip"]',
   );
-  const tooltipList = [...tooltipTriggerList].map(
-    (tooltipTriggerEl) => new bootstrap.Tooltip(tooltipTriggerEl),
-  );
+  const tooltipList = [...tooltipTriggerList].map((tooltipTriggerEl) => {
+    if (!bootstrap.Tooltip.getInstance(tooltipTriggerEl)) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    }
+  });
 
   // Initialize Flatpickr
   flatpickr(".datepicker", {
@@ -90,13 +92,25 @@ function initSidebarToggle() {
     sidebar.addEventListener("click", function (e) {
       if (window.innerWidth >= 992) {
         const currentSize = html.getAttribute("data-sidenav-size");
-        // Check if we are in condensed mode and the click is NOT on a link (to avoid re-expanding when navigating, though expanding is safer)
-        // Actually, user wants "click need to expand".
-        // It's better to just check if condensed.
         if (currentSize === "condensed") {
           html.setAttribute("data-sidenav-size", "default");
         }
       }
+    });
+
+    // Ensure links trigger expansion
+    const links = sidebar.querySelectorAll(".side-nav-link");
+    links.forEach((link) => {
+      link.addEventListener("click", function (e) {
+        if (
+          window.innerWidth >= 992 &&
+          html.getAttribute("data-sidenav-size") === "condensed"
+        ) {
+          html.setAttribute("data-sidenav-size", "default");
+          // Note: We allow the default action (Bootstrap collapse or navigation) to proceed
+          // e.stopPropagation(); // Do not stop propagation or preventing default unless desired
+        }
+      });
     });
   }
 

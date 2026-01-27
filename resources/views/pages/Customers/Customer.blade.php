@@ -4,156 +4,23 @@
 <!-- Select2 CSS -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
 
-<style>
-    /* Modern Styles Ported from Leads Create */
-    .card-modern {
-        border: none;
-        border-radius: 16px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        background: #fff;
-        overflow: hidden;
-        margin-bottom: 1.5rem;
-    }
-
-    .form-label {
-        font-weight: 600;
-        color: #343a40;
-        font-size: 0.9rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .form-control,
-    .form-select {
-        height: 50px;
-        border: 1px solid #e0e0e0;
-        border-radius: 12px;
-        padding: 0.6rem 1rem;
-        font-size: 0.95rem;
-        background-color: #f8f9fa;
-        transition: all 0.2s;
-    }
-
-    .form-control:focus,
-    .form-select:focus {
-        border-color: #556ee6;
-        box-shadow: 0 0 0 0.25rem rgba(85, 110, 230, 0.1);
-        background-color: #fff;
-    }
-
-    textarea.form-control {
-        height: auto;
-        min-height: 120px;
-    }
-
-    /* Select2 Customization */
-    .select2-container--default .select2-selection--single {
-        height: 50px;
-        border: 1px solid #e0e0e0;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        background-color: #f8f9fa;
-    }
-
-    .select2-container--default .select2-selection--single:focus-within {
-        border-color: #556ee6;
-        box-shadow: 0 0 0 0.25rem rgba(85, 110, 230, 0.1);
-        background-color: #fff;
-    }
-
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 50px;
-        right: 10px;
-    }
-
-    .select2-container--default .select2-selection--single .select2-selection__rendered {
-        padding-left: 15px;
-        font-size: 0.95rem;
-        color: #495057;
-        font-weight: 500;
-    }
-
-    .select2-dropdown {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        margin-top: 8px;
-    }
-
-    .select2-search__field {
-        border-radius: 8px !important;
-        padding: 8px 12px !important;
-    }
-
-    /* Section Headers */
-    .section-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid #f0f0f0;
-    }
-
-    .section-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 1rem;
-        font-size: 1.25rem;
-    }
-
-    /* Buttons */
-    .btn-modern {
-        border-radius: 10px;
-        padding: 10px 20px;
-        font-weight: 600;
-        transition: all 0.3s;
-    }
-
-    .required-asterisk {
-        color: red;
-    }
-
-    /* Sticky Header Styles */
-    .sticky-top-header {
-        position: sticky;
-        top: 0;
-        z-index: 1000;
-        background-color: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        padding: 10px 0;
-        margin-top: 0 !important;
-        margin-bottom: 2rem !important;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        transition: all 0.3s ease;
-    }
-</style>
+<link href="/css/pages/customer.css" rel="stylesheet" />
 @endsection
 
 @section('content')
 <div class="container-fluid pb-5">
     <!-- Page Header -->
     <!-- Page Header -->
+    <!-- Page Header -->
     <div class="row align-items-center mb-4 mt-3" id="page-header">
-        <div class="col-12">
-            <div class="page-title-box d-flex align-items-center justify-content-between">
-                <div>
-                    <h4 class="page-title mb-1 fw-bold fs-3 text-dark">Customer Details</h4>
-                    <ol class="breadcrumb m-0 small text-muted">
-                        <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-muted">Dashboard</a></li>
-                        <li class="breadcrumb-item active text-primary">Create Customer</li>
-                    </ol>
-                </div>
-                <div>
-                    <button type="button" class="btn btn-primary btn-lg rounded-pill shadow fw-bold" onclick="validateSubmitCustomer(event)">
-                        <i class="bi bi-check-circle-fill me-2"></i> Submit Customer
-                    </button>
-                </div>
-            </div>
+        <div class="col-md-6">
+            <h4 class="mb-1 fw-bold text-dark">Customer Details</h4>
+            <p class="text-muted mb-0 small">Manage customer information and verified documents</p>
+        </div>
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <button type="button" class="btn btn-primary-common px-5 rounded-pill shadow-sm fw-bold" onclick="validateSubmitCustomer(event)">
+                <i class="bi bi-check-lg me-2"></i> Submit Customer
+            </button>
         </div>
     </div>
 
@@ -171,16 +38,60 @@
         });
     </script>
 
-    <div class="row justify-content-center">
-        <div class="col-12">
+    <div class="row">
+        <!-- Sticky Sidebar Navigation -->
+        <div class="col-lg-3 d-none d-lg-block">
+            <nav class="sticky-sidebar">
+                <div class="nav flex-column nav-pills nav-pills-custom" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                    <a class="nav-link active" href="#section-basic">
+                        <i class="bi bi-person-lines-fill"></i> Basic Details
+                    </a>
+                    <a class="nav-link" href="#section-address">
+                        <i class="bi bi-geo-alt-fill"></i> Address & Location
+                    </a>
+                    <a class="nav-link" href="#section-occupation">
+                        <i class="bi bi-briefcase-fill"></i> Occupation
+                    </a>
+                    <a class="nav-link" href="#section-documents">
+                        <i class="bi bi-file-earmark-text-fill"></i> Documents
+                    </a>
+                    <a class="nav-link" href="#section-bank">
+                        <i class="bi bi-bank2"></i> Bank Details
+                    </a>
+                    <a class="nav-link" href="#section-guardian">
+                        <i class="bi bi-shield-lock-fill"></i> Guardian
+                    </a>
+                </div>
+
+                <!-- Progress Widget -->
+                <div class="card border-0 shadow-sm mt-4 rounded-4" style="background: linear-gradient(145deg, #ffffff, #f5f7fa);">
+                    <div class="card-body p-4 text-center">
+                        <h6 class="text-uppercase text-muted small fw-bold mb-3">Completion</h6>
+                        <div class="position-relative d-inline-block">
+                            <svg class="progress-ring" width="80" height="80">
+                                <circle class="progress-ring__circle-bg" stroke="#e2e8f0" stroke-width="6" fill="transparent" r="34" cx="40" cy="40" />
+                                <circle class="progress-ring__circle" stroke="url(#gradient)" stroke-width="6" fill="transparent" r="34" cx="40" cy="40" />
+                                <defs>
+                                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#667eea" />
+                                        <stop offset="100%" stop-color="#764ba2" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <span class="position-absolute top-50 start-50 translate-middle fw-bold text-dark" id="completion-percentage">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content Form Area -->
+        <div class="col-lg-9">
             {{-- ===================== SECTION 1: BASIC CUSTOMER DETAILS ===================== --}}
-            <div class="card glass-card">
+            <div class="card card-modern" id="section-basic">
                 <div class="card-body p-4">
                     <div class="section-header">
-                        <div class="section-icon bg-light text-primary">
-                            <i class="bi bi-person-lines-fill"></i>
-                        </div>
-                        <h5 class="mb-0 fw-bold text-dark">Basic Customer Details</h5>
+                        <i class="bi bi-person-lines-fill"></i> Basic Customer Details
                     </div>
 
                     <div class="row g-4">
@@ -188,50 +99,29 @@
                             <label for="cus_number" class="form-label">
                                 Customer Number <span class="required-asterisk">*</span>
                             </label>
-                            @php
-                            $cus_type = $settings['customer_num_type'] ?? '';
-                            $cus_fmt = $settings['customer_format'] ?? '';
-                            @endphp
-
-                            @if($cus_type == "Customize")
-                            <input type="text" id="cus_number" name="cus_number" class="form-control" onkeyup="create_id_2(this.value)" placeholder="Enter Number">
-                            <div class="invalid-feedback"></div>
-                            <label id="formatted_num_use" hidden></label>
-                            @elseif($cus_type == "Format")
-                            @php
-                            $newnum = str_replace(
-                            ['@Center_No@', '@Group_No@','@Customize_No@','@Auto_ID@','@Branch_No@','@Root@','@Center_Cus_Count@'],
-                            ['C000', 'G000','Customize No',$formatted_customer_id,'@Branch_No@','@Root@','CenterCustomerCount'],
-                            $cus_fmt
-                            );
-                            @endphp
-
-                            @if(strpos($cus_fmt, '@Customize_No@') !== false)
-                            <input type="number" id="cus_number" name="cus_number" class="form-control" onkeyup="create_id(this.value)">
-                            <label id="formatted_num" style="color: red">{{ $newnum }}</label>
-                            <label id="formatted_num_use" hidden>{{$newnum}}</label>
-                            @else
-                            <input type="text" id="cus_number" name="cus_number" class="form-control" value="{{ $newnum }}" readonly>
-                            <div class="invalid-feedback"></div>
-                            <label id="formatted_num_use" hidden>{{$newnum}}</label>
-                            @endif
-                            @endif
+                            <!-- Logic moved to JS -->
+                            <div id="cus_number_container">
+                                <input type="text" id="cus_number" name="cus_number" class="form-control" placeholder="Loading..." readonly>
+                                <div class="invalid-feedback"></div>
+                                <label id="formatted_num_use" hidden></label>
+                                <label id="formatted_num" style="color: red; display: none;"></label>
+                            </div>
                         </div>
 
                         <div class="col-md-4">
-                            <label for="root" class="form-label">Root</label>
-                            <select class="form-select choices-select" id="root" name="root">
-                                <option value="" selected disabled>Select Root</option>
-                                @foreach($route as $item)
-                                <option value="{{$item->id_route}}">{{$item->name}}-{{$item->root_code}}</option>
-                                @endforeach
+                            <label for="route" class="form-label">Route</label>
+                            <label for="route" class="form-label">Route</label>
+                            <select class="form-select select2" id="route" name="route">
+                                <option value="" selected disabled>Select Route</option>
+                                <!-- Options loaded by JS -->
                             </select>
                             <div class="invalid-feedback"></div>
                         </div>
 
                         <div class="col-md-4">
                             <label for="title" class="form-label">Title</label>
-                            <select class="form-select" id="title" name="title">
+                            <label for="title" class="form-label">Title</label>
+                            <select class="form-select select2" id="title" name="title">
                                 <option value="" selected disabled>Select Title</option>
                                 <option>Mr</option>
                                 <option>Ms.</option>
@@ -243,7 +133,7 @@
 
                         <div class="col-md-4">
                             <label for="civil_status" class="form-label">Civil Status</label>
-                            <select class="form-select choices-select" id="civil_status" name="civil_status">
+                            <select class="form-select select2" id="civil_status" name="civil_status">
                                 <option value="" selected disabled>Select Civil Status</option>
                                 <option>Married</option>
                                 <option>Single</option>
@@ -293,7 +183,8 @@
 
                         <div class="col-md-4">
                             <label for="gender" class="form-label">Gender</label>
-                            <select class="form-control" id="gender" name="gender">
+                            <label for="gender" class="form-label">Gender</label>
+                            <select class="form-select select2" id="gender" name="gender">
                                 <option value="">Select Gender</option>
                                 <option value="-">-</option>
                                 <option value="Male">Male</option>
@@ -327,13 +218,10 @@
             </div>
 
             {{-- ===================== SECTION 2: ADDRESS & LOCATION ===================== --}}
-            <div class="card card-modern">
+            <div class="card card-modern" id="section-address">
                 <div class="card-body p-4">
                     <div class="section-header">
-                        <div class="section-icon bg-light text-info">
-                            <i class="bi bi-geo-alt-fill"></i>
-                        </div>
-                        <h5 class="mb-0 fw-bold text-dark">Address & Location</h5>
+                        <i class="bi bi-geo-alt-fill"></i> Address & Location
                     </div>
 
                     <div class="row g-4">
@@ -357,7 +245,7 @@
 
                         <div class="col-md-6">
                             <label for="state" class="form-label">Province / State</label>
-                            <select id="state" name="state" class="form-control">
+                            <select id="state" name="state" class="form-select select2">
                                 <option value="">Select Province</option>
                             </select>
                             <div class="invalid-feedback"></div>
@@ -365,7 +253,7 @@
 
                         <div class="col-md-6">
                             <label for="city" class="form-label">City / Town</label>
-                            <select id="city" name="city" class="form-control">
+                            <select id="city" name="city" class="form-select select2">
                                 <option value="">Select City / Town</option>
                             </select>
                             <div class="invalid-feedback"></div>
@@ -394,13 +282,10 @@
             </div>
 
             {{-- ===================== SECTION 3: OCCUPATION DETAILS ===================== --}}
-            <div class="card card-modern">
+            <div class="card card-modern" id="section-occupation">
                 <div class="card-body p-4">
                     <div class="section-header">
-                        <div class="section-icon bg-light text-warning">
-                            <i class="bi bi-briefcase-fill"></i>
-                        </div>
-                        <h5 class="mb-0 fw-bold text-dark">Occupation Details</h5>
+                        <i class="bi bi-briefcase-fill"></i> Occupation Details
                     </div>
 
                     <div class="row g-4">
@@ -448,13 +333,10 @@
             </div>
 
             {{-- ===================== SECTION 4: REQUIRED DOCUMENTS ===================== --}}
-            <div class="card card-modern">
+            <div class="card card-modern" id="section-documents">
                 <div class="card-body p-4">
                     <div class="section-header">
-                        <div class="section-icon bg-light text-secondary">
-                            <i class="bi bi-file-earmark-text-fill"></i>
-                        </div>
-                        <h5 class="mb-0 fw-bold text-dark">Required Documents</h5>
+                        <i class="bi bi-file-earmark-text-fill"></i> Required Documents
                     </div>
 
                     <div class="row g-3 align-items-end">
@@ -466,7 +348,7 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <button type="button" class="btn btn-success btn-modern w-100 w-md-auto" id="addDocBtn">Add Document</button>
+                            <button type="button" class="btn btn-primary-common w-100 w-md-auto" id="addDocBtn">Add Document</button>
                         </div>
                     </div>
 
@@ -488,19 +370,16 @@
             </div>
 
             {{-- ===================== SECTION 5: BANK DETAILS ===================== --}}
-            <div class="card card-modern">
+            <div class="card card-modern" id="section-bank">
                 <div class="card-body p-4">
                     <div class="section-header">
-                        <div class="section-icon bg-light text-success">
-                            <i class="bi bi-bank2"></i>
-                        </div>
-                        <h5 class="mb-0 fw-bold text-dark">Bank Details</h5>
+                        <i class="bi bi-bank2"></i> Bank Details
                     </div>
 
                     <div class="row g-4">
                         <div class="col-md-6">
                             <label for="bank_name" class="form-label">Bank Name</label>
-                            <select id="bank_name" class="form-control">
+                            <select id="bank_name" class="form-select select2">
                                 <option value="">Select Bank</option>
                             </select>
                         </div>
@@ -514,7 +393,7 @@
                         </div>
                         <div class="col-md-6">
                             <label for="branch" class="form-label">Branch code</label>
-                            <select id="branch" class="form-control">
+                            <select id="branch" class="form-select select2">
                                 <option value="">Select Branch</option>
                             </select>
                         </div>
@@ -523,7 +402,7 @@
                             <input type="text" id="bank_code" class="form-control" placeholder="Bank Code">
                         </div>
                         <div class="col-md-6 text-end">
-                            <button type="button" class="btn btn-success btn-modern mt-md-4" id="addBankBtn">Add Bank Account</button>
+                            <button type="button" class="btn btn-primary-common mt-md-4" id="addBankBtn">Add Bank Account</button>
                         </div>
                     </div>
 
@@ -548,19 +427,16 @@
             </div>
 
             {{-- ===================== SECTION 6: GUARDIAN DETAILS ===================== --}}
-            <div class="card card-modern">
+            <div class="card card-modern" id="section-guardian">
                 <div class="card-body p-4">
                     <div class="section-header">
-                        <div class="section-icon bg-light text-danger">
-                            <i class="bi bi-shield-lock-fill"></i>
-                        </div>
-                        <h5 class="mb-0 fw-bold text-dark">Guardian Details</h5>
+                        <i class="bi bi-shield-lock-fill"></i> Guardian Details
                     </div>
 
                     <div class="row g-4">
                         <div class="col-md-4">
                             <label for="gua_title" class="form-label">Guardian Title</label>
-                            <select class="form-select" id="gua_title" name="gua_title">
+                            <select class="form-select select2" id="gua_title" name="gua_title">
                                 <option value="" selected disabled>Select Title</option>
                                 <option>Mr</option>
                                 <option>Mrs</option>
@@ -581,7 +457,7 @@
 
                         <div class="col-md-4">
                             <label for="guardian_gender" class="form-label">Gender</label>
-                            <select class="form-control" id="guardian_gender" name="guardian_gender">
+                            <select class="form-select select2" id="guardian_gender" name="guardian_gender">
                                 <option value="-">Select Gender</option>
                                 <option value="Male">Male</option>
                                 <option value="Female">Female</option>
@@ -622,7 +498,7 @@
             {{-- ===================== SAVE BUTTON ===================== --}}
 
 
-        </div> <!-- end col-lg-10 -->
+        </div> <!-- end col-lg-9 -->
     </div> <!-- end row -->
 </div>
 
@@ -647,10 +523,95 @@
 <script src="/JS/validate.js"></script>
 <script src="/JS/group.js"></script>
 <script src="/JS/customer.js"></script>
-@if(isset($customer))
-<input type="hidden" id="customer_id" value="{{ $customer->id }}">
-@endif
+<input type="hidden" id="customer_id">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // Initialize Searchable Selects for all inputs with .select2 class
+        // Exclude specific ajax-loaded ones to avoid double-init issues if they have their own logic
+        $('.select2').not('#state, #city, #bank_name, #branch').select2({
+            width: '100%'
+        });
+
+        // --- ScrollSpy Logic ---
+        const sections = ['section-basic', 'section-address', 'section-occupation', 'section-documents', 'section-bank', 'section-guardian'];
+        const navLinks = document.querySelectorAll('.nav-pills-custom .nav-link');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionEl = document.getElementById(section);
+                if (sectionEl) { // Check if element exists
+                    const sectionTop = sectionEl.offsetTop;
+                    const sectionHeight = sectionEl.clientHeight;
+                    // Offset for sticky header
+                    if (scrollY >= (sectionTop - 150)) {
+                        current = '#' + section;
+                    }
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === current) {
+                    link.classList.add('active');
+                }
+            });
+            // Default to first if at top
+            if (scrollY < 200 && navLinks.length > 0) {
+                navLinks[0].classList.add('active');
+            }
+        });
+
+        // --- Simple Completion Progress (Visual Only for now) ---
+        // This calculates based on filled inputs in the form
+        function updateProgress() {
+            const inputs = document.querySelectorAll('.form-control, .form-select');
+            let total = 0;
+            let filled = 0;
+
+            // Filter only visible inputs
+            inputs.forEach(input => {
+                if (input.offsetParent !== null && input.type !== 'hidden') {
+                    total++;
+                    if (input.value.trim() !== '') {
+                        filled++;
+                    }
+                }
+            });
+
+            const percent = total === 0 ? 0 : Math.round((filled / total) * 100);
+
+            // Update Ring
+            const circle = document.querySelector('.progress-ring__circle');
+            if (circle) {
+                const radius = circle.r.baseVal.value;
+                const circumference = radius * 2 * Math.PI;
+                circle.style.strokeDasharray = `${circumference} ${circumference}`;
+                const offset = circumference - (percent / 100) * circumference;
+                circle.style.strokeDashoffset = offset;
+            }
+
+            const text = document.getElementById('completion-percentage');
+            if (text) text.innerText = percent + '%';
+        }
+
+        // Run on load and input change
+        updateProgress();
+        $('input, select, textarea').on('change input', updateProgress);
+    });
+</script>
+
+<style>
+    /* Progress Ring CSS */
+    .progress-ring__circle {
+        transition: stroke-dashoffset 0.35s;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+    }
+</style>
 
 <!-- Select2 JavaScript -->
 
@@ -708,32 +669,188 @@
 </script>
 
 
-{{-- ===================== CUSTOMER NUMBER HELPER ===================== --}}
 <script>
-    function create_id(value) {
+    // Global variables for settings
+    let appSettings = {};
+    let nextCustomerId = '';
+
+    $(document).ready(function() {
+        // 1. Determine if Edit Mode
+        const pathSegments = window.location.pathname.split('/');
+        // Assuming URL is /customers/{id}/edit or /customers/create
+        // or /customers/{id}
+        let customerId = null;
+        if (pathSegments.includes('edit')) {
+            customerId = pathSegments[pathSegments.indexOf('edit') - 1]; // get ID before 'edit'
+        } else if (pathSegments.length > 2 && !isNaN(pathSegments[pathSegments.length - 1])) {
+            // Maybe /customers/{id}?
+            customerId = pathSegments[pathSegments.length - 1];
+        }
+
+        // 2. Fetch Form Data
         $.ajax({
-            url: "{{ route('customers.preview_number') }}",
-            method: 'POST',
-            data: {
-                custom_val: value,
-                _token: '{{ csrf_token() }}'
-            },
+            url: "{{ route('customers.form-data') }}",
+            type: "GET",
+            data: customerId ? {
+                id: customerId
+            } : {},
             success: function(response) {
-                if (response.formatted_number) {
-                    $('#formatted_num').text(response.formatted_number);
-                    $('#formatted_num_use').text(response.formatted_number);
+                appSettings = response.settings;
+                nextCustomerId = response.next_customer_id;
+
+                // Populate Routes
+                const rootSelect = $('#root');
+                if (response.routes && response.routes.length > 0) {
+                    response.routes.forEach(route => {
+                        rootSelect.append(new Option(`${route.name}-${route.root_code}`, route.id_route));
+                    });
+                }
+
+                // Handle Customer Number Logic
+                handleCustomerNumber(response);
+
+                // If Edit Mode, Populate Fields
+                if (response.customer) {
+                    populateCustomerData(response.customer);
                 }
             },
             error: function(err) {
-                console.error("Error fetching preview number", err);
+                console.error("Error loading form data", err);
+                alert("Failed to load form data. Please refresh.");
             }
         });
+    });
+
+    function handleCustomerNumber(data) {
+        const cusType = data.settings['customer_num_type'];
+        const cusFmt = data.settings['customer_format'];
+        const input = $('#cus_number');
+        const hiddenLabel = $('#formatted_num_use');
+        const displayLabel = $('#formatted_num');
+
+        if (data.customer) {
+            // Edit mode: just show the code
+            input.val(data.customer.customer_code).prop('readonly', true);
+            hiddenLabel.text(data.customer.customer_code);
+            return;
+        }
+
+        if (cusType === "Customize") {
+            input.prop('readonly', false).attr('placeholder', 'Enter Number');
+            input.on('keyup', function() {
+                create_id_2(this.value);
+            });
+        } else if (cusType === "Format") {
+            // Logic to format number
+            // str_replace equivalent
+            // ['@Center_No@', '@Group_No@','@Customize_No@','@Auto_ID@','@Branch_No@','@Root@','@Center_Cus_Count@'],
+            // ['C000', 'G000','Customize No',$formatted_customer_id,'@Branch_No@','@Root@','CenterCustomerCount'],
+
+            let newNum = cusFmt
+                .replace('@Center_No@', 'C000')
+                .replace('@Group_No@', 'G000')
+                .replace('@Auto_ID@', data.next_customer_id)
+                .replace('@Branch_No@', '@Branch_No@') // Placeholder?
+                .replace('@Root@', '@Root@') // Placeholder?
+                .replace('@Center_Cus_Count@', 'CenterCustomerCount'); // Placeholder?
+
+            if (cusFmt.includes('@Customize_No@')) {
+                newNum = newNum.replace('@Customize_No@', 'Customize No');
+                input.prop('readonly', false).attr('type', 'number');
+                input.on('keyup', function() {
+                    create_id(this.value);
+                });
+                displayLabel.text(newNum).show();
+                hiddenLabel.text(newNum);
+            } else {
+                newNum = newNum.replace('@Customize_No@', 'Customize No'); // Just in case
+                input.val(newNum).prop('readonly', true);
+                hiddenLabel.text(newNum);
+            }
+        }
     }
 
-    function create_id_2(value) {
-        $('#formatted_num_use').text(value);
+    function populateCustomerData(customer) {
+        // Update Page Title
+        $('.page-title').text('Edit Customer Details');
+        $('.breadcrumb-item.active').text('Edit Customer');
+
+        // Set Customer ID
+        $('#customer_id').val(customer.id);
+
+        // Basic Details
+        $('#root').val(customer.route_id).trigger('change');
+        $('#title').val(customer.title);
+        $('#civil_status').val(customer.civil_status);
+        $('#f_name').val(customer.first_name);
+        $('#last_name').val(customer.last_name);
+        $('#email').val(customer.email);
+        $('#contact_number').val(customer.contact_no);
+        $('#contact_number_2').val(customer.contact_no_2 || '');
+        // $('#business_registration').val(customer.business_reg_no); // if exists
+        $('#nic').val(customer.new_nic || customer.nic);
+        $('#gender').val(customer.gender);
+        $('#dob').val(customer.dob);
+        $('#landline').val(customer.landline || '');
+
+        // Address
+        $('#curr_address_01').val(customer.address_1);
+        $('#curr_address_02').val(customer.address_2);
+        $('#curr_address_03').val(customer.address_3);
+
+        $('#per_address_01').val(customer.permanent_address_1);
+        $('#per_address_02').val(customer.permanent_address_2);
+        $('#per_address_03').val(customer.permanent_address_3);
+
+        // Province/City (Best effort - ideally needs pre-fetching option)
+        if (customer.province_id) {
+            // Create option if using AJAX and valid
+            if ($('#state').find("option[value='" + customer.province_id + "']").length) {
+                $('#state').val(customer.province_id).trigger('change');
+            } else {
+                // Create a temporary option
+                // Note: We need the name, which we might not have.
+                // Assuming standard usage or that it's just value setting.
+                // $('#state').append(new Option("Selected Province ("+customer.province_id+")", customer.province_id, true, true)).trigger('change');
+            }
+        }
+
+        $('#note').val(customer.description || customer.note || '');
+        $('#longitude').val(customer.longitude);
+        $('#latitude').val(customer.latitude);
+
+        // Occupation
+        $('#occu_job_position').val(customer.job_position);
+        $('#occu_monthly_salary').val(customer.monthly_salary);
+        $('#occu_address_01').val(customer.work_address_1);
+        $('#occu_address_02').val(customer.work_address_2);
+        $('#occu_address_03').val(customer.work_address_3);
+        $('#occu_contact_no').val(customer.work_contact_no);
+        $('#occu_longitude').val(customer.work_longitude);
+        $('#occu_latitude').val(customer.work_latitude);
+
+        // Guardian (if flat structure)
+        $('#gua_title').val(customer.guarantor_title || '');
+        $('#gua_name').val(customer.guarantor_name);
+        $('#gua_nic').val(customer.guarantor_nic);
+        $('#guardian_gender').val(customer.guarantor_gender);
+        $('#gua_relation').val(customer.guarantor_relation);
+        $('#gua_occu').val(customer.guarantor_occupation);
+        $('#gua_contact').val(customer.guarantor_contact_no);
+        $('#gua_address_01').val(customer.guarantor_address_1);
+        $('#gua_address_02').val(customer.guarantor_address_2);
+        $('#gua_address_03').val(customer.guarantor_address_3);
+
+        // Banks - This requires a separate fetch or including it in the getFormData
+        // We will leave the existing AJAX logic for bank to handle it (load_bank route) or add it here if needed.
+        // There is existing code: function load_bank(id) ...
+        // We should trigger that if it exists.
+        if (typeof load_bank === 'function') {
+            load_bank(customer.id);
+        }
     }
 </script>
+
 
 
 {{-- ===================== BANK SELECT2 (LIVE BANKS + BRANCHES) ===================== --}}

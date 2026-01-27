@@ -21,6 +21,8 @@ return new class extends Migration
 
             $table->string('collection_type', 45)->default('customizable');
             $table->string('collection_date', 45)->default('Monday');
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

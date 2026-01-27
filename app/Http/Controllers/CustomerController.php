@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
 use App\Models\Route;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class CustomerController extends Controller
 {
@@ -38,22 +38,9 @@ class CustomerController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        try {
-            // Needed data for the view
-            $route = Route::where('branch_id', session('branch_id'))->get();
-            $settings = \App\Models\AppSettings::where('branch_id', session('branch_id'))->pluck('value', 'key');
-
-            return view('pages.Customers.Customer', compact('route', 'settings'));
-        } catch (\Exception $e) {
-            dd($e);
-            // dd($e); // Debugging removed
-            return back()->with('error', 'Error loading create form: ' . $e->getMessage());
-        }
+        return view('pages.Customers.Customer');
     }
 
     /**
@@ -103,16 +90,7 @@ class CustomerController extends Controller
      */
     public function edit(Customer $customer)
     {
-        try {
-            $route = \DB::table('route')->where('branch_id', session('branch_id'))->get();
-            // Fetch settings for the customer's branch if possible, else session branch
-            $branchId = $customer->branch_id ?? session('branch_id');
-            $settings = \App\Models\AppSettings::where('branch_id', $branchId)->pluck('value', 'key');
-
-            return view('pages.Customers.Customer', compact('customer', 'route', 'settings'));
-        } catch (\Exception $e) {
-            return back()->with('error', 'Error loading edit form: ' . $e->getMessage());
-        }
+        return view('pages.Customers.Customer');
     }
 
     /**
@@ -267,5 +245,32 @@ class CustomerController extends Controller
         } catch (\Exception $e) {
             return response()->json(['message' => 'Error deleting: ' . $e->getMessage(), 'item' => 'error'], 200);
         }
+    }
+
+
+    public function getFormData(Request $request)
+    {
+        $branchId = session('branch_id');
+        $settings = \App\Models\AppSettings::where('branch_id', $branchId)->pluck('value', 'key');
+        $routes = \App\Models\Route::where('branch_id', $branchId)->get();
+
+        $data = [
+            'settings' => $settings,
+            'routes' => $routes,
+        ];
+
+        // Next customer ID (for create mode)
+        $customer_max = Customer::max('id') + 1;
+        $data['next_customer_id'] = str_pad($customer_max, 3, '0', STR_PAD_LEFT);
+
+        // If 'id' is passed, fetch customer data for edit mode
+        if ($request->has('id')) {
+            $customer = Customer::find($request->id);
+            if ($customer) {
+                $data['customer'] = $customer;
+            }
+        }
+
+        return response()->json($data);
     }
 }

@@ -99,6 +99,9 @@
     @include('layout.partials.sidebar-styles')
     @include('component.header.styles')
 
+    <!-- Global Modern Styles -->
+    <link href="{{ asset('css/global-modern.css') }}" rel="stylesheet">
+
     @yield('head')
 </head>
 

@@ -19,7 +19,7 @@
             <div class="position-absolute start-50 top-50 translate-middle d-none d-md-block">
                 @if (session('branch_access') === 1)
                 <div class="dropdown">
-                    <button type="button" class="btn border-0 d-flex align-items-center gap-2 text-white fw-semibold shadow-sm rounded-pill px-4 py-2 hover-scale" data-bs-toggle="dropdown" aria-expanded="false" style="background: linear-gradient(135deg, #4f46e5 0%, #ec4899 100%);">
+                    <button type="button" class="btn border-0 d-flex align-items-center gap-2 text-white fw-semibold shadow-sm rounded-pill px-4 py-2 hover-scale" data-bs-toggle="dropdown" aria-expanded="false" style="background: linear-gradient(135deg, #4f46e5 0%, #ec4899 100%);" data-bs-placement="bottom"  data-bs-custom-class="shadcn-tooltip">
                         <div class="d-flex align-items-center justify-content-center bg-white bg-opacity-25 rounded-circle me-1" style="width: 24px; height: 24px;">
                             <i class="ri-building-2-fill fs-6 text-white"></i>
                         </div>
@@ -78,7 +78,7 @@
 
                 <!-- User Profile Dropdown -->
                 <div class="dropdown ms-2">
-                    <button class="btn btn-link text-decoration-none d-flex align-items-center gap-2 p-0 focus-none" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Profile" data-bs-custom-class="shadcn-tooltip">
+                    <button class="btn btn-link text-decoration-none d-flex align-items-center gap-2 p-0 focus-none" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-placement="bottom" data-bs-custom-class="shadcn-tooltip">
                         @php
                         $logoPath = $companyItem && $companyItem->Logo ? 'storage/' . $companyItem->Logo : '';
                         $logoUrl = ($logoPath && file_exists(public_path($logoPath))) ? asset($logoPath) : asset('assets/images/users/avatar-1.jpg');
