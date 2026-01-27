@@ -20,18 +20,31 @@
 <script>
     let globalTargetInput = null;
     let globalStream = null;
+    let currentFacingMode = 'user'; // Default
 
     function openGlobalCamera(targetInputSelector) {
-        globalTargetInput = document.querySelector(targetInputSelector);
+        if (targetInputSelector) {
+            globalTargetInput = document.querySelector(targetInputSelector);
+        }
         const video = document.getElementById('globalVideo');
         $('#globalCameraModal').modal('show');
 
-        const facingMode = document.getElementById('cameraFacing').value || 'user';
+        // Start stream when modal opens
+        startCameraStream();
+    }
+
+    function startCameraStream() {
+        const video = document.getElementById('globalVideo');
+
+        // Stop existing
+        if (globalStream) {
+            globalStream.getTracks().forEach(track => track.stop());
+        }
 
         const constraints = {
             video: {
                 facingMode: {
-                    ideal: facingMode
+                    ideal: currentFacingMode
                 }
             }
         };
@@ -42,53 +55,68 @@
                 video.srcObject = stream;
             })
             .catch(err => {
-                Swal.fire('Error', 'Unable to access selected camera: ' + err.message, 'error');
+                console.warn("Camera access error:", err);
+                if (currentFacingMode === 'environment') {
+                    // Fallback check
+                    currentFacingMode = 'user';
+                    startCameraStream(); // Retry with user
+                } else {
+                    Swal.fire('Error', 'Unable to access camera: ' + err.message, 'error');
+                }
             });
     }
 
-
+    function toggleCameraFacing() {
+        currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+        startCameraStream();
+    }
 
     function captureGlobalImage() {
         const video = document.getElementById('globalVideo');
         const canvas = document.getElementById('globalCanvas');
+        const ctx = canvas.getContext('2d');
 
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+        // Capture Square Crop from Center
+        const size = Math.min(video.videoWidth, video.videoHeight);
+        const startX = (video.videoWidth - size) / 2;
+        const startY = (video.videoHeight - size) / 2;
 
-        const imageData = canvas.toDataURL("image/png");
+        canvas.width = size;
+        canvas.height = size;
+
+        ctx.drawImage(video, startX, startY, size, size, 0, 0, size, size);
+
+        // Compress slightly to JPEG for smaller file size, or keep PNG
+        const imageData = canvas.toDataURL("image/jpeg", 0.9);
 
         // Stop camera
-        if (globalStream) {
-            globalStream.getTracks().forEach(track => track.stop());
-        }
-
+        closeGlobalCamera();
         $('#globalCameraModal').modal('hide');
 
         // Convert base64 to File and attach to target file input
         fetch(imageData)
             .then(res => res.blob())
             .then(blob => {
-                const file = new File([blob], `capture_${Date.now()}.png`, {
-                    type: "image/png"
+                const file = new File([blob], `capture_${Date.now()}.jpg`, {
+                    type: "image/jpeg"
                 });
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(file);
-                globalTargetInput.files = dataTransfer.files;
+
+                if (globalTargetInput) {
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    globalTargetInput.files = dataTransfer.files;
+                    // Trigger change event so any listeners (like image previews) receive it
+                    globalTargetInput.dispatchEvent(new Event('change', {
+                        bubbles: true
+                    }));
+                }
             });
     }
-
-    document.getElementById('cameraFacing').addEventListener('change', () => {
-        if (globalStream) {
-            globalStream.getTracks().forEach(track => track.stop());
-        }
-        openGlobalCamera(globalTargetInput ? `#${globalTargetInput.id}` : null);
-    });
-
 
     function closeGlobalCamera() {
         if (globalStream) {
             globalStream.getTracks().forEach(track => track.stop());
+            globalStream = null;
         }
     }
 </script>

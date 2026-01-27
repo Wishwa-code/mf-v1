@@ -42,6 +42,29 @@
         <!-- Sticky Sidebar Navigation -->
         <div class="col-lg-3 d-none d-lg-block">
             <nav class="sticky-sidebar">
+                <!-- Profile Image Widget -->
+                <div class="profile-widget-container text-center mb-4">
+                    <div class="position-relative d-inline-block">
+                        <div class="profile-avatar-wrapper shadow-lg" onclick="openImageSelectionModal()">
+                            <img id="profile-preview" src="https://ui-avatars.com/api/?name=Customer&background=EBF4FF&color=7F9CF5&size=150" alt="Profile" class="img-fluid rounded-circle">
+                            <div class="profile-avatar-overlay">
+                                <i class="bi bi-camera-fill fs-3 text-white"></i>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 shadow-sm edit-profile-btn" onclick="openImageSelectionModal()">
+                            <i class="bi bi-pencil-fill small"></i>
+                        </button>
+                    </div>
+                    <div class="mt-2">
+                        <h6 class="fw-bold text-dark mb-0">Customer Photo</h6>
+                        <small class="text-muted" style="font-size: 0.8rem;">Click to upload</small>
+                    </div>
+
+                    <!-- Hidden Inputs -->
+                    <input type="file" id="hidden_file_upload" accept="image/*" class="d-none" onchange="previewProfileImage(this)">
+                    <input type="file" id="hidden_camera_upload" accept="image/*" capture="environment" class="d-none" onchange="previewProfileImage(this)">
+                </div>
+
                 <div class="nav flex-column nav-pills nav-pills-custom" id="v-pills-tab" role="tablist" aria-orientation="vertical">
                     <a class="nav-link active" href="#section-basic">
                         <i class="bi bi-person-lines-fill"></i> Basic Details
@@ -502,6 +525,42 @@
     </div> <!-- end row -->
 </div>
 
+<!-- Image Selection Modal -->
+<div class="modal fade" id="imageSelectionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-body p-0">
+                <div class="p-3 text-center bg-light border-bottom">
+                    <h6 class="fw-bold mb-0">Update Photo</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <button type="button" class="list-group-item list-group-item-action p-3 d-flex align-items-center gap-3" onclick="triggerFileUpload()">
+                        <div class="icon-box bg-blue-light text-primary rounded-circle p-2">
+                            <i class="bi bi-image fs-5"></i>
+                        </div>
+                        <div class="text-start">
+                            <div class="fw-semibold text-dark">Upload Image</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">From gallery</small>
+                        </div>
+                    </button>
+                    <button type="button" class="list-group-item list-group-item-action p-3 d-flex align-items-center gap-3" onclick="triggerCameraUpload()">
+                        <div class="icon-box bg-purple-light text-purple rounded-circle p-2">
+                            <i class="bi bi-camera fs-5"></i>
+                        </div>
+                        <div class="text-start">
+                            <div class="fw-semibold text-dark">Take Photo</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Use camera</small>
+                        </div>
+                    </button>
+                </div>
+                <div class="p-2 bg-light">
+                    <button type="button" class="btn btn-light w-100 text-muted btn-sm fw-bold" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="progress-container" style="display:none;">
     <div class="progress">
         <div id="progress-bar"
@@ -602,6 +661,48 @@
         updateProgress();
         $('input, select, textarea').on('change input', updateProgress);
     });
+
+    // --- Profile Image Logic ---
+    window.openImageSelectionModal = function() {
+        $('#imageSelectionModal').modal('show');
+    };
+
+    window.triggerFileUpload = function() {
+        // Hide modal
+        $('#imageSelectionModal').modal('hide');
+        // Trigger file input
+        $('#hidden_file_upload').click();
+    };
+
+    window.triggerCameraUpload = function() {
+        // Hide modal
+        $('#imageSelectionModal').modal('hide');
+
+        // Try global camera first if available, else fallback to standard capture input
+        if (typeof window.openGlobalCamera === 'function') {
+            window.openGlobalCamera('#hidden_camera_upload');
+        } else {
+            $('#hidden_camera_upload').click();
+        }
+    };
+
+    window.previewProfileImage = function(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('profile-preview').src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+
+            // Also update the original form input if it exists
+            const mainInput = document.getElementById('cus_phto');
+            if (mainInput) {
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(input.files[0]);
+                mainInput.files = dataTransfer.files;
+            }
+        }
+    };
 </script>
 
 <style>

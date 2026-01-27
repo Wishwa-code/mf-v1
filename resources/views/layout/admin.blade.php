@@ -139,25 +139,40 @@ $companyMask = $companyItem ? $companyItem->SMS_Mask : null;
 
 
         <!-- Global Camera Modal -->
-        <div id="globalCameraModal" class="modal fade" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">📷 Camera</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="closeGlobalCamera()"></button>
+        <div id="globalCameraModal" class="modal fade" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-md">
+                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden bg-black">
+                    <!-- Header removed for immersive feel -->
+                    
+                    <div class="modal-body p-0 position-relative">
+                        <!-- Square Video Container -->
+                        <div class="ratio ratio-1x1 position-relative overflow-hidden">
+                             <video id="globalVideo" autoplay playsinline class="w-100 h-100 object-fit-cover"></video>
+                             <canvas id="globalCanvas" style="display:none;"></canvas>
+                             
+                             <!-- Top Right Close Button -->
+                             <button type="button" class="btn btn-dark bg-black bg-opacity-50 text-white rounded-circle position-absolute top-0 end-0 m-3 border-0 shadow-sm" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;" onclick="closeGlobalCamera()" data-bs-dismiss="modal">
+                                <i class="bi bi-x-lg small"></i>
+                             </button>
+                        </div>
+                        
+                        <!-- Controls Overlay (Bottom) -->
+                        <div class="position-absolute bottom-0 w-100 p-4 d-flex justify-content-between align-items-center" style="background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);">
+                            
+                            <!-- Toggle Camera Icon -->
+                            <button id="toggleCameraBtn" class="btn btn-outline-light rounded-circle border-0 bg-white bg-opacity-10 backdrop-blur" style="width: 48px; height: 48px;" onclick="toggleCameraFacing()">
+                                <i class="bi bi-arrow-repeat fs-4"></i>
+                            </button>
+                            
+                            <!-- Capture Button (Center) -->
+                            <button class="btn btn-light rounded-circle p-1 shadow-lg border-2 border-white d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;" onclick="captureGlobalImage()">
+                                <div class="rounded-circle bg-danger w-100 h-100 border border-2 border-white"></div>
+                            </button>
+                            
+                            <!-- Dummy Spacer for Flex Balance -->
+                            <div style="width: 48px;"></div>
+                        </div>
                     </div>
-                    <div class="modal-body text-center">
-                        <select id="cameraFacing" class="form-select mb-2" style="width: auto; display:inline-block;">
-                            <option value="user">📸 Selfie Camera</option>
-                            <option value="environment">📷 Back Camera</option>
-                        </select>
-
-                        <video id="globalVideo" autoplay style="width:100%; max-height:300px; border:1px solid #ccc;"></video>
-                        <canvas id="globalCanvas" style="display:none;"></canvas>
-                        <br>
-                        <button class="btn btn-success mt-2" onclick="captureGlobalImage()">✅</button>
-                    </div>
-
                 </div>
             </div>
         </div>
