@@ -46,6 +46,8 @@ class PaymentsController extends Controller
         $branchId = (int) $request->attributes->get('branch_id');
         $user = $request->user();
 
+        // DEBUG: Check if file is actually received
+
         // Validate incoming JSON
         $request->validate([
             'payment_amount' => 'required|numeric|min:0.01',
@@ -112,9 +114,16 @@ class PaymentsController extends Controller
             /** @var \App\Http\Controllers\TodayPaymentController $paymentController */
             $paymentController = app(TodayPaymentController::class);
 
+            // Prepare files
+            $files = [];
+            if ($request->hasFile('proof_image')) {
+                $files['file'] = $request->file('proof_image');
+            }
+
             // Create a synthetic Request carrying the expected payload
             // __construct(array $query = [], array $request = [], array $attributes = [], array $cookies = [], array $files = [], array $server = [], $content = null)
             $forward = new Request([], $paymentData, [], [], $files);
+            $forward->setMethod('POST');
 
             $result = $paymentController->store($forward);
 

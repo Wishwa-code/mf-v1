@@ -1009,6 +1009,7 @@ class TodayPaymentController extends Controller
         $payment_date = $request->payment_date;
         $time = date('H:i:s');
         $payment_type = $request->payment_type;
+
         $bulk = $request->bulk ?? '0';
 
         Log::info($request->sms);
@@ -1238,9 +1239,16 @@ class TodayPaymentController extends Controller
                     'description_id' => $comment_id,
                     'comment' => $chq_comment,
                     'type' => 'Loan Comment',
+                    'user_id' => $user_id,
                 ]);
                 $this->customerLogController->store($request);
-                return response()->json(['item' => 'success', 'id' => '1', 'test' => "1", 'payment_id' => 0], 200);
+                return response()->json([
+                    'item' => 'success',
+                    'id' => '1',
+                    'test' => "1",
+                    'payment_id' => 0,
+                    'image_url' => $slipPath ? asset('storage/' . $slipPath) : null
+                ], 200);
             }
         } else {
             if ($payment_type == "Cheque") {
@@ -1947,7 +1955,13 @@ class TodayPaymentController extends Controller
                 }
 
 
-                return response()->json(['item' => 'sucess', 'id' => '1', 'test' => "1", 'payment_id' => $savedId], 200);
+                return response()->json([
+                    'item' => 'sucess',
+                    'id' => '1',
+                    'test' => "1",
+                    'payment_id' => $savedId,
+                    'image_url' => $slipPath ? asset('storage/' . $slipPath) : null
+                ], 200);
 
             } else if ($type === "Draft") {
 
@@ -2318,7 +2332,13 @@ class TodayPaymentController extends Controller
                         ->first();
                     $this->SavingAccountController->index($saving_account->id, 'Deposit', 'Payment', $Saving_balance_tot_paid, '0.00', $Saving_balance_tot_paid, 'Credit');
                 }
-                return response()->json(['item' => 'sucess', 'id' => '1', 'test' => "1", 'payment_id' => $savedId], 200);
+                return response()->json([
+                    'item' => 'sucess',
+                    'id' => '1',
+                    'test' => "1",
+                    'payment_id' => $savedId,
+                    'image_url' => $slipPath ? asset('storage/' . $slipPath) : null
+                ], 200);
 
 
             } else if ($type === "Reducing Balance") {
@@ -2789,7 +2809,13 @@ class TodayPaymentController extends Controller
                 }
 
 
-                return response()->json(['item' => 'sucess', 'id' => '1', 'test' => "1", 'payment_id' => $savedId], 200);
+                return response()->json([
+                    'item' => 'sucess',
+                    'id' => '1',
+                    'test' => "1",
+                    'payment_id' => $savedId,
+                    'image_url' => $slipPath ? asset('storage/' . $slipPath) : null
+                ], 200);
 
 
             } else {
