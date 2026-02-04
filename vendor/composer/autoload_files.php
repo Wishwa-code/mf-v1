@@ -45,4 +45,5 @@ return array(
     '320163ac6b93aebe3dc25b60a0533d56' => $vendorDir . '/spatie/laravel-ignition/src/helpers.php',
     '0b47d6d4a00ca9112ba3953b49e7c9a4' => $vendorDir . '/yajra/laravel-datatables-oracle/src/helper.php',
     'b4e3f29b106af37a2bb239f73cdf68c7' => $baseDir . '/app/helpers.php',
+    '71172401222a06a49527f8afb1c3dbc6' => $baseDir . '/app/Helpers/SessionHelper.php',
 );
