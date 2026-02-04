@@ -46,7 +46,7 @@ class TodayPaymentController extends Controller
         $customers = DB::table('customer')->where('branch_id', '=', session('branch_id'))->get();
         $center = DB::table('center')->where('branch_id', '=', session('branch_id'))->get();
 
-        $user_id = (int)session('userid');
+        $user_id = (int) session('userid');
 
         $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
         $collector = 0;
@@ -88,7 +88,7 @@ class TodayPaymentController extends Controller
             ->join('user', 'route.id_officer', '=', 'user.id')
             ->get();
 
-        $user_id = (int)session('userid');
+        $user_id = (int) session('userid');
 
         $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
         $collector = $collector_val->collector;
@@ -105,8 +105,8 @@ class TodayPaymentController extends Controller
         }
         $loanQuery->orderBy('customer_loan.idCustomer_Loan', 'asc'); // Add this line to order by loan number
         $loan = $loanQuery->get();
-        $sheetKey  = 'bp';
-        $order_by  = DB::table('app_settings')->where('key', "repayment_order_{$sheetKey}")->value('value') ?? 'name_asc';
+        $sheetKey = 'bp';
+        $order_by = DB::table('app_settings')->where('key', "repayment_order_{$sheetKey}")->value('value') ?? 'name_asc';
         return view('pages.BulkPayment', compact('group', 'loan', 'route', 'center', 'customers', 'company', 'sheetKey', 'order_by'));
     }
 
@@ -115,14 +115,14 @@ class TodayPaymentController extends Controller
      */
     public function create(Request $request)
     {
-        $route         = (array) $request->input('route', []);
+        $route = (array) $request->input('route', []);
         $centerDetails = (array) $request->input('center_details', []);
-        $group         = (array) $request->input('group', []);
-        $customer      = (array) $request->input('customer', []);
-        $loanNumbers   = (array) $request->input('loan_number_search', []);
-        $status        = $request->status; // keep single
+        $group = (array) $request->input('group', []);
+        $customer = (array) $request->input('customer', []);
+        $loanNumbers = (array) $request->input('loan_number_search', []);
+        $status = $request->status; // keep single
 
-        $user_id = (int)session('userid');
+        $user_id = (int) session('userid');
 
         $collector_val = DB::table('user')->where('id', '=', $user_id)->first();
         $collector = $collector_val->collector;
@@ -239,12 +239,12 @@ class TodayPaymentController extends Controller
 
     public function latePayment(Request $request)
     {
-        $center_details    = $request->center_details;
-        $group             = $request->group;
-        $customer          = $request->customer;
-        $route             = $request->route;
-        $status            = $request->status;
-        $lending_officer   = $request->lending;
+        $center_details = $request->center_details;
+        $group = $request->group;
+        $customer = $request->customer;
+        $route = $request->route;
+        $status = $request->status;
+        $lending_officer = $request->lending;
         $installmentFilter = $request->input('installment_filter'); // all | more_than_3 | maturity | maturity7 | maturity14 | maturity21
 
         // Any maturity variant?
@@ -532,11 +532,11 @@ class TodayPaymentController extends Controller
 
     public function latePayment_arrease(Request $request)
     {
-        $center_details    = $request->center_details;
-        $group             = $request->group;
-        $customer          = $request->customer;
-        $route             = $request->route;
-        $lending_officer   = $request->lending;
+        $center_details = $request->center_details;
+        $group = $request->group;
+        $customer = $request->customer;
+        $route = $request->route;
+        $lending_officer = $request->lending;
         $installmentFilter = $request->installment_filter; // maturity | maturity7 | maturity14 | maturity21
         $today = date('Y-m-d'); // before query build
 
@@ -719,14 +719,14 @@ class TodayPaymentController extends Controller
     public function Bulk_create(Request $request)
     {
         $center_details = $request->center_details;
-        $route          = $request->route;
-        $group          = $request->group;
-        $customer       = $request->customer;
-        $status         = $request->status;
-        $loan_number    = $request->loan_number_search;
-        $user_id        = (int)user_data('idUser');
-        $perPage        = (int) ($request->get('per_page', 10));
-        $includeTotals  = (bool) $request->get('include_totals', false); // ← only compute when true
+        $route = $request->route;
+        $group = $request->group;
+        $customer = $request->customer;
+        $status = $request->status;
+        $loan_number = $request->loan_number_search;
+        $user_id = (int) user_data('idUser');
+        $perPage = (int) ($request->get('per_page', 10));
+        $includeTotals = (bool) $request->get('include_totals', false); // ← only compute when true
 
 
 
@@ -743,12 +743,12 @@ class TodayPaymentController extends Controller
 
         if ($collector_val) {
             $collector = $collector_val->collector;
-            $bank_id   = tableWithBranch('company_bank_accounts')
+            $bank_id = tableWithBranch('company_bank_accounts')
                 ->where('Account_No', $user_id)->value('Idbank');
         }
 
         $recovery_officer = $request->filled('recovery') ? $request->recovery : '0';
-        $lending_officer  = $request->filled('lending')  ? $request->lending  : '0';
+        $lending_officer = $request->filled('lending') ? $request->lending : '0';
 
         // ---- Aggregation subquery (installments) ----
         $subquery = DB::table('installments')
@@ -934,22 +934,28 @@ class TodayPaymentController extends Controller
                 $loanQuery_2->join('collector_has_route', 'customer.route_id', '=', 'collector_has_route.route_id')
                     ->where('collector_has_route.collector_id', $user_id);
             }
-            if ($center_details != '0') $loanQuery_2->where('center.idCenter', $center_details);
-            if ($route != '0')          $loanQuery_2->where('customer.route_id', $route);
-            if ($group != '0')          $loanQuery_2->where('customer_group.idCustomer_Group', $group);
-            if ($customer != '0')       $loanQuery_2->where('customer.idCustomer', $customer);
-            if ($recovery_officer != '0') $loanQuery_2->where('customer_loan.collector_id', $recovery_officer);
-            if ($lending_officer != '0')  $loanQuery_2->where('customer_loan.lending_officer_id', $lending_officer);
+            if ($center_details != '0')
+                $loanQuery_2->where('center.idCenter', $center_details);
+            if ($route != '0')
+                $loanQuery_2->where('customer.route_id', $route);
+            if ($group != '0')
+                $loanQuery_2->where('customer_group.idCustomer_Group', $group);
+            if ($customer != '0')
+                $loanQuery_2->where('customer.idCustomer', $customer);
+            if ($recovery_officer != '0')
+                $loanQuery_2->where('customer_loan.collector_id', $recovery_officer);
+            if ($lending_officer != '0')
+                $loanQuery_2->where('customer_loan.lending_officer_id', $lending_officer);
 
             $gettotal = $loanQuery_2->get();
         }
 
         return response()->json([
-            'item'      => $loan,
-            'message'   => 'all',
+            'item' => $loan,
+            'message' => 'all',
             'collector' => $collector,
-            'bank_id'   => $bank_id,
-            'gettotal'  => $gettotal
+            'bank_id' => $bank_id,
+            'gettotal' => $gettotal
         ], 200);
     }
 
@@ -994,12 +1000,9 @@ class TodayPaymentController extends Controller
         return response()->json(['item' => $loan, 'saving' => $saving, 'savings' => $last_log->Saving_Account_Balance, 'extraChargelatestBalance' => $extraChargelatestBalance], 200);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        $user_id = (int)session('userid');
+        $user_id = (int) session('userid');
         $loan_id = $request->loan_id;
         $payment_amount = $request->payment_amount;
         $type_saving_amount = $request->saving_amount;
@@ -1040,28 +1043,28 @@ class TodayPaymentController extends Controller
                     ->orderByDesc('Loan_Log_ID') // latest log
                     ->first();
 
-                $penaltyBalance   = $latestLog->Panelty_Balance ?? 0;
-                $interestBalance  = $latestLog->Interest_Balance ?? 0;
-                $capitalBalance   = $latestLog->Capital_Balance ?? 0;
-                $savingBalance    = $latestLog->Saving_Account_Balance ?? 0;
-                $totalPending     = $latestLog->Total_Pending_Balance ?? 0;
+                $penaltyBalance = $latestLog->Panelty_Balance ?? 0;
+                $interestBalance = $latestLog->Interest_Balance ?? 0;
+                $capitalBalance = $latestLog->Capital_Balance ?? 0;
+                $savingBalance = $latestLog->Saving_Account_Balance ?? 0;
+                $totalPending = $latestLog->Total_Pending_Balance ?? 0;
 
                 $latestBalance = (float) $latest->balance;
 
                 $now = Carbon::now();
                 $date = $now->toDateString();
                 $time = $now->toTimeString();
-                $user_id = user_data('idUser');
+                $user_id = session('userid');
                 $branch_id = session('branch_id');
 
                 // Common data for extra_charger
                 $commonData = [
-                    'loan_id'     => $loan_id,
-                    'date'        => $date,
-                    'time'        => $time,
+                    'loan_id' => $loan_id,
+                    'date' => $date,
+                    'time' => $time,
                     'description' => 'Payment adjustment for -' . $latest->description,
-                    'user_id'     => $user_id,
-                    'branch_id'   => $branch_id,
+                    'user_id' => $user_id,
+                    'branch_id' => $branch_id,
                 ];
 
                 if ($payment_amount <= $latestBalance) {
@@ -1070,7 +1073,7 @@ class TodayPaymentController extends Controller
 
                     // Insert new extra_charger row
                     DB::table('extra_charger')->insert(array_merge($commonData, [
-                        'amount'  => -$payment_amount,
+                        'amount' => -$payment_amount,
                         'balance' => $newBalance,
                     ]));
 
@@ -1098,10 +1101,12 @@ class TodayPaymentController extends Controller
                     ]);
 
                     $payment_amount = 0;
+
+
                 } else {
                     // Payment larger than extra_charger balance
                     DB::table('extra_charger')->insert(array_merge($commonData, [
-                        'amount'  => -$latestBalance,
+                        'amount' => -$latestBalance,
                         'balance' => 0,
                     ]));
 
@@ -1161,6 +1166,9 @@ class TodayPaymentController extends Controller
                 $this->bankLogController->index($bank_account_company, "Installment Part Payment", "Installment Part Payment", "Installment Part Payment", "debit", $extraAmount, $ins_part_payment->Idbank);
                 $this->bankLogController->index($ins_part_payment->Idbank, "Installment Part Payment", "Installment Part Payment", "Installment Part Payment", "credit", $extraAmount, $bank_account_company);
             }
+
+
+
         }
 
 
@@ -1385,6 +1393,9 @@ class TodayPaymentController extends Controller
                         'Payment_type' => $payment_type,
                         'branch_id' => session('branch_id')
                     ]);
+
+
+
                 }
 
 
@@ -1404,7 +1415,7 @@ class TodayPaymentController extends Controller
                     'description_id' => $loan_id,
                     'comment' => ' ',
                     'type' => 'Payment',
-                    'user' => user_data('idUser'),
+                    'user' => session('userid'),
                     'points' => $points_to_add,
                     'branch_id' => session('branch_id')
                 ]);
@@ -1447,6 +1458,7 @@ class TodayPaymentController extends Controller
                                 $Saving_balance = 0;
                                 $Total_Balance = 0;
                                 $Status = "1";
+
                             } else if ($current_payment_amount >= ($Panalty_Balance + $Interest_Balance + $capital_balance)) {
 
                                 $New_Saving_payment = $current_payment_amount - ($Panalty_Balance + $Interest_Balance + $capital_balance);
@@ -1565,6 +1577,7 @@ class TodayPaymentController extends Controller
                                 'User_idUser' => $user_id,
                                 'branch_id' => session('branch_id')
                             ]);
+
                         }
                     }
                 }
@@ -1604,9 +1617,9 @@ class TodayPaymentController extends Controller
 
                 if ($recovery_status === 'active') {
 
-                    $branch_id   = session('branch_id');
-                    $user_id     = (int)session('userid');
-                    $now         = now();
+                    $branch_id = session('branch_id');
+                    $user_id = (int) session('userid');
+                    $now = now();
 
                     // Fetch existing recovery account for this customer
                     $recoveryAccount = DB::table('recovery_account')
@@ -1616,29 +1629,29 @@ class TodayPaymentController extends Controller
                         ->first();
 
                     if ($recoveryAccount) {
-                        $newBalance = (float)$recoveryAccount->current_balance + (float)$payment_amount;
+                        $newBalance = (float) $recoveryAccount->current_balance + (float) $payment_amount;
 
                         // Update recovery account balance
                         DB::table('recovery_account')
                             ->where('idRecovery_Account', $recoveryAccount->idRecovery_Account)
                             ->update([
                                 'current_balance' => $newBalance,
-                                'updated_at'      => $now,
-                                'updated_by'      => $user_id,
+                                'updated_at' => $now,
+                                'updated_by' => $user_id,
                             ]);
 
                         // Log recovery transaction
                         DB::table('recovery_account_log')->insert([
                             'recovery_account_id' => $recoveryAccount->idRecovery_Account,
-                            'loan_id'             => $loan_id,
-                            'customer_id'         => $customer_id,
-                            'action_type'         => 'Payment Debit',
-                            'description'         => "Payment of {$payment_amount} added to recovery account.",
-                            'amount'              => $payment_amount,
-                            'balance_after'       => $newBalance,
-                            'created_at'          => $now,
-                            'created_by'          => $user_id,
-                            'branch_id'           => $branch_id,
+                            'loan_id' => $loan_id,
+                            'customer_id' => $customer_id,
+                            'action_type' => 'Payment Debit',
+                            'description' => "Payment of {$payment_amount} added to recovery account.",
+                            'amount' => $payment_amount,
+                            'balance_after' => $newBalance,
+                            'created_at' => $now,
+                            'created_by' => $user_id,
+                            'branch_id' => $branch_id,
                         ]);
 
                         // ---- Log in Loan_Log with updated recovery balance ----
@@ -1681,6 +1694,7 @@ class TodayPaymentController extends Controller
                             0
                         );
                     }
+
                 } else {
                     // ---- Normal loan payment when recovery inactive ----
                     $this->loanLogController->index(
@@ -1904,14 +1918,14 @@ class TodayPaymentController extends Controller
                     $loan_balance = $loan_balance ?? 0;
 
                     $placeholders = [
-                        '@Member_No@'        => $customer->cus_number,
-                        '@Member_Name@'      => $customer->First_Name . ' ' . $customer->Last_Name,
-                        '@Loan_No@'          => $loan->Loan_No,
-                        '@Payment_Date@'     => $customer_payment->Date,
-                        '@Paid_Amount@'      => number_format($customer_payment->Amount, 2, '.', ','),
-                        '@Loan_Balance@'     => number_format($loan_balance, 2, '.', ','),
-                        '@Capital_Balance@'  => number_format($loan->capital_balance, 2, '.', ','),
-                        '@Pending_Total@'  => number_format($arrears, 2, '.', ','),
+                        '@Member_No@' => $customer->cus_number,
+                        '@Member_Name@' => $customer->First_Name . ' ' . $customer->Last_Name,
+                        '@Loan_No@' => $loan->Loan_No,
+                        '@Payment_Date@' => $customer_payment->Date,
+                        '@Paid_Amount@' => number_format($customer_payment->Amount, 2, '.', ','),
+                        '@Loan_Balance@' => number_format($loan_balance, 2, '.', ','),
+                        '@Capital_Balance@' => number_format($loan->capital_balance, 2, '.', ','),
+                        '@Pending_Total@' => number_format($arrears, 2, '.', ','),
                     ];
 
                     // Step 3: Replace placeholders in the loan_format
@@ -1922,17 +1936,19 @@ class TodayPaymentController extends Controller
                     if ($sms_status == '1') {
                         DB::afterCommit(function () use ($loan, $loan_number_txt, $savedId) {
                             dispatch(new SendPaymentSmsJob(
-                                paymentId: (int)$savedId,
-                                loanId: (int)$loan->idCustomer_Loan ?? (int)$loan->idCustomer_Loan ?? 0, // ensure numeric
-                                customerId: (int)$loan->Customer_idCustomer,
+                                paymentId: (int) $savedId,
+                                loanId: (int) $loan->idCustomer_Loan ?? (int) $loan->idCustomer_Loan ?? 0, // ensure numeric
+                                customerId: (int) $loan->Customer_idCustomer,
                                 message: $loan_number_txt
                             ))->onQueue('sms');
                         });
                     }
+
                 }
 
 
                 return response()->json(['item' => 'sucess', 'id' => '1', 'test' => "1", 'payment_id' => $savedId], 200);
+
             } else if ($type === "Draft") {
 
                 $installments = tableWithBranch('installments')
@@ -1989,7 +2005,7 @@ class TodayPaymentController extends Controller
                     'description_id' => $loan_id,
                     'comment' => ' ',
                     'type' => 'Payment',
-                    'user' => user_data('idUser'),
+                    'user' => session('userid'),
                     'points' => $points_to_add,
                     'branch_id' => session('branch_id')
                 ]);
@@ -2033,6 +2049,7 @@ class TodayPaymentController extends Controller
                             $Saving_balance = 0;
                             $Total_Balance = 0;
                             $Status = "1";
+
                         } else if ($current_payment_amount >= ($Panalty_Balance + $Interest_Balance + $capital_balance)) {
 
                             $New_Saving_payment = $current_payment_amount - ($Panalty_Balance + $Interest_Balance + $capital_balance);
@@ -2152,6 +2169,7 @@ class TodayPaymentController extends Controller
                             'User_idUser' => $user_id,
                             'branch_id' => session('branch_id')
                         ]);
+
                     }
                 }
 
@@ -2301,6 +2319,8 @@ class TodayPaymentController extends Controller
                     $this->SavingAccountController->index($saving_account->id, 'Deposit', 'Payment', $Saving_balance_tot_paid, '0.00', $Saving_balance_tot_paid, 'Credit');
                 }
                 return response()->json(['item' => 'sucess', 'id' => '1', 'test' => "1", 'payment_id' => $savedId], 200);
+
+
             } else if ($type === "Reducing Balance") {
 
                 $installments = DB::table('installments')
@@ -2368,6 +2388,9 @@ class TodayPaymentController extends Controller
                         'Payment_type' => $payment_type,
                         'branch_id' => session('branch_id')
                     ]);
+
+
+
                 }
 
 
@@ -2387,7 +2410,7 @@ class TodayPaymentController extends Controller
                     'description_id' => $loan_id,
                     'comment' => ' ',
                     'type' => 'Payment',
-                    'user' => user_data('idUser'),
+                    'user' => session('userid'),
                     'points' => $points_to_add,
                     'branch_id' => session('branch_id')
                 ]);
@@ -2430,6 +2453,7 @@ class TodayPaymentController extends Controller
                             $Saving_balance = 0;
                             $Total_Balance = 0;
                             $Status = "1";
+
                         } else if ($current_payment_amount >= ($Panalty_Balance + $Interest_Balance + $capital_balance)) {
 
                             $New_Saving_payment = $current_payment_amount - ($Panalty_Balance + $Interest_Balance + $capital_balance);
@@ -2548,6 +2572,7 @@ class TodayPaymentController extends Controller
                             'User_idUser' => $user_id,
                             'branch_id' => session('branch_id')
                         ]);
+
                     }
                 }
 
@@ -2754,9 +2779,9 @@ class TodayPaymentController extends Controller
                     if ($sms_status == '1') {
                         DB::afterCommit(function () use ($loan, $loan_number_txt, $savedId) {
                             dispatch(new SendPaymentSmsJob(
-                                paymentId: (int)$savedId,
-                                loanId: (int)$loan->idCustomer_Loan ?? (int)$loan->idCustomer_Loan ?? 0, // ensure numeric
-                                customerId: (int)$loan->Customer_idCustomer,
+                                paymentId: (int) $savedId,
+                                loanId: (int) $loan->idCustomer_Loan ?? (int) $loan->idCustomer_Loan ?? 0, // ensure numeric
+                                customerId: (int) $loan->Customer_idCustomer,
                                 message: $loan_number_txt
                             ))->onQueue('sms');
                         });
@@ -2765,10 +2790,1789 @@ class TodayPaymentController extends Controller
 
 
                 return response()->json(['item' => 'sucess', 'id' => '1', 'test' => "1", 'payment_id' => $savedId], 200);
+
+
             } else {
+
             }
         }
+
     }
+    /**
+     * Store a newly created resource in storage.
+     */
+    // public function store(Request $request)
+    // {
+    //     $user_id = (int)session('userid');
+    //     $loan_id = $request->loan_id;
+    //     $payment_amount = $request->payment_amount;
+    //     $type_saving_amount = $request->saving_amount;
+    //     $payment_date = $request->payment_date;
+    //     $time = date('H:i:s');
+    //     $payment_type = $request->payment_type;
+    //     $bulk = $request->bulk ?? '0';
+
+    //     Log::info($request->sms);
+
+
+    //     $cheque_accept = $request->cheque_accept ?? '0';
+    //     $cheque_id = $request->cheque_id ?? '0';
+    //     $cheque_issue_bank = $request->cheque_issue_bank ?? '0';
+    //     $chq_number = $request->chq_number ?? '0';
+    //     $chq_type = $request->chq_type ?? '0';
+    //     $name_on_cheque = $request->name_on_cheque ?? '0';
+    //     $chq_date = $request->chq_date ?? '0';
+    //     $sms_status = $request->sms ?? '0';
+
+
+    //     $bank_account_company_chq = $request->bank_account_company;
+
+
+
+    //     $latest = DB::table('extra_charger')
+    //         ->where('loan_id', $loan_id)
+    //         ->orderByDesc('id_extra_charger')
+    //         ->first();
+
+    //     if ($latest && isset($latest->balance) && (float) $latest->balance > 0) {
+
+    //         DB::transaction(function () use (&$payment_amount, $latest, $loan_id) {
+
+    //             // Get latest Loan_Log balances
+    //             $latestLog = DB::table('Loan_Log')
+    //                 ->where('Loan_ID', $loan_id)
+    //                 ->orderByDesc('Loan_Log_ID') // latest log
+    //                 ->first();
+
+    //             $penaltyBalance   = $latestLog->Panelty_Balance ?? 0;
+    //             $interestBalance  = $latestLog->Interest_Balance ?? 0;
+    //             $capitalBalance   = $latestLog->Capital_Balance ?? 0;
+    //             $savingBalance    = $latestLog->Saving_Account_Balance ?? 0;
+    //             $totalPending     = $latestLog->Total_Pending_Balance ?? 0;
+
+    //             $latestBalance = (float) $latest->balance;
+
+    //             $now = Carbon::now();
+    //             $date = $now->toDateString();
+    //             $time = $now->toTimeString();
+    //             $user_id = user_data('idUser');
+    //             $branch_id = session('branch_id');
+
+    //             // Common data for extra_charger
+    //             $commonData = [
+    //                 'loan_id'     => $loan_id,
+    //                 'date'        => $date,
+    //                 'time'        => $time,
+    //                 'description' => 'Payment adjustment for -' . $latest->description,
+    //                 'user_id'     => $user_id,
+    //                 'branch_id'   => $branch_id,
+    //             ];
+
+    //             if ($payment_amount <= $latestBalance) {
+    //                 // Payment fully absorbed by this extra_charger row
+    //                 $newBalance = $latestBalance - $payment_amount;
+
+    //                 // Insert new extra_charger row
+    //                 DB::table('extra_charger')->insert(array_merge($commonData, [
+    //                     'amount'  => -$payment_amount,
+    //                     'balance' => $newBalance,
+    //                 ]));
+
+    //                 // Insert Loan_Log with latest balances
+    //                 DB::table('Loan_Log')->insert([
+    //                     'Loan_ID' => $loan_id,
+    //                     'Date_Time' => $now->toDateTimeString(),
+    //                     'Type' => 'Extra Payment',
+    //                     'Type_ID' => 0,
+    //                     'Description' => 'Extra payment applied from Extra Charger',
+    //                     'Amount' => $payment_amount,
+    //                     'Panelty_Payment' => 0,
+    //                     'Interest_Payment' => 0,
+    //                     'Capital_Payment' => 0,
+    //                     'Savings_Payment' => 0,
+    //                     'Extra_Payment' => $payment_amount,
+    //                     'Panelty_Balance' => $penaltyBalance,
+    //                     'Interest_Balance' => $interestBalance,
+    //                     'Capital_Balance' => $capitalBalance,
+    //                     'Total_Pending_Balance' => $totalPending - $payment_amount,
+    //                     'Saving_Account_Balance' => $savingBalance,
+    //                     'Extra_Balance' => $newBalance,
+    //                     'User_idUser' => $user_id,
+    //                     'branch_id' => $branch_id
+    //                 ]);
+
+    //                 $payment_amount = 0;
+    //             } else {
+    //                 // Payment larger than extra_charger balance
+    //                 DB::table('extra_charger')->insert(array_merge($commonData, [
+    //                     'amount'  => -$latestBalance,
+    //                     'balance' => 0,
+    //                 ]));
+
+    //                 // Insert Loan_Log with latest balances
+    //                 DB::table('Loan_Log')->insert([
+    //                     'Loan_ID' => $loan_id,
+    //                     'Date_Time' => $now->toDateTimeString(),
+    //                     'Type' => 'Extra Payment',
+    //                     'Type_ID' => 0,
+    //                     'Description' => 'Extra payment applied from Extra Charger',
+    //                     'Amount' => $latestBalance,
+    //                     'Panelty_Payment' => 0,
+    //                     'Interest_Payment' => 0,
+    //                     'Capital_Payment' => 0,
+    //                     'Savings_Payment' => 0,
+    //                     'Extra_Payment' => $latestBalance,
+    //                     'Panelty_Balance' => $penaltyBalance,
+    //                     'Interest_Balance' => $interestBalance,
+    //                     'Capital_Balance' => $capitalBalance,
+    //                     'Total_Pending_Balance' => $totalPending - $latestBalance,
+    //                     'Saving_Account_Balance' => $savingBalance,
+    //                     'Extra_Balance' => 0,
+    //                     'User_idUser' => $user_id,
+    //                     'branch_id' => $branch_id
+    //                 ]);
+
+    //                 $payment_amount -= $latestBalance;
+    //             }
+    //         });
+    //     }
+
+    //     if ($payment_amount == 0) {
+    //         return response()->json(['item' => 'success', 'id' => '1', 'test' => "1", 'payment_id' => 2], 200);
+    //     }
+
+
+
+
+    //     if ($request->extraAmount > 0) {
+
+    //         $payment_amount = $request->total_loan_balance;
+    //         $extraAmount = $request->extraAmount;
+
+    //         $bank_account_company = $request->bank_account_company;
+    //         $ins_part_payment = tableWithBranch('company_bank_accounts')
+    //             ->where('Bank_Type', '=', 'System_default_12')
+    //             ->first();
+    //         if ($payment_type === "Cash") {
+    //             $bank_account_company = DB::table('company_bank_accounts')
+    //                 ->where('branch_id', session('branch_id'))
+    //                 ->whereRaw('LOWER(Account_No) = ?', ['cash'])  // Case-insensitive comparison
+    //                 ->value('Idbank');
+
+    //             $this->bankLogController->index($bank_account_company, "Installment Part Payment", "Installment Part Payment", "Installment Part Payment", "debit", $extraAmount, $ins_part_payment->Idbank);
+    //             $this->bankLogController->index($ins_part_payment->Idbank, "Installment Part Payment", "Installment Part Payment", "Installment Part Payment", "credit", $extraAmount, $bank_account_company);
+    //         } else {
+    //             $this->bankLogController->index($bank_account_company, "Installment Part Payment", "Installment Part Payment", "Installment Part Payment", "debit", $extraAmount, $ins_part_payment->Idbank);
+    //             $this->bankLogController->index($ins_part_payment->Idbank, "Installment Part Payment", "Installment Part Payment", "Installment Part Payment", "credit", $extraAmount, $bank_account_company);
+    //         }
+    //     }
+
+
+
+
+    //     $loan = tableWithBranch('customer_loan')
+    //         ->where('idCustomer_Loan', '=', $loan_id)
+    //         ->first();
+    //     $customer_id = $loan->Customer_idCustomer;
+    //     $loan_category = tableWithBranch('loan_category')->where('idLoan_Category', '=', $loan->Loan_Category_idLoan_Category)->first();
+    //     if ($cheque_accept == "0") {
+    //         if ($payment_type == "Cheque") {
+    //             // Validate unique cheque number
+    //             $existingCheque = DB::table('Cheque_payment')
+    //                 ->where('chq_number', $chq_number)
+    //                 ->where('chq_status', '!=', '-1')
+    //                 ->where('branch_id', session('branch_id'))
+    //                 ->first();
+
+    //             if ($existingCheque) {
+    //                 return response()->json([
+    //                     'item' => 'error',
+    //                     'message' => 'This cheque number already exists. Please enter a unique cheque number.'
+    //                 ], 422);
+    //             }
+    //             $slipPath = null;
+    //             if ($request->hasFile('file')) {
+    //                 $file = $request->file('file');
+    //                 $directory = 'payment_slip';
+
+    //                 // Check if the directory exists on the public disk, create it if not
+    //                 if (!Storage::disk('public')->exists($directory)) {
+    //                     Storage::disk('public')->makeDirectory($directory);
+    //                 }
+    //                 $slipPath = Storage::disk('public')->putFile($directory, $file);
+    //             }
+
+    //             DB::table('Cheque_payment')->insert([
+    //                 'date' => date('Y-m-d'),
+    //                 'time' => date('H:i:s'),
+    //                 'cus_id' => $loan->Customer_idCustomer,
+    //                 'file' => $slipPath,
+    //                 'payment_amount' => $payment_amount,
+    //                 'loan_id' => $loan_id,
+    //                 'payment_date' => $payment_date,
+    //                 'payment_type' => $request->payment_type,
+    //                 'bank_account_company' => $request->bank_account_company,
+    //                 'cheque_issue_bank' => $request->cheque_issue_bank,
+    //                 'name_on_cheque' => $request->name_on_cheque,
+    //                 'chq_number' => $request->chq_number,
+    //                 'chq_date' => $request->chq_date,
+    //                 'chq_type' => $request->chq_type,
+    //                 'branch_id' => session('branch_id')
+    //             ]);
+
+    //             $chq_comment = 'Cheque Received ! Cheque No : ' . $request->chq_number . ' Cheque Date : ' . $request->chq_date . ' Cheque Type : ' . $request->chq_type . ' Amount : ' . $payment_amount;
+    //             $comment_id = DB::table('loan_comment')->insertGetId([
+    //                 'comment' => $chq_comment,
+    //                 'loan_id' => $loan_id,
+    //                 'user_id' => $user_id,
+    //                 'date' => now()->toDateString(),
+    //                 'time' => now()->toTimeString(),
+    //             ]);
+    //             $request = new Request([
+    //                 'customer_id' => $loan->Customer_idCustomer,
+    //                 'description' => 'Cheque payment from ' . $request->f_name . ' ' . $request->last_name,
+    //                 'description_id' => $comment_id,
+    //                 'comment' => $chq_comment,
+    //                 'type' => 'Loan Comment',
+    //             ]);
+    //             $this->customerLogController->store($request);
+    //             return response()->json(['item' => 'success', 'id' => '1', 'test' => "1", 'payment_id' => 0], 200);
+    //         }
+    //     } else {
+    //         if ($payment_type == "Cheque") {
+    //             DB::table('Cheque_payment')
+    //                 ->where('idChq', $cheque_id)
+    //                 ->update([
+    //                     'chq_status' => '1'
+    //                 ]);
+    //             $chq_comment = 'Cheque Accepted ! Cheque No : ' . $request->chq_number . ' Cheque Date : ' . $request->chq_date . ' Cheque Type : ' . $request->chq_type . ' Amount : ' . $payment_amount;
+    //             $comment_id = DB::table('loan_comment')->insertGetId([
+    //                 'comment' => $chq_comment,
+    //                 'loan_id' => $loan_id,
+    //                 'user_id' => $user_id,
+    //                 'date' => now()->toDateString(),
+    //                 'time' => now()->toTimeString(),
+    //             ]);
+    //             $request = new Request([
+    //                 'customer_id' => $loan->Customer_idCustomer,
+    //                 'description' => 'Cheque payment from ' . $request->f_name . ' ' . $request->last_name,
+    //                 'description_id' => $comment_id,
+    //                 'comment' => $chq_comment,
+    //                 'type' => 'Loan Comment',
+    //             ]);
+    //             $this->customerLogController->store($request);
+    //         }
+    //     }
+
+
+
+
+
+
+
+
+
+    //     $company = DB::table('company')->first();
+
+
+    //     $points_to_add = 0;
+    //     if ($company->points === "1") {
+    //         $points_percentage = $company->points_percentage;
+    //         $payment_amount_for_points = $payment_amount;
+
+    //         // Calculate the points to be added
+    //         $points_to_add = ($payment_amount_for_points * $points_percentage) / 100;
+
+    //         // Retrieve the current points of the customer
+    //         $customer = DB::table('customer')->where('branch_id', session('branch_id'))->where('idCustomer', $loan->Customer_idCustomer)->first();
+    //         $current_points = $customer->points;
+
+    //         // Update the customer's points
+    //         DB::table('customer')
+    //             ->where('idCustomer', $loan->Customer_idCustomer)
+    //             ->where('branch_id', session('branch_id'))
+    //             ->update([
+    //                 'points' => $current_points + $points_to_add
+    //             ]);
+    //     }
+
+
+    //     $truepayment_amount = 0.0;
+
+    //     $loan = DB::table('customer_loan')
+    //         ->where('idCustomer_Loan', '=', $loan_id)
+    //         ->where('branch_id', session('branch_id'))
+    //         ->where('Status', '=', '0')
+    //         ->get();
+
+    //     foreach ($loan as $loan_item) {
+    //         $type = $loan_item->type;
+    //         $Reducing_type = $loan_item->Reducing_type;
+
+    //         $loan_cate = DB::table('loan_category')->where('branch_id', session('branch_id'))->where('idLoan_Category', '=', $loan_item->Loan_Category_idLoan_Category)->first();
+    //         $enable_saving_process = "No";
+    //         if ($loan_cate) {
+    //             $enable_saving_process = $loan_cate->enable_saving_process;
+    //         }
+
+
+    //         if ($type === "Flat Rate" || $Reducing_type == "1") {
+
+    //             // Check recovery account setting
+    //             $recovery_setting = DB::table('app_settings')
+    //                 ->where('key', '=', 'recovery_account_status')
+    //                 ->first();
+    //             $recovery_status = $recovery_setting->value ?? 'inactive';
+
+    //             $installments = DB::table('installments')
+    //                 ->where('Customer_Loan_idCustomer_Loan', '=', $loan_id)
+    //                 ->where('Status', '=', '0')
+    //                 ->where('branch_id', session('branch_id'))
+    //                 ->orderBy('idInstallments')
+    //                 ->get();
+
+    //             $slipPath = null;
+    //             if ($request->hasFile('file')) {
+    //                 $file = $request->file('file');
+    //                 $directory = 'payment_slip';
+
+    //                 // Check if the directory exists on the public disk, create it if not
+    //                 if (!Storage::disk('public')->exists($directory)) {
+    //                     Storage::disk('public')->makeDirectory($directory);
+    //                 }
+
+    //                 // Store the file on the public disk
+    //                 $slipPath = Storage::disk('public')->putFile($directory, $file);
+    //             }
+
+    //             $savedId = 0;
+    //             $comment = '-';
+    //             if ($cheque_accept != "0") {
+    //                 $comment = 'Cheque Accepted ! Cheque No : ' . $chq_number . ' Cheque Date : ' . $chq_date . ' Cheque Type : ' . $chq_type;
+    //             }
+
+    //             $saving_payment_type = "0";
+    //             if ($loan_category) {
+    //                 if ($loan_category->enable_saving_process == "Yes") {
+    //                     $saving_payment_type = $loan_category->saving_payment;
+    //                 }
+    //             }
+
+
+
+
+
+    //             if ($saving_payment_type == "0") {
+    //                 $savedId = DB::table('customer_payments')->insertGetId([
+    //                     'comment' => $comment,
+    //                     'Date' => $payment_date,
+    //                     'Description' => 'Payment',
+    //                     'Amount' => $payment_amount,
+    //                     'Customer_Loan_idCustomer_Loan' => $loan_id,
+    //                     'User_idUser' => $user_id,
+    //                     'time' => Carbon::now()->format('H:i:s'),
+    //                     'Slip' => $slipPath,
+    //                     'Payment_type' => $payment_type,
+    //                     'branch_id' => session('branch_id')
+    //                 ]);
+    //             } else {
+    //                 $new_payment_amount = $payment_amount + $type_saving_amount;
+    //                 $savedId = DB::table('customer_payments')->insertGetId([
+    //                     'comment' => $comment,
+    //                     'Date' => $payment_date,
+    //                     'Description' => 'Payment',
+    //                     'Amount' => $new_payment_amount,
+    //                     'Customer_Loan_idCustomer_Loan' => $loan_id,
+    //                     'User_idUser' => $user_id,
+    //                     'time' => Carbon::now()->format('H:i:s'),
+    //                     'Slip' => $slipPath,
+    //                     'Payment_type' => $payment_type,
+    //                     'branch_id' => session('branch_id')
+    //                 ]);
+    //             }
+
+
+    //             $customer_loan = tableWithBranch('customer_loan')->where('idCustomer_Loan', '=', $loan_id)->first();
+
+    //             $customer_table = tableWithBranch('customer')
+    //                 ->where('idCustomer', '=', $customer_loan->Customer_idCustomer)
+    //                 ->first();
+
+    //             $newpayment_amount = number_format($payment_amount, 2);
+    //             DB::table('customer_log')->insert([
+    //                 'customer_id' => $customer_loan->Customer_idCustomer,
+    //                 'customer_name' => $customer_table->First_Name . ' ' . $customer_table->Last_Name,
+    //                 'date' => $payment_date,
+    //                 'time' => date('H:i:s'),
+    //                 'description' => "Payment Amount :({$newpayment_amount})\nLoan Id : {$loan_id}",
+    //                 'description_id' => $loan_id,
+    //                 'comment' => ' ',
+    //                 'type' => 'Payment',
+    //                 'user' => user_data('idUser'),
+    //                 'points' => $points_to_add,
+    //                 'branch_id' => session('branch_id')
+    //             ]);
+
+    //             $Panalty_Balance_tot_paid = 0;
+    //             $Interest_Balance_tot_paid = 0;
+    //             $capital_balance_tot_paid = 0;
+    //             $Saving_balance_tot_paid = 0;
+
+    //             $current_payment_amount = $payment_amount;
+
+    //             if ($recovery_status !== 'active') {
+    //                 foreach ($installments as $item) {
+    //                     if ($payment_amount > 0) {
+    //                         $Panalty_Balance = $item->Panalty_Balance;
+    //                         $Interest_Balance = $item->Interest_Balance;
+    //                         $capital_balance = $item->capital_balance;
+    //                         $Saving_balance = $item->Saving_balance;
+    //                         $Total_Balance = $item->Total_Balance;
+    //                         $Status = $item->Status;
+
+
+    //                         $idInstallments = $item->idInstallments;
+
+
+    //                         if ($current_payment_amount >= ($Panalty_Balance + $Interest_Balance + $capital_balance + $Saving_balance)) {
+
+    //                             $Panalty_Balance_tot_paid += $Panalty_Balance;
+    //                             $Interest_Balance_tot_paid += $Interest_Balance;
+    //                             $capital_balance_tot_paid += $capital_balance;
+    //                             $Saving_balance_tot_paid += $Saving_balance;
+
+
+    //                             $New_Total_paid = $Total_Balance;
+    //                             $current_payment_amount -= $Total_Balance;
+
+    //                             $Panalty_Balance = 0;
+    //                             $Interest_Balance = 0;
+    //                             $capital_balance = 0;
+    //                             $Saving_balance = 0;
+    //                             $Total_Balance = 0;
+    //                             $Status = "1";
+    //                         } else if ($current_payment_amount >= ($Panalty_Balance + $Interest_Balance + $capital_balance)) {
+
+    //                             $New_Saving_payment = $current_payment_amount - ($Panalty_Balance + $Interest_Balance + $capital_balance);
+    //                             $New_Saving_balance = $Saving_balance - $New_Saving_payment;
+
+
+    //                             $New_Total_paid = $Panalty_Balance + $Interest_Balance + $capital_balance + $New_Saving_payment;
+
+    //                             $New_Total_Balance = $New_Saving_balance;
+
+
+    //                             $current_payment_amount -= $New_Total_paid;
+
+    //                             $Panalty_Balance_tot_paid += $Panalty_Balance;
+    //                             $Interest_Balance_tot_paid += $Interest_Balance;
+    //                             $capital_balance_tot_paid += $capital_balance;
+    //                             $Saving_balance_tot_paid += $New_Saving_payment;
+
+    //                             $Panalty_Balance = 0;
+    //                             $Interest_Balance = 0;
+    //                             $capital_balance = 0;
+    //                             $Saving_balance = $New_Saving_balance;
+    //                             $Total_Balance = $New_Total_Balance;
+    //                         } else if ($current_payment_amount >= ($Panalty_Balance + $Interest_Balance)) {
+
+    //                             $New_Capital_payment = $current_payment_amount - ($Panalty_Balance + $Interest_Balance);
+    //                             $New_Capital_balance = $capital_balance - $New_Capital_payment;
+
+
+    //                             $New_Total_paid = $Panalty_Balance + $Interest_Balance + $New_Capital_payment;
+
+    //                             $New_Total_Balance = $New_Capital_balance + $Saving_balance;
+
+
+    //                             $current_payment_amount -= $New_Total_paid;
+
+
+    //                             $Panalty_Balance_tot_paid += $Panalty_Balance;
+    //                             $Interest_Balance_tot_paid += $Interest_Balance;
+    //                             $capital_balance_tot_paid += $New_Capital_payment;
+    //                             $Saving_balance_tot_paid += 0.00;
+
+    //                             $Panalty_Balance = 0;
+    //                             $Interest_Balance = 0;
+    //                             $capital_balance = $New_Capital_balance;
+    //                             $Total_Balance = $New_Total_Balance;
+    //                         } else if ($current_payment_amount >= ($Panalty_Balance)) {
+
+    //                             $New_Interest_payment = $current_payment_amount - ($Panalty_Balance);
+    //                             $New_Interest_balance = $Interest_Balance - $New_Interest_payment;
+
+
+    //                             $New_Total_paid = $Panalty_Balance + $New_Interest_payment;
+
+    //                             $New_Total_Balance = $New_Interest_balance + $Saving_balance + $capital_balance;
+
+
+    //                             $current_payment_amount -= $New_Total_paid;
+
+    //                             $Panalty_Balance_tot_paid += $Panalty_Balance;
+    //                             $Interest_Balance_tot_paid += $New_Interest_payment;
+    //                             $capital_balance_tot_paid += 0.00;
+    //                             $Saving_balance_tot_paid += 0.00;
+
+    //                             $Panalty_Balance = 0;
+    //                             $Interest_Balance = $New_Interest_balance;
+    //                             $Total_Balance = $New_Total_Balance;
+    //                         } else {
+
+    //                             $New_Panelty_payment = $current_payment_amount;
+    //                             $New_Panelty_balance = $Panalty_Balance - $New_Panelty_payment;
+
+
+    //                             $New_Total_paid = $New_Panelty_payment;
+
+    //                             $New_Total_Balance = $Interest_Balance + $Saving_balance + $capital_balance + $New_Panelty_balance;
+
+    //                             $current_payment_amount -= $New_Total_paid;
+
+    //                             $Panalty_Balance_tot_paid += $New_Panelty_payment;
+    //                             $Interest_Balance_tot_paid += 0.00;
+    //                             $capital_balance_tot_paid += 0.00;
+    //                             $Saving_balance_tot_paid += 0.00;
+
+
+    //                             $Panalty_Balance = $New_Panelty_balance;
+    //                             $Total_Balance = $New_Total_Balance;
+    //                         }
+
+
+    //                         DB::table('installments')
+    //                             ->where('idInstallments', $idInstallments)
+    //                             ->where('branch_id', session('branch_id'))
+    //                             ->update([
+    //                                 'Status' => $Status,
+    //                                 'Panelty_status' => '2',
+    //                                 'Paid_Amount' => DB::raw('Paid_Amount + ' . $New_Total_paid),
+    //                                 'Total_Balance' => $Total_Balance,
+    //                                 'Panalty_Balance' => $Panalty_Balance,
+    //                                 'Interest_Balance' => $Interest_Balance,
+    //                                 'capital_balance' => $capital_balance,
+    //                                 'Saving_balance' => $Saving_balance,
+    //                             ]);
+
+
+    //                         DB::table('installment_log')->insert([
+    //                             'Installments_idInstallments' => $idInstallments,
+    //                             'Date' => $payment_date . ' ' . $time,
+    //                             'Description' => 'Payment : ' . $payment_amount,
+    //                             'Amount' => $New_Total_paid,
+    //                             'Panalty_Total' => $Panalty_Balance,
+    //                             'Interest_Balance' => $Interest_Balance,
+    //                             'Capital_balance' => $capital_balance,
+    //                             'Saving_balance' => $Saving_balance,
+    //                             'Total_Balance' => $Total_Balance,
+    //                             'User_idUser' => $user_id,
+    //                             'branch_id' => session('branch_id')
+    //                         ]);
+    //                     }
+    //                 }
+    //             }
+
+
+
+    //             $loan_log = DB::table('Loan_Log')
+    //                 ->where('Loan_ID', '=', $loan_id)
+    //                 ->orderBy('Loan_Log_ID', 'desc')  // Assuming 'id' is the primary key or auto-increment column
+    //                 ->first();
+
+    //             $Panelty_Balance_Log = $loan_log->Panelty_Balance;
+    //             $Interest_Balance_Log = $loan_log->Interest_Balance;
+    //             $Capital_Balance_Log = $loan_log->Capital_Balance;
+    //             $Saving_Balance_Log = $loan_log->Saving_Account_Balance;
+
+
+    //             $Panelty_Balance_Log -= $Panalty_Balance_tot_paid;
+    //             $Interest_Balance_Log -= $Interest_Balance_tot_paid;
+    //             $Capital_Balance_Log -= $capital_balance_tot_paid;
+
+    //             if ($enable_saving_process == "Yes") {
+    //                 if ($saving_payment_type == "0") {
+    //                     $Saving_Balance_Log += $Saving_balance_tot_paid;
+    //                 } else {
+    //                     $Saving_Balance_Log += $type_saving_amount;
+    //                     $Saving_balance_tot_paid = $type_saving_amount;
+    //                 }
+    //             }
+
+
+    //             $Total_Pending_Balance_Log = $Panelty_Balance_Log + $Interest_Balance_Log + $Capital_Balance_Log;
+    //             $saving_balance = round($installments->sum('Saving_Account_Balance'), 2);
+    //             if (!$saving_balance > 0) {
+    //                 $Total_Pending_Balance_Log = $Panelty_Balance_Log + $Interest_Balance_Log + $Capital_Balance_Log + $Saving_Balance_Log;
+    //             }
+
+    //             if ($recovery_status === 'active') {
+
+    //                 $branch_id   = session('branch_id');
+    //                 $user_id     = (int)session('userid');
+    //                 $now         = now();
+
+    //                 // Fetch existing recovery account for this customer
+    //                 $recoveryAccount = DB::table('recovery_account')
+    //                     ->where('customer_id', $customer_id)
+    //                     ->where('branch_id', $branch_id)
+    //                     ->lockForUpdate()
+    //                     ->first();
+
+    //                 if ($recoveryAccount) {
+    //                     $newBalance = (float)$recoveryAccount->current_balance + (float)$payment_amount;
+
+    //                     // Update recovery account balance
+    //                     DB::table('recovery_account')
+    //                         ->where('idRecovery_Account', $recoveryAccount->idRecovery_Account)
+    //                         ->update([
+    //                             'current_balance' => $newBalance,
+    //                             'updated_at'      => $now,
+    //                             'updated_by'      => $user_id,
+    //                         ]);
+
+    //                     // Log recovery transaction
+    //                     DB::table('recovery_account_log')->insert([
+    //                         'recovery_account_id' => $recoveryAccount->idRecovery_Account,
+    //                         'loan_id'             => $loan_id,
+    //                         'customer_id'         => $customer_id,
+    //                         'action_type'         => 'Payment Debit',
+    //                         'description'         => "Payment of {$payment_amount} added to recovery account.",
+    //                         'amount'              => $payment_amount,
+    //                         'balance_after'       => $newBalance,
+    //                         'created_at'          => $now,
+    //                         'created_by'          => $user_id,
+    //                         'branch_id'           => $branch_id,
+    //                     ]);
+
+    //                     // ---- Log in Loan_Log with updated recovery balance ----
+    //                     $this->loanLogController->index(
+    //                         $loan_id,
+    //                         'Customer Payment',
+    //                         $savedId,
+    //                         'Customer Payment',
+    //                         $payment_amount,
+    //                         0,
+    //                         0,
+    //                         0,
+    //                         0,
+    //                         $Panelty_Balance_Log,
+    //                         $Interest_Balance_Log,
+    //                         $Capital_Balance_Log,
+    //                         $Total_Pending_Balance_Log,
+    //                         $Saving_Balance_Log,
+    //                         $payment_amount,     // Recovery_Amount = this payment
+    //                         $newBalance          // Recovery_Balance = updated total
+    //                     );
+    //                 } else {
+    //                     // No recovery account (edge case) — fallback to normal log
+    //                     $this->loanLogController->index(
+    //                         $loan_id,
+    //                         'Customer Payment',
+    //                         $savedId,
+    //                         'Customer Payment',
+    //                         $payment_amount,
+    //                         0,
+    //                         0,
+    //                         0,
+    //                         0,
+    //                         $Panelty_Balance_Log,
+    //                         $Interest_Balance_Log,
+    //                         $Capital_Balance_Log,
+    //                         $Total_Pending_Balance_Log,
+    //                         $Saving_Balance_Log,
+    //                         $payment_amount,
+    //                         0
+    //                     );
+    //                 }
+    //             } else {
+    //                 // ---- Normal loan payment when recovery inactive ----
+    //                 $this->loanLogController->index(
+    //                     $loan_id,
+    //                     'Customer Payment',
+    //                     $savedId,
+    //                     'Customer Payment',
+    //                     $payment_amount,
+    //                     $Panalty_Balance_tot_paid,
+    //                     $Interest_Balance_tot_paid,
+    //                     $capital_balance_tot_paid,
+    //                     $Saving_balance_tot_paid,
+    //                     $Panelty_Balance_Log,
+    //                     $Interest_Balance_Log,
+    //                     $Capital_Balance_Log,
+    //                     $Total_Pending_Balance_Log,
+    //                     $Saving_Balance_Log
+    //                 );
+
+    //                 $this->capitalBalanceController->index($loan_id);
+
+    //                 $loan_for_bank = tableWithBranch('customer_loan')
+    //                     ->where('idCustomer_Loan', '=', $loan_id)
+    //                     ->first();
+    //                 $bank_log_comment = "Loan Number : {$loan_for_bank->Loan_No}";
+
+    //                 $bank_account_company = $request->bank_account_company;
+    //                 if ($bulk == "1") {
+    //                     $user = DB::table('user')->where('id', '=', $user_id)->first();
+    //                     if ($user) {
+
+    //                         $collector = $user->collector;
+    //                         $cashier = $user->cashier;
+
+    //                         $bank_account_company = DB::table('company_bank_accounts')
+    //                             ->where('branch_id', session('branch_id'))
+    //                             ->where('Account_No', '=', $user_id)  // Case-insensitive comparison
+    //                             ->value('Idbank');
+
+    //                         if ($collector == "1") {
+    //                             $payment_type = "Collector";
+    //                         } elseif ($cashier == "1") {
+    //                             $payment_type = "Cashier";
+    //                         } else {
+    //                             $payment_type = "Cash";
+    //                             $bank_account_company = DB::table('company_bank_accounts')
+    //                                 ->where('branch_id', session('branch_id'))
+    //                                 ->whereRaw('LOWER(Account_No) = ?', ['cash'])  // Case-insensitive comparison
+    //                                 ->value('Idbank');
+    //                         }
+    //                     }
+    //                 }
+
+
+
+
+    //                 $capital_id = tableWithBranch('company_bank_accounts')
+    //                     ->where('Bank_Type', '=', 'System_default_1')
+    //                     ->first();
+
+    //                 $interest_id = tableWithBranch('company_bank_accounts')
+    //                     ->where('Bank_Type', '=', 'System_default_2')
+    //                     ->first();
+
+    //                 $panelty_id = tableWithBranch('company_bank_accounts')
+    //                     ->where('Bank_Type', '=', 'System_default_5')
+    //                     ->first();
+
+    //                 $saving_id = tableWithBranch('company_bank_accounts')
+    //                     ->where('Bank_Type', '=', 'System_default_10')
+    //                     ->first();
+    //                 if ($payment_type === "Bank Deposit") {
+    //                     if ($capital_balance_tot_paid > 0) {
+    //                         //capital
+    //                         $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Bank Deposit", "debit", $capital_balance_tot_paid, $capital_id->Idbank, $savedId);
+    //                         $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Bank Deposit", "credit", $capital_balance_tot_paid, $bank_account_company, $savedId);
+    //                     }
+
+    //                     if ($Interest_Balance_tot_paid > 0) {
+    //                         //interest
+    //                         $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Bank Deposit", "debit", $Interest_Balance_tot_paid, $interest_id->Idbank, $savedId);
+    //                         $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Bank Deposit", "credit", $Interest_Balance_tot_paid, $bank_account_company, $savedId);
+    //                     }
+
+    //                     if ($Panalty_Balance_tot_paid > 0) {
+    //                         //panelty
+    //                         $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Bank Deposit", "debit", $Panalty_Balance_tot_paid, $panelty_id->Idbank, $savedId);
+    //                         $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Bank Deposit", "credit", $Panalty_Balance_tot_paid, $bank_account_company, $savedId);
+    //                     }
+
+    //                     if ($Saving_balance_tot_paid > 0) {
+    //                         //saving
+    //                         $this->bankLogController->index($bank_account_company, "Loan Payment-Saving", $bank_log_comment, "Bank Deposit", "debit", $Saving_balance_tot_paid, $saving_id->Idbank, $savedId);
+    //                         $this->bankLogController->index($saving_id->Idbank, "Loan Payment-Saving", $bank_log_comment, "Bank Deposit", "credit", $Saving_balance_tot_paid, $bank_account_company, $savedId);
+    //                     }
+    //                 } else if ($payment_type === "Collector" || $payment_type === "Cashier") {
+    //                     if ($capital_balance_tot_paid > 0) {
+    //                         //capital
+    //                         $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Collector Deposit", "debit", $capital_balance_tot_paid, $capital_id->Idbank, $savedId);
+    //                         $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Collector Deposit", "credit", $capital_balance_tot_paid, $bank_account_company, $savedId);
+    //                     }
+
+    //                     if ($Interest_Balance_tot_paid > 0) {
+    //                         //interest
+    //                         $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Collector Deposit", "debit", $Interest_Balance_tot_paid, $interest_id->Idbank, $savedId);
+    //                         $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Collector Deposit", "credit", $Interest_Balance_tot_paid, $bank_account_company, $savedId);
+    //                     }
+
+    //                     if ($Panalty_Balance_tot_paid > 0) {
+    //                         //panelty
+    //                         $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Collector Deposit", "debit", $Panalty_Balance_tot_paid, $panelty_id->Idbank, $savedId);
+    //                         $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Collector Deposit", "credit", $Panalty_Balance_tot_paid, $bank_account_company, $savedId);
+    //                     }
+
+    //                     if ($Saving_balance_tot_paid > 0) {
+    //                         //saving
+    //                         $this->bankLogController->index($bank_account_company, "Loan Payment-Saving", $bank_log_comment, "Collector Deposit", "debit", $Saving_balance_tot_paid, $saving_id->Idbank, $savedId);
+    //                         $this->bankLogController->index($saving_id->Idbank, "Loan Payment-Saving", $bank_log_comment, "Collector Deposit", "credit", $Saving_balance_tot_paid, $bank_account_company, $savedId);
+    //                     }
+    //                 } else if ($payment_type === "Cash") {
+    //                     $bank_account_company = DB::table('company_bank_accounts')
+    //                         ->where('branch_id', session('branch_id'))
+    //                         ->whereRaw('LOWER(Account_No) = ?', ['cash'])  // Case-insensitive comparison
+    //                         ->value('Idbank');
+    //                     if ($capital_balance_tot_paid > 0) {
+    //                         //capital
+    //                         $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Cash", "debit", $capital_balance_tot_paid, $capital_id->Idbank, $savedId);
+    //                         $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Cash", "credit", $capital_balance_tot_paid, $bank_account_company, $savedId);
+    //                     }
+
+    //                     if ($Interest_Balance_tot_paid > 0) {
+    //                         //interest
+    //                         $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Cash", "debit", $Interest_Balance_tot_paid, $interest_id->Idbank, $savedId);
+    //                         $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Cash", "credit", $Interest_Balance_tot_paid, $bank_account_company, $savedId);
+    //                     }
+
+    //                     if ($Panalty_Balance_tot_paid > 0) {
+    //                         //panelty
+    //                         $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Cash", "debit", $Panalty_Balance_tot_paid, $panelty_id->Idbank, $savedId);
+    //                         $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Cash", "credit", $Panalty_Balance_tot_paid, $bank_account_company, $savedId);
+    //                     }
+
+    //                     if ($Saving_balance_tot_paid > 0) {
+    //                         //saving
+    //                         $this->bankLogController->index($bank_account_company, "Loan Payment-Saving", $bank_log_comment, "Cash", "debit", $Saving_balance_tot_paid, $saving_id->Idbank, $savedId);
+    //                         $this->bankLogController->index($saving_id->Idbank, "Loan Payment-Saving", $bank_log_comment, "Cash", "credit", $Saving_balance_tot_paid, $bank_account_company, $savedId);
+    //                     }
+    //                 } else if ($payment_type === "Cheque") {
+    //                     DB::table('cheque_details')->insert([
+    //                         'Date_Time' => date('Y-m-d H:i:s'),
+    //                         'Type' => "Receive",
+    //                         'Company_Account' => $cheque_issue_bank,
+    //                         'Description' => "Customer payment",
+    //                         'Amount' => $payment_amount,
+    //                         'Cheque_No' => $chq_number,
+    //                         'Cheque_Type' => $chq_type,
+    //                         'Name_On_The_Cheque' => $name_on_cheque,
+    //                         'Cheque_Date' => $chq_date,
+    //                         'Status' => '0',
+    //                         'Note' => '-',
+    //                         'Payment_id' => $savedId,
+    //                         'branch_id' => session('branch_id')
+    //                     ]);
+    //                     if ($capital_balance_tot_paid > 0) {
+    //                         //capital
+    //                         $this->bankLogController->index($bank_account_company_chq, "Loan Payment-Capital", $bank_log_comment, "Cheque Deposit", "debit", $capital_balance_tot_paid, $capital_id->Idbank, $savedId);
+    //                         $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Cheque Deposit", "credit", $capital_balance_tot_paid, $bank_account_company_chq, $savedId);
+    //                     }
+
+    //                     if ($Interest_Balance_tot_paid > 0) {
+    //                         //interest
+    //                         $this->bankLogController->index($bank_account_company_chq, "Loan Payment-Interest", $bank_log_comment, "Cheque Deposit", "debit", $Interest_Balance_tot_paid, $interest_id->Idbank, $savedId);
+    //                         $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Cheque Deposit", "credit", $Interest_Balance_tot_paid, $bank_account_company_chq, $savedId);
+    //                     }
+
+    //                     if ($Panalty_Balance_tot_paid > 0) {
+    //                         //panelty
+    //                         $this->bankLogController->index($bank_account_company_chq, "Loan Payment-Penalty", $bank_log_comment, "Cheque Deposit", "debit", $Panalty_Balance_tot_paid, $panelty_id->Idbank, $savedId);
+    //                         $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Cheque Deposit", "credit", $Panalty_Balance_tot_paid, $bank_account_company_chq, $savedId);
+    //                     }
+
+    //                     if ($Saving_balance_tot_paid > 0) {
+    //                         //saving
+    //                         $this->bankLogController->index($bank_account_company_chq, "Loan Payment-Saving", $bank_log_comment, "Cheque Deposit", "debit", $Saving_balance_tot_paid, $saving_id->Idbank, $savedId);
+    //                         $this->bankLogController->index($saving_id->Idbank, "Loan Payment-Saving", $bank_log_comment, "Cheque Deposit", "credit", $Saving_balance_tot_paid, $bank_account_company_chq, $savedId);
+    //                     }
+    //                 }
+    //             }
+
+
+    //             $saving_account = tableWithBranch('Customer_Saving_Accounts')
+    //                 ->where('Loan_Id', '=', $loan_id)
+    //                 ->first();
+    //             if ($enable_saving_process == "Yes") {
+    //                 $this->SavingAccountController->index($saving_account->id, 'Deposit', 'Payment', $Saving_balance_tot_paid, '0.00', $Saving_balance_tot_paid, 'Credit', $savedId);
+    //             }
+
+    //             $customer_payment = DB::table('customer_payments')->where('idCustomer_Payments', '=', $savedId)->first();
+    //             $loan = DB::table('customer_loan')->where('idCustomer_Loan', '=', $loan_id)->first();
+    //             $sms_template = tableWithBranch('sms_template')->where('type', '=', 'loan_payment')->where('status', '=', '1')->first();
+    //             if ($sms_template) {
+    //                 $customer = DB::table('customer')->where('idCustomer', '=', $loan->Customer_idCustomer)->first();
+    //                 $arrears = DB::table('installments')
+    //                     ->where('installments.Customer_Loan_idCustomer_Loan', $loan_id)
+    //                     ->where('installments.Status', '=', '0')
+    //                     ->where('installments.Installment_Date', '<', date('Y-m-d'))
+    //                     ->sum('installments.Total_Balance');
+
+    //                 $arrears = $arrears ?? 0;
+
+    //                 $loan_balance = DB::table('installments')
+    //                     ->where('Customer_Loan_idCustomer_Loan', $loan_id)
+    //                     ->sum('Total_Balance');
+    //                 $loan_balance = $loan_balance ?? 0;
+
+
+    //                 $loan_balance = DB::table('installments')
+    //                     ->where('installments.Customer_Loan_idCustomer_Loan', $loan_id)
+    //                     ->where('installments.Status', '=', '0')
+    //                     ->sum('installments.Total_Balance');
+    //                 $loan_balance = $loan_balance ?? 0;
+
+    //                 $placeholders = [
+    //                     '@Member_No@'        => $customer->cus_number,
+    //                     '@Member_Name@'      => $customer->First_Name . ' ' . $customer->Last_Name,
+    //                     '@Loan_No@'          => $loan->Loan_No,
+    //                     '@Payment_Date@'     => $customer_payment->Date,
+    //                     '@Paid_Amount@'      => number_format($customer_payment->Amount, 2, '.', ','),
+    //                     '@Loan_Balance@'     => number_format($loan_balance, 2, '.', ','),
+    //                     '@Capital_Balance@'  => number_format($loan->capital_balance, 2, '.', ','),
+    //                     '@Pending_Total@'  => number_format($arrears, 2, '.', ','),
+    //                 ];
+
+    //                 // Step 3: Replace placeholders in the loan_format
+    //                 $loan_number_txt = $sms_template->template;
+    //                 foreach ($placeholders as $placeholder => $value) {
+    //                     $loan_number_txt = str_replace($placeholder, $value, $loan_number_txt);
+    //                 }
+    //                 if ($sms_status == '1') {
+    //                     DB::afterCommit(function () use ($loan, $loan_number_txt, $savedId) {
+    //                         dispatch(new SendPaymentSmsJob(
+    //                             paymentId: (int)$savedId,
+    //                             loanId: (int)$loan->idCustomer_Loan ?? (int)$loan->idCustomer_Loan ?? 0, // ensure numeric
+    //                             customerId: (int)$loan->Customer_idCustomer,
+    //                             message: $loan_number_txt
+    //                         ))->onQueue('sms');
+    //                     });
+    //                 }
+    //             }
+
+
+    //             return response()->json(['item' => 'sucess', 'id' => '1', 'test' => "1", 'payment_id' => $savedId], 200);
+    //         } else if ($type === "Draft") {
+
+    //             $installments = tableWithBranch('installments')
+    //                 ->where('Customer_Loan_idCustomer_Loan', '=', $loan_id)
+    //                 ->where('Status', '=', '0')
+    //                 ->orderBy('idInstallments')
+    //                 ->get();
+
+    //             $slipPath = null;
+    //             if ($request->hasFile('file')) {
+    //                 $file = $request->file('file');
+    //                 $directory = 'payment_slip';
+
+    //                 // Check if the directory exists on the public disk, create it if not
+    //                 if (!Storage::disk('public')->exists($directory)) {
+    //                     Storage::disk('public')->makeDirectory($directory);
+    //                 }
+
+    //                 // Store the file on the public disk
+    //                 $slipPath = Storage::disk('public')->putFile($directory, $file);
+    //             }
+
+    //             $savedId = 0;
+    //             $comment = '-';
+    //             if ($cheque_accept != "0") {
+    //                 $comment = 'Cheque Accepted ! Cheque No : ' . $chq_number . ' Cheque Date : ' . $chq_date . ' Cheque Type : ' . $chq_type;
+    //             }
+    //             $savedId = DB::table('customer_payments')->insertGetId([
+    //                 'comment' => $comment,
+    //                 'Date' => $payment_date,
+    //                 'Description' => 'Payment',
+    //                 'Amount' => $payment_amount,
+    //                 'Customer_Loan_idCustomer_Loan' => $loan_id,
+    //                 'User_idUser' => $user_id,
+    //                 'time' => Carbon::now()->format('H:i:s'),
+    //                 'Slip' => $slipPath,
+    //                 'Payment_type' => $payment_type,
+    //                 'branch_id' => session('branch_id')
+    //             ]);
+
+    //             $customer_loan = tableWithBranch('customer_loan')->where('idCustomer_Loan', '=', $loan_id)->first();
+
+    //             $customer_table = tableWithBranch('customer')
+    //                 ->where('idCustomer', '=', $customer_loan->Customer_idCustomer)
+    //                 ->first();
+
+    //             $newpayment_amount = number_format($payment_amount, 2);
+    //             DB::table('customer_log')->insert([
+    //                 'customer_id' => $customer_loan->Customer_idCustomer,
+    //                 'customer_name' => $customer_table->First_Name . ' ' . $customer_table->Last_Name,
+    //                 'date' => $payment_date,
+    //                 'time' => date('H:i:s'),
+    //                 'description' => "Payment Amount :({$newpayment_amount})\nLoan Id : {$loan_id}",
+    //                 'description_id' => $loan_id,
+    //                 'comment' => ' ',
+    //                 'type' => 'Payment',
+    //                 'user' => user_data('idUser'),
+    //                 'points' => $points_to_add,
+    //                 'branch_id' => session('branch_id')
+    //             ]);
+
+    //             $Panalty_Balance_tot_paid = 0;
+    //             $Interest_Balance_tot_paid = 0;
+    //             $capital_balance_tot_paid = 0;
+    //             $Saving_balance_tot_paid = 0;
+    //             $Total_Balance_tot_paid = 0;
+    //             $New_Total_paid = 0;
+    //             $current_payment_amount = $payment_amount;
+
+
+    //             foreach ($installments as $item) {
+    //                 if ($payment_amount > 0) {
+    //                     $Panalty_Balance = $item->Panalty_Balance;
+    //                     $Interest_Balance = $item->Interest_Balance;
+    //                     $capital_balance = $item->capital_balance;
+    //                     $Saving_balance = $item->Saving_balance;
+    //                     $Total_Balance = $item->Total_Balance;
+    //                     $Status = $item->Status;
+
+
+    //                     $idInstallments = $item->idInstallments;
+
+
+    //                     if ($current_payment_amount >= ($Panalty_Balance + $Interest_Balance + $capital_balance + $Saving_balance)) {
+
+    //                         $Panalty_Balance_tot_paid += $Panalty_Balance;
+    //                         $Interest_Balance_tot_paid += $Interest_Balance;
+    //                         $capital_balance_tot_paid += $capital_balance;
+    //                         $Saving_balance_tot_paid += $Saving_balance;
+
+
+    //                         $New_Total_paid = $Total_Balance;
+    //                         $current_payment_amount -= $Total_Balance;
+
+    //                         $Panalty_Balance = 0;
+    //                         $Interest_Balance = 0;
+    //                         $capital_balance = 0;
+    //                         $Saving_balance = 0;
+    //                         $Total_Balance = 0;
+    //                         $Status = "1";
+    //                     } else if ($current_payment_amount >= ($Panalty_Balance + $Interest_Balance + $capital_balance)) {
+
+    //                         $New_Saving_payment = $current_payment_amount - ($Panalty_Balance + $Interest_Balance + $capital_balance);
+    //                         $New_Saving_balance = $Saving_balance - $New_Saving_payment;
+
+
+    //                         $New_Total_paid = $Panalty_Balance + $Interest_Balance + $capital_balance + $New_Saving_payment;
+
+    //                         $New_Total_Balance = $New_Saving_balance;
+
+
+    //                         $current_payment_amount -= $New_Total_paid;
+
+    //                         $Panalty_Balance_tot_paid += $Panalty_Balance;
+    //                         $Interest_Balance_tot_paid += $Interest_Balance;
+    //                         $capital_balance_tot_paid += $capital_balance;
+    //                         $Saving_balance_tot_paid += $New_Saving_payment;
+
+    //                         $Panalty_Balance = 0;
+    //                         $Interest_Balance = 0;
+    //                         $capital_balance = 0;
+    //                         $Saving_balance = $New_Saving_balance;
+    //                         $Total_Balance = $New_Total_Balance;
+    //                     } else if ($current_payment_amount >= ($Panalty_Balance + $Interest_Balance)) {
+
+    //                         $New_Capital_payment = $current_payment_amount - ($Panalty_Balance + $Interest_Balance);
+    //                         $New_Capital_balance = $capital_balance - $New_Capital_payment;
+
+
+    //                         $New_Total_paid = $Panalty_Balance + $Interest_Balance + $New_Capital_payment;
+
+    //                         $New_Total_Balance = $New_Capital_balance + $Saving_balance;
+
+
+    //                         $current_payment_amount -= $New_Total_paid;
+
+
+    //                         $Panalty_Balance_tot_paid += $Panalty_Balance;
+    //                         $Interest_Balance_tot_paid += $Interest_Balance;
+    //                         $capital_balance_tot_paid += $New_Capital_payment;
+    //                         $Saving_balance_tot_paid += 0.00;
+
+    //                         $Panalty_Balance = 0;
+    //                         $Interest_Balance = 0;
+    //                         $capital_balance = $New_Capital_balance;
+    //                         $Total_Balance = $New_Total_Balance;
+    //                     } else if ($current_payment_amount >= ($Panalty_Balance)) {
+
+    //                         $New_Interest_payment = $current_payment_amount - ($Panalty_Balance);
+    //                         $New_Interest_balance = $Interest_Balance - $New_Interest_payment;
+
+
+    //                         $New_Total_paid = $Panalty_Balance + $New_Interest_payment;
+
+    //                         $New_Total_Balance = $New_Interest_balance + $Saving_balance + $capital_balance;
+
+
+    //                         $current_payment_amount -= $New_Total_paid;
+
+    //                         $Panalty_Balance_tot_paid += $Panalty_Balance;
+    //                         $Interest_Balance_tot_paid += $New_Interest_payment;
+    //                         $capital_balance_tot_paid += 0.00;
+    //                         $Saving_balance_tot_paid += 0.00;
+
+    //                         $Panalty_Balance = 0;
+    //                         $Interest_Balance = $New_Interest_balance;
+    //                         $Total_Balance = $New_Total_Balance;
+    //                     } else {
+
+    //                         $New_Panelty_payment = $current_payment_amount;
+    //                         $New_Panelty_balance = $Panalty_Balance - $New_Panelty_payment;
+
+
+    //                         $New_Total_paid = $New_Panelty_payment;
+
+    //                         $New_Total_Balance = $Interest_Balance + $Saving_balance + $capital_balance + $New_Panelty_balance;
+
+    //                         $current_payment_amount -= $New_Total_paid;
+
+    //                         $Panalty_Balance_tot_paid += $New_Panelty_payment;
+    //                         $Interest_Balance_tot_paid += 0.00;
+    //                         $capital_balance_tot_paid += 0.00;
+    //                         $Saving_balance_tot_paid += 0.00;
+
+
+    //                         $Panalty_Balance = $New_Panelty_balance;
+    //                         $Total_Balance = $New_Total_Balance;
+    //                     }
+
+
+    //                     DB::table('installments')
+    //                         ->where('idInstallments', $idInstallments)
+    //                         ->where('branch_id', session('branch_id'))
+    //                         ->update([
+    //                             'Status' => $Status,
+    //                             'Panelty_status' => '2',
+    //                             'Paid_Amount' => DB::raw('Paid_Amount + ' . $New_Total_paid),
+    //                             'Total_Balance' => $Total_Balance,
+    //                             'Panalty_Balance' => $Panalty_Balance,
+    //                             'Interest_Balance' => $Interest_Balance,
+    //                             'capital_balance' => $capital_balance,
+    //                             'Saving_balance' => $Saving_balance,
+
+    //                         ]);
+
+
+    //                     DB::table('installment_log')->insert([
+    //                         'Installments_idInstallments' => $idInstallments,
+    //                         'Date' => $payment_date . ' ' . $time,
+    //                         'Description' => 'Payment : ' . $payment_amount,
+    //                         'Amount' => $New_Total_paid,
+    //                         'Panalty_Total' => $Panalty_Balance,
+    //                         'Interest_Balance' => $Interest_Balance,
+    //                         'Capital_balance' => $capital_balance,
+    //                         'Saving_balance' => $Saving_balance,
+    //                         'Total_Balance' => $Total_Balance,
+    //                         'User_idUser' => $user_id,
+    //                         'branch_id' => session('branch_id')
+    //                     ]);
+    //                 }
+    //             }
+
+
+    //             $loan_log = tableWithBranch('Loan_Log')
+    //                 ->where('Loan_ID', '=', $loan_id)
+    //                 ->orderBy('Loan_Log_ID', 'desc')  // Assuming 'id' is the primary key or auto-increment column
+    //                 ->first();
+
+    //             $Panelty_Balance_Log = $loan_log->Panelty_Balance;
+    //             $Interest_Balance_Log = $loan_log->Interest_Balance;
+    //             $Capital_Balance_Log = $loan_log->Capital_Balance;
+    //             $Saving_Balance_Log = $loan_log->Saving_Account_Balance;
+    //             //                $new_payment_amount
+
+
+    //             $Panelty_Balance_Log -= $Panalty_Balance_tot_paid;
+    //             $Interest_Balance_Log -= $Interest_Balance_tot_paid;
+    //             $Capital_Balance_Log -= $capital_balance_tot_paid;
+    //             $Saving_Balance_Log -= $Saving_balance_tot_paid;
+
+    //             $Total_Pending_Balance_Log = $Panelty_Balance_Log + $Interest_Balance_Log + $Capital_Balance_Log + $Saving_Balance_Log;
+
+
+    //             $this->loanLogController->index(
+    //                 $loan_id,
+    //                 'Customer Payment',
+    //                 $savedId,
+    //                 'Customer Payment',
+    //                 $payment_amount,
+    //                 $Panalty_Balance_tot_paid,
+    //                 $Interest_Balance_tot_paid,
+    //                 $capital_balance_tot_paid,
+    //                 $Saving_balance_tot_paid,
+    //                 $Panelty_Balance_Log,
+    //                 $Interest_Balance_Log,
+    //                 $Capital_Balance_Log,
+    //                 $Total_Pending_Balance_Log,
+    //                 $Saving_Balance_Log
+    //             );
+    //             $this->capitalBalanceController->index($loan_id);
+
+
+
+    //             $loan_for_bank = tableWithBranch('customer_loan')
+    //                 ->where('idCustomer_Loan', '=', $loan_id)
+    //                 ->first();
+    //             $bank_log_comment = "Loan Number : {$loan_for_bank->Loan_No}";
+    //             $bank_account_company = $request->bank_account_company;
+
+    //             $capital_id = tableWithBranch('company_bank_accounts')
+    //                 ->where('Bank_Type', '=', 'System_default_1')
+    //                 ->first();
+
+    //             $interest_id = tableWithBranch('company_bank_accounts')
+    //                 ->where('Bank_Type', '=', 'System_default_2')
+    //                 ->first();
+
+    //             $panelty_id = tableWithBranch('company_bank_accounts')
+    //                 ->where('Bank_Type', '=', 'System_default_5')
+    //                 ->first();
+
+
+    //             if ($payment_type === "Bank Deposit") {
+    //                 if ($capital_balance_tot_paid > 0) {
+    //                     //capital
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Bank Deposit", "debit", $capital_balance_tot_paid, $capital_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Bank Deposit", "credit", $capital_balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+
+    //                 if ($Interest_Balance_tot_paid > 0) {
+    //                     //interest
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Bank Deposit", "debit", $Interest_Balance_tot_paid, $interest_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Bank Deposit", "credit", $Interest_Balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+
+    //                 if ($Panalty_Balance_tot_paid > 0) {
+    //                     //panelty
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Bank Deposit", "debit", $Panalty_Balance_tot_paid, $panelty_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Bank Deposit", "credit", $Panalty_Balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+    //             } else if ($payment_type === "Collector" || $payment_type === "Cashier") {
+    //                 if ($capital_balance_tot_paid > 0) {
+    //                     //capital
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Collector Deposit", "debit", $capital_balance_tot_paid, $capital_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Collector Deposit", "credit", $capital_balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+
+    //                 if ($Interest_Balance_tot_paid > 0) {
+    //                     //interest
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Collector Deposit", "debit", $Interest_Balance_tot_paid, $interest_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Collector Deposit", "credit", $Interest_Balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+
+    //                 if ($Panalty_Balance_tot_paid > 0) {
+    //                     //panelty
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Collector Deposit", "debit", $Panalty_Balance_tot_paid, $panelty_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Collector Deposit", "credit", $Panalty_Balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+    //             } else if ($payment_type === "Cash") {
+    //                 $bank_account_company = DB::table('company_bank_accounts')
+    //                     ->where('branch_id', session('branch_id'))
+    //                     ->whereRaw('LOWER(Account_No) = ?', ['cash'])  // Case-insensitive comparison
+    //                     ->value('Idbank');
+    //                 if ($capital_balance_tot_paid > 0) {
+    //                     //capital
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Cash", "debit", $capital_balance_tot_paid, $capital_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Cash", "credit", $capital_balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+
+    //                 if ($Interest_Balance_tot_paid > 0) {
+    //                     //interest
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Cash", "debit", $Interest_Balance_tot_paid, $interest_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Cash", "credit", $Interest_Balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+
+    //                 if ($Panalty_Balance_tot_paid > 0) {
+    //                     //panelty
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Cash", "debit", $Panalty_Balance_tot_paid, $panelty_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Cash", "credit", $Panalty_Balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+    //             } else if ($payment_type === "Cheque") {
+    //                 DB::table('cheque_details')->insert([
+    //                     'Date_Time' => date('Y-m-d H:i:s'),
+    //                     'Type' => "Receive",
+    //                     'Company_Account' => $cheque_issue_bank,
+    //                     'Description' => "Customer payment",
+    //                     'Amount' => $payment_amount,
+    //                     'Cheque_No' => $chq_number,
+    //                     'Cheque_Type' => $chq_type,
+    //                     'Name_On_The_Cheque' => $name_on_cheque,
+    //                     'Cheque_Date' => $chq_date,
+    //                     'Status' => '0',
+    //                     'Note' => '-',
+    //                     'Payment_id' => $savedId,
+    //                     'branch_id' => session('branch_id')
+    //                 ]);
+    //             }
+
+
+
+
+    //             if ($enable_saving_process == "Yes") {
+    //                 $saving_account = tableWithBranch('Customer_Saving_Accounts')
+    //                     ->where('Loan_Id', '=', $loan_id)
+    //                     ->first();
+    //                 $this->SavingAccountController->index($saving_account->id, 'Deposit', 'Payment', $Saving_balance_tot_paid, '0.00', $Saving_balance_tot_paid, 'Credit');
+    //             }
+    //             return response()->json(['item' => 'sucess', 'id' => '1', 'test' => "1", 'payment_id' => $savedId], 200);
+    //         } else if ($type === "Reducing Balance") {
+
+    //             $installments = DB::table('installments')
+    //                 ->where('Customer_Loan_idCustomer_Loan', '=', $loan_id)
+    //                 ->where('Status', '=', '0')
+    //                 ->where('branch_id', session('branch_id'))
+    //                 ->orderBy('idInstallments')
+    //                 ->get();
+
+    //             $slipPath = null;
+    //             if ($request->hasFile('file')) {
+    //                 $file = $request->file('file');
+    //                 $directory = 'payment_slip';
+
+    //                 // Check if the directory exists on the public disk, create it if not
+    //                 if (!Storage::disk('public')->exists($directory)) {
+    //                     Storage::disk('public')->makeDirectory($directory);
+    //                 }
+
+    //                 // Store the file on the public disk
+    //                 $slipPath = Storage::disk('public')->putFile($directory, $file);
+    //             }
+
+    //             $savedId = 0;
+    //             $comment = '-';
+    //             if ($cheque_accept != "0") {
+    //                 $comment = 'Cheque Accepted ! Cheque No : ' . $chq_number . ' Cheque Date : ' . $chq_date . ' Cheque Type : ' . $chq_type;
+    //             }
+
+    //             $saving_payment_type = "0";
+    //             if ($loan_category) {
+    //                 if ($loan_category->enable_saving_process == "Yes") {
+    //                     $saving_payment_type = $loan_category->saving_payment;
+    //                 }
+    //             }
+
+
+
+
+
+    //             if ($saving_payment_type == "0") {
+    //                 $savedId = DB::table('customer_payments')->insertGetId([
+    //                     'comment' => $comment,
+    //                     'Date' => $payment_date,
+    //                     'Description' => 'Payment',
+    //                     'Amount' => $payment_amount,
+    //                     'Customer_Loan_idCustomer_Loan' => $loan_id,
+    //                     'User_idUser' => $user_id,
+    //                     'time' => Carbon::now()->format('H:i:s'),
+    //                     'Slip' => $slipPath,
+    //                     'Payment_type' => $payment_type,
+    //                     'branch_id' => session('branch_id')
+    //                 ]);
+    //             } else {
+    //                 $new_payment_amount = $payment_amount + $type_saving_amount;
+    //                 $savedId = DB::table('customer_payments')->insertGetId([
+    //                     'comment' => $comment,
+    //                     'Date' => $payment_date,
+    //                     'Description' => 'Payment',
+    //                     'Amount' => $new_payment_amount,
+    //                     'Customer_Loan_idCustomer_Loan' => $loan_id,
+    //                     'User_idUser' => $user_id,
+    //                     'time' => Carbon::now()->format('H:i:s'),
+    //                     'Slip' => $slipPath,
+    //                     'Payment_type' => $payment_type,
+    //                     'branch_id' => session('branch_id')
+    //                 ]);
+    //             }
+
+
+    //             $customer_loan = tableWithBranch('customer_loan')->where('idCustomer_Loan', '=', $loan_id)->first();
+
+    //             $customer_table = tableWithBranch('customer')
+    //                 ->where('idCustomer', '=', $customer_loan->Customer_idCustomer)
+    //                 ->first();
+
+    //             $newpayment_amount = number_format($payment_amount, 2);
+    //             DB::table('customer_log')->insert([
+    //                 'customer_id' => $customer_loan->Customer_idCustomer,
+    //                 'customer_name' => $customer_table->First_Name . ' ' . $customer_table->Last_Name,
+    //                 'date' => $payment_date,
+    //                 'time' => date('H:i:s'),
+    //                 'description' => "Payment Amount :({$newpayment_amount})\nLoan Id : {$loan_id}",
+    //                 'description_id' => $loan_id,
+    //                 'comment' => ' ',
+    //                 'type' => 'Payment',
+    //                 'user' => user_data('idUser'),
+    //                 'points' => $points_to_add,
+    //                 'branch_id' => session('branch_id')
+    //             ]);
+
+    //             $Panalty_Balance_tot_paid = 0;
+    //             $Interest_Balance_tot_paid = 0;
+    //             $capital_balance_tot_paid = 0;
+    //             $Saving_balance_tot_paid = 0;
+
+    //             $current_payment_amount = $payment_amount;
+
+
+    //             foreach ($installments as $item) {
+    //                 if ($payment_amount > 0) {
+    //                     $Panalty_Balance = $item->Panalty_Balance;
+    //                     $Interest_Balance = $item->Interest_Balance;
+    //                     $capital_balance = $item->capital_balance;
+    //                     $Saving_balance = $item->Saving_balance;
+    //                     $Total_Balance = $item->Total_Balance;
+    //                     $Status = $item->Status;
+
+
+    //                     $idInstallments = $item->idInstallments;
+
+
+    //                     if ($current_payment_amount >= ($Panalty_Balance + $Interest_Balance + $capital_balance + $Saving_balance)) {
+
+    //                         $Panalty_Balance_tot_paid += $Panalty_Balance;
+    //                         $Interest_Balance_tot_paid += $Interest_Balance;
+    //                         $capital_balance_tot_paid += $capital_balance;
+    //                         $Saving_balance_tot_paid += $Saving_balance;
+
+
+    //                         $New_Total_paid = $Total_Balance;
+    //                         $current_payment_amount -= $Total_Balance;
+
+    //                         $Panalty_Balance = 0;
+    //                         $Interest_Balance = 0;
+    //                         $capital_balance = 0;
+    //                         $Saving_balance = 0;
+    //                         $Total_Balance = 0;
+    //                         $Status = "1";
+    //                     } else if ($current_payment_amount >= ($Panalty_Balance + $Interest_Balance + $capital_balance)) {
+
+    //                         $New_Saving_payment = $current_payment_amount - ($Panalty_Balance + $Interest_Balance + $capital_balance);
+    //                         $New_Saving_balance = $Saving_balance - $New_Saving_payment;
+
+
+    //                         $New_Total_paid = $Panalty_Balance + $Interest_Balance + $capital_balance + $New_Saving_payment;
+
+    //                         $New_Total_Balance = $New_Saving_balance;
+
+
+    //                         $current_payment_amount -= $New_Total_paid;
+
+    //                         $Panalty_Balance_tot_paid += $Panalty_Balance;
+    //                         $Interest_Balance_tot_paid += $Interest_Balance;
+    //                         $capital_balance_tot_paid += $capital_balance;
+    //                         $Saving_balance_tot_paid += $New_Saving_payment;
+
+    //                         $Panalty_Balance = 0;
+    //                         $Interest_Balance = 0;
+    //                         $capital_balance = 0;
+    //                         $Saving_balance = $New_Saving_balance;
+    //                         $Total_Balance = $New_Total_Balance;
+    //                     } else if ($current_payment_amount >= ($Panalty_Balance + $Interest_Balance)) {
+
+    //                         $New_Capital_payment = $current_payment_amount - ($Panalty_Balance + $Interest_Balance);
+    //                         $New_Capital_balance = $capital_balance - $New_Capital_payment;
+
+
+    //                         $New_Total_paid = $Panalty_Balance + $Interest_Balance + $New_Capital_payment;
+
+    //                         $New_Total_Balance = $New_Capital_balance + $Saving_balance;
+
+
+    //                         $current_payment_amount -= $New_Total_paid;
+
+
+    //                         $Panalty_Balance_tot_paid += $Panalty_Balance;
+    //                         $Interest_Balance_tot_paid += $Interest_Balance;
+    //                         $capital_balance_tot_paid += $New_Capital_payment;
+    //                         $Saving_balance_tot_paid += 0.00;
+
+    //                         $Panalty_Balance = 0;
+    //                         $Interest_Balance = 0;
+    //                         $capital_balance = $New_Capital_balance;
+    //                         $Total_Balance = $New_Total_Balance;
+    //                     } else if ($current_payment_amount >= ($Panalty_Balance)) {
+
+    //                         $New_Interest_payment = $current_payment_amount - ($Panalty_Balance);
+    //                         $New_Interest_balance = $Interest_Balance - $New_Interest_payment;
+
+
+    //                         $New_Total_paid = $Panalty_Balance + $New_Interest_payment;
+
+    //                         $New_Total_Balance = $New_Interest_balance + $Saving_balance + $capital_balance;
+
+
+    //                         $current_payment_amount -= $New_Total_paid;
+
+    //                         $Panalty_Balance_tot_paid += $Panalty_Balance;
+    //                         $Interest_Balance_tot_paid += $New_Interest_payment;
+    //                         $capital_balance_tot_paid += 0.00;
+    //                         $Saving_balance_tot_paid += 0.00;
+
+    //                         $Panalty_Balance = 0;
+    //                         $Interest_Balance = $New_Interest_balance;
+    //                         $Total_Balance = $New_Total_Balance;
+    //                     } else {
+
+    //                         $New_Panelty_payment = $current_payment_amount;
+    //                         $New_Panelty_balance = $Panalty_Balance - $New_Panelty_payment;
+
+
+    //                         $New_Total_paid = $New_Panelty_payment;
+
+    //                         $New_Total_Balance = $Interest_Balance + $Saving_balance + $capital_balance + $New_Panelty_balance;
+
+    //                         $current_payment_amount -= $New_Total_paid;
+
+    //                         $Panalty_Balance_tot_paid += $New_Panelty_payment;
+    //                         $Interest_Balance_tot_paid += 0.00;
+    //                         $capital_balance_tot_paid += 0.00;
+    //                         $Saving_balance_tot_paid += 0.00;
+
+
+    //                         $Panalty_Balance = $New_Panelty_balance;
+    //                         $Total_Balance = $New_Total_Balance;
+    //                     }
+
+
+    //                     DB::table('installments')
+    //                         ->where('idInstallments', $idInstallments)
+    //                         ->where('branch_id', session('branch_id'))
+    //                         ->update([
+    //                             'Status' => $Status,
+    //                             'Panelty_status' => '2',
+    //                             'Paid_Amount' => DB::raw('Paid_Amount + ' . $New_Total_paid),
+    //                             'Total_Balance' => $Total_Balance,
+    //                             'Panalty_Balance' => $Panalty_Balance,
+    //                             'Interest_Balance' => $Interest_Balance,
+    //                             'capital_balance' => $capital_balance,
+    //                             'Saving_balance' => $Saving_balance,
+    //                         ]);
+
+
+    //                     DB::table('installment_log')->insert([
+    //                         'Installments_idInstallments' => $idInstallments,
+    //                         'Date' => $payment_date . ' ' . $time,
+    //                         'Description' => 'Payment : ' . $payment_amount,
+    //                         'Amount' => $New_Total_paid,
+    //                         'Panalty_Total' => $Panalty_Balance,
+    //                         'Interest_Balance' => $Interest_Balance,
+    //                         'Capital_balance' => $capital_balance,
+    //                         'Saving_balance' => $Saving_balance,
+    //                         'Total_Balance' => $Total_Balance,
+    //                         'User_idUser' => $user_id,
+    //                         'branch_id' => session('branch_id')
+    //                     ]);
+    //                 }
+    //             }
+
+
+    //             $loan_log = DB::table('Loan_Log')
+    //                 ->where('Loan_ID', '=', $loan_id)
+    //                 ->orderBy('Loan_Log_ID', 'desc')  // Assuming 'id' is the primary key or auto-increment column
+    //                 ->first();
+
+    //             $Panelty_Balance_Log = $loan_log->Panelty_Balance;
+    //             $Interest_Balance_Log = $loan_log->Interest_Balance;
+    //             $Capital_Balance_Log = $loan_log->Capital_Balance;
+    //             $Saving_Balance_Log = $loan_log->Saving_Account_Balance;
+
+
+    //             $Panelty_Balance_Log -= $Panalty_Balance_tot_paid;
+    //             $Interest_Balance_Log -= $Interest_Balance_tot_paid;
+    //             $Capital_Balance_Log -= $capital_balance_tot_paid;
+
+    //             if ($enable_saving_process == "Yes") {
+    //                 if ($saving_payment_type == "0") {
+    //                     $Saving_Balance_Log += $Saving_balance_tot_paid;
+    //                 } else {
+    //                     $Saving_Balance_Log += $type_saving_amount;
+    //                     $Saving_balance_tot_paid = $type_saving_amount;
+    //                 }
+    //             }
+
+
+    //             $Total_Pending_Balance_Log = $Panelty_Balance_Log + $Interest_Balance_Log + $Capital_Balance_Log;
+    //             $saving_balance = round($installments->sum('Saving_Account_Balance'), 2);
+    //             if (!$saving_balance > 0) {
+    //                 $Total_Pending_Balance_Log = $Panelty_Balance_Log + $Interest_Balance_Log + $Capital_Balance_Log + $Saving_Balance_Log;
+    //             }
+
+
+    //             $this->loanLogController->index(
+    //                 $loan_id,
+    //                 'Customer Payment',
+    //                 $savedId,
+    //                 'Customer Payment',
+    //                 $payment_amount,
+    //                 $Panalty_Balance_tot_paid,
+    //                 $Interest_Balance_tot_paid,
+    //                 $capital_balance_tot_paid,
+    //                 $Saving_balance_tot_paid,
+    //                 $Panelty_Balance_Log,
+    //                 $Interest_Balance_Log,
+    //                 $Capital_Balance_Log,
+    //                 $Total_Pending_Balance_Log,
+    //                 $Saving_Balance_Log
+    //             );
+    //             $this->capitalBalanceController->index($loan_id);
+
+
+    //             $loan_for_bank = tableWithBranch('customer_loan')
+    //                 ->where('idCustomer_Loan', '=', $loan_id)
+    //                 ->first();
+    //             $bank_log_comment = "Loan Number : {$loan_for_bank->Loan_No}";
+    //             $bank_account_company = $request->bank_account_company;
+
+    //             $capital_id = tableWithBranch('company_bank_accounts')
+    //                 ->where('Bank_Type', '=', 'System_default_1')
+    //                 ->first();
+
+    //             $interest_id = tableWithBranch('company_bank_accounts')
+    //                 ->where('Bank_Type', '=', 'System_default_2')
+    //                 ->first();
+
+    //             $panelty_id = tableWithBranch('company_bank_accounts')
+    //                 ->where('Bank_Type', '=', 'System_default_5')
+    //                 ->first();
+
+    //             $saving_id = tableWithBranch('company_bank_accounts')
+    //                 ->where('Bank_Type', '=', 'System_default_10')
+    //                 ->first();
+    //             if ($payment_type === "Bank Deposit") {
+    //                 if ($capital_balance_tot_paid > 0) {
+    //                     //capital
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Bank Deposit", "debit", $capital_balance_tot_paid, $capital_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Bank Deposit", "credit", $capital_balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+
+    //                 if ($Interest_Balance_tot_paid > 0) {
+    //                     //interest
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Bank Deposit", "debit", $Interest_Balance_tot_paid, $interest_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Bank Deposit", "credit", $Interest_Balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+
+    //                 if ($Panalty_Balance_tot_paid > 0) {
+    //                     //panelty
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Bank Deposit", "debit", $Panalty_Balance_tot_paid, $panelty_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Bank Deposit", "credit", $Panalty_Balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+
+    //                 if ($Saving_balance_tot_paid > 0) {
+    //                     //saving
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Saving", $bank_log_comment, "Bank Deposit", "debit", $Saving_balance_tot_paid, $saving_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($saving_id->Idbank, "Loan Payment-Saving", $bank_log_comment, "Bank Deposit", "credit", $Saving_balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+    //             } else if ($payment_type === "Collector" || $payment_type === "Cashier") {
+    //                 if ($capital_balance_tot_paid > 0) {
+    //                     //capital
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Collector Deposit", "debit", $capital_balance_tot_paid, $capital_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Collector Deposit", "credit", $capital_balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+
+    //                 if ($Interest_Balance_tot_paid > 0) {
+    //                     //interest
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Collector Deposit", "debit", $Interest_Balance_tot_paid, $interest_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Collector Deposit", "credit", $Interest_Balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+
+    //                 if ($Panalty_Balance_tot_paid > 0) {
+    //                     //panelty
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Collector Deposit", "debit", $Panalty_Balance_tot_paid, $panelty_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Collector Deposit", "credit", $Panalty_Balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+
+    //                 if ($Saving_balance_tot_paid > 0) {
+    //                     //saving
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Saving", $bank_log_comment, "Collector Deposit", "debit", $Saving_balance_tot_paid, $saving_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($saving_id->Idbank, "Loan Payment-Saving", $bank_log_comment, "Collector Deposit", "credit", $Saving_balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+    //             } else if ($payment_type === "Cash") {
+    //                 $bank_account_company = DB::table('company_bank_accounts')
+    //                     ->where('branch_id', session('branch_id'))
+    //                     ->whereRaw('LOWER(Account_No) = ?', ['cash'])  // Case-insensitive comparison
+    //                     ->value('Idbank');
+    //                 if ($capital_balance_tot_paid > 0) {
+    //                     //capital
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Capital", $bank_log_comment, "Cash", "debit", $capital_balance_tot_paid, $capital_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($capital_id->Idbank, "Loan Payment-Capital", $bank_log_comment, "Cash", "credit", $capital_balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+
+    //                 if ($Interest_Balance_tot_paid > 0) {
+    //                     //interest
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Interest", $bank_log_comment, "Cash", "debit", $Interest_Balance_tot_paid, $interest_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($interest_id->Idbank, "Loan Payment-Interest", $bank_log_comment, "Cash", "credit", $Interest_Balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+
+    //                 if ($Panalty_Balance_tot_paid > 0) {
+    //                     //panelty
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Penalty", $bank_log_comment, "Cash", "debit", $Panalty_Balance_tot_paid, $panelty_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($panelty_id->Idbank, "Loan Payment-Penalty", $bank_log_comment, "Cash", "credit", $Panalty_Balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+
+    //                 if ($Saving_balance_tot_paid > 0) {
+    //                     //saving
+    //                     $this->bankLogController->index($bank_account_company, "Loan Payment-Saving", $bank_log_comment, "Cash", "debit", $Saving_balance_tot_paid, $saving_id->Idbank, $savedId);
+    //                     $this->bankLogController->index($saving_id->Idbank, "Loan Payment-Saving", $bank_log_comment, "Cash", "credit", $Saving_balance_tot_paid, $bank_account_company, $savedId);
+    //                 }
+    //             } else if ($payment_type === "Cheque") {
+    //                 DB::table('cheque_details')->insert([
+    //                     'Date_Time' => date('Y-m-d H:i:s'),
+    //                     'Type' => "Receive",
+    //                     'Company_Account' => $cheque_issue_bank,
+    //                     'Description' => "Customer payment",
+    //                     'Amount' => $payment_amount,
+    //                     'Cheque_No' => $chq_number,
+    //                     'Cheque_Type' => $chq_type,
+    //                     'Name_On_The_Cheque' => $name_on_cheque,
+    //                     'Cheque_Date' => $chq_date,
+    //                     'Status' => '0',
+    //                     'Note' => '-',
+    //                     'Payment_id' => $savedId,
+    //                     'branch_id' => session('branch_id')
+    //                 ]);
+    //             }
+    //             $saving_account = tableWithBranch('Customer_Saving_Accounts')
+    //                 ->where('Loan_Id', '=', $loan_id)
+    //                 ->first();
+    //             if ($enable_saving_process == "Yes") {
+    //                 $this->SavingAccountController->index($saving_account->id, 'Deposit', 'Payment', $Saving_balance_tot_paid, '0.00', $Saving_balance_tot_paid, 'Credit', $savedId);
+    //             }
+
+    //             $customer_payment = DB::table('customer_payments')->where('idCustomer_Payments', '=', $savedId)->first();
+    //             $loan = DB::table('customer_loan')->where('idCustomer_Loan', '=', $loan_id)->first();
+    //             $sms_template = DB::table('sms_template')->where('type', '=', 'loan_payment')->where('status', '=', '1')->first();
+    //             if ($sms_template) {
+    //                 $customer = DB::table('customer')->where('idCustomer', '=', $loan->Customer_idCustomer)->first();
+
+    //                 $loan_balance = DB::table('installments')
+    //                     ->where('Customer_Loan_idCustomer_Loan', $loan_id)
+    //                     ->sum('Total_Balance');
+    //                 $loan_balance = $loan_balance ?? 0;
+
+    //                 $placeholders = [
+    //                     '@Member_No@' => $customer->cus_number,
+    //                     '@Member_Name@' => $customer->First_Name . ' ' . $customer->Last_Name,
+    //                     '@Loan_No@' => $loan->Loan_No,
+    //                     '@Payment_Date@' => $customer_payment->Date,
+    //                     '@Paid_Amount@' => number_format($customer_payment->Amount, 2, '.', ','),
+    //                     '@Loan_Balance@' => number_format($loan_balance, 2, '.', ','),
+    //                     '@Capital_Balance@' => number_format($loan->capital_balance, 2, '.', ','),
+    //                 ];
+
+    //                 // Step 3: Replace placeholders in the loan_format
+    //                 $loan_number_txt = $sms_template->template;
+    //                 foreach ($placeholders as $placeholder => $value) {
+    //                     $loan_number_txt = str_replace($placeholder, $value, $loan_number_txt);
+    //                 }
+    //                 Log::info($sms_status);
+    //                 if ($sms_status == '1') {
+    //                     DB::afterCommit(function () use ($loan, $loan_number_txt, $savedId) {
+    //                         dispatch(new SendPaymentSmsJob(
+    //                             paymentId: (int)$savedId,
+    //                             loanId: (int)$loan->idCustomer_Loan ?? (int)$loan->idCustomer_Loan ?? 0, // ensure numeric
+    //                             customerId: (int)$loan->Customer_idCustomer,
+    //                             message: $loan_number_txt
+    //                         ))->onQueue('sms');
+    //                     });
+    //                 }
+    //             }
+
+
+    //             return response()->json(['item' => 'sucess', 'id' => '1', 'test' => "1", 'payment_id' => $savedId], 200);
+    //         } else {
+    //         }
+    //     }
+    // }
 
     /**
      * Display the specified resource.
@@ -3188,7 +4992,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             ->where('customer_loan.Amount', '>', 0)
             ->get()
             ->map(function ($loan) {
-                return (object)[
+                return (object) [
                     'center_name' => $loan->center_name,
                     'group_name' => $loan->group_name,
                     'transaction_type' => 'Loan Issue',
@@ -3205,7 +5009,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             ->where('customer_loan.Total_Other_Amount', '>', 0)
             ->get()
             ->map(function ($charge) {
-                return (object)[
+                return (object) [
                     'center_name' => $charge->center_name,
                     'group_name' => $charge->group_name,
                     'transaction_type' => 'Other Charges',
@@ -3271,13 +5075,13 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
         $date = $request->date;
         $date_to = $request->date_to;
 
-        $center_details     = (array) $request->input('center_details', []);
-        $group              = (array) $request->input('group', []);
-        $customer           = (array) $request->input('customer', []);
-        $user               = (array) $request->input('user', []);
-        $route              = (array) $request->input('route', []);
+        $center_details = (array) $request->input('center_details', []);
+        $group = (array) $request->input('group', []);
+        $customer = (array) $request->input('customer', []);
+        $user = (array) $request->input('user', []);
+        $route = (array) $request->input('route', []);
         $loan_number_search = (array) $request->input('loan_number_search', []);
-        $payment_type       = (array) $request->input('payment_type', []);
+        $payment_type = (array) $request->input('payment_type', []);
 
 
         // -------- NORMAL PAYMENTS ----------
@@ -3448,11 +5252,11 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
         $loan = $unionQuery->get();
 
         // delete permission
-        $user_id = (int)session('userid');
+        $user_id = (int) session('userid');
         $payment_delete = DB::table('user')->where('id', '=', $user_id)->first();
         $payment_delete_status = 0;
         if ($payment_delete) {
-            $payment_delete_status = (int)$payment_delete->payment_delete;
+            $payment_delete_status = (int) $payment_delete->payment_delete;
         }
 
         return response()->json([
@@ -3535,7 +5339,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
 
     public function update_reduce_balance(Request $request)
     {
-        $user_id = (int)session('userid');
+        $user_id = (int) session('userid');
         $installmentsData = $request->input('installments');
         $payment_amount = $request->input('payment_amount');
 
@@ -3739,7 +5543,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
                 '@Paid_Amount@' => number_format($customer_payment->Amount, 2, '.', ','),
                 '@Loan_Balance@' => number_format($loan_balance, 2, '.', ','),
                 '@Capital_Balance@' => number_format($loan->capital_balance, 2, '.', ','),
-                '@Pending_Total@'  => number_format($arrears, 2, '.', ','),
+                '@Pending_Total@' => number_format($arrears, 2, '.', ','),
             ];
 
             // Step 3: Replace placeholders in the loan_format
@@ -4482,12 +6286,12 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             }
 
             // --- Prepare values ---
-            $loanId      = (int)$request->loan_id;
-            $amount      = (float)$request->amount;
+            $loanId = (int) $request->loan_id;
+            $amount = (float) $request->amount;
             $description = $request->description ?? '';
-            $date        = $request->date ? Carbon::parse($request->date)->toDateString() : now()->toDateString();
-            $userId      = (int)session('userid');
-            $branchId    = (int)session('branch_id');
+            $date = $request->date ? Carbon::parse($request->date)->toDateString() : now()->toDateString();
+            $userId = (int) session('userid');
+            $branchId = (int) session('branch_id');
             $chargeCodeId = $request->other_charges_code_id ?? null;
             $chargeCodeDescription = $request->other_charges_codes_discription ?? null;
 
@@ -4498,19 +6302,19 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
                 ->lockForUpdate()
                 ->first();
 
-            $currentBalance = $lastRow ? (float)$lastRow->balance : 0.0;
-            $newBalance     = $currentBalance + $amount;
+            $currentBalance = $lastRow ? (float) $lastRow->balance : 0.0;
+            $newBalance = $currentBalance + $amount;
 
             // --- Insert new extra charge record ---
             $id = DB::table('extra_charger')->insertGetId([
-                'loan_id'     => $loanId,
-                'date'        => $date,
-                'time'        => now()->format('H:i:s'),
+                'loan_id' => $loanId,
+                'date' => $date,
+                'time' => now()->format('H:i:s'),
                 'description' => $description,
-                'user_id'     => $userId,
-                'branch_id'   => $branchId,
-                'amount'      => $amount,
-                'balance'     => $newBalance,
+                'user_id' => $userId,
+                'branch_id' => $branchId,
+                'amount' => $amount,
+                'balance' => $newBalance,
                 'other_charges_code_id' => $chargeCodeId,
                 'other_charges_codes_discription' => $chargeCodeDescription,
             ]);
@@ -4520,8 +6324,8 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
                 'comment' => 'Extra Charges ' . number_format($amount, 2),
                 'loan_id' => $loanId,
                 'user_id' => $userId,
-                'date'    => now()->toDateString(),
-                'time'    => now()->toTimeString(),
+                'date' => now()->toDateString(),
+                'time' => now()->toTimeString(),
             ]);
 
             // --- Get latest Loan_Log balances ---
@@ -4530,12 +6334,12 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
                 ->orderByDesc('Loan_Log_ID')
                 ->first();
 
-            $penaltyBalance   = $latestLog->Panelty_Balance ?? 0;
-            $interestBalance  = $latestLog->Interest_Balance ?? 0;
-            $capitalBalance   = $latestLog->Capital_Balance ?? 0;
-            $savingBalance    = $latestLog->Saving_Account_Balance ?? 0;
-            $totalPending     = $latestLog->Total_Pending_Balance ?? 0;
-            $extraBalance     = $newBalance; // latest extra balance including this payment
+            $penaltyBalance = $latestLog->Panelty_Balance ?? 0;
+            $interestBalance = $latestLog->Interest_Balance ?? 0;
+            $capitalBalance = $latestLog->Capital_Balance ?? 0;
+            $savingBalance = $latestLog->Saving_Account_Balance ?? 0;
+            $totalPending = $latestLog->Total_Pending_Balance ?? 0;
+            $extraBalance = $newBalance; // latest extra balance including this payment
 
             // --- Insert Loan_Log for this extra charge ---
             DB::table('Loan_Log')->insert([
@@ -4565,9 +6369,9 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
             $created = DB::table('extra_charger')->where('id_extra_charger', $id)->first();
 
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => 'Extra charge saved successfully.',
-                'data'    => $created
+                'data' => $created
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -4730,7 +6534,7 @@ LEFT JOIN customer_group ON group_has_customer.group_id = customer_group.idCusto
         }
 
         // get actual loan number used in descriptions
-        $loan_no = trim((string)($loan->Loan_No ?? ''));
+        $loan_no = trim((string) ($loan->Loan_No ?? ''));
 
         if ($loan_no === '') {
             return response()->json(['error' => 'Loan number missing from loan record'], 400);

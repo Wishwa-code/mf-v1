@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\DailyVerificationController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\{AuthController, DirectoryController, CollectionsController, LoansController, CustomersController, PaymentsController, RoutesController, AccountLoginApiController};
 use App\Http\Middleware\ApplyBranchFromUser;
@@ -38,4 +39,8 @@ Route::middleware(['auth:sanctum', ApplyBranchFromUser::class])->group(function 
 
     Route::post('/loans/comments/store', [LoansController::class, 'storeComment']);
     Route::post('/loans/comments/fetch', [LoansController::class, 'fetchComments']);
+
+    // Daily Verification
+    Route::get('/daily-verification/status', [DailyVerificationController::class, 'checkOdometerImageStatus']);
+    Route::post('/daily-verification/upload', [DailyVerificationController::class, 'uploadOdometerImage']);
 });

@@ -29,7 +29,10 @@ class CustomerLogController extends Controller
      */
     public function store(Request $request)
     {
-        $user_id = user_data('idUser');
+        $user_id = $request->input('user_id') ?? user_data('idUser');
+        if (!$user_id && $request->user()) {
+            $user_id = $request->user()->id;
+        }
         $date = date('Y-m-d');
         $time = date('H:i:s');
 

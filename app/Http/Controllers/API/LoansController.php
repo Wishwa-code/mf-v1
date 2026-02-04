@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class LoansController
 {
@@ -19,17 +20,17 @@ class LoansController
     public function index(Request $request)
     {
         $branchId = (int) $request->attributes->get('branch_id');
-        $user     = $request->user();
-        $userId   = (int) $user->id;
+        $user = $request->user();
+        $userId = (int) $user->id;
         $collectorFlag = (int) ($user->collector ?? 0);
 
         // Filters (string '0' means "All")
-        $groupId       = $request->query('group', '0');
-        $categoryId    = $request->query('category', '0');
-        $customerId    = $request->query('customer', '0');
-        $centerId      = $request->query('center_details', '0');
-        $routeId       = $request->query('route', '0');
-        $loanNoSearch  = $request->query('loan_number_search', '');
+        $groupId = $request->query('group', '0');
+        $categoryId = $request->query('category', '0');
+        $customerId = $request->query('customer', '0');
+        $centerId = $request->query('center_details', '0');
+        $routeId = $request->query('route', '0');
+        $loanNoSearch = $request->query('loan_number_search', '');
 
         $perPage = (int) $request->query('per_page', 10);
 
@@ -162,11 +163,11 @@ class LoansController
         // Money fields to 2 decimals for each row
         $items->setCollection(
             $items->getCollection()->map(function ($r) {
-                $r->Amount             = $this->fix2($r->Amount);
+                $r->Amount = $this->fix2($r->Amount);
                 $r->Installment_Amount = $this->fix2($r->Installment_Amount);
-                $r->capital_balance    = $this->fix2($r->capital_balance);
-                $r->Balance_Amount     = $this->fix2($r->Balance_Amount);
-                $r->total_penalty      = $this->fix2($r->total_penalty);
+                $r->capital_balance = $this->fix2($r->capital_balance);
+                $r->Balance_Amount = $this->fix2($r->Balance_Amount);
+                $r->total_penalty = $this->fix2($r->total_penalty);
                 return $r;
             })
         );
@@ -185,12 +186,24 @@ class LoansController
             $t->join('collector_has_route', 'customer.route_id', '=', 'collector_has_route.route_id')
                 ->where('collector_has_route.collector_id', $userId);
         }
-        if ($groupId !== '0')     { $t->where('subquery.group_id', $groupId); }
-        if ($categoryId !== '0')  { $t->where('loan_category.idLoan_Category', $categoryId); }
-        if ($customerId !== '0')  { $t->where('customer.idCustomer', $customerId); }
-        if ($centerId !== '0')    { $t->where('center.idCenter', $centerId); }
-        if ($routeId !== '0')     { $t->where('customer.route_id', $routeId); }
-        if (!empty($loanNoSearch)) { $t->where('customer_loan.Loan_No', 'LIKE', '%' . $loanNoSearch . '%'); }
+        if ($groupId !== '0') {
+            $t->where('subquery.group_id', $groupId);
+        }
+        if ($categoryId !== '0') {
+            $t->where('loan_category.idLoan_Category', $categoryId);
+        }
+        if ($customerId !== '0') {
+            $t->where('customer.idCustomer', $customerId);
+        }
+        if ($centerId !== '0') {
+            $t->where('center.idCenter', $centerId);
+        }
+        if ($routeId !== '0') {
+            $t->where('customer.route_id', $routeId);
+        }
+        if (!empty($loanNoSearch)) {
+            $t->where('customer_loan.Loan_No', 'LIKE', '%' . $loanNoSearch . '%');
+        }
 
         // Totals (cast to 2 decimals at SQL level)
         $totalsRow = $t->selectRaw('
@@ -203,10 +216,10 @@ class LoansController
 
         // Normalize to numeric with 2 decimals
         $totals = [
-            'totalLoanCount'      => (int)   ($totalsRow->totalLoanCount ?? 0),
+            'totalLoanCount' => (int) ($totalsRow->totalLoanCount ?? 0),
             'totalCapitalBalance' => $this->fix2($totalsRow->totalCapitalBalance ?? 0),
-            'totalPendingAmount'  => $this->fix2($totalsRow->totalPendingAmount ?? 0),
-            'totalLoanAmount'     => $this->fix2($totalsRow->totalLoanAmount ?? 0),
+            'totalPendingAmount' => $this->fix2($totalsRow->totalPendingAmount ?? 0),
+            'totalLoanAmount' => $this->fix2($totalsRow->totalLoanAmount ?? 0),
         ];
 
         // ---------------- Permissions & designation ----------------
@@ -214,19 +227,19 @@ class LoansController
             ->where('user_id', $userId)
             ->pluck('value', 'permission_key'); // [permission_key => value]
 
-        $designation   = $user->Designation ?? null;
-        $current_loan  = (int) ($permissions['current_loan_delete']   ?? 0);
-        $loan_agreement= (int) ($permissions['current_loan_agreement']?? 0);
-        $extra_charge  = (int) ($permissions['loan_extra_charges']    ?? 0);
+        $designation = $user->Designation ?? null;
+        $current_loan = (int) ($permissions['current_loan_delete'] ?? 0);
+        $loan_agreement = (int) ($permissions['current_loan_agreement'] ?? 0);
+        $extra_charge = (int) ($permissions['loan_extra_charges'] ?? 0);
 
         return response()->json([
-            'item'           => $items, // paginator with rows
-            'designation'    => $designation,
-            'current_loan'   => $current_loan,
+            'item' => $items, // paginator with rows
+            'designation' => $designation,
+            'current_loan' => $current_loan,
             'loan_agreement' => $loan_agreement,
-            'extra_charge'   => $extra_charge,
-            'totals'         => $totals,
-            'message'        => 'notall',
+            'extra_charge' => $extra_charge,
+            'totals' => $totals,
+            'message' => 'notall',
         ], 200);
     }
 
@@ -234,14 +247,14 @@ class LoansController
 
     private function fix2($v): float
     {
-        return round((float)$v, 2);
+        return round((float) $v, 2);
     }
 
     public function show(Request $request, int $id)
     {
         $branchId = (int) $request->attributes->get('branch_id');
-        $user     = $request->user();
-        $userId   = (int) $user->id;
+        $user = $request->user();
+        $userId = (int) $user->id;
         $collectorFlag = (int) ($user->collector ?? 0);
 
         // --- Subqueries (same style as index) ---
@@ -324,6 +337,7 @@ class LoansController
                 'customer.Nic',
                 'customer.cus_number',
                 'customer.route_id',
+                'customer.Cus_phto',
 
                 // Center/Route/Group
                 'center.idCenter',
@@ -363,23 +377,23 @@ class LoansController
 
         if (!$row) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Loan not found',
             ], 404);
         }
 
         // Normalize money fields to 2 decimals
-        $row->Amount             = $this->fix2($row->Amount);
+        $row->Amount = $this->fix2($row->Amount);
         $row->Installment_Amount = $this->fix2($row->Installment_Amount);
-        $row->capital_balance    = $this->fix2($row->capital_balance);
-        $row->Balance_Amount     = $this->fix2($row->Balance_Amount);
-        $row->total_penalty      = $this->fix2($row->total_penalty);
-        $row->total_balance      = $this->fix2($row->total_balance);
-        $row->total_paid_amount  = $this->fix2($row->total_paid_amount);
+        $row->capital_balance = $this->fix2($row->capital_balance);
+        $row->Balance_Amount = $this->fix2($row->Balance_Amount);
+        $row->total_penalty = $this->fix2($row->total_penalty);
+        $row->total_balance = $this->fix2($row->total_balance);
+        $row->total_paid_amount = $this->fix2($row->total_paid_amount);
 
         return response()->json([
             'status' => 'success',
-            'loan'   => $row,
+            'loan' => $row,
         ], 200);
     }
 
@@ -390,13 +404,13 @@ class LoansController
         // Optional date range filters (YYYY-MM-DD)
         $request->validate([
             'date_from' => 'nullable|date_format:Y-m-d',
-            'date_to'   => 'nullable|date_format:Y-m-d',
-            'order'     => 'nullable|in:asc,desc',
+            'date_to' => 'nullable|date_format:Y-m-d',
+            'order' => 'nullable|in:asc,desc',
         ]);
 
         $dateFrom = $request->query('date_from'); // YYYY-MM-DD
-        $dateTo   = $request->query('date_to');   // YYYY-MM-DD
-        $order    = strtolower($request->query('order', 'asc')) === 'desc' ? 'desc' : 'asc';
+        $dateTo = $request->query('date_to');   // YYYY-MM-DD
+        $order = strtolower($request->query('order', 'asc')) === 'desc' ? 'desc' : 'asc';
 
         $q = DB::table('customer_payments as cp')
             ->where('cp.branch_id', $branchId)
@@ -429,11 +443,11 @@ class LoansController
         });
 
         return response()->json([
-            'status'    => 'success',
-            'loan_id'   => $id,
+            'status' => 'success',
+            'loan_id' => $id,
             'date_from' => $dateFrom,
-            'date_to'   => $dateTo,
-            'payments'  => $payments,
+            'date_to' => $dateTo,
+            'payments' => $payments,
         ], 200);
     }
 
@@ -441,20 +455,20 @@ class LoansController
     public function byCustomer(Request $request)
     {
         $branchId = (int) $request->attributes->get('branch_id');
-        $user     = $request->user();
-        $userId   = (int) $user->id;
+        $user = $request->user();
+        $userId = (int) $user->id;
         $collectorFlag = (int) ($user->collector ?? 0);
 
         // inputs
         $request->validate([
             'q' => 'required|min:1', // or remove min:2 if unnecessary
             'per_page' => 'nullable|integer|min:1|max:200',
-            'order'    => 'nullable|in:asc,desc',
+            'order' => 'nullable|in:asc,desc',
         ]);
 
-        $qstr    = trim($request->query('q'));
+        $qstr = trim($request->query('q'));
         $perPage = (int) $request->query('per_page', 10);
-        $order   = strtolower($request->query('order', 'desc')) === 'asc' ? 'asc' : 'desc';
+        $order = strtolower($request->query('order', 'desc')) === 'asc' ? 'asc' : 'desc';
 
         $query = DB::table('customer_loan as cl')
             ->join('customer as c', 'cl.Customer_idCustomer', '=', 'c.idCustomer')
@@ -490,22 +504,143 @@ class LoansController
         // Ensure numeric two-decimals in JSON
         $items->setCollection(
             $items->getCollection()->map(function ($r) {
-                $r->Total_Loan_Balance  = round((float)$r->Total_Loan_Balance, 2);
-                $r->Installment_Amount  = round((float)$r->Installment_Amount, 2);
-                $r->Interest            = round((float)$r->Interest, 2);
-                $r->Loan_Amount         = round((float)$r->Loan_Amount, 2);
+                $r->Total_Loan_Balance = round((float) $r->Total_Loan_Balance, 2);
+                $r->Installment_Amount = round((float) $r->Installment_Amount, 2);
+                $r->Interest = round((float) $r->Interest, 2);
+                $r->Loan_Amount = round((float) $r->Loan_Amount, 2);
                 return $r;
             })
         );
 
         return response()->json([
             'status' => 'success',
-            'query'  => $qstr,
-            'loans'  => $items, // paginator with only requested fields
+            'query' => $qstr,
+            'loans' => $items, // paginator with only requested fields
         ], 200);
     }
 
 
+    // POST /api/loans/comments/store
+    public function storeComment(Request $request)
+    {
+        $request->validate([
+            'loan_id' => 'required|integer',
+            'comment' => 'required|string|max:2000',
+            'f_name' => 'nullable|string|max:100',
+            'last_name' => 'nullable|string|max:100',
+        ]);
 
+        $user = $request->user();
+        $user_id = (int) $user->id;
+        $branchId = (int) $request->attributes->get('branch_id');
+
+        if (!$user_id || !$branchId) {
+            return response()->json([
+                'type' => 'unauthorized',
+                'message' => 'Session expired or invalid session.',
+            ], 401);
+        }
+
+        // ✅ Ensure loan exists and belongs to this branch
+        $loan = DB::table('customer_loan')
+            ->where('branch_id', $branchId)
+            ->where('idCustomer_Loan', $request->loan_id)
+            ->first();
+
+        if (!$loan) {
+            return response()->json([
+                'type' => 'not_found',
+                'message' => 'Loan not found for this branch.',
+            ], 404);
+        }
+
+        // Insert comment
+        $comment_id = DB::table('loan_comment')->insertGetId([
+            'comment' => $request->comment,
+            'loan_id' => (int) $request->loan_id,
+            'user_id' => $user_id,
+            'date' => now()->toDateString(),
+            'time' => now()->format('H:i:s'),
+        ]);
+
+        // Optional: customer log (kept similar to your sample)
+        try {
+            if (property_exists($this, 'customerLogController') && $this->customerLogController) {
+                $logReq = new Request([
+                    // NOTE: your sample uses customer_id = $loan->idCustomer_Loan (same as loan id)
+                    'customer_id' => $loan->idCustomer_Loan,
+                    'description' => 'Loan Comment for ' . trim(($request->f_name ?? '') . ' ' . ($request->last_name ?? '')),
+                    'description_id' => $comment_id,
+                    'comment' => $request->comment,
+                    'type' => 'Loan Comment',
+                ]);
+
+                $this->customerLogController->store($logReq);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Customer log store failed for loan comment', [
+                'loan_id' => $request->loan_id,
+                'comment_id' => $comment_id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return response()->json([
+            'type' => 'success',
+            'message' => 'Comment saved successfully',
+            'comment_id' => $comment_id,
+        ]);
+    }
+
+    // POST /api/loans/comments/fetch
+    public function fetchComments(Request $request)
+    {
+        $request->validate([
+            'loan_id' => 'required|integer',
+        ]);
+
+        $branchId = (int) session('branch_id');
+        if (!$branchId) {
+            return response()->json([
+                'type' => 'unauthorized',
+                'message' => 'Session expired or invalid session.',
+            ], 401);
+        }
+
+        // ✅ Ensure loan belongs to this branch (prevents cross-branch reading)
+        $loanExists = DB::table('customer_loan')
+            ->where('branch_id', $branchId)
+            ->where('idCustomer_Loan', $request->loan_id)
+            ->exists();
+
+        if (!$loanExists) {
+            return response()->json([
+                'type' => 'not_found',
+                'message' => 'Loan not found for this branch.',
+            ], 404);
+        }
+
+        $comments = DB::table('loan_comment')
+            ->leftJoin('user', 'loan_comment.user_id', '=', 'user.id')
+            ->where('loan_comment.loan_id', (int) $request->loan_id)
+            ->select(
+                'loan_comment.id_loan_comment',
+                'loan_comment.comment',
+                'loan_comment.date',
+                'loan_comment.time',
+                'loan_comment.user_id',
+                DB::raw('IF(user.id IS NULL, "-", user.Full_Name) as Full_Name')
+            )
+            ->orderBy('loan_comment.date', 'desc')
+            ->orderBy('loan_comment.time', 'desc')
+            ->get();
+
+        return response()->json([
+            'type' => 'success',
+            'loan_id' => (int) $request->loan_id,
+            'comments' => $comments,
+        ]);
+
+    }
 
 }
