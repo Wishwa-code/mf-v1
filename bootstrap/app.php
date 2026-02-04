@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'branch.from.user' => \App\Http\Middleware\ApplyBranchFromUser::class,
             'privilege' => \App\Http\Middleware\CheckPrivilege::class,
         ]);
+
+        $middleware->api(prepend: [
+            \App\Http\Middleware\LogIncomingRequests::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
