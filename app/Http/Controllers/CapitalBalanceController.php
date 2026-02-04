@@ -91,7 +91,7 @@ class CapitalBalanceController extends Controller
                     $ins_interest = 0;
 
                     if ($firstInstallment) {
-                        $firstId           = $firstInstallment->idInstallments;
+                        $firstId = $firstInstallment->idInstallments;
                         $Installment_Amount = $firstInstallment->Installment_Amount;
                         $capital_amount = $firstInstallment->capital_amount;
                         if ($Installment_Amount == $capital_amount) {
@@ -137,12 +137,12 @@ class CapitalBalanceController extends Controller
                                 ->where('idInstallments', $lastInstallment->idInstallments)
                                 ->update([
                                     'Installment_Amount' => DB::raw("Installment_Amount + $capital_additional_amount + $interest_additional_amount"),
-                                    'capital_amount'     => DB::raw("capital_amount + $capital_additional_amount"),
-                                    'interest_amount'    => DB::raw("interest_amount + $interest_additional_amount"),
-                                    'Total_Amount'       => DB::raw("Total_Amount + $capital_additional_amount + $interest_additional_amount"),
-                                    'capital_balance'    => DB::raw("capital_balance + $capital_additional_amount"),
-                                    'Interest_Balance'   => DB::raw("Interest_Balance + $interest_additional_amount"),
-                                    'Total_Balance'      => DB::raw("Total_Balance + $capital_additional_amount + $interest_additional_amount"),
+                                    'capital_amount' => DB::raw("capital_amount + $capital_additional_amount"),
+                                    'interest_amount' => DB::raw("interest_amount + $interest_additional_amount"),
+                                    'Total_Amount' => DB::raw("Total_Amount + $capital_additional_amount + $interest_additional_amount"),
+                                    'capital_balance' => DB::raw("capital_balance + $capital_additional_amount"),
+                                    'Interest_Balance' => DB::raw("Interest_Balance + $interest_additional_amount"),
+                                    'Total_Balance' => DB::raw("Total_Balance + $capital_additional_amount + $interest_additional_amount"),
                                 ]);
                         }
                     }
@@ -399,13 +399,13 @@ class CapitalBalanceController extends Controller
 
             if ($setting) {
                 $setting->update([
-                    'value'      => $value,
+                    'value' => $value,
                     'updated_by' => $uid,
                 ]);
             } else {
                 AppSettings::create([
-                    'key'        => $key,
-                    'value'      => $value,
+                    'key' => $key,
+                    'value' => $value,
                     'created_by' => $uid,
                     'updated_by' => $uid,
                 ]);
@@ -418,14 +418,14 @@ class CapitalBalanceController extends Controller
             */
 
             DB::table('app_setting_log')->insert([
-                'user_id'     => $uid,
+                'user_id' => $uid,
                 'setting_key' => $key,
-                'old_value'   => $oldValue,
-                'new_value'   => $value,
-                'changed_at'  => now(),
-                'branch_id'   => session('branch_id'),
-                'ip_address'  => $request->ip(),
-                'user_agent'  => $request->userAgent(),
+                'old_value' => $oldValue,
+                'new_value' => $value,
+                'changed_at' => now(),
+                'branch_id' => session('branch_id'),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
             ]);
 
             Cache::forget('app_settings');

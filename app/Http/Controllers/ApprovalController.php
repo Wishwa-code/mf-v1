@@ -11,17 +11,18 @@ use App\Models\User;
 use App\Models\Customer;
 use App\Models\ApprovalRequest;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\Log;
 
 class ApprovalController extends Controller
 {
     public function pending_approval(Request $request)
     {
         // Get branch access info
-        $branch_access   = session('branch_access', 0);
-        $user_branch_id  = session('branch_id');
-        $head_office_id  = session('head_branch');
-        $selectedBranch  = $request->get('branch_id', '');
-        $selectedType    = $request->get('type', '');
+        $branch_access = session('branch_access', 0);
+        $user_branch_id = session('branch_id');
+        $head_office_id = session('head_branch');
+        $selectedBranch = $request->get('branch_id', '');
+        $selectedType = $request->get('type', '');
 
         // Get branches for filter dropdown
         $branches = $this->getBranches();
@@ -85,10 +86,10 @@ class ApprovalController extends Controller
 
             // Manual mapping of Branch and User names
             $branches = $this->getBranches();
-            $users    = $this->getUsers();
+            $users = $this->getUsers();
 
             $branchesCollection = collect($branches);
-            $usersCollection    = collect($users);
+            $usersCollection = collect($users);
 
             $pendingApprovals->transform(function ($item) use ($branchesCollection, $usersCollection, $types) {
                 // Map Branch Name
@@ -156,12 +157,12 @@ class ApprovalController extends Controller
 
     public function approved_history(Request $request)
     {
-        $branch_access   = session('branch_access', 0);
-        $user_branch_id  = session('branch_id');
-        $selectedBranch  = $request->get('branch_id', '');
-        $selectedType    = $request->get('type', '');
-        $dateFrom        = $request->get('date_from', '');
-        $dateTo          = $request->get('date_to', '');
+        $branch_access = session('branch_access', 0);
+        $user_branch_id = session('branch_id');
+        $selectedBranch = $request->get('branch_id', '');
+        $selectedType = $request->get('type', '');
+        $dateFrom = $request->get('date_from', '');
+        $dateTo = $request->get('date_to', '');
 
         $branches = $this->getBranches();
 
@@ -227,9 +228,9 @@ class ApprovalController extends Controller
             $approvedHistory = $query->orderBy('ar.approved_date_time', 'desc')->get();
 
             // Manual Mapping
-            $users    = $this->getUsers();
+            $users = $this->getUsers();
             $branchesCollection = collect($branches);
-            $usersCollection    = collect($users);
+            $usersCollection = collect($users);
 
             $approvedHistory->transform(function ($item) use ($branchesCollection, $usersCollection, $types) {
                 $branch = $branchesCollection->first(function ($b) use ($item) {
@@ -290,13 +291,13 @@ class ApprovalController extends Controller
 
     public function rejected_approval(Request $request)
     {
-        $branch_access   = session('branch_access', 0);
-        $user_branch_id  = session('branch_id');
+        $branch_access = session('branch_access', 0);
+        $user_branch_id = session('branch_id');
         $head_office_id = session('head_branch');
-        $selectedBranch  = $request->get('branch_id', '');
-        $selectedType    = $request->get('type', '');
-        $dateFrom        = $request->get('date_from', '');
-        $dateTo          = $request->get('date_to', '');
+        $selectedBranch = $request->get('branch_id', '');
+        $selectedType = $request->get('type', '');
+        $dateFrom = $request->get('date_from', '');
+        $dateTo = $request->get('date_to', '');
 
         $branches = $this->getBranches();
 
@@ -362,10 +363,10 @@ class ApprovalController extends Controller
             $rejectedApprovals = $query->orderBy('ar.approved_date_time', 'desc')->get();
 
             // Manual Mapping
-            $users    = $this->getUsers();
+            $users = $this->getUsers();
 
             $branchesCollection = collect($branches);
-            $usersCollection    = collect($users);
+            $usersCollection = collect($users);
 
             $rejectedApprovals->transform(function ($item) use ($branchesCollection, $usersCollection, $types) {
                 $branch = $branchesCollection->first(function ($b) use ($item) {
@@ -425,7 +426,7 @@ class ApprovalController extends Controller
 
     public function approve(Request $request)
     {
-        $id      = $request->input('id');
+        $id = $request->input('id');
         $comment = trim($request->input('comment', ''));
 
         try {
@@ -445,7 +446,7 @@ class ApprovalController extends Controller
             // -----------------------------------------------------------------
             if ($approval->typeid == 101) {
                 $requestData = json_decode($approval->data, true);
-                $userData    = $requestData['user_data'];
+                $userData = $requestData['user_data'];
 
                 // Create user
                 $user = User::create($userData);
@@ -454,8 +455,8 @@ class ApprovalController extends Controller
                 if (!empty($requestData['branches'])) {
                     foreach ($requestData['branches'] as $branch_id) {
                         DB::table('user_has_branches')->insert([
-                            'user_id'   => $user->id,
-                            'branch_id' => (int)$branch_id,
+                            'user_id' => $user->id,
+                            'branch_id' => (int) $branch_id,
                         ]);
                     }
                 }
@@ -476,7 +477,7 @@ class ApprovalController extends Controller
                         foreach ($privileges as $permissionKey => $value) {
                             DB::table('user_privileges_has_user')->updateOrInsert(
                                 ['user_id' => $user->id, 'permission_key' => $permissionKey],
-                                ['value'   => $value]
+                                ['value' => $value]
                             );
                         }
                     }
@@ -484,32 +485,32 @@ class ApprovalController extends Controller
 
                 // Create bank account
                 $Bank = [
-                    'Bank_Type'       => "Collector",
-                    'code'            => $user->id . '/Collector',
-                    'Bank_Name'       => "Collector",
-                    'Account_Name'    => $userData['Full_Name'],
-                    'Account_No'      => $user->id,
-                    'Bank_Branch'     => '-',
+                    'Bank_Type' => "Collector",
+                    'code' => $user->id . '/Collector',
+                    'Bank_Name' => "Collector",
+                    'Account_Name' => $userData['Full_Name'],
+                    'Account_No' => $user->id,
+                    'Bank_Branch' => '-',
                     'Account_Balance' => "0.00",
-                    'type'            => "Cash and Bank",
-                    'cashflow'        => "Non Applicable",
-                    'User'            => $user->id,
-                    'branch_id'       => $userData['branch_access'],
+                    'type' => "Cash and Bank",
+                    'cashflow' => "Non Applicable",
+                    'User' => $user->id,
+                    'branch_id' => $userData['branch_access'],
                 ];
 
                 $insertedId = insertWithBranch('company_bank_accounts', $Bank);
 
                 $bankLogData = [
                     'Bank_Account_Id' => $insertedId,
-                    'Date_Time'       => date('Y-m-d H:i:s'),
-                    'Type'            => "Account Creation",
-                    'Description'     => "Collector Account",
-                    'Note'            => "",
-                    'Credit'          => "0.00",
-                    'Debit'           => "0.00",
-                    'Balance'         => "0.00",
-                    'User'            => $user->id,
-                    'branch_id'       => $userData['branch_access'],
+                    'Date_Time' => date('Y-m-d H:i:s'),
+                    'Type' => "Account Creation",
+                    'Description' => "Collector Account",
+                    'Note' => "",
+                    'Credit' => "0.00",
+                    'Debit' => "0.00",
+                    'Balance' => "0.00",
+                    'User' => $user->id,
+                    'branch_id' => $userData['branch_access'],
                 ];
 
                 insertWithBranch('company_bank_has_log', $bankLogData);
@@ -520,10 +521,10 @@ class ApprovalController extends Controller
             // -----------------------------------------------------------------
             if ($approval->typeid == 102) {
                 $requestData = json_decode($approval->data, true);
-
+                Log::info($requestData);
                 // Status-only change
                 if (isset($requestData['new_data']) && isset($requestData['new_data']['Status'])) {
-                    $userId    = $requestData['user_id'];
+                    $userId = $requestData['user_id'];
                     $newStatus = $requestData['new_data']['Status'];
 
                     DB::table('user')
@@ -531,25 +532,29 @@ class ApprovalController extends Controller
                         ->update(['Status' => $newStatus]);
                 } else {
                     // Full details update
-                    $updateData      = $requestData['update_data'];
-                    $newBranches     = $requestData['new_branches'];
+                    $updateData = $requestData['update_data'];
+                    $newBranches = $requestData['new_branches'];
                     $branchesChanged = $requestData['branches_changed'];
 
                     $userId = $updateData['user_id'];
 
-                    User::where('id', $userId)
+                    $affected = DB::table('user')
+                        ->where('id', $userId)
                         ->update([
-                            'Epf_no'          => $updateData['Epf_no'],
-                            'Designation'     => $updateData['Designation'],
-                            'Nic'             => $updateData['Nic'],
-                            'Full_Name'       => $updateData['Full_Name'],
-                            'TP'              => $updateData['TP'],
+                            'Epf_no' => $updateData['Epf_no'],
+                            'Designation' => $updateData['Designation'],
+                            'Nic' => $updateData['Nic'],
+                            'Full_Name' => $updateData['Full_Name'],
+                            'TP' => $updateData['TP'],
                             'lending_officer' => $updateData['lending_officer'],
-                            'collector'       => $updateData['collector'],
-                            'branch_id'       => $updateData['branch_id'],
-                            'branch_access'   => $updateData['branch_access'],
-                            'cashier'         => $updateData['cashier'],
+                            'collector' => $updateData['collector'],
+                            'branch_id' => $updateData['branch_id'],
+                            'branch_access' => $updateData['branch_access'],
+                            'cashier' => $updateData['cashier'],
                         ]);
+
+                    Log::info("User update affected rows: " . $affected);
+
 
                     // 🔁 Update related bank account name
                     DB::table('company_bank_accounts')
@@ -565,8 +570,8 @@ class ApprovalController extends Controller
 
                         foreach ($newBranches as $branch_id) {
                             DB::table('user_has_branches')->insert([
-                                'user_id'   => $userId,
-                                'branch_id' => (int)$branch_id,
+                                'user_id' => $userId,
+                                'branch_id' => (int) $branch_id,
                             ]);
                         }
                     }
@@ -578,13 +583,13 @@ class ApprovalController extends Controller
             // -----------------------------------------------------------------
             if ($approval->typeid == 103) {
                 $requestData = json_decode($approval->data, true);
-                $userId      = $requestData['user_id'];
-                $privileges  = $requestData['privileges'];
+                $userId = $requestData['user_id'];
+                $privileges = $requestData['privileges'];
 
                 foreach ($privileges as $key => $value) {
                     DB::table('user_privileges_has_user')->updateOrInsert(
                         ['user_id' => $userId, 'permission_key' => $key],
-                        ['value'   => $value]
+                        ['value' => $value]
                     );
 
                     if ($key === "payment_delete") {
@@ -606,7 +611,7 @@ class ApprovalController extends Controller
             // TYPE 201: DESIGNATION DETAILS / PRIVILEGES UPDATE
             // -----------------------------------------------------------------
             if ($approval->typeid == 201) {
-                $requestData   = json_decode($approval->data, true);
+                $requestData = json_decode($approval->data, true);
                 $designationId = $requestData['designation_id'];
 
                 if (isset($requestData['update_type']) && $requestData['update_type'] === 'details') {
@@ -614,12 +619,12 @@ class ApprovalController extends Controller
                     DB::table('designation')
                         ->where('idDesignation', $designationId)
                         ->update([
-                            'name'              => $newData['name'],
-                            'desi_level'        => $newData['desi_level'],
-                            'loan_creat'        => $newData['loan_creat'],
-                            'loan_issue'        => $newData['loan_issue'],
+                            'name' => $newData['name'],
+                            'desi_level' => $newData['desi_level'],
+                            'loan_creat' => $newData['loan_creat'],
+                            'loan_issue' => $newData['loan_issue'],
                             'max_create_amount' => $newData['max_create_amount'],
-                            'max_issue_amount'  => $newData['max_issue_amount'],
+                            'max_issue_amount' => $newData['max_issue_amount'],
                         ]);
                 } else {
                     $privileges = $requestData['privileges'];
@@ -635,7 +640,7 @@ class ApprovalController extends Controller
             // TYPE 301: CUSTOMER CREATION
             // -----------------------------------------------------------------
             if ($approval->typeid == 301) {
-                $requestData  = json_decode($approval->data, true);
+                $requestData = json_decode($approval->data, true);
                 $customerData = $requestData['customer_data'];
 
                 // Safety: branch_id from approval
@@ -674,16 +679,16 @@ class ApprovalController extends Controller
 
                 // Log BEFORE customer_number()
                 DB::table('customer_log')->insert([
-                    'customer_id'    => $customerId,
-                    'customer_name'  => ($customerData['First_Name'] ?? '') . ' ' . ($customerData['Last_Name'] ?? ''),
-                    'date'           => date('Y-m-d'),
-                    'time'           => date('H:i:s'),
-                    'description'    => 'Customer registration for ' . (($customerData['First_Name'] ?? '') . ' ' . ($customerData['Last_Name'] ?? '')),
+                    'customer_id' => $customerId,
+                    'customer_name' => ($customerData['First_Name'] ?? '') . ' ' . ($customerData['Last_Name'] ?? ''),
+                    'date' => date('Y-m-d'),
+                    'time' => date('H:i:s'),
+                    'description' => 'Customer registration for ' . (($customerData['First_Name'] ?? '') . ' ' . ($customerData['Last_Name'] ?? '')),
                     'description_id' => $customerId,
-                    'comment'        => ' ',
-                    'type'           => 'Customer Registration',
-                    'user'           => user_data('idUser'),
-                    'branch_id'      => $branchId,
+                    'comment' => ' ',
+                    'type' => 'Customer Registration',
+                    'user' => user_data('idUser'),
+                    'branch_id' => $branchId,
                 ]);
 
                 // Generate customer number
@@ -700,7 +705,7 @@ class ApprovalController extends Controller
                     $customer_table = Customer::where('idCustomer', $customerId)->first();
                     if ($customer_table) {
                         $placeholders = [
-                            '@Member_No@'   => $customer_table->cus_number,
+                            '@Member_No@' => $customer_table->cus_number,
                             '@Member_Name@' => $customer_table->First_Name . ' ' . $customer_table->Last_Name,
                         ];
 
@@ -720,8 +725,8 @@ class ApprovalController extends Controller
             // -----------------------------------------------------------------
             if ($approval->typeid == 302) {
                 $requestData = json_decode($approval->data, true);
-                $customerId  = $requestData['customer_id'];
-                $newData     = $requestData['new_data'];
+                $customerId = $requestData['customer_id'];
+                $newData = $requestData['new_data'];
 
                 Customer::where('idCustomer', $customerId)
                     ->where('branch_id', $approval->branch_id)
@@ -730,16 +735,16 @@ class ApprovalController extends Controller
                 customer_number($customerId);
 
                 DB::table('customer_log')->insert([
-                    'customer_id'    => $customerId,
-                    'customer_name'  => ($newData['First_Name'] ?? '') . ' ' . ($newData['Last_Name'] ?? ''),
-                    'date'           => date('Y-m-d'),
-                    'time'           => date('H:i:s'),
-                    'description'    => 'Customer Update',
+                    'customer_id' => $customerId,
+                    'customer_name' => ($newData['First_Name'] ?? '') . ' ' . ($newData['Last_Name'] ?? ''),
+                    'date' => date('Y-m-d'),
+                    'time' => date('H:i:s'),
+                    'description' => 'Customer Update',
                     'description_id' => $customerId,
-                    'comment'        => ' ',
-                    'type'           => 'Customer Update',
-                    'user'           => user_data('idUser'),
-                    'branch_id'      => $approval->branch_id,
+                    'comment' => ' ',
+                    'type' => 'Customer Update',
+                    'user' => user_data('idUser'),
+                    'branch_id' => $approval->branch_id,
                 ]);
             }
 
@@ -747,17 +752,17 @@ class ApprovalController extends Controller
             // TYPE 304: CUSTOMER STATUS CHANGE / BLACKLIST
             // -----------------------------------------------------------------
             if ($approval->typeid == 304) {
-                $requestData     = json_decode($approval->data, true);
-                $customerId      = $requestData['customer_id'];
-                $newStatus       = $requestData['new_status'];
-                $note            = $requestData['note'];
-                $actionType      = $requestData['action_type'];
-                $actionDesc      = $requestData['action_description'];
+                $requestData = json_decode($approval->data, true);
+                $customerId = $requestData['customer_id'];
+                $newStatus = $requestData['new_status'];
+                $note = $requestData['note'];
+                $actionType = $requestData['action_type'];
+                $actionDesc = $requestData['action_description'];
 
                 Customer::where('idCustomer', $customerId)
                     ->where('branch_id', $approval->branch_id)
                     ->update([
-                        'Status'  => $newStatus,
+                        'Status' => $newStatus,
                         'Comment' => $note,
                     ]);
 
@@ -767,16 +772,16 @@ class ApprovalController extends Controller
 
                 if ($customer) {
                     DB::table('customer_log')->insert([
-                        'customer_id'    => $customerId,
-                        'customer_name'  => $customer->First_Name . ' ' . $customer->Last_Name,
-                        'date'           => date('Y-m-d'),
-                        'time'           => date('H:i:s'),
-                        'description'    => $note ?: $actionDesc,
+                        'customer_id' => $customerId,
+                        'customer_name' => $customer->First_Name . ' ' . $customer->Last_Name,
+                        'date' => date('Y-m-d'),
+                        'time' => date('H:i:s'),
+                        'description' => $note ?: $actionDesc,
                         'description_id' => $customerId,
-                        'comment'        => ' ',
-                        'type'           => $actionType,
-                        'user'           => user_data('idUser'),
-                        'branch_id'      => $approval->branch_id,
+                        'comment' => ' ',
+                        'type' => $actionType,
+                        'user' => user_data('idUser'),
+                        'branch_id' => $approval->branch_id,
                     ]);
                 }
             }
@@ -798,15 +803,15 @@ class ApprovalController extends Controller
 
                     // Upload
                 } elseif (isset($requestData['document_path'])) {
-                    $customerId   = $requestData['customer_id'];
-                    $description  = $requestData['description'];
+                    $customerId = $requestData['customer_id'];
+                    $description = $requestData['description'];
                     $documentPath = $requestData['document_path'];
 
                     DB::table('customer_documents')->insert([
                         'Customer_idCustomer' => $customerId,
-                        'Description'         => $description,
-                        'Path'                => $documentPath,
-                        'branch_id'           => $approval->branch_id,
+                        'Description' => $description,
+                        'Path' => $documentPath,
+                        'branch_id' => $approval->branch_id,
                     ]);
                 }
             }
@@ -816,7 +821,7 @@ class ApprovalController extends Controller
             // -----------------------------------------------------------------
             if ($approval->typeid == 401) {
                 $requestData = json_decode($approval->data, true);
-                $loan_id     = $requestData['loan_id'];
+                $loan_id = $requestData['loan_id'];
 
                 DB::table('customer_loan')
                     ->where('idCustomer_Loan', $loan_id)
@@ -829,8 +834,8 @@ class ApprovalController extends Controller
             // -----------------------------------------------------------------
             if ($approval->typeid == 402) {
                 $requestData = json_decode($approval->data, true);
-                $loan_id     = $requestData['loan_id'];
-                $reason      = $requestData['reason'];
+                $loan_id = $requestData['loan_id'];
+                $reason = $requestData['reason'];
                 $customer_id = $requestData['customer_id'];
 
                 DB::table('customer_loan')
@@ -844,15 +849,15 @@ class ApprovalController extends Controller
                     ->first();
 
                 $logData = [
-                    'customer_id'    => $customer_id,
-                    'customer_name'  => ($customer->First_Name ?? '') . ' ' . ($customer->Last_Name ?? ''),
-                    'date'           => date('Y-m-d'),
-                    'time'           => date('H:i:s'),
-                    'description'    => "Delete Loan ({$loan_id})\nReason : {$reason}",
+                    'customer_id' => $customer_id,
+                    'customer_name' => ($customer->First_Name ?? '') . ' ' . ($customer->Last_Name ?? ''),
+                    'date' => date('Y-m-d'),
+                    'time' => date('H:i:s'),
+                    'description' => "Delete Loan ({$loan_id})\nReason : {$reason}",
                     'description_id' => $loan_id,
-                    'comment'        => ' ',
-                    'type'           => 'Delete Loan',
-                    'user'           => user_data('idUser'),
+                    'comment' => ' ',
+                    'type' => 'Delete Loan',
+                    'user' => user_data('idUser'),
                 ];
 
                 insertWithBranch('customer_log', $logData);
@@ -862,8 +867,8 @@ class ApprovalController extends Controller
             // TYPE 403: LOAN INSTALLMENT MODIFICATION
             // -----------------------------------------------------------------
             if ($approval->typeid == 403) {
-                $requestData  = json_decode($approval->data, true);
-                $loanId       = $requestData['loan_id'];
+                $requestData = json_decode($approval->data, true);
+                $loanId = $requestData['loan_id'];
                 $installments = $requestData['installments'];
 
                 foreach ($installments as $installment) {
@@ -873,7 +878,7 @@ class ApprovalController extends Controller
                         ->where('branch_id', $approval->branch_id)
                         ->update([
                             'Installment_Date' => $installment['installment_date'],
-                            'Panelty_date'     => $installment['penalty_date'],
+                            'Panelty_date' => $installment['penalty_date'],
                         ]);
                 }
             }
@@ -883,9 +888,9 @@ class ApprovalController extends Controller
             // -----------------------------------------------------------------
             if ($approval->typeid == 603) {
                 $requestData = json_decode($approval->data, true);
-                $expenseId   = $requestData['expense_id'];
+                $expenseId = $requestData['expense_id'];
                 $expenseData = $requestData['expense_data'];
-                $bankIdData  = $requestData['bank_id_data'];
+                $bankIdData = $requestData['bank_id_data'];
 
                 $last_expenses = DB::table('expences')
                     ->where('id', $expenseId)
@@ -902,29 +907,29 @@ class ApprovalController extends Controller
                         $reason = 'Delete Expense : (' . $last_expenses->reason . ')';
 
                         DB::table('bank_log')->insert([
-                            'bank_id'       => $last_expenses->bank_id,
-                            'type'          => 'Expenses',
-                            'reason'        => $reason,
-                            'cheque_no'     => '-',
-                            'date_time'     => now(),
-                            'debit_credit'  => 'debit',
-                            'amount'        => $last_expenses->amount,
+                            'bank_id' => $last_expenses->bank_id,
+                            'type' => 'Expenses',
+                            'reason' => $reason,
+                            'cheque_no' => '-',
+                            'date_time' => now(),
+                            'debit_credit' => 'debit',
+                            'amount' => $last_expenses->amount,
                             'other_bank_id' => $bank_id->Idbank,
-                            'user_id'       => user_data('idUser'),
-                            'branch_id'     => $approval->branch_id,
+                            'user_id' => user_data('idUser'),
+                            'branch_id' => $approval->branch_id,
                         ]);
 
                         DB::table('bank_log')->insert([
-                            'bank_id'       => $bank_id->Idbank,
-                            'type'          => 'Expenses',
-                            'reason'        => $reason,
-                            'cheque_no'     => '-',
-                            'date_time'     => now(),
-                            'debit_credit'  => 'credit',
-                            'amount'        => $last_expenses->amount,
+                            'bank_id' => $bank_id->Idbank,
+                            'type' => 'Expenses',
+                            'reason' => $reason,
+                            'cheque_no' => '-',
+                            'date_time' => now(),
+                            'debit_credit' => 'credit',
+                            'amount' => $last_expenses->amount,
                             'other_bank_id' => $last_expenses->bank_id,
-                            'user_id'       => user_data('idUser'),
-                            'branch_id'     => $approval->branch_id,
+                            'user_id' => user_data('idUser'),
+                            'branch_id' => $approval->branch_id,
                         ]);
                     }
 
@@ -940,10 +945,10 @@ class ApprovalController extends Controller
             // -----------------------------------------------------------------
             ApprovalRequest::where('id', $id)
                 ->update([
-                    'status'             => 1,
-                    'approveduserid'     => user_data('idUser'),
+                    'status' => 1,
+                    'approveduserid' => user_data('idUser'),
                     'approved_date_time' => now(),
-                    'comment'            => $comment,
+                    'comment' => $comment,
                 ]);
 
             // -----------------------------------------------------------------
@@ -955,15 +960,15 @@ class ApprovalController extends Controller
 
                 DB::table('approval_notifications')->insert([
                     'approval_id' => $approval->id,
-                    'branch_id'   => $approval->branch_id,
-                    'type'        => $approval->type,
-                    'typeid'      => $approval->typeid,
-                    'status'      => 1, // 1 = Approved
-                    'title'       => 'Approval Request Approved',
-                    'message'     => 'Your request for ' . $typeText . ' has been approved.',
-                    'is_read'     => 0,
-                    'created_at'  => now(),
-                    'updated_at'  => now(),
+                    'branch_id' => $approval->branch_id,
+                    'type' => $approval->type,
+                    'typeid' => $approval->typeid,
+                    'status' => 1, // 1 = Approved
+                    'title' => 'Approval Request Approved',
+                    'message' => 'Your request for ' . $typeText . ' has been approved.',
+                    'is_read' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
 
@@ -997,7 +1002,7 @@ class ApprovalController extends Controller
 
     public function reject(Request $request)
     {
-        $id     = $request->input('id');
+        $id = $request->input('id');
         $reason = $request->input('reason');
 
         try {
@@ -1010,7 +1015,7 @@ class ApprovalController extends Controller
             // Loan approval rejection (Type 401) -> set loan as rejected
             if ($approval->typeid == 401) {
                 $requestData = json_decode($approval->data, true);
-                $loan_id     = $requestData['loan_id'];
+                $loan_id = $requestData['loan_id'];
 
                 DB::table('customer_loan')
                     ->where('idCustomer_Loan', $loan_id)
@@ -1020,10 +1025,10 @@ class ApprovalController extends Controller
 
             ApprovalRequest::where('id', $id)
                 ->update([
-                    'status'             => 2,
-                    'approveduserid'     => user_data('idUser'),
+                    'status' => 2,
+                    'approveduserid' => user_data('idUser'),
                     'approved_date_time' => now(),
-                    'comment'            => $reason,
+                    'comment' => $reason,
                 ]);
 
             // -------------------------------------------------------------
@@ -1034,15 +1039,15 @@ class ApprovalController extends Controller
 
                 DB::table('approval_notifications')->insert([
                     'approval_id' => $approval->id,
-                    'branch_id'   => $approval->branch_id,
-                    'type'        => $approval->type,
-                    'typeid'      => $approval->typeid,
-                    'status'      => 2, // 2 = Rejected
-                    'title'       => 'Approval Request Rejected',
-                    'message'     => 'Your request for ' . $typeText . ' has been rejected. Reason: ' . $reason,
-                    'is_read'     => 0,
-                    'created_at'  => now(),
-                    'updated_at'  => now(),
+                    'branch_id' => $approval->branch_id,
+                    'type' => $approval->type,
+                    'typeid' => $approval->typeid,
+                    'status' => 2, // 2 = Rejected
+                    'title' => 'Approval Request Rejected',
+                    'message' => 'Your request for ' . $typeText . ' has been rejected. Reason: ' . $reason,
+                    'is_read' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
 
@@ -1074,7 +1079,7 @@ class ApprovalController extends Controller
 
     public function callback(Request $request)
     {
-        $id      = $request->input('id');
+        $id = $request->input('id');
         $comment = $request->input('comment');
 
         try {
@@ -1086,10 +1091,10 @@ class ApprovalController extends Controller
 
             ApprovalRequest::where('id', $id)
                 ->update([
-                    'status'             => -1,
-                    'approveduserid'     => user_data('idUser'),
+                    'status' => -1,
+                    'approveduserid' => user_data('idUser'),
                     'approved_date_time' => now(),
-                    'comment'            => $comment,
+                    'comment' => $comment,
                 ]);
 
             // -------------------------------------------------------------
@@ -1100,15 +1105,15 @@ class ApprovalController extends Controller
 
                 DB::table('approval_notifications')->insert([
                     'approval_id' => $approval->id,
-                    'branch_id'   => $approval->branch_id,
-                    'type'        => $approval->type,
-                    'typeid'      => $approval->typeid,
-                    'status'      => 3, // 3 = Callback
-                    'title'       => 'Approval Request Sent for Callback',
-                    'message'     => 'Your request for ' . $typeText . ' was sent back with comments: ' . $comment,
-                    'is_read'     => 0,
-                    'created_at'  => now(),
-                    'updated_at'  => now(),
+                    'branch_id' => $approval->branch_id,
+                    'type' => $approval->type,
+                    'typeid' => $approval->typeid,
+                    'status' => 3, // 3 = Callback
+                    'title' => 'Approval Request Sent for Callback',
+                    'message' => 'Your request for ' . $typeText . ' was sent back with comments: ' . $comment,
+                    'is_read' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
 
@@ -1719,10 +1724,11 @@ class ApprovalController extends Controller
             $changesCount = 0;
             // Privileges are stored as flat key-value pairs
             foreach ($newPrivileges as $key => $value) {
-                if (empty($key)) continue;
+                if (empty($key))
+                    continue;
 
-                $newValue = (int)$value;
-                $currentValue = (int)($currentPrivileges[$key] ?? 0);
+                $newValue = (int) $value;
+                $currentValue = (int) ($currentPrivileges[$key] ?? 0);
 
                 if ($currentValue != $newValue) {
                     $changesCount++;
@@ -2389,8 +2395,8 @@ class ApprovalController extends Controller
 
     private function buildPersonName(?string $first, ?string $last): ?string
     {
-        $first = trim((string)($first ?? ''));
-        $last = trim((string)($last ?? ''));
+        $first = trim((string) ($first ?? ''));
+        $last = trim((string) ($last ?? ''));
 
         $fullName = trim($first . ' ' . $last);
 
@@ -2471,7 +2477,7 @@ class ApprovalController extends Controller
         }
 
         $sinceId = (int) $request->get('since_id', 0);
-        $init    = (bool) $request->get('init', false);
+        $init = (bool) $request->get('init', false);
 
         $lastPendingId = DB::table('approval_request')
             ->where('status', 0)
@@ -2480,9 +2486,9 @@ class ApprovalController extends Controller
         // First sync – no popup
         if ($init) {
             return response()->json([
-                'success'   => true,
-                'init'      => true,
-                'last_id'   => $lastPendingId,
+                'success' => true,
+                'init' => true,
+                'last_id' => $lastPendingId,
                 'approvals' => [],
             ]);
         }
@@ -2508,9 +2514,9 @@ class ApprovalController extends Controller
             ->get();
 
         return response()->json([
-            'success'   => true,
-            'init'      => false,
-            'last_id'   => $lastPendingId,
+            'success' => true,
+            'init' => false,
+            'last_id' => $lastPendingId,
             'approvals' => $approvals,
         ]);
     }
@@ -2546,7 +2552,7 @@ class ApprovalController extends Controller
 
         return response()->json([
             'success' => true,
-            'items'   => $items,
+            'items' => $items,
         ]);
     }
     private function getBranches()
@@ -2613,4 +2619,365 @@ class ApprovalController extends Controller
 
         return [];
     }
+    // ==============================
+    // ✅ UNIVERSAL DETAILS ENDPOINT
+    // ==============================
+    public function getApprovalDetails(Request $request)
+    {
+        $id = (int) $request->id;
+        $typeId = (int) $request->typeId;
+
+        $row = DB::table('approval_request')->where('id', $id)->first();
+        if (!$row) {
+            return response()->json([
+                'success' => false,
+                'html' => '<div class="alert alert-danger">Request not found.</div>'
+            ]);
+        }
+
+        $payload = json_decode($row->data ?? '', true);
+        if (!is_array($payload)) {
+            return response()->json([
+                'success' => false,
+                'html' => '<div class="alert alert-danger">Invalid request JSON data.</div>'
+            ]);
+        }
+
+        // Common info (optional use in views)
+        $meta = [
+            'id' => $row->id,
+            'typeid' => $row->typeid,
+            'type' => $row->type,
+            'description' => $row->description,
+            'data_time' => $row->data_time,
+            'branch_id' => $row->branch_id,
+            'userid' => $row->userid,
+        ];
+
+        // Render by typeid
+        switch ($typeId) {
+            // CUSTOMER
+            case 301:
+                return $this->renderCustomerCreate($payload, $meta);
+            case 302:
+                return $this->renderCustomerUpdate($payload, $meta);
+            case 303:
+                return $this->renderCustomerStatus($payload, $meta);
+            case 304:
+                return $this->renderCustomerBlacklist($payload, $meta);
+            case 305:
+                return $this->renderCustomerDocument($payload, $meta);
+
+            // USER
+            case 101:
+                return $this->renderUserCreate($payload, $meta);
+            case 102:
+                return $this->renderUserUpdate($payload, $meta);
+            case 103:
+                return $this->renderUserPrivilegeChange($payload, $meta);
+            case 104:
+                return $this->renderUserDesignationChange($payload, $meta);
+
+            // DESIGNATION
+            case 201:
+                return $this->renderDesignationPrivileges($payload, $meta);
+
+            // LOAN
+            case 401:
+                return $this->renderLoanApproval($payload, $meta);
+            case 402:
+                return $this->renderLoanRejection($payload, $meta);
+            case 403:
+                return $this->renderLoanModification($payload, $meta);
+
+            // FINANCE
+            case 501:
+                return $this->renderBankTransfer($payload, $meta);
+            case 502:
+                return $this->renderPaymentUndo($payload, $meta);
+            case 503:
+                return $this->renderPaymentReversal($payload, $meta);
+
+            // EXPENSE
+            case 601:
+                return $this->renderExpenseCreate($payload, $meta);
+            case 602:
+                return $this->renderExpenseApproval($payload, $meta);
+            case 603:
+                return $this->renderExpenseModification($payload, $meta);
+        }
+
+        // fallback
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.partials.raw_json', compact('payload', 'meta'))->render()
+        ]);
+    }
+
+    // =========================
+    // ✅ RENDER HELPERS (VIEWS)
+    // =========================
+
+    private function renderCustomerCreate($payload, $meta)
+    {
+        $c = $payload['customer_data'] ?? [];
+        $address = trim(implode(', ', array_filter([
+            $c['Address'] ?? null,
+            $c['Address_02'] ?? null,
+            $c['Address_03'] ?? null,
+        ])));
+
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.customer_create', compact('c', 'address', 'meta'))->render()
+        ]);
+    }
+
+    private function renderCustomerUpdate($payload, $meta)
+    {
+        // supports either {old_data,new_data} OR {customer_old,customer_new}
+        $old = $payload['old_data'] ?? ($payload['customer_old'] ?? []);
+        $new = $payload['new_data'] ?? ($payload['customer_new'] ?? []);
+
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.customer_update', compact('old', 'new', 'meta'))->render()
+        ]);
+    }
+
+    private function renderCustomerStatus($payload, $meta)
+    {
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.customer_status', compact('payload', 'meta'))->render()
+        ]);
+    }
+
+    private function renderCustomerBlacklist($payload, $meta)
+    {
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.customer_blacklist', compact('payload', 'meta'))->render()
+        ]);
+    }
+
+    private function renderCustomerDocument($payload, $meta)
+    {
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.customer_document', compact('payload', 'meta'))->render()
+        ]);
+    }
+
+    private function renderUserCreate($payload, $meta)
+    {
+        $u = $payload['user_data'] ?? $payload;
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.user_create', compact('u', 'meta'))->render()
+        ]);
+    }
+
+    private function renderUserUpdate($payload, $meta)
+    {
+        // status change request format
+        if (isset($payload['new_data']) && isset($payload['new_data']['Status'])) {
+            $old = $payload['old_data'] ?? [];
+            $new = $payload['new_data'] ?? [];
+            return response()->json([
+                'success' => true,
+                'html' => view('approval.user_update', compact('old', 'new', 'meta'))->render()
+            ]);
+        }
+
+        // full update request format (from updateUser())
+        $update = $payload['update_data'] ?? [];
+        $old = $payload['old_data'] ?? []; // optional if you send it later
+        $new = $update;
+
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.user_update_full', compact('old', 'new', 'meta', 'payload'))->render()
+        ]);
+    }
+
+
+    private function renderUserPrivilegeChange($payload, $meta)
+    {
+        // supports privilege list in multiple keys
+        $priv = $payload['privileges'] ?? ($payload['privilege_data'] ?? ($payload['data'] ?? $payload));
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.user_privileges', compact('priv', 'meta'))->render()
+        ]);
+    }
+
+    private function renderUserDesignationChange($payload, $meta)
+    {
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.user_designation', compact('payload', 'meta'))->render()
+        ]);
+    }
+
+    private function renderDesignationPrivileges($payload, $meta)
+    {
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.designation_privileges', compact('payload', 'meta'))->render()
+        ]);
+    }
+
+    private function renderLoanApproval($payload, $meta)
+    {
+        $loan = $payload['loan_data'] ?? $payload;
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.loan_approval', compact('loan', 'meta'))->render()
+        ]);
+    }
+
+    private function renderLoanRejection($payload, $meta)
+    {
+        $loan = $payload['loan_data'] ?? $payload;
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.loan_rejection', compact('loan', 'payload', 'meta'))->render()
+        ]);
+    }
+
+    private function renderLoanModification($payload, $meta)
+    {
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.loan_modification', compact('payload', 'meta'))->render()
+        ]);
+    }
+
+    private function renderBankTransfer($payload, $meta)
+    {
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.bank_transfer', compact('payload', 'meta'))->render()
+        ]);
+    }
+
+    private function renderPaymentUndo($payload, $meta)
+    {
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.payment_undo', compact('payload', 'meta'))->render()
+        ]);
+    }
+
+    private function renderPaymentReversal($payload, $meta)
+    {
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.payment_reversal', compact('payload', 'meta'))->render()
+        ]);
+    }
+
+    private function renderExpenseCreate($payload, $meta)
+    {
+        $exp = $payload['expense_data'] ?? $payload;
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.expense_create', compact('exp', 'meta'))->render()
+        ]);
+    }
+
+    private function renderExpenseApproval($payload, $meta)
+    {
+        $exp = $payload['expense_data'] ?? $payload;
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.expense_approval', compact('exp', 'meta'))->render()
+        ]);
+    }
+
+    private function renderExpenseModification($payload, $meta)
+    {
+        return response()->json([
+            'success' => true,
+            'html' => view('approval.expense_modification', compact('payload', 'meta'))->render()
+        ]);
+    }
+
+
+    public function autoApproveById($id, $comment = 'Auto approved (approval disabled)')
+    {
+        // IMPORTANT: approve() expects Request input id/comment, so we call internal logic
+        $request = new \Illuminate\Http\Request();
+        $request->merge([
+            'id' => $id,
+            'comment' => $comment
+        ]);
+
+        return $this->approve($request); // uses your existing approve() full logic
+    }
+
+    public function bulkApproveLoans(Request $request)
+    {
+        $branchId = (int) session('branch_id');
+        $approveUserId = 1; // requested
+        $now = now()->format('Y-m-d H:i:s');
+
+        DB::beginTransaction();
+        try {
+
+            // 1) Get ALL pending loans (Status = -1)
+            $loanIds = DB::table('customer_loan')
+                ->where('Status', -1)
+                ->where('branch_id', $branchId) // remove this line if your table doesn't have branch_id
+                ->pluck('idCustomer_Loan')
+                ->toArray();
+
+            $loanIds = array_values(array_unique(array_filter($loanIds)));
+
+            if (empty($loanIds)) {
+                DB::rollBack();
+                return response()->json([
+                    'ok' => false,
+                    'message' => 'No pending loans (Status = -1) found.'
+                ], 200);
+            }
+
+            // 2) Update loan_has_approval only "not yet approved"
+            $affectedLoanHasApproval = DB::table('loan_has_approval')
+                ->where('branch_id', $branchId)
+                ->whereIn('loan_id', $loanIds)
+                ->where(function ($q) {
+                    $q->whereNull('comment')
+                        ->orWhere('comment', '=', '')
+                        ->orWhere('comment', '=', '-')
+                        ->orWhereNull('user_id')
+                        ->orWhere('user_id', '=', 0);
+                })
+                ->update([
+                    'comment' => 'Approved',
+                    'user_id' => $approveUserId,
+                    'date' => $now,
+                ]);
+
+            DB::commit();
+
+            return response()->json([
+                'ok' => true,
+                'message' => 'Bulk approve completed (pending loans Status=-1).',
+                'loan_ids_count' => count($loanIds),
+                'updated_loan_has_approval_rows' => $affectedLoanHasApproval,
+            ], 200);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'ok' => false,
+                'message' => 'Bulk approval failed.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
 }

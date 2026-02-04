@@ -67,18 +67,17 @@ class LoanController extends Controller
     {
         DB::beginTransaction();
         try {
-            $user_id = (int)user_data('idUser');
+            $user_id = (int) user_data('idUser');
 
             $loan = new Loan();
             $loan->created_at = Carbon::now();
             $date = Carbon::now()->toDateString();
 
-            $customer_id      = $request->customer_id;
+            $customer_id = $request->customer_id;
             $type_loan_number = $request->type_loan_number;
 
             // Step 1: Fetch necessary data
             $maxId = DB::table('customer_loan')->where('branch_id', session('branch_id'))->max('idCustomer_Loan') ?? 1;
-            Log::info($maxId);
             $maxId++;
             $type = $request->loan_type;
 
@@ -86,12 +85,16 @@ class LoanController extends Controller
             $branch_no = $company->branch;
             $loan_format = $company->loan_format;
 
+
+            $loan_seperator_group = $company->loan_seperate_from;
+            $loan_seperator_inv = $company->inv_loan_seperate_from;
+
             $loan_num_type = $company->loan_num_type;
 
             // Initialize the loan_number_txt
             $loan_number_txt = $type_loan_number;
             // Format the ID with leading zeros (e.g., 001, 010, 100, etc.)
-            $formatted_loan_id = str_pad($maxId, 3, '0', STR_PAD_LEFT);
+            $formatted_loan_id = str_pad($maxId, 4, '0', STR_PAD_LEFT);
             $product_code = tableWithBranch('loan_category')
                 ->where('idLoan_Category', '=', $request->loan_cate_id)
                 ->first();
@@ -245,13 +248,13 @@ class LoanController extends Controller
                             ->count();
 
                         $placeholders = [
-                            '@Branch_No@'    => $branch_no,
-                            '@Root@'         => $cus_root->root_code ?? '',
+                            '@Branch_No@' => $branch_no,
+                            '@Root@' => $cus_root->root_code ?? '',
                             '@Product_Code@' => $product_code->Product_code,
-                            '@Customer_No@'  => str_pad($cus_root->idCustomer, 3, '0', STR_PAD_LEFT),
-                            '@Auto_Id@'      => $formatted_loan_id,
-                            '@Loan_Count@'   => $cus_loan_count + 1,
-                            '@RootlyCount@'  => str_pad($routewiseloanCount + 1, 3, '0', STR_PAD_LEFT),
+                            '@Customer_No@' => str_pad($cus_root->idCustomer, 3, '0', STR_PAD_LEFT),
+                            '@Auto_Id@' => $formatted_loan_id,
+                            '@Loan_Count@' => $cus_loan_count + 1,
+                            '@RootlyCount@' => str_pad($routewiseloanCount + 1, 3, '0', STR_PAD_LEFT),
                         ];
 
                         // Step 3: Replace placeholders in the loan_format
@@ -259,6 +262,16 @@ class LoanController extends Controller
                         foreach ($placeholders as $placeholder => $value) {
                             $loan_number_txt = str_replace($placeholder, $value, $loan_number_txt);
                         }
+
+                        if ($loan_seperator_inv) {
+                            // remove all common separators
+                            $loan_number_txt = str_replace(
+                                ['/', '.', '-', '_', ' '],
+                                '',
+                                $loan_number_txt
+                            );
+                        }
+
                     } else {
                         $loan_no = tableWithBranch('customer', 'customer')
                             ->leftJoin('group_has_customer', 'group_has_customer.cus_id', '=', 'customer.idCustomer')
@@ -291,16 +304,16 @@ class LoanController extends Controller
 
                             // Step 2: Define the mapping
                             $placeholders = [
-                                '@Branch_No@'        => $branch_no,
-                                '@Center_No@'        => $loan_no->No,
-                                '@Group_No@'         => $loan_no->Group_No,
-                                '@Product_Code@'     => $product_code->Product_code,
-                                '@Root@'             => $loan_no->root,
-                                '@Customer_No@'      => str_pad($loan_no->idCustomer, 3, '0', STR_PAD_LEFT),
-                                '@Auto_Id@'          => $formatted_loan_id,
-                                '@Loan_Count@'       => $cus_loan_count + 1,
+                                '@Branch_No@' => $branch_no,
+                                '@Center_No@' => $loan_no->No,
+                                '@Group_No@' => $loan_no->Group_No,
+                                '@Product_Code@' => $product_code->Product_code,
+                                '@Root@' => $loan_no->root,
+                                '@Customer_No@' => str_pad($loan_no->idCustomer, 3, '0', STR_PAD_LEFT),
+                                '@Auto_Id@' => $formatted_loan_id,
+                                '@Loan_Count@' => $cus_loan_count + 1,
                                 '@Center_Cus_Count@' => $center_customer_count + 1,
-                                '@RootlyCount@'      => str_pad($routewiseloanCount + 1, 3, '0', STR_PAD_LEFT),
+                                '@RootlyCount@' => str_pad($routewiseloanCount + 1, 3, '0', STR_PAD_LEFT),
                             ];
 
                             // Step 3: Replace placeholders in the loan_format
@@ -308,6 +321,16 @@ class LoanController extends Controller
                             foreach ($placeholders as $placeholder => $value) {
                                 $loan_number_txt = str_replace($placeholder, $value, $loan_number_txt);
                             }
+
+                            if ($loan_seperator_group) {
+                                // remove all common separators
+                                $loan_number_txt = str_replace(
+                                    ['/', '.', '-', '_', ' '],
+                                    '',
+                                    $loan_number_txt
+                                );
+                            }
+
                         }
                     }
                 }
@@ -367,11 +390,11 @@ class LoanController extends Controller
                     // 5) Add a customer log
                     $CustomerLogController = new CustomerLogController();
                     $req = new Request([
-                        'customer_id'    => $customer_id,
-                        'description'    => "Customer Number Changed (Individual Loan) From " . ($customer_old_details->cus_number ?? 'N/A') . " To " . $customer_number_txt,
+                        'customer_id' => $customer_id,
+                        'description' => "Customer Number Changed (Individual Loan) From " . ($customer_old_details->cus_number ?? 'N/A') . " To " . $customer_number_txt,
                         'description_id' => $customer_id,
-                        'comment'        => 'Change Customer Number',
-                        'type'           => 'Customer Update',
+                        'comment' => 'Change Customer Number',
+                        'type' => 'Customer Update',
                     ]);
                     $CustomerLogController->store($req);
 
@@ -390,13 +413,13 @@ class LoanController extends Controller
                 $sumTotalAmount = 0.0;
 
                 $firstTotalBalance = null;
-                $maxTotalBalance   = 0.0;
-                $lastNonZero       = 0.0;
+                $maxTotalBalance = 0.0;
+                $lastNonZero = 0.0;
 
                 foreach (($request->installment ?? []) as $row) {
                     $installmentAmount = (float) data_get($row, 'installmentAmount', 0); // per-row installment
-                    $totalAmount       = (float) data_get($row, 'totalAmount', 0);       // if you have a "total" column per row
-                    $totalBalance      = (float) data_get($row, 'totalBalance', 0);      // running balance column
+                    $totalAmount = (float) data_get($row, 'totalAmount', 0);       // if you have a "total" column per row
+                    $totalBalance = (float) data_get($row, 'totalBalance', 0);      // running balance column
 
                     // interest: prefer explicit, else fall back to installmentBalance if that's your interest column
                     $interestPerRow = (float) (
@@ -410,13 +433,15 @@ class LoanController extends Controller
                         max(0, $installmentAmount - $interestPerRow)
                     );
 
-                    $sumCapital     += $capitalPerRow;
-                    $sumInterest    += $interestPerRow;
+                    $sumCapital += $capitalPerRow;
+                    $sumInterest += $interestPerRow;
                     $sumTotalAmount += $totalAmount;
 
                     if ($totalBalance > 0) {
-                        if ($firstTotalBalance === null) $firstTotalBalance = $totalBalance;
-                        if ($totalBalance > $maxTotalBalance) $maxTotalBalance = $totalBalance;
+                        if ($firstTotalBalance === null)
+                            $firstTotalBalance = $totalBalance;
+                        if ($totalBalance > $maxTotalBalance)
+                            $maxTotalBalance = $totalBalance;
                         $lastNonZero = $totalBalance;
                     }
                 }
@@ -425,51 +450,53 @@ class LoanController extends Controller
                 $grandTotal = $sumCapital + $sumInterest;
 
                 // Overwrite the four fields from table totals
-                $loan->Total_Loan_Amount   = round($grandTotal, 2);
-                $loan->Balance_Amount      = round($grandTotal, 2);
-                $loan->capital_balance     = round($sumCapital, 2);
+                $loan->Total_Loan_Amount = round($grandTotal, 2);
+                $loan->Balance_Amount = round($grandTotal, 2);
+                $loan->capital_balance = round($sumCapital, 2);
                 $loan->installment_balance = round($sumInterest, 2);
-                $loan->Interest_Amount     = round($sumInterest, 2);
+                $loan->Interest_Amount = round($sumInterest, 2);
+
+                $loan->Installment_Amount = $request->new_interest_amount;
             } else {
-                $loan->Total_Loan_Amount   = $request->total_loan_amount;
-                $loan->Balance_Amount      = $request->total_loan_amount;
-                $loan->capital_balance     = $request->total_capital_amount;
+                $loan->Total_Loan_Amount = $request->total_loan_amount;
+                $loan->Balance_Amount = $request->total_loan_amount;
+                $loan->capital_balance = $request->total_capital_amount;
                 $loan->installment_balance = $request->total_interest_amount;
-                $loan->Interest_Amount     = $request->interest_amount;
+                $loan->Interest_Amount = $request->interest_amount;
             }
 
-            $loan->Loan_No                           = $loan_number_txt;
-            $loan->Loan_Category_idLoan_Category     = $request->loan_cate_id;
-            $loan->Customer_idCustomer               = $request->customer_id;
-            $loan->Leasing_type                      = $request->lease_type;
-            $loan->Vehicle_No                        = $request->vehicle_num;
-            $loan->Date_Time                         = $request->issue_date;
-            $loan->Amount                            = $request->loan_amount;
-            $loan->Interest_Rate                     = $request->interest;
-            $loan->Panalty_Rate                      = $request->panelty_amount;
-            $loan->Installment_Count                 = $request->ins_count;
+            $loan->Loan_No = $loan_number_txt;
+            $loan->Loan_Category_idLoan_Category = $request->loan_cate_id;
+            $loan->Customer_idCustomer = $request->customer_id;
+            $loan->Leasing_type = $request->lease_type;
+            $loan->Vehicle_No = $request->vehicle_num;
+            $loan->Date_Time = $request->issue_date;
+            $loan->Amount = $request->loan_amount;
+            $loan->Interest_Rate = $request->interest;
+            $loan->Panalty_Rate = $request->panelty_amount;
+            $loan->Installment_Count = $request->ins_count;
 
-            $loan->Total_Other_Amount                = $request->total_loan_charge;
-            $loan->Other_Amount_Balance              = $request->loan_charge_balance;
+            $loan->Total_Other_Amount = $request->total_loan_charge;
+            $loan->Other_Amount_Balance = $request->loan_charge_balance;
 
-            $loan->Installment_Amount                = $request->new_interest_amount;
-            $loan->Collection_Type                   = $request->collection_type;
-            $loan->Collection_Date                   = $request->installment_date_txt;
-            $loan->Panalty_Date                      = $request->panelty_date;
 
-            $loan->Status                            = "-1";
-            $loan->User_idUser                       = $user_id;
+            $loan->Collection_Type = $request->collection_type;
+            $loan->Collection_Date = $request->installment_date_txt;
+            $loan->Panalty_Date = $request->panelty_date;
 
-            $loan->type                              = $request->interest_method;
-            $loan->Interest_period                   = $request->Interest_period;
-            $loan->lending_officer_id                = $request->lending_officer;
-            $loan->collector_id                      = $request->collector_officer;
-            $loan->cus_bank_account                  = $request->bank_acc;
-            $loan->repayment_duration                = $request->repayment_duration_period;
-            $loan->loan_broker                       = $request->loan_broker;
-            $loan->loan_broker_commission            = $request->loan_broker_commission;
-            $loan->saving_amount                     = $request->saving_amount ?? '0.00';
-            $loan->branch_id                         = session('branch_id');
+            $loan->Status = "-1";
+            $loan->User_idUser = $user_id;
+
+            $loan->type = $request->interest_method;
+            $loan->Interest_period = $request->Interest_period;
+            $loan->lending_officer_id = $request->lending_officer;
+            $loan->collector_id = $request->collector_officer;
+            $loan->cus_bank_account = $request->bank_acc;
+            $loan->repayment_duration = $request->repayment_duration_period;
+            $loan->loan_broker = $request->loan_broker;
+            $loan->loan_broker_commission = $request->loan_broker_commission;
+            $loan->saving_amount = $request->saving_amount ?? '0.00';
+            $loan->branch_id = session('branch_id');
 
             $product = tableWithBranch('loan_category')->where('idLoan_Category', '=', $request->loan_cate_id)->first();
             if ($product) {
@@ -480,6 +507,8 @@ class LoanController extends Controller
             $loan->save();
 
             $id = $loan->id;
+
+
 
             $product = tableWithBranch('loan_category')->where('idLoan_Category', '=', $request->loan_cate_id)->first();
             if ($product) {
@@ -501,13 +530,13 @@ class LoanController extends Controller
                         if ($loan_no) {
                             // Step 2: Define the mapping
                             $placeholders = [
-                                '@Branch_No@'   => $branch_no,
-                                '@Root@'        => $loan_no->Group_No,
-                                '@Center_No@'   => $loan_no->No,
-                                '@Group_No@'    => $loan_no->Group_No,
+                                '@Branch_No@' => $branch_no,
+                                '@Root@' => $loan_no->Group_No,
+                                '@Center_No@' => $loan_no->No,
+                                '@Group_No@' => $loan_no->Group_No,
                                 '@Customer_No@' => $loan_no->idCustomer,
-                                '@Auto_Id@'     => $formatted_loan_id,
-                                '@Loan_Count@'  => $cus_loan_count + 1,
+                                '@Auto_Id@' => $formatted_loan_id,
+                                '@Loan_Count@' => $cus_loan_count + 1,
                             ];
 
                             // Step 3: Replace placeholders in the loan_format
@@ -521,13 +550,13 @@ class LoanController extends Controller
                     // Prepare data for Customer_Saving_Accounts
                     $savingData = [
                         'Customer_Id' => $customer_id,
-                        'Loan_Id'     => $id,
-                        'Loan_No'     => $loan_number_txt,
+                        'Loan_Id' => $id,
+                        'Loan_No' => $loan_number_txt,
                         'Created_Date' => date('Y-m-d H:i:s'),
-                        'Account_No'  => $saving_number_txt,
+                        'Account_No' => $saving_number_txt,
                         'Account_Type' => "Saving",
-                        'Balance'     => "0.00",
-                        'Status'      => "1",
+                        'Balance' => "0.00",
+                        'Status' => "1",
                     ];
 
                     // Insert and get the ID of the saving account
@@ -536,13 +565,13 @@ class LoanController extends Controller
                     // Prepare data for Savings_Account_Log
                     $logData = [
                         'Saving_Acount_Id' => $saving,
-                        'Date_Time'        => date('Y-m-d H:i:s'),
-                        'Type'             => "Saving Account",
-                        'Description'      => "Account Creation",
-                        'Credit'           => 0.00,
-                        'Debit'            => 0.00,
-                        'Balance'          => 0.00,
-                        'User'             => $user_id,
+                        'Date_Time' => date('Y-m-d H:i:s'),
+                        'Type' => "Saving Account",
+                        'Description' => "Account Creation",
+                        'Credit' => 0.00,
+                        'Debit' => 0.00,
+                        'Balance' => 0.00,
+                        'User' => $user_id,
                     ];
 
                     // Insert log entry
@@ -554,71 +583,87 @@ class LoanController extends Controller
 
             // Flags sent from the frontend
             $routeCollectionType = (string) $request->input('route_collection_type', '-');
-            $collectionDateMode  = (string) $request->input('collection_date_type_global', '-');
+            $collectionDateMode = (string) $request->input('collection_date_type_global', '-');
 
             // Only use the two extra fields in this mode:
             $useRouteCollection = ($routeCollectionType === 'fixed' && $collectionDateMode === 'according_to_route');
 
             foreach ($request->installment as $item) {
-                $customerLoanId     = $id;
-                $no                 = $item['No'];
-                $installmentDate    = $item['installmentDate'];
-                $installmentAmount  = $item['installmentAmount'];
-                $capitalAmount      = $item['capitalAmount'];
-                $interestAmount     = $item['interestAmount'];
-                $panaltyDate        = $item['panaltyDate'];
-                $panaltyAmount      = $item['panaltyAmount'];
-                $totalAmount        = $item['totalAmount'];
+                $customerLoanId = $id;
+                $no = $item['No'];
+                $installmentDate = $item['installmentDate'];
+                $installmentAmount = $item['installmentAmount'];
+                $capitalAmount = $item['capitalAmount'];
+                $interestAmount = $item['interestAmount'];
+                $panaltyDate = $item['panaltyDate'];
+                $panaltyAmount = $item['panaltyAmount'];
+                $totalAmount = $item['totalAmount'];
 
-                $paidAmount         = "0.00";
-                $panaltyBalance     = $item['panaltyBalance'];
+                $paidAmount = "0.00";
+                $panaltyBalance = $item['panaltyBalance'];
                 $installmentBalance = $item['installmentBalance'];
-                $totalBalance       = $item['totalBalance'];
+                $totalBalance = $item['totalBalance'];
 
                 // From UI (only meaningful in 'fixed' + 'according_to_route')
                 $collectionDate = $useRouteCollection
                     ? ($item['collectionDate'] ?? $installmentDate)
                     : $installmentDate;
-                $difference     = $useRouteCollection
-                    ? (isset($item['difference']) && $item['difference'] !== '' ? (int)$item['difference'] : null)
+                $difference = $useRouteCollection
+                    ? (isset($item['difference']) && $item['difference'] !== '' ? (int) $item['difference'] : null)
                     : null;
 
                 // Base payload (common)
                 $insert = [
                     'Customer_Loan_idCustomer_Loan' => $customerLoanId,
-                    'No'                 => $no,
-                    'Installment_Date'   => $installmentDate,
+                    'No' => $no,
+                    'Installment_Date' => $installmentDate,
                     'Installment_Amount' => $installmentAmount,
-                    'capital_amount'     => $capitalAmount,
-                    'interest_amount'    => $interestAmount,
-                    'Panalty_Amount'     => $panaltyAmount,
-                    'Total_Amount'       => $totalAmount,
-                    'Paid_Amount'        => $paidAmount,
-                    'Panalty_Balance'    => $panaltyBalance,
-                    'Interest_Balance'   => $interestAmount,
-                    'capital_balance'    => $capitalAmount,
-                    'Total_Balance'      => $totalBalance,
-                    'Status'             => '0',
-                    'Panelty_date'       => $panaltyDate,
-                    'Panelty_status'     => '0',
-                    'branch_id'          => session('branch_id'),
+                    'capital_amount' => $capitalAmount,
+                    'interest_amount' => $interestAmount,
+                    'Panalty_Amount' => $panaltyAmount,
+                    'Total_Amount' => $totalAmount,
+                    'Paid_Amount' => $paidAmount,
+                    'Panalty_Balance' => $panaltyBalance,
+                    'Interest_Balance' => $interestAmount,
+                    'capital_balance' => $capitalAmount,
+                    'Total_Balance' => $totalBalance,
+                    'Status' => '0',
+                    'Panelty_date' => $panaltyDate,
+                    'Panelty_status' => '0',
+                    'branch_id' => session('branch_id'),
 
                     // Always present in schema; set them by mode
-                    'Collection_Date'    => $collectionDate,   // null if not the route-based mode
-                    'Collection_Diff'    => $difference,       // null if not the route-based mode
+                    'Collection_Date' => $collectionDate,   // null if not the route-based mode
+                    'Collection_Diff' => $difference,       // null if not the route-based mode
                 ];
 
                 // Savings on/off
                 if (($saving_check ?? 'No') === "Yes") {
-                    $insert['Saving_amount']  = $item['savingAmount'];
+                    $insert['Saving_amount'] = $item['savingAmount'];
                     $insert['Saving_balance'] = $item['savingBalance'];
                 } else {
                     // Ensure zeros if columns exist and you want explicit values when saving is off
-                    $insert['Saving_amount']  = 0.00;
+                    $insert['Saving_amount'] = 0.00;
                     $insert['Saving_balance'] = 0.00;
                 }
 
                 DB::table('installments')->insert($insert);
+            }
+
+
+            if (($request->interest_method ?? '') === 'Reducing Balance') {
+                $secondInstallmentAmount = DB::table('installments')
+                    ->where('Customer_Loan_idCustomer_Loan', $id)
+                    ->orderBy('Installment_Date', 'asc')
+                    ->offset(1)
+                    ->value('Installment_Amount');
+
+                DB::table('customer_loan')
+                    ->where('idCustomer_Loan', $id)
+                    ->update([
+                        'Installment_Amount' => $secondInstallmentAmount
+                    ]);
+
             }
 
 
@@ -636,7 +681,7 @@ class LoanController extends Controller
                     $witnessData = [
                         'Customer_Loan_idCustomer_Loan' => $id,
                         'cus_id' => $item['cus_id'],
-                        'type'   => $newtypeshow,
+                        'type' => $newtypeshow,
                     ];
 
                     insertWithBranch('witness', $witnessData);
@@ -646,15 +691,15 @@ class LoanController extends Controller
             if (isset($request->loan_charge_table) && count($request->loan_charge_table) > 0) {
                 foreach ($request->loan_charge_table as $item) {
                     $customerLoanId = $id;
-                    $Description    = $item['Description'];
-                    $Type           = $item['Type'];
-                    $Amount         = $item['Amount'];
+                    $Description = $item['Description'];
+                    $Type = $item['Type'];
+                    $Amount = $item['Amount'];
 
                     $loanOtherChargesData = [
-                        'Description'                      => $Description,
-                        'Type'                             => $Type,
-                        'Amount'                           => $Amount,
-                        'Customer_Loan_idCustomer_Loan'    => $customerLoanId,
+                        'Description' => $Description,
+                        'Type' => $Type,
+                        'Amount' => $Amount,
+                        'Customer_Loan_idCustomer_Loan' => $customerLoanId,
                     ];
 
                     insertWithBranch('loan_other_charges', $loanOtherChargesData);
@@ -667,13 +712,13 @@ class LoanController extends Controller
             $level = tableWithBranch('level')->where('product_id', '=', $request->loan_cate_id)->get();
             foreach ($level as $item) {
                 $loanApprovalData = [
-                    'loan_id'    => $id,
-                    'level'      => $item->type,
-                    'level_id'   => $item->id,
+                    'loan_id' => $id,
+                    'level' => $item->type,
+                    'level_id' => $item->id,
                     'description' => $item->description,
-                    'comment'    => '',
-                    'user_id'    => 0,
-                    'date'       => '-',
+                    'comment' => '',
+                    'user_id' => 0,
+                    'date' => '-',
                 ];
 
                 insertWithBranch('loan_has_approval', $loanApprovalData);
@@ -681,10 +726,10 @@ class LoanController extends Controller
                 $checklist = tableWithBranch('approval_checklist')->where('level_id', '=', $item->id)->get();
                 foreach ($checklist as $check_item) {
                     $loanChecklistData = [
-                        'loan_id'    => $id,
-                        'level'      => $item->id,
+                        'loan_id' => $id,
+                        'level' => $item->id,
                         'description' => $check_item->description,
-                        'status'     => '0',
+                        'status' => '0',
                     ];
                     insertWithBranch('loan_has_approval_checklist', $loanChecklistData);
                 }
@@ -692,11 +737,11 @@ class LoanController extends Controller
 
             // Don't overwrite the main $request. Use a separate Request instance for logging.
             $logRequest = new Request([
-                'customer_id'    => $request->customer_id,
-                'description'    => "Created new loan ({$request->loan_number_txt})\nLoan Amount : {$request->loan_amount}\nProduct name : {$product->Name}",
+                'customer_id' => $request->customer_id,
+                'description' => "Created new loan ({$request->loan_number_txt})\nLoan Amount : {$request->loan_amount}\nProduct name : {$product->Name}",
                 'description_id' => $id,
-                'comment'        => ' ',
-                'type'           => 'Create Loan',
+                'comment' => ' ',
+                'type' => 'Create Loan',
             ]);
 
             // Call the store method of CustomerLogController
@@ -743,8 +788,8 @@ class LoanController extends Controller
                 ])));
 
                 $customerPayload = [
-                    'cus_number'       => (string) $customer->cus_number,
-                    'name'             => $fullName,
+                    'cus_number' => (string) $customer->cus_number,
+                    'name' => $fullName,
                 ];
             }
 
@@ -754,11 +799,11 @@ class LoanController extends Controller
                 'item' => $loan->getKey(),
                 'type' => $type,
                 'loan' => [
-                    'loan_no'           => $loan->Loan_No,
-                    'amount'            => $loan->Amount,
-                    'interest_rate'     => $loan->Interest_Rate,
-                    'installments'      => $loan->Installment_Count,
-                    'interest_amt'      => $loan->Interest_Amount,
+                    'loan_no' => $loan->Loan_No,
+                    'amount' => $loan->Amount,
+                    'interest_rate' => $loan->Interest_Rate,
+                    'installments' => $loan->Installment_Count,
+                    'interest_amt' => $loan->Interest_Amount,
                 ],
                 'customer' => $customerPayload,
             ], 200);
@@ -768,7 +813,7 @@ class LoanController extends Controller
             \Log::error('Create Loan failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'message' => 'Create loan failed. Transaction rolled back.',
-                'error'   => $e->getMessage()
+                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -1133,7 +1178,7 @@ class LoanController extends Controller
 
                 $witnessDetails[] = [
                     'type' => 'Guarantor',
-                    'details' => $guarantor ?? (object)['First_Name' => null, 'Last_Name' => null, 'Contact_No' => null, 'Nic' => null, 'Address' => null]
+                    'details' => $guarantor ?? (object) ['First_Name' => null, 'Last_Name' => null, 'Contact_No' => null, 'Nic' => null, 'Address' => null]
                 ];
             } else {
                 $customer = tableWithBranch('customer')
@@ -1142,16 +1187,16 @@ class LoanController extends Controller
 
                 $witnessDetails[] = [
                     'type' => 'Customer',
-                    'details' => $customer ?? (object)['First_Name' => null, 'Last_Name' => null, 'Contact_No' => null, 'Nic' => null, 'Address' => null]
+                    'details' => $customer ?? (object) ['First_Name' => null, 'Last_Name' => null, 'Contact_No' => null, 'Nic' => null, 'Address' => null]
                 ];
             }
         }
-        $user_id = (int)session('userid');
+        $user_id = (int) session('userid');
 
         $payment_delete = DB::table('user')->where('id', '=', $user_id)->first();
         $payment_delete_status = 0;
         if ($payment_delete) {
-            $payment_delete_status = (int)$payment_delete->payment_delete;
+            $payment_delete_status = (int) $payment_delete->payment_delete;
         }
 
         $loanQuery = tableWithBranch('customer_loan', 'customer_loan')
@@ -1277,8 +1322,8 @@ class LoanController extends Controller
             ->selectRaw('SUM(CASE WHEN amount < 0 THEN -amount ELSE 0 END) AS total_extra_payments')
             ->first();
 
-        $totalExtraCharges  = (float)($extraAgg->total_extra_charges  ?? 0);
-        $totalExtraPayments = (float)($extraAgg->total_extra_payments ?? 0);
+        $totalExtraCharges = (float) ($extraAgg->total_extra_charges ?? 0);
+        $totalExtraPayments = (float) ($extraAgg->total_extra_payments ?? 0);
 
         $Collecting_Officer = DB::table('user')->where('id', $loan->collector_id)->first();
 
@@ -1713,24 +1758,25 @@ class LoanController extends Controller
 
         $this->ensureResheduleTable();
 
-        $loan_id         = (int) $request->loan_id;
+        $loan_id = (int) $request->loan_id;
         $reschedule_type = (string) $request->reschedule_type;
-        $user_id         = (int)user_data('idUser');
-        $today           = Carbon::now()->toDateString();
+        $user_id = (int) user_data('idUser');
+        $today = Carbon::now()->toDateString();
 
         // minimal validation of required inputs you actually use below
         $request->validate([
-            'loan_id'            => 'required|integer',
-            'installment'        => 'required|array|min:1',
-            'collection_type'    => 'required|string',
-            'interest_method'    => 'required|string',
+            'loan_id' => 'required|integer',
+            'installment' => 'required|array|min:1',
+            'collection_type' => 'required|string',
+            'interest_method' => 'required|string',
             'installment_date_txt' => 'required|date',
         ]);
 
         // simple num sanitizer for strings like "27,000.00"
         $num = function ($v) {
-            if ($v === null) return null;
-            return (float) str_replace([',', ' '], '', (string)$v);
+            if ($v === null)
+                return null;
+            return (float) str_replace([',', ' '], '', (string) $v);
         };
 
         $savingFlag = ($request->saving ?? '') === 'Yes';
@@ -1754,7 +1800,7 @@ class LoanController extends Controller
             $data = Arr::only($data, (new Reschedule)->getFillable());
 
             // add your new meta fields
-            $data['loan_id']    = $loanRow->idCustomer_Loan;
+            $data['loan_id'] = $loanRow->idCustomer_Loan;
             $data['created_by'] = $user_id;
 
             // if your model has $timestamps=false, set created_at manually:
@@ -1768,36 +1814,36 @@ class LoanController extends Controller
 
             // 3) Update fields on customer_loan (only those you are posting)
             $update = [
-                'Date_Time'           => $today,
-                'Amount'              => $num($request->loan_amount),
-                'Interest_Rate'       => $num($request->interest),
-                'Panalty_Rate'        => $num($request->panelty_amount),
-                'Interest_Amount'     => $num($request->interest_amount),
-                'Total_Other_Amount'  => $num($request->total_loan_charge),
-                'Total_Loan_Amount'   => $num($request->total_loan_amount),
-                'Installment_Amount'  => $num($request->new_interest_amount),
-                'Collection_Type'     => $request->collection_type,
-                'Collection_Date'     => $request->installment_date_txt,
-                'Panalty_Date'        => $request->panelty_date,
-                'Balance_Amount'      => $num($request->total_loan_amount),
-                'User_idUser'         => $user_id,
-                'capital_balance'     => $num($request->total_capital_amount),
+                'Date_Time' => $today,
+                'Amount' => $num($request->loan_amount),
+                'Interest_Rate' => $num($request->interest),
+                'Panalty_Rate' => $num($request->panelty_amount),
+                'Interest_Amount' => $num($request->interest_amount),
+                'Total_Other_Amount' => $num($request->total_loan_charge),
+                'Total_Loan_Amount' => $num($request->total_loan_amount),
+                'Installment_Amount' => $num($request->new_interest_amount),
+                'Collection_Type' => $request->collection_type,
+                'Collection_Date' => $request->installment_date_txt,
+                'Panalty_Date' => $request->panelty_date,
+                'Balance_Amount' => $num($request->total_loan_amount),
+                'User_idUser' => $user_id,
+                'capital_balance' => $num($request->total_capital_amount),
                 'installment_balance' => $num($request->total_interest_amount),
-                'type'                => $request->interest_method,
-                'Interest_period'     => $request->Interest_period,
-                'saving_amount'       => $num($request->saving_amount) ?? 0.00,
-                'branch_id'           => session('branch_id'),
+                'type' => $request->interest_method,
+                'Interest_period' => $request->Interest_period,
+                'saving_amount' => $num($request->saving_amount) ?? 0.00,
+                'branch_id' => session('branch_id'),
             ];
 
             // Optional fields: only set if present in request
             foreach (
                 [
                     'Loan_Category_idLoan_Category' => 'loan_cate_id',
-                    'Customer_idCustomer'           => 'customer_id',
-                    'Leasing_type'                  => 'lease_type',
-                    'Vehicle_No'                    => 'vehicle_num',
-                    'Other_Amount_Balance'          => 'loan_charge_balance',
-                    'repayment_duration'            => 'repayment_duration_period',
+                    'Customer_idCustomer' => 'customer_id',
+                    'Leasing_type' => 'lease_type',
+                    'Vehicle_No' => 'vehicle_num',
+                    'Other_Amount_Balance' => 'loan_charge_balance',
+                    'repayment_duration' => 'repayment_duration_period',
                 ] as $col => $reqKey
             ) {
                 if ($request->filled($reqKey)) {
@@ -1833,26 +1879,26 @@ class LoanController extends Controller
             foreach ($items as $it) {
                 $base = [
                     'Customer_Loan_idCustomer_Loan' => $loan_id,
-                    'No'                 => $nextNo++,
-                    'Installment_Date'   => $it['installmentDate'] ?? $today,
+                    'No' => $nextNo++,
+                    'Installment_Date' => $it['installmentDate'] ?? $today,
                     'Installment_Amount' => $num($it['installmentAmount'] ?? 0),
-                    'capital_amount'     => $num($it['capitalAmount'] ?? 0),
-                    'interest_amount'    => $num($it['interestAmount'] ?? 0),
-                    'Panalty_Amount'     => $num($it['panaltyAmount'] ?? 0),
-                    'Total_Amount'       => $num($it['totalAmount'] ?? 0),
-                    'Paid_Amount'        => '0.00',
-                    'Panalty_Balance'    => $num($it['panaltyBalance'] ?? 0),
-                    'Interest_Balance'   => $num($it['interestAmount'] ?? 0),
-                    'capital_balance'    => $num($it['capitalAmount'] ?? 0),
-                    'Total_Balance'      => $num($it['totalBalance'] ?? 0),
-                    'Status'             => '0',
-                    'Panelty_date'       => $it['panaltyDate'] ?? $today,
-                    'Panelty_status'     => '0',
-                    'branch_id'          => session('branch_id'),
+                    'capital_amount' => $num($it['capitalAmount'] ?? 0),
+                    'interest_amount' => $num($it['interestAmount'] ?? 0),
+                    'Panalty_Amount' => $num($it['panaltyAmount'] ?? 0),
+                    'Total_Amount' => $num($it['totalAmount'] ?? 0),
+                    'Paid_Amount' => '0.00',
+                    'Panalty_Balance' => $num($it['panaltyBalance'] ?? 0),
+                    'Interest_Balance' => $num($it['interestAmount'] ?? 0),
+                    'capital_balance' => $num($it['capitalAmount'] ?? 0),
+                    'Total_Balance' => $num($it['totalBalance'] ?? 0),
+                    'Status' => '0',
+                    'Panelty_date' => $it['panaltyDate'] ?? $today,
+                    'Panelty_status' => '0',
+                    'branch_id' => session('branch_id'),
                 ];
 
                 if ($savingFlag) {
-                    $base['Saving_amount']  = $num($it['savingAmount'] ?? 0);
+                    $base['Saving_amount'] = $num($it['savingAmount'] ?? 0);
                     $base['Saving_balance'] = $num($it['savingBalance'] ?? 0);
                 }
 
@@ -1957,4 +2003,270 @@ class LoanController extends Controller
 
         return response()->json($data);
     }
+
+
+    public function updatePenaltyStatus(Request $request)
+    {
+        $request->validate([
+            'loan_id' => 'required|integer',
+            'panelty_status' => 'required|in:0,1',
+            // optional: 'comment' => 'nullable|string|max:1000',
+        ]);
+
+        $table = 'customer_loan';
+        $column = 'Panelty_Status';
+
+        // ✅ 1) Ensure the column exists (no migration)
+        if (!Schema::hasColumn($table, $column)) {
+            DB::statement("ALTER TABLE `$table` ADD COLUMN `$column` TINYINT(1) NOT NULL DEFAULT 1");
+        }
+
+        $loanId = (int) $request->loan_id;
+        $status = (int) $request->panelty_status;
+
+        // ✅ 2) Get loan details (for logging + safety)
+        $loanQ = DB::table($table)->where('idCustomer_Loan', $loanId);
+
+        if (Schema::hasColumn($table, 'branch_id')) {
+            $loanQ->where('branch_id', session('branch_id'));
+        }
+
+        $customer_loan = $loanQ->first();
+
+        if (!$customer_loan) {
+            return response()->json(['message' => 'Loan not found.'], 404);
+        }
+
+        $oldStatus = (int) ($customer_loan->{$column} ?? 1);
+
+        // If already same status, no need update
+        if ($oldStatus === $status) {
+            return response()->json([
+                'message' => 'Penalty status already updated.',
+                'loan_id' => $loanId,
+                'Panelty_Status' => $status,
+            ]);
+        }
+
+        // ✅ 3) Update
+        $updated = DB::table($table)
+            ->where('idCustomer_Loan', $loanId)
+            ->update([$column => $status]);
+
+        if (!$updated) {
+            return response()->json(['message' => 'Loan not updated.'], 500);
+        }
+
+        // ✅ 3.1) Insert into loan_comment table (NEW)
+        $user_id = (int) session('userid');
+
+        $actionText = $status === 1 ? 'Penalty ON' : 'Penalty OFF';
+        $prevText = $oldStatus === 1 ? 'ON' : 'OFF';
+        $newText = $status === 1 ? 'ON' : 'OFF';
+        $byUserName = session('Full_Name') ?? '-';
+
+        // If you want to use request->comment, keep it; otherwise auto-generate:
+        $commentText = trim((string) ($request->comment ?? ''));
+
+        if ($commentText === '') {
+            $commentText =
+                "{$actionText} ({$customer_loan->Loan_No})\n" .
+                "Previous : {$prevText}\n" .
+                "New      : {$newText}\n" .
+                "By User  : {$byUserName}";
+        }
+
+        $comment_id = DB::table('loan_comment')->insertGetId([
+            'comment' => $commentText,
+            'loan_id' => $loanId,        // ✅ link to loan
+            'user_id' => $user_id,
+            'date' => now()->toDateString(),
+            'time' => now()->toTimeString(),
+        ]);
+
+        // ✅ 4) Customer Log (your existing log)
+        $logRequest = new Request([
+            'customer_id' => $customer_loan->Customer_idCustomer,
+            'description' => "{$actionText} ({$customer_loan->Loan_No})\n"
+                . "Previous : {$prevText}\n"
+                . "New      : {$newText}\n"
+                . "By User  : {$byUserName}",
+            'description_id' => $comment_id, // ✅ better to save comment id (or keep $loanId if you want)
+            'comment' => '',
+            'type' => 'Penalty Status',
+        ]);
+
+        $this->customerLogController->store($logRequest);
+
+        return response()->json([
+            'message' => 'Penalty status updated.',
+            'loan_id' => $loanId,
+            'Panelty_Status' => $status,
+            'comment_id' => $comment_id,
+        ]);
+    }
+
+
+    public function regenerateLoanNumbersAllActive(Request $request)
+    {
+        $branchId = (int) session('branch_id');
+        $userId = (int) (session('userid') ?? 0);
+
+        $loan_format = $request->loan_format
+            ?? '@Customer_No@/@Center_No@/@Center_Cus_Count@/@Product_Code@/@Loan_Count@';
+        $loan_seperator_group = (int) ($request->loan_seperator_group ?? 0);
+
+        // if you have branch no stored somewhere
+        $branch_no = $request->branch_no ?? (session('branch_no') ?? '');
+
+        $updated = 0;
+        $logged = 0;
+
+        DB::table('customer_loan as cl')
+            ->where('cl.branch_id', $branchId)
+            ->where('cl.Status', '=', 0) // ✅ active
+            ->orderBy('cl.idCustomer_Loan', 'asc')
+            ->select([
+                'cl.idCustomer_Loan as chunk_id',
+                'cl.idCustomer_Loan',
+                'cl.Customer_idCustomer',
+                'cl.Loan_Category_idLoan_Category',
+                'cl.Loan_No as old_loan_no',
+            ])
+            ->chunkById(300, function ($rows) use ($branchId, $userId, $branch_no, $loan_format, $loan_seperator_group, &$updated, &$logged) {
+                foreach ($rows as $row) {
+
+                    $loan_id = (int) $row->idCustomer_Loan;
+                    $customer_id = (int) $row->Customer_idCustomer;
+                    $loan_cate_id = (int) $row->Loan_Category_idLoan_Category;
+
+                    $oldLoanNo = (string) ($row->old_loan_no ?? '');
+
+                    // ---------------- YOUR CODE (same logic) ----------------
+    
+                    $cus_loan_count = tableWithBranch('customer_loan')
+                        ->where('Customer_idCustomer', '=', $customer_id)
+                        ->where('Status', '!=', '-2')
+                        ->count();
+
+                    $maxId = DB::table('customer_loan')
+                        ->where('branch_id', session('branch_id'))
+                        ->max('idCustomer_Loan') ?? 1;
+                    $maxId++;
+                    $formatted_loan_id = str_pad($maxId, 4, '0', STR_PAD_LEFT);
+
+                    $product_code = tableWithBranch('loan_category')
+                        ->where('idLoan_Category', '=', $loan_cate_id)
+                        ->first();
+
+                    $loan_no = tableWithBranch('customer', 'customer')
+                        ->leftJoin('group_has_customer', 'group_has_customer.cus_id', '=', 'customer.idCustomer')
+                        ->leftJoin('customer_group', 'customer_group.idCustomer_Group', '=', 'group_has_customer.group_id')
+                        ->leftJoin('center', 'center.idCenter', '=', 'customer_group.center_id')
+                        ->leftJoin('route', 'route.id_route', '=', 'center.route_id')
+                        ->where('customer.idCustomer', $customer_id)
+                        ->select('customer.*', 'customer_group.*', 'center.*', 'route.root_code as root')
+                        ->first();
+
+                    $loan_number_txt = null;
+
+                    if ($loan_no) {
+
+                        $center_id = $loan_no->idCenter;
+
+                        $center_customer_count = DB::table('customer')
+                            ->join('group_has_customer', 'group_has_customer.cus_id', '=', 'customer.idCustomer')
+                            ->join('customer_group', 'customer_group.idCustomer_Group', '=', 'group_has_customer.group_id')
+                            ->where('customer_group.center_id', $center_id)
+                            ->distinct('customer.idCustomer')
+                            ->count('customer.idCustomer');
+
+                        $routeId = DB::table('customer')
+                            ->where('idCustomer', $customer_id)
+                            ->value('route_id');
+
+                        $routewiseloanCount = DB::table('customer_loan as cl2')
+                            ->join('customer as c2', 'cl2.Customer_idCustomer', '=', 'c2.idCustomer')
+                            ->where('c2.route_id', $routeId)
+                            ->count();
+
+                        $placeholders = [
+                            '@Branch_No@' => $branch_no,
+                            '@Center_No@' => $loan_no->No,
+                            '@Group_No@' => $loan_no->Group_No,
+                            '@Product_Code@' => $product_code->Product_code ?? '',
+                            '@Root@' => $loan_no->root ?? '',
+                            '@Customer_No@' => str_pad($loan_no->idCustomer, 3, '0', STR_PAD_LEFT),
+                            '@Auto_Id@' => $formatted_loan_id,
+                            '@Loan_Count@' => $cus_loan_count + 1,
+                            '@Center_Cus_Count@' => $center_customer_count + 1,
+                            '@RootlyCount@' => str_pad($routewiseloanCount + 1, 3, '0', STR_PAD_LEFT),
+                        ];
+
+                        $loan_number_txt = $loan_format;
+                        foreach ($placeholders as $placeholder => $value) {
+                            $loan_number_txt = str_replace($placeholder, $value, $loan_number_txt);
+                        }
+                        Log::info($loan_number_txt);
+
+                    }
+
+                    // ---------------- END YOUR CODE ----------------
+    
+                    // If cannot generate due to missing joins, skip
+                    if (!$loan_number_txt) {
+                        Log::warning('Loan no regenerate skipped (missing data)', [
+                            'loan_id' => $loan_id,
+                            'customer_id' => $customer_id,
+                            'loan_cate_id' => $loan_cate_id,
+                        ]);
+                        continue;
+                    }
+
+                    // Update if changed
+                    if ($oldLoanNo !== $loan_number_txt) {
+
+                        DB::table('customer_loan')
+                            ->where('idCustomer_Loan', $loan_id)
+                            ->update(['Loan_No' => $loan_number_txt]);
+
+                        $updated++;
+
+                        Log::info('Loan number regenerated', [
+                            'branch_id' => $branchId,
+                            'user_id' => $userId,
+                            'loan_id' => $loan_id,
+                            'customer_id' => $customer_id,
+                            'old_loan_no' => $oldLoanNo,
+                            'new_loan_no' => $loan_number_txt,
+                            'ip' => request()->ip(),
+                            'user_agent' => substr((string) request()->userAgent(), 0, 450),
+                        ]);
+
+                        $logged++;
+                    }
+                }
+            }, 'chunk_id');
+
+        Log::info('Loan numbers regenerated ALL ACTIVE (summary)', [
+            'branch_id' => $branchId,
+            'user_id' => $userId,
+            'updated' => $updated,
+            'logged' => $logged,
+            'format' => $loan_format,
+        ]);
+
+        return response()->json([
+            'type' => 'success',
+            'updated' => $updated,
+            'logged' => $logged,
+            'format' => $loan_format,
+        ]);
+    }
+
+
+
+
+
+
 }

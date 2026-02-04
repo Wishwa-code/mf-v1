@@ -34,41 +34,41 @@ return [
 
         // MAIN DB (asipiya_main)
         'main' => [
-            'driver'    => 'mysql',
-            'host'      => env('MAIN_DB_HOST', '127.0.0.1'),
-            'port'      => env('MAIN_DB_PORT', '3306'),
-            'database'  => env('MAIN_DB_DATABASE', 'asiptrej_fincocapital61'),
-            'username'  => env('MAIN_DB_USERNAME', 'root'),
-            'password'  => env('MAIN_DB_PASSWORD', ''),
-            'charset'   => 'utf8mb4',
+            'driver' => 'mysql',
+            'host' => env('MAIN_DB_HOST', '127.0.0.1'),
+            'port' => env('MAIN_DB_PORT', '3306'),
+            'database' => env('MAIN_DB_DATABASE', 'asipbook_mf_0204'),
+            'username' => env('MAIN_DB_USERNAME', 'root'),
+            'password' => env('MAIN_DB_PASSWORD', ''),
+            'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
-            'prefix'    => '',
+            'prefix' => '',
         ],
 
         // GENERIC TENANT CONNECTION (DB name will be set per request)
         'tenant' => [
-            'driver'    => 'mysql',
-            'host'      => env('TENANT_DB_HOST', '127.0.0.1'),
-            'port'      => env('TENANT_DB_PORT', '3306'),
-            'database'  => null,  // <- IMPORTANT: we will fill this from session
-            'username'  => env('TENANT_DB_USERNAME', 'root'),
-            'password'  => env('TENANT_DB_PASSWORD', ''),
-            'charset'   => 'utf8mb4',
+            'driver' => 'mysql',
+            'host' => env('TENANT_DB_HOST', '127.0.0.1'),
+            'port' => env('TENANT_DB_PORT', '3306'),
+            'database' => null,  // <- IMPORTANT: we will fill this from session
+            'username' => env('TENANT_DB_USERNAME', 'root'),
+            'password' => env('TENANT_DB_PASSWORD', ''),
+            'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
-            'prefix'    => '',
+            'prefix' => '',
         ],
 
         // Your old 'mysql' can just alias to main if you want:
         'mysql' => [
-            'driver'    => 'mysql',
-            'host'      => env('MAIN_DB_HOST', '127.0.0.1'),
-            'port'      => env('MAIN_DB_PORT', '3306'),
-            'database'  => env('MAIN_DB_DATABASE', 'asiptrej_fincocapital61'),
-            'username'  => env('MAIN_DB_USERNAME', 'root'),
-            'password'  => env('MAIN_DB_PASSWORD', ''),
-            'charset'   => 'utf8mb4',
+            'driver' => 'mysql',
+            'host' => env('MAIN_DB_HOST', '127.0.0.1'),
+            'port' => env('MAIN_DB_PORT', '3306'),
+            'database' => env('MAIN_DB_DATABASE', 'asipbook_mf_0204'),
+            'username' => env('MAIN_DB_USERNAME', 'root'),
+            'password' => env('MAIN_DB_PASSWORD', ''),
+            'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
-            'prefix'    => '',
+            'prefix' => '',
         ],
     ],
 
@@ -107,7 +107,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_database_'),
+            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_') . '_database_'),
         ],
 
         'default' => [

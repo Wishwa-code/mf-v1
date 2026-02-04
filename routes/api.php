@@ -10,9 +10,9 @@ Route::middleware(['auth:sanctum', ApplyBranchFromUser::class])->group(function 
     // existing
     Route::get('/routes', [DirectoryController::class, 'listRoutes']);
     Route::get('/centers', [DirectoryController::class, 'listCenters']);
-    Route::get('/groups',  [DirectoryController::class, 'listGroups']);
+    Route::get('/groups', [DirectoryController::class, 'listGroups']);
     Route::get('/centers/{center_id}/groups', [DirectoryController::class, 'groupsByCenter'])->whereNumber('center_id');
-    Route::get('/collections',       [CollectionsController::class, 'index']);
+    Route::get('/collections', [CollectionsController::class, 'index']);
     Route::get('/collections/today', [CollectionsController::class, 'today']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -33,4 +33,9 @@ Route::middleware(['auth:sanctum', ApplyBranchFromUser::class])->group(function 
     Route::get('/routes/{id}/customers', [RoutesController::class, 'customers'])->whereNumber('id');
     Route::get('/payments/{id}/receipt', [PaymentsController::class, 'paymentReceipt'])
         ->whereNumber('id');
+    Route::get('/payments/my', [PaymentsController::class, 'myPayments']); // logged user payments
+    Route::get('/payments/my/summary', [PaymentsController::class, 'myPaymentsSummary']); // optional totals
+
+    Route::post('/loans/comments/store', [LoansController::class, 'storeComment']);
+    Route::post('/loans/comments/fetch', [LoansController::class, 'fetchComments']);
 });
