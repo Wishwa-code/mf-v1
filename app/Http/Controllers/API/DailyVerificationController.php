@@ -15,6 +15,8 @@ class DailyVerificationController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'type' => 'required|in:day_start,day_end',
+            'user_id' => 'required', // User said they will send user id
+            'date' => 'sometimes|date', // Optional, defaults to today
         ]);
 
         if ($validator->fails()) {
@@ -22,18 +24,30 @@ class DailyVerificationController extends Controller
         }
 
         try {
-            $userId = auth()->user()->id;
-            $today = Carbon::today();
-            $type = $request->query('type');
+            $userId = $request->input('user_id');
+            $date = $request->input('date', Carbon::today()->toDateString());
+            $type = $request->input('type');
 
-            $verification = DailyOdometerVerification::where('user_id', $userId)
-                ->whereDate('created_at', $today)
-                ->where('upload_time', $type)
+            $verification = DailyOdometerVerification::where('collector_id', $userId)
+                ->whereDate('date', $date)
                 ->first();
 
+            $uploaded = false;
+            $imageUrl = null;
+
+            if ($verification) {
+                if ($type === 'day_start' && $verification->start_photo) {
+                    $uploaded = true;
+                    $imageUrl = asset($verification->start_photo);
+                } elseif ($type === 'day_end' && $verification->end_photo) {
+                    $uploaded = true;
+                    $imageUrl = asset($verification->end_photo);
+                }
+            }
+
             return response()->json([
-                'uploaded' => $verification ? true : false,
-                'image_url' => $verification ? asset($verification->image_url) : null
+                'uploaded' => $uploaded,
+                'image_url' => $imageUrl
             ]);
 
         } catch (\Exception $e) {
@@ -46,6 +60,11 @@ class DailyVerificationController extends Controller
         $validator = Validator::make($request->all(), [
             'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB max
             'type' => 'required|in:day_start,day_end',
+            'user_id' => 'required',
+            'user_name' => 'required|string',
+            'location' => 'nullable|string',
+            'reading_value' => 'required|numeric',
+            'date' => 'sometimes|date',
         ]);
 
         if ($validator->fails()) {
@@ -55,14 +74,19 @@ class DailyVerificationController extends Controller
         try {
             DB::beginTransaction();
 
-            $userId = auth()->user()->id;
-            $image = $request->file('image');
+            $userId = $request->input('user_id');
+            $userName = $request->input('user_name');
+            $location = $request->input('location');
+            $readingValue = $request->input('reading_value');
             $type = $request->input('type');
+            $date = $request->input('date', Carbon::today()->toDateString());
+
+            $image = $request->file('image');
 
             // Generate a unique filename
-            $filename = time() . '_' . $type . '_' . $image->getClientOriginalName();
+            $filename = time() . '_' . $type . '_' . $userId . '_' . $image->getClientOriginalName();
 
-            // Store directly in public folder to avoid symlink/URL issues
+            // Store directly in public folder
             $destinationPath = public_path('uploads/daily_odometer');
 
             // Ensure directory exists
@@ -71,25 +95,64 @@ class DailyVerificationController extends Controller
             }
 
             $image->move($destinationPath, $filename);
-
             $dbPath = 'uploads/daily_odometer/' . $filename;
 
-            $today = Carbon::today();
-            $verification = DailyOdometerVerification::where('user_id', $userId)
-                ->whereDate('created_at', $today)
-                ->where('upload_time', $type)
+            // Find existing record for this user and date
+            $verification = DailyOdometerVerification::where('collector_id', $userId)
+                ->where('date', $date)
                 ->first();
 
-            if ($verification) {
-                // Ideally delete old image here
-                $verification->image_url = $dbPath;
-                $verification->save();
-            } else {
-                DailyOdometerVerification::create([
-                    'user_id' => $userId,
-                    'image_url' => $dbPath,
-                    'upload_time' => $type,
-                ]);
+            if ($type === 'day_start') {
+                if ($verification) {
+                    // Update existing
+                    $verification->update([
+                        'start_photo' => $dbPath,
+                        'start_reading_value' => $readingValue,
+                        'start_location' => $location,
+                        'start_upload_time' => Carbon::now()->toTimeString(),
+                        'collector_name' => $userName, // Update name just in case
+                    ]);
+                } else {
+                    // Create new
+                    DailyOdometerVerification::create([
+                        'collector_id' => $userId,
+                        'collector_name' => $userName,
+                        'date' => $date,
+                        'start_photo' => $dbPath,
+                        'start_reading_value' => $readingValue,
+                        'start_location' => $location,
+                        'start_upload_time' => Carbon::now()->toTimeString(),
+                    ]);
+                }
+            } else { // day_end
+                if ($verification) {
+                    $verification->update([
+                        'end_photo' => $dbPath,
+                        'end_reading_value' => $readingValue,
+                        'end_location' => $location,
+                        'end_upload_time' => Carbon::now()->toTimeString(),
+                    ]);
+                } else {
+                    // Create new if end is uploaded first (unlikely but possible logic)
+                    DailyOdometerVerification::create([
+                        'collector_id' => $userId,
+                        'collector_name' => $userName,
+                        'date' => $date,
+                        'end_photo' => $dbPath,
+                        'end_reading_value' => $readingValue,
+                        'end_location' => $location,
+                        'end_upload_time' => Carbon::now()->toTimeString(),
+                        // Start fields will be nullable/empty
+                        'start_reading_value' => 0, // Fallback or nullable? Schema says NOT NULL for start_reading_value.
+                        // User SQL says: odometer_value -> start_reading_value DOUBLE NOT NULL.
+                        // So we must provide a value if creating new. I'll use 0 or readingValue if logically it's the only reading.
+                        // But strictly speaking, if day_end is first, start is missing.
+                        // I will set start_reading_value to 0 to avoid SQL error, or make it nullable in migration?
+                        // User SQL: CHANGE COLUMN ... start_reading_value DOUBLE ... NOT NULL.
+                        // So I must provide it. I'll use 0.
+                        'start_photo' => '', // Schema says NOT NULL.
+                    ]);
+                }
             }
 
             DB::commit();
