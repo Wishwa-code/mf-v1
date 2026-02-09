@@ -21,8 +21,8 @@ class RoutesController
     public function index(Request $request)
     {
         $branchId = (int) $request->attributes->get('branch_id');
-        $user     = $request->user();
-        $userId   = (int) $user->id;
+        $user = $request->user();
+        $userId = (int) $user->id;
         $collectorFlag = (int) ($user->collector ?? 0);
 
 
@@ -74,12 +74,26 @@ class RoutesController
             ->where('l1.Status', 0)
             ->groupBy('l1.Customer_idCustomer');
 
+        // Subquery: Find center info (logic from CustomersController)
+        $groupsSub = DB::table('group_has_customer as ghc')
+            ->leftJoin('customer_group as cg', 'cg.idCustomer_Group', '=', 'ghc.group_id')
+            ->leftJoin('center as cen', 'cen.idCenter', '=', 'cg.center_id')
+            ->select(
+                'ghc.cus_id',
+                DB::raw('MAX(cen.idCenter) as center_id')
+            )
+            ->groupBy('ghc.cus_id');
+
         $customers = DB::table('customer as c')
             // Only customers who have an active loan (inner join with subquery)
             ->joinSub($latestActiveLoan, 'al', function ($join) {
                 $join->on('al.Customer_idCustomer', '=', 'c.idCustomer');
             })
             ->join('customer_loan as l', 'l.idCustomer_Loan', '=', 'al.latest_loan_id')
+            // Join for center info
+            ->leftJoinSub($groupsSub, 'gsub', function ($join) {
+                $join->on('gsub.cus_id', '=', 'c.idCustomer');
+            })
             ->where('c.branch_id', $branchId)
             ->where('c.route_id', $id)
             ->where('c.Status', 1) // only active customers
@@ -88,14 +102,15 @@ class RoutesController
                 'c.First_Name as First_Name',
                 'c.Last_Name as Last_Name',
                 'l.Loan_No as cus_number',          // keep the frontend field name
-                'l.idCustomer_Loan as Loan_ID'
+                'l.idCustomer_Loan as Loan_ID',
+                'gsub.center_id'
             )
             ->orderBy('c.idCustomer', $order)
             ->get();
 
         return response()->json([
-            'status'    => 'success',
-            'route_id'  => $id,
+            'status' => 'success',
+            'route_id' => $id,
             'customers' => $customers,
         ], 200);
     }
