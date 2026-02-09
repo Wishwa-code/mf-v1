@@ -17,9 +17,9 @@ class CustomersController
     public function index(Request $request)
     {
         $branchId = (int) $request->attributes->get('branch_id');
-        $search   = trim((string) $request->query('search', ''));
-        $routeId  = $request->query('route_id');
-        $status   = $request->query('status'); // optional, but we'll default to 1
+        $search = trim((string) $request->query('search', ''));
+        $routeId = $request->query('route_id');
+        $status = $request->query('status'); // optional, but we'll default to 1
         $perPage = (int) $request->query('per_page', 100);
 
         // Subquery: aggregated groups per customer
@@ -129,7 +129,13 @@ class CustomersController
 
         $groupsSub = DB::table('group_has_customer as ghc')
             ->leftJoin('customer_group as cg', 'cg.idCustomer_Group', '=', 'ghc.group_id')
-            ->select('ghc.cus_id', DB::raw('GROUP_CONCAT(DISTINCT cg.Name ORDER BY cg.Name SEPARATOR ", ") as group_names'))
+            ->leftJoin('center as cen', 'cen.idCenter', '=', 'cg.center_id')
+            ->select(
+                'ghc.cus_id',
+                DB::raw('GROUP_CONCAT(DISTINCT cg.Name ORDER BY cg.Name SEPARATOR ", ") as group_names'),
+                DB::raw('GROUP_CONCAT(DISTINCT cen.Name ORDER BY cen.Name SEPARATOR ", ") as center_names'),
+                DB::raw('MAX(cen.idCenter) as center_id') // Assuming one center per customer primarily, or taking one if multiple
+            )
             ->groupBy('ghc.cus_id');
 
         $row = DB::table('customer as c')
@@ -143,6 +149,8 @@ class CustomersController
                 'c.*',
                 'r.name as route_name',
                 DB::raw('IFNULL(gsub.group_names, "") as group_names'),
+                DB::raw('IFNULL(gsub.center_names, "") as center_names'),
+                'gsub.center_id',
             ])
             ->first();
 
@@ -151,7 +159,7 @@ class CustomersController
         }
 
         return response()->json([
-            'status'   => 'success',
+            'status' => 'success',
             'customer' => $row,
         ], 200);
     }
