@@ -80,7 +80,8 @@ class RoutesController
             ->leftJoin('center as cen', 'cen.idCenter', '=', 'cg.center_id')
             ->select(
                 'ghc.cus_id',
-                DB::raw('MAX(cen.idCenter) as center_id')
+                DB::raw('MAX(cen.idCenter) as center_id'),
+                DB::raw('GROUP_CONCAT(DISTINCT cen.Name ORDER BY cen.Name SEPARATOR ", ") as center_name')
             )
             ->groupBy('ghc.cus_id');
 
@@ -103,7 +104,8 @@ class RoutesController
                 'c.Last_Name as Last_Name',
                 'l.Loan_No as cus_number',          // keep the frontend field name
                 'l.idCustomer_Loan as Loan_ID',
-                'gsub.center_id'
+                'gsub.center_id',
+                'gsub.center_name'
             )
             ->orderBy('c.idCustomer', $order)
             ->get();
