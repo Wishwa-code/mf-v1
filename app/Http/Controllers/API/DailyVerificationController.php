@@ -62,7 +62,8 @@ class DailyVerificationController extends Controller
             'type' => 'required|in:day_start,day_end',
             'user_id' => 'required',
             'user_name' => 'required|string',
-            'location' => 'nullable|string',
+            'latitude' => 'required',
+            'longitude' => 'required',
             'reading_value' => 'required|numeric',
             'date' => 'sometimes|date',
         ]);
@@ -76,7 +77,14 @@ class DailyVerificationController extends Controller
 
             $userId = $request->input('user_id');
             $userName = $request->input('user_name');
-            $location = $request->input('location');
+
+            $latitude = $request->input('latitude');
+            $longitude = $request->input('longitude');
+            $location = json_encode([
+                'latitude' => $latitude,
+                'longitude' => $longitude
+            ]);
+
             $readingValue = $request->input('reading_value');
             $type = $request->input('type');
             $date = $request->input('date', Carbon::today()->toDateString());
