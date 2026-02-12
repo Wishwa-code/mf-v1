@@ -43,4 +43,7 @@ Route::middleware(['auth:sanctum', ApplyBranchFromUser::class])->group(function 
     // Daily Verification
     Route::get('/daily-verification/status', [DailyVerificationController::class, 'checkOdometerImageStatus']);
     Route::post('/daily-verification/upload', [DailyVerificationController::class, 'uploadOdometerImage']);
+
+    // User Location
+    Route::post('/user-locations', [\App\Http\Controllers\API\UserLocationController::class, 'store']);
 });
